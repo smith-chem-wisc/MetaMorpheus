@@ -218,7 +218,7 @@ namespace EngineLayer
                         int indOfParent = Array.IndexOf(split, "Parent");
                         if (indOfParent > 0)
                         {
-                            precursorMz = double.Parse(split[indOfParent + 1]);
+                            precursorMz = double.Parse(split[indOfParent + 1], CultureInfo.InvariantCulture);
                         }
                     }
 
@@ -226,7 +226,7 @@ namespace EngineLayer
                     int indOfRt = Array.IndexOf(split, "iRT");
                     if (indOfRt > 0)
                     {
-                        rt = double.Parse(split[indOfRt + 1]);
+                        rt = double.Parse(split[indOfRt + 1], CultureInfo.InvariantCulture);
                     }
                     else
                     {
@@ -234,7 +234,7 @@ namespace EngineLayer
 
                         if (indOfRt > 0)
                         {
-                            rt = double.Parse(split[indOfRt + 1]);
+                            rt = double.Parse(split[indOfRt + 1], CultureInfo.InvariantCulture);
                         }
                     }
 
