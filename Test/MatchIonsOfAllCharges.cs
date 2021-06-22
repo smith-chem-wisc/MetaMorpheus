@@ -83,6 +83,37 @@ namespace Test
                     }
                 }
             }
+
+            //test specific condition: unknown fragment mass; this only happens rarely for sequences with unknown amino acids
+            var myMsDataFile1 = new TestDataFile();
+            var variableModifications1 = new List<Modification>();
+            var fixedModifications1 = new List<Modification>();
+            var proteinList1 = new List<Protein> { new Protein("QXQ", null) };
+            var productMassTolerance = new AbsoluteTolerance(0.01);
+            var searchModes = new OpenSearchMode();
+
+            Tolerance DeconvolutionMassTolerance1 = new PpmTolerance(5);
+
+            var listOfSortedms2Scans1 = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("Custom Protease3", CleavageSpecificity.Full, null, null, motifs);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+
+            CommonParameters CommonParameters1 = new CommonParameters(
+                digestionParams: new DigestionParams(protease: protease.Name, maxMissedCleavages: 0, minPeptideLength: 1),
+                scoreCutoff: 1,
+                addCompIons: false);
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
+            PeptideSpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+
+            bool writeSpectralLibrary = true;
+            new ClassicSearchEngine(allPsmsArray1, listOfSortedms2Scans1, variableModifications1, fixedModifications1, null, null, null,
+                proteinList1, searchModes, CommonParameters1, fsp, null, new List<string>(), writeSpectralLibrary).Run();
+
+            var psm1 = allPsmsArray1.Where(p => p != null).ToList();
+            Assert.AreEqual(psm1.Count, 222);
         }
 
         [Test]
