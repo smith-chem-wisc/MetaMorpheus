@@ -113,11 +113,10 @@ namespace EngineLayer
                     score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
                     ions.Add(ion);
                 }
-
             }
 
-
             return score;
+
         }
 
         public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false)
@@ -260,6 +259,7 @@ namespace EngineLayer
                     }
                 }
             }
+
             return matchedFragmentIons;
         }
 

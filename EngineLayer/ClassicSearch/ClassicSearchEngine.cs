@@ -22,7 +22,6 @@ namespace EngineLayer.ClassicSearch
         private readonly PeptideSpectralMatch[] PeptideSpectralMatches;
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
-        public Dictionary<PeptideWithSetModifications, PeptideWithSetModifications> decoyTargetPairs;
         private readonly bool WriteSpectralLibrary;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
@@ -249,7 +248,5 @@ namespace EngineLayer.ClassicSearch
             // index of the first element that is larger than value
             return index;
         }
-
-
     }
 }

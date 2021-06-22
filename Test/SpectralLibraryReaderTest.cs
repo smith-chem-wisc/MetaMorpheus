@@ -3,13 +3,9 @@ using System.IO;
 using System;
 using System.Linq;
 using EngineLayer;
-using MzLibUtil;
 using TaskLayer;
 using System.Collections.Generic;
 using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
-using Proteomics;
-using MassSpectrometry;
 
 namespace Test
 {
