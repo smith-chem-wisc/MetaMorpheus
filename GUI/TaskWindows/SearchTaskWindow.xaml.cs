@@ -495,13 +495,13 @@ namespace MetaMorpheusGUI
             }
 
             double? minimumAllowedIntensityRatioToBasePeak = null;
-            if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, out double minimumAllowedIntensityRatio))
+            if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minimumAllowedIntensityRatio))
             {
                 minimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatio;
             }
 
             double? windowWidthThompsons = null;
-            if (double.TryParse(WindowWidthThomsonsTextBox.Text, out double windowWidth))
+            if (double.TryParse(WindowWidthThomsonsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double windowWidth))
             {
                 windowWidthThompsons = windowWidth;
             }
