@@ -48,8 +48,9 @@ namespace Test
                     maxMissedCleavages: 0,
                     minPeptideLength: 1,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
+            bool writeSpectralLibrary = false;
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(),false);
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpectralLibrary);
 
             cse.Run();
             Assert.AreEqual(3, globalPsms[0].MatchedFragmentIons.Count);
