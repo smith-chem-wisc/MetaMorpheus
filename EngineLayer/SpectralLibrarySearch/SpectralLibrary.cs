@@ -333,8 +333,8 @@ namespace EngineLayer
                     double neutralLoss = 0;
                     if (split[2].Contains("-"))
                     {
-                        String[] NL = split[2].Split(neutralLossSplit, StringSplitOptions.RemoveEmptyEntries).ToArray();
-                        neutralLoss = double.Parse(NL[1]);
+                        String[] neutralLossInformation = split[2].Split(neutralLossSplit, StringSplitOptions.RemoveEmptyEntries).ToArray();
+                        neutralLoss = double.Parse(neutralLossInformation[1]);
                     }
 
                     string fragmentType = regexMatchResult.Groups[1].Value;
