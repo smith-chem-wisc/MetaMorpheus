@@ -48,10 +48,16 @@ namespace EngineLayer
             {
                 double intensityFraction = matchedIon.Intensity / maxIntensity;
 
+                string neutralLoss = null;
+                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    neutralLoss = "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss;
+                }
+
                 spectrum.Append("\n"+matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
                     matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +
                     matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString() + "^" +
-                    matchedIon.Charge + "/" + 0 + "ppm" + "\"");
+                    matchedIon.Charge + neutralLoss + "/" + 0 + "ppm" + "\"");
             }
 
             return spectrum.ToString();
