@@ -199,6 +199,12 @@
     <None Update="TestData\SpectralLibrarySearch\slicedMouse.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralLibrarySearch\spectralLibraryNeutralLossTest.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralLibrarySearch\yeast2fake_pdeep_lib.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
