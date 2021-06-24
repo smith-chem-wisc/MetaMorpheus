@@ -421,7 +421,7 @@ namespace MetaMorpheusGUI
             double? minimumAllowedIntensityRatioToBasePeak = null;
             if (!string.IsNullOrWhiteSpace(MinimumAllowedIntensityRatioToBasePeakTexBox.Text))
             {
-                if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, out double minimumAllowedIntensityRatio))
+                if (double.TryParse(MinimumAllowedIntensityRatioToBasePeakTexBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minimumAllowedIntensityRatio))
                 {
                     minimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatio;
                 }
