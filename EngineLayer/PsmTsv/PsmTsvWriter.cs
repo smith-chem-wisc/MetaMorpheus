@@ -190,7 +190,7 @@ namespace EngineLayer
             s[PsmTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingPeptides.Select(p => p.Notch)).ResolvedString;
         }
 
-        internal static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        internal static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, int? spectralCount = null)
         {
             bool pepWithModsIsNull = psm == null || psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
 
@@ -202,6 +202,7 @@ namespace EngineLayer
             string geneString = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Protein.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), psm.FullSequence).ResolvedString;
             s[PsmTsvHeader.AmbiguityLevel] = ProteoformLevelClassifier.ClassifyPrSM(s[PsmTsvHeader.FullSequence], geneString);
             s[PsmTsvHeader.PsmCount] = pepWithModsIsNull ? " " : psm.PsmCount.ToString();
+            s[PsmTsvHeader.FileSpecificPsmCount] = spectralCount == null ? " " : spectralCount.Value.ToString();
             s[PsmTsvHeader.Mods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
             s[PsmTsvHeader.ModsChemicalFormulas] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;

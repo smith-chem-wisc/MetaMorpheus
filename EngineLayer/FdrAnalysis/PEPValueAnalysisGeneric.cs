@@ -55,7 +55,7 @@ namespace EngineLayer
 
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
 
-            MLContext mlContext = new MLContext();
+            MLContext mlContext = new MLContext(seed: 1);
             //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code.
             const int numGroups = 4;
 

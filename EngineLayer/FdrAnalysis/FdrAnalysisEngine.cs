@@ -165,7 +165,7 @@ namespace EngineLayer.FdrAnalysis
         {
             if (AnalysisType == "PSM")
             {
-                CountPsm();
+                CountPsm(AllPsms);
                 //Need some reasonable number of PSMs to train on to get a reasonable estimation of the PEP
                 if (AllPsms.Count > 100)
                 {
@@ -228,23 +228,24 @@ namespace EngineLayer.FdrAnalysis
             return cumulative_target;
         }
 
-        public void CountPsm()
+        public static Dictionary<(string filePath, string fullSequence), int> CountPsm(List<PeptideSpectralMatch> allPsms)
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
-            var allUnambiguousPsms = AllPsms.Where(psm => psm.FullSequence != null);
+            var allUnambiguousPsms = allPsms.Where(psm => psm.FullSequence != null);
 
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                 psm.FdrInfo.QValue <= 0.01
                 && psm.FdrInfo.QValueNotch <= 0.01)
-                .GroupBy(p => p.FullSequence);
+                .GroupBy(p => p.FullSequence).ToList();
 
+            // this is the PSM count for a sequence across the entire dataset being searched
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
 
             foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
             {
-                if (!sequenceToPsmCount.ContainsKey(sequenceGroup.First().FullSequence))
+                if (!sequenceToPsmCount.ContainsKey(sequenceGroup.Key))
                 {
-                    sequenceToPsmCount.Add(sequenceGroup.First().FullSequence, sequenceGroup.Count());
+                    sequenceToPsmCount.Add(sequenceGroup.Key, sequenceGroup.Count());
                 }
             }
 
@@ -255,6 +256,21 @@ namespace EngineLayer.FdrAnalysis
                     psm.PsmCount = sequenceToPsmCount[psm.FullSequence];
                 }
             }
+
+            // this is to calculate PSM count on a per-spectra file basis for each identified sequence
+            Dictionary<(string filePath, string fullSequence), int> psmsPerFile = new Dictionary<(string, string), int>();
+            List<string> files = allPsms.Select(p => p.FullFilePath).Distinct().ToList();
+
+            foreach (var sequence in unambiguousPsmsLessThanOnePercentFdr)
+            {
+                foreach (var filePath in files)
+                {
+                    int countPerFile = sequence.Count(p => p.FullFilePath == filePath);
+                    psmsPerFile.TryAdd((filePath, sequence.Key), countPerFile);
+                }
+            }
+
+            return psmsPerFile;
         }
     }
 }

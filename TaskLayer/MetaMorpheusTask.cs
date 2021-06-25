@@ -597,14 +597,23 @@ namespace TaskLayer
             }
         }
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned,
+            Dictionary<(string filePath, string fullSequence), int> spectralCountsPerFile = null)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned));
+                    if (spectralCountsPerFile == null)
+                    {
+                        output.WriteLine(psm.ToString(modstoWritePruned));
+                    }
+                    else
+                    {
+                        spectralCountsPerFile.TryGetValue((psm.FullFilePath, psm.FullSequence), out int spectralCount);
+                        output.WriteLine(psm.ToString(modstoWritePruned, spectralCount));
+                    }
                 }
             }
         }

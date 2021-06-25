@@ -141,6 +141,9 @@ namespace TaskLayer
                 psm.ResolveAllAmbiguities();
             }
 
+            // protein parsimony removes some ambiguity. need to get a re-count of unambiguous PSMs <0.01 qvalue
+            FdrAnalysisEngine.CountPsm(Parameters.AllPsms);
+
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
         }
 
@@ -551,6 +554,9 @@ namespace TaskLayer
 
             PsmsGroupedByFile = FilteredPsmListForOutput.GroupBy(p => p.FullFilePath);
 
+            // get spectral count per file
+            var spectralCountsPerFile = FdrAnalysisEngine.CountPsm(Parameters.AllPsms);
+
             foreach (var file in PsmsGroupedByFile)
             {
                 // write summary text
@@ -569,7 +575,7 @@ namespace TaskLayer
 
                     // write PSMs
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
-                    WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                    WritePsmsToTsv(psmsForThisFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, spectralCountsPerFile);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
 
                     // write PSMs for percolator
@@ -982,6 +988,9 @@ namespace TaskLayer
         {
             Status("Writing peptide results...", Parameters.SearchTaskId);
 
+            // get spectral count per file
+            var spectralCountsPerFile = FdrAnalysisEngine.CountPsm(Parameters.AllPsms);
+
             // write best (highest-scoring) PSM per peptide
             string filename = "All" + GlobalVariables.AnalyteType + "s.psmtsv";
             string writtenFile = Path.Combine(Parameters.OutputFolder, filename);
@@ -1022,7 +1031,7 @@ namespace TaskLayer
                     // write best (highest-scoring) PSM per peptide
                     filename = "_" + GlobalVariables.AnalyteType + "s.psmtsv";
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + filename);
-                    WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                    WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection, spectralCountsPerFile);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
             }

@@ -139,16 +139,16 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, int? spectralCount = null)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned).Values);
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, spectralCount).Values);
         }
 
-        public static Dictionary<string, string> DataDictionary(PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        public static Dictionary<string, string> DataDictionary(PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, int? spectralCount = null)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm);
-            PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
+            PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned, spectralCount);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
             PsmTsvWriter.AddMatchScoreData(s, psm);
             return s;
