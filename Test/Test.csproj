@@ -277,6 +277,12 @@
     <None Update="TestVariantPep.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TopDownTestData\ProteoformAmbiguity.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TopDownTestData\ProteoformAmbiguity.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TopDownTestData\slicedTDYeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

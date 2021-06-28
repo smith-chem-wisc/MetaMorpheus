@@ -240,7 +240,7 @@ namespace MetaMorpheusGUI
             DialogResult = false;
             CustomFragmentationWindow.Close();
         }
-        
+
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
@@ -456,7 +456,7 @@ namespace MetaMorpheusGUI
                     dissociationType: dissociationType,
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     precursorMassTolerance: precursorMassTolerance,
-                    productMassTolerance: productMassTolerance,                    
+                    productMassTolerance: productMassTolerance,
                     trimMs1Peaks: TrimMs1Peaks,
                     trimMsMsPeaks: TrimMsMsPeaks,
                     numberOfPeaksToKeepPerWindow: numPeaksToKeep,
