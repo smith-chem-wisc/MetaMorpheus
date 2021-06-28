@@ -55,7 +55,7 @@ namespace Test
         }
 
         /// <summary>
-        /// FIXME: MetaMorpheus currently reports ambiguity at the PrSM level, but starts tossing things when we get to the proteoform/protein level
+        /// TODO: MetaMorpheus currently reports ambiguity at the PrSM level, but starts tossing things when we get to the proteoform/protein level. See issue #2061
         /// Example 1: a base seqeunce is needed for parsimony, but an ambiguous sequence means the base sequence is null.
         /// Example 2: a full sequence is needed for determining which peptides/proteoforms are unique, but ambiguous localization means the full sequence is null.
         /// </summary>
