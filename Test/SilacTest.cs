@@ -207,7 +207,7 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
 
-            Assert.IsTrue(theStringResult.Contains("All target PSMs within 1% FDR: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
+            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
             ///Normal Peptide
             //test proteins
