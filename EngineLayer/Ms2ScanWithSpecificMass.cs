@@ -114,6 +114,59 @@ namespace EngineLayer
             return index - 1;
         }
 
+        //look for IsotopicEnvelopes which are in the range of acceptable mass 
+        public IsotopicEnvelope[] GetClosestExperimentalIsotopicEnvelopeList(double minimumMass, double maxMass)
+        {
+
+            if (DeconvolutedMonoisotopicMasses.Length == 0)
+            {
+                return null;
+            }
+            
+            //if no mass is in this range, then return null
+            if (DeconvolutedMonoisotopicMasses[0] > maxMass || DeconvolutedMonoisotopicMasses.Last() < minimumMass)
+            {
+                return null;
+            }
+            int startIndex = GetClosestFragmentMassMinimum(minimumMass);
+            int endIndex = GetClosestFragmentMassMaximum(maxMass);
+            int length = endIndex - startIndex + 1;
+
+            if (length < 1)
+            {
+                return null;
+            }
+            IsotopicEnvelope[] isotopicEnvelopes = ExperimentalFragments.Skip(startIndex).Take(length).ToArray();
+            return isotopicEnvelopes;
+        }
+
+        //look for the closest index which is bigger than acceptable minimun mass
+        //if all the mass in the array are smaller than the minimum mass, then return DeconvolutedMonoisotopicMasses.Length, which means no mass is acceptable
+        public int GetClosestFragmentMassMinimum(double massMinimum)
+        {
+            int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, massMinimum);
+            if (index >= 0)
+            {
+                return index;
+            }
+            index = ~index;
+
+            return index;
+        }
+
+        //look for the closest index which is smaller than acceptable maximum mass
+        //if all the mass in the array are bigger than the maximum mass, then return -1, which means no mass is acceptable
+        public int GetClosestFragmentMassMaximum(double massMax)
+        {
+            int index = Array.BinarySearch(DeconvolutedMonoisotopicMasses, massMax);
+            if (index >= 0)
+            {
+                 return index;
+            }
+            index = ~index;
+
+            return index - 1;
+        }
         public double? GetClosestExperimentalFragmentMz(double theoreticalMz, out double? intensity)
         {
             if (TheScan.MassSpectrum.XArray.Length == 0)

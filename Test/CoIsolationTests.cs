@@ -62,7 +62,7 @@ namespace Test
             
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length]; ;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(),false).Run();
 
             // Two matches for this single scan! Corresponding to two co-isolated masses
             Assert.AreEqual(2, allPsmsArray.Length);

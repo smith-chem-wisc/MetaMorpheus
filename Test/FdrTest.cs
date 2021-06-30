@@ -184,7 +184,7 @@ namespace Test
             //check better when using delta
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(),false).Run();
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
                 fsp, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -235,7 +235,7 @@ namespace Test
             //check no change when using delta
             allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(),false).Run();
 
             CommonParameters = new CommonParameters(useDeltaScore: true, digestionParams: new DigestionParams(minPeptideLength: 5));
 
@@ -278,7 +278,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(),false).Run();
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, 
                 CommonParameters, fsp, new List<string>()).Run());
 
@@ -476,7 +476,7 @@ namespace Test
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchMode, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchMode, CommonParameters, fsp, null, new List<string>(),false).Run();
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             List<PeptideSpectralMatch> moreNonNullPSMs = new List<PeptideSpectralMatch>();
 
@@ -638,7 +638,7 @@ namespace Test
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
             new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(),false).Run();
 
             List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
@@ -691,7 +691,7 @@ namespace Test
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
             new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null,
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(),false).Run();
 
             List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();

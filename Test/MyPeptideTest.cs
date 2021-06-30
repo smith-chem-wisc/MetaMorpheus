@@ -49,7 +49,7 @@ namespace Test
                     minPeptideLength: 1,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(),false);
 
             cse.Run();
             Assert.AreEqual(3, globalPsms[0].MatchedFragmentIons.Count);
@@ -84,7 +84,7 @@ namespace Test
                     maxModificationIsoforms: int.MaxValue,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(),false);
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -120,7 +120,7 @@ namespace Test
                     maxModificationIsoforms: int.MaxValue,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null,
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(),false);
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -181,7 +181,7 @@ namespace Test
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
 
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null,
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(),false);
 
             cse.Run();
             Assert.IsNull(globalPsms[0]);

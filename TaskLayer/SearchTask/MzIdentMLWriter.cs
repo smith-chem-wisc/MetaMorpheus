@@ -227,7 +227,7 @@ namespace TaskLayer
                 }
             };
             int database_index = 0;
-            foreach (string database in databases)
+            foreach (string database in databases.Where(p=>p!=null))
             {
                 _mzid.DataCollection.Inputs.SearchDatabase[database_index] = new mzIdentML110.Generated.SearchDatabaseType()
                 {
@@ -252,7 +252,7 @@ namespace TaskLayer
             }
 
             int protein_index = 0;
-            foreach (Protein protein in proteins)
+            foreach (Protein protein in proteins.Where(p=>p.DatabaseFilePath!=null))
             {
                 _mzid.SequenceCollection.DBSequence[protein_index] = new mzIdentML110.Generated.DBSequenceType
                 {
