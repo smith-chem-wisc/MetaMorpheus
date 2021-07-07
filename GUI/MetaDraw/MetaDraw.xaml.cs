@@ -155,19 +155,14 @@ namespace MetaMorpheusGUI
 
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
 
-            // draw the PSM
+            // draw the annotated spectrum
             MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors);
 
-            if (psm.ChildScanMatchedIons != null)
-            {
-                ParentChildScanView.Visibility = Visibility.Visible;
-                ParentScanView.Visibility = Visibility.Visible;
-            }
-            else
-            {
-                ParentChildScanView.Visibility = Visibility.Collapsed;
-                ParentScanView.Visibility = Visibility.Collapsed;
-            }
+            //draw the sequence coverage
+            MetaDrawLogic.DrawSequenceCoverageMap(psm, sequenceText, map);
+            mapViewer.Width = map.Width;
+
+            ParentChildScanView.Visibility = psm.ChildScanMatchedIons != null ? Visibility.Visible : Visibility.Collapsed;
 
             if (errors != null && errors.Any())
             {
@@ -539,6 +534,11 @@ namespace MetaMorpheusGUI
                     plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize;
                 }
             }
+        }
+        private void AnnotationSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            mapViewer.Height = .8 * SequenceAnnotationGrid.ActualHeight;
+            mapViewer.Width = .99 * SequenceAnnotationGrid.ActualWidth;
         }
     }
 }

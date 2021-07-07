@@ -78,6 +78,7 @@
         public const string BetaPeptideScoreLabel = "Beta Peptide Score";
         public const string BetaPeptideRankLabel = "Beta Peptide Rank";
         public const string BetaPeptideMatchedIonsLabel = "Beta Peptide Matched Ion Mass-To-Charge Ratios";
+        public const string BetaPeptideMatchedIonIntensitiesLabel = "Beta Peptide Matched Ion Intensities";
         public const string XLTotalScoreLabel = "XL Total Score";
         public const string ParentIonsLabel = "Parent Ions";
     }
