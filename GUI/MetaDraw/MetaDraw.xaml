@@ -194,7 +194,7 @@
                                             CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto">
                                             <Grid Name="mapGrid" Background="White">
                                                 <Grid.RowDefinitions>
-                                                    <RowDefinition Height="155" ></RowDefinition>
+                                                    <RowDefinition Height="160" ></RowDefinition>
                                                     <RowDefinition Height=" *"></RowDefinition>
                                                 </Grid.RowDefinitions>
                                                 <Canvas x:Name="sequenceText" Grid.Row="0" Background="White"></Canvas>

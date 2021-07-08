@@ -57,7 +57,6 @@ namespace MetaMorpheusGUI
             base.Closing += this.OnClosing;
 
             ParentChildScanView.Visibility = Visibility.Collapsed;
-            ParentScanView.Visibility = Visibility.Collapsed;
 
             PsmStatPlotFiles = new ObservableCollection<string>();
             selectSourceFileListBox.DataContext = PsmStatPlotFiles;
@@ -535,6 +534,7 @@ namespace MetaMorpheusGUI
                 }
             }
         }
+
         private void AnnotationSizeChanged(object sender, SizeChangedEventArgs e)
         {
             mapViewer.Height = .8 * SequenceAnnotationGrid.ActualHeight;
