@@ -514,6 +514,8 @@ namespace TaskLayer
                     int maxNumMatchedIons = matchedIonsForAllAmbiguousPeptides.Max(x => x.Count);
 
                     //remove peptides if they have fewer than max-1 matched ions, thus requiring at least two internal ions to disambiguate an ID
+                    //if not removed, then add the matched internal ions
+                    HashSet<PeptideWithSetModifications> PeptidesToMatchingInternalFragments = new HashSet<PeptideWithSetModifications>();
                     for (int peptideIndex = 0; peptideIndex < ambiguousPeptides.Count; peptideIndex++)
                     {
                         //if we should remove the theoretical, remove it
@@ -524,7 +526,13 @@ namespace TaskLayer
                         // otherwise add the matched internal ions to the total ions
                         else
                         {
-                            psm.PeptidesToMatchingFragments[ambiguousPeptides[peptideIndex]].AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]);
+                            PeptideWithSetModifications currentPwsm = ambiguousPeptides[peptideIndex];
+                            //check that we haven't already added the matched ions for this peptide
+                            if (!PeptidesToMatchingInternalFragments.Contains(currentPwsm))
+                            {
+                                PeptidesToMatchingInternalFragments.Add(currentPwsm); //record that we've seen this peptide
+                                psm.PeptidesToMatchingFragments[currentPwsm].AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
+                            }
                         }
                     }
                 }
