@@ -234,6 +234,12 @@ namespace GuiFunctions
                 TextDrawing(sequenceText, new Point(r * spacing + xShift, textHeight), psm.BaseSeq[r].ToString(), Brushes.Black, 16);
             }
 
+            //create circles for mods, if needed and able
+            if (!psm.FullSequence.Contains("|")) //can't draw mods if not localized/identified
+            {
+                PeptideSpectrumMatchPlot.AnnotateModifications(psm, sequenceText, psm.FullSequence, textHeight-4, spacing, xShift+5);
+            }
+
             //draw lines for each matched fragment
             List<bool[]> index = new List<bool[]>();
 

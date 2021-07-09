@@ -151,6 +151,12 @@
     <None Update="TestData\hela_snip_for_unitTest.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\InternalTest.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\InternalTest.mgf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\LEEGPPVTTVLTR_ms1.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

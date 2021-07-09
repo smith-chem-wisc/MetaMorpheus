@@ -168,6 +168,47 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
+
+        /// <summary>
+        /// Ensure internal fragment ions are being matched correctly and can disambiguate ambiguous proteoforms
+        /// </summary>
+        [Test]
+        public static void InternalFragmentIonTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+
+                SearchParameters = new SearchParameters
+                {
+                    MinAllowedInternalFragmentLength = 1
+                },
+                CommonParameters = new CommonParameters(
+                   digestionParams: new DigestionParams("top-down"),
+                   listOfModsVariable: new List<(string, string)> {
+                       ("Common Variable", "Oxidation on M"),
+                       ("Common Biological", "Acetylation on K"),
+                       ("Common Biological", "Acetylation on X")  })
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\InternalTest.mgf");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\InternalTest.fasta");
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestInternal", searchTask) };
+
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+            engine.Run();
+
+            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestInternal\AllPSMs.psmtsv");
+            //var output = File.ReadAllLines(outputPath);
+            //read the psmtsv
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(outputPath, out var warning);
+            Assert.IsTrue(psms.Count == 1);
+            //check that it's been disambiguated
+            Assert.IsFalse(psms[0].FullSequence.Contains("|"));
+        }
+
         /// <summary>
         /// Tests that normalization in a search task works properly with an Experimental Design file read in,
         /// and skips quantification when that file is absent

@@ -167,7 +167,7 @@ namespace GuiFunctions
         protected void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons)
         {
             // don't draw ambiguous sequences
-            if (SpectrumMatch.FullSequence.Contains("|"))
+            if (fullSequence.Contains("|"))
             {
                 return;
             }
@@ -213,40 +213,40 @@ namespace GuiFunctions
                     // don't draw diagnostic ions, precursor ions, etc
                 }
             }
-            AnnotateModifications(fullSequence, yLoc);
+            AnnotateModifications(SpectrumMatch, SequenceDrawingCanvas, fullSequence, yLoc);
         }
 
-        protected void AnnotateModifications(string fullSequence, int yLoc)
+        public static void AnnotateModifications(PsmFromTsv spectrumMatch, Canvas sequenceDrawingCanvas, string fullSequence, int yLoc, double? spacer = null, int xShift = 12)
         {
             var peptide = new PeptideWithSetModifications(fullSequence, GlobalVariables.AllModsKnownDictionary);
 
             // read glycans if applicable
             List<Tuple<int, string, double>> localGlycans = null;
-            if (SpectrumMatch.GlycanLocalizationLevel != null)
+            if (spectrumMatch.GlycanLocalizationLevel != null)
             {
-                localGlycans = PsmFromTsv.ReadLocalizedGlycan(SpectrumMatch.LocalizedGlycan);
+                localGlycans = PsmFromTsv.ReadLocalizedGlycan(spectrumMatch.LocalizedGlycan);
             }
 
             // annotate mods
             foreach (var mod in peptide.AllModsOneIsNterminus)
             {
-                double xLocation = (mod.Key - 1) * MetaDrawSettings.AnnotatedSequenceTextSpacing - 12;
+                double xLocation = (mod.Key - 1) * (spacer ?? MetaDrawSettings.AnnotatedSequenceTextSpacing) - xShift;
                 double yLocation = yLoc + 2;
 
                 if (mod.Value.ModificationType == "O-Glycosylation")
                 {
                     if (localGlycans.Where(p => p.Item1 + 1 == mod.Key).Count() > 0)
                     {
-                        DrawCircle(SequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
+                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
                     }
                     else
                     {
-                        DrawCircle(SequenceDrawingCanvas, new Point(xLocation, yLocation), Brushes.Gray);
+                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), Brushes.Gray);
                     }
                 }
                 else
                 {
-                    DrawCircle(SequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
+                    DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
                 }
             }
         }
