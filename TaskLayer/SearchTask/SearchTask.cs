@@ -483,7 +483,7 @@ namespace TaskLayer
             for (int index = 0; index < fileSpecificPsms.Length; index++)
             {
                 PeptideSpectralMatch psm = fileSpecificPsms[index];
-                if (psm != null && psm.BestMatchingPeptides.Count() > 1)
+                if (psm != null && psm.BestMatchingPeptides.Count() > 0)
                 {
                     //Get the scan
                     Ms2ScanWithSpecificMass scanForThisPsm = arrayOfMs2ScansSortedByMass[index];

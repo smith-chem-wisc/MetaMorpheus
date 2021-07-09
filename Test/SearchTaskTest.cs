@@ -207,6 +207,28 @@ namespace Test
             Assert.IsTrue(psms.Count == 1);
             //check that it's been disambiguated
             Assert.IsFalse(psms[0].FullSequence.Contains("|"));
+            int numTotalFragments = psms[0].MatchedIons.Count;
+
+            //test again but no variable acetyl on K. Make sure that internal fragments are still searched even without ambiguity
+            searchTask = new SearchTask()
+            {
+
+                SearchParameters = new SearchParameters
+                {
+                    MinAllowedInternalFragmentLength = 1
+                },
+                CommonParameters = new CommonParameters(
+                   digestionParams: new DigestionParams("top-down"),
+                   listOfModsVariable: new List<(string, string)> {
+                       ("Common Variable", "Oxidation on M"),
+                       ("Common Biological", "Acetylation on X")  })
+            };
+            taskList = new List<(string, MetaMorpheusTask)> { ("TestInternal", searchTask) };
+            engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+            engine.Run();
+            psms = PsmTsvReader.ReadTsv(outputPath, out warning);
+            Assert.IsTrue(psms.Count == 1);
+            Assert.IsTrue(psms[0].MatchedIons.Count == numTotalFragments);
         }
 
         /// <summary>
