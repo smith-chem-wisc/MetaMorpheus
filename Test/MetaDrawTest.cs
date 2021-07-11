@@ -732,6 +732,30 @@ namespace Test
 
             // delete output
             Directory.Delete(outputFolder, true);
-        }       
+        }
+
+        [Test]
+        public static void SequenceCoverageMapTest()
+        {
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\InternalTest.mgf");
+            string psmFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SequenceCoverageTestPSM.psmtsv");
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw sequence coverage for PSM
+            var sequenceText = new Canvas();
+            var map = new Canvas();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            metadrawLogic.DrawSequenceCoverageMap(psm, sequenceText, map);
+
+            //test no errors
+            Assert.That(errors == null || !errors.Any());
+        }
     }
 }

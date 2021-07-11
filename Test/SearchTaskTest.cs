@@ -229,6 +229,8 @@ namespace Test
             psms = PsmTsvReader.ReadTsv(outputPath, out warning);
             Assert.IsTrue(psms.Count == 1);
             Assert.IsTrue(psms[0].MatchedIons.Count == numTotalFragments);
+
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestInternal"), true);
         }
 
         /// <summary>
