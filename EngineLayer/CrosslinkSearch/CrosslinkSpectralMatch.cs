@@ -14,7 +14,10 @@ namespace EngineLayer.CrosslinkSearch
         {
             //The XLTotalScore is set here because some CSMs are not crosslinks and we need this score to be non-zero.
             XLTotalScore = score;
-            
+            //if (_BestMatchingPeptides.First() == 0)
+            //{
+            //    _BestMatchingPeptides.Add((0, theBestPeptide));
+            //}
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }

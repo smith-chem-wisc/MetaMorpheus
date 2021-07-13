@@ -15,7 +15,7 @@ namespace EngineLayer.CrosslinkSearch
     public class CrosslinkSearchEngine : ModernSearchEngine
     {
         public static readonly double ToleranceForMassDifferentiation = 1e-9;
-        protected readonly SortedList<double, CrosslinkSpectralMatch>[] GlobalCsms;
+        protected readonly List<CrosslinkSpectralMatch>[] GlobalCsms;
         protected readonly List<List<(double, int, double)>> Precursorss;
         protected readonly List<(int, int, int)>[] Candidates;
         protected readonly bool[,][] BetaCandidateIndices;
@@ -40,7 +40,7 @@ namespace EngineLayer.CrosslinkSearch
         private readonly double[] PrecursorMassTable;
         private readonly double[] NextPrecursorMassTable;
 
-        public CrosslinkSearchEngine(SortedList<double, CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
+        public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             Crosslinker crosslinker, int CrosslinkSearchTopNum, bool CleaveAtCrosslinkSite, bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds, 
@@ -290,7 +290,7 @@ namespace EngineLayer.CrosslinkSearch
             return _precursors;
         }
 
-        private void FindCrosslinkedPeptide(Ms2ScanWithSpecificMass scan, List<(double, int, double)> precursors, int[] idsOfPeptidesPossiblyObserved, bool[] _betaCandidateIndices, byte byteScoreCutoff, int scanIndex, ref SortedList<double, CrosslinkSpectralMatch> possibleMatches, HashSet<Tuple<int, int>> seenPair)
+        private void FindCrosslinkedPeptide(Ms2ScanWithSpecificMass scan, List<(double, int, double)> precursors, int[] idsOfPeptidesPossiblyObserved, bool[] _betaCandidateIndices, byte byteScoreCutoff, int scanIndex, ref List<CrosslinkSpectralMatch> possibleMatches, HashSet<Tuple<int, int>> seenPair)
         {
             //The code here is to generate intensity ranks of signature ions for cleavable crosslink.
             int rank = 1;
@@ -307,17 +307,17 @@ namespace EngineLayer.CrosslinkSearch
             HashSet<string> possibleMatchFullseq = new HashSet<string>();
             if (possibleMatches == null)
             {
-                possibleMatches = new SortedList<double, CrosslinkSpectralMatch>();
+                possibleMatches = new List<CrosslinkSpectralMatch>();
             }
             foreach (var pm in possibleMatches)
             {
-                foreach (var v in pm.Value.BestMatchingPeptides.Select(p => p.Peptide.FullSequence))
+                foreach (var v in pm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence))
                 {
                     possibleMatchFullseq.Add(v);
                 }
-                if (pm.Value.BetaPeptide!=null)
+                if (pm.BetaPeptide!=null)
                 {
-                    foreach (var v in pm.Value.BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide.FullSequence))
+                    foreach (var v in pm.BetaPeptide.BestMatchingPeptides.Select(p => p.Peptide.FullSequence))
                     {
                         possibleMatchFullseq.Add(v);
                     }
@@ -332,11 +332,11 @@ namespace EngineLayer.CrosslinkSearch
                 {
                     for (int i = 0; i < possibleMatches.Count; i++)
                     {
-                        CrosslinkSpectralMatch.AddMatchingPepWithSameFullSeq(possibleMatches.ElementAt(i).Value, PeptideIndex[id], possibleMatches.ElementAt(i).Value.PeptidesToMatchingFragments.First().Value);
+                        CrosslinkSpectralMatch.AddMatchingPepWithSameFullSeq(possibleMatches.ElementAt(i), PeptideIndex[id], possibleMatches.ElementAt(i).PeptidesToMatchingFragments.First().Value);
                         
-                        if (possibleMatches.ElementAt(i).Value.BetaPeptide != null)
+                        if (possibleMatches.ElementAt(i).BetaPeptide != null)
                         {
-                            CrosslinkSpectralMatch.AddMatchingPepWithSameFullSeq(possibleMatches.ElementAt(i).Value.BetaPeptide, PeptideIndex[id], possibleMatches.ElementAt(i).Value.PeptidesToMatchingFragments.First().Value);
+                            CrosslinkSpectralMatch.AddMatchingPepWithSameFullSeq(possibleMatches.ElementAt(i).BetaPeptide, PeptideIndex[id], possibleMatches.ElementAt(i).PeptidesToMatchingFragments.First().Value);
                         }
                     }
 
@@ -356,27 +356,11 @@ namespace EngineLayer.CrosslinkSearch
                             CrossType = PsmCrossType.Single,
                         };
 
-                        if (x != null && possibleMatches.ContainsKey(x.ReXLTotalScore))
+                        if (x != null && x.XLTotalScore > byteScoreCutoff)
                         {
-                            if (String.Compare(possibleMatches[x.ReXLTotalScore].BestMatchingPeptides.First().Peptide.FullSequence, PeptideIndex[id].FullSequence) < 0)
-                            {
-                                possibleMatches.Remove(x.ReXLTotalScore);
-                                possibleMatches.Add(x.ReXLTotalScore, x);
-                                possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                            }
-                        }
-                        else if (x != null && possibleMatches.Count < 2 && x.XLTotalScore > byteScoreCutoff)
-                        {
-                            possibleMatches.Add(x.ReXLTotalScore, x);
                             possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                        }
-                        else if (x != null && possibleMatches.Count >= 2 && x.ReXLTotalScore < possibleMatches.Last().Key)
-                        {
-                            var min_score = possibleMatches.Last().Key;
-                            possibleMatches.Remove(min_score);
+                            possibleMatches.Add(x);
 
-                            possibleMatches.Add(x.ReXLTotalScore, x);
-                            possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
                         }
 
                     }
@@ -387,27 +371,11 @@ namespace EngineLayer.CrosslinkSearch
                             // tris deadend
                             var x = LocalizeDeadEndSite(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, TrisDeadEnd, 0, scanIndex);
 
-                            if (x!= null && possibleMatches.ContainsKey(x.ReXLTotalScore))
+                            if (x != null && x.XLTotalScore > byteScoreCutoff)
                             {
-                                if (String.Compare(possibleMatches[x.ReXLTotalScore].BestMatchingPeptides.First().Peptide.FullSequence, PeptideIndex[id].FullSequence) < 0)
-                                {
-                                    possibleMatches.Remove(x.ReXLTotalScore);
-                                    possibleMatches.Add(x.ReXLTotalScore, x);
-                                    possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                                }                                              
-                            }
-                            else if (x != null && possibleMatches.Count < 2 && x.XLTotalScore > byteScoreCutoff)
-                            {
-                                possibleMatches.Add(x.ReXLTotalScore, x);
                                 possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                            }
-                            else if (x != null && possibleMatches.Count >= 2 && x.ReXLTotalScore < possibleMatches.Last().Key)
-                            {
-                                var min_score = possibleMatches.Last().Key;
-                                possibleMatches.Remove(min_score);
+                                possibleMatches.Add(x);
 
-                                possibleMatches.Add(x.ReXLTotalScore, x);
-                                possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
                             }
                         }
                     }
@@ -418,27 +386,11 @@ namespace EngineLayer.CrosslinkSearch
                             // H2O deadend
                             var x = LocalizeDeadEndSite(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, H2ODeadEnd, 0, scanIndex);
 
-                            if (x != null && possibleMatches.ContainsKey(x.ReXLTotalScore))
+                            if (x != null && x.XLTotalScore > byteScoreCutoff)
                             {
-                                if (String.Compare(possibleMatches[x.ReXLTotalScore].BestMatchingPeptides.First().Peptide.FullSequence, PeptideIndex[id].FullSequence) < 0)
-                                {       
-                                    possibleMatches.Remove(x.ReXLTotalScore);
-                                    possibleMatches.Add(x.ReXLTotalScore, x);
-                                    possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                                }
-                            }
-                            else if (x != null && possibleMatches.Count < 2 && x.XLTotalScore > byteScoreCutoff)
-                            {
-                                possibleMatches.Add(x.ReXLTotalScore, x);
                                 possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                            }
-                            else if (x != null && possibleMatches.Count >= 2 && x.ReXLTotalScore < possibleMatches.Last().Key)
-                            {
-                                var min_score = possibleMatches.Last().Key;
-                                possibleMatches.Remove(min_score);
+                                possibleMatches.Add(x);
 
-                                possibleMatches.Add(x.ReXLTotalScore, x);
-                                possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
                             }
                         }
                     }
@@ -449,27 +401,11 @@ namespace EngineLayer.CrosslinkSearch
                             // NH2 deadend
                             var x = LocalizeDeadEndSite(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, NH2DeadEnd, 0, scanIndex);
 
-                            if (x != null && possibleMatches.ContainsKey(x.ReXLTotalScore))
+                            if (x != null && x.XLTotalScore > byteScoreCutoff)
                             {
-                                if (String.Compare(possibleMatches[x.ReXLTotalScore].BestMatchingPeptides.First().Peptide.FullSequence, PeptideIndex[id].FullSequence) < 0)
-                                {
-                                    possibleMatches.Remove(x.ReXLTotalScore);
-                                    possibleMatches.Add(x.ReXLTotalScore, x);
-                                    possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                                }
-                            }
-                            else if (x != null && possibleMatches.Count < 2 && x.XLTotalScore > byteScoreCutoff)
-                            {
-                                possibleMatches.Add(x.ReXLTotalScore, x);
                                 possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                            }
-                            else if (x != null && possibleMatches.Count >= 2 && x.ReXLTotalScore < possibleMatches.Last().Key)
-                            {
-                                var min_score = possibleMatches.Last().Key;
-                                possibleMatches.Remove(min_score);
+                                possibleMatches.Add(x);
 
-                                possibleMatches.Add(x.ReXLTotalScore, x);
-                                possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
                             }
 
                         }
@@ -481,27 +417,11 @@ namespace EngineLayer.CrosslinkSearch
                         {
                             var x = LocalizeLoopSites(PeptideIndex[id], scan, CommonParameters, possibleCrosslinkLocations, 0, scanIndex);
 
-                            if (x != null && possibleMatches.ContainsKey(x.ReXLTotalScore))
+                            if (x != null && x.XLTotalScore > byteScoreCutoff)
                             {
-                                if (String.Compare(possibleMatches[x.ReXLTotalScore].BestMatchingPeptides.First().Peptide.FullSequence, PeptideIndex[id].FullSequence) < 0)
-                                {
-                                    possibleMatches.Remove(x.ReXLTotalScore);
-                                    possibleMatches.Add(x.ReXLTotalScore, x);
-                                    possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                                }
-                            }
-                            else if (x != null && possibleMatches.Count < 2 && x.XLTotalScore > byteScoreCutoff)
-                            {
-                                possibleMatches.Add(x.ReXLTotalScore, x);
                                 possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                            }
-                            else if (x != null && possibleMatches.Count >= 2 && x.ReXLTotalScore < possibleMatches.Last().Key)
-                            {
-                                var min_score = possibleMatches.Last().Key;
-                                possibleMatches.Remove(min_score);
+                                possibleMatches.Add(x);
 
-                                possibleMatches.Add(x.ReXLTotalScore, x);
-                                possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
                             }
                         }
                     }
@@ -526,11 +446,11 @@ namespace EngineLayer.CrosslinkSearch
                             {
                                 for (int i = 0; i < possibleMatches.Count; i++)
                                 {
-                                    CrosslinkSpectralMatch.AddMatchingPepWithSameFullSeq(possibleMatches.ElementAt(i).Value, NextPeptideIndex[betaMassLowIndex], possibleMatches.ElementAt(i).Value.PeptidesToMatchingFragments.First().Value);
+                                    CrosslinkSpectralMatch.AddMatchingPepWithSameFullSeq(possibleMatches.ElementAt(i), NextPeptideIndex[betaMassLowIndex], possibleMatches.ElementAt(i).PeptidesToMatchingFragments.First().Value);
 
-                                    if (possibleMatches.ElementAt(i).Value.BetaPeptide != null)
+                                    if (possibleMatches.ElementAt(i).BetaPeptide != null)
                                     {
-                                        CrosslinkSpectralMatch.AddMatchingPepWithSameFullSeq(possibleMatches.ElementAt(i).Value.BetaPeptide, NextPeptideIndex[betaMassLowIndex], possibleMatches.ElementAt(i).Value.PeptidesToMatchingFragments.First().Value);
+                                        CrosslinkSpectralMatch.AddMatchingPepWithSameFullSeq(possibleMatches.ElementAt(i).BetaPeptide, NextPeptideIndex[betaMassLowIndex], possibleMatches.ElementAt(i).PeptidesToMatchingFragments.First().Value);
                                     }
                                 }
 
@@ -560,32 +480,12 @@ namespace EngineLayer.CrosslinkSearch
                                         x.XlRank = rank;                                               
                                     }
 
-                                    if (x != null && possibleMatches.ContainsKey(x.ReXLTotalScore))
+                                    if (x != null && x.XLTotalScore > byteScoreCutoff)
                                     {
-                                        if (String.Compare(possibleMatches[x.ReXLTotalScore].BestMatchingPeptides.First().Peptide.FullSequence, PeptideIndex[id].FullSequence) < 0
-                                            || (String.Compare(possibleMatches[x.ReXLTotalScore].BestMatchingPeptides.First().Peptide.FullSequence, PeptideIndex[id].FullSequence) == 0
-                                            && String.Compare(possibleMatches[x.ReXLTotalScore].BetaPeptide.BestMatchingPeptides.First().Peptide.FullSequence, NextPeptideIndex[betaMassLowIndex].FullSequence) < 0))
-                                        {
-                                            possibleMatches.Remove(x.ReXLTotalScore);
-                                            possibleMatches.Add(x.ReXLTotalScore, x);
-                                            possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                                            possibleMatchFullseq.Add(NextPeptideIndex[betaMassLowIndex].FullSequence);
-                                        }
-                                    }
-                                    else if (x != null && possibleMatches.Count < 2 && x.XLTotalScore > byteScoreCutoff)
-                                    {
-                                        possibleMatches.Add(x.ReXLTotalScore, x);
                                         possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
                                         possibleMatchFullseq.Add(NextPeptideIndex[betaMassLowIndex].FullSequence);
-                                    }
-                                    else if (x != null && possibleMatches.Count >= 2 && x.ReXLTotalScore < possibleMatches.Last().Key)
-                                    {
-                                        var min_score = possibleMatches.Last().Key;
-                                        possibleMatches.Remove(min_score);
+                                        possibleMatches.Add(x);
 
-                                        possibleMatches.Add(x.ReXLTotalScore, x);
-                                        possibleMatchFullseq.Add(PeptideIndex[id].FullSequence);
-                                        possibleMatchFullseq.Add(NextPeptideIndex[betaMassLowIndex].FullSequence);
                                     }
                                 }
                             }

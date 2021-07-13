@@ -43,6 +43,34 @@ namespace TaskLayer
             }
         }
 
+        public static void WriteTestAllToTxt(List<List<CrosslinkSpectralMatch>> itemss, string outputFile)
+        {
+            if (itemss.Count == 0)
+            { return; }
+            var writtenFile = Path.Combine(outputFile);
+            using (StreamWriter output = new StreamWriter(writtenFile))
+            {
+                foreach (var items in itemss)
+                {
+                    foreach (var item in items)
+                    {
+                        var beta_seq = "";
+                        if (item.BetaPeptide!=null)
+                        {
+                            beta_seq = item.BetaPeptide.FullSequence;
+                        }
+                        output.Write(
+                            item.ScanNumber.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + "-." + item.FullSequence + "--" + beta_seq
+                            + "\t"
+                            );
+                    }
+                    output.Write('\n');
+
+                }
+            }
+        }
+
         public static void WriteCrosslinkToTxtForPercolator(List<CrosslinkSpectralMatch> items, string outputFolder, string fileName, Crosslinker crosslinker)
         {
             if (items.Count == 0)

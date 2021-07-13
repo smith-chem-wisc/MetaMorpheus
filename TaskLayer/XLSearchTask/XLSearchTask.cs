@@ -98,8 +98,7 @@ namespace TaskLayer
 
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2ScansWrapByScanNum(myMsDataFile, origDataFile, combinedParams, out List<List<(double, int, double)>> precursorss).ToArray();
 
-                //var descendingComparer = Comparer<double>.Create((x, y) => y.CompareTo(x));
-                SortedList<double, CrosslinkSpectralMatch>[] newCsmsPerMS2ScanPerFile = new SortedList<double, CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
+                List<CrosslinkSpectralMatch>[] newCsmsPerMS2ScanPerFile = new List<CrosslinkSpectralMatch>[arrayOfMs2ScansSortedByMass.Length];
 
                 myFileManager.DoneWithFile(origDataFile);
 
@@ -204,12 +203,12 @@ namespace TaskLayer
                 //The allPsmsList is same as allPsms after ResolveAmbiguities.
                 foreach (var csmsPerScan in newCsmsPerMS2ScanPerFile.Where(p=>p!=null && p.Count > 0))
                 {
-                    foreach (var csm in csmsPerScan.Values)
+                    foreach (var csm in csmsPerScan)
                     {
                         CrosslinkSpectralMatch.ResolveProteinPosAmbiguitiesForXl(csm);                  
                     }
 
-                    _ListOfCsmsPerMS2ScanParsimony.Add(csmsPerScan.Values.ToList());
+                    _ListOfCsmsPerMS2ScanParsimony.Add(csmsPerScan.ToList());
                 }
 
                 _ListOfCsmsPerMS2ScanParsimony = SortListsOfCsms(_ListOfCsmsPerMS2ScanParsimony, CommonParameters);
@@ -250,7 +249,7 @@ namespace TaskLayer
                 newLists.Add(SortOneListCsmsSetSecondBestScore(csmsPerScan, commonParameters));
             }
 
-            return newLists.OrderByDescending(c => c.First().XLTotalScore).ThenByDescending(c => c.First().FullSequence + (c.First().BetaPeptide != null ? c.First().BetaPeptide.FullSequence : "")).ToList();
+            return newLists.OrderByDescending(c => c.First().XLTotalScore).ThenByDescending(c => c.First().FullSequence + (c.First().BetaPeptide != null ? c.First().BetaPeptide.FullSequence : "-")).ToList();
         }
 
         public static List<CrosslinkSpectralMatch> SortOneListCsmsSetSecondBestScore(List<CrosslinkSpectralMatch> csmsPerScan, CommonParameters commonParameters)
@@ -268,7 +267,7 @@ namespace TaskLayer
             {
                 csm.SecondBestXlScore = secondBestSore;
             }
-            csmsPerScan = csmsPerScan.OrderByDescending(c => c.XLTotalScore).ThenBy(c => c.FullSequence + (c.BetaPeptide != null ? c.BetaPeptide.FullSequence : "")).ToList();
+            csmsPerScan = csmsPerScan.OrderByDescending(c => c.XLTotalScore).ThenBy(c => c.FullSequence + (c.BetaPeptide != null ? c.BetaPeptide.FullSequence : "-")).ToList();
 
             return csmsPerScan;
         }
