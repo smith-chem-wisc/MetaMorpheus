@@ -449,6 +449,7 @@
                             <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                             <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                             <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write Individual File Results" />
+                            <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write SpectralLibrary" />
                             <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress Individual File Results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                             <StackPanel Orientation="Horizontal">
                                 <CheckBox x:Name="QValueCheckBox" Content="Filter results to q-value:" IsChecked="False">
