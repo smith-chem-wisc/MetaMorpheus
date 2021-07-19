@@ -57,10 +57,11 @@ namespace Test
             
             PeptideSpectralMatch[] allPsmsArray_withOutAmbiguity = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
+            bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray_withAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters_t, fsp_t, null, new List<string>()).Run(); //report all ambiguity TRUE
+                proteinList, searchModes, CommonParameters_t, fsp_t, null, new List<string>(), writeSpectralLibrary).Run(); //report all ambiguity TRUE
             new ClassicSearchEngine(allPsmsArray_withOutAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
-                proteinList, searchModes, CommonParameters_f, fsp_f, null, new List<string>()).Run(); //report all ambiguity FALSE
+                proteinList, searchModes, CommonParameters_f, fsp_f, null, new List<string>(), writeSpectralLibrary).Run(); //report all ambiguity FALSE
 
             Assert.AreEqual("QQQ", allPsmsArray_withAmbiguity[0].BaseSequence);
             Assert.AreEqual("QQQ", allPsmsArray_withOutAmbiguity[0].BaseSequence);

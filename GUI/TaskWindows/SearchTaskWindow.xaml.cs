@@ -305,6 +305,7 @@ namespace MetaMorpheusGUI
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
+            WriteSpectralLibraryCheckBox.IsChecked = task.SearchParameters.WriteSpectralLibrary;
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
             IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
 
@@ -580,6 +581,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.WriteSpectralLibrary = WriteSpectralLibraryCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
 
