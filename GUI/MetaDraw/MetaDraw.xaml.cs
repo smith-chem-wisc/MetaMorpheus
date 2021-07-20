@@ -158,7 +158,7 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors);
 
             //draw the sequence coverage if not crosslinked
-            if (psm.ChildScanMatchedIons != null) //FIXME switch to ==
+            if (psm.ChildScanMatchedIons == null)
             {
                 MetaDrawLogic.DrawSequenceCoverageMap(psm, sequenceText, map); //TODO: figure out how to show coverage on crosslinked peptides
                 ParentChildScanView.Visibility = Visibility.Collapsed;
