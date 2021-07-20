@@ -25,6 +25,7 @@ namespace TaskLayer
             KeepAllUniprotMods = true;
             MassDiffAcceptorType = MassDiffAcceptorType.OneMM;
             MaxFragmentSize = 30000.0;
+            MinAllowedInternalFragmentLength = 0;
             WriteMzId = true;
             WritePepXml = false;
             IncludeModMotifInMzid = false;
@@ -76,6 +77,7 @@ namespace TaskLayer
         public List<FdrCategory> LocalFdrCategories { get; set; }
         public string CustomMdac { get; set; }
         public double MaxFragmentSize { get; set; }
+        public int MinAllowedInternalFragmentLength { get; set; } //0 means "no internal fragments"
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }

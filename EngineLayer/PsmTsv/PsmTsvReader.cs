@@ -96,6 +96,7 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.NextAminoAcid, Array.IndexOf(spl, PsmTsvHeader.NextAminoAcid));
             parsedHeader.Add(PsmTsvHeader.DecoyContaminantTarget, Array.IndexOf(spl, PsmTsvHeader.DecoyContaminantTarget));
             parsedHeader.Add(PsmTsvHeader.MatchedIonMzRatios, Array.IndexOf(spl, PsmTsvHeader.MatchedIonMzRatios));
+            parsedHeader.Add(PsmTsvHeader.MatchedIonIntensities, Array.IndexOf(spl, PsmTsvHeader.MatchedIonIntensities));
             parsedHeader.Add(PsmTsvHeader.QValue, Array.IndexOf(spl, PsmTsvHeader.QValue));
             parsedHeader.Add(PsmTsvHeader.QValueNotch, Array.IndexOf(spl, PsmTsvHeader.QValueNotch));
             parsedHeader.Add(PsmTsvHeader.PEP, Array.IndexOf(spl, PsmTsvHeader.PEP));
@@ -113,6 +114,7 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.BetaPeptideScoreLabel, Array.IndexOf(spl, PsmTsvHeader.BetaPeptideScoreLabel));
             parsedHeader.Add(PsmTsvHeader.BetaPeptideRankLabel, Array.IndexOf(spl, PsmTsvHeader.BetaPeptideRankLabel));
             parsedHeader.Add(PsmTsvHeader.BetaPeptideMatchedIonsLabel, Array.IndexOf(spl, PsmTsvHeader.BetaPeptideMatchedIonsLabel));
+            parsedHeader.Add(PsmTsvHeader.BetaPeptideMatchedIonIntensitiesLabel, Array.IndexOf(spl, PsmTsvHeader.BetaPeptideMatchedIonIntensitiesLabel));
             parsedHeader.Add(PsmTsvHeader.XLTotalScoreLabel, Array.IndexOf(spl, PsmTsvHeader.XLTotalScoreLabel));
             parsedHeader.Add(PsmTsvHeader.ParentIonsLabel, Array.IndexOf(spl, PsmTsvHeader.ParentIonsLabel));
             parsedHeader.Add(PsmTsvHeader.Ms2ScanRetentionTime, Array.IndexOf(spl, PsmTsvHeader.Ms2ScanRetentionTime));

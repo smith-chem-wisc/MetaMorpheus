@@ -789,6 +789,25 @@
                                                     </CheckBox.ToolTip>
                                                 </CheckBox>
                                             </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="5,0,0,5">
+                                                <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="False">
+                                                    <CheckBox.ToolTip>
+                                                        <TextBlock>
+                                                Search for theoretical internal fragment ions AFTER scoring. These ions are useful for localizing PTMs, but are not used during scoring.
+                                                        </TextBlock>
+                                                    </CheckBox.ToolTip>
+                                                </CheckBox>
+                                                <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="18,-6,0,0" />
+                                                <TextBox x:Name="MinInternalFragmentLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=InternalIonsCheckBox}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                        Minimum length (number of amino acids) allowed for an internal fragment ion. 
+                                                            <LineBreak/>
+                                                            Small internal fragments can be uninformative and computationally expensive.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </TextBox>
+                                            </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="5">
                                                 <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />
                                                 <TextBox x:Name="MaxFragmentMassTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
