@@ -328,6 +328,9 @@
     <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="XlTestData\XL_Intralinks_MIons.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\YeastPol2.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

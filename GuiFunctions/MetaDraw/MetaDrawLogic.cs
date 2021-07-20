@@ -248,7 +248,7 @@ namespace GuiFunctions
             //C-terminal in reverse order
             List<MatchedFragmentIon> cTermFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).OrderByDescending(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
             //add internal fragments
-            List<MatchedFragmentIon> internalFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.None).OrderBy(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
+            List<MatchedFragmentIon> internalFragments = psm.MatchedIons.Where(x => x.NeutralTheoreticalProduct.SecondaryProductType != null).OrderBy(x => x.NeutralTheoreticalProduct.FragmentNumber).ToList();
 
             //indexes to navigate terminal ions
             int n = 0;
