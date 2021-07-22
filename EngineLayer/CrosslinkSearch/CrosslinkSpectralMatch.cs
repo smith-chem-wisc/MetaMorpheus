@@ -14,10 +14,10 @@ namespace EngineLayer.CrosslinkSearch
         {
             //The XLTotalScore is set here because some CSMs are not crosslinks and we need this score to be non-zero.
             XLTotalScore = score;
-            //if (_BestMatchingPeptides.First() == 0)
-            //{
-            //    _BestMatchingPeptides.Add((0, theBestPeptide));
-            //}
+            _BestMatchingPeptides.Clear();
+
+            _BestMatchingPeptides.Add((0, theBestPeptide));
+
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
@@ -55,7 +55,8 @@ namespace EngineLayer.CrosslinkSearch
 
         public static void AddMatchingPepWithSameFullSeq(CrosslinkSpectralMatch csm, PeptideWithSetModifications pwsm, List<MatchedFragmentIon> matchedFragmentIons)
         {
-            if(csm._BestMatchingPeptides.First().Pwsm.FullSequence == pwsm.FullSequence && csm._BestMatchingPeptides.Count(p=>p.Pwsm.Protein.Accession == pwsm.Protein.Accession) ==0)
+            var test = csm._BestMatchingPeptides.First().Pwsm.FullSequence;
+            if (csm._BestMatchingPeptides.First().Pwsm.FullSequence == pwsm.FullSequence && csm._BestMatchingPeptides.Count(p=>p.Pwsm.Protein.Accession == pwsm.Protein.Accession) ==0)
             {
                 csm._BestMatchingPeptides.Add((0, pwsm));
                 csm.PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
