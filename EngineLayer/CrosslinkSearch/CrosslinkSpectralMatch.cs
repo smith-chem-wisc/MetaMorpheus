@@ -62,7 +62,29 @@ namespace EngineLayer.CrosslinkSearch
                 csm.PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
             }
         }
-        
+
+        public void ResolveProteinPosAmbiguitiesForXl()
+        {
+            if (CrossType == PsmCrossType.Cross)
+            {
+                // alpha peptide crosslink residue in the protein
+                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+
+                // beta crosslink residue in protein
+                BetaPeptide.XlProteinPos = BetaPeptide.OneBasedStartResidueInProtein == null ? (int?)null : BetaPeptide.OneBasedStartResidueInProtein.Value + BetaPeptide.LinkPositions[0] - 1;
+            }
+            else if (CrossType == PsmCrossType.DeadEnd || CrossType == PsmCrossType.DeadEndH2O || CrossType == PsmCrossType.DeadEndNH2 || CrossType == PsmCrossType.DeadEndTris)
+            {
+                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+            }
+            else if (CrossType == PsmCrossType.Loop)
+            {
+                XlProteinPos = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[0] - 1;
+
+                XlProteinPosLoop = OneBasedStartResidueInProtein == null ? (int?)null : OneBasedStartResidueInProtein.Value + LinkPositions[1] - 1;
+            }
+        }
+
         public static bool IsIntraCsm(CrosslinkSpectralMatch csm)
         {
             //The pair "ProteinA and Decoy_ProteinA" is count for intra-crosslink. 
