@@ -16,7 +16,7 @@
         <SolidColorBrush x:Key="TextColor1" Color="#2f3640" />
         <SolidColorBrush x:Key="TextColor2" Color="#f5f6fa" />
         <SolidColorBrush x:Key="TextColorDelete" Color="#c23616" />
-        
+
         <!--Default button style for all of MetaMorpheus-->
         <!--<Style TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
@@ -25,5 +25,10 @@
             <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
             <Setter Property="FontSize" Value="12"/>
         </Style>-->
+
+        <Style x:Key="InternalGridStyle" TargetType="Grid">
+            <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+            <Setter Property="Margin" Value="0,0,0,0"/>
+        </Style>
     </Application.Resources>
 </Application>

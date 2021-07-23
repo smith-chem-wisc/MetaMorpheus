@@ -2,6 +2,7 @@
 using EngineLayer.GlycoSearch;
 using GuiFunctions;
 using System.ComponentModel;
+using System.Globalization;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -55,7 +56,7 @@ namespace MetaMorpheusGUI
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {
-                if (double.TryParse(qValueBox.Text, out double qValueFilter) && qValueFilter >= 0 && qValueFilter <= 1)
+                if (double.TryParse(qValueBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValueFilter) && qValueFilter >= 0 && qValueFilter <= 1)
                 {
                     MetaDrawSettings.QValueFilter = qValueFilter;
                 }

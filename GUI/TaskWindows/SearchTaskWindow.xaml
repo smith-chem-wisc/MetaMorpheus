@@ -449,6 +449,7 @@
                             <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                             <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                             <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write Individual File Results" />
+                            <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write SpectralLibrary" />
                             <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress Individual File Results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                             <StackPanel Orientation="Horizontal">
                                 <CheckBox x:Name="QValueCheckBox" Content="Filter results to q-value:" IsChecked="False">
@@ -787,6 +788,25 @@
                                                         </TextBlock>
                                                     </CheckBox.ToolTip>
                                                 </CheckBox>
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="5,0,0,5">
+                                                <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="False">
+                                                    <CheckBox.ToolTip>
+                                                        <TextBlock>
+                                                Search for theoretical internal fragment ions AFTER scoring. These ions are useful for localizing PTMs, but are not used during scoring.
+                                                        </TextBlock>
+                                                    </CheckBox.ToolTip>
+                                                </CheckBox>
+                                                <Label x:Name="minInternalFragmentLengthLabel" Content="Min Internal Length:" Margin="18,-6,0,0" />
+                                                <TextBox x:Name="MinInternalFragmentLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=InternalIonsCheckBox}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <TextBox.ToolTip>
+                                                        <TextBlock>
+                                                        Minimum length (number of amino acids) allowed for an internal fragment ion. 
+                                                            <LineBreak/>
+                                                            Small internal fragments can be uninformative and computationally expensive.
+                                                        </TextBlock>
+                                                    </TextBox.ToolTip>
+                                                </TextBox>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="5">
                                                 <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />

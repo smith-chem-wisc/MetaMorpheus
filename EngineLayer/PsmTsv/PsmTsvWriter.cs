@@ -263,7 +263,7 @@ namespace EngineLayer
                 // using ", " instead of "," improves human readability
                 const string delimiter = ", ";
 
-                var matchedIonsGroupedByProductType = matchedIons.GroupBy(i => i.NeutralTheoreticalProduct.ProductType).OrderBy(i => i.Key).ToList();
+                var matchedIonsGroupedByProductType = matchedIons.GroupBy(x => new { x.NeutralTheoreticalProduct.ProductType, x.NeutralTheoreticalProduct.SecondaryProductType }).ToList();
 
                 foreach (var productType in matchedIonsGroupedByProductType)
                 {
@@ -280,17 +280,7 @@ namespace EngineLayer
                         double massError = ion.Mz.ToMass(ion.Charge) - ion.NeutralTheoreticalProduct.NeutralMass;
                         double ppmMassError = massError / ion.NeutralTheoreticalProduct.NeutralMass * 1e6;
 
-                        if (ion.NeutralTheoreticalProduct.NeutralLoss == 0)
-                        {
-                            // no neutral loss
-                            ionLabel = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber + "+" + ion.Charge;
-                        }
-                        else
-                        {
-                            // ion label with neutral loss
-                            ionLabel = "(" + ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber
-                                + "-" + ion.NeutralTheoreticalProduct.NeutralLoss.ToString("F2") + ")" + "+" + ion.Charge;
-                        }
+                        ionLabel = ion.Annotation;
 
                         // append ion label
                         seriesStringBuilder.Append(ionLabel);

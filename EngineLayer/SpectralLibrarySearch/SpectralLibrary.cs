@@ -26,6 +26,12 @@ namespace EngineLayer
             { "Carbamidomethyl", "[Common Fixed:Carbamidomethyl on C]" }
         };
 
+        private static Dictionary<string, string> pDeepToMetaMorpheusModDictionary = new Dictionary<string, string>
+        {
+            { "Oxidation","[Common Variable:Oxidation on M]" },
+            {"CAM", "[Common Fixed:Carbamidomethyl on C]" }
+        };
+
         public SpectralLibrary(List<string> pathsToLibraries)
         {
             LibraryPaths = pathsToLibraries;
@@ -149,7 +155,14 @@ namespace EngineLayer
             reader.DiscardBufferedData();
 
             // return the library spectrum
-            return ReadLibrarySpectrum(reader);
+            if (path.Contains("pdeep"))
+            {
+                return ReadLibrarySpectrum_pDeep(reader);
+            }
+            else
+            {
+                return ReadLibrarySpectrum(reader);
+            }
         }
 
         private LibrarySpectrum ReadLibrarySpectrum(StreamReader reader, bool onlyReadHeader = false)
@@ -159,6 +172,7 @@ namespace EngineLayer
             char[] commentSplit = new char[] { ' ', ':', '=' };
             char[] modSplit = new char[] { '=', '/' };
             char[] fragmentSplit = new char[] { '\t', '\"', ')', '/' };
+            char[] neutralLossSplit = new char[] { '-' };
 
             bool readingPeaks = false;
             string sequence = null;
@@ -204,7 +218,7 @@ namespace EngineLayer
                         int indOfParent = Array.IndexOf(split, "Parent");
                         if (indOfParent > 0)
                         {
-                            precursorMz = double.Parse(split[indOfParent + 1]);
+                            precursorMz = double.Parse(split[indOfParent + 1], CultureInfo.InvariantCulture);
                         }
                     }
 
@@ -212,7 +226,7 @@ namespace EngineLayer
                     int indOfRt = Array.IndexOf(split, "iRT");
                     if (indOfRt > 0)
                     {
-                        rt = double.Parse(split[indOfRt + 1]);
+                        rt = double.Parse(split[indOfRt + 1], CultureInfo.InvariantCulture);
                     }
                     else
                     {
@@ -220,7 +234,7 @@ namespace EngineLayer
 
                         if (indOfRt > 0)
                         {
-                            rt = double.Parse(split[indOfRt + 1]);
+                            rt = double.Parse(split[indOfRt + 1], CultureInfo.InvariantCulture);
                         }
                     }
 
@@ -316,6 +330,13 @@ namespace EngineLayer
                     // read fragment type, number
                     Match regexMatchResult = IonParserRegex.Match(split[2]);
 
+                    double neutralLoss = 0;
+                    if (split[2].Contains("-"))
+                    {
+                        String[] neutralLossInformation = split[2].Split(neutralLossSplit, StringSplitOptions.RemoveEmptyEntries).ToArray();
+                        neutralLoss = double.Parse(neutralLossInformation[1]);
+                    }
+
                     string fragmentType = regexMatchResult.Groups[1].Value;
                     int fragmentNumber = int.Parse(regexMatchResult.Groups[2].Value);
                     int fragmentCharge = 1;
@@ -323,6 +344,120 @@ namespace EngineLayer
                     if (regexMatchResult.Groups.Count > 3 && !string.IsNullOrWhiteSpace(regexMatchResult.Groups[3].Value))
                     {
                         fragmentCharge = int.Parse(regexMatchResult.Groups[3].Value);
+                    }
+
+                    ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), fragmentType, true);
+
+                    //TODO: figure out terminus
+                    FragmentationTerminus terminus = (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), "None", true);
+
+                    //TODO: figure out amino acid position
+                    var product = new Product(peakProductType, terminus, experMz, fragmentNumber, 0, neutralLoss);
+
+                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, experMz, experIntensity, fragmentCharge));
+                }
+            }
+
+            return new LibrarySpectrum(sequence, precursorMz, z, matchedFragmentIons, rt);
+        }
+
+        private LibrarySpectrum ReadLibrarySpectrum_pDeep(StreamReader reader, bool onlyReadHeader = false)
+        {
+            char[] nameSplit = new char[] { '/', '_' };
+            char[] mwSplit = new char[] { ':' };
+            char[] commentSplit = new char[] { ' ', ':', '=' };
+            char[] modSplit = new char[] { '/', '(', ')' };
+            char[] fragmentSplit = new char[] { '\t', '/' };
+
+            bool readingPeaks = false;
+            string sequence = null;
+            int z = 2;
+            double precursorMz = 0;
+            double rt = 0;
+            List<MatchedFragmentIon> matchedFragmentIons = new List<MatchedFragmentIon>();
+
+            while (reader.Peek() > 0)
+            {
+                string line = reader.ReadLine();
+                string[] split;
+
+                if (line.StartsWith("Name", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (sequence != null)
+                    {
+                        return new LibrarySpectrum(sequence, precursorMz, z, matchedFragmentIons, rt);
+                    }
+
+                    split = line.Split(nameSplit);
+
+                    // get sequence
+                    sequence = split[0].Replace("Name:", string.Empty).Trim();
+
+                    // get charge
+                    z = int.Parse(split[1].Trim());
+
+                    string[] mods = split[2].Split(modSplit, StringSplitOptions.RemoveEmptyEntries);
+                    for (int i = mods.Length - 1; i > 0; i--)
+                    {
+                        string[] modInfo = mods[i].Split(',');
+                        int index = Convert.ToInt32(modInfo[0]);
+                        string mod = modInfo[2];
+                        string metaMorpheusMod = pDeepToMetaMorpheusModDictionary[mod];
+                        //add the mod into the sequence
+                        string leftSeq = sequence.Substring(0, index + 1);
+                        string rightSeq = sequence.Substring(index + 1);
+                        sequence = leftSeq + metaMorpheusMod + rightSeq;
+                    }
+
+                }
+                else if (line.StartsWith("Comment", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    split = line.Split(commentSplit);
+
+                    // get precursor m/z in comment
+                    int indOfParent = Array.IndexOf(split, "Parent");
+                    if (indOfParent > 0)
+                    {
+                        precursorMz = double.Parse(split[indOfParent + 1]);
+                    }
+
+                    // get RT
+                    int indOfRt = Array.IndexOf(split, "RTInSeconds");
+                    if (indOfRt > 0)
+                    {
+                        rt = double.Parse(split[indOfRt + 1]);
+                    }
+                }
+                else if (line.StartsWith("Num peaks", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (onlyReadHeader)
+                    {
+                        return new LibrarySpectrum(sequence, precursorMz, z, matchedFragmentIons, rt);
+                    }
+
+                    // this assumes that the peaks are listed after the "Num peaks" line
+                    readingPeaks = true;
+                }
+                else if (readingPeaks && line != "")
+                {
+                    split = line.Split(fragmentSplit, StringSplitOptions.RemoveEmptyEntries);
+
+                    // read fragment m/z
+                    var experMz = double.Parse(split[0], CultureInfo.InvariantCulture);
+
+                    // read fragment intensity
+                    var experIntensity = double.Parse(split[1], CultureInfo.InvariantCulture);
+
+                    // read fragment type, number      
+
+                    string fragmentType = split[2].ToCharArray()[0].ToString();
+                    int fragmentNumber = int.Parse(new string(split[2].Split(new char[] { '^' })[0].Where(Char.IsDigit).ToArray()));
+                    int fragmentCharge = 1;
+
+
+                    if (split[2].Contains('^'))
+                    {
+                        fragmentCharge = int.Parse(split[2].Split('^')[1]);
                     }
 
                     ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), fragmentType, true);
@@ -360,7 +495,15 @@ namespace EngineLayer
                     reader.DiscardBufferedData();
 
                     // parse the header
-                    var libraryItem = ReadLibrarySpectrum(reader, onlyReadHeader: true);
+                    LibrarySpectrum libraryItem;
+                    if (path.Contains("pdeep"))
+                    {
+                        libraryItem = ReadLibrarySpectrum_pDeep(reader, onlyReadHeader: true);
+                    }
+                    else
+                    {
+                        libraryItem = ReadLibrarySpectrum(reader, onlyReadHeader: true);
+                    }
 
                     // add the spectrum to the index
                     SequenceToFileAndLocation.TryAdd(libraryItem.Name, (path, byteOffset));
