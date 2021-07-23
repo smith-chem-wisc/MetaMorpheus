@@ -194,9 +194,27 @@ namespace EngineLayer.CrosslinkSearch
                             Candidates[scanIndex].Add((CurrentPartition - 1, id, scoringTable[id]));
                         }
 
+                        //Only keep TopN candidates.
                         if (CommonParameters.TotalPartitions > 1 && Candidates[scanIndex].Count() > TopN)
                         {
                             Candidates[scanIndex].Sort((x, y) => x.Item3.CompareTo(y.Item3));
+                            Candidates[scanIndex].Reverse();
+                            int minScore = Candidates[scanIndex][TopN - 1].Item3;
+                            var id = Candidates[scanIndex].Count -1;
+
+                            var keepRemove = true
+                            while(id >= TopN && keepRemove)
+                            {
+                                if (Candidates[scanIndex][id].Item3 < minScore)
+                                {
+                                    Candidates[scanIndex].RemoveAt(id);
+                                }
+                                else
+                                {
+                                    keepRemove = false;
+                                }
+                                id--;
+                            }
                         }
 
                     }               
@@ -239,18 +257,8 @@ namespace EngineLayer.CrosslinkSearch
                     {
                         continue;
                     }
-
-                    //Search at most TopN ids for all partitions. 
-                    var _candidates = new List<int>();
-                    if (Candidates[scanIndex].Count > TopN)
-                    {
-                        var minScore = Candidates[scanIndex][TopN - 1].Item3;
-                        _candidates.AddRange(Candidates[scanIndex].Where(p => p.Item1 == CurrentPartition - 1 && p.Item3 >= minScore).Select(p => p.Item2));
-                    }
-                    else
-                    {
-                        _candidates.AddRange(Candidates[scanIndex].Where(p => p.Item1 == CurrentPartition - 1).Select(p => p.Item2));
-                    }
+                 
+                    var _candidates = Candidates[scanIndex].Where(p => p.Item1 == CurrentPartition - 1).Select(p => p.Item2).ToList();
 
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
