@@ -114,6 +114,45 @@ namespace EngineLayer
             return index - 1;
         }
 
+        //look for IsotopicEnvelopes which are in the range of acceptable mass 
+        public IsotopicEnvelope[] GetClosestExperimentalIsotopicEnvelopeList(double minimumMass, double maxMass)
+        {
+
+            if (DeconvolutedMonoisotopicMasses.Length == 0)
+            {
+                return null;
+            }
+
+            //if no mass is in this range, then return null
+            if (DeconvolutedMonoisotopicMasses[0] > maxMass || DeconvolutedMonoisotopicMasses.Last() < minimumMass)
+            {
+                return null;
+            }
+
+            int startIndex = GetClosestFragmentMass(minimumMass);
+            int endIndex = GetClosestFragmentMass(maxMass);
+
+            //the index we get from GetClosestFragmentMass is the closest mass, while the acceptable mass we need is between minimumMass and maxMass
+            //so the startIndex mass is supposed to be larger than minimumMass, if not , then startIndex increases by 1;
+            //the endIndex mass is supposed to be smaller than maxMass, if not , then endIndex decreases by 1;
+            if (DeconvolutedMonoisotopicMasses[startIndex]<minimumMass)
+            {
+                startIndex = startIndex+1;
+            }
+            if(DeconvolutedMonoisotopicMasses[endIndex] > maxMass)
+            {
+                endIndex = endIndex - 1;
+            }
+            int length = endIndex - startIndex + 1;
+
+            if (length < 1)
+            {
+                return null;
+            }
+            IsotopicEnvelope[] isotopicEnvelopes = ExperimentalFragments.Skip(startIndex).Take(length).ToArray();
+            return isotopicEnvelopes;
+        }
+
         public double? GetClosestExperimentalFragmentMz(double theoreticalMz, out double? intensity)
         {
             if (TheScan.MassSpectrum.XArray.Length == 0)

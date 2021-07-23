@@ -59,7 +59,7 @@ namespace GuiFunctions
             // colors of each fragment to annotate
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             ProductTypeToColor[ProductType.b] = OxyColors.Blue;
-            ProductTypeToColor[ProductType.y] = OxyColors.Purple;
+            ProductTypeToColor[ProductType.y] = OxyColors.Red;
             ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
             ProductTypeToColor[ProductType.c] = OxyColors.Gold;
             ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
@@ -68,9 +68,9 @@ namespace GuiFunctions
             // colors of each fragment to annotate
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
-            BetaProductTypeToColor[ProductType.y] = OxyColors.MediumPurple;
+            BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
             BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
-            BetaProductTypeToColor[ProductType.c] = OxyColors.OrangeRed;
+            BetaProductTypeToColor[ProductType.c] = OxyColors.Orange;
             BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
             BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
 

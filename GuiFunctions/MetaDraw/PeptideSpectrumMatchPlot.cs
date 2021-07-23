@@ -167,7 +167,7 @@ namespace GuiFunctions
         protected void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons)
         {
             // don't draw ambiguous sequences
-            if (SpectrumMatch.FullSequence.Contains("|"))
+            if (fullSequence.Contains("|"))
             {
                 return;
             }
@@ -186,65 +186,67 @@ namespace GuiFunctions
             // draw the fragment ion annotations on the base sequence
             foreach (var ion in matchedFragmentIons)
             {
-                int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
-                string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
-                OxyColor oxycolor = SpectrumMatch.VariantCrossingIons.Contains(ion) ?
-                    MetaDrawSettings.VariantCrossColor : MetaDrawSettings.ProductTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
-                Color color = Color.FromArgb(oxycolor.A, oxycolor.R, oxycolor.G, oxycolor.B);
-
-                if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                //if it's not an internal fragment
+                if (ion.NeutralTheoreticalProduct.SecondaryProductType == null)
                 {
-                    annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
-                }
+                    int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
+                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
+                    OxyColor oxycolor = SpectrumMatch.VariantCrossingIons.Contains(ion) ?
+                        MetaDrawSettings.VariantCrossColor : MetaDrawSettings.ProductTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
+                    Color color = Color.FromArgb(oxycolor.A, oxycolor.R, oxycolor.G, oxycolor.B);
 
-                double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11;
-                double y = yLoc + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
+                    if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                    {
+                        annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
+                    }
+                    double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11;
+                    double y = yLoc + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
 
-                if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
-                {
-                    DrawCTermIon(SequenceDrawingCanvas, new Point(x, y), color, annotation);
+                    if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                    {
+                        DrawCTermIon(SequenceDrawingCanvas, new Point(x, y), color, annotation);
+                    }
+                    else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                    {
+                        DrawNTermIon(SequenceDrawingCanvas, new Point(x, y), color, annotation);
+                    }
+                    // don't draw diagnostic ions, precursor ions, etc
                 }
-                else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
-                {
-                    DrawNTermIon(SequenceDrawingCanvas, new Point(x, y), color, annotation);
-                }
-                // don't draw diagnostic ions, precursor ions, etc
             }
-
-            AnnotateModifications(fullSequence, yLoc);
+            AnnotateModifications(SpectrumMatch, SequenceDrawingCanvas, fullSequence, yLoc);
         }
 
-        protected void AnnotateModifications(string fullSequence, int yLoc)
+        public static void AnnotateModifications(PsmFromTsv spectrumMatch, Canvas sequenceDrawingCanvas, string fullSequence, int yLoc, double? spacer = null, int xShift = 12)
         {
             var peptide = new PeptideWithSetModifications(fullSequence, GlobalVariables.AllModsKnownDictionary);
 
             // read glycans if applicable
             List<Tuple<int, string, double>> localGlycans = null;
-            if (SpectrumMatch.GlycanLocalizationLevel != null)
+            if (spectrumMatch.GlycanLocalizationLevel != null)
             {
-                localGlycans = PsmFromTsv.ReadLocalizedGlycan(SpectrumMatch.LocalizedGlycan);
+                localGlycans = PsmFromTsv.ReadLocalizedGlycan(spectrumMatch.LocalizedGlycan);
             }
 
             // annotate mods
             foreach (var mod in peptide.AllModsOneIsNterminus)
             {
-                double xLocation = (mod.Key - 1) * MetaDrawSettings.AnnotatedSequenceTextSpacing - 12;
+                double xLocation = (mod.Key - 1) * (spacer ?? MetaDrawSettings.AnnotatedSequenceTextSpacing) - xShift;
                 double yLocation = yLoc + 2;
 
                 if (mod.Value.ModificationType == "O-Glycosylation")
                 {
                     if (localGlycans.Where(p => p.Item1 + 1 == mod.Key).Count() > 0)
                     {
-                        DrawCircle(SequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
+                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
                     }
                     else
                     {
-                        DrawCircle(SequenceDrawingCanvas, new Point(xLocation, yLocation), Brushes.Gray);
+                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), Brushes.Gray);
                     }
                 }
                 else
                 {
-                    DrawCircle(SequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
+                    DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
                 }
             }
         }
@@ -302,16 +304,17 @@ namespace GuiFunctions
             {
                 ionColor = MetaDrawSettings.VariantCrossColor;
             }
+            else if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null) //if internal fragment
+            {
+                ionColor = OxyColors.Purple;
+            }
+            else if (isBetaPeptide)
+            {
+                ionColor = MetaDrawSettings.BetaProductTypeToColor[matchedIon.NeutralTheoreticalProduct.ProductType];
+            }
             else
             {
-                if (isBetaPeptide)
-                {
-                    ionColor = MetaDrawSettings.BetaProductTypeToColor[matchedIon.NeutralTheoreticalProduct.ProductType];
-                }
-                else
-                {
-                    ionColor = MetaDrawSettings.ProductTypeToColor[matchedIon.NeutralTheoreticalProduct.ProductType];
-                }
+                ionColor = MetaDrawSettings.ProductTypeToColor[matchedIon.NeutralTheoreticalProduct.ProductType];
             }
 
             int i = Scan.MassSpectrum.GetClosestPeakIndex(matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge));
@@ -340,13 +343,7 @@ namespace GuiFunctions
                 }
             }
 
-            string productType = matchedIon.NeutralTheoreticalProduct.ProductType.ToString()
-                //.Replace("star", "*", StringComparison.OrdinalIgnoreCase)
-                //.Replace("degree", "°", StringComparison.OrdinalIgnoreCase)
-                //.Replace("dot", "·", StringComparison.OrdinalIgnoreCase)
-                ;
-            string productNumber = matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString();
-            string peakAnnotationText = prefix + productType + productNumber;
+            string peakAnnotationText = prefix + matchedIon.NeutralTheoreticalProduct.Annotation;
 
             if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
             {
