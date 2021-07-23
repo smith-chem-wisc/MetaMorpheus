@@ -202,7 +202,7 @@ namespace EngineLayer.CrosslinkSearch
                             int minScore = Candidates[scanIndex][TopN - 1].Item3;
                             var id = Candidates[scanIndex].Count -1;
 
-                            var keepRemove = true
+                            var keepRemove = true;
                             while(id >= TopN && keepRemove)
                             {
                                 if (Candidates[scanIndex][id].Item3 < minScore)
