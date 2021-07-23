@@ -199,11 +199,7 @@ namespace EngineLayer.CrosslinkSearch
                             Candidates[scanIndex].Sort((x, y) => x.Item3.CompareTo(y.Item3));
                         }
 
-                        var _candidates = Candidates[scanIndex].Where(p => p.Item1 == CurrentPartition - 1).Select(p => p.Item2).ToArray();
-
-                    }
-                  
-                    //BetaCandidateIndices[scanIndex, CurrentPartition - 1] = scoringTable.Select(p => p >= 2).ToArray();
+                    }               
 
                     // report search progress
                     progress++;
@@ -244,7 +240,17 @@ namespace EngineLayer.CrosslinkSearch
                         continue;
                     }
 
-                    var _candidates = Candidates[scanIndex].Where(p => p.Item1 == CurrentPartition-1).Select(p => p.Item2).ToArray();
+                    //Search at most TopN ids for all partitions. 
+                    var _candidates = new List<int>();
+                    if (Candidates[scanIndex].Count > TopN)
+                    {
+                        var minScore = Candidates[scanIndex][TopN - 1].Item3;
+                        _candidates.AddRange(Candidates[scanIndex].Where(p => p.Item1 == CurrentPartition - 1 && p.Item3 >= minScore).Select(p => p.Item2));
+                    }
+                    else
+                    {
+                        _candidates.AddRange(Candidates[scanIndex].Where(p => p.Item1 == CurrentPartition - 1).Select(p => p.Item2));
+                    }
 
                     var scan = ListOfSortedMs2Scans[scanIndex];
 
@@ -287,7 +293,32 @@ namespace EngineLayer.CrosslinkSearch
             return _precursors;
         }
 
-        private void FindCrosslinkedPeptide(Ms2ScanWithSpecificMass scan, List<(double, int, double)> precursors, int[] idsOfPeptidesPossiblyObserved, byte byteScoreCutoff, int scanIndex, ref List<CrosslinkSpectralMatch> possibleMatches, HashSet<Tuple<int, int>> seenPair)
+        /// <summary>
+        /// Try to keep top K csm candidate. The function is not used now. 
+        /// </summary>
+        /// <param name="csm"></param>
+        /// <param name="possibleMatches"></param>
+        private void Add2PossibleMatches(CrosslinkSpectralMatch csm, ref List<CrosslinkSpectralMatch> possibleMatches)
+        {
+            if (possibleMatches.Count == 0)
+            {
+                possibleMatches.Add(csm);
+                return;
+            }
+
+            if (csm.XLTotalScore < possibleMatches.Last().XLTotalScore - 1)
+            {
+                return;
+            }
+
+            possibleMatches.Add(csm);
+
+            possibleMatches.Sort((x, y) => x.XLTotalScore.CompareTo(y.XLTotalScore));
+            possibleMatches.Reverse();
+        }
+
+
+        private void FindCrosslinkedPeptide(Ms2ScanWithSpecificMass scan, List<(double, int, double)> precursors, List<int> idsOfPeptidesPossiblyObserved, byte byteScoreCutoff, int scanIndex, ref List<CrosslinkSpectralMatch> possibleMatches, HashSet<Tuple<int, int>> seenPair)
         {
             //The code here is to generate intensity ranks of signature ions for cleavable crosslink.
             int rank = 1;
@@ -327,7 +358,6 @@ namespace EngineLayer.CrosslinkSearch
                         if (x != null && x.XLTotalScore > byteScoreCutoff)
                         {
                             possibleMatches.Add(x);
-
                         }
 
                     }
@@ -341,7 +371,6 @@ namespace EngineLayer.CrosslinkSearch
                             if (x != null && x.XLTotalScore > byteScoreCutoff)
                             {
                                 possibleMatches.Add(x);
-
                             }
                         }
                     }
@@ -355,7 +384,6 @@ namespace EngineLayer.CrosslinkSearch
                             if (x != null && x.XLTotalScore > byteScoreCutoff)
                             {
                                 possibleMatches.Add(x);
-
                             }
                         }
                     }
@@ -369,7 +397,6 @@ namespace EngineLayer.CrosslinkSearch
                             if (x != null && x.XLTotalScore > byteScoreCutoff)
                             {
                                 possibleMatches.Add(x);
-
                             }
 
                         }
@@ -384,7 +411,6 @@ namespace EngineLayer.CrosslinkSearch
                             if (x != null && x.XLTotalScore > byteScoreCutoff)
                             {
                                 possibleMatches.Add(x);
-
                             }
                         }
                     }
@@ -427,7 +453,6 @@ namespace EngineLayer.CrosslinkSearch
                                 if (x != null && x.XLTotalScore > byteScoreCutoff)
                                 {
                                     possibleMatches.Add(x);
-
                                 }
                             }
 

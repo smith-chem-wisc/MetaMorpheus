@@ -765,18 +765,6 @@ namespace Test
             Assert.AreEqual(67, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
-
-            ////This test is very complicated and are very good to prevent errors. Please keep the commented output for debug usage.
-            //string outputFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Test_temp_inter_" + inter.ToString() + ".tsv");
-            //WriteFile.WritePsmCrossToTsv(firstCsmsFromListsOfCsms.Where(p => p.CrossType == PsmCrossType.Inter).ToList(), outputFile1, 2);
-            //string outputFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"Test_temp_intra_" + intra.ToString() + ".tsv");
-            //WriteFile.WritePsmCrossToTsv(firstCsmsFromListsOfCsms.Where(p => p.CrossType == PsmCrossType.Intra).ToList(), outputFile2, 2);
-
-            //string outputFile = Path.Combine(@"C:\Users\lulei_000\Desktop\", @"NewTest_temp_all_" + inter.ToString() + "_" + intra.ToString() + ".tsv");
-            //WriteFile.WriteTestAllToTxt(nonNullCsmsStillLists, outputFile);
-            //Directory.Delete(outputFile1, true);
-            //Directory.Delete(outputFile2, true);
-            //Directory.Delete(outputFile, true);
         }
 
         [Test]
