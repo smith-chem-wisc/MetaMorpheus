@@ -217,12 +217,13 @@ namespace Test
             File.Delete(@"allPsms.tsv");
 
             // write percolator result
-            WriteFile.WriteCrosslinkToTxtForPercolator(newPsms.Where(q => q.CrossType == PsmCrossType.Cross).ToList(), TestContext.CurrentContext.TestDirectory, "perc", new Crosslinker());
+            WriteFile.WriteCrosslinkToTxtForPercolator(newPsms.Where(q => q.CrossType == PsmCrossType.Inter || q.CrossType == PsmCrossType.Intra).ToList(), TestContext.CurrentContext.TestDirectory, "perc", new Crosslinker());
             var percOut = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"perc.txt"), Encoding.UTF8);
             string header = "SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein";
             string dataRow = "T-2-1\t1\t2\t9.080357142857142\t9.080357142857142\t3\t1994.05\t79237.2823474838\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\tFake01(2)\tFake02(4)";
             Assert.AreEqual(header, percOut[0]);
             Assert.AreEqual(dataRow, percOut[1]);
+            File.Delete(@"perc.txt");
         }
 
         [Test]
