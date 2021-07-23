@@ -301,30 +301,6 @@ namespace EngineLayer.CrosslinkSearch
             return _precursors;
         }
 
-        /// <summary>
-        /// Try to keep top K csm candidate. The function is not used now. 
-        /// </summary>
-        /// <param name="csm"></param>
-        /// <param name="possibleMatches"></param>
-        private void Add2PossibleMatches(CrosslinkSpectralMatch csm, ref List<CrosslinkSpectralMatch> possibleMatches)
-        {
-            if (possibleMatches.Count == 0)
-            {
-                possibleMatches.Add(csm);
-                return;
-            }
-
-            if (csm.XLTotalScore < possibleMatches.Last().XLTotalScore - 1)
-            {
-                return;
-            }
-
-            possibleMatches.Add(csm);
-
-            possibleMatches.Sort((x, y) => x.XLTotalScore.CompareTo(y.XLTotalScore));
-            possibleMatches.Reverse();
-        }
-
 
         private void FindCrosslinkedPeptide(Ms2ScanWithSpecificMass scan, List<(double, int, double)> precursors, List<int> idsOfPeptidesPossiblyObserved, byte byteScoreCutoff, int scanIndex, ref List<CrosslinkSpectralMatch> possibleMatches, HashSet<Tuple<int, int>> seenPair)
         {

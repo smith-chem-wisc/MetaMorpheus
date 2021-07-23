@@ -25,21 +25,6 @@ namespace EngineLayer.CrosslinkSearch
         public List<int> LinkPositions { get; set; }
         public double XLTotalScore { get; set; }    //alpha + beta psmCross.
 
-        public double ReXLTotalScore
-        {
-            get
-            {
-                if (XLTotalScore!= 0)
-                {
-                    return 1 / XLTotalScore;
-
-                }
-                else
-                {
-                    return 0;
-                }
-            }
-        }
         public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
         public int XlRank { get; set; }   //Rank after indexing score. Could be used for PEP
         public int ParentIonExistNum { get; set; }
@@ -53,15 +38,6 @@ namespace EngineLayer.CrosslinkSearch
         public int? XlProteinPosLoop { get; private set; }
         public new double DeltaScore { get { return (XLTotalScore - SecondBestXlScore); } }
 
-        public static void AddMatchingPepWithSameFullSeq(CrosslinkSpectralMatch csm, PeptideWithSetModifications pwsm, List<MatchedFragmentIon> matchedFragmentIons)
-        {
-            var test = csm._BestMatchingPeptides.First().Pwsm.FullSequence;
-            if (csm._BestMatchingPeptides.First().Pwsm.FullSequence == pwsm.FullSequence && csm._BestMatchingPeptides.Count(p=>p.Pwsm.Protein.Accession == pwsm.Protein.Accession) ==0)
-            {
-                csm._BestMatchingPeptides.Add((0, pwsm));
-                csm.PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
-            }
-        }
 
         public void ResolveProteinPosAmbiguitiesForXl()
         {
