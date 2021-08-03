@@ -111,6 +111,7 @@
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <TabControl Grid.Row="0">
+                                <!--MS2 Scan Annotations-->
                                 <TabItem Header="Parent Scan View" Name="ParentScanView">
                                     <Grid Name="PsmAnnotationGrid">
                                         <Grid.RowDefinitions>
@@ -176,6 +177,34 @@
                                         </ItemsControl.ItemsPanel>
 
                                     </ItemsControl>
+                                </TabItem>
+                                <!--Sequence Coverage Annotation-->
+                                <TabItem Header="Sequence Coverage" Name="SequenceCoverageAnnotationView">
+                                    <Grid Grid.Row="1" Name="SequenceAnnotationGrid" SizeChanged="AnnotationSizeChanged" Style="{StaticResource InternalGridStyle}">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height = "35"></RowDefinition>
+                                            <RowDefinition Height = "*"></RowDefinition>
+                                            <RowDefinition Height="5"></RowDefinition>
+                                            <RowDefinition Height = "30"></RowDefinition>
+                                        </Grid.RowDefinitions>
+
+                                        <!--Header label-->
+                                        <Label Content="Sequence Coverage Map" Grid.Row="0" />
+                                        <ScrollViewer Grid.Row="1" Name="sequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                            CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto">
+                                            <Grid Name="mapGrid" Background="White">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="160" ></RowDefinition>
+                                                    <RowDefinition Height=" *"></RowDefinition>
+                                                </Grid.RowDefinitions>
+                                                <Canvas x:Name="sequenceText" Grid.Row="0" Background="White"></Canvas>
+                                                <ScrollViewer Grid.Row="1" Name="mapViewer" HorizontalAlignment="Center" VerticalAlignment="Center" Width="Auto" 
+                                                    CanContentScroll="True" VerticalScrollBarVisibility="Auto">
+                                                    <Canvas x:Name="map" Background="White"></Canvas>
+                                                </ScrollViewer>
+                                            </Grid>
+                                        </ScrollViewer>
+                                    </Grid>
                                 </TabItem>
                             </TabControl>
 

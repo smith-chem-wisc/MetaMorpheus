@@ -48,8 +48,9 @@ namespace Test
                     maxMissedCleavages: 0,
                     minPeptideLength: 1,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
+            bool writeSpectralLibrary = false;
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpectralLibrary);
 
             cse.Run();
             Assert.AreEqual(3, globalPsms[0].MatchedFragmentIons.Count);
@@ -83,8 +84,9 @@ namespace Test
                     minPeptideLength: 1,
                     maxModificationIsoforms: int.MaxValue,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
+            bool writeSpectralLibrary = false;
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null, 
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpectralLibrary);
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -119,8 +121,9 @@ namespace Test
                     minPeptideLength: 1,
                     maxModificationIsoforms: int.MaxValue,
                     initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
+            bool writeSpetralLibrary = false;
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null,
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpetralLibrary);
 
             cse.Run();
             Assert.Less(globalPsms[0].Score, 2);
@@ -179,9 +182,9 @@ namespace Test
             PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
-
+            bool writeSpetralLibrary = false;
             ClassicSearchEngine cse = new ClassicSearchEngine(globalPsms, arrayOfSortedMS2Scans, new List<Modification>(), new List<Modification>(), null, null, null,
-                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>());
+                new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpetralLibrary);
 
             cse.Run();
             Assert.IsNull(globalPsms[0]);

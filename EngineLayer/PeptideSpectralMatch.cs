@@ -78,7 +78,7 @@ namespace EngineLayer
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
-        
+
         public IEnumerable<(int Notch, PeptideWithSetModifications Peptide)> BestMatchingPeptides
         {
             get
@@ -131,6 +131,10 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(int notch, PeptideWithSetModifications pwsm)
         {
             _BestMatchingPeptides.Remove((notch, pwsm));
+            if (!_BestMatchingPeptides.Any(x => x.Pwsm.Equals(pwsm)))
+            {
+                PeptidesToMatchingFragments.Remove(pwsm);
+            }
             this.ResolveAllAmbiguities();
         }
 
