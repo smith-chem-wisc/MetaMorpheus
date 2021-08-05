@@ -125,6 +125,7 @@ namespace MetaMorpheusGUI
         {
             cbCrosslinkers.SelectedItem = task.XlSearchParameters.Crosslinker;
             txtXLTopNum.Text = task.XlSearchParameters.CrosslinkSearchTopNum.ToString(CultureInfo.InvariantCulture);
+            ckbAddCompIon.IsChecked = task.CommonParameters.AddCompIons;
             ckbCrosslinkAtCleavageSite.IsChecked = task.XlSearchParameters.CrosslinkAtCleavageSite;
             ckbQuenchH2O.IsChecked = task.XlSearchParameters.XlQuench_H2O;
             ckbQuenchNH2.IsChecked = task.XlSearchParameters.XlQuench_NH2;
@@ -257,7 +258,7 @@ namespace MetaMorpheusGUI
 
             CustomFragmentationWindow.Close();
 
-            TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);
+            TheTask.XlSearchParameters.CrosslinkSearchTopNum = int.Parse(txtXLTopNum.Text, CultureInfo.InvariantCulture);           
             TheTask.XlSearchParameters.CrosslinkAtCleavageSite = ckbCrosslinkAtCleavageSite.IsChecked.Value;
             TheTask.XlSearchParameters.Crosslinker = (Crosslinker)cbCrosslinkers.SelectedItem;
 
@@ -316,6 +317,7 @@ namespace MetaMorpheusGUI
                 listOfModsFixed.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
+            bool _addCompIons = ckbAddCompIon.IsChecked.Value;
             CommonParameters commonParamsToSave = new CommonParameters(
                 precursorMassTolerance: PrecursorMassTolerance,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "XLSearchTask",
@@ -329,6 +331,7 @@ namespace MetaMorpheusGUI
                 minimumAllowedIntensityRatioToBasePeak: double.Parse(MinRatioTextBox.Text, CultureInfo.InvariantCulture),
                 dissociationType: dissociationType,
                 separationType: separationType,
+                addCompIons: _addCompIons,
 
                 ms2childScanDissociationType: ms2childDissociationType,
                 ms3childScanDissociationType: ms3childDissociationType,

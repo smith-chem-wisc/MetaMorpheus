@@ -109,6 +109,7 @@
                                 <ComboBox x:Name="MS3ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
                             </StackPanel>
                             <StackPanel>
+                                <CheckBox x:Name="ckbAddCompIon"  VerticalAlignment="Center" Content="Generate Complementary Ions" Margin="2" />
                                 <CheckBox x:Name="ckbCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="Crosslink At Cleavage Site" Margin="2" />
                             </StackPanel>
                         </StackPanel>
