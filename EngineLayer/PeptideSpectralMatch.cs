@@ -11,7 +11,7 @@ namespace EngineLayer
     public class PeptideSpectralMatch
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
-        private List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
+        protected List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
 
         public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
         {
