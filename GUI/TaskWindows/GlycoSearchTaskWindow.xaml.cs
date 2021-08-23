@@ -66,10 +66,10 @@ namespace MetaMorpheusGUI
         private void PopulateChoices()
         {
             ChildScanDissociationTypeComboBox.Items.Add("Null");
-            foreach (string dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Keys)
+            foreach (var dissassociationType in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
             {
-                DissociationTypeComboBox.Items.Add(dissassociationType);
-                ChildScanDissociationTypeComboBox.Items.Add(dissassociationType);
+                DissociationTypeComboBox.Items.Add(dissassociationType.Key);
+                ChildScanDissociationTypeComboBox.Items.Add(dissassociationType.Key);
             }          
 
             cbbPrecusorMsTl.Items.Add("Da");

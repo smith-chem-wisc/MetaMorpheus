@@ -43,6 +43,7 @@ namespace TaskLayer
             }
         }
 
+
         public static void WriteCrosslinkToTxtForPercolator(List<CrosslinkSpectralMatch> items, string outputFolder, string fileName, Crosslinker crosslinker)
         {
             if (items.Count == 0)

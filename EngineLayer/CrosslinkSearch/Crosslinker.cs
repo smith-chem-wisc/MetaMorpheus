@@ -2,6 +2,7 @@
 using System.IO;
 using MassSpectrometry;
 using System.Globalization;
+using Proteomics;
 
 namespace EngineLayer
 {
@@ -117,6 +118,19 @@ namespace EngineLayer
                 deadendMassTris: double.Parse(split[10], CultureInfo.InvariantCulture));
 
             return crosslinker;
+        }
+
+        /// <summary>
+        /// Deadend and loop crosslink are changed to a type of modification and searched as a modified peptide.
+        /// </summary>
+        /// <param name="crosslinker"></param>
+        public static void GenerateCrosslinkModifications(Crosslinker crosslinker, out Modification TrisDeadEnd, out Modification H2ODeadEnd, out Modification NH2DeadEnd, out Modification Loop)
+        {
+            ModificationMotif.TryGetMotif("X", out var motif);
+            TrisDeadEnd = new Modification(_originalId: "Tris Dead End", _modificationType: "Crosslink", _locationRestriction: "Anywhere.", _target: motif, _monoisotopicMass: crosslinker.DeadendMassTris);
+            H2ODeadEnd = new Modification(_originalId: "H2O Dead End", _modificationType: "Crosslink", _locationRestriction: "Anywhere.", _target: motif, _monoisotopicMass: crosslinker.DeadendMassH2O);
+            NH2DeadEnd = new Modification(_originalId: "NH2 Dead End", _modificationType: "Crosslink", _locationRestriction: "Anywhere.", _target: motif, _monoisotopicMass: crosslinker.DeadendMassNH2);
+            Loop = new Modification(_originalId: "Loop", _modificationType: "Crosslink", _locationRestriction: "Anywhere.", _target: motif, _monoisotopicMass: crosslinker.LoopMass);
         }
 
         public override string ToString()
