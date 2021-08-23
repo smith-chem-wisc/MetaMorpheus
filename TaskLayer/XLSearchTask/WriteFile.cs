@@ -9,8 +9,6 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
-using System.Text;
-using EngineLayer.FdrAnalysis;
 
 namespace TaskLayer
 {
@@ -45,63 +43,44 @@ namespace TaskLayer
             }
         }
 
-        //This function is similar to PostSearchAnalysisTask.WritePsmsForPercolator. Except optimized for crosslink.
-        public static void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator, string predefinedSearchType)
+
+        public static void WriteCrosslinkToTxtForPercolator(List<CrosslinkSpectralMatch> items, string outputFolder, string fileName, Crosslinker crosslinker)
         {
-            using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
+            if (items.Count == 0)
+            { return; }
+            var writtenFile = Path.Combine(outputFolder, fileName + ".txt");
+            using (StreamWriter output = new StreamWriter(writtenFile))
             {
-                string searchType = predefinedSearchType; 
-
-                string header = "SpecId\tLabel\tScanNr\t";
-                header += String.Join("\t", PsmData.trainingInfos[searchType]);
-                header += "\tPeptide\tProteins";
-
-                if (searchType == "crosslink")
+                output.WriteLine("SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum" +
+                    "\tPeptide\tProtein");
+                foreach (var item in items)
                 {
-                    header += "\tBeta Peptide\tBeta Proteins";
-                }
-
-
-                output.WriteLine(header);
-
-                StringBuilder directions = new StringBuilder();
-                directions.Append("DefaultDirection\t-\t-");
-
-                foreach (var headerVariable in PsmData.trainingInfos[searchType])
-                {
-                    directions.Append("\t");
-                    directions.Append(PsmData.assumedAttributeDirection[headerVariable]);
-                }
-
-                output.WriteLine(directions.ToString());
-
-                int idNumber = 0;
-                psmList.OrderByDescending(p => p.Score);
-                foreach (PeptideSpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
-                {
-                    output.Write(idNumber.ToString());
-                    idNumber++;
-                    output.Write('\t' + (psm.IsDecoy ? -1 : 1).ToString());
-                    output.Write('\t' + psm.ScanNumber.ToString());
-                    output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
-
-                    // HACKY: Ignores all ambiguity
-                    var pwsm = psm.BestMatchingPeptides.First().Peptide;
-                    output.Write('\t' + (pwsm.PreviousAminoAcid + "." + pwsm.FullSequence + "." + pwsm.NextAminoAcid).ToString());
-                    output.Write('\t' + (pwsm.Protein.Accession).ToString());
-
-                    if (searchType == "crosslink")
+                    if (item.BaseSequence != null && item.BetaPeptide.BaseSequence != null && item.ProteinAccession != null && item.BetaPeptide.ProteinAccession != null)
                     {
-                        var csm = (EngineLayer.CrosslinkSearch.CrosslinkSpectralMatch)psm;
-                        if (csm.BetaPeptide != null)
+                        string x = "T"; int label = 1;
+                        if (item.IsDecoy || item.BetaPeptide.IsDecoy)
                         {
-                            var x = csm.BetaPeptide.BestMatchingPeptides.First().Peptide;
-                            output.Write('\t' + (x.PreviousAminoAcid + "." + x.FullSequence + "." + x.NextAminoAcid).ToString());
-                            output.Write('\t' + (x.Protein.Accession).ToString());
+                            x = "D"; label = -1;
                         }
+                        output.WriteLine(
+                            x + "-" + item.ScanNumber.ToString(CultureInfo.InvariantCulture) + "-" + item.ScanRetentionTime.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + label.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.ScanNumber.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.XLTotalScore.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.DeltaScore.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPeptide.PeptideMonisotopicMass.HasValue) ? ((item.ScanPrecursorMass - item.BetaPeptide.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value - crosslinker.TotalMass) / item.ScanPrecursorMass * 1E6).ToString(CultureInfo.InvariantCulture) : "---")
+                            + "\t" + item.BetaPeptide.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + (item.BetaPeptide.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
+                            + "\t" + "-." + item.FullSequence + item.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPeptide.FullSequence + item.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
+                            + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                                   + "(" + (item.XlProteinPos.HasValue ? item.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
+                            + "\t" + item.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                                   + "(" + (item.BetaPeptide.XlProteinPos.HasValue ? item.BetaPeptide.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
+                            );
                     }
-
-                    output.WriteLine();
                 }
             }
         }

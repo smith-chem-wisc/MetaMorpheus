@@ -97,7 +97,7 @@ namespace TaskLayer
         public const string SecondFragmentIndexFileName = "secondFragmentIndex.ind";
         public const string PrecursorIndexFileName = "precursorIndex.ind";
 
-        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
+        public static List<Ms2ScanWithSpecificMass>[] _GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
             var msNScans = myMSDataFile.GetAllScansList().Where(x => x.MsnOrder > 1).ToArray();
             var ms2Scans = msNScans.Where(p => p.MsnOrder == 2).ToArray();
@@ -106,7 +106,7 @@ namespace TaskLayer
 
             if (!ms2Scans.Any())
             {
-                return new List<Ms2ScanWithSpecificMass>();
+                return scansWithPrecursors;
             }
 
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
@@ -234,8 +234,8 @@ namespace TaskLayer
                                     double precursorMz = 0;
                                     var precursorSpectrum = ms2scan;
 
-                                    //In current situation, do we need to perform the following function.
-                                    //In some weird data, the MS3 scan has mis-leading precursor mass.
+                                    //In current situation, do we need to perform the following function. 
+                                    //In some weird data, the MS3 scan has mis-leading precursor mass. 
                                     //MS3 scan is low res in most of the situation, and the matched ions are not scored in a good way.
                                     //{
                                     //    ms3ChildScan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
@@ -273,6 +273,18 @@ namespace TaskLayer
                         }
                     }
                 });
+
+            return scansWithPrecursors;
+        }
+
+        public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
+        {
+            var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
+
+            if (scansWithPrecursors.Length == 0)
+            {
+                return new List<Ms2ScanWithSpecificMass>();
+            }
 
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
             var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
@@ -321,6 +333,34 @@ namespace TaskLayer
                             }
                         }
                     });
+            }
+
+            return parentScans;
+        }
+
+        public static List<Ms2ScanWithSpecificMass> GetMs2ScansWrapByScanNum(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters, out List<List<(double, int, double)>> precursors)
+        {
+            var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
+
+            var parentScans = new List<Ms2ScanWithSpecificMass>();
+            precursors = new List<List<(double, int, double)>>();
+
+            if (scansWithPrecursors.Length == 0)
+            {
+                return parentScans;
+            }
+
+            var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
+            //var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).Select(p=>p.First()).ToArray();
+
+            
+            for (int i = 0; i < scansWithPrecursors.Length; i++)
+            {
+                if (scansWithPrecursors[i].Any() && !childScanNumbers.Contains(scansWithPrecursors[i].First().OneBasedScanNumber))
+                {
+                    parentScans.Add(scansWithPrecursors[i].First());
+                    precursors.Add(scansWithPrecursors[i].Select(p => (p.PrecursorMass, p.PrecursorCharge, p.PrecursorMonoisotopicPeakMz)).ToList());
+                }
             }
 
             return parentScans;
@@ -905,6 +945,43 @@ namespace TaskLayer
                     WriteFragmentIndex(precursorIndex, precursorIndexFile);
                     FinishedWritingFile(precursorIndexFile, new List<string> { taskId });
                 }
+            }
+        }
+
+        public void GenerateIndexes_PeptideOnly(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        {
+            bool successfullyReadIndices = false;
+            string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
+
+            if (pathToFolderWithIndices != null) //if indexes exist
+            {
+                try
+                {
+                    Status("Reading peptide index...", new List<string> { taskId });
+                    peptideIndex = ReadPeptideIndex(Path.Combine(pathToFolderWithIndices, PeptideIndexFileName), allKnownProteins);
+
+                    if (indexEngine.GeneratePrecursorIndex)
+                    {
+                        Status("Reading precursor index...", new List<string> { taskId });
+                        precursorIndex = ReadFragmentIndex(Path.Combine(pathToFolderWithIndices, PrecursorIndexFileName));
+                    }
+
+                    successfullyReadIndices = true;
+                }
+                catch
+                {
+                    // could put something here... this basically is just to prevent a crash if the index was unable to be read.
+
+                    // if the old index couldn't be read, a new one will be generated.
+
+                    // an old index may not be able to be read because of information required by new versions of MetaMorpheus
+                    // that wasn't written by old versions.
+                }
+            }
+
+            if (!successfullyReadIndices) //if we didn't find indexes with the same params
+            {
+                // This is for the second round search, so successfullyReadIndices must be true, otherwise there are problems.
             }
         }
 
