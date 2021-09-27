@@ -168,6 +168,71 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
+
+        /// <summary>
+        /// Ensure internal fragment ions are being matched correctly and can disambiguate ambiguous proteoforms
+        /// </summary>
+        [Test]
+        public static void InternalFragmentIonTest()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+
+                SearchParameters = new SearchParameters
+                {
+                    MinAllowedInternalFragmentLength = 1
+                },
+                CommonParameters = new CommonParameters(
+                   digestionParams: new DigestionParams("top-down"),
+                   listOfModsVariable: new List<(string, string)> {
+                       ("Common Variable", "Oxidation on M"),
+                       ("Common Biological", "Acetylation on K"),
+                       ("Common Biological", "Acetylation on X")  })
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\InternalTest.mgf");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\InternalTest.fasta");
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestInternal", searchTask) };
+
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+            engine.Run();
+
+            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestInternal\AllPSMs.psmtsv");
+            //var output = File.ReadAllLines(outputPath);
+            //read the psmtsv
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(outputPath, out var warning);
+            Assert.IsTrue(psms.Count == 1);
+            //check that it's been disambiguated
+            Assert.IsFalse(psms[0].FullSequence.Contains("|"));
+            int numTotalFragments = psms[0].MatchedIons.Count;
+
+            //test again but no variable acetyl on K. Make sure that internal fragments are still searched even without ambiguity
+            searchTask = new SearchTask()
+            {
+
+                SearchParameters = new SearchParameters
+                {
+                    MinAllowedInternalFragmentLength = 1
+                },
+                CommonParameters = new CommonParameters(
+                   digestionParams: new DigestionParams("top-down"),
+                   listOfModsVariable: new List<(string, string)> {
+                       ("Common Variable", "Oxidation on M"),
+                       ("Common Biological", "Acetylation on X")  })
+            };
+            taskList = new List<(string, MetaMorpheusTask)> { ("TestInternal", searchTask) };
+            engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
+            engine.Run();
+            psms = PsmTsvReader.ReadTsv(outputPath, out warning);
+            Assert.IsTrue(psms.Count == 1);
+            Assert.IsTrue(psms[0].MatchedIons.Count == numTotalFragments);
+
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestInternal"), true);
+        }
+
         /// <summary>
         /// Tests that normalization in a search task works properly with an Experimental Design file read in,
         /// and skips quantification when that file is absent
@@ -376,7 +441,7 @@ namespace Test
 
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
-                0, path);
+                0, path, true);
 
             var file = File.ReadAllLines(path);
             bool found = false;
@@ -399,7 +464,7 @@ namespace Test
 
             ModificationMotif.TryGetMotif("T", out var motif);
 
-            Modification fakeMod = new Modification(_originalId: "FAKE", _accession: "FAKE_MOD_ACCESSION", _modificationType: "fake", 
+            Modification fakeMod = new Modification(_originalId: "FAKE", _accession: "FAKE_MOD_ACCESSION", _modificationType: "fake",
                 _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 0,
                 _databaseReference: new Dictionary<string, IList<string>> { { "PSI-MOD", new List<string> { "FAKE_MOD_ACCESSION" } } });
 
@@ -418,7 +483,7 @@ namespace Test
 
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
-                0, path);
+                0, path, true);
 
             var file = File.ReadAllLines(path);
             bool found = false;
@@ -431,7 +496,82 @@ namespace Test
             }
             Assert.That(found);
 
+            // test again w/ NOT appending motifs onto mod names
+            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
+                0, path, false);
+
+            file = File.ReadAllLines(path);
+            found = false;
+            foreach (var line in file)
+            {
+                if (line.Contains("FAKE") && !line.Contains(" on ") && line.Contains("PSI-MOD:" + resIdAccession))
+                {
+                    found = true;
+                }
+            }
+            Assert.That(found);
+
             File.Delete(path);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        [Test]
+        public static void TestAutodetectDissocationTypeFromScanHeader()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoQuantification = false // quant disabled just to save some time
+                },
+
+                // use DissociationType.Autodetect as the dissociation type. this signals to the search that the dissociation type
+                // should be taken from the scan header on a scan-specific basis
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect)
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestAutodetectDissocationTypeFromScanHeader");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            // run the task
+            var autoTaskFolder = Path.Combine(folderPath, @"Autodetect");
+            Directory.CreateDirectory(autoTaskFolder);
+            searchTask.RunTask(autoTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
+
+            // run identical task but select the HCD dissociation type instead of autodetect
+            var hcdTaskFolder = Path.Combine(folderPath, @"HCD");
+            Directory.CreateDirectory(hcdTaskFolder);
+            searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoQuantification = false
+                },
+
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD)
+            };
+
+            searchTask.RunTask(hcdTaskFolder, new List<DbForTask> { db }, new List<string> { myFile }, "");
+
+            // check search results
+            var psmFileAutodetect = File.ReadAllLines(Path.Combine(autoTaskFolder, "AllPSMs.psmtsv"));
+            var psmFileHcd = File.ReadAllLines(Path.Combine(hcdTaskFolder, "AllPSMs.psmtsv"));
+
+            Assert.That(psmFileAutodetect.Length == psmFileHcd.Length);
+
+            for (int i = 0; i < psmFileAutodetect.Length; i++)
+            {
+                Assert.That(psmFileAutodetect[i].Equals(psmFileHcd[i]));
+            }
+
+            // clean up
+            Directory.Delete(folderPath, true);
         }
     }
 }

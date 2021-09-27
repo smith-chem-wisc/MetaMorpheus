@@ -184,7 +184,7 @@ namespace Test
             //check better when using delta
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), SearchParameters.WriteSpectralLibrary).Run();
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
                 fsp, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -235,7 +235,7 @@ namespace Test
             //check no change when using delta
             allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), SearchParameters.WriteSpectralLibrary).Run();
 
             CommonParameters = new CommonParameters(useDeltaScore: true, digestionParams: new DigestionParams(minPeptideLength: 5));
 
@@ -268,6 +268,7 @@ namespace Test
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
+            SearchParameters SearchParameters = new SearchParameters();
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters));
 
@@ -278,7 +279,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), SearchParameters.WriteSpectralLibrary).Run();
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, 
                 CommonParameters, fsp, new List<string>()).Run());
 
@@ -475,8 +476,10 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+
+            bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchMode, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchMode, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             List<PeptideSpectralMatch> moreNonNullPSMs = new List<PeptideSpectralMatch>();
 
@@ -637,8 +640,9 @@ namespace Test
             extendedArray = extendedArray.OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
+            bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, 
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
@@ -690,8 +694,9 @@ namespace Test
             extendedArray = extendedArray.OrderBy(b => b.PrecursorMass).ToArray();
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
+            bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null,
-                proteinList, searchModes, CommonParameters, fsp, null, new List<string>()).Run();
+                proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
