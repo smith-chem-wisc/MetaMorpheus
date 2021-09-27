@@ -741,7 +741,8 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
-            float spectralAngle = 0;
+            float spectralAngle = (float)double.NaN;
+            float hasSpectralAngle = 0;
 
             if (searchType != "crosslink")
             {
@@ -771,6 +772,11 @@ namespace EngineLayer
                 psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
                 spectralAngle = (float)psm.SpectralAngle;
+
+                if (PsmHasSpectralAngle(psm))
+                {
+                    hasSpectralAngle = 1;
+                }
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
@@ -877,7 +883,8 @@ namespace EngineLayer
 
                 Label = label,
 
-                SpectralAngle = spectralAngle
+                SpectralAngle = spectralAngle,
+                HasSpectralAngle = hasSpectralAngle
             };
 
             return psm.PsmData_forPEPandPercolator;
@@ -898,6 +905,16 @@ namespace EngineLayer
                 }
             }
             return identifiedVariant;
+        }
+
+        private static bool PsmHasSpectralAngle(PeptideSpectralMatch psm)
+        {
+            bool hasSpectralAngle = false;
+            if (psm.SpectralAngle >= 0)
+            {
+                hasSpectralAngle = true;
+            }
+            return hasSpectralAngle;
         }
 
         public static bool ContainsModificationsThatShiftMobility(IEnumerable<Modification> modifications)

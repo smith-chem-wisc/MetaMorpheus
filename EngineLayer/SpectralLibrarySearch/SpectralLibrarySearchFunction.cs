@@ -22,14 +22,19 @@ namespace EngineLayer
                 //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
                 foreach (var peptide in psm.PeptidesToMatchingFragments)
                 {
-                    if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                    if (spectralLibrary != null && !peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                     {
-                        continue;
+                        double spectralAngle = CalculateSquareIntensitySpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, psm, commonParameters);
+                        psm.SpectralAngle = spectralAngle;
                     }
-
-                    double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
-
-                    psm.SpectralAngle = spectralAngle;
+                    else if (spectralLibrary != null && peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.PeptideDescription, scan.PrecursorCharge, out var targetlibrarySpectrum))
+                    {
+                        var decoyPeptideTheorProducts = new List<Product>();
+                        peptide.Key.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
+                        var decoylibrarySpectrum = GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
+                        double spectralAngle = CalculateSquareIntensitySpectralAngle(decoylibrarySpectrum, scan.TheScan, psm, commonParameters);
+                        psm.SpectralAngle = spectralAngle;
+                    }
                 }
             }
         }
@@ -37,7 +42,7 @@ namespace EngineLayer
         /// <summary>
         /// Calculates the spectral angle, as described by Prosit ( https://www.nature.com/articles/s41592-019-0426-7 ).
         /// </summary>
-        public static double CalculateNormalizedSpectralAngle(List<MatchedFragmentIon> theoreticalLibraryIons, MsDataScan scan, CommonParameters commonParameters)
+        public static double CalculateSquareIntensitySpectralAngle(List<MatchedFragmentIon> theoreticalLibraryIons, MsDataScan scan, PeptideSpectralMatch psm, CommonParameters commonParameters)
         {
             double mzCutoff = 300;
             int fragmentNumberCutoff = 3;
@@ -73,13 +78,16 @@ namespace EngineLayer
                     var test = new Product(libraryIon.NeutralTheoreticalProduct.ProductType, libraryIon.NeutralTheoreticalProduct.Terminus,
                         libraryIon.NeutralTheoreticalProduct.NeutralMass, libraryIon.NeutralTheoreticalProduct.FragmentNumber,
                         libraryIon.NeutralTheoreticalProduct.AminoAcidPosition, libraryIon.NeutralTheoreticalProduct.NeutralLoss);
-                    matchedIons.Add(libraryIon, new MatchedFragmentIon(ref test, mz, experimentalIntensity, libraryIon.Charge));
+                    if (!matchedIons.ContainsKey(libraryIon))
+                    {
+                        matchedIons.Add(libraryIon, new MatchedFragmentIon(ref test, mz, experimentalIntensity, libraryIon.Charge));
+                    }
                 }
             }
-
+            psm.LibraryMatchedFragments = matchedIons.Values.ToList();
             // L2 norm
-            double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(p.Value.Intensity, 2)));
-            double theorNormalizer = Math.Sqrt(theoreticalLibraryIons.Sum(p => Math.Pow(p.Intensity, 2)));
+            double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(Math.Sqrt(p.Value.Intensity), 2)));
+            double theorNormalizer = Math.Sqrt(theoreticalLibraryIons.Sum(p => Math.Pow(Math.Sqrt(p.Intensity), 2)));
 
             double dotProduct = 0;
 
@@ -87,13 +95,106 @@ namespace EngineLayer
             {
                 if (matchedIons.TryGetValue(libraryIon, out var experIon))
                 {
-                    dotProduct += (libraryIon.Intensity / theorNormalizer) * (experIon.Intensity / expNormalizer);
+                    dotProduct += (Math.Sqrt(libraryIon.Intensity) / theorNormalizer) * (Math.Sqrt(experIon.Intensity) / expNormalizer);
                 }
             }
 
             double normalizedSpectralAngle = 1 - (2 * Math.Acos(dotProduct) / Math.PI);
 
             return normalizedSpectralAngle;
+        }
+
+
+        public static List<MatchedFragmentIon> GetDecoyLibrarySpectrumFromTargetByReverse(LibrarySpectrum targetSpectrum, List<Product> decoyPeptideTheorProducts)
+        {
+            var decoyFragmentIons = new List<MatchedFragmentIon>();
+            foreach (var targetIon in targetSpectrum.MatchedFragmentIons)
+            {
+                foreach (var decoyPeptideTheorIon in decoyPeptideTheorProducts)
+                {
+                    if (targetIon.NeutralTheoreticalProduct.ProductType == decoyPeptideTheorIon.ProductType && targetIon.NeutralTheoreticalProduct.FragmentNumber == decoyPeptideTheorIon.FragmentNumber)
+                    {
+                        double decoyFragmentMz = decoyPeptideTheorIon.NeutralMass.ToMz(targetIon.Charge);
+                        Product temProduct = decoyPeptideTheorIon;
+                        decoyFragmentIons.Add(new MatchedFragmentIon(ref temProduct, decoyFragmentMz, targetIon.Intensity, targetIon.Charge));
+                    }
+                }
+            }
+            return decoyFragmentIons;
+        }
+       
+        public static LibrarySpectrum ConvertingPsmsToConcensusSpectrumWithWeight(List<PeptideSpectralMatch> mutiplePsms)
+        {
+            Dictionary<Tuple<Product, int>, double[]> allIntensityBeforeNormalize = new Dictionary<Tuple<Product, int>, double[]>();
+            Dictionary<Tuple<Product, int>, double> allIntensityAfterNormalize = new Dictionary<Tuple<Product, int>, double>();
+            Dictionary<Tuple<Product, int>, double[]> allMz = new Dictionary<Tuple<Product, int>, double[]>();
+            Dictionary<Tuple<Product, int>, double> allAverageMz = new Dictionary<Tuple<Product, int>, double>();
+            var allIntensitySumForNormalize = new double[mutiplePsms.Count];
+            Dictionary<Tuple<Product, int>, int> numberOfEachIons = new Dictionary<Tuple<Product, int>, int>();
+            List<MatchedFragmentIon> libraryIons = new List<MatchedFragmentIon>();
+
+            Dictionary<Tuple<Product, int>, double> weightScoreForEachIon = new Dictionary<Tuple<Product, int>, double>();
+
+            for (int i = 0; i < mutiplePsms.Count; i++)
+            {
+                var matchedIons = mutiplePsms[i].LibraryMatchedFragments.ToList();
+                for (int j = 0; j < matchedIons.Count; j++)
+                {
+                    Tuple<Product, int> newKey = new Tuple<Product, int>(matchedIons[j].NeutralTheoreticalProduct, matchedIons[j].Charge);
+                    if (!allIntensityBeforeNormalize.ContainsKey(newKey))
+                    {
+                        var listOfIntensity = new double[mutiplePsms.Count];
+                        var listOfMz = new double[mutiplePsms.Count];
+                        listOfIntensity[i] = matchedIons[j].Intensity;
+                        listOfMz[i] = matchedIons[j].Mz;
+                        allIntensityBeforeNormalize.Add(newKey, listOfIntensity);
+                        allMz.Add(newKey, listOfMz);
+                        numberOfEachIons.Add(newKey, 1);
+                        weightScoreForEachIon.Add(newKey, mutiplePsms[i].Score);
+                    }
+                    else
+                    {
+                        allIntensityBeforeNormalize[newKey][i] = matchedIons[j].Intensity;
+                        allMz[newKey][i] = matchedIons[j].Mz;
+                        int num = numberOfEachIons[newKey];
+                        numberOfEachIons[newKey] = num + 1;
+                        var tem = weightScoreForEachIon[newKey];
+                        weightScoreForEachIon[newKey] = tem + mutiplePsms[i].Score;
+                    }
+                }
+            }
+
+            List<Tuple<Product, int>> commonIons = numberOfEachIons.Where(p => p.Value == mutiplePsms.Count).Select(q => q.Key).ToList();
+            List<Tuple<Product, int>> unqualifiedIons = numberOfEachIons.Where(p => p.Value < ((double)mutiplePsms.Count / (double)2)).Select(q => q.Key).ToList();
+            for (int k = 0; k < mutiplePsms.Count; k++)
+            {
+                double intensitySum = 0;
+                foreach (var x in commonIons)
+                {
+                    intensitySum = intensitySum + allIntensityBeforeNormalize[x][k];
+                }
+                allIntensitySumForNormalize[k] = intensitySum;
+            }
+            foreach (var y in allIntensityBeforeNormalize.Where(p => !unqualifiedIons.Contains(p.Key)))
+            //foreach (var y in allIntensityBeforeNormalize)
+            {
+                for (int l = 0; l < y.Value.Length; l++)
+                {
+                    double intensityBeforeNormalize = y.Value[l];
+                    double intensityAfterNormalize = intensityBeforeNormalize / allIntensitySumForNormalize[l];
+                    double intensityAfterWeight = (intensityAfterNormalize * mutiplePsms[l].Score) / weightScoreForEachIon[y.Key];
+                    y.Value[l] = intensityAfterWeight;
+                }
+                allIntensityAfterNormalize.Add(y.Key, y.Value.Where(p => p > 0).ToList().Sum());
+            }
+            var max = allIntensityAfterNormalize.Select(p => p.Value).Max();
+            foreach (var eachMz in allMz.Where(p => !unqualifiedIons.Contains(p.Key)))
+            //foreach (var eachMz in allMz)
+            {
+                Product temProduct = eachMz.Key.Item1;
+                libraryIons.Add(new MatchedFragmentIon(ref temProduct, eachMz.Value.Average(), allIntensityAfterNormalize[eachMz.Key] / max, eachMz.Key.Item2));
+            }
+            return new LibrarySpectrum(mutiplePsms[0].FullSequence, mutiplePsms.Select(p => p.ScanPrecursorMonoisotopicPeakMz).Average(), mutiplePsms[0].ScanPrecursorCharge, libraryIons, mutiplePsms.Select(p => p.ScanRetentionTime).Average(), false);
         }
     }
 }

@@ -7,6 +7,7 @@ using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -71,6 +72,10 @@ namespace TaskLayer
             WriteProteinResults();
             WriteQuantificationResults();
             WritePrunedDatabase();
+            if (Parameters.SearchParameters.WriteSpectralLibrary)
+            {
+                SpectralLibraryGeneration();
+            }
             if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count() > 0)))
             {
                 WriteVariantResults();
@@ -578,6 +583,88 @@ namespace TaskLayer
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
             }
+        }
+
+        private void SpectralLibraryGeneration()
+        {
+            var FilteredPsmList = Parameters.AllPsms
+                .Where(p => p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
+            FilteredPsmList.RemoveAll(b => b.IsDecoy);
+            FilteredPsmList.RemoveAll(b => b.IsContaminant);
+            Dictionary<String, List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<String, List<PeptideSpectralMatch>>();
+            foreach (var x in FilteredPsmList)
+            {
+                List<PeptideSpectralMatch> psmsWithsinglePeptide = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence).OrderByDescending(p => p.Score).ToList();
+                String peptideWithChargeState = x.FullSequence + "/" + x.ScanPrecursorCharge;
+                List<PeptideSpectralMatch> psmsWithsinglePeptideAndSameCharge = psmsWithsinglePeptide.Where(b => b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
+                if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
+                {
+                    PsmsGroupByPeptideAndCharge.Add(peptideWithChargeState, psmsWithsinglePeptideAndSameCharge);
+                }
+            }
+
+            var spectraLibrary = new List<LibrarySpectrum>();
+
+            foreach (var x in PsmsGroupByPeptideAndCharge)
+            {
+                List<PeptideSpectralMatch> psmsForLibrary = new List<PeptideSpectralMatch>();
+                if (x.Value.Count == 1)
+                {
+                    List<MatchedFragmentIon> standardSpctrumPeaks = x.Value[0].MatchedFragmentIons;
+                    double standardPrecursurMz = x.Value[0].ScanPrecursorMonoisotopicPeakMz;
+                    double standardRt = x.Value[0].ScanRetentionTime;
+                    var standardSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, standardPrecursurMz, x.Value[0].ScanPrecursorCharge, standardSpctrumPeaks, standardRt);
+                    spectraLibrary.Add(standardSpectrum);
+                }
+                else
+                {
+                    int a = 0;
+                    int b = 0;
+                    List<double> eachSaTotal = new List<double>();
+                    while (b < 5 && b < x.Value.Count)
+                    {
+                        int c = 0;
+                        List<MatchedFragmentIon> possibleStandardPeaks = x.Value[b].MatchedFragmentIons;
+                        List<double> saList = new List<double>();
+                        {
+                            double sa = SpectralLibrarySearchFunction.CalculateSquareIntensitySpectralAngle(possibleStandardPeaks, x.Value[c].MsDataScan, x.Value[c], CommonParameters);
+                            saList.Add(sa);
+                            c++;
+                        }
+                        eachSaTotal.Add(saList.Average());
+                        b++;
+                    }
+                    int standardIndex = eachSaTotal.IndexOf(eachSaTotal.Max());
+
+                    List<MatchedFragmentIon> standardSpctrumPeaks = x.Value[standardIndex].MatchedFragmentIons;
+                    x.Value[standardIndex].LibraryMatchedFragments= x.Value[standardIndex].MatchedFragmentIons;
+                    psmsForLibrary.Add(x.Value[standardIndex]);
+                    double standardPrecursurMz = x.Value[standardIndex].ScanPrecursorMonoisotopicPeakMz;
+                    double standardRt = x.Value[standardIndex].ScanRetentionTime;
+
+                    while (a < x.Value.Count - 1)
+                    {
+                        var spectrumToCompare = x.Value[a].MatchedFragmentIons;
+                        var testScore = SpectralLibrarySearchFunction.CalculateSquareIntensitySpectralAngle(standardSpctrumPeaks, x.Value[a].MsDataScan, x.Value[a], CommonParameters);
+                        if (testScore > 0.65 && a != standardIndex)
+                        {
+                            psmsForLibrary.Add(x.Value[a]);
+                        }
+                        a++;
+                    }
+
+                    if (psmsForLibrary.Count == 1)
+                    {
+                        spectraLibrary.Add(new LibrarySpectrum(psmsForLibrary[0].FullSequence, psmsForLibrary[0].ScanPrecursorMonoisotopicPeakMz, psmsForLibrary[0].ScanPrecursorCharge, psmsForLibrary[0].MatchedFragmentIons, psmsForLibrary[0].ScanRetentionTime, false));
+                    }
+                    else
+                    {
+                        var concensusSpectrum = SpectralLibrarySearchFunction.ConvertingPsmsToConcensusSpectrumWithWeight(psmsForLibrary);
+                        spectraLibrary.Add(concensusSpectrum);
+                    }
+                }
+            }
+            WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
         }
 
         private void WriteProteinResults()

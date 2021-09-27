@@ -13,6 +13,8 @@ using TaskLayer;
 using Chemistry;
 using System;
 using MassSpectrometry;
+using Nett;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -274,11 +276,11 @@ namespace Test
             var psm1 = allPsmsArray1.Where(p => p != null).ToList();
             Assert.That(psm1[0].IsDecoy == false && psm1[0].FullSequence == "DITANLR");
             Assert.That(psm1[1].IsDecoy == true && psm1[1].FullSequence == "LSISNVAK");
-            Assert.That(psm1[2].IsDecoy == true&& psm1[2].FullSequence == "LSISNVAK");
-            Assert.That(psm1[3].IsDecoy == false&& psm1[3].FullSequence == "RQPAQPR");
-            Assert.That(psm1[4].IsDecoy == false&& psm1[4].FullSequence == "KKAEDGINK");
-            Assert.That(psm1[5].IsDecoy == false&& psm1[5].FullSequence == "EKAEAEAEK");
-            Assert.That(psm1[6].IsDecoy == false&& psm1[6].FullSequence == "EKAEAEAEK");
+            Assert.That(psm1[2].IsDecoy == true && psm1[2].FullSequence == "LSISNVAK");
+            Assert.That(psm1[3].IsDecoy == false && psm1[3].FullSequence == "RQPAQPR");
+            Assert.That(psm1[4].IsDecoy == false && psm1[4].FullSequence == "KKAEDGINK");
+            Assert.That(psm1[5].IsDecoy == false && psm1[5].FullSequence == "EKAEAEAEK");
+            Assert.That(psm1[6].IsDecoy == false && psm1[6].FullSequence == "EKAEAEAEK");
 
 
             proteinList.Add(new Protein("LSISNVAK", "", isDecoy: true));
@@ -324,7 +326,7 @@ namespace Test
 
 
             //compare psm's target/decoy results in 4 conditions. they should be same as new decoy methods shouldn't change the t/d results
-            for (int i=0; i<psm1.Count;i++)
+            for (int i = 0; i < psm1.Count; i++)
             {
                 Assert.That(psm1[i].FullSequence == psm2[i].FullSequence && psm3[i].FullSequence == psm3[i].FullSequence && psm2[i].FullSequence == psm3[i].FullSequence);
                 Assert.That(psm1[i].IsDecoy == psm2[i].IsDecoy && psm3[i].IsDecoy == psm3[i].IsDecoy && psm2[i].IsDecoy == psm3[i].IsDecoy);
@@ -333,11 +335,69 @@ namespace Test
             //compare MetaMorpheus scores in 4 conditions; for some psms, they should have a little higher score when "generating library" as they switch to all charges ions matching function
             for (int j = 0; j < psm1.Count; j++)
             {
-               if(psm1[j].FullSequence == psm2[j].FullSequence && psm1[j].MatchedFragmentIons.Count != psm2[j].MatchedFragmentIons.Count)
+                if (psm1[j].FullSequence == psm2[j].FullSequence && psm1[j].MatchedFragmentIons.Count != psm2[j].MatchedFragmentIons.Count)
                 {
                     Assert.That(psm1[j].Score < psm2[j].Score);
                 }
             }
         }
+
+
+        [Test]
+        public static void TestLibraryGenarationForBottomUp()
+        {
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");
+
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+            task.SearchParameters.WriteMzId = true;
+            task.SearchParameters.WriteSpectralLibrary = true;
+
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouseDatabase.fasta.gz"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+            EverythingRunnerEngine MassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder);
+
+            MassSpectraFile.Run();
+            var test = Path.Combine(thisTaskOutputFolder, @"SpectraFileOutput\spectralLibrary.msp");
+
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGenaration");
+            var outputDir = Path.Combine(testDir, @"SpectralLibraryTest");
+
+            Directory.CreateDirectory(outputDir);
+
+            var searchTask = new SearchTask();
+
+            searchTask.RunTask(outputDir,
+                new List<DbForTask>
+                {
+                    new DbForTask(test, false),
+                    db
+                },
+                new List<string> { raw },
+                "");
+
+            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            int ind = Array.IndexOf(split, "Normalized Spectral Angle");
+            int indOfTarget = Array.IndexOf(split, "Decoy/Contaminant/Target");
+            Assert.That(ind >= 0);
+            var spectralAngleList = new List<Double>();
+            for (int i=1; i< results.Length;i++)
+            {
+                String sequence = results[i].Split('\t')[14].ToString();
+                
+                    var spectralAngle = double.Parse(results[i].Split('\t')[ind]);
+                    string targetOrDecoy = results[i].Split('\t')[indOfTarget].ToString();
+
+                if (targetOrDecoy.Equals("T"))
+                {
+                    spectralAngleList.Add(spectralAngle);
+                }
+            }
+            var x = spectralAngleList.Average();
+            Assert.That(spectralAngleList.Average() > 0.65);
+            
+            Directory.Delete(thisTaskOutputFolder, true);
+        }
     }
 }
+    
