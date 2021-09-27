@@ -20,6 +20,7 @@
         public const string BaseSequence = "Base Sequence";
         public const string FullSequence = "Full Sequence";
         public const string EssentialSequence = "Essential Sequence";
+        public const string AmbiguityLevel = "Ambiguity Level";
         public const string PsmCount = "PSM Count (unambiguous, <0.01 q-value)";
         public const string Mods = "Mods";
         public const string ModsChemicalFormulas = "Mods Chemical Formulas";
@@ -77,6 +78,7 @@
         public const string BetaPeptideScoreLabel = "Beta Peptide Score";
         public const string BetaPeptideRankLabel = "Beta Peptide Rank";
         public const string BetaPeptideMatchedIonsLabel = "Beta Peptide Matched Ion Mass-To-Charge Ratios";
+        public const string BetaPeptideMatchedIonIntensitiesLabel = "Beta Peptide Matched Ion Intensities";
         public const string XLTotalScoreLabel = "XL Total Score";
         public const string ParentIonsLabel = "Parent Ions";
     }

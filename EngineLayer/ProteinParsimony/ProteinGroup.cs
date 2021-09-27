@@ -3,6 +3,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -143,13 +144,20 @@ namespace EngineLayer
             if (FilesForQuantification != null)
             {
                 bool unfractionated = FilesForQuantification.Select(p => p.Fraction).Distinct().Count() == 1;
-                bool conditionsDefined = FilesForQuantification.All(p => p.Condition == "Default") || FilesForQuantification.All(p => string.IsNullOrWhiteSpace(p.Condition));
+                bool conditionsUndefined = FilesForQuantification.All(p => string.IsNullOrEmpty(p.Condition));
+
+                // this is a hacky way to test for SILAC-labeled data...
+                // Currently SILAC will report 1 column of intensities per label per spectra file, and is NOT summarized
+                // into biorep-level intensity values. the SILAC code uses the "condition" field to organize this info,
+                // even if the experimental design is not defined by the user. So the following bool is a way to distinguish
+                // between experimental design being used in SILAC automatically vs. being defined by the user
+                bool silacExperimentalDesign = FilesForQuantification.Any(p => !File.Exists(p.FullFilePathWithExtension));
 
                 foreach (var sampleGroup in FilesForQuantification.GroupBy(p => p.Condition))
                 {
                     foreach (var sample in sampleGroup.GroupBy(p => p.BiologicalReplicate).OrderBy(p => p.Key))
                     {
-                        if (!conditionsDefined && unfractionated)
+                        if ((conditionsUndefined && unfractionated) || silacExperimentalDesign)
                         {
                             // if the data is unfractionated and the conditions haven't been defined, just use the file name as the intensity header
                             sb.Append("Intensity_" + sample.First().FilenameWithoutExtension + "\t");

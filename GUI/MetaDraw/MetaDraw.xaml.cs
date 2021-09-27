@@ -57,7 +57,6 @@ namespace MetaMorpheusGUI
             base.Closing += this.OnClosing;
 
             ParentChildScanView.Visibility = Visibility.Collapsed;
-            ParentScanView.Visibility = Visibility.Collapsed;
 
             PsmStatPlotFiles = new ObservableCollection<string>();
             selectSourceFileListBox.DataContext = PsmStatPlotFiles;
@@ -155,19 +154,23 @@ namespace MetaMorpheusGUI
 
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
 
-            // draw the PSM
+            // draw the annotated spectrum
             MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors);
 
-            if (psm.ChildScanMatchedIons != null)
+            //draw the sequence coverage if not crosslinked
+            if (psm.ChildScanMatchedIons == null)
             {
-                ParentChildScanView.Visibility = Visibility.Visible;
-                ParentScanView.Visibility = Visibility.Visible;
+                MetaDrawLogic.DrawSequenceCoverageMap(psm, sequenceText, map); //TODO: figure out how to show coverage on crosslinked peptides
+                ParentChildScanView.Visibility = Visibility.Collapsed;
+                SequenceCoverageAnnotationView.Visibility = Visibility.Visible;
             }
             else
             {
-                ParentChildScanView.Visibility = Visibility.Collapsed;
-                ParentScanView.Visibility = Visibility.Collapsed;
+                ParentChildScanView.Visibility = Visibility.Visible;
+                SequenceCoverageAnnotationView.Visibility = Visibility.Collapsed;
             }
+
+            mapViewer.Width = map.Width;
 
             if (errors != null && errors.Any())
             {
@@ -539,6 +542,12 @@ namespace MetaMorpheusGUI
                     plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize;
                 }
             }
+        }
+
+        private void AnnotationSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            mapViewer.Height = .8 * SequenceAnnotationGrid.ActualHeight;
+            mapViewer.Width = .99 * SequenceAnnotationGrid.ActualWidth;
         }
     }
 }

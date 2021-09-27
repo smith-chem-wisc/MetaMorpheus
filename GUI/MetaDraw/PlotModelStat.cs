@@ -34,7 +34,7 @@ namespace MetaMorpheusGUI
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
         {
             { ProductType.b, OxyColors.Blue },
-            { ProductType.y, OxyColors.Purple },
+            { ProductType.y, OxyColors.Red },
             { ProductType.c, OxyColors.Gold },
             { ProductType.zPlusOne, OxyColors.Orange },
             { ProductType.D, OxyColors.DodgerBlue },
@@ -292,7 +292,7 @@ namespace MetaMorpheusGUI
                 TrackerFormatString = "{1}: {2:0.###}\n{3}: {4:0.###}\nFull sequence: {Tag}"
             };
             List<Tuple<double, double, string>> xy = new List<Tuple<double, double, string>>();
-            List<Tuple<double, double, string>> variantxy = new List<Tuple<double, double, string>>();  
+            List<Tuple<double, double, string>> variantxy = new List<Tuple<double, double, string>>();
             var filteredList = allPsms.Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa, CultureInfo.InvariantCulture), 0) == 0).ToList();
             var test = allPsms.SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm));
             switch (plotType)
@@ -302,7 +302,7 @@ namespace MetaMorpheusGUI
                     xAxisTitle = "Retention time";
                     foreach (var psm in filteredList)
                     {
-                        if(psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
+                        if (psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
                         {
                             xy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm, CultureInfo.InvariantCulture), (double)psm.RetentionTime, psm.FullSequence));
                         }
@@ -329,9 +329,9 @@ namespace MetaMorpheusGUI
                     SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
                     foreach (var psm in allPsms)
                     {
-                        if(psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
+                        if (psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
                         {
-                            xy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)), 
+                            xy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
                             (double)psm.RetentionTime, psm.FullSequence));
                         }
                         else
@@ -401,4 +401,3 @@ namespace MetaMorpheusGUI
         public void AttachPlotView(IPlotView plotView) { }
     }
 }
-

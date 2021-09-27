@@ -202,7 +202,7 @@ namespace TaskLayer
                 {
                     Warn("Could not copy Experimental Design file to search task output. That's ok, the search will continue");
                 }
-                
+
                 spectraFileInfo = ExperimentalDesign.ReadExperimentalDesign(assumedExperimentalDesignPath, Parameters.CurrentRawFileList, out var errors);
 
                 if (errors.Any())
@@ -220,10 +220,12 @@ namespace TaskLayer
             {
                 spectraFileInfo = new List<SpectraFileInfo>();
 
-                foreach (var file in Parameters.CurrentRawFileList)
+                for (int i = 0; i < Parameters.CurrentRawFileList.Count; i++)
                 {
+                    var file = Parameters.CurrentRawFileList[i];
+
                     // experimental design info passed in here for each spectra file
-                    spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: 0, fraction: 0, techrep: 0));
+                    spectraFileInfo.Add(new SpectraFileInfo(fullFilePathWithExtension: file, condition: "", biorep: i, fraction: 0, techrep: 0));
                 }
             }
 
@@ -651,10 +653,11 @@ namespace TaskLayer
                         {
                             mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
                         }
-                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter), subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
-
+                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter), 
+                            subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
                             new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
-                            CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath);
+                            CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath, 
+                            Parameters.SearchParameters.IncludeModMotifInMzid);
 
                         FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
