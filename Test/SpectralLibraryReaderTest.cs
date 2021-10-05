@@ -322,13 +322,6 @@ namespace Test
             testLibraryWithoutDecoy.CloseConnections();
             File.Delete(writtenPath);
         }
-
-        [Test]
-        public static void SpectralLibraryGeneration()
-        {
-
-        }
-
     }
     
 }

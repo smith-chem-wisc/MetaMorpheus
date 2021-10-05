@@ -205,16 +205,7 @@
     <None Update="TestData\SpectralLibrarySearch\P16858_target.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\SpectralLibrarySearch\slicedMouse.raw">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="TestData\SpectralLibrarySearch\slicedMouseDatabase.fasta.gz">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="TestData\SpectralLibrarySearch\slicedYeastData.raw">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="TestData\SpectralLibrarySearch\SmallCalibratible_Yeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\SpectralLibrarySearch\spectralLibraryNeutralLossTest.msp">

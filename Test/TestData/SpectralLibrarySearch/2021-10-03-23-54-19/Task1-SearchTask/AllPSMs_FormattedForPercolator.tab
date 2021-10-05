@@ -1,2 +1,0 @@
-SpecId	Label	ScanNr	TotalMatchingFragmentCount	Intensity	PrecursorChargeDiffToMode	DeltaScore	Notch	PsmCount	ModsCount	AbsoluteAverageFragmentMassErrorFromMedian	MissedCleavagesCount	Ambiguity	LongestFragmentIonSeries	ComplementaryIonCount	HydrophobicityZScore	IsVariantPeptide	IsDeadEnd	IsLoop	SpectralAngle	HasSpectralAngle	Peptide	Proteins
-DefaultDirection	-	-	1	1	1	1	-1	1	-1	-1	-1	-1	1	1	-1	-1	-1	-1	1	1
