@@ -1,0 +1,82 @@
+MetaMorpheus: version Not a release version. DEBUG.
+Total time: 00:00:25.7296163
+
+
+
+
+Time to run task: 00:00:25.4706111
+
+
+--------------------------------------------------
+
+
+All target PSMS within 1% FDR: 7
+All target peptides within 1% FDR: 7
+All target protein groups within 1% FDR: 7
+
+MS2 spectra in slicedMouse: 5
+Precursors fragmented in slicedMouse: 7
+Target PSMs within 1% FDR in slicedMouse: 7
+Target protein groups within 1 % FDR in slicedMouse: 7
+Target peptides within 1% FDR in slicedMouse: 7
+
+
+
+
+--------------------------------------------------
+
+
+Engine Results:
+
+Engine type: ClassicSearchEngine
+Time to run engine: 00:00:20.3157197
+
+Engine type: FdrAnalysisEngine
+Time to run engine: 00:00:00.0069759
+PSMs within 1% FDR: 7
+Delta Score Used for FDR Analysis: False
+
+
+
+Engine type: ModificationAnalysisEngine
+Time to run engine: 00:00:00.0138734
+Localized mods seen below q-value 0.01:
+
+(Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:
+	Carbamidomethyl on C	1
+(Approx) Additional unlocalized mods seen below q-value 0.01:
+
+(Approx) Additional unlocalized modification formulas seen below q-value 0.01:
+
+
+All mods in database limited to peptides observed in the results:
+
+
+
+Engine type: ProteinParsimonyEngine
+Time to run engine: 00:00:00.0413772
+
+
+Engine type: ProteinScoringAndFdrEngine
+Time to run engine: 00:00:00.0146015
+Number of proteins within 1% FDR: 7
+
+Engine type: ProteinScoringAndFdrEngine
+Time to run engine: 00:00:00.0001733
+Number of proteins within 1% FDR: 7
+
+Engine type: FdrAnalysisEngine
+Time to run engine: 00:00:00.0025798
+Peptides within 1% FDR: 7
+Delta Score Used for FDR Analysis: False
+
+
+
+Engine type: FdrAnalysisEngine
+Time to run engine: 00:00:00.0000523
+Peptides within 1% FDR: 7
+Delta Score Used for FDR Analysis: False
+
+
+
+

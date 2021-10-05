@@ -1,0 +1,2 @@
+SpecId	Label	ScanNr	TotalMatchingFragmentCount	Intensity	PrecursorChargeDiffToMode	DeltaScore	Notch	PsmCount	ModsCount	AbsoluteAverageFragmentMassErrorFromMedian	Ambiguity	LongestFragmentIonSeries	ComplementaryIonCount	SpectralAngle	HasSpectralAngle	Peptide	Proteins
+DefaultDirection	-	-	1	1	1	1	-1	1	-1	-1	-1	1	1	1	1

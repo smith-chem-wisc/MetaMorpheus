@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MzIdentML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" id="" version="1.1.0" xmlns="http://psidev.info/psi/pi/mzIdentML/1.1">
+  <cvList>
+    <cv fullName="Proteomics Standards Initiative Mass Spectrometry Vocabularies" version="4.0.9" uri="https://github.com/HUPO-PSI/psi-ms-CV/blob/master/psi-ms.obo" id="PSI-MS" />
+    <cv fullName="Proteomics Standards Initiative Modification Vocabularies" version="1.2" uri="http://psidev.cvs.sourceforge.net/viewvc/psidev/psi/mod/data/PSI-MOD.obo" id="PSI-MOD" />
+    <cv fullName="UNIT-ONTOLOGY" uri="http://www.unimod.org/obo/unimod.obo" id="UNIMOD" />
+    <cv fullName="UNIT-ONTOLOGY" uri="http://www.unimod.org/obo/unimod.obo" id="UO" />
+  </cvList>
+  <AnalysisSoftwareList>
+    <AnalysisSoftware id="AS_MetaMorpheus" name="MetaMorpheus" version="Not a release version. DEBUG." uri="https://github.com/smith-chem-wisc/MetaMorpheus">
+      <ContactRole contact_ref="UWMadisonSmithGroup">
+        <Role>
+          <cvParam name="software vendor" cvRef="PSI-MS" accession="MS:1001267" />
+        </Role>
+      </ContactRole>
+      <SoftwareName>
+        <cvParam name="MetaMorpheus" cvRef="PSI-MS" accession="MS:1002826" />
+      </SoftwareName>
+    </AnalysisSoftware>
+  </AnalysisSoftwareList>
+  <Provider id="PROVIDER">
+    <ContactRole contact_ref="UWMadisonSmithGroup">
+      <Role>
+        <cvParam name="researcher" cvRef="PSI-MS" accession="MS:1001271" />
+      </Role>
+    </ContactRole>
+  </Provider>
+  <AuditCollection>
+    <Person id="UWMadisonSmithGroupPerson">
+      <cvParam name="contact email" value="mm_support@chem.wisc.edu" cvRef="PSI-MS" accession="MS:1000589" />
+      <cvParam name="affiliation name" value="UWMadisonSmithGroup" cvRef="PSI-MS" accession="MS:1000590" />
+    </Person>
+    <Organization id="UWMadisonSmithGroup">
+      <cvParam name="contact email" value="mm_support@chem.wisc.edu" cvRef="PSI-MS" accession="MS:1000589" />
+      <cvParam name="affiliation name" value="UWMadisonSmithGroup" cvRef="PSI-MS" accession="MS:1000590" />
+    </Organization>
+  </AuditCollection>
+  <SequenceCollection>
+    <DBSequence id="DBS_P40312" name="Cytochrome b5" length="120" searchDatabase_ref="SDB_0" accession="P40312">
+      <Seq>MPKVYSYQEVAEHNGPENFWIIIDDKVYDVSQFKDEHPGGDEIIMDLGGQDATESFVDIGHSDEALRLLKGLYIGDVDKTSERVSVEKVSTSENQSKGSGTLVVILAILMLGVAYYLLNE</Seq>
+      <cvParam name="protein description" value="P40312|Cytochrome b5|Cytochrome b5" cvRef="PSI-MS" accession="MS:1001088" />
+    </DBSequence>
+    <Peptide id="P_0">
+      <PeptideSequence>PKVYSYQEVAEHNGPENFWIIIDDKVYDVSQFKDEHPGGDEIIMDLGGQDATESFVDIGHSDEALRLLKGLYIGDVDKTSERVSVEKVSTSENQSKGSGTLVVILAILMLGVAYYLLNE</PeptideSequence>
+    </Peptide>
+    <PeptideEvidence id="PE_0" dBSequence_ref="DBS_P40312" peptide_ref="P_0" start="2" end="120" pre="M" post="-" />
+  </SequenceCollection>
+  <AnalysisCollection>
+    <SpectrumIdentification id="SI" spectrumIdentificationProtocol_ref="SIP" spectrumIdentificationList_ref="SIL">
+      <InputSpectra spectraData_ref="SD_0" />
+      <SearchDatabaseRef searchDatabase_ref="SDB_0" />
+    </SpectrumIdentification>
+  </AnalysisCollection>
+  <AnalysisProtocolCollection>
+    <SpectrumIdentificationProtocol id="SIP" analysisSoftware_ref="AS_MetaMorpheus">
+      <SearchType>
+        <cvParam name="ms-ms search" cvRef="PSI-MS" accession="MS:1001083" />
+      </SearchType>
+      <AdditionalSearchParams>
+        <cvParam name="parent mass type mono" cvRef="PSI-MS" accession="MS:1001211" />
+        <cvParam name="fragment mass type mono" cvRef="PSI-MS" accession="MS:1001255" />
+      </AdditionalSearchParams>
+      <ModificationParams>
+        <SearchModification fixedMod="true" massDelta="57.021465" residues="C">
+          <cvParam name="Carbamidomethyl" cvRef="PSI-MS" accession="UNIMOD:4" />
+        </SearchModification>
+        <SearchModification fixedMod="true" massDelta="57.021465" residues="U">
+          <cvParam name="Carbamidomethyl" cvRef="PSI-MS" accession="UNIMOD:4" />
+        </SearchModification>
+      </ModificationParams>
+      <Enzymes>
+        <Enzyme id="E_0" name="top-down" missedCleavages="2">
+          <EnzymeName>
+            <cvParam name="no cleavage" cvRef="PSI-MS" accession="MS:1001955" />
+          </EnzymeName>
+        </Enzyme>
+      </Enzymes>
+      <FragmentTolerance>
+        <cvParam name="search tolerance plus value" value="20" unitAccession="UO:0000169" unitName="parts per million" unitCvRef="UO" cvRef="PSI-MS" accession="MS:1001412" />
+        <cvParam name="search tolerance minus value" value="20" unitAccession="UO:0000169" unitName="parts per million" unitCvRef="UO" cvRef="PSI-MS" accession="MS:1001413" />
+      </FragmentTolerance>
+      <ParentTolerance>
+        <cvParam name="search tolerance plus value" value="5" unitAccession="UO:0000169" unitName="parts per million" unitCvRef="UO" cvRef="PSI-MS" accession="MS:1001412" />
+        <cvParam name="search tolerance minus value" value="5" unitAccession="UO:0000169" unitName="parts per million" unitCvRef="UO" cvRef="PSI-MS" accession="MS:1001413" />
+      </ParentTolerance>
+      <Threshold>
+        <cvParam name="pep:FDR threshold" value="0.01" cvRef="PSI-MS" accession="MS:1001448" />
+      </Threshold>
+    </SpectrumIdentificationProtocol>
+    <ProteinDetectionProtocol id="PDP" analysisSoftware_ref="AS_MetaMorpheus">
+      <Threshold>
+        <cvParam name="prot:FDR threshold" value="0.01" cvRef="PSI-MS" accession="MS:1001447" />
+      </Threshold>
+    </ProteinDetectionProtocol>
+  </AnalysisProtocolCollection>
+  <DataCollection>
+    <Inputs>
+      <SearchDatabase id="SDB_0" location="C:\Users\User\Downloads\uniprot-yeast-filtered-reviewed_yes.fasta.gz">
+        <DatabaseName>
+          <cvParam name="database type amino acid" cvRef="PSI-MS" accession="MS:1001073" />
+        </DatabaseName>
+      </SearchDatabase>
+      <SpectraData id="SD_0" name="slicedTDYeast" location="G:\yuling\MetaMorpheus\Test\TopDownTestData\slicedTDYeast.mzML">
+        <FileFormat>
+          <cvParam name="mzML format" cvRef="PSI-MS" accession="MS:1000584" />
+        </FileFormat>
+        <SpectrumIDFormat>
+          <cvParam name="mzML unique identifier" cvRef="PSI-MS" accession="MS:1001530" />
+        </SpectrumIDFormat>
+      </SpectraData>
+    </Inputs>
+    <AnalysisData>
+      <SpectrumIdentificationList id="SIL">
+        <SpectrumIdentificationResult id="SIR_0" spectrumID="controllerType=0 controllerNumber=1 scan=2" spectraData_ref="SD_0">
+          <SpectrumIdentificationItem id="SII_0_0" chargeState="9" experimentalMassToCharge="1462.95935" calculatedMassToCharge="1462.95882" peptide_ref="P_0" rank="1" passThreshold="true">
+            <PeptideEvidenceRef peptideEvidence_ref="PE_0" />
+            <cvParam name="MetaMorpheus:score" value="41.04495021074098" cvRef="PSI-MS" accession="MS:1002827" />
+            <cvParam name="PSM-level q-value" value="0" cvRef="PSI-MS" accession="MS:1002354" />
+          </SpectrumIdentificationItem>
+          <cvParam name="scan start time" value="74.540503" cvRef="PSI-MS" accession="MS:1000016" />
+        </SpectrumIdentificationResult>
+      </SpectrumIdentificationList>
+      <ProteinDetectionList id="PDL">
+        <ProteinAmbiguityGroup id="PAG_0">
+          <ProteinDetectionHypothesis id="PDH_0" dBSequence_ref="DBS_P40312" passThreshold="true">
+            <PeptideHypothesis peptideEvidence_ref="PE_0">
+              <SpectrumIdentificationItemRef spectrumIdentificationItem_ref="SII_0_0" />
+            </PeptideHypothesis>
+            <cvParam name="MetaMorpheus:protein score" value="41.04495021074098" cvRef="PSI-MS" accession="MS:1002828" />
+            <cvParam name="protein group-level q-value" value="0" cvRef="PSI-MS" accession="MS:1002373" />
+            <cvParam name="sequence coverage" value="0.9916666666666667" cvRef="PSI-MS" accession="MS:1001093" />
+            <cvParam name="distinct peptide sequences" value="1" cvRef="PSI-MS" accession="MS:1001097" />
+          </ProteinDetectionHypothesis>
+        </ProteinAmbiguityGroup>
+      </ProteinDetectionList>
+    </AnalysisData>
+  </DataCollection>
+</MzIdentML>

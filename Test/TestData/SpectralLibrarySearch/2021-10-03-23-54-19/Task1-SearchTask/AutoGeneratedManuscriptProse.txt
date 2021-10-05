@@ -1,0 +1,10 @@
+The data analysis was performed using MetaMorpheus version Not a release version. DEBUG., available at https://github.com/smith-chem-wisc/MetaMorpheus.
+The following search settings were used: protease = trypsin; maximum missed cleavages = 2; minimum peptide length = 7; maximum peptide length = unspecified; initiator methionine behavior = Variable; fixed modifications = Carbamidomethyl on C, Carbamidomethyl on U; variable modifications = Oxidation on M; max mods per peptide = 2; max modification isoforms = 1024; precursor mass tolerance = ±5.0000 PPM; product mass tolerance = ±20.0000 PPM; report PSM ambiguity = True. The combined search database contained 17082 non-decoy protein entries including 0 contaminant sequences. Data files were processed on a computer running Microsoft Windows 10.0.19042 with a 64-bit Intel(R) Xeon(R) CPU E5-2630 v4 @ 2.20GHz processor with 40 threads and 128GB installed RAM. 
+The total time to perform the Search task on 1 spectra file(s) was 0.42 minutes.
+
+Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMorpheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.
+
+Spectra files: 
+	G:\yuling\MetaMorpheus\Test\TestData\SpectralLibrarySearch\slicedMouse.raw
+Databases:
+	G:\yuling\MetaMorpheus\Test\TestData\SpectralLibrarySearch\slicedMouseDatabase.fasta.gz Downloaded on: 09/27/2021 14:39:27
