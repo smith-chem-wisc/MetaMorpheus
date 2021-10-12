@@ -22,11 +22,13 @@ namespace EngineLayer
                 //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
                 foreach (var peptide in psm.PeptidesToMatchingFragments)
                 {
+                    //if peptide is target, directly look for the target's spectrum in the spectral library
                     if (spectralLibrary != null && !peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                     {
                         double spectralAngle = CalculateSquareIntensitySpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, psm, commonParameters);
                         psm.SpectralAngle = spectralAngle;
                     }
+                    ////if peptide is decoy, look for the decoy's corresponding target's spectrum in the spectral library and generate decoy spectrum by function GetDecoyLibrarySpectrumFromTargetByRevers
                     else if (spectralLibrary != null && peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.PeptideDescription, scan.PrecursorCharge, out var targetlibrarySpectrum))
                     {
                         var decoyPeptideTheorProducts = new List<Product>();
@@ -104,7 +106,7 @@ namespace EngineLayer
             return normalizedSpectralAngle;
         }
 
-
+        // For decoy library spectrum generation, we use the predicted m/z valuse of the decoy sequence and we use the decoy's corresponding target's library spectrum's intensity values as decoy's intensities
         public static List<MatchedFragmentIon> GetDecoyLibrarySpectrumFromTargetByReverse(LibrarySpectrum targetSpectrum, List<Product> decoyPeptideTheorProducts)
         {
             var decoyFragmentIons = new List<MatchedFragmentIon>();
