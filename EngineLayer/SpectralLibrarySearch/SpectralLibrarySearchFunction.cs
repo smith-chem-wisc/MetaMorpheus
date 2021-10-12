@@ -122,7 +122,9 @@ namespace EngineLayer
             }
             return decoyFragmentIons;
         }
-       
+
+        // This function is used to converting several spectra matching the same sequence with same charge to a consensus library spectrum. In this function, ll the mz, intensities
+        //are averaged with weight. The MetaMopeheus score which comes from database search are treated as weight.If a peak exists in less than 50% of all spectra, it will be discarded
         public static LibrarySpectrum ConvertingPsmsToConcensusSpectrumWithWeight(List<PeptideSpectralMatch> mutiplePsms)
         {
             Dictionary<Tuple<Product, int>, double[]> allIntensityBeforeNormalize = new Dictionary<Tuple<Product, int>, double[]>();
@@ -165,7 +167,11 @@ namespace EngineLayer
             }
 
             List<Tuple<Product, int>> commonIons = numberOfEachIons.Where(p => p.Value == mutiplePsms.Count).Select(q => q.Key).ToList();
+
+            //If a peak exists in less than 50% of all spectra, it will be discarded
             List<Tuple<Product, int>> unqualifiedIons = numberOfEachIons.Where(p => p.Value < ((double)mutiplePsms.Count / (double)2)).Select(q => q.Key).ToList();
+
+            // store all intensity values before normalize
             for (int k = 0; k < mutiplePsms.Count; k++)
             {
                 double intensitySum = 0;
@@ -175,8 +181,9 @@ namespace EngineLayer
                 }
                 allIntensitySumForNormalize[k] = intensitySum;
             }
+
+            // store all intensity values after normalize with weight. The MetaMopeheus score which comes from database search are treated as weight.
             foreach (var y in allIntensityBeforeNormalize.Where(p => !unqualifiedIons.Contains(p.Key)))
-            //foreach (var y in allIntensityBeforeNormalize)
             {
                 for (int l = 0; l < y.Value.Length; l++)
                 {
@@ -187,9 +194,10 @@ namespace EngineLayer
                 }
                 allIntensityAfterNormalize.Add(y.Key, y.Value.Where(p => p > 0).ToList().Sum());
             }
+
+            // second normalize by max of the intensity values
             var max = allIntensityAfterNormalize.Select(p => p.Value).Max();
             foreach (var eachMz in allMz.Where(p => !unqualifiedIons.Contains(p.Key)))
-            //foreach (var eachMz in allMz)
             {
                 Product temProduct = eachMz.Key.Item1;
                 libraryIons.Add(new MatchedFragmentIon(ref temProduct, eachMz.Value.Average(), allIntensityAfterNormalize[eachMz.Key] / max, eachMz.Key.Item2));

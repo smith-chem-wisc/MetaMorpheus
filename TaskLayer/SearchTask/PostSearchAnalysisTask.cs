@@ -591,6 +591,8 @@ namespace TaskLayer
                 .Where(p => p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
             FilteredPsmList.RemoveAll(b => b.IsDecoy);
             FilteredPsmList.RemoveAll(b => b.IsContaminant);
+
+            //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
             Dictionary<String, List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<String, List<PeptideSpectralMatch>>();
             foreach (var x in FilteredPsmList)
             {
@@ -603,11 +605,12 @@ namespace TaskLayer
                 }
             }
 
+            // generating spectral library
             var spectraLibrary = new List<LibrarySpectrum>();
-
             foreach (var x in PsmsGroupByPeptideAndCharge)
             {
                 List<PeptideSpectralMatch> psmsForLibrary = new List<PeptideSpectralMatch>();
+                // if the PsmsGroupByPeptideAndCharge group has only one psm, save it directly in spectral library
                 if (x.Value.Count == 1)
                 {
                     List<MatchedFragmentIon> standardSpctrumPeaks = x.Value[0].MatchedFragmentIons;
@@ -616,10 +619,14 @@ namespace TaskLayer
                     var standardSpectrum = new LibrarySpectrum(x.Value[0].FullSequence, standardPrecursurMz, x.Value[0].ScanPrecursorCharge, standardSpctrumPeaks, standardRt);
                     spectraLibrary.Add(standardSpectrum);
                 }
+                // if the PsmsGroupByPeptideAndCharge group has more than one psm, converting these psms to one consensus spectrum and save it as library spectrum in spectral library
                 else
                 {
                     int a = 0;
                     int b = 0;
+
+                    // sort psms by MetaMorpheus scores, the first one has the highest  MetaMorpheus score. Take top 5 spectra and compare each one with other 4 spectra and calculate 
+                    // spectral angles. The one which has largest sum of spectral angles will be treated as initial standard spectrum.
                     List<double> eachSaTotal = new List<double>();
                     while (b < 5 && b < x.Value.Count)
                     {
@@ -635,13 +642,15 @@ namespace TaskLayer
                         b++;
                     }
                     int standardIndex = eachSaTotal.IndexOf(eachSaTotal.Max());
-
                     List<MatchedFragmentIon> standardSpctrumPeaks = x.Value[standardIndex].MatchedFragmentIons;
-                    x.Value[standardIndex].LibraryMatchedFragments= x.Value[standardIndex].MatchedFragmentIons;
+                    x.Value[standardIndex].LibraryMatchedFragments = x.Value[standardIndex].MatchedFragmentIons;
+                    // psmsForLibrary store all the qualified spectra which can be used to generate library. Store the initial standard spectrum in it first.
                     psmsForLibrary.Add(x.Value[standardIndex]);
                     double standardPrecursurMz = x.Value[standardIndex].ScanPrecursorMonoisotopicPeakMz;
                     double standardRt = x.Value[standardIndex].ScanRetentionTime;
 
+                    //compare each other spectra in the same PsmsGroupByPeptideAndCharge group with the initial standard spectrum, if the spectral angle is more than 0.65, the spetrum will be treated aas qualified 
+                    //and stored in  psmsForLibrary.
                     while (a < x.Value.Count - 1)
                     {
                         var spectrumToCompare = x.Value[a].MatchedFragmentIons;
@@ -653,6 +662,7 @@ namespace TaskLayer
                         a++;
                     }
 
+                    // all the qualified spectra will be averaged with weight to generate the library spectrum. 
                     if (psmsForLibrary.Count == 1)
                     {
                         spectraLibrary.Add(new LibrarySpectrum(psmsForLibrary[0].FullSequence, psmsForLibrary[0].ScanPrecursorMonoisotopicPeakMz, psmsForLibrary[0].ScanPrecursorCharge, psmsForLibrary[0].MatchedFragmentIons, psmsForLibrary[0].ScanRetentionTime, false));
