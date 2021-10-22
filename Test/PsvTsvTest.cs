@@ -1,6 +1,8 @@
 ﻿using EngineLayer;
+using GuiFunctions;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Test
 {
@@ -21,6 +23,17 @@ namespace Test
             string psmFile = @"TestData\oglyco.psmtsv";
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             Assert.AreEqual(9, parsedPsms.Count);
+        }
+
+        [Test]
+        public static void MetaDrawLogicTestOglyco()
+        {
+            var metadrawLogic = new MetaDrawLogic();
+            string psmFile = @"TestData\oglyco.psmtsv";
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(false, true);
+
+            Assert.That(!errors.Any());
         }
     }
 }
