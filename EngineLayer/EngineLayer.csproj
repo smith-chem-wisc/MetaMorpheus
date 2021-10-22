@@ -39,12 +39,6 @@
     <None Update="Data\elements.dat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Data\oglyco.psmtsv">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="Data\oglycoSinglePsms.psmtsv">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="Data\PSI-MOD.obo.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

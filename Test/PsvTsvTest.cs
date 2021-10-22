@@ -10,7 +10,7 @@ namespace Test
         [Test]
         public static void ReadOGlycoSinglePsms()
         {
-            string psmFile = @"Data\oglycoSinglePsms.psmtsv";
+            string psmFile = @"TestData\oglycoSinglePsms.psmtsv";
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             Assert.AreEqual(2, parsedPsms.Count);
         }
@@ -18,7 +18,7 @@ namespace Test
         [Test]
         public static void ReadOGlycoPsms()
         {
-            string psmFile = @"Data\oglyco.psmtsv";
+            string psmFile = @"TestData\oglyco.psmtsv";
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             Assert.AreEqual(9, parsedPsms.Count);
         }
