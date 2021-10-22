@@ -310,6 +310,8 @@ namespace EngineLayer
         {
             List<string> ionProperty = input.Substring(1, input.Length - 2) //remove the brackets on the ends
                     .Replace("];[", ", ") //replace delimiter between ion series with the delimiter used between ions
+                    .Replace("[","")
+                    .Replace("]","")
                     .Split(", ") //split by delimiter between ions
                     .ToList();
             ionProperty.RemoveAll(p => p.Contains("\"") || p.Equals(""));
