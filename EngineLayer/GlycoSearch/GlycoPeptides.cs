@@ -241,7 +241,7 @@ namespace EngineLayer.GlycoSearch
             return false;
         }
 
-        public static double CalculateSinglePeptideScore(List<MatchedFragmentIon> matchedFragmentIons, List<Product> theoreticalProducts, CommonParameters commonParameters, double g = 0.70)
+        public static double CalculateSinglePeptideScore(List<MatchedFragmentIon> matchedFragmentIons, List<Product> theoreticalProducts, CommonParameters commonParameters, double g = 0.70, double w = 0.35)
         {
             //The function is using pGlyco score equation.
             double score = 0;
@@ -256,11 +256,16 @@ namespace EngineLayer.GlycoSearch
                 match_peps_count++;
             }
 
-            score = score_p * Math.Pow(match_peps_count / theo_peps_count, g);
+            score = (1 - w)*score_p * Math.Pow(match_peps_count / theo_peps_count, g);
 
             return score;
         }
 
+
+        /// <summary>
+        /// pGlyco2 score function.
+        /// Ref 'pGlyco 2.0 enables precision N-glycoproteomics with comprehensive quality control and one-step mass spectrometry for intact glycopeptide identification'
+        /// </summary>
         public static double CalculatePeptideScore(List<MatchedFragmentIon> matchedFragmentIons, List<Product> theoreticalProducts, CommonParameters commonParameters, double a = 0.56, double b = 1.42, double g = 0.70, double w = 0.35)
         {
             //The function is using pGlyco score equation.
@@ -268,19 +273,24 @@ namespace EngineLayer.GlycoSearch
             double score_g = 0;
             double score_p = 0;
 
-            double match_count = matchedFragmentIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.D);
-            var theo_count = theoreticalProducts.Count(p => p.ProductType != ProductType.D);
+            double match_y_count = 0;
+            var theo_y_count = theoreticalProducts.Count(p => p.ProductType == ProductType.Y);
 
             double match_ycores_count = 0;
             var theo_ycores_count = theoreticalProducts.Count(p => p.ProductType == ProductType.Ycore );
 
-            double match_peps_count = 0;  
+            double match_peps_count = 0;
             var theo_peps_count = theoreticalProducts.Count(p => p.ProductType != ProductType.Ycore && p.ProductType != ProductType.Y && p.ProductType != ProductType.D);
+
+            foreach (var m in matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.Y))
+            {
+                score_g += Math.Log(m.Intensity) * (1 - Math.Pow(m.MassErrorPpm / commonParameters.ProductMassTolerance.Value, 4));
+                match_y_count++;
+            }
 
             foreach (var m in matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.Ycore))
             {
-                score_g += Math.Log10(m.Intensity)
-                    * (1 - Math.Pow(m.MassErrorPpm / commonParameters.ProductMassTolerance.Value, 4));
+                score_g += Math.Log(m.Intensity) * (1 - Math.Pow(m.MassErrorPpm / commonParameters.ProductMassTolerance.Value, 4));
                 match_ycores_count++;
             }
 
@@ -288,14 +298,22 @@ namespace EngineLayer.GlycoSearch
                 && p.NeutralTheoreticalProduct.ProductType != ProductType.Y
                 && p.NeutralTheoreticalProduct.ProductType != ProductType.D))
             {
-                score_p += Math.Log10(m.Intensity) * (1 - Math.Pow(m.MassErrorPpm / commonParameters.ProductMassTolerance.Value, 4));
+                score_p += Math.Log(m.Intensity) * (1 - Math.Pow(m.MassErrorPpm / commonParameters.ProductMassTolerance.Value, 4));
                 match_peps_count++;
             }
 
-            score = w * score_g * Math.Pow(match_count / theo_count, a) 
-                * Math.Pow(match_ycores_count / theo_ycores_count, b)
-                + (1 - w) * score_p * Math.Pow(match_peps_count / theo_peps_count, g);
 
+            if (theo_y_count == 0)
+            {
+                score = w * Math.Pow(match_ycores_count / theo_ycores_count, b)
+                    + (1 - w) * score_p * Math.Pow(match_peps_count / theo_peps_count, g);
+            }
+            else
+            {
+                score = w * score_g * Math.Pow(match_y_count / theo_y_count, a)
+                    * Math.Pow(match_ycores_count / theo_ycores_count, b)
+                    + (1 - w) * score_p * Math.Pow(match_peps_count / theo_peps_count, g);
+            }
             return score;
         }
 
