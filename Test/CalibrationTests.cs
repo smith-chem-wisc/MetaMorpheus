@@ -68,6 +68,32 @@ namespace Test
         }
 
         [Test]
+        public static void CalibrationZeroIntensityTest()
+        {
+            //check that peaks with zero intensity don't crash the program
+
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\subset20100611_Velos1_TaGe_SA_Hela_3.mzML");
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\FullHuman.fasta");
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo = new SpectraFileInfo(nonCalibratedFilePath, "condition", 0, 0, 0);
+            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+            // run calibration
+            CalibrationTask calibrationTask = new CalibrationTask();
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+        }
+
+        [Test]
         public static void CalibrationTestLowRes()
         {
             CalibrationTask calibrationTask = new CalibrationTask();
