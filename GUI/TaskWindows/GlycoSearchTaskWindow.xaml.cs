@@ -122,7 +122,7 @@ namespace MetaMorpheusGUI
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
             TbMaxNGlycanNum.Text = task._glycoSearchParameters.MaximumNGlycanAllowed.ToString(CultureInfo.InvariantCulture);
-            CkbSearchGlycopeptideOnly.IsChecked = task._glycoSearchParameters.SearchGlycopeptideOnly;
+            
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
             CkbMixedGlycoAllowed.IsChecked = task._glycoSearchParameters.MixedGlycoAllowed;
             CkbIndex_by_ion.IsChecked = task._glycoSearchParameters.Indexing_by_ion;
@@ -154,6 +154,9 @@ namespace MetaMorpheusGUI
             RadioButtonSlideDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Slide;
             deconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             useProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
+
+            CkbSearchNGlycopeptideOnly.IsChecked = task.CommonParameters.DigestionParams.KeepNGlycopeptide;
+            CkbSearchOGlycopeptideOnly.IsChecked = task.CommonParameters.DigestionParams.KeepOGlycopeptide;
             missedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
@@ -270,7 +273,6 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumNGlycanAllowed = int.Parse(TbMaxNGlycanNum.Text, CultureInfo.InvariantCulture);
-            TheTask._glycoSearchParameters.SearchGlycopeptideOnly = CkbSearchGlycopeptideOnly.IsChecked.Value;
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
             TheTask._glycoSearchParameters.MixedGlycoAllowed = CkbMixedGlycoAllowed.IsChecked.Value;
             TheTask._glycoSearchParameters.Indexing_by_ion = CkbIndex_by_ion.IsChecked.Value;
@@ -278,24 +280,7 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.IndexingChildScanDiffIndex = CkbIndexChildScanWithDiffIndex.IsChecked.Value;
 
 
-            var keepNGlycopeptideOnly = false;
-            var keepOGlycopeptideOnly = false;
-            if (TheTask._glycoSearchParameters.SearchGlycopeptideOnly)
-            {
-                if (TheTask._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch)
-                {
-                    keepNGlycopeptideOnly = true;
-                }
-                else if (TheTask._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch)
-                {
-                    keepOGlycopeptideOnly = true;
-                }
-                else if (TheTask._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch)
-                {
-                    keepNGlycopeptideOnly = true;
-                    keepOGlycopeptideOnly = true;
-                }
-            }
+
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
@@ -320,6 +305,8 @@ namespace MetaMorpheusGUI
             int MaxModificationIsoforms = (int.Parse(maxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture));
             int MaxModPerPep = (int.Parse(TxtBoxMaxModPerPep.Text, CultureInfo.InvariantCulture));
             InitiatorMethionineBehavior InitiatorMethionineBehavior = ((InitiatorMethionineBehavior)initiatorMethionineBehaviorComboBox.SelectedIndex);
+            var keepNGlycopeptideOnly = CkbSearchNGlycopeptideOnly.IsChecked.Value;
+            var keepOGlycopeptideOnly = CkbSearchOGlycopeptideOnly.IsChecked.Value;
             DigestionParams digestionParamsToSave = new DigestionParams(
                 protease: protease.Name,
                 maxMissedCleavages: MaxMissedCleavages,
@@ -327,9 +314,9 @@ namespace MetaMorpheusGUI
                 maxPeptideLength: MaxPeptideLength,
                 maxModificationIsoforms: MaxModificationIsoforms,
                 maxModsForPeptides: MaxModPerPep,
-                initiatorMethionineBehavior: InitiatorMethionineBehavior
-                //keepNGlycopeptideOnly: keepNGlycopeptideOnly,
-                //keepOGlycopeptideOnly: keepOGlycopeptideOnly
+                initiatorMethionineBehavior: InitiatorMethionineBehavior,
+                keepNGlycopeptide: keepNGlycopeptideOnly,
+                keepOGlycopeptide: keepOGlycopeptideOnly
                 );
 
             Tolerance ProductMassTolerance;

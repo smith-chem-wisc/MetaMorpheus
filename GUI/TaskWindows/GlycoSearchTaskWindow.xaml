@@ -107,7 +107,7 @@
                                         <RowDefinition Height="1*"/>
                                         <RowDefinition Height="1*"/>
                                         <RowDefinition Height="1*"/>
-                                        <RowDefinition Height="1*"/>
+                                        <RowDefinition Height="2*"/>
                                     </Grid.RowDefinitions>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="1*"/>
@@ -141,8 +141,9 @@
                                         <Label Content="Keep top N candidates" />
                                         <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2"/>
                                     </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Grid.Row="3" Margin="10">
-                                        <CheckBox x:Name="CkbSearchGlycopeptideOnly" Content=" Only Search Glycopeptide" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
+                                    <StackPanel Orientation="Vertical" Grid.Row="3" Margin="10">
+                                        <CheckBox x:Name="CkbSearchNGlycopeptideOnly" Content=" Only keep peptide with N motif 'Nxt/s'"  VerticalAlignment="Center"/>
+                                        <CheckBox x:Name="CkbSearchOGlycopeptideOnly" Content=" Only keep peptide with O motif T/S" VerticalAlignment="Center"/>
                                     </StackPanel>
                                 </Grid>
                             </GroupBox>
