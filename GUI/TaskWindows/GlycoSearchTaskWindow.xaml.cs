@@ -122,6 +122,7 @@ namespace MetaMorpheusGUI
             Rbt_N_O_GlycoSearch.IsChecked = task._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch;
             TbMaxOGlycanNum.Text = task._glycoSearchParameters.MaximumOGlycanAllowed.ToString(CultureInfo.InvariantCulture);
             TbMaxNGlycanNum.Text = task._glycoSearchParameters.MaximumNGlycanAllowed.ToString(CultureInfo.InvariantCulture);
+            CkbSearchGlycopeptideOnly.IsChecked = task._glycoSearchParameters.SearchGlycopeptideOnly;
             CkbOxoniumIonFilt.IsChecked = task._glycoSearchParameters.OxoniumIonFilt;
             CkbMixedGlycoAllowed.IsChecked = task._glycoSearchParameters.MixedGlycoAllowed;
             CkbIndex_by_ion.IsChecked = task._glycoSearchParameters.Indexing_by_ion;
@@ -269,11 +270,32 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumNGlycanAllowed = int.Parse(TbMaxNGlycanNum.Text, CultureInfo.InvariantCulture);
+            TheTask._glycoSearchParameters.SearchGlycopeptideOnly = CkbSearchGlycopeptideOnly.IsChecked.Value;
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
             TheTask._glycoSearchParameters.MixedGlycoAllowed = CkbMixedGlycoAllowed.IsChecked.Value;
             TheTask._glycoSearchParameters.Indexing_by_ion = CkbIndex_by_ion.IsChecked.Value;
             TheTask._glycoSearchParameters.IndexingChildScan = CkbIndexingChildScan.IsChecked.Value;
             TheTask._glycoSearchParameters.IndexingChildScanDiffIndex = CkbIndexChildScanWithDiffIndex.IsChecked.Value;
+
+
+            var keepNGlycopeptideOnly = false;
+            var keepOGlycopeptideOnly = false;
+            if (TheTask._glycoSearchParameters.SearchGlycopeptideOnly)
+            {
+                if (TheTask._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.NGlycanSearch)
+                {
+                    keepNGlycopeptideOnly = true;
+                }
+                else if (TheTask._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.OGlycanSearch)
+                {
+                    keepOGlycopeptideOnly = true;
+                }
+                else if (TheTask._glycoSearchParameters.GlycoSearchType == EngineLayer.GlycoSearch.GlycoSearchType.N_O_GlycanSearch)
+                {
+                    keepNGlycopeptideOnly = true;
+                    keepOGlycopeptideOnly = true;
+                }
+            }
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
@@ -305,7 +327,10 @@ namespace MetaMorpheusGUI
                 maxPeptideLength: MaxPeptideLength,
                 maxModificationIsoforms: MaxModificationIsoforms,
                 maxModsForPeptides: MaxModPerPep,
-                initiatorMethionineBehavior: InitiatorMethionineBehavior);
+                initiatorMethionineBehavior: InitiatorMethionineBehavior
+                //keepNGlycopeptideOnly: keepNGlycopeptideOnly,
+                //keepOGlycopeptideOnly: keepOGlycopeptideOnly
+                );
 
             Tolerance ProductMassTolerance;
             if (productMassToleranceComboBox.SelectedIndex == 0)

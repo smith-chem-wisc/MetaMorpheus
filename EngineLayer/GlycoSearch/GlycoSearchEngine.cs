@@ -471,120 +471,154 @@ namespace EngineLayer.GlycoSearch
                         _FindSingle(theScan, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, ref gsmCandidates);
 
                     }
-                    else if (pre.Item1 - theScanBestPeptide.MonoisotopicMass >= 150) //Filter out unknow non-glycan modifications.
+
+                    //The smallest glycan modification generally is HexNac 203. //Filter out unknow non-glycan modifications.
+                    if (pre.Item1 - theScanBestPeptide.MonoisotopicMass < 150)
                     {
-                        var oxo204check = false;
+                        continue;
+                    }
 
-                        //Filter by glycanBoxes mass difference. Allow largest 2.052 mass deconvolution error.
-                        var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(pre.Item1) - theScanBestPeptide.MonoisotopicMass - 2.052;
-
-                        var possibleGlycanMassHigh = PrecusorSearchMode.GetMaximumValue(pre.Item1) - theScanBestPeptide.MonoisotopicMass + 2.052;
-
-                        if (GlycoSearchType == GlycoSearchType.OGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+                    List<int> n_modPos = new List<int>();
+                    List<int> o_modPos = new List<int>();
+                    if (GlycoSearchType == GlycoSearchType.NGlycanSearch )
+                    {
+                        n_modPos = GlycoPeptides.GetPossibleModSites(theScanBestPeptide, new string[] { "Nxt", "Nxs" }).OrderBy(p => p).ToList();
+                        if (n_modPos.Count < 1)
                         {
-                            if (possibleGlycanMassHigh < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
-                            {
-                                continue;
-                            }
+                            continue;
+                        }
+                    }
+                    else if (GlycoSearchType == GlycoSearchType.OGlycanSearch)
+                    {
+                        o_modPos = GlycoPeptides.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToList();
+                        if (o_modPos.Count < 1)
+                        {
+                            continue;
+                        }
+                    }
+                    else if (GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+                    {
+                        n_modPos = GlycoPeptides.GetPossibleModSites(theScanBestPeptide, new string[] { "Nxt", "Nxs" }).OrderBy(p => p).ToList();
+                        o_modPos = GlycoPeptides.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToList();
+                        if (n_modPos.Count < 1 && o_modPos.Count < 1)
+                        {
+                            continue;
+                        }
+                    }
 
-                            //Filter by OxoniumIon //if oxo204check is ture. It will either continue of pass, the following OxoniumIonFilter must pass.
-                            if (OxoniumIonFilter && !oxo204check)
-                            {
-                                ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                                oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
-                                oxo204check = true;
-                            }
+                    var oxo204check = false;
 
-                            if (oxo204check && oxoniumIonIntensities[OxoniumIon204Index] == 0)
-                            {
-                                continue;
-                            }
+                    //Filter by glycanBoxes mass difference. Allow largest 2.052 mass deconvolution error.
+                    var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(pre.Item1) - theScanBestPeptide.MonoisotopicMass - 2.052;
 
-                            //Filter Ycore
-                            if (FilterYcore)
-                            {
-                                var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.OGlycoPep, ProductSearchMode);
-                                if (ycore_count < 2)
-                                {
-                                    continue;
-                                }
-                            }
+                    var possibleGlycanMassHigh = PrecusorSearchMode.GetMaximumValue(pre.Item1) - theScanBestPeptide.MonoisotopicMass + 2.052;
 
-                            //Find O-Glycan use the original function.
-                            //FindOGlycan(theScan, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref gsmCandidates);
-                            
-                            _FindGlycan(theScan, pre.Item1, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, possibleGlycanMassLow, possibleGlycanMassHigh, oxoniumIonIntensities,
-                                GlycoType.OGlycoPep, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanMods, GlycanBox.OGlycanBoxes, ref gsmCandidates);
+                    if (GlycoSearchType == GlycoSearchType.OGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+                    {
+                        if (possibleGlycanMassHigh < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
+                        {
+                            continue;
                         }
 
-                        if (GlycoSearchType == GlycoSearchType.NGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+                        //Filter by OxoniumIon //if oxo204check is ture. It will either continue of pass, the following OxoniumIonFilter must pass.
+                        if (OxoniumIonFilter && !oxo204check)
                         {
-                            if (possibleGlycanMassHigh < GlycanBox.NGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.NGlycanBoxes.Last().Mass)
-                            {
-                                continue;
-                            }
-
-                            //Filter by OxoniumIon
-                            if (OxoniumIonFilter && !oxo204check)
-                            {
-                                ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                                oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
-                                oxo204check = true;
-                            }
-
-                            if (oxo204check && oxoniumIonIntensities[OxoniumIon204Index] == 0)
-                            {
-                                continue;
-                            }
-
-                            //Filter Ycore
-                            if (FilterYcore)
-                            {
-                                var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.NGlycoPep, ProductSearchMode);
-                                if (ycore_count < 2)
-                                {
-                                    continue;
-                                }
-                            }
-
-                            //Find N-Glycan 
-                            _FindGlycan(theScan, pre.Item1, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, possibleGlycanMassLow, possibleGlycanMassHigh, oxoniumIonIntensities,
-                                GlycoType.NGlycoPep, GlycanBox.GlobalNGlycans, GlycanBox.GlobalNGlycanMods, GlycanBox.NGlycanBoxes, ref gsmCandidates);
+                            ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
+                            oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
+                            oxo204check = true;
                         }
 
-                        if (GlycoSearchType == GlycoSearchType.N_O_GlycanSearch && MixedGlycanAllowed)
+                        if (oxo204check && oxoniumIonIntensities[OxoniumIon204Index] == 0)
                         {
-                            if (possibleGlycanMassHigh < GlycanBox.MixedModBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.MixedModBoxes.Last().Mass)
-                            {
-                                continue;
-                            }
-
-                            //Filter by OxoniumIon
-                            if (OxoniumIonFilter && !oxo204check)
-                            {
-                                ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
-                                oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
-                                oxo204check = true;
-                            }
-
-                            if (oxo204check && oxoniumIonIntensities[OxoniumIon204Index] == 0)
-                            {
-                                continue;
-                            }
-
-                            //Filter Ycore
-                            if (FilterYcore)
-                            {
-                                var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.MixedGlycoPep, ProductSearchMode);
-                                if (ycore_count < 2)
-                                {
-                                    continue;
-                                }
-                            }
-
-                            _FindGlycan(theScan, pre.Item1, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, possibleGlycanMassLow, possibleGlycanMassHigh, oxoniumIonIntensities,
-                                GlycoType.MixedGlycoPep, GlycanBox.GlobalMixedGlycans, GlycanBox.GlobalMixedGlycanMods, GlycanBox.MixedModBoxes, ref gsmCandidates);
+                            continue;
                         }
+
+                        //Filter Ycore
+                        if (FilterYcore)
+                        {
+                            //OGlycopeptide better to have at least one ycore ion.
+                            var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.OGlycoPep, ProductSearchMode);
+                            if (ycore_count < 1)
+                            {
+                                continue;
+                            }
+                        }
+
+                        //Find O-Glycan use the original function.
+                        //FindOGlycan(theScan, scanIndex, scoreCutOff, pepId, theScanBestPeptide, ind, possibleGlycanMassLow, oxoniumIonIntensities, ref gsmCandidates);
+
+                        _FindGlycan(theScan, pre.Item1, scanIndex, scoreCutOff, pepId, theScanBestPeptide, n_modPos, o_modPos, ind, possibleGlycanMassLow, possibleGlycanMassHigh, oxoniumIonIntensities,
+                            GlycoType.OGlycoPep, GlycanBox.GlobalOGlycans, GlycanBox.GlobalOGlycanMods, GlycanBox.OGlycanBoxes, ref gsmCandidates);
+                    }
+
+                    if (GlycoSearchType == GlycoSearchType.NGlycanSearch || GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+                    {
+                        if (possibleGlycanMassHigh < GlycanBox.NGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.NGlycanBoxes.Last().Mass)
+                        {
+                            continue;
+                        }
+
+                        //Filter by OxoniumIon
+                        if (OxoniumIonFilter && !oxo204check)
+                        {
+                            ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
+                            oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
+                            oxo204check = true;
+                        }
+
+                        if (oxo204check && oxoniumIonIntensities[OxoniumIon204Index] == 0)
+                        {
+                            continue;
+                        }
+
+                        //Filter Ycore
+                        if (FilterYcore)
+                        {
+                            var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.NGlycoPep, ProductSearchMode);
+                            if (ycore_count < 2)
+                            {
+                                continue;
+                            }
+                        }
+
+                        //Find N-Glycan 
+                        _FindGlycan(theScan, pre.Item1, scanIndex, scoreCutOff, pepId, theScanBestPeptide, n_modPos, o_modPos, ind, possibleGlycanMassLow, possibleGlycanMassHigh, oxoniumIonIntensities,
+                            GlycoType.NGlycoPep, GlycanBox.GlobalNGlycans, GlycanBox.GlobalNGlycanMods, GlycanBox.NGlycanBoxes, ref gsmCandidates);
+                    }
+
+                    if (GlycoSearchType == GlycoSearchType.N_O_GlycanSearch && MixedGlycanAllowed)
+                    {
+                        if (possibleGlycanMassHigh < GlycanBox.MixedModBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.MixedModBoxes.Last().Mass)
+                        {
+                            continue;
+                        }
+
+                        //Filter by OxoniumIon
+                        if (OxoniumIonFilter && !oxo204check)
+                        {
+                            ////The oxoniumIonIntensities is related with Glycan.AllOxoniumIons (the [9] is 204). A spectrum needs to have 204.0867 to be considered as a glycopeptide for now.
+                            oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(theScan, ProductSearchMode, CommonParameters.DissociationType);
+                            oxo204check = true;
+                        }
+
+                        if (oxo204check && oxoniumIonIntensities[OxoniumIon204Index] == 0)
+                        {
+                            continue;
+                        }
+
+                        //Filter Ycore
+                        if (FilterYcore)
+                        {
+                            var ycore_count = GlycoPeptides.YCoreIonsFilter(theScan, theScanBestPeptide, GlycoType.MixedGlycoPep, ProductSearchMode);
+                            if (ycore_count < 2)
+                            {
+                                continue;
+                            }
+                        }
+
+                        _FindGlycan(theScan, pre.Item1, scanIndex, scoreCutOff, pepId, theScanBestPeptide, n_modPos, o_modPos, ind, possibleGlycanMassLow, possibleGlycanMassHigh, oxoniumIonIntensities,
+                            GlycoType.MixedGlycoPep, GlycanBox.GlobalMixedGlycans, GlycanBox.GlobalMixedGlycanMods, GlycanBox.MixedModBoxes, ref gsmCandidates);
+
                     }
                 }
             }
@@ -642,26 +676,30 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        private void _FindGlycan(Ms2ScanWithSpecificMass theScan, double precursorMass, int scanIndex, int scoreCutOff, int pepId, PeptideWithSetModifications theScanBestPeptide,
-            int ind, double possibleGlycanMassLow, double possibleGlycanMassHigh, double[] oxoniumIonIntensities,
+        private void _FindGlycan(Ms2ScanWithSpecificMass theScan, double precursorMass, int scanIndex, int scoreCutOff, 
+            int pepId, PeptideWithSetModifications theScanBestPeptide, List<int> n_modPos, List<int> o_modPos, int ind, 
+            double possibleGlycanMassLow, double possibleGlycanMassHigh, double[] oxoniumIonIntensities,
             GlycoType glycanType, Glycan[] globalglycans, Modification[] globalmods, GlycanBox[] globalBoxes, ref List<GlycoSpectraMatchCandidate> gsmCandidates)
         {
-            List<int> n_modPos = new List<int>();
-            if (glycanType == GlycoType.NGlycoPep || glycanType == GlycoType.MixedGlycoPep)
+
+            if (glycanType == GlycoType.NGlycoPep)
             {
-                n_modPos = GlycoPeptides.GetPossibleModSites(theScanBestPeptide, new string[] { "Nxt", "Nxs" }).OrderBy(p => p).ToList();
                 if (n_modPos.Count < 1)
                 {
                     return;
                 }
             }
 
-            List<int> o_modPos = new List<int>();
-
-            if (glycanType == GlycoType.OGlycoPep || glycanType == GlycoType.MixedGlycoPep)
+            else if (glycanType == GlycoType.OGlycoPep)
             {
-                o_modPos = GlycoPeptides.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToList();
                 if (o_modPos.Count < 1)
+                {
+                    return;
+                }
+            }
+            else if (glycanType == GlycoType.MixedGlycoPep)
+            {
+                if (o_modPos.Count < 1 && n_modPos.Count < 1)
                 {
                     return;
                 }

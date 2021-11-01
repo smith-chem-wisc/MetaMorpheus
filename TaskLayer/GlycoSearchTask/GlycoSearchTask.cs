@@ -53,7 +53,16 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
             // Set TotalPartitions
-            CommonParameters.TotalPartitions = proteinList.Count() / 250;
+            var partitionSize = 300;
+            if (_glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch)
+            {
+                partitionSize = partitionSize * 8;
+            }
+            else if (_glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch || _glycoSearchParameters.GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+            {
+                partitionSize = partitionSize * 2;
+            }
+            CommonParameters.TotalPartitions = proteinList.Count() / partitionSize;
             if (CommonParameters.TotalPartitions == 0) { CommonParameters.TotalPartitions = 1; }
 
             MyFileManager myFileManager = new MyFileManager(true);

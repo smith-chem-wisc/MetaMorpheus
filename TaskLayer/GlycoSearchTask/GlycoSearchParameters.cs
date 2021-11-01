@@ -18,6 +18,7 @@ namespace TaskLayer
             GlycoSearchTopNum = 20;
             MaximumOGlycanAllowed = 4;
             MaximumNGlycanAllowed = 1;
+            SearchGlycopeptideOnly = true;
             Indexing_by_ion = true;
             IndexingChildScan = false;
             IndexingChildScanDiffIndex = false;
@@ -34,6 +35,8 @@ namespace TaskLayer
         public int MaximumOGlycanAllowed { get; set; }
 
         public int MaximumNGlycanAllowed { get; set; }
+
+        public bool SearchGlycopeptideOnly { get; set; }
         public bool Indexing_by_ion { get; set; }
         public bool IndexingChildScan { get; set; }
         public bool IndexingChildScanDiffIndex { get; set; }
