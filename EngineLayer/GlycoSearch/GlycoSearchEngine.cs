@@ -808,6 +808,7 @@ namespace EngineLayer.GlycoSearch
                 List<Product> products = new List<Product>();
                 theScanBestPeptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, products);
                 var matchedFragmentIons = MatchFragmentIons(theScan, products, CommonParameters);
+                double mScore = CalculatePeptideScore(theScan.TheScan, matchedFragmentIons);
                 double score = GlycoPeptides.CalculateSinglePeptideScore(matchedFragmentIons, products, CommonParameters);
 
                 var allMatchedChildIons = new Dictionary<int, List<MatchedFragmentIon>>();
@@ -831,14 +832,17 @@ namespace EngineLayer.GlycoSearch
                     }
 
                     allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
+                    double mChildScore = CalculatePeptideScore(theScan.TheScan, matchedChildIons);
                     double childScore = GlycoPeptides.CalculateSinglePeptideScore(matchedChildIons, childFragments, CommonParameters);
 
                     //TO THINK:may think a different way to use childScore
+                    mScore += mChildScore;
                     score += childScore;
                 }
 
                 var gsmSingle = new GlycoSpectralMatch(theScanBestPeptide, 0, score, scanIndex, theScan, CommonParameters, matchedFragmentIons);
                 gsmSingle.Rank = gsmcd.Rank;
+                gsmSingle.MScore = mScore;
                 if (allMatchedChildIons.Count() > 0)
                 {
                     gsmSingle.ChildMatchedFragmentIons = allMatchedChildIons;
@@ -981,7 +985,7 @@ namespace EngineLayer.GlycoSearch
             //var matchedIons = MatchFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
             var matchedIons = GlycoPeptides.GlyMatchOriginFragmentIons(theScan, fragmentsForEachGlycoPeptide, CommonParameters);
 
-            //double score = CalculatePeptideScore(theScan.TheScan, matchedIons);
+            double mScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(p=>p.NeutralTheoreticalProduct.ProductType != ProductType.D).ToList());
             double score = GlycoPeptides.CalculatePeptideScore(matchedIons, fragmentsForEachGlycoPeptide, CommonParameters);
 
             var DiagnosticIonScore = CalculatePeptideScore(theScan.TheScan, matchedIons.Where(v => v.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
@@ -1013,7 +1017,7 @@ namespace EngineLayer.GlycoSearch
                 }
 
                 allMatchedChildIons.Add(childScan.OneBasedScanNumber, matchedChildIons);
-                //double childScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons);
+                double mChildScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(p => p.NeutralTheoreticalProduct.ProductType != ProductType.D).ToList());
                 double childScore = GlycoPeptides.CalculatePeptideScore(matchedChildIons, childFragments, CommonParameters);
 
                 double childDiagnosticIonScore = CalculatePeptideScore(childScan.TheScan, matchedChildIons.Where(v => v.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList());
@@ -1023,6 +1027,7 @@ namespace EngineLayer.GlycoSearch
                 GlycanScore += childGlycanScore;
 
                 //TO THINK:may think a different way to use childScore
+                mScore += mChildScore;
                 score += childScore;
 
                 p += childScan.TheScan.MassSpectrum.Size * CommonParameters.ProductMassTolerance.GetRange(1000).Width / childScan.TheScan.MassSpectrum.Range.Width;
@@ -1030,6 +1035,8 @@ namespace EngineLayer.GlycoSearch
             }
 
             var psmGlyco = new GlycoSpectralMatch(peptideWithMod, 0, score, scanIndex, theScan, CommonParameters, matchedIons);
+
+            psmGlyco.MScore = mScore;
 
             psmGlyco.GlycanType = gsmcd.GType;
 

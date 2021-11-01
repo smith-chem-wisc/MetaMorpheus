@@ -28,6 +28,8 @@ namespace EngineLayer.GlycoSearch
         //Glyco properties
         public List<int> ModPos { get; set; }
         public LocalizationLevel LocalizationLevel { get; set; }
+
+        public double MScore { get; set; }  //The original Morpheus score.
         public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
         public double GlycanScore { get; set; } //Scores from only matched Y ions. 
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
@@ -129,6 +131,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Peptide Monoisotopic Mass" + '\t');
             //sb.Append("Predicted Hydrophobicity" + '\t');
             sb.Append("Score" + '\t');
+            sb.Append("MScore" + '\t');
             sb.Append("Rank" + '\t');
 
             sb.Append("Matched Ion Series" + '\t');
@@ -215,6 +218,7 @@ namespace EngineLayer.GlycoSearch
             //sb.Append(PredictedHydrophobicity); sb.Append("\t");
             //sb.Append(PredictedRT); sb.Append("\t");
             sb.Append(Score + "\t");
+            sb.Append(MScore + "\t");
             sb.Append(Rank + "\t");
 
             if (ChildMatchedFragmentIons == null)

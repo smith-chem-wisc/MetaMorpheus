@@ -250,7 +250,7 @@
                                             <Label x:Name="label_Copy" Content="Protease" />
                                             <ComboBox x:Name="proteaseComboBox" SelectionChanged="NonSpecificUpdate" />
                                         </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="1">
+                                        <StackPanel Orientation="Horizontal" Margin="1" Visibility="Hidden">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
                                             <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
                                         </StackPanel>

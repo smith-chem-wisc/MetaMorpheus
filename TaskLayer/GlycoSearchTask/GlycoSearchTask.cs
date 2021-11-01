@@ -30,7 +30,7 @@ namespace TaskLayer
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
                 ms2childScanDissociationType: DissociationType.EThcD,
-                scoreCutoff: 3,
+                scoreCutoff: 2,
                 trimMsMsPeaks: true, 
                 numberOfPeaksToKeepPerWindow: 500,
                 minimumAllowedIntensityRatioToBasePeak: 0.001,
