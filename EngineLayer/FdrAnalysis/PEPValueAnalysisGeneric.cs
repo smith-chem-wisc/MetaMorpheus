@@ -741,8 +741,9 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
-            float spectralAngle = (float)double.NaN;
+            float spectralAngle = float.NaN;
             float hasSpectralAngle = 0;
+            //bool hasSpectralAngle = false;
 
             if (searchType != "crosslink")
             {
@@ -772,7 +773,7 @@ namespace EngineLayer
                 psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
                 spectralAngle = (float)psm.SpectralAngle;
-
+               
                 if (PsmHasSpectralAngle(psm))
                 {
                     hasSpectralAngle = 1;
@@ -909,12 +910,7 @@ namespace EngineLayer
 
         private static bool PsmHasSpectralAngle(PeptideSpectralMatch psm)
         {
-            bool hasSpectralAngle = false;
-            if (psm.SpectralAngle >= 0)
-            {
-                hasSpectralAngle = true;
-            }
-            return hasSpectralAngle;
+            return psm.SpectralAngle >= 0;
         }
 
         public static bool ContainsModificationsThatShiftMobility(IEnumerable<Modification> modifications)

@@ -15,36 +15,42 @@ namespace EngineLayer
         public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, PeptideSpectralMatch[] peptideSpectralMatches,
             Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans, CommonParameters commonParameters)
         {
-            foreach (PeptideSpectralMatch psm in peptideSpectralMatches.Where(p => p != null))
+            if(spectralLibrary != null)
             {
-                Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psm.ScanIndex];
-
-                //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
-                foreach (var peptide in psm.PeptidesToMatchingFragments)
+                foreach (PeptideSpectralMatch psm in peptideSpectralMatches.Where(p => p != null))
                 {
-                    //if peptide is target, directly look for the target's spectrum in the spectral library
-                    if (spectralLibrary != null && !peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                    Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psm.ScanIndex];
+
+                    //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
+                    foreach (var peptide in psm.PeptidesToMatchingFragments)
                     {
-                        double spectralAngle = CalculateSquareIntensitySpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, psm, commonParameters);
-                        psm.SpectralAngle = spectralAngle;
-                    }
-                    ////if peptide is decoy, look for the decoy's corresponding target's spectrum in the spectral library and generate decoy spectrum by function GetDecoyLibrarySpectrumFromTargetByRevers
-                    else if (spectralLibrary != null && peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.PeptideDescription, scan.PrecursorCharge, out var targetlibrarySpectrum))
-                    {
-                        var decoyPeptideTheorProducts = new List<Product>();
-                        peptide.Key.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
-                        var decoylibrarySpectrum = GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
-                        double spectralAngle = CalculateSquareIntensitySpectralAngle(decoylibrarySpectrum, scan.TheScan, psm, commonParameters);
-                        psm.SpectralAngle = spectralAngle;
+
+                        //if peptide is target, directly look for the target's spectrum in the spectral library
+                        if (!peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                        {
+                            double spectralAngle = CalculateSquareIntensitySpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, psm, commonParameters);
+                            psm.SpectralAngle = spectralAngle;
+                        }
+
+                        //if peptide is decoy, look for the decoy's corresponding target's spectrum in the spectral library and generate decoy spectrum by function GetDecoyLibrarySpectrumFromTargetByRevers
+                        else if (peptide.Key.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(peptide.Key.PeptideDescription, scan.PrecursorCharge, out var targetlibrarySpectrum))
+                        {
+                            var decoyPeptideTheorProducts = new List<Product>();
+                            peptide.Key.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
+                            var decoylibrarySpectrum = GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
+                            double spectralAngle = CalculateSquareIntensitySpectralAngle(decoylibrarySpectrum, scan.TheScan, psm, commonParameters);
+                            psm.SpectralAngle = spectralAngle;
+                        }
                     }
                 }
             }
+            
         }
 
         /// <summary>
         /// Calculates the spectral angle, as described by Prosit ( https://www.nature.com/articles/s41592-019-0426-7 ).
         /// </summary>
-        public static double CalculateSquareIntensitySpectralAngle(List<MatchedFragmentIon> theoreticalLibraryIons, MsDataScan scan, PeptideSpectralMatch psm, CommonParameters commonParameters)
+        public static double CalculateSquareIntensitySpectralAngle(List<MatchedFragmentIon> spectrumLibraryIons, MsDataScan scan, PeptideSpectralMatch psm, CommonParameters commonParameters)
         {
             double mzCutoff = 300;
             int fragmentNumberCutoff = 3;
@@ -58,9 +64,9 @@ namespace EngineLayer
             Dictionary<MatchedFragmentIon, MatchedFragmentIon> matchedIons = new Dictionary<MatchedFragmentIon, MatchedFragmentIon>();
 
             // search for each theoretical ion
-            for (int i = 0; i < theoreticalLibraryIons.Count; i++)
+            for (int i = 0; i < spectrumLibraryIons.Count; i++)
             {
-                var libraryIon = theoreticalLibraryIons[i];
+                var libraryIon = spectrumLibraryIons[i];
 
                 // see https://www.nature.com/articles/s41592-019-0426-7
                 // "All non-zero fragment ions (m/z > 300, ion >3, no neutral loss fragment ions) were considered for spectral angle calculation"
@@ -89,11 +95,11 @@ namespace EngineLayer
             psm.LibraryMatchedFragments = matchedIons.Values.ToList();
             // L2 norm
             double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(Math.Sqrt(p.Value.Intensity), 2)));
-            double theorNormalizer = Math.Sqrt(theoreticalLibraryIons.Sum(p => Math.Pow(Math.Sqrt(p.Intensity), 2)));
+            double theorNormalizer = Math.Sqrt(spectrumLibraryIons.Sum(p => Math.Pow(Math.Sqrt(p.Intensity), 2)));
 
             double dotProduct = 0;
 
-            foreach (var libraryIon in theoreticalLibraryIons)
+            foreach (var libraryIon in spectrumLibraryIons)
             {
                 if (matchedIons.TryGetValue(libraryIon, out var experIon))
                 {

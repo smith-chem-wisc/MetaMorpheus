@@ -622,24 +622,23 @@ namespace TaskLayer
                 // if the PsmsGroupByPeptideAndCharge group has more than one psm, converting these psms to one consensus spectrum and save it as library spectrum in spectral library
                 else
                 {
-                    int a = 0;
-                    int b = 0;
-
                     // sort psms by MetaMorpheus scores, the first one has the highest  MetaMorpheus score. Take top 5 spectra and compare each one with other 4 spectra and calculate 
                     // spectral angles. The one which has largest sum of spectral angles will be treated as initial standard spectrum.
+                    int psmIndexForChoosingInitialStandardSpectrum = 0;
                     List<double> eachSaTotal = new List<double>();
-                    while (b < 5 && b < x.Value.Count)
+                    while (psmIndexForChoosingInitialStandardSpectrum < 5 && psmIndexForChoosingInitialStandardSpectrum < x.Value.Count)
                     {
-                        int c = 0;
-                        List<MatchedFragmentIon> possibleStandardPeaks = x.Value[b].MatchedFragmentIons;
+                        int indexOfpsmToCompare = 0;
+                        List<MatchedFragmentIon> possibleStandardPeaks = x.Value[psmIndexForChoosingInitialStandardSpectrum].MatchedFragmentIons;
                         List<double> saList = new List<double>();
+                        while (indexOfpsmToCompare < 5 && indexOfpsmToCompare < x.Value.Count)
                         {
-                            double sa = SpectralLibrarySearchFunction.CalculateSquareIntensitySpectralAngle(possibleStandardPeaks, x.Value[c].MsDataScan, x.Value[c], CommonParameters);
+                            double sa = SpectralLibrarySearchFunction.CalculateSquareIntensitySpectralAngle(possibleStandardPeaks, x.Value[indexOfpsmToCompare].MsDataScan, x.Value[indexOfpsmToCompare], CommonParameters);
                             saList.Add(sa);
-                            c++;
+                            indexOfpsmToCompare++;
                         }
                         eachSaTotal.Add(saList.Average());
-                        b++;
+                        psmIndexForChoosingInitialStandardSpectrum++;
                     }
                     int standardIndex = eachSaTotal.IndexOf(eachSaTotal.Max());
                     List<MatchedFragmentIon> standardSpctrumPeaks = x.Value[standardIndex].MatchedFragmentIons;
@@ -649,17 +648,18 @@ namespace TaskLayer
                     double standardPrecursurMz = x.Value[standardIndex].ScanPrecursorMonoisotopicPeakMz;
                     double standardRt = x.Value[standardIndex].ScanRetentionTime;
 
-                    //compare each other spectra in the same PsmsGroupByPeptideAndCharge group with the initial standard spectrum, if the spectral angle is more than 0.65, the spetrum will be treated aas qualified 
+                    //compare each other spectra in the same PsmsGroupByPeptideAndCharge group with the initial standard spectrum, if the spectral angle is more than 0.65, the spetrum will be treated as qualified 
                     //and stored in  psmsForLibrary.
-                    while (a < x.Value.Count - 1)
+                    int psmIndex = 0;
+                    while (psmIndex < x.Value.Count)
                     {
-                        var spectrumToCompare = x.Value[a].MatchedFragmentIons;
-                        var testScore = SpectralLibrarySearchFunction.CalculateSquareIntensitySpectralAngle(standardSpctrumPeaks, x.Value[a].MsDataScan, x.Value[a], CommonParameters);
-                        if (testScore > 0.65 && a != standardIndex)
+                        var spectrumToCompare = x.Value[psmIndex].MatchedFragmentIons;
+                        var testScore = SpectralLibrarySearchFunction.CalculateSquareIntensitySpectralAngle(standardSpctrumPeaks, x.Value[psmIndex].MsDataScan, x.Value[psmIndex], CommonParameters);
+                        if (testScore > 0.65 && psmIndex != standardIndex)
                         {
-                            psmsForLibrary.Add(x.Value[a]);
+                            psmsForLibrary.Add(x.Value[psmIndex]);
                         }
-                        a++;
+                        psmIndex++;
                     }
 
                     // all the qualified spectra will be averaged with weight to generate the library spectrum. 
