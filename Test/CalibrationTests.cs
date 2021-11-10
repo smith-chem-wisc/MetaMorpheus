@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using FlashLFQ;
+using MassSpectrometry;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
@@ -79,14 +80,15 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
 
             // set up original spectra file (input to calibration)
-            string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\subset20100611_Velos1_TaGe_SA_Hela_3.mzML");
+            string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\withZeros.mzML");
+            MyFileManager myFileManager = new MyFileManager(false);
+
+            MsDataFile myMsDataFile = myFileManager.LoadFile(nonCalibratedFilePath,  new CommonParameters());
+            Assert.IsTrue(myMsDataFile.GetAllScansList().Any(x => x.MassSpectrum.YArray.Contains(0)));
+
 
             // protein db
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\FullHuman.fasta");
-
-            // set up original experimental design (input to calibration)
-            SpectraFileInfo fileInfo = new SpectraFileInfo(nonCalibratedFilePath, "condition", 0, 0, 0);
-            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\zero.fasta.gz");
 
             // run calibration
             CalibrationTask calibrationTask = new CalibrationTask();
