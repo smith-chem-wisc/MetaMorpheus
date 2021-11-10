@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using FlashLFQ;
+using MassSpectrometry;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
@@ -65,6 +66,33 @@ namespace Test
 
             // clean up
             Directory.Delete(unitTestFolder, true);
+        }
+
+        [Test]
+        public static void CalibrationZeroIntensityTest()
+        {
+            //check that peaks with zero intensity don't crash the program
+
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\withZeros.mzML");
+            MyFileManager myFileManager = new MyFileManager(false);
+
+            MsDataFile myMsDataFile = myFileManager.LoadFile(nonCalibratedFilePath,  new CommonParameters());
+            Assert.IsTrue(myMsDataFile.GetAllScansList().Any(x => x.MassSpectrum.YArray.Contains(0)));
+
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\zero.fasta.gz");
+
+            // run calibration
+            CalibrationTask calibrationTask = new CalibrationTask();
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
         }
 
         [Test]
