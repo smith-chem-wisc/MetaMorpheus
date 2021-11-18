@@ -399,7 +399,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestDecoyLibrarySpectraGeneration()
+        public static void TestDecoyLibrarySpectraGenerationFunction()
         {
             Product a = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
             Product b = new Product(ProductType.b, FragmentationTerminus.N, 2, 2, 1, 0);
@@ -417,6 +417,41 @@ namespace Test
             Assert.That(decoySpectum[1].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[1].NeutralTheoreticalProduct.FragmentNumber == 2 && decoySpectum[1].Intensity == 2);
             Assert.That(decoySpectum[2].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[2].NeutralTheoreticalProduct.FragmentNumber == 3 && decoySpectum[2].Intensity == 3);
             Assert.That(decoySpectum[3].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[3].NeutralTheoreticalProduct.FragmentNumber == 4 && decoySpectum[3].Intensity == 4);
+        }
+
+        [Test]
+        public static void TestDecoyLibraryGenerationDuringSearch()
+        {
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");
+
+            var task = new SearchTask();
+
+            var spectralLibrary = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\EPAVFGR.msp");
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\mouse-filtered-reviewed.fasta.gz"), false);
+            List<DbForTask> dbList = new List<DbForTask> { new DbForTask(spectralLibrary, false), db };
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse300-480.raw");
+            EverythingRunnerEngine MassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw }, dbList, thisTaskOutputFolder);
+
+            MassSpectraFile.Run();
+
+            var results = File.ReadAllLines(Path.Combine(thisTaskOutputFolder, @"SpectraFileOutput\AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            int indOfSA= Array.IndexOf(split, "Normalized Spectral Angle");
+            int indOfTorD = Array.IndexOf(split, "Decoy/Contaminant/Target");
+            int indOfTargetSequenceInTDpairs = Array.IndexOf(split, "Peptide Description");
+            int indOfsequence = Array.IndexOf(split, "Full Sequence");
+            for (int i = 1; i < results.Length; i++)
+            {
+                if(results[i].Split('\t')[indOfsequence] == "GFVAPER")
+                {
+                    Assert.That(results[i].Split('\t')[indOfTorD] == "D");
+                    Assert.That(Double.Parse(results[i].Split('\t')[indOfSA]) < 0.3);
+                    Assert.That(results[i].Split('\t')[indOfTargetSequenceInTDpairs] == "EPAVFGR");
+                }
+               
+            }
+
+            Directory.Delete(thisTaskOutputFolder, true);
         }
     }
 }
