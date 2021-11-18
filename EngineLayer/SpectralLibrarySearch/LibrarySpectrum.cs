@@ -1,4 +1,6 @@
-﻿using Proteomics.Fragmentation;
+﻿using Chemistry;
+using Proteomics.Fragmentation;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +19,11 @@ namespace EngineLayer
         public int ChargeState { get; set; }
         public List<MatchedFragmentIon> MatchedFragmentIons { get; set; }
         public bool IsDecoy { get; set; }
+
+        public double[] XArray => _XArray;
+        private double[] _XArray;
+        public double[] YArray => _YArray;
+        private double[] _YArray;
         public string Name
         {
             get { return Sequence + "/" + ChargeState; }
@@ -30,6 +37,7 @@ namespace EngineLayer
             ChargeState = chargeState;
             IsDecoy = isDecoy;
             RetentionTime = rt;
+            PopulateSpectrumArrays(peaks, chargeState);
         }
 
         public override string ToString()
@@ -61,6 +69,13 @@ namespace EngineLayer
             }
 
             return spectrum.ToString();
+        }
+
+        private void PopulateSpectrumArrays(List<MatchedFragmentIon> peaks, int charge)
+        {
+            _XArray = peaks.Select(p => p.NeutralTheoreticalProduct.NeutralMass.ToMz(charge)).ToArray();
+            _YArray = peaks.Select(p => p.Intensity).ToArray();
+            Array.Sort(_XArray,_YArray);
         }
     }
 }
