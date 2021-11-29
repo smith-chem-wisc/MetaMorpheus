@@ -31,25 +31,37 @@ namespace EngineLayer
             {
                 for (; i < psms.Length; i += maxThreadsPerFile)
                 {
-                    if(psms[i] != null)
+                    lock (myLocks[i])
                     {
-                        Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
-
-                        //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
-                        foreach (var peptide in psms[i].PeptidesToMatchingFragments)
+                        if (psms[i] != null)
                         {
-                            if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                            Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
+
+                            //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
+                            foreach (var peptide in psms[i].PeptidesToMatchingFragments)
                             {
-                                continue;
+                                if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                                {
+                                    continue;
+                                }
+                                SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray, SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
+                                double sA = s.SpectralContrastAngle();
+                                //double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
+                                if (Double.IsNaN(sA))
+                                {
+                                    int j = i;
+                                    i++;
+                                }
+                                if(sA == 0)
+                                {
+                                    int j = i;
+                                    i++;
+                                }
+                                psms[i].SpectralAngle = sA;
                             }
-
-                            SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray, SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
-                            double sA = s.SpectralContrastAngle();
-                            //double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
-
-                            psms[i].SpectralAngle = sA;
                         }
                     }
+                    
                 }
             });
 
@@ -57,66 +69,66 @@ namespace EngineLayer
             
         }
 
-        ///// <summary>
-        ///// Calculates the spectral angle, as described by Prosit ( https://www.nature.com/articles/s41592-019-0426-7 ).
-        ///// </summary>
-        //public static double CalculateNormalizedSpectralAngle(List<MatchedFragmentIon> theoreticalLibraryIons, MsDataScan scan, CommonParameters commonParameters)
-        //{
-        //    double mzCutoff = 300;
-        //    int fragmentNumberCutoff = 3;
+        /// <summary>
+        /// Calculates the spectral angle, as described by Prosit ( https://www.nature.com/articles/s41592-019-0426-7 ).
+        /// </summary>
+        public static double CalculateNormalizedSpectralAngle(List<MatchedFragmentIon> theoreticalLibraryIons, MsDataScan scan, CommonParameters commonParameters)
+        {
+            double mzCutoff = 300;
+            int fragmentNumberCutoff = 3;
 
-        //    // if the spectrum has no peaks
-        //    if (scan.MassSpectrum.XArray.Length == 0)
-        //    {
-        //        return 0;
-        //    }
+            // if the spectrum has no peaks
+            if (scan.MassSpectrum.XArray.Length == 0)
+            {
+                return 0;
+            }
 
-        //    Dictionary<MatchedFragmentIon, MatchedFragmentIon> matchedIons = new Dictionary<MatchedFragmentIon, MatchedFragmentIon>();
+            Dictionary<MatchedFragmentIon, MatchedFragmentIon> matchedIons = new Dictionary<MatchedFragmentIon, MatchedFragmentIon>();
 
-        //    // search for each theoretical ion
-        //    for (int i = 0; i < theoreticalLibraryIons.Count; i++)
-        //    {
-        //        var libraryIon = theoreticalLibraryIons[i];
+            // search for each theoretical ion
+            for (int i = 0; i < theoreticalLibraryIons.Count; i++)
+            {
+                var libraryIon = theoreticalLibraryIons[i];
 
-        //        // see https://www.nature.com/articles/s41592-019-0426-7
-        //        // "All non-zero fragment ions (m/z > 300, ion >3, no neutral loss fragment ions) were considered for spectral angle calculation"
-        //        if (libraryIon.Mz <= mzCutoff || libraryIon.NeutralTheoreticalProduct.FragmentNumber <= fragmentNumberCutoff)
-        //        {
-        //            continue;
-        //        }
+                // see https://www.nature.com/articles/s41592-019-0426-7
+                // "All non-zero fragment ions (m/z > 300, ion >3, no neutral loss fragment ions) were considered for spectral angle calculation"
+                if (libraryIon.Mz <= mzCutoff || libraryIon.NeutralTheoreticalProduct.FragmentNumber <= fragmentNumberCutoff)
+                {
+                    continue;
+                }
 
-        //        // get the closest peak in the spectrum to the library peak
-        //        var closestPeakIndex = scan.MassSpectrum.GetClosestPeakIndex(libraryIon.Mz);
-        //        double mz = scan.MassSpectrum.XArray[closestPeakIndex];
-        //        double experimentalIntensity = scan.MassSpectrum.YArray[closestPeakIndex];
+                // get the closest peak in the spectrum to the library peak
+                var closestPeakIndex = scan.MassSpectrum.GetClosestPeakIndex(libraryIon.Mz);
+                double mz = scan.MassSpectrum.XArray[closestPeakIndex];
+                double experimentalIntensity = scan.MassSpectrum.YArray[closestPeakIndex];
 
-        //        // is the mass error acceptable?
-        //        if (commonParameters.ProductMassTolerance.Within(mz.ToMass(libraryIon.Charge), libraryIon.Mz.ToMass(libraryIon.Charge)))
-        //        {
-        //            var test = new Product(libraryIon.NeutralTheoreticalProduct.ProductType, libraryIon.NeutralTheoreticalProduct.Terminus,
-        //                libraryIon.NeutralTheoreticalProduct.NeutralMass, libraryIon.NeutralTheoreticalProduct.FragmentNumber,
-        //                libraryIon.NeutralTheoreticalProduct.AminoAcidPosition, libraryIon.NeutralTheoreticalProduct.NeutralLoss);
-        //            matchedIons.Add(libraryIon, new MatchedFragmentIon(ref test, mz, experimentalIntensity, libraryIon.Charge));
-        //        }
-        //    }
+                // is the mass error acceptable?
+                if (commonParameters.ProductMassTolerance.Within(mz.ToMass(libraryIon.Charge), libraryIon.Mz.ToMass(libraryIon.Charge)))
+                {
+                    var test = new Product(libraryIon.NeutralTheoreticalProduct.ProductType, libraryIon.NeutralTheoreticalProduct.Terminus,
+                        libraryIon.NeutralTheoreticalProduct.NeutralMass, libraryIon.NeutralTheoreticalProduct.FragmentNumber,
+                        libraryIon.NeutralTheoreticalProduct.AminoAcidPosition, libraryIon.NeutralTheoreticalProduct.NeutralLoss);
+                    matchedIons.Add(libraryIon, new MatchedFragmentIon(ref test, mz, experimentalIntensity, libraryIon.Charge));
+                }
+            }
 
-        //    // L2 norm
-        //    double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(p.Value.Intensity, 2)));
-        //    double theorNormalizer = Math.Sqrt(theoreticalLibraryIons.Sum(p => Math.Pow(p.Intensity, 2)));
+            // L2 norm
+            double expNormalizer = Math.Sqrt(matchedIons.Sum(p => Math.Pow(p.Value.Intensity, 2)));
+            double theorNormalizer = Math.Sqrt(theoreticalLibraryIons.Sum(p => Math.Pow(p.Intensity, 2)));
 
-        //    double dotProduct = 0;
+            double dotProduct = 0;
 
-        //    foreach (var libraryIon in theoreticalLibraryIons)
-        //    {
-        //        if (matchedIons.TryGetValue(libraryIon, out var experIon))
-        //        {
-        //            dotProduct += (libraryIon.Intensity / theorNormalizer) * (experIon.Intensity / expNormalizer);
-        //        }
-        //    }
+            foreach (var libraryIon in theoreticalLibraryIons)
+            {
+                if (matchedIons.TryGetValue(libraryIon, out var experIon))
+                {
+                    dotProduct += (libraryIon.Intensity / theorNormalizer) * (experIon.Intensity / expNormalizer);
+                }
+            }
 
-        //    double normalizedSpectralAngle = 1 - (2 * Math.Acos(dotProduct) / Math.PI);
+            double normalizedSpectralAngle = 1 - (2 * Math.Acos(dotProduct) / Math.PI);
 
-        //    return normalizedSpectralAngle;
-        //}
+            return normalizedSpectralAngle;
+        }
     }
 }
