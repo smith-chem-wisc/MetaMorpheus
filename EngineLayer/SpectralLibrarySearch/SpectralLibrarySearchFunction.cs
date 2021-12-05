@@ -3,6 +3,7 @@ using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
 using MzLibUtil;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,35 +30,52 @@ namespace EngineLayer
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (i) =>
             {
+
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops) { return; }
+
                 for (; i < psms.Length; i += maxThreadsPerFile)
                 {
                     lock (myLocks[i])
                     {
+                        
                         if (psms[i] != null)
                         {
                             Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
-
-                            //TODO: spectral angle could be used to disambiguate PSMs. right now for ambiguous PSMs, the spectral angle for only one peptide option is saved
-                            foreach (var peptide in psms[i].PeptidesToMatchingFragments)
+                            List<(int, PeptideWithSetModifications)> pwsms = new();
+                            List<double> pwsmSpectralAngles = new();
+                            foreach (var (Notch, Peptide) in psms[i].BestMatchingPeptides)
                             {
-                                if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(peptide.Key.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                                if (spectralLibrary == null || !spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                 {
                                     continue;
                                 }
                                 SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray, SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
-                                double sA = s.SpectralContrastAngle();
+                                pwsms.Add((Notch, Peptide));
+                                pwsmSpectralAngles.Add(s.SpectralContrastAngle());
+
                                 //double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
-                                if (Double.IsNaN(sA))
+                            }
+                            if(pwsmSpectralAngles.Count > 0)
+                            {
+                                psms[i].SpectralAngle = pwsmSpectralAngles.Max();
+                                List<int> indexesToRemove = new();
+                                for (int j = 0; j < pwsmSpectralAngles.Count; j++)
                                 {
-                                    int j = i;
-                                    i++;
+                                    if (pwsmSpectralAngles[j] < (pwsmSpectralAngles.Max() - 0.05))
+                                    {
+                                        indexesToRemove.Add(j);
+                                    }
                                 }
-                                if(sA == 0)
+                                indexesToRemove.OrderByDescending(a => a).ToList();
+                                foreach (int index in indexesToRemove)
                                 {
-                                    int j = i;
-                                    i++;
+                                    psms[i].RemoveThisAmbiguousPeptide(pwsms[index].Item1, pwsms[index].Item2);
                                 }
-                                psms[i].SpectralAngle = sA;
+                            }
+                            else
+                            {
+                                psms[i].SpectralAngle = 0;
                             }
                         }
                     }
