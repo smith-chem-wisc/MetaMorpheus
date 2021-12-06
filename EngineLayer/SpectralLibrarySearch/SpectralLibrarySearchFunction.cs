@@ -53,25 +53,10 @@ namespace EngineLayer
                                 SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray, SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
                                 pwsms.Add((Notch, Peptide));
                                 pwsmSpectralAngles.Add(s.SpectralContrastAngle());
-
-                                //double spectralAngle = CalculateNormalizedSpectralAngle(librarySpectrum.MatchedFragmentIons, scan.TheScan, commonParameters);
                             }
                             if(pwsmSpectralAngles.Count > 0)
                             {
                                 psms[i].SpectralAngle = pwsmSpectralAngles.Max();
-                                List<int> indexesToRemove = new();
-                                for (int j = 0; j < pwsmSpectralAngles.Count; j++)
-                                {
-                                    if (pwsmSpectralAngles[j] < (pwsmSpectralAngles.Max() - 0.05))
-                                    {
-                                        indexesToRemove.Add(j);
-                                    }
-                                }
-                                indexesToRemove.OrderByDescending(a => a).ToList();
-                                foreach (int index in indexesToRemove)
-                                {
-                                    psms[i].RemoveThisAmbiguousPeptide(pwsms[index].Item1, pwsms[index].Item2);
-                                }
                             }
                             else
                             {
