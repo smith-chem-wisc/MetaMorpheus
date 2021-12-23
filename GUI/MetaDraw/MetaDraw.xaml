@@ -172,7 +172,8 @@
                                         <ItemsControl.ItemsPanel>
                                             <ItemsPanelTemplate>
                                                 <!--This here is very important for how multiple scans displayed. Useful parameters are (HorizontalAlignment="Stretch" or Columns="1")-->
-                                                <UniformGrid HorizontalAlignment="Stretch" Columns="{Binding Path=MyColumnCount}"/>
+                                                <!--Columns="{Binding Path=MyColumnCount}" has caused problems viewing parent child spectra in O-glyco search so be careful-->
+                                                <UniformGrid HorizontalAlignment="Stretch" Columns="1"/>
                                             </ItemsPanelTemplate>
                                         </ItemsControl.ItemsPanel>
 
