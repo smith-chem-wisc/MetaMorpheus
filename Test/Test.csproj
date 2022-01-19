@@ -229,6 +229,9 @@
     <None Update="TestData\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\tmt18test.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\unprocessedMzAndIntensities.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
