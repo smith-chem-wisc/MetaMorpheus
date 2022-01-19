@@ -72,9 +72,9 @@ namespace Test
             int precursorCharge2 = 1;
             var ms3 = new Ms2ScanWithSpecificMass(scans[2], precursorMass2.ToMz(precursorCharge2), precursorCharge2, origDataFile, new CommonParameters());
 
-            List<Modification> gptmdModifications = new List<Modification>();
-            gptmdModifications.AddRange(GlobalVariables.AllModsKnown);
-            List<Modification> tmt18Mods = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
+            List<Modification> fixedModifications = new List<Modification>();
+            fixedModifications.AddRange(GlobalVariables.AllModsKnown);
+            List<Modification> tmt18Mods = fixedModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
             ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
 
             Protein p = new Protein(peptide, "accession");
@@ -92,9 +92,9 @@ namespace Test
         [TestCase("PEPTIDEK", 1536.8764)]
         public static void TestPeptideLabelledWithTMT18(string peptide, double totalMass)
         {
-            List<Modification> gptmdModifications = new List<Modification>();
-            gptmdModifications.AddRange(GlobalVariables.AllModsKnown);
-            List<Modification> tmt18Mods = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
+            List<Modification> fixedModifications = new List<Modification>();
+            fixedModifications.AddRange(GlobalVariables.AllModsKnown);
+            List<Modification> tmt18Mods = fixedModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
 
             Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
