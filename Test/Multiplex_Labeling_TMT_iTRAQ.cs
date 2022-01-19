@@ -1,12 +1,15 @@
 ﻿using Chemistry;
 using EngineLayer;
+using IO.MzML;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using TaskLayer;
 
 namespace Test
 {
@@ -17,18 +20,93 @@ namespace Test
         [TestCase("C8 N1 H16", 126.128274520)]
         [TestCase("C8 H16 N{15}1", 127.125309415)]
         [TestCase("C7 H16 C{13}1 N{15}1", 128.128664250)]
-        [TestCase("C6 H16 C{13}2 N{15}1", 129.132019085)]
-        [TestCase("C5 H16 C{13}3 N{15}1", 130.135373920)]
-        [TestCase("C3 N1 H16 C{13}5", 131.145048695)]
         [TestCase("C7 N1 H16 C{13}1", 127.131629355)]
+        [TestCase("C6 H16 C{13}2 N{15}1", 129.132019085)]
         [TestCase("C6 N1 H16 C{13}2", 128.134984190)]
         [TestCase("C5 N1 H16 C{13}3", 129.138339025)]
+        [TestCase("C5 H16 C{13}3 N{15}1", 130.135373920)]
         [TestCase("C4 N1 H16 C{13}4", 130.141693860)]
         [TestCase("C4 H16 C{13}4 N{15}1", 131.138728755)]
+        [TestCase("C3 N1 H16 C{13}5", 131.145048695)]
+        [TestCase("C3 H16 C{13}5 N{15}1", 132.142083590)]
+        [TestCase("C2 N1 H16 C{13}6", 132.148403531)]
+        [TestCase("C2 H16 C{13}6 N{15}1", 133.145438425)]
+        [TestCase("C1 N1 H16 C{13}7", 133.151758366)]
+        [TestCase("C1 H16 C{13}7 N{15}1", 134.148793260)]
+        [TestCase("N1 H16 C{13}8", 134.155113201)]
+        [TestCase("H16 C{13}8 N{15}1", 135.152148095)]
         public static void TestChemicalFormulaWithIsotopesTMT(string formula, double mass)
         {
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
             Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass));
+        }
+
+        [Test]
+        [TestCase("LAALNPESNTAGLDIFAK")]
+        public static void TestingTMT18(string peptide)
+        {
+            Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tmt18test.mzML");
+            FilteringParams filter = new FilteringParams(200, 0.01, null, 1, false, false, false);
+            MyMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter, 1);
+            var scans = MyMsDataFiles[origDataFile].GetAllScansList();
+
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
+            CommonParameters CommonParameters = new CommonParameters(
+             dissociationType: DissociationType.HCD,
+             maxThreadsToUsePerFile: 1,
+             precursorMassTolerance: new MzLibUtil.PpmTolerance(5),
+             productMassTolerance: new MzLibUtil.PpmTolerance(20),
+             numberOfPeaksToKeepPerWindow: 200,
+             minimumAllowedIntensityRatioToBasePeak: 0.01,
+             trimMs1Peaks: false,
+             trimMsMsPeaks: false,
+             digestionParams: new DigestionParams(
+                 protease: "trypsin",
+                 minPeptideLength: 1,
+                 maxMissedCleavages: 2,
+                 initiatorMethionineBehavior: InitiatorMethionineBehavior.Variable),
+             scoreCutoff: 5);
+
+            double precursorMass2 = 787.520; 
+            int precursorCharge2 = 1;
+            var ms3 = new Ms2ScanWithSpecificMass(scans[2], precursorMass2.ToMz(precursorCharge2), precursorCharge2, origDataFile, new CommonParameters());
+
+            List<Modification> gptmdModifications = new List<Modification>();
+            gptmdModifications.AddRange(GlobalVariables.AllModsKnown);
+            List<Modification> tmt18Mods = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
+
+            Protein p = new Protein(peptide, "accession");
+            var aPeptideWithSetModifications = p.Digest(digestionParams, tmt18Mods, new List<Modification>()).First();
+            var theseTheoreticalFragments = new List<Product>(); 
+            aPeptideWithSetModifications.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theseTheoreticalFragments);
+            bool writeSpectralLibrary = false;
+            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(ms3, theseTheoreticalFragments, CommonParameters, matchAllCharges: writeSpectralLibrary);
+
+            Assert.AreEqual(16, matchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList().Count());
+        }
+
+        [Test]
+        [TestCase("PEPTIDE", 1104.5743)]
+        [TestCase("PEPTIDEK", 1536.8764)]
+        public static void TestPeptideLabelledWithTMT18(string peptide, double totalMass)
+        {
+            List<Modification> gptmdModifications = new List<Modification>();
+            gptmdModifications.AddRange(GlobalVariables.AllModsKnown);
+            List<Modification> tmt18Mods = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
+
+            Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
+            var p = P.Digest(CommonParameters.DigestionParams, tmt18Mods, new List<Modification>()).First();
+            var f = new List<Product>();
+            p.Fragment(DissociationType.HCD, FragmentationTerminus.Both, f);
+
+            List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
+            productMasses.Distinct();
+            productMasses.Sort();
+           
+            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
         }
 
         [Test]
@@ -195,7 +273,7 @@ namespace Test
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
             if (mz)
             {
-                Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass.ToMz(1),5));
+                Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass.ToMz(1), 5));
             }
             else
             {
