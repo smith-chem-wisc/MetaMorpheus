@@ -72,6 +72,13 @@ namespace TaskLayer
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
+                else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count== CurrentXmlDbFilenameList.Count)
+                {
+                    Warn("Cannot proceed. No protein database files selected.");
+                    FinishedAllTasks(OutputFolder);
+                    return;
+                }
+               
                 var ok = TaskList[i];
 
                 // reset product types for custom fragmentation
