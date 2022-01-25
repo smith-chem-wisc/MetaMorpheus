@@ -6,6 +6,7 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -39,52 +40,6 @@ namespace Test
         {
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
             Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass));
-        }
-
-        [Test]
-        [TestCase("LAALNPESNTAGLDIFAK")]
-        public static void TestingTMT18(string peptide)
-        {
-            Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tmt18test.mzML");
-            FilteringParams filter = new FilteringParams(200, 0.01, null, 1, false, false, false);
-            MyMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter, 1);
-            var scans = MyMsDataFiles[origDataFile].GetAllScansList();
-
-            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
-            CommonParameters CommonParameters = new CommonParameters(
-             dissociationType: DissociationType.HCD,
-             maxThreadsToUsePerFile: 1,
-             precursorMassTolerance: new MzLibUtil.PpmTolerance(5),
-             productMassTolerance: new MzLibUtil.PpmTolerance(20),
-             numberOfPeaksToKeepPerWindow: 200,
-             minimumAllowedIntensityRatioToBasePeak: 0.01,
-             trimMs1Peaks: false,
-             trimMsMsPeaks: false,
-             digestionParams: new DigestionParams(
-                 protease: "trypsin",
-                 minPeptideLength: 1,
-                 maxMissedCleavages: 2,
-                 initiatorMethionineBehavior: InitiatorMethionineBehavior.Variable),
-             scoreCutoff: 5);
-
-            double precursorMass2 = 787.520; 
-            int precursorCharge2 = 1;
-            var ms3 = new Ms2ScanWithSpecificMass(scans[2], precursorMass2.ToMz(precursorCharge2), precursorCharge2, origDataFile, new CommonParameters());
-
-            List<Modification> fixedModifications = new List<Modification>();
-            fixedModifications.AddRange(GlobalVariables.AllModsKnown);
-            List<Modification> tmt18Mods = fixedModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
-            ModificationMotif.TryGetMotif("P", out ModificationMotif motif);
-
-            Protein p = new Protein(peptide, "accession");
-            var aPeptideWithSetModifications = p.Digest(digestionParams, tmt18Mods, new List<Modification>()).First();
-            var theseTheoreticalFragments = new List<Product>(); 
-            aPeptideWithSetModifications.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theseTheoreticalFragments);
-            bool writeSpectralLibrary = false;
-            List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(ms3, theseTheoreticalFragments, CommonParameters, matchAllCharges: writeSpectralLibrary);
-
-            Assert.AreEqual(16, matchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType == ProductType.D).ToList().Count());
         }
 
         [Test]
@@ -129,6 +84,59 @@ namespace Test
             productMasses.Sort();
 
             Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+        }
+
+        [Test]
+        public static void testingTMTonBigScan()
+        {
+            Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tmt18test.mzML");
+            FilteringParams filter = new FilteringParams();
+            MyMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter, 1);
+            var scans2 = MyMsDataFiles[origDataFile].GetAllScansList();
+            var trimmedScans = scans2.Where(m => m.MsnOrder == 3).ToList();
+
+            Protein p = new Protein("LAALNPESNTAGLDIFAK", "accession");
+            List<Modification> fixedModifications = new List<Modification>();
+            fixedModifications.AddRange(GlobalVariables.AllModsKnown);
+            List<Modification> tmt18Mods = fixedModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
+            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
+            var aPeptideWithSetModifications = p.Digest(digestionParams, tmt18Mods, new List<Modification>()).First();
+            var theseTheoreticalFragments = new List<Product>();
+            aPeptideWithSetModifications.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theseTheoreticalFragments);
+            theseTheoreticalFragments = theseTheoreticalFragments.Where(n => n.ProductType == ProductType.D).ToList();
+            double ppmTolerance = 20;
+            int roundTo = 5;
+
+            List<double> diagnosticIons = new List<double>();
+            for (int k = 0; k < theseTheoreticalFragments.Count(); k++)
+            {
+                diagnosticIons.Add(Math.Round(theseTheoreticalFragments[k].NeutralMass, roundTo));
+            }
+
+            int i = 460;
+            do
+            {
+                if (i == trimmedScans.Count())
+                    break;
+                var massList = trimmedScans[i].MassSpectrum.XArray.ToList();
+                for (int j = 0; j < massList.Count(); j++)
+                {
+                    massList[j] = Math.Round(massList[j], roundTo);
+                }
+
+                for (int l = 0; l < massList.Count(); l++)
+                {
+                    for (int m = 0; m < diagnosticIons.Count(); m++)
+                    {
+                        double toleranceValue = ppmTolerance / Math.Pow(10, 6) * massList[l];
+                        if ((massList[l] < diagnosticIons[m] + toleranceValue) & (massList[l] > diagnosticIons[m] - toleranceValue))
+                            diagnosticIons.Remove(diagnosticIons[m]);
+                    }
+                }
+                i++;
+            } while (diagnosticIons.Count() > 0);
+            Assert.AreEqual(0, diagnosticIons.Count());
         }
 
         [Test]
