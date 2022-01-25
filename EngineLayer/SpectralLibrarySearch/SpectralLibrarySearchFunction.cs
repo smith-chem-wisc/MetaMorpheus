@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Proteomics.ProteolyticDigestion;
 using System.Threading.Tasks;
-using MassSpectrometry.MzSpectra;
 
 
 namespace EngineLayer
@@ -415,84 +414,84 @@ namespace EngineLayer
         //}
         // This function is used to converting several spectra matching the same sequence with same charge to a consensus library spectrum. In this function, ll the mz, intensities
         //are averaged with weight. The MetaMopeheus score which comes from database search are treated as weight.If a peak exists in less than 50% of all spectra, it will be discarded
-        public static LibrarySpectrum ConvertingPsmsToConcensusSpectrumWithWeightnew(List<PeptideSpectralMatch> mutiplePsms)
-        {
-            Dictionary<Tuple<Product, int>, double[]> allIntensityBeforeNormalize = new Dictionary<Tuple<Product, int>, double[]>();
-            Dictionary<Tuple<Product, int>, double> allIntensityAfterNormalize = new Dictionary<Tuple<Product, int>, double>();
-            Dictionary<Tuple<Product, int>, double[]> allMz = new Dictionary<Tuple<Product, int>, double[]>();
-            Dictionary<Tuple<Product, int>, double> allAverageMz = new Dictionary<Tuple<Product, int>, double>();
-            var allIntensitySumForNormalize = new double[mutiplePsms.Count];
-            Dictionary<Tuple<Product, int>, int> numberOfEachIons = new Dictionary<Tuple<Product, int>, int>();
-            List<MatchedFragmentIon> libraryIons = new List<MatchedFragmentIon>();
+        //public static LibrarySpectrum ConvertingPsmsToConcensusSpectrumWithWeightnew(List<PeptideSpectralMatch> mutiplePsms)
+        //{
+        //    Dictionary<Tuple<Product, int>, double[]> allIntensityBeforeNormalize = new Dictionary<Tuple<Product, int>, double[]>();
+        //    Dictionary<Tuple<Product, int>, double> allIntensityAfterNormalize = new Dictionary<Tuple<Product, int>, double>();
+        //    Dictionary<Tuple<Product, int>, double[]> allMz = new Dictionary<Tuple<Product, int>, double[]>();
+        //    Dictionary<Tuple<Product, int>, double> allAverageMz = new Dictionary<Tuple<Product, int>, double>();
+        //    var allIntensitySumForNormalize = new double[mutiplePsms.Count];
+        //    Dictionary<Tuple<Product, int>, int> numberOfEachIons = new Dictionary<Tuple<Product, int>, int>();
+        //    List<MatchedFragmentIon> libraryIons = new List<MatchedFragmentIon>();
 
-            Dictionary<Tuple<Product, int>, double> weightScoreForEachIon = new Dictionary<Tuple<Product, int>, double>();
+        //    Dictionary<Tuple<Product, int>, double> weightScoreForEachIon = new Dictionary<Tuple<Product, int>, double>();
 
-            for (int i = 0; i < mutiplePsms.Count; i++)
-            {
-                var matchedIons = mutiplePsms[i].LibraryMatchedFragments.ToList();
-                for (int j = 0; j < matchedIons.Count; j++)
-                {
-                    Tuple<Product, int> newKey = new Tuple<Product, int>(matchedIons[j].NeutralTheoreticalProduct, matchedIons[j].Charge);
-                    if (!allIntensityBeforeNormalize.ContainsKey(newKey))
-                    {
-                        var listOfIntensity = new double[mutiplePsms.Count];
-                        var listOfMz = new double[mutiplePsms.Count];
-                        listOfIntensity[i] = matchedIons[j].Intensity;
-                        listOfMz[i] = matchedIons[j].Mz;
-                        allIntensityBeforeNormalize.Add(newKey, listOfIntensity);
-                        allMz.Add(newKey, listOfMz);
-                        numberOfEachIons.Add(newKey, 1);
-                        weightScoreForEachIon.Add(newKey, mutiplePsms[i].Score);
-                    }
-                    else
-                    {
-                        allIntensityBeforeNormalize[newKey][i] = matchedIons[j].Intensity;
-                        allMz[newKey][i] = matchedIons[j].Mz;
-                        int num = numberOfEachIons[newKey];
-                        numberOfEachIons[newKey] = num + 1;
-                        var tem = weightScoreForEachIon[newKey];
-                        weightScoreForEachIon[newKey] = tem + mutiplePsms[i].Score;
-                    }
-                }
-            }
+        //    for (int i = 0; i < mutiplePsms.Count; i++)
+        //    {
+        //        var matchedIons = mutiplePsms[i].LibraryMatchedFragments.ToList();
+        //        for (int j = 0; j < matchedIons.Count; j++)
+        //        {
+        //            Tuple<Product, int> newKey = new Tuple<Product, int>(matchedIons[j].NeutralTheoreticalProduct, matchedIons[j].Charge);
+        //            if (!allIntensityBeforeNormalize.ContainsKey(newKey))
+        //            {
+        //                var listOfIntensity = new double[mutiplePsms.Count];
+        //                var listOfMz = new double[mutiplePsms.Count];
+        //                listOfIntensity[i] = matchedIons[j].Intensity;
+        //                listOfMz[i] = matchedIons[j].Mz;
+        //                allIntensityBeforeNormalize.Add(newKey, listOfIntensity);
+        //                allMz.Add(newKey, listOfMz);
+        //                numberOfEachIons.Add(newKey, 1);
+        //                weightScoreForEachIon.Add(newKey, mutiplePsms[i].Score);
+        //            }
+        //            else
+        //            {
+        //                allIntensityBeforeNormalize[newKey][i] = matchedIons[j].Intensity;
+        //                allMz[newKey][i] = matchedIons[j].Mz;
+        //                int num = numberOfEachIons[newKey];
+        //                numberOfEachIons[newKey] = num + 1;
+        //                var tem = weightScoreForEachIon[newKey];
+        //                weightScoreForEachIon[newKey] = tem + mutiplePsms[i].Score;
+        //            }
+        //        }
+        //    }
 
-            List<Tuple<Product, int>> commonIons = numberOfEachIons.Where(p => p.Value == mutiplePsms.Count).Select(q => q.Key).ToList();
+        //    List<Tuple<Product, int>> commonIons = numberOfEachIons.Where(p => p.Value == mutiplePsms.Count).Select(q => q.Key).ToList();
 
-            //If a peak exists in less than 50% of all spectra, it will be discarded
-            List<Tuple<Product, int>> unqualifiedIons = numberOfEachIons.Where(p => p.Value < ((double)mutiplePsms.Count / (double)2)).Select(q => q.Key).ToList();
+        //    //If a peak exists in less than 50% of all spectra, it will be discarded
+        //    List<Tuple<Product, int>> unqualifiedIons = numberOfEachIons.Where(p => p.Value < ((double)mutiplePsms.Count / (double)2)).Select(q => q.Key).ToList();
 
-            // store all intensity values before normalize
-            for (int k = 0; k < mutiplePsms.Count; k++)
-            {
-                double intensitySum = 0;
-                foreach (var x in commonIons)
-                {
-                    intensitySum = intensitySum + allIntensityBeforeNormalize[x][k];
-                }
-                allIntensitySumForNormalize[k] = intensitySum;
-            }
+        //    // store all intensity values before normalize
+        //    for (int k = 0; k < mutiplePsms.Count; k++)
+        //    {
+        //        double intensitySum = 0;
+        //        foreach (var x in commonIons)
+        //        {
+        //            intensitySum = intensitySum + allIntensityBeforeNormalize[x][k];
+        //        }
+        //        allIntensitySumForNormalize[k] = intensitySum;
+        //    }
 
-            // store all intensity values after normalize with weight. The MetaMopeheus score which comes from database search are treated as weight.
-            foreach (var y in allIntensityBeforeNormalize.Where(p => !unqualifiedIons.Contains(p.Key)))
-            {
-                for (int l = 0; l < y.Value.Length; l++)
-                {
-                    double intensityBeforeNormalize = y.Value[l];
-                    double intensityAfterNormalize = intensityBeforeNormalize / allIntensitySumForNormalize[l];
-                    double intensityAfterWeight = (intensityAfterNormalize * mutiplePsms[l].Score) / weightScoreForEachIon[y.Key];
-                    y.Value[l] = intensityAfterWeight;
-                }
-                allIntensityAfterNormalize.Add(y.Key, y.Value.Where(p => p > 0).ToList().Sum());
-            }
+        //    // store all intensity values after normalize with weight. The MetaMopeheus score which comes from database search are treated as weight.
+        //    foreach (var y in allIntensityBeforeNormalize.Where(p => !unqualifiedIons.Contains(p.Key)))
+        //    {
+        //        for (int l = 0; l < y.Value.Length; l++)
+        //        {
+        //            double intensityBeforeNormalize = y.Value[l];
+        //            double intensityAfterNormalize = intensityBeforeNormalize / allIntensitySumForNormalize[l];
+        //            double intensityAfterWeight = (intensityAfterNormalize * mutiplePsms[l].Score) / weightScoreForEachIon[y.Key];
+        //            y.Value[l] = intensityAfterWeight;
+        //        }
+        //        allIntensityAfterNormalize.Add(y.Key, y.Value.Where(p => p > 0).ToList().Sum());
+        //    }
 
-            // second normalize by max of the intensity values
-            var max = allIntensityAfterNormalize.Select(p => p.Value).Max();
-            foreach (var eachMz in allMz.Where(p => !unqualifiedIons.Contains(p.Key)))
-            {
-                Product temProduct = eachMz.Key.Item1;
-                libraryIons.Add(new MatchedFragmentIon(ref temProduct, eachMz.Value.Average(), allIntensityAfterNormalize[eachMz.Key] / max, eachMz.Key.Item2));
-            }
-            return new LibrarySpectrum(mutiplePsms[0].FullSequence, mutiplePsms.Select(p => p.ScanPrecursorMonoisotopicPeakMz).Average(), mutiplePsms[0].ScanPrecursorCharge, libraryIons, mutiplePsms.Select(p => p.ScanRetentionTime).Average(), false);
-        }
+        //    // second normalize by max of the intensity values
+        //    var max = allIntensityAfterNormalize.Select(p => p.Value).Max();
+        //    foreach (var eachMz in allMz.Where(p => !unqualifiedIons.Contains(p.Key)))
+        //    {
+        //        Product temProduct = eachMz.Key.Item1;
+        //        libraryIons.Add(new MatchedFragmentIon(ref temProduct, eachMz.Value.Average(), allIntensityAfterNormalize[eachMz.Key] / max, eachMz.Key.Item2));
+        //    }
+        //    return new LibrarySpectrum(mutiplePsms[0].FullSequence, mutiplePsms.Select(p => p.ScanPrecursorMonoisotopicPeakMz).Average(), mutiplePsms[0].ScanPrecursorCharge, libraryIons, mutiplePsms.Select(p => p.ScanRetentionTime).Average(), false);
+        //}
     }
 }
