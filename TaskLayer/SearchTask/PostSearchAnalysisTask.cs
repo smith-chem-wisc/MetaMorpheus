@@ -529,6 +529,7 @@ namespace TaskLayer
             {
                 FilteredPsmListForOutput.RemoveAll(b => b.IsContaminant);
             }
+            UpdatePsmCounts(FilteredPsmListForOutput);
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
@@ -988,7 +989,6 @@ namespace TaskLayer
             List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
 
             new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
-
             if (!Parameters.SearchParameters.WriteDecoys)
             {
                 peptides.RemoveAll(b => b.IsDecoy);
@@ -1025,6 +1025,15 @@ namespace TaskLayer
                     WritePsmsToTsv(peptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
+            }
+        }
+
+        private void UpdatePsmCounts(List<PeptideSpectralMatch> psms)
+        {
+            foreach (PeptideSpectralMatch psm in psms)
+            {
+                int psmCount = psms.Select(p => p.FullSequence == psm.FullSequence && p.FdrInfo.QValue > 0.01 && !p.BaseSequence.Contains('|')).Count();
+                psm.UpdatePsmCount(psmCount);
             }
         }
 

@@ -137,7 +137,11 @@ namespace EngineLayer
             }
             this.ResolveAllAmbiguities();
         }
-
+        
+        public void UpdatePsmCount(int count)
+        {
+            this.PsmCount = count;
+        }
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
