@@ -642,7 +642,8 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
-                foreach (var psm in psms)
+                var trimmedPsms = psms.Where(m => m.PsmCount != 0);
+                foreach (var psm in trimmedPsms)
                 {
                     output.WriteLine(psm.ToString(modstoWritePruned));
                 }
