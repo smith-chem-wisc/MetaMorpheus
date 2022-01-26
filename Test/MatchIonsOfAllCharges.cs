@@ -438,18 +438,16 @@ namespace Test
             int indOfTorD = Array.IndexOf(split, "Decoy/Contaminant/Target");
             int indOfTargetSequenceInTDpairs = Array.IndexOf(split, "Peptide Description");
             int indOfsequence = Array.IndexOf(split, "Full Sequence");
-            //for (int i = 1; i < results.Length; i++)
-            //{
-            //    if (results[i].Split('\t')[indOfsequence] == "GFVAPER")
-            //    {
-            //        Assert.That(results[i].Split('\t')[indOfTorD] == "D");
-            //        Assert.That(Double.Parse(results[i].Split('\t')[indOfSA]) < 0.4);
-            //        Assert.That(results[i].Split('\t')[indOfTargetSequenceInTDpairs] == "EPAVFGR");
-            //    }
-
-            //}
-
-            //Directory.Delete(thisTaskOutputFolder, true);
+            for (int i = 1; i < results.Length; i++)
+            {
+                if (results[i].Split('\t')[indOfsequence] == "GFVAPER")
+                {
+                    Assert.That(results[i].Split('\t')[indOfTorD] == "D");
+                    Assert.That(Double.Parse(results[i].Split('\t')[indOfSA]) < 0.45);
+                    Assert.That(results[i].Split('\t')[indOfTargetSequenceInTDpairs] == "EPAVFGR");
+                }
+            }
+            Directory.Delete(thisTaskOutputFolder, true);
         }
     }
 }
