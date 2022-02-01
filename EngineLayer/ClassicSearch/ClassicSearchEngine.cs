@@ -97,8 +97,37 @@ namespace EngineLayer.ClassicSearch
                         // Stop loop if canceled
                         if (GlobalVariables.StopLoops) { return; }
 
+                        var empty = new List<Modification>();
+                        var digestionmotifs = DigestionMotif.ParseDigestionMotifsFromString("X");
+                        Protease customProtease = new Protease("custom" + Proteins[i].Accession, CleavageSpecificity.Full, "", "", digestionmotifs);
+
+                        int minPeptideLength = Proteins[i].BaseSequence.Length - 5;
+                        int maxMissedCleavages = Proteins[i].BaseSequence.Length;
+                        bool generateUnlabeledProteinsForSilac = false;
+                        InitiatorMethionineBehavior initiatorMethionineBehavior = InitiatorMethionineBehavior.Variable;
+                        FragmentationTerminus fragmentationTerminus = FragmentationTerminus.Both;
+                        CleavageSpecificity searchModeType = CleavageSpecificity.Full;
+                        int maxModsForPeptides = 5;
+                        int maxModificationIsoforms = 1024;
+
+                        if (!ProteaseDictionary.Dictionary.Keys.Contains(customProtease.Name))
+                        {
+                            ProteaseDictionary.Dictionary.Add(customProtease.Name, customProtease);
+                        }
+
+                        
+
+                        DigestionParams myDigestionParams = new DigestionParams(customProtease.Name, minPeptideLength: minPeptideLength, maxMissedCleavages: maxMissedCleavages,
+                            generateUnlabeledProteinsForSilac: generateUnlabeledProteinsForSilac, initiatorMethionineBehavior: initiatorMethionineBehavior,
+                            fragmentationTerminus: fragmentationTerminus, searchModeType: searchModeType, maxModsForPeptides: maxModsForPeptides,
+                            maxModificationIsoforms: maxModificationIsoforms);
+
+
+
+
+
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
-                        foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
+                        foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(myDigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
                             PeptideWithSetModifications reversedOnTheFlyDecoy = null;
 
