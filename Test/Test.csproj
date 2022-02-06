@@ -18,7 +18,7 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.ML" Version="1.3.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="1.3.1" />
-    <PackageReference Include="mzLib" Version="1.0.502" />
+    <PackageReference Include="mzLib" Version="1.0.504" />
     <PackageReference Include="NUnit" Version="3.12.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.16.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.5.0" />
@@ -172,6 +172,12 @@
     <None Update="TestData\myPrositLib.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\oglyco.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\oglycoSinglePsms.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\ok.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -224,6 +230,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\tinySemi.mgf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\tmt18test.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\tmt18test2.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\unprocessedMzAndIntensities.tsv">
