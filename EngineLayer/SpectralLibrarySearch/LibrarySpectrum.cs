@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System;
 
 namespace EngineLayer
 {
@@ -17,6 +18,9 @@ namespace EngineLayer
         public int ChargeState { get; set; }
         public List<MatchedFragmentIon> MatchedFragmentIons { get; set; }
         public bool IsDecoy { get; set; }
+
+        public double[] XArray { get; private set; }
+        public double[] YArray { get; private set; }
         public string Name
         {
             get { return Sequence + "/" + ChargeState; }
@@ -30,6 +34,9 @@ namespace EngineLayer
             ChargeState = chargeState;
             IsDecoy = isDecoy;
             RetentionTime = rt;
+            XArray = peaks.Select(p => p.Mz).ToArray();
+            YArray = peaks.Select(p => p.Intensity).ToArray();
+            Array.Sort(XArray, YArray);
         }
 
         public override string ToString()

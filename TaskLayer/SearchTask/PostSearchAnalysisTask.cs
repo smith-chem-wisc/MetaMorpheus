@@ -584,6 +584,8 @@ namespace TaskLayer
                 }
             }
         }
+
+        //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
             var FilteredPsmList = Parameters.AllPsms
@@ -596,7 +598,7 @@ namespace TaskLayer
             {
                 List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
                 (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
-                //List<PeptideSpectralMatch> psmsWithsinglePeptideAndSameCharge = psmsWithsinglePeptide.Where(b => b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
+                
                 if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
                 {
                     PsmsGroupByPeptideAndCharge.Add(peptideWithChargeState, psmsWithSamePeptideAndSameCharge);
