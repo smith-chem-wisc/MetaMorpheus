@@ -1032,8 +1032,12 @@ namespace TaskLayer
         {
             foreach (PeptideSpectralMatch psm in psms)
             {
-                int psmCount = psms.Select(p => p.FullSequence == psm.FullSequence && p.FdrInfo.QValue > 0.01 && !p.BaseSequence.Contains('|')).Count();
-                psm.UpdatePsmCount(psmCount);
+                int psmCount = 0;
+                if (psm.FullSequence != null)
+                {
+                    psmCount = psms.Count(p => p.FullSequence == psm.FullSequence && p.FdrInfo.QValue <= 0.01 && !p.BaseSequence.Contains('|'));
+                    psm.UpdatePsmCount(psmCount);
+                }
             }
         }
 
