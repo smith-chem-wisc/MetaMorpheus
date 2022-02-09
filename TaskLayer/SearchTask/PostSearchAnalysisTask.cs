@@ -1030,14 +1030,12 @@ namespace TaskLayer
 
         private void UpdatePsmCounts(List<PeptideSpectralMatch> psms)
         {
-            foreach (PeptideSpectralMatch psm in psms)
+            var allUnambiguousAndLessThanOnePercentFdr = psms.Where(m => m.FullSequence != null && m.FdrInfo.QValue <= 0.01 && !m.BaseSequence.Contains('|'));
+            foreach (PeptideSpectralMatch psm in allUnambiguousAndLessThanOnePercentFdr)
             {
                 int psmCount = 0;
-                if (psm.FullSequence != null)
-                {
-                    psmCount = psms.Count(p => p.FullSequence == psm.FullSequence && p.FdrInfo.QValue <= 0.01 && !p.BaseSequence.Contains('|'));
-                    psm.UpdatePsmCount(psmCount);
-                }
+                psmCount = allUnambiguousAndLessThanOnePercentFdr.Count(p => p.FullSequence == psm.FullSequence);
+                psm.UpdatePsmCount(psmCount);
             }
         }
 
