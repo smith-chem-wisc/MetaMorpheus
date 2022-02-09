@@ -155,7 +155,7 @@ TG   K
 PP   Anywhere.
 MT   Common Biological
 DI   HCD:169.110323533
-CF   C4 H7 O2
+CF   C4 H6 O2
 //
 ID   Malonylation
 TG   K
