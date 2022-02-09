@@ -799,8 +799,6 @@ namespace MetaMorpheusGUI
                         if (UpdateGUISettings.UseNonSpecificRecommendedSettings())
                         {
                             MaxPeptideLengthTextBox.Text = "25";
-                            ClassicSearchRadioButton.IsChecked = false;
-                            NonSpecificSearchRadioButton.IsChecked = true;
                         }
                         break;
                     case "top-down":
