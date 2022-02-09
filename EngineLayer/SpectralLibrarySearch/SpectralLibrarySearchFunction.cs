@@ -52,7 +52,6 @@ namespace EngineLayer
                                             pwsms.Add((Notch, Peptide));
                                             pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
                                         }
-
                                     }
 
                                     //if peptide is decoy, look for the decoy's corresponding target's spectrum in the spectral library and generate decoy spectrum by function GetDecoyLibrarySpectrumFromTargetByRevers
@@ -83,9 +82,7 @@ namespace EngineLayer
                     }
                 });
             }
-                
         }
-
 
         /// <summary>
         /// Calculates the spectral angle, as described by Prosit ( https://www.nature.com/articles/s41592-019-0426-7 ).
