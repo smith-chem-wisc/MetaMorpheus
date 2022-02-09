@@ -112,32 +112,6 @@ namespace Test
             File.Delete(writtenPath);
         }
 
-        //The purpose of this test is to ensure that engine won't run without database loaded
-        [Test]
-        public static void TestWithOnlySpectralLibraryLoaded ()
-        {
-            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
-            var outputDir = Path.Combine(testDir, @"SpectralLibrarySearchTest");
-            string library1 = Path.Combine(testDir, @"P16858_target.msp");
-            string mgfName = @"TestData\ok.mgf";
-
-            SearchTask task = new SearchTask
-            {
-                SearchParameters = new SearchParameters
-                {
-                }
-            };
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>
-            {
-                ("task1", task),
-            };
-            //run!
-
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mgfName }, new List<DbForTask> { new DbForTask(library1, false), }, outputDir);
-            engine.Run();
-            ////Just don't crash! There should also be at least one psm at 1% FDR, but can't check for that.
-            //Directory.Delete(outputDir, true);
-        }
         [Test]
         public static void SpectralLibrarySearchTest()
         {
