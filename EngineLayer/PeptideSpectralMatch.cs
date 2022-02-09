@@ -39,7 +39,6 @@ namespace EngineLayer
         }
 
         public MsDataScan MsDataScan { get; set; }
-        public List<MatchedFragmentIon> LibraryMatchedFragments { get; set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; private set; }
         public string EssentialSequence { get; private set; }
