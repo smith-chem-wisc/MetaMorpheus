@@ -279,13 +279,15 @@ namespace TaskLayer
 
         public static IEnumerable<Ms2ScanWithSpecificMass> GetMs2Scans(MsDataFile myMSDataFile, string fullFilePath, CommonParameters commonParameters)
         {
-            var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters);
+            // _GetMs2Scans returns an array of List<Ms2ScanWithSpecificMass>
+            var scansWithPrecursors = _GetMs2Scans(myMSDataFile, fullFilePath, commonParameters); 
 
             if (scansWithPrecursors.Length == 0)
             {
                 return new List<Ms2ScanWithSpecificMass>();
             }
 
+            // Defines child scans (ms2+ and parentScans MS1?)
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
             var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber))
                 .SelectMany(v => v)
