@@ -53,7 +53,7 @@ UniProt .XML or .fasta format; may be used in compressed (.gz) format. If you wo
 ## Test Installation (Windows GUI)
 
 1. Download the latest MetaMorpheusInstaller.msi [release](https://github.com/smith-chem-wisc/MetaMorpheus/releases), and install MetaMorpheus.
-2. Download the example spectra and database files from [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/2u42qp0b8jllywqzeungmjj04gplw5in).
+2. Download the example spectra and database files from [https://uwmadison.box.com/v/MetaMorpheusPublic](https://uwmadison.box.com/s/woh246eq30vtckxsfbae5pw0ltoznlca).
 3. Open MetaMorpheus from the start menu, and drag and drop the .raw spectra files and the UniProt .xml database into MetaMorpheus.
 4. Add a series of Tasks to make a workflow for MetaMorpheus to follow. Drag the .toml files (these files store MetaMorpheus's search parameters) (Task1 - Task5) into the application.
   * Task1-SearchTaskconfig.toml - the standard search functionality.
