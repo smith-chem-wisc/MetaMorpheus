@@ -22,6 +22,7 @@ namespace TaskLayer
     public enum MyTask
     {
         Search,
+        SingleCellProteomics,
         Gptmd,
         Calibrate,
         XLSearch,
