@@ -708,6 +708,46 @@ namespace TaskLayer
             }
         }
 
+        private void PostQuantificationMbrAnalysis()
+        {
+
+            List<ChromatographicPeak> peaks = (List<ChromatographicPeak>)Parameters.FlashLfqResults.Peaks.Select(p => p.Value);
+            var mbrPeaks = peaks.Where(p => p.IsMbrPeak).GroupBy(p=>p.SpectraFileInfo.FullFilePathWithExtension).ToList();
+            List<PeptideSpectralMatch> allPeptides = GetAllPeptides();
+            List<string> spectraFileFullFilePaths = peaks.Select(p => p.SpectraFileInfo.FullFilePathWithExtension).Distinct().ToList();
+
+            foreach (string spectraFile in spectraFileFullFilePaths)
+            {
+                if (mbrPeaks.ke) ;
+
+                foreach (ChromatographicPeak mbrPeak in mbrPeaks)
+                {
+                    PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
+                    PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
+                    double monoIsotopicMass = bestDonorPsm.PeptideMonisotopicMass.Value;
+                }
+            }
+
+        }
+
+        private List<PeptideSpectralMatch> GetAllPeptides()
+        {
+            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+
+            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
+
+            if (!Parameters.SearchParameters.WriteDecoys)
+            {
+                peptides.RemoveAll(b => b.IsDecoy);
+            }
+            if (!Parameters.SearchParameters.WriteContaminants)
+            {
+                peptides.RemoveAll(b => b.IsContaminant);
+            }
+            peptides.RemoveAll(p => p.FdrInfo.QValue > CommonParameters.QValueOutputFilter);
+            return peptides;
+        }
+
         private void WritePrunedDatabase()
         {
             if (Parameters.SearchParameters.WritePrunedDatabase)
