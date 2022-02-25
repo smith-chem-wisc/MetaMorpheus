@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -712,19 +713,27 @@ namespace TaskLayer
         {
 
             List<ChromatographicPeak> peaks = (List<ChromatographicPeak>)Parameters.FlashLfqResults.Peaks.Select(p => p.Value);
-            var mbrPeaks = peaks.Where(p => p.IsMbrPeak).GroupBy(p=>p.SpectraFileInfo.FullFilePathWithExtension).ToList();
+
+            var mbrPeaks = peaks.Where(p=>p.IsMbrPeak).ToLookup(p => p.SpectraFileInfo.FullFilePathWithExtension, p => p);
+
             List<PeptideSpectralMatch> allPeptides = GetAllPeptides();
             List<string> spectraFileFullFilePaths = peaks.Select(p => p.SpectraFileInfo.FullFilePathWithExtension).Distinct().ToList();
 
             foreach (string spectraFile in spectraFileFullFilePaths)
             {
-                if (mbrPeaks.ke) ;
+                List<ChromatographicPeak> fileSpecificMbrPeaks = mbrPeaks[spectraFile].ToList();
+                MyFileManager myFileManager = new MyFileManager(true);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(spectraFile, CommonParameters);
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, spectraFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
-                foreach (ChromatographicPeak mbrPeak in mbrPeaks)
+                foreach (ChromatographicPeak pk in fileSpecificMbrPeaks)
                 {
-                    PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
+                    PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == pk.Identifications.First().ModifiedSequence).First();
                     PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
                     double monoIsotopicMass = bestDonorPsm.PeptideMonisotopicMass.Value;
+
+                    MiniClassicSearchEngine mcse = new(bestDonorPwsm, arrayOfMs2ScansSortedByMass, new List<Modification>(), new List<Modification>(), new MassDiffAcceptor, CommonParameters, new List<(string FileName, CommonParameters Parameters)>(), new SpectralLibrary(), new List<string>());
+                    mcse.Run();
                 }
             }
 
