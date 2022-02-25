@@ -732,8 +732,10 @@ namespace TaskLayer
                     PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
                     double monoIsotopicMass = bestDonorPsm.PeptideMonisotopicMass.Value;
 
-                    MiniClassicSearchEngine mcse = new(bestDonorPwsm, arrayOfMs2ScansSortedByMass, new List<Modification>(), new List<Modification>(), new MassDiffAcceptor, CommonParameters, new List<(string FileName, CommonParameters Parameters)>(), new SpectralLibrary(), new List<string>());
-                    mcse.Run();
+                    SpectralLibrary mySpectralLibrary = new();
+
+                    MiniClassicSearchEngine mcse = new(bestDonorPwsm, arrayOfMs2ScansSortedByMass, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.MassDiffAcceptorType, CommonParameters,Parameters.FileSettingsList, mySpectralLibrary, Parameters.SearchTaskId);
+                    mcse.Run(); 
                 }
             }
 
