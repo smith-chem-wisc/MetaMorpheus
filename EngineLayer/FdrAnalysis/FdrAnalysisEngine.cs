@@ -1,5 +1,4 @@
-﻿using EngineLayer.CrosslinkSearch;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -265,7 +264,7 @@ namespace EngineLayer.FdrAnalysis
                 psmCount = allAmbiguousPsmsLessThanOnePercentFdr.Count(p => p.AmbiguousFullSequence == psm.AmbiguousFullSequence);
                 if (psm.PsmCount != psmCount)
                     psm.PsmCount = psmCount;
-            }    
+            }
         }
     }
 }

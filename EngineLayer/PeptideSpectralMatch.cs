@@ -62,7 +62,8 @@ namespace EngineLayer
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
-        public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
+        public int NumDifferentMatchingPeptides
+        { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public PsmData PsmData_forPEPandPercolator { get; set; }
         public string AmbiguousFullSequence { get; set; } // to allow for counting ambiguous Psms without altering FullSequence field
@@ -72,7 +73,8 @@ namespace EngineLayer
         public double SpectralAngle { get; set; }
         public string NativeId; // this is a property of the scan. used for mzID writing
 
-        public double DeltaScore { get { return (Score - RunnerUpScore); } }
+        public double DeltaScore
+        { get { return (Score - RunnerUpScore); } }
 
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
@@ -139,7 +141,7 @@ namespace EngineLayer
             }
             this.ResolveAllAmbiguities();
         }
-        
+
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
