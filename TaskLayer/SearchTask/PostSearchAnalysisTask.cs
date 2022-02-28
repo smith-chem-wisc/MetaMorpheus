@@ -529,7 +529,6 @@ namespace TaskLayer
             {
                 FilteredPsmListForOutput.RemoveAll(b => b.IsContaminant);
             }
-            UpdatePsmCounts(FilteredPsmListForOutput);
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
@@ -1028,16 +1027,6 @@ namespace TaskLayer
             }
         }
 
-        private void UpdatePsmCounts(List<PeptideSpectralMatch> psms)
-        {
-            var allUnambiguousAndLessThanOnePercentFdr = psms.Where(m => m.FullSequence != null && m.FdrInfo.QValue <= 0.01 && !m.BaseSequence.Contains('|'));
-            foreach (PeptideSpectralMatch psm in allUnambiguousAndLessThanOnePercentFdr)
-            {
-                int psmCount = 0;
-                psmCount = allUnambiguousAndLessThanOnePercentFdr.Count(p => p.FullSequence == psm.FullSequence);
-                psm.UpdatePsmCount(psmCount);
-            }
-        }
 
         private void CompressIndividualFileResults()
         {

@@ -31,6 +31,7 @@ namespace EngineLayer
             Xcorr = xcorr;
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
+            AmbiguousFullSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(p => p.Pwsm.FullSequence)).ResolvedString;
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
@@ -64,6 +65,7 @@ namespace EngineLayer
         public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public PsmData PsmData_forPEPandPercolator { get; set; }
+        public string AmbiguousFullSequence { get; set; } // to allow for counting ambiguous Psms without altering FullSequence field
 
         public double Score { get; private set; }
         public double Xcorr;
@@ -138,10 +140,6 @@ namespace EngineLayer
             this.ResolveAllAmbiguities();
         }
         
-        public void UpdatePsmCount(int count)
-        {
-            this.PsmCount = count;
-        }
         public override string ToString()
         {
             return ToString(new Dictionary<string, int>());
@@ -198,6 +196,7 @@ namespace EngineLayer
             ModsIdentified = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.AllModsOneIsNterminus)).ResolvedValue;
             ModsChemicalFormula = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
             Notch = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Notch)).ResolvedValue;
+            AmbiguousFullSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.FullSequence)).ResolvedString;
 
             // if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
             if (IsDecoy)
@@ -392,6 +391,7 @@ namespace EngineLayer
             DigestionParams = psm.DigestionParams;
             PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
             SpectralAngle = psm.SpectralAngle;
+            AmbiguousFullSequence = PsmTsvWriter.Resolve(psm.BestMatchingPeptides.Select(p => p.Peptide.FullSequence)).ResolvedString;
         }
     }
 }

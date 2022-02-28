@@ -232,7 +232,6 @@ namespace EngineLayer.FdrAnalysis
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
             var allUnambiguousPsms = AllPsms.Where(psm => psm.FullSequence != null);
-
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                 psm.FdrInfo.QValue <= 0.01
                 && psm.FdrInfo.QValueNotch <= 0.01)
@@ -255,6 +254,18 @@ namespace EngineLayer.FdrAnalysis
                     psm.PsmCount = sequenceToPsmCount[psm.FullSequence];
                 }
             }
+
+            // count ambiguous psms with fdr cutoff = 0.01
+            var allAmbiguousPsms = AllPsms.Where(m => m.FullSequence == null).ToList();
+            var allAmbiguousPsmsLessThanOnePercentFdr = allAmbiguousPsms.Where(psm =>
+                psm.FdrInfo.QValue <= 0.01 && psm.FdrInfo.QValueNotch <= 0.01);
+            foreach (var psm in allAmbiguousPsmsLessThanOnePercentFdr)
+            {
+                int psmCount = 0;
+                psmCount = allAmbiguousPsmsLessThanOnePercentFdr.Count(p => p.AmbiguousFullSequence == psm.AmbiguousFullSequence);
+                if (psm.PsmCount != psmCount)
+                    psm.PsmCount = psmCount;
+            }    
         }
     }
 }
