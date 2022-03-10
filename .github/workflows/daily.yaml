@@ -1,0 +1,96 @@
+name: Daily build & reporting
+
+schedule:
+  - cron: '0 4 * * 1,2,3,4,5,6,7'
+
+jobs:
+  BuildAndReport:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+
+      - name: Pull CI repository
+        run: |
+          # Possibly put these in MM? Could use a different branch and protect that branch
+          git pull https://github.com/smith-chem-wisc/Jenkins-MetaMorpheus.git
+
+      - name: Build MetaMorpheus
+        run: |
+          dotnet restore MetaMorpheus.sln
+          dotnet msbuild CMD/CMD.csproj -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false
+
+      - name: Build auditor
+        run: |
+          dotnet restore Jenkins-MetaMorpheus/Auditor/Auditor.sln
+          dotnet msbuild Jenkins-MetaMorpheus/Auditor/Auditor.sln /verbosity:minimal
+
+      - name: Set up run environment
+        run: |
+          For /f "tokens=2-4 delims=/ " %%a in ('date /t') do (set mydate=%%c-%%a-%%b)
+          For /f "tokens=1-2 delims=/:" %%a in ("%TIME%") do (set mytime=%%a%%b)
+          $datafolder = "Jenkins-MetaMorpheus/TestFiles/DataAndRunSettings"
+          $outfolder = "output"
+
+      - name: Classic search
+        run:
+          CMD\bin\Release\net5.0\cmd.exe
+            -t $datafolder\Classic\Task1SearchExample.toml
+            $datafolder\Classic\Task2CalibrationExample.toml
+            $datafolder\Classic\Task3SearchExample.toml
+            $datafolder\Classic\Task4GptmdExample.toml
+            $datafolder\Classic\Task5SearchExample.toml
+            -s $datafolder\Classic\04-30-13_CAST_Frac4_6uL.raw
+            $datafolder\Classic\04-30-13_CAST_Frac5_4uL.raw
+            -d $datafolder\Classic\uniprot-cRAP-1-24-2018.xml.gz
+            $datafolder\Classic\uniprot-mouse-reviewed-1-24-2018.xml.gz
+            -o $output\TestFiles\Results\Classic_[%mydate%_%mytime%];
+
+      - name: XL search
+        run:
+          CMD\bin\Release\net5.0\cmd.exe
+            -t $datafolder\XL\XLSearchTaskconfig.toml
+            -s $datafolder\XL\2017-11-21_XL_DSSO_Ribosome_RT60min_1-calib.mzml
+            -d $datafolder\XL\RibosomeGO.fasta
+            -o $output\TestFiles\Results\XL_[%mydate%_%mytime%]
+
+      - name: Nonspecific search
+        run:
+          CMD\bin\Release\net5.0\cmd.exe
+            -t $datafolder\Nonspecific\SearchTaskconfig_Nonspecific.toml
+            -s $datafolder\Nonspecific\20130504_EXQ3_MiBa_SA_Fib-2.raw
+            -d $datafolder\Nonspecific\uniprot-filtered-reviewed_HomoSapiens.fasta
+            -o $outfolder\TestFiles\Results\Nonspecific_[%mydate%_%mytime%]
+
+      - name: Semispecific search
+        run:
+          CMD\bin\Release\net5.0\cmd.exe
+            -t $datafolder\Semispecific\SearchTaskconfig_Semispecific.toml
+            -s $datafolder\Classic\04-30-13_CAST_Frac4_6uL.raw
+            $datafolder\Classic\04-30-13_CAST_Frac5_4uL.raw
+            -d $datafolder\Classic\uniprot-cRAP-1-24-2018.xml.gz
+            $datafolder\Classic\uniprot-mouse-reviewed-1-24-2018.xml.gz
+            -o $outfolder\TestFiles\Results\Semispecific_[%mydate%_%mytime%]
+
+      - name: Modern search
+        run:
+          CMD\bin\Release\net5.0\cmd.exe
+            -t $datafolder\Modern\SearchTaskconfig_Modern.toml
+            -s $datafolder\Classic\04-30-13_CAST_Frac4_6uL.raw
+            $datafolder\Classic\04-30-13_CAST_Frac5_4uL.raw
+            -d $datafolder\Classic\uniprot-cRAP-1-24-2018.xml.gz
+            $datafolder\Classic\uniprot-mouse-reviewed-1-24-2018.xml.gz
+            -o $outfolder\TestFiles\Results\Modern_[%mydate%_%mytime%]
+
+      - name: Postsearch analysis
+        run: |
+          Jenkins-MetaMorpheus/Auditor/Auditor/bin/Debug/Auditor -i $outfolder/TestFiles/Results -o $outfolder/Results
+          python Jenkins-MetaMorpheus/PlotGeneration/GeneratePsmPlot.py
+          python Jenkins-MetaMorpheus/PlotGeneration/GenerateTaskTimePlot.py
+      - name: Postsearch reporting
+        run: |
+          python Jenkins-MetaMorpheus/PlotGeneration/EmailPlots.py
