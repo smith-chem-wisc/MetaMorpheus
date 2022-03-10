@@ -102,7 +102,7 @@ jobs:
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
 
     - name: Build docker image
-      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller
+      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
 
     - name: Run quick test, reference database
       run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
