@@ -37,7 +37,7 @@ jobs:
         files: Test/TestResults/*/coverage.cobertura.xml
 
   WindowsAndLinuxDockerTests:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     timeout-minutes: 90
     steps:
     - uses: actions/checkout@v2
@@ -52,14 +52,14 @@ jobs:
     - name: Build SpritzCMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
 
-    - name: Build Windows docker image
-      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
-
     - name: Build Linux docker image
       run: docker build -t smithchemwisc/metamorpheus:dev .
 
-    - name: Run Windows docker test
-      run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
-
     - name: Run Linux docker Test
       run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o ./mnt/data/DockerMicrovignetteOutput -v minimal
+
+    - name: Build Windows docker image
+      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
+
+    - name: Run Windows docker test
+      run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
