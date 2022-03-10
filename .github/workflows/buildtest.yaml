@@ -53,7 +53,7 @@ jobs:
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
 
     - name: Build Windows docker image
-      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller
+      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
 
     - name: Build Linux docker image
       run: docker build -t smithchemwisc/metamorpheus:dev .
