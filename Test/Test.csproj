@@ -220,9 +220,6 @@
     <None Update="TestData\SpectralLibrarySearch\slicedMouse.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\SpectralLibrarySearch\slicedMouse300-480.raw">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <None Update="TestData\SpectralLibrarySearch\slicedMouseDatabase.fasta.gz">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
