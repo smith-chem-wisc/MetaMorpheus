@@ -7,8 +7,10 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -592,6 +594,27 @@ namespace Test
         {
             var manager = new MyFileManager(true);
             Assert.That(manager.SeeIfOpen(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\allResults.txt")) == false);
+        }
+
+        [Test]
+        public static void MissingDbInSpectralLibrarySearch()
+        {
+
+            SearchTask classicSearch = new();
+
+            List<(string, MetaMorpheusTask)> taskList = new() { ("ClassicSearch", classicSearch)};
+
+            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+            string fastaName = @"TestData\SpectralLibrarySearch\P16858_target.msp";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMspNoXML");
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            engine.Run();
+
+            List<string> warnings = engine.Warnings;
+
+
+            Assert.AreEqual("Cannot proceed. No protein database files selected.", warnings[0]);
         }
     }
 }
