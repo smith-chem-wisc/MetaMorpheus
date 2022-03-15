@@ -342,6 +342,61 @@ namespace Test
         }
 
         [Test]
+        public static void TestLibraryGeneration()
+        {
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");
+
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+            task.SearchParameters.WriteMzId = true;
+            task.SearchParameters.WriteSpectralLibrary = true;
+
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\uniprot-yeast-filtered-reviewed_yes.fasta.gz"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedYeast.raw");
+            EverythingRunnerEngine MassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder);
+
+            MassSpectraFile.Run();
+            var test = Path.Combine(thisTaskOutputFolder, @"SpectraFileOutput\spectralLibrary.msp");
+
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGenaration");
+            var outputDir = Path.Combine(testDir, @"SpectralLibraryTest");
+
+            Directory.CreateDirectory(outputDir);
+
+            var searchTask = new SearchTask();
+
+            searchTask.RunTask(outputDir,
+                new List<DbForTask>
+                {
+                    new DbForTask(test, false),
+                    db
+                },
+                new List<string> { raw },
+                "");
+
+            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            int ind = Array.IndexOf(split, "Normalized Spectral Angle");
+            int indOfTarget = Array.IndexOf(split, "Decoy/Contaminant/Target");
+            Assert.That(ind >= 0);
+            var spectralAngleList = new List<Double>();
+            var decoySpectralAngleList = new List<Double>();
+            for (int i = 1; i < results.Length; i++)
+            {
+                String sequence = results[i].Split('\t')[14].ToString();
+
+                var spectralAngle = double.Parse(results[i].Split('\t')[ind]);
+                string targetOrDecoy = results[i].Split('\t')[indOfTarget].ToString();
+
+                if (targetOrDecoy.Equals("T") && spectralAngle >= 0)
+                {
+                    spectralAngleList.Add(spectralAngle);
+                }
+            }
+            Assert.That(spectralAngleList.Average() > 0.9);
+            Directory.Delete(thisTaskOutputFolder, true);
+        }
+
+        [Test]
         public static void TestDecoyLibrarySpectraGenerationFunction()
         {
             Product a = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);

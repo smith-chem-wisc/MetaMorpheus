@@ -202,6 +202,9 @@
     <None Update="TestData\smalldb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralLibrarySearch\1-81.raw">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\EPAVFGR.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -221,6 +224,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\SpectralLibrarySearch\slicedMouseDatabase.fasta.gz">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralLibrarySearch\slicedYeast.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\SpectralLibrarySearch\slicedYeastData.raw">
