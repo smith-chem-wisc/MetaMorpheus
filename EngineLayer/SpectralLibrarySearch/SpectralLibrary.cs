@@ -1,4 +1,5 @@
-﻿using MzLibUtil;
+﻿using Chemistry;
+using MzLibUtil;
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
@@ -352,7 +353,7 @@ namespace EngineLayer
                     FragmentationTerminus terminus = (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), "None", true);
 
                     //TODO: figure out amino acid position
-                    var product = new Product(peakProductType, terminus, experMz, fragmentNumber, 0, neutralLoss);
+                    var product = new Product(peakProductType, terminus, experMz.ToMass(fragmentCharge), fragmentNumber, 0, neutralLoss);
 
                     matchedFragmentIons.Add(new MatchedFragmentIon(ref product, experMz, experIntensity, fragmentCharge));
                 }
