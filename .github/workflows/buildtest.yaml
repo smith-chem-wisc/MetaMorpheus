@@ -17,19 +17,13 @@ jobs:
       with:
         dotnet-version: 5.0.x
     - name: Restore dependencies
-      run: |
-        dotnet restore
+      run: dotnet restore
     - name: Build
-      run: |
-        dotnet build --no-restore
+      run: dotnet build --no-restore
     - name: Add coverlet collector
-      run: |
-        dotnet add Test/Test.csproj package coverlet.collector
+      run: dotnet add Test/Test.csproj package coverlet.collector
     - name: Test
-      run: |
-        dotnet test --no-build --verbosity normal
-          --collect:"XPlat Code Coverage" /p:CoverletOutputFormat=cobertura
-          ./Test/Test.csproj
+      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" /p:CoverletOutputFormat=cobertura ./Test/Test.csproj
     - name: Codecov
       uses: codecov/codecov-action@v2
       with:
@@ -45,21 +39,15 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
-
     - name: Restore dependencies
       run: dotnet restore CMD/CMD.csproj
-
     - name: Build SpritzCMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
-
     - name: Build Linux docker image
       run: docker build -t smithchemwisc/metamorpheus:dev .
-
     - name: Run Linux docker Test
       run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o ./mnt/data/DockerMicrovignetteOutput -v minimal
-
     - name: Build Windows docker image
       run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
-
     - name: Run Windows docker test
       run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal

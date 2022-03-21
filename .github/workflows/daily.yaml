@@ -21,12 +21,12 @@ jobs:
 
       - name: Build MetaMorpheus
         run: |
-          dotnet restore MetaMorpheus.sln
+          dotnet restore MetaMorpheus.sln &&
           dotnet msbuild CMD/CMD.csproj -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false
 
       - name: Build auditor
         run: |
-          dotnet restore Jenkins-MetaMorpheus/Auditor/Auditor.sln
+          dotnet restore Jenkins-MetaMorpheus/Auditor/Auditor.sln &&
           dotnet msbuild Jenkins-MetaMorpheus/Auditor/Auditor.sln /verbosity:minimal
 
       - name: Set up run environment
@@ -88,9 +88,8 @@ jobs:
 
       - name: Postsearch analysis
         run: |
-          Jenkins-MetaMorpheus/Auditor/Auditor/bin/Debug/Auditor -i $outfolder/TestFiles/Results -o $outfolder/Results
-          python Jenkins-MetaMorpheus/PlotGeneration/GeneratePsmPlot.py
+          Jenkins-MetaMorpheus/Auditor/Auditor/bin/Debug/Auditor -i $outfolder/TestFiles/Results -o $outfolder/Results &&
+          python Jenkins-MetaMorpheus/PlotGeneration/GeneratePsmPlot.py &&
           python Jenkins-MetaMorpheus/PlotGeneration/GenerateTaskTimePlot.py
       - name: Postsearch reporting
-        run: |
-          python Jenkins-MetaMorpheus/PlotGeneration/EmailPlots.py
+        run: python Jenkins-MetaMorpheus/PlotGeneration/EmailPlots.py

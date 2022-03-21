@@ -15,53 +15,44 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 5.0.x
-
       - name: Set up NuGet
         uses: nuget/setup-nuget@v1
         with:
           nuget-version: '6.x'
-
       - name: Verify commit exists in release branch
         run: |
           git fetch --no-tags --prune --depth=1 origin +refs/heads/*:refs/remotes/origin/*
           git branch --remote --contains | grep origin/${env:RELEASE_BRANCH}
         env:
           RELEASE_BRANCH: master
-
       - name: Restore dependencies
         run: dotnet restore MetaMorpheus.sln
-
       - name: Build
         run: |
-          $version= &git describe --tags
+          $version= &git describe --tags &&
           dotnet build --no-restore --configuration Release /p:Version=${version} /p:Platform=x64 MetaMorpheus.sln
-
       - name: Test
         run: |
-          $version= &git describe --tags
+          $version= &git describe --tags &&
           dotnet test --configuration Release /p:Platform=x64 /p:Version=${version} --no-build MetaMorpheus.sln
-
       - name: Setup msbuild
         uses: microsoft/setup-msbuild@v1
-
       - name: Build Installer
         run: |
-          $version= &git describe --tags
+          $version= &git describe --tags &&
           msbuild MetaMorpheusSetup/MetaMorpheusSetup.wixproj  /p:Configuration=Release /p:Version=${version}
-
       - name: Sign Installer
         run: |
           # Install decryption package (needed for adding security certificate to installer)
-          Write-Host "Installing Decryption Package" -BackgroundColor Blue
-          nuget install secure-file -ExcludeVersion
-          secure-file\tools\secure-file -decrypt smith_MM_certificate.pfx.enc -secret $env:key_secret
+          Write-Host "Installing Decryption Package" -BackgroundColor Blue &&
+          nuget install secure-file -ExcludeVersion &&
+          secure-file\tools\secure-file -decrypt smith_MM_certificate.pfx.enc -secret $env:key_secret &&
 
           # Add security certificate to installer
-          Write-Host "Adding Security Certificate to Installer" -BackgroundColor Blue
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-          $cert.Import($env:sign_cert,$env:key_cert,'DefaultKeySet')
+          Write-Host "Adding Security Certificate to Installer" -BackgroundColor Blue &&
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 &&
+          $cert.Import($env:sign_cert,$env:key_cert,'DefaultKeySet') &&
           Set-AuthenticodeSignature -FilePath MetaMorpheusInstaller.msi -Certificate $cert
-
       - name: Create archive
         uses: thedoctor0/zip-release@master
         with:
@@ -69,14 +60,12 @@ jobs:
           filename: 'MetaMorpheus_CommandLine.zip'
           path: CMD/bin/x64/Release/net5.0/
           directory: ./
-
       - name: Upload SpritzCMD
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.UPLOAD_TOKEN }}
           file: MetaMorpheus_CommandLine.zip
           tag: ${{ github.ref }}
-
       - name: Upload Installer
         uses: svenstaro/upload-release-action@v2
         with:
@@ -94,25 +83,20 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
-
     - name: Restore dependencies
       run: dotnet restore CMD/CMD.csproj
-
     - name: Build SpritzCMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
-
     - name: Build docker image
       run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
-
     - name: Run quick test, reference database
       run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
-
     - name: Login, tag, and push
       run: |
-        Write-Host "Deploying Release Build to Docker Hub" -BackgroundColor Blue
-        version=$(git describe --tags)
-        docker tag smithchemwisc/metamorpheus:dev smithchemwisc/metamorpheus:$version
-        docker tag smithchemwisc/metamorpheus:dev smithchemwisc/metamorpheus:latest
-        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
-        docker push smithchemwisc/metamorpheus:$version
+        Write-Host "Deploying Release Build to Docker Hub" -BackgroundColor Blue &&
+        version=$(git describe --tags) &&
+        docker tag smithchemwisc/metamorpheus:dev smithchemwisc/metamorpheus:$version &&
+        docker tag smithchemwisc/metamorpheus:dev smithchemwisc/metamorpheus:latest &&
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin &&
+        docker push smithchemwisc/metamorpheus:$version &&
         docker push smithchemwisc/metamorpheus:latest

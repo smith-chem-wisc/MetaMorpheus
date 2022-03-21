@@ -14,17 +14,13 @@ jobs:
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 5.0.x
-
     - name: Restore dependencies
       run: dotnet restore CMD/CMD.csproj
-
     - name: Build SpritzCMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
-
     - name: Build Linux docker image
       run: docker build -t smithchemwisc/metamorpheus:dev .
-
     - name: Push dev image
       run: |
-        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+        echo ${{ secrets.DOCKERHUB_TOKEN }} | docker login -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin &&
         docker push smithchemwisc/metamorpheus:dev
