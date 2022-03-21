@@ -6,10 +6,10 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Easy.Common.Extensions;
 
 namespace EngineLayer
 {

@@ -13,6 +13,7 @@ using TaskLayer;
 using Chemistry;
 using System;
 using MassSpectrometry;
+using Nett;
 
 namespace Test
 {
@@ -274,11 +275,11 @@ namespace Test
             var psm1 = allPsmsArray1.Where(p => p != null).ToList();
             Assert.That(psm1[0].IsDecoy == false && psm1[0].FullSequence == "DITANLR");
             Assert.That(psm1[1].IsDecoy == true && psm1[1].FullSequence == "LSISNVAK");
-            Assert.That(psm1[2].IsDecoy == true&& psm1[2].FullSequence == "LSISNVAK");
-            Assert.That(psm1[3].IsDecoy == false&& psm1[3].FullSequence == "RQPAQPR");
-            Assert.That(psm1[4].IsDecoy == false&& psm1[4].FullSequence == "KKAEDGINK");
-            Assert.That(psm1[5].IsDecoy == false&& psm1[5].FullSequence == "EKAEAEAEK");
-            Assert.That(psm1[6].IsDecoy == false&& psm1[6].FullSequence == "EKAEAEAEK");
+            Assert.That(psm1[2].IsDecoy == true && psm1[2].FullSequence == "LSISNVAK");
+            Assert.That(psm1[3].IsDecoy == false && psm1[3].FullSequence == "RQPAQPR");
+            Assert.That(psm1[4].IsDecoy == false && psm1[4].FullSequence == "KKAEDGINK");
+            Assert.That(psm1[5].IsDecoy == false && psm1[5].FullSequence == "EKAEAEAEK");
+            Assert.That(psm1[6].IsDecoy == false && psm1[6].FullSequence == "EKAEAEAEK");
 
 
             proteinList.Add(new Protein("LSISNVAK", "", isDecoy: true));
@@ -324,7 +325,7 @@ namespace Test
 
 
             //compare psm's target/decoy results in 4 conditions. they should be same as new decoy methods shouldn't change the t/d results
-            for (int i=0; i<psm1.Count;i++)
+            for (int i = 0; i < psm1.Count; i++)
             {
                 Assert.That(psm1[i].FullSequence == psm2[i].FullSequence && psm3[i].FullSequence == psm3[i].FullSequence && psm2[i].FullSequence == psm3[i].FullSequence);
                 Assert.That(psm1[i].IsDecoy == psm2[i].IsDecoy && psm3[i].IsDecoy == psm3[i].IsDecoy && psm2[i].IsDecoy == psm3[i].IsDecoy);
@@ -333,11 +334,87 @@ namespace Test
             //compare MetaMorpheus scores in 4 conditions; for some psms, they should have a little higher score when "generating library" as they switch to all charges ions matching function
             for (int j = 0; j < psm1.Count; j++)
             {
-               if(psm1[j].FullSequence == psm2[j].FullSequence && psm1[j].MatchedFragmentIons.Count != psm2[j].MatchedFragmentIons.Count)
+                if (psm1[j].FullSequence == psm2[j].FullSequence && psm1[j].MatchedFragmentIons.Count != psm2[j].MatchedFragmentIons.Count)
                 {
                     Assert.That(psm1[j].Score < psm2[j].Score);
                 }
             }
+        }
+
+        [Test]
+        public static void TestLibraryGeneration()
+        {
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");
+
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+            task.SearchParameters.WriteMzId = true;
+            task.SearchParameters.WriteSpectralLibrary = true;
+
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\uniprot-yeast-filtered-reviewed_yes.fasta.gz"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedYeast.raw");
+            EverythingRunnerEngine MassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder);
+
+            MassSpectraFile.Run();
+            var test = Path.Combine(thisTaskOutputFolder, @"SpectraFileOutput\spectralLibrary.msp");
+
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGenaration");
+            var outputDir = Path.Combine(testDir, @"SpectralLibraryTest");
+
+            Directory.CreateDirectory(outputDir);
+
+            var searchTask = new SearchTask();
+
+            searchTask.RunTask(outputDir,
+                new List<DbForTask>
+                {
+                    new DbForTask(test, false),
+                    db
+                },
+                new List<string> { raw },
+                "");
+
+            var results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            var split = results[0].Split('\t');
+            int ind = Array.IndexOf(split, "Normalized Spectral Angle");
+            int indOfTarget = Array.IndexOf(split, "Decoy/Contaminant/Target");
+            Assert.That(ind >= 0);
+            var spectralAngleList = new List<Double>();
+            var decoySpectralAngleList = new List<Double>();
+            for (int i = 1; i < results.Length; i++)
+            {
+                String sequence = results[i].Split('\t')[14].ToString();
+
+                var spectralAngle = double.Parse(results[i].Split('\t')[ind]);
+                string targetOrDecoy = results[i].Split('\t')[indOfTarget].ToString();
+
+                if (targetOrDecoy.Equals("T") && spectralAngle >= 0)
+                {
+                    spectralAngleList.Add(spectralAngle);
+                }
+            }
+            Assert.That(spectralAngleList.Average() > 0.9);
+            Directory.Delete(thisTaskOutputFolder, true);
+        }
+
+        [Test]
+        public static void TestDecoyLibrarySpectraGenerationFunction()
+        {
+            Product a = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
+            Product b = new Product(ProductType.b, FragmentationTerminus.N, 2, 2, 1, 0);
+            Product c = new Product(ProductType.b, FragmentationTerminus.N, 3, 3, 1, 0);
+            Product d = new Product(ProductType.b, FragmentationTerminus.N, 4, 4, 1, 0);
+            var decoyPeptideTheorProducts = new List<Product> { a, b, c, d };
+            MatchedFragmentIon aa = new MatchedFragmentIon(ref a, 1, 1, 1);
+            MatchedFragmentIon bb = new MatchedFragmentIon(ref b, 2, 2, 1);
+            MatchedFragmentIon cc = new MatchedFragmentIon(ref c, 3, 3, 1);
+            MatchedFragmentIon dd = new MatchedFragmentIon(ref d, 4, 4, 1);
+            var peaks = new List<MatchedFragmentIon> { aa, bb, cc, dd };
+            var librarySpectrum = new LibrarySpectrum("library", 0, 0, peaks, 0);
+            var decoySpectum = SpectralLibrarySearchFunction.GetDecoyLibrarySpectrumFromTargetByReverse(librarySpectrum, decoyPeptideTheorProducts);
+            Assert.That(decoySpectum[0].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[0].NeutralTheoreticalProduct.FragmentNumber == 1 && decoySpectum[0].Intensity == 1);
+            Assert.That(decoySpectum[1].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[1].NeutralTheoreticalProduct.FragmentNumber == 2 && decoySpectum[1].Intensity == 2);
+            Assert.That(decoySpectum[2].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[2].NeutralTheoreticalProduct.FragmentNumber == 3 && decoySpectum[2].Intensity == 3);
+            Assert.That(decoySpectum[3].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[3].NeutralTheoreticalProduct.FragmentNumber == 4 && decoySpectum[3].Intensity == 4);
         }
     }
 }

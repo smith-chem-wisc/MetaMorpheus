@@ -883,7 +883,8 @@ namespace EngineLayer
 
                 Label = label,
 
-                SpectralAngle = spectralAngle
+                SpectralAngle = spectralAngle,
+                HasSpectralAngle = hasSpectralAngle
             };
 
             return psm.PsmData_forPEPandPercolator;
@@ -905,10 +906,12 @@ namespace EngineLayer
             }
             return identifiedVariant;
         }
+      
         private static bool PsmHasSpectralAngle(PeptideSpectralMatch psm)
         {
             return psm.SpectralAngle >= 0;
         }
+
         public static bool ContainsModificationsThatShiftMobility(IEnumerable<Modification> modifications)
         {
             List<string> shiftingModifications = new List<string> { "Acetylation", "Ammonia loss", "Carbamyl", "Deamidation", "Formylation",

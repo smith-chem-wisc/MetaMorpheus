@@ -91,7 +91,7 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(6)]
         public float AbsoluteAverageFragmentMassErrorFromMedian { get; set; }
-
+  
         [LoadColumn(7)]
         public float MissedCleavagesCount { get; set; }
 
@@ -144,6 +144,7 @@ namespace EngineLayer.FdrAnalysis
         public float SpectralAngle { get; set; }
 
         [LoadColumn(24)]
+
         public float HasSpectralAngle { get; set; }
     }
 }

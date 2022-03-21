@@ -756,12 +756,12 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle" };
+            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "top-down";
             string[] trainingInfoTopDown = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount" };
+            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle" };
             Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
 
             List<string> positiveAttributes = new List<string> { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "PsmCount", "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta" };
@@ -801,13 +801,14 @@ namespace Test
                 IsInter = 20,
                 IsIntra = 21,
                 Label = false,
-                SpectralAngle = 22
+                SpectralAngle = 22,
+                HasSpectralAngle = 23
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t18\t19\t22";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t18\t19\t22\t23";
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
-            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t9\t10\t11";
+            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t9\t10\t11\t22\t23";
             Assert.AreEqual(topDownToString, pd.ToString("top-down"));
         }
     }
