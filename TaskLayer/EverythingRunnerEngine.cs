@@ -15,6 +15,7 @@ namespace TaskLayer
         private string OutputFolder;
         private List<string> CurrentRawDataFilenameList;
         private List<DbForTask> CurrentXmlDbFilenameList;
+        private List<string> _warnings;
 
         public EverythingRunnerEngine(List<(string, MetaMorpheusTask)> taskList, List<string> startingRawFilenameList, List<DbForTask> startingXmlDbFilenameList, string outputFolder)
         {
@@ -23,6 +24,7 @@ namespace TaskLayer
 
             CurrentRawDataFilenameList = startingRawFilenameList;
             CurrentXmlDbFilenameList = startingXmlDbFilenameList;
+            _warnings = new();
         }
 
         public static event EventHandler<StringEventArgs> FinishedWritingAllResultsFileHandler;
@@ -38,6 +40,8 @@ namespace TaskLayer
         public static event EventHandler<StringListEventArgs> NewFileSpecificTomlHandler;
 
         public static event EventHandler<StringEventArgs> WarnHandler;
+
+        public List<string> Warnings { get { return _warnings; } private set { } }
 
         public void Run()
         {
@@ -72,6 +76,13 @@ namespace TaskLayer
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
+                else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count== CurrentXmlDbFilenameList.Count)
+                {
+                    Warn("Cannot proceed. No protein database files selected.");
+                    FinishedAllTasks(OutputFolder);
+                    return;
+                }
+               
                 var ok = TaskList[i];
 
                 // reset product types for custom fragmentation
@@ -130,6 +141,7 @@ namespace TaskLayer
         private void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, null));
+            _warnings.Add(v);
         }
 
         private void StartingAllTasks()
