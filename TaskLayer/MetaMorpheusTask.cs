@@ -649,6 +649,21 @@ namespace TaskLayer
             }
         }
 
+        protected static void WriteSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
+        {
+
+            string spectrumFilePath = outputFolder + "\\spectralLibrary.msp";
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+
+                foreach (var x in spectrumLibrary)
+                {
+                    output.WriteLine(x.ToString());
+                }
+
+            }
+        }
+
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
