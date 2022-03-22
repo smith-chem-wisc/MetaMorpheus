@@ -65,25 +65,21 @@ Installation and typical usage is described for the on the [Getting Started](htt
 ## Citing MetaMorpheus
 
 If you use MetaMorpheus, please cite:
-* [Enhanced Global Post-translational Modification Discovery with MetaMorpheus, J Proteome Res **2018**, _17_, 1844-1851.](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873)
+* MetaMorpheus: [Enhanced Global Post-translational Modification Discovery with MetaMorpheus, J Proteome Res **2018**, _17_, 1844-1851.](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873)
+* Morpheus: [A Proteomics Search Algorithm Specifically Designed for High-Resolution Tandem Mass Spectra, J Proteome Res **2013**, _12_, 1377–1386](http://pubs.acs.org/doi/abs/10.1021/pr301024c)
 
 Please also cite:
-* If you use quantification: [Ultrafast Peptide Label-Free Quantification with FlashLFQ, J Proteome Res **2018**, _17_, 386–391.](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608)
+* If you use GPTMD searches: 
+  * [Global Post-Translational Modification Discovery, J Proteome Res **2017**, _16_, 1383–1390](https://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034)
+  * [Global Identification of Protein Post-translational Modifications in a Single-Pass Database Search, J Proteome Res, **2015**, _14_, 4714–4720](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.5b00599)
+* If you use quantification: 
+  * [Ultrafast Peptide Label-Free Quantification with FlashLFQ, J Proteome Res **2018**, _17_, 386–391.](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608)
+  * If you use SILAC quantification: [An atlas of protein turnover rates in mouse tissues, Nat Communications **2021**, _12_, 6778.](https://www.nature.com/articles/s41467-021-26842-3)
 * If you use multiple protease parsimony: [Improved Protein Inference from Multiple Protease Bottom-Up Mass Spectrometry Data, J Proteome Res **2019**, _18_, 9, 3429–3438.](https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330)
 * If you use glycoproteomic searches: [O-Pair Search with MetaMorpheus for O-glycopeptide characterization, Nat Methods **2020**, _17_, 1133–1138.](https://www.nature.com/articles/s41592-020-00985-5)
-* If you use SILAC quantification: [An atlas of protein turnover rates in mouse tissues, Nat Communications **2021**, _12_, 6778.](https://www.nature.com/articles/s41467-021-26842-3)
 * If you Spritz proteogenomic database searches: [Spritz: A Proteogenomic Database Engine, J Proteome Res **2021**, _20_, 1826–1834.](https://pubs.acs.org/doi/10.1021/acs.jproteome.0c00407)
 * If you use long-read proteogenomic characterization: [Enhanced protein isoform characterization through long-read proteogenomics, Genome Biology **2022**, _23_, 69.](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02624-y)
 
 ## mzLib, an all-purpose mass spectrometry toolchest implemented by MetaMorpheus
 
 [mzLib](https://github.com/smith-chem-wisc/mzLib) is a [nuget](https://www.nuget.org/packages/mzLib/) package that we created as an all-purpose toolchest for mass-spec data analysis and many of its functions provide the tools for MetaMorpheus. mzLib is freely available for use in mass-spec applications. You do not need to download mzLib separately to run MetaMorpheus; it is already included.
-
-## References
-
-* [Enhanced Global Post-translational Modification Discovery with MetaMorpheus--J Proteome Res. 2018 May 4;17(5):1844-1851](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873)
-* [Global Post-translational Modification Discovery--J. Proteome Res., 2017, 16, 1383-1390](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.6b00034)
-
-* [Global Identification of Protein Post-translational Modifications in a Single-Pass Database Search--J. Proteome Res., 2015, 14 (11), pp 4714–4720](http://pubs.acs.org/doi/abs/10.1021/acs.jproteome.5b00599)
-
-* [A Proteomics Search Algorithm Specifically Designed for High-Resolution Tandem Mass Spectra--J. Proteome Res., 2013, 12 (3), pp 1377–1386](http://pubs.acs.org/doi/abs/10.1021/pr301024c)
