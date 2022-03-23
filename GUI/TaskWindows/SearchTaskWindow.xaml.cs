@@ -277,6 +277,7 @@ namespace MetaMorpheusGUI
             DeltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            AddBiomarkersCheckBox.IsChecked = task.CommonParameters.AddBiomarkers;
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -490,6 +491,7 @@ namespace MetaMorpheusGUI
 
             bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
+            bool AddBiomarkers = AddBiomarkersCheckBox.IsChecked.Value;
 
             int? numPeaksToKeep = null;
             if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
@@ -538,6 +540,7 @@ namespace MetaMorpheusGUI
                 separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
+                addBiomarkers: AddBiomarkers,
                 numberOfPeaksToKeepPerWindow: numPeaksToKeep,
                 minimumAllowedIntensityRatioToBasePeak: minimumAllowedIntensityRatioToBasePeak,
                 windowWidthThomsons: windowWidthThompsons,

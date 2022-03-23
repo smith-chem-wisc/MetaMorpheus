@@ -14,8 +14,7 @@ semi-trypsin	"K|,R|"			semi	MS:1001313	Trypsin/P	(?<=[KR])
 trypsin	"K|,R|"			full	MS:1001313	Trypsin/P	(?<=[KR])		
 tryptophan oxidation	W|			full					
 non-specific	X|			full	MS:1001956	unspecific cleavage			
-top-down				none	MS:1001955	no cleavage			
-top-down biomarker				none	MS:1001955	no cleavage			
+top-down				none	MS:1001955	no cleavage						
 singleN				SingleN	MS:1001957	single cleavage			
 singleC				SingleC	MS:1001958	single cleavage			
 peptidomics				none		no cleavage			
