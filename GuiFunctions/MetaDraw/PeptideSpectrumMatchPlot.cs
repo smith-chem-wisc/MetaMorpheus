@@ -417,6 +417,10 @@ namespace GuiFunctions
             text.Append(SpectrumMatch.QValue.ToString("F3"));
             text.Append("\r\n");
 
+            text.Append("PEP Value: ");
+            text.Append(SpectrumMatch.PEP.ToString("F3"));
+            text.Append("\r\n");
+
             var annotation = new PlotTextAnnotation()
             {
                 Text = text.ToString(),
