@@ -203,7 +203,7 @@ namespace TaskLayer
                     File.Copy(assumedExperimentalDesignPath, writtenFile, overwrite: true);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
                 }
-                catch (Exception e)
+                catch (Exception _)
                 {
                     Warn("Could not copy Experimental Design file to search task output. That's ok, the search will continue");
                 }
