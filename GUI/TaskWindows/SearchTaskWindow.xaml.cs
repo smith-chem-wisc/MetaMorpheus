@@ -1237,6 +1237,19 @@ namespace MetaMorpheusGUI
             SaveButton_Click(sender, e);
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
+
+        /// <summary>
+        /// Retained/Lost Methionine is best handled through biomarker search when biomarker search is selected.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AddBiomarkersCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AddBiomarkersCheckBox.IsChecked.Value)
+            {
+                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)InitiatorMethionineBehavior.Retain;
+            }
+        }
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

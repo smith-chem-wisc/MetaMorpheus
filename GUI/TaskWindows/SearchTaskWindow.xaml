@@ -498,7 +498,7 @@
                                     <GroupBox Header="Add Protein Truncation and Proteolysis Products">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="AddBiomarkersCheckBox" Content="Add Protein Truncation and Proteolysis Products" IsChecked="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                <CheckBox x:Name="AddBiomarkersCheckBox" Content="Add Protein Truncation and Proteolysis Products. Automatically sets initiator methionine to retain." IsChecked="False" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Checked="AddBiomarkersCheckBox_Checked">
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
                                                 Enables search of protein and proteolysis products with terminal degration from either terminus of up to 5 amino acids including any PTMs.
