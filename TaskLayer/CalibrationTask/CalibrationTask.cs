@@ -234,15 +234,15 @@ namespace TaskLayer
         private readonly int NumRequiredMs2Datapoints = 100;
         public const string CalibSuffix = "-calib";
 
-        private bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
+        private static bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
         {
             if (thisRoundPsmCount > prevPsmCount)
             {
                 return true;
             }
 
-            var precRatio = thisRoundPrecTol / prevPrecTol;
-            var prodRatio = thisRoundProdTol / prevProdTol;
+            double precRatio = thisRoundPrecTol / prevPrecTol;
+            double prodRatio = thisRoundProdTol / prevProdTol;
 
             if (thisRoundPsmCount == prevPsmCount)
             {
@@ -309,11 +309,11 @@ namespace TaskLayer
         private static void WriteNewExperimentalDesignFile(string pathToOldExperDesign, string outputFolder, List<string> originalUncalibratedFileNamesWithExtension,
             List<string> unsuccessfullyCalibratedFilePaths)
         {
-            var oldExperDesign = ExperimentalDesign.ReadExperimentalDesign(pathToOldExperDesign, originalUncalibratedFileNamesWithExtension, out var errors);
+            List<SpectraFileInfo> oldExperDesign = ExperimentalDesign.ReadExperimentalDesign(pathToOldExperDesign, originalUncalibratedFileNamesWithExtension, out var errors);
 
             if (errors.Any())
             {
-                foreach (var error in errors)
+                foreach (string error in errors)
                 {
                     Warn(error);
                 }
