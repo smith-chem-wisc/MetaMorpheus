@@ -156,7 +156,7 @@ namespace Test
         {
             // create the unit test directory
             string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestProteinQuantFileHeaders");
-            Directory.CreateDirectory(unitTestFolder);
+            _ = Directory.CreateDirectory(unitTestFolder);
 
             List<SpectraFileInfo> fileInfos = new List<SpectraFileInfo>();
             string peptide = "PEPTIDE";
@@ -191,8 +191,8 @@ namespace Test
                             mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=1");
 
                         // create the MS2 scan
-                        var pep = new PeptideWithSetModifications(peptide, new Dictionary<string, Proteomics.Modification>());
-                        List<Product> frags = new List<Product>();
+                        PeptideWithSetModifications pep = new PeptideWithSetModifications(peptide, new Dictionary<string, Proteomics.Modification>());
+                        List<Product> frags = new();
                         pep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
                         double[] mz2 = frags.Select(v => v.NeutralMass.ToMz(1)).ToArray();
                         double[] intensities2 = frags.Select(v => 1e6).ToArray();
@@ -209,7 +209,7 @@ namespace Test
                             new MsDataFile(scans, new SourceFile(@"scan number only nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null)),
                             fullPath, false);
 
-                        var spectraFileInfo = new SpectraFileInfo(fullPath, condition, b, r, f);
+                        SpectraFileInfo spectraFileInfo = new SpectraFileInfo(fullPath, condition, b, r, f);
                         fileInfos.Add(spectraFileInfo);
                     }
                 }
@@ -218,20 +218,20 @@ namespace Test
             // write the experimental design for this quantification test
             if (hasDefinedExperimentalDesign)
             {
-                ExperimentalDesign.WriteExperimentalDesignToFile(fileInfos);
+                _ = ExperimentalDesign.WriteExperimentalDesignToFile(fileInfos);
             }
 
             // run the search/quantification
             SearchTask task = new SearchTask();
-            task.RunTask(unitTestFolder, new List<DbForTask> { new DbForTask(dbName, false) }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
+            _ = task.RunTask(unitTestFolder, new List<DbForTask> { new DbForTask(dbName, false) }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
 
             // read in the protein quant results
             Assert.That(File.Exists(Path.Combine(unitTestFolder, "AllQuantifiedProteinGroups.tsv")));
-            var lines = File.ReadAllLines(Path.Combine(unitTestFolder, "AllQuantifiedProteinGroups.tsv"));
+            string[] lines = File.ReadAllLines(Path.Combine(unitTestFolder, "AllQuantifiedProteinGroups.tsv"));
 
             // check the intensity column headers
-            var splitHeader = lines[0].Split(new char[] { '\t' }).ToList();
-            var intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity", StringComparison.OrdinalIgnoreCase)).ToList();
+            List<string> splitHeader = lines[0].Split(new char[] { '\t' }).ToList();
+            List<string> intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity", StringComparison.OrdinalIgnoreCase)).ToList();
 
             Assert.That(intensityColumnHeaders.Count == 2);
 
