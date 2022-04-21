@@ -127,7 +127,7 @@ namespace Test
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
-            Assert.IsTrue(output[1].Contains("1944543.6482630058\t972271.8241315029")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[1].Contains("1374999.999999999\t687499.9999999995")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
