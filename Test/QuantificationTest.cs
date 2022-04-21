@@ -237,8 +237,8 @@ namespace Test
 
             if (!hasDefinedExperimentalDesign)
             {
-                Assert.That(intensityColumnHeaders[0] == "Intensity_TestCondition_1");
-                Assert.That(intensityColumnHeaders[1] == "Intensity_TestCondition_2");
+                Assert.That(intensityColumnHeaders[0] == "Intensity_file_b0f0r0");
+                Assert.That(intensityColumnHeaders[1] == "Intensity_file_b1f0r0");
             }
             else
             {
