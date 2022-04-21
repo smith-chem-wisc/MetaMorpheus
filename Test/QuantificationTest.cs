@@ -158,7 +158,7 @@ namespace Test
             string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestProteinQuantFileHeaders");
             _ = Directory.CreateDirectory(unitTestFolder);
 
-            List<SpectraFileInfo> fileInfos = new List<SpectraFileInfo>();
+            List<SpectraFileInfo> fileInfos = new();
             string peptide = "PEPTIDE";
             double ionIntensity = 1e6;
             string condition = hasDefinedExperimentalDesign ? "TestCondition" : "";
@@ -184,14 +184,14 @@ namespace Test
                         ChemicalFormula cf = new Proteomics.AminoAcidPolymer.Peptide(peptide).GetChemicalFormula();
                         IsotopicDistribution dist = IsotopicDistribution.GetDistribution(cf, 0.125, 1e-8);
                         double[] mz = dist.Masses.Select(v => v.ToMz(1)).ToArray();
-                        double[] intensities = dist.Intensities.Select(v => v * ionIntensity).ToArray();
+                        double[] intensities = dist.Intensities.Select(v => v * ionIntensity * (b + f + r + 0.1)).ToArray(); //ion intensity multiplier added b/c of changes rob made to quant in PR #621 https://github.com/smith-chem-wisc/mzLib/pull/624
 
                         scans[0] = new MsDataScan(massSpectrum: new MzSpectrum(mz, intensities, false), oneBasedScanNumber: 1, msnOrder: 1, isCentroid: true,
                             polarity: Polarity.Positive, retentionTime: 1.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
                             mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=1");
 
                         // create the MS2 scan
-                        PeptideWithSetModifications pep = new PeptideWithSetModifications(peptide, new Dictionary<string, Proteomics.Modification>());
+                        PeptideWithSetModifications pep = new(peptide, new Dictionary<string, Proteomics.Modification>());
                         List<Product> frags = new();
                         pep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
                         double[] mz2 = frags.Select(v => v.NeutralMass.ToMz(1)).ToArray();
@@ -209,7 +209,7 @@ namespace Test
                             new MsDataFile(scans, new SourceFile(@"scan number only nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null)),
                             fullPath, false);
 
-                        SpectraFileInfo spectraFileInfo = new SpectraFileInfo(fullPath, condition, b, r, f);
+                        SpectraFileInfo spectraFileInfo = new(fullPath, condition, b, r, f);
                         fileInfos.Add(spectraFileInfo);
                     }
                 }
@@ -222,7 +222,7 @@ namespace Test
             }
 
             // run the search/quantification
-            SearchTask task = new SearchTask();
+            SearchTask task = new();
             _ = task.RunTask(unitTestFolder, new List<DbForTask> { new DbForTask(dbName, false) }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
 
             // read in the protein quant results
@@ -237,8 +237,8 @@ namespace Test
 
             if (!hasDefinedExperimentalDesign)
             {
-                Assert.That(intensityColumnHeaders[0] == "Intensity_file_b0f0r0");
-                Assert.That(intensityColumnHeaders[1] == "Intensity_file_b1f0r0");
+                Assert.That(intensityColumnHeaders[0] == "Intensity_TestCondition_1");
+                Assert.That(intensityColumnHeaders[1] == "Intensity_TestCondition_2");
             }
             else
             {
@@ -254,7 +254,7 @@ namespace Test
 
             Assert.That(intensity1 > 0);
             Assert.That(intensity2 > 0);
-            Assert.That(intensity1 == intensity2);
+            Assert.That(intensity1 < intensity2);
 
             Directory.Delete(unitTestFolder, true);
         }
