@@ -65,7 +65,7 @@ CustomIons = ["c", "zDot"]
 AssumeOrphanPeaksAreZ1Fragments = true
 MaxHeterozygousVariants = 4
 MinVariantDepth = 1
-AddBiomarkers = false
+AddTruncations = false
 
 [CommonParameters.DigestionParams]
 MaxMissedCleavages = 2

@@ -22,7 +22,7 @@ namespace EngineLayer
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, bool normalizePeaksAccrossAllWindows = false, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
             int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
-            bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1, bool addBiomarkers = false)
+            bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1, bool addTruncations = false)
         {
             TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
@@ -64,7 +64,7 @@ namespace EngineLayer
 
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
-            AddBiomarkers = addBiomarkers;
+            AddTruncations = addTruncations;
         }
 
         // Notes:
@@ -105,7 +105,7 @@ namespace EngineLayer
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
 
-        public bool AddBiomarkers { get; private set; }
+        public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
 
@@ -186,7 +186,7 @@ namespace EngineLayer
                                 AssumeOrphanPeaksAreZ1Fragments,
                                 MaxHeterozygousVariants,
                                 MinVariantDepth,
-                                AddBiomarkers);
+                                AddTruncations);
         }
 
         public void SetCustomProductTypes()
