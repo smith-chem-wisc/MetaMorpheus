@@ -43,7 +43,7 @@ namespace GuiFunctions
 
             ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
-            AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons);
+            AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
             AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
 
             if (annotateProperties)
@@ -164,7 +164,7 @@ namespace GuiFunctions
             }
         }
 
-        protected void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons)
+        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, Canvas canvas)
         {
             // don't draw ambiguous sequences
             if (fullSequence.Contains("|"))
@@ -173,15 +173,15 @@ namespace GuiFunctions
             }
 
             // draw base sequence
-            double canvasWidth = SequenceDrawingCanvas.Width;
+            double canvasWidth = canvas.Width;
             for (int r = 0; r < baseSequence.Length; r++)
             {
                 double x = r * MetaDrawSettings.AnnotatedSequenceTextSpacing + 10;
-                DrawText(SequenceDrawingCanvas, new Point(x, yLoc), baseSequence[r].ToString(), Brushes.Black);
+                DrawText(canvas, new Point(x, yLoc), baseSequence[r].ToString(), Brushes.Black);
 
                 canvasWidth = x + 30;
             }
-            SequenceDrawingCanvas.Width = Math.Max(SequenceDrawingCanvas.Width, canvasWidth);
+            canvas.Width = Math.Max(canvas.Width, canvasWidth);
 
             // draw the fragment ion annotations on the base sequence
             foreach (var ion in matchedFragmentIons)
@@ -204,16 +204,16 @@ namespace GuiFunctions
 
                     if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
                     {
-                        DrawCTermIon(SequenceDrawingCanvas, new Point(x, y), color, annotation);
+                        DrawCTermIon(canvas, new Point(x, y), color, annotation);
                     }
                     else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
                     {
-                        DrawNTermIon(SequenceDrawingCanvas, new Point(x, y), color, annotation);
+                        DrawNTermIon(canvas, new Point(x, y), color, annotation);
                     }
                     // don't draw diagnostic ions, precursor ions, etc
                 }
             }
-            AnnotateModifications(SpectrumMatch, SequenceDrawingCanvas, fullSequence, yLoc);
+            AnnotateModifications(SpectrumMatch, canvas, fullSequence, yLoc);
         }
 
         public static void AnnotateModifications(PsmFromTsv spectrumMatch, Canvas sequenceDrawingCanvas, string fullSequence, int yLoc, double? spacer = null, int xShift = 12)

@@ -155,7 +155,7 @@ namespace MetaMorpheusGUI
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
 
             // draw the annotated spectrum
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors);
+            MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
 
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
@@ -548,6 +548,16 @@ namespace MetaMorpheusGUI
         {
             mapViewer.Height = .8 * SequenceAnnotationGrid.ActualHeight;
             mapViewer.Width = .99 * SequenceAnnotationGrid.ActualWidth;
+        }
+
+        /// <summary>
+        /// Adjusts the sequence annotation on the spectum whenever the scrollbar is moved
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void wholeSequenceCoverageHorizontalScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+
         }
     }
 }

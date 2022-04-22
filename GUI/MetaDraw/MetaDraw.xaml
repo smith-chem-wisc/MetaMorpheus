@@ -108,9 +108,34 @@
                         <Grid Grid.Column="2">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*" />
+                                <RowDefinition Height="7*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TabControl Grid.Row="0">
+                            
+                            <!--Upper Sequence Annotation-->
+                            <Grid Grid.Row="0" >
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="0.5*"/>
+                                    <ColumnDefinition Width="6*"/>
+                                    <ColumnDefinition Width="1.5*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <!--Settings menu-->
+                               
+                                
+                                <ScrollViewer Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Name="wholeSequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                          CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto" ScrollChanged="wholeSequenceCoverageHorizontalScroll_ScrollChanged">
+                                    <Canvas x:Name="sequenceTextScrollable" Grid.Row="0" Background="White" ></Canvas>
+                                </ScrollViewer>
+                                <Grid Grid.Column="2" Background="LightGray" Opacity="0.7">
+
+                                </Grid>
+                                
+                                
+                            </Grid>
+                            
+
+                            <TabControl Grid.Row="1">
                                 <!--MS2 Scan Annotations-->
                                 <TabItem Header="Parent Scan View" Name="ParentScanView">
                                     <Grid Name="PsmAnnotationGrid">
@@ -121,7 +146,7 @@
                                         <!--Spectrum annotation-->
                                         <Grid Grid.Row="0">
                                             <Grid.RowDefinitions>
-                                                <RowDefinition Height = "*" />
+                                                <RowDefinition Height = "0.75*" />
                                             </Grid.RowDefinitions>
                                             <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0"/>
                                         </Grid>
@@ -132,7 +157,7 @@
                                                 <RowDefinition Height = "auto" />
                                             </Grid.RowDefinitions>
 
-                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="canvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="canvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch"/>
                                         </Grid>
                                     </Grid>
                                 </TabItem>
@@ -210,7 +235,7 @@
                             </TabControl>
 
                             <!--Detailed PSM properties-->
-                            <StackPanel Grid.Row="1">
+                            <StackPanel Grid.Row="2">
                                 <Expander x:Name="NotificationExpander" FlowDirection="RightToLeft" >
                                     <Expander.Header>
                                         <StackPanel>

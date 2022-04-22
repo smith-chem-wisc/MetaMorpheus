@@ -19,7 +19,7 @@ namespace GuiFunctions
             SequenceDrawingCanvas.Height = 150;
 
             // annotate beta peptide base sequence
-            AnnotateBaseSequence(csm.BetaPeptideBaseSequence, csm.BetaPeptideFullSequence, 100, csm.BetaPeptideMatchedIons);
+            AnnotateBaseSequence(csm.BetaPeptideBaseSequence, csm.BetaPeptideFullSequence, 100, csm.BetaPeptideMatchedIons, SequenceDrawingCanvas);
 
             // annotate beta peptide matched ions
             AnnotateMatchedIons(isBetaPeptide: true, csm.BetaPeptideMatchedIons);

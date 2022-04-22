@@ -87,7 +87,7 @@ namespace GuiFunctions
             return errors;
         }
 
-        public void DisplaySpectrumMatch(PlotView plotView, Canvas canvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
+        public void DisplaySpectrumMatch(PlotView plotView, Canvas canvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas sequenceText = null)
         {
             errors = null;
 
@@ -108,7 +108,8 @@ namespace GuiFunctions
             LibrarySpectrum librarySpectrum = null;
 
             // plot the annotated spectrum match
-            PeptideSpectrumMatchPlot plot;
+            PeptideSpectrumMatchPlot stationarySequence;
+            PeptideSpectrumMatchPlot scrollableSequence;
             //if not crosslinked
             if (psm.BetaPeptideBaseSequence == null)
             {
@@ -119,14 +120,20 @@ namespace GuiFunctions
                     librarySpectrum = librarySpectrum1;
                 }
 
-                plot = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
+                stationarySequence = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
+
             }
             else //crosslinked
             {
-                plot = new CrosslinkSpectrumMatchPlot(plotView, canvas, psm, scan);
+                stationarySequence = new CrosslinkSpectrumMatchPlot(plotView, canvas, psm, scan);
             }
 
-            CurrentlyDisplayedPlots.Add(plot);
+            if (sequenceText != null)
+            {
+                scrollableSequence = new PeptideSpectrumMatchPlot(plotView, sequenceText, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
+            }
+
+            CurrentlyDisplayedPlots.Add(stationarySequence);
 
             // plot parent/child scans
             if (psm.ChildScanMatchedIons != null)
