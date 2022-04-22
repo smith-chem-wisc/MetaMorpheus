@@ -31,7 +31,7 @@ namespace GuiFunctions
         protected Canvas SequenceDrawingCanvas;
 
         public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv psm, MsDataScan scan,
-            List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null, int widthToAdd = 0) : base(plotView)
+            List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null) : base(plotView)
         {
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
@@ -43,7 +43,7 @@ namespace GuiFunctions
 
             ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
-            AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas, widthToAdd: widthToAdd);
+            AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
             AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
 
             if (annotateProperties)
@@ -164,7 +164,7 @@ namespace GuiFunctions
             }
         }
 
-        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, Canvas canvas, int startingPosition = 0, int widthToAdd = 0)
+        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, Canvas canvas, int startingPosition = 0)
         {
             ClearCanvas(canvas);
             // don't draw ambiguous sequences
@@ -182,7 +182,7 @@ namespace GuiFunctions
 
                 canvasWidth = x + 30;
             }
-            canvas.Width = Math.Max(canvas.Width, canvasWidth) + widthToAdd;
+            canvas.Width = Math.Max(canvas.Width, canvasWidth) + 165; // this number is the width of the grayed out box
 
             // draw the fragment ion annotations on the base sequence
             foreach (var ion in matchedFragmentIons)

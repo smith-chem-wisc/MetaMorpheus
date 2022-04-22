@@ -88,7 +88,7 @@ namespace GuiFunctions
             return errors;
         }
 
-        public void DisplaySpectrumMatch(PlotView plotView, Canvas canvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas sequenceText = null, int widthToAdd = 0)
+        public void DisplaySpectrumMatch(PlotView plotView, Canvas canvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas sequenceText = null)
         {
             errors = null;
 
@@ -131,7 +131,7 @@ namespace GuiFunctions
 
             if (sequenceText != null)
             {
-                scrollableSequence = new PeptideSpectrumMatchPlot(plotView, sequenceText, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum, widthToAdd: widthToAdd);
+                scrollableSequence = new PeptideSpectrumMatchPlot(plotView, sequenceText, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
             }
 
             CurrentlyDisplayedPlots.Add(StationarySequence);

@@ -154,10 +154,9 @@ namespace MetaMorpheusGUI
             }
 
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
-            int widthToAdd = (int)Math.Round(GrayBox.ActualWidth, 0);
 
             // draw the annotated spectrum
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable, widthToAdd: widthToAdd);
+            MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
 
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
@@ -574,7 +573,7 @@ namespace MetaMorpheusGUI
             string fullSequence = psm.FullSequence.Substring(firstLetterOnScreen, lettersOnScreen);
             List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > firstLetterOnScreen &&
             p.NeutralTheoreticalProduct.AminoAcidPosition < (firstLetterOnScreen + lettersOnScreen)).ToList();
-
+            double tacos = UpperSequenceAnnotaiton.ActualHeight;
             MetaDrawLogic.StationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, canvas, firstLetterOnScreen);
 
 

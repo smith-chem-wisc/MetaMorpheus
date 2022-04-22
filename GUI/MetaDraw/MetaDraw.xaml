@@ -101,36 +101,35 @@
                         <!--PSM annotated peaks-->
                         <Grid Grid.Column="2">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
-                                <RowDefinition Height="7*" />
+                                <RowDefinition Height="57" />
+                                <RowDefinition Height="8*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             
                             <!--Upper Sequence Annotation-->
-                            <Grid Grid.Row="0" >
+                            <Grid Grid.Row="0" Name="UpperSequenceAnnotaiton">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="0.6*"/>
-                                    <ColumnDefinition Width="6*" Name="SequenceAnnotationArea"/>
-                                    <ColumnDefinition Width="1.6*"/>
+                                    <ColumnDefinition Width="1"/>
+                                    <ColumnDefinition Width="57"/>
+                                    <ColumnDefinition Width="*" Name="SequenceAnnotationArea"/>
+                                    <ColumnDefinition Width="165"/>
                                 </Grid.ColumnDefinitions>
 
+                                <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
                                 <!--Settings menu-->
-                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="0" Click="settings_Click" Background="White" BorderThickness="0">
+                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" BorderThickness="0">
                                     <StackPanel Name="SettingsButton" Orientation="Horizontal">
-                                        <Image Source="Icons\icons8-settings-256.bmp" Margin="-5,3,0,0"></Image>
+                                        <Image Source="Icons\icons8-settings-256.bmp" Margin="0,3,0,0" ></Image>
                                     </StackPanel>
                                 </Button>
 
-                                <ScrollViewer Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Name="wholeSequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                <ScrollViewer Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Name="wholeSequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                           CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto" ScrollChanged="wholeSequenceCoverageHorizontalScroll_ScrollChanged">
                                     <Canvas x:Name="sequenceTextScrollable" Grid.Row="0" Background="White" ></Canvas>
                                 </ScrollViewer>
-                                    
-                                <Grid Name="GrayBox" Grid.Column="2" Background="LightGray" Opacity="0.7" Margin="0,0,0,16"></Grid>
-                                
-                                
+
+                                <Grid Name="GrayBox" Grid.Column="3" Background="LightGray" Opacity="0.7" Margin="0,0,0,16"></Grid>
                             </Grid>
-                            
 
                             <TabControl Grid.Row="1">
                                 <!--MS2 Scan Annotations-->
