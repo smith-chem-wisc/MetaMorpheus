@@ -31,6 +31,7 @@ namespace GuiFunctions
         public ObservableCollection<string> SpectralLibraryPaths { get; private set; }
         public ObservableCollection<PsmFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
         public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
+        public PeptideSpectrumMatchPlot StationarySequence { get; private set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
 
@@ -87,7 +88,7 @@ namespace GuiFunctions
             return errors;
         }
 
-        public void DisplaySpectrumMatch(PlotView plotView, Canvas canvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas sequenceText = null)
+        public void DisplaySpectrumMatch(PlotView plotView, Canvas canvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas sequenceText = null, int widthToAdd = 0)
         {
             errors = null;
 
@@ -108,7 +109,7 @@ namespace GuiFunctions
             LibrarySpectrum librarySpectrum = null;
 
             // plot the annotated spectrum match
-            PeptideSpectrumMatchPlot stationarySequence;
+
             PeptideSpectrumMatchPlot scrollableSequence;
             //if not crosslinked
             if (psm.BetaPeptideBaseSequence == null)
@@ -120,20 +121,20 @@ namespace GuiFunctions
                     librarySpectrum = librarySpectrum1;
                 }
 
-                stationarySequence = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
+                StationarySequence = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
 
             }
             else //crosslinked
             {
-                stationarySequence = new CrosslinkSpectrumMatchPlot(plotView, canvas, psm, scan);
+                StationarySequence = new CrosslinkSpectrumMatchPlot(plotView, canvas, psm, scan);
             }
 
             if (sequenceText != null)
             {
-                scrollableSequence = new PeptideSpectrumMatchPlot(plotView, sequenceText, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
+                scrollableSequence = new PeptideSpectrumMatchPlot(plotView, sequenceText, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum, widthToAdd: widthToAdd);
             }
 
-            CurrentlyDisplayedPlots.Add(stationarySequence);
+            CurrentlyDisplayedPlots.Add(StationarySequence);
 
             // plot parent/child scans
             if (psm.ChildScanMatchedIons != null)

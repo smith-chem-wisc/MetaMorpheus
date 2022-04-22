@@ -1,6 +1,7 @@
 using EngineLayer;
 using GuiFunctions;
 using OxyPlot;
+using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -153,9 +154,10 @@ namespace MetaMorpheusGUI
             }
 
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            int widthToAdd = (int)Math.Round(GrayBox.ActualWidth, 0);
 
             // draw the annotated spectrum
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
+            MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable, widthToAdd: widthToAdd);
 
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
@@ -557,6 +559,24 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void wholeSequenceCoverageHorizontalScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
+            double width = SequenceAnnotationArea.ActualWidth;
+            double offset /*woo woo*/ = wholeSequenceCoverageHorizontalScroll.ContentHorizontalOffset;
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+
+            int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            int firstLetterOnScreen = (int)Math.Round((offset - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
+            {
+                lettersOnScreen = psm.BaseSeq.Length - firstLetterOnScreen;
+            }
+
+            string baseSequence = psm.BaseSeq.Substring(firstLetterOnScreen, lettersOnScreen);
+            string fullSequence = psm.FullSequence.Substring(firstLetterOnScreen, lettersOnScreen);
+            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > firstLetterOnScreen &&
+            p.NeutralTheoreticalProduct.AminoAcidPosition < (firstLetterOnScreen + lettersOnScreen)).ToList();
+
+            MetaDrawLogic.StationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, canvas, firstLetterOnScreen);
+
 
         }
     }

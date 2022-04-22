@@ -13,12 +13,6 @@
         <TabControl>
             <TabItem Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
-                    <!--Settings menu-->
-                    <Menu x:Name="menu" DockPanel.Dock="Top">
-                        <MenuItem Header="Settings">
-                            <MenuItem Header="Edit Settings" Click="settings_Click"></MenuItem>
-                        </MenuItem>
-                    </Menu>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*"/>
@@ -115,21 +109,24 @@
                             <!--Upper Sequence Annotation-->
                             <Grid Grid.Row="0" >
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="0.5*"/>
-                                    <ColumnDefinition Width="6*"/>
-                                    <ColumnDefinition Width="1.5*"/>
+                                    <ColumnDefinition Width="0.6*"/>
+                                    <ColumnDefinition Width="6*" Name="SequenceAnnotationArea"/>
+                                    <ColumnDefinition Width="1.6*"/>
                                 </Grid.ColumnDefinitions>
 
                                 <!--Settings menu-->
-                               
-                                
+                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="0" Click="settings_Click" Background="White" BorderThickness="0">
+                                    <StackPanel Name="SettingsButton" Orientation="Horizontal">
+                                        <Image Source="Icons\icons8-settings-256.bmp" Margin="-5,3,0,0"></Image>
+                                    </StackPanel>
+                                </Button>
+
                                 <ScrollViewer Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Name="wholeSequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                           CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto" ScrollChanged="wholeSequenceCoverageHorizontalScroll_ScrollChanged">
                                     <Canvas x:Name="sequenceTextScrollable" Grid.Row="0" Background="White" ></Canvas>
                                 </ScrollViewer>
-                                <Grid Grid.Column="2" Background="LightGray" Opacity="0.7">
-
-                                </Grid>
+                                    
+                                <Grid Name="GrayBox" Grid.Column="2" Background="LightGray" Opacity="0.7" Margin="0,0,0,16"></Grid>
                                 
                                 
                             </Grid>
