@@ -7,7 +7,6 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -178,7 +177,7 @@ namespace Test
             Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue lightLysine = Residue.GetResidue('K');
 
-            SearchTask task = new SearchTask
+            SearchTask task = new()
             {
                 SearchParameters = new SearchParameters
                 {
@@ -187,8 +186,8 @@ namespace Test
             };
 
             List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>()) }; //has the additional, but not the original
-            List<List<double>> massDifferences1 = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
-            List<List<double>> massDifferences2 = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
+            List<List<double>> massDifferences1 = new() { new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass } };
+            List<List<double>> massDifferences2 = new() { new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass } };
 
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences1);
             string mzmlName = @"silac.mzML";
@@ -201,11 +200,11 @@ namespace Test
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
-            Directory.CreateDirectory(outputFolder);
-            var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
+            _ = Directory.CreateDirectory(outputFolder);
+            string theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
 
             Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
@@ -214,7 +213,7 @@ namespace Test
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silacPart2\tIntensity_silac(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that two files were made
-            Assert.IsTrue(output[1].Contains("1237436.8670764582\t1237436.8670764582\t618718.4335382291\t618718.4335382291")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[1].Contains("875000.0000000009\t875000.0000000009\t437500.00000000047\t437500.00000000047")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
