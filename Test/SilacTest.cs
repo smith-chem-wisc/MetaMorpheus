@@ -90,12 +90,12 @@ namespace Test
         public static void TestSilacMultipleModsPerCondition()
         {
             //The concern with multiple mods per label is the conversions back and forth between "light" and "heavy" labels
-            Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
-            Residue heavyArginine = new Residue("b", 'b', "b", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N4O"), ModificationSites.All); //+6 arginine
+            Residue heavyLysine = new("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+            Residue heavyArginine = new("b", 'b', "b", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N4O"), ModificationSites.All); //+6 arginine
             Residue lightLysine = Residue.GetResidue('K');
             Residue lightArginine = Residue.GetResidue('R');
 
-            SilacLabel krLabel = new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass);
+            SilacLabel krLabel = new(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass);
             krLabel.AddAdditionalSilacLabel(new SilacLabel(lightArginine.Letter, heavyArginine.Letter, heavyArginine.ThisChemicalFormula.Formula, heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass));
 
             SearchTask task = new SearchTask
@@ -108,26 +108,26 @@ namespace Test
             };
 
 
-            List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>()) };
-            List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass + heavyArginine.MonoisotopicMass) - (lightLysine.MonoisotopicMass + lightArginine.MonoisotopicMass) } };
+            List<PeptideWithSetModifications> lightPeptide = new() { new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>()) };
+            List<List<double>> massDifferences = new() { new List<double> { (heavyLysine.MonoisotopicMass + heavyArginine.MonoisotopicMass) - (lightLysine.MonoisotopicMass + lightArginine.MonoisotopicMass) } };
 
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak: true);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
-            Protein theProtein = new Protein("MPRTEINRSEQENEWITHAKANDANRANDSMSTFF", "accession1");
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+            Protein theProtein = new("MPRTEINRSEQENEWITHAKANDANRANDSMSTFF", "accession1");
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
-            Directory.CreateDirectory(outputFolder);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
+            _ = Directory.CreateDirectory(outputFolder);
+            _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
 
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silac(K+8.014 & R+6.020)")); //test that two files were made
-            Assert.IsTrue(output[1].Contains("1944543.6482630058\t972271.8241315029")); //test the heavy intensity is half that of the light (per the raw file)
+            Assert.IsTrue(output[1].Contains("1374999.999999999\t687499.9999999995")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -155,15 +155,15 @@ namespace Test
             File.Delete(mzmlName);
             Directory.Delete(outputFolder, true);
 
-            List<PeptideWithSetModifications> heavyPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("ANDANb", new Dictionary<string, Modification>()) }; //has the additional, but not the original
-            massDifferences = new List<List<double>> { new List<double> { (lightArginine.MonoisotopicMass) - (heavyArginine.MonoisotopicMass) } };
+            List<PeptideWithSetModifications> heavyPeptide = new() { new PeptideWithSetModifications("ANDANb", new Dictionary<string, Modification>()) }; //has the additional, but not the original
+            massDifferences = new List<List<double>> { new List<double> { lightArginine.MonoisotopicMass - heavyArginine.MonoisotopicMass } };
 
             myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
             mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             Directory.CreateDirectory(outputFolder);
-            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
+            _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
 
             //Clear the old files
             Directory.Delete(outputFolder, true);
