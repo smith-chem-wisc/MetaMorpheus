@@ -36,6 +36,9 @@ namespace GuiFunctions
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
 
+        // size of window to draw sequence
+        public static int FirstAAonScreenIndex { get; set; } 
+        public static int NumberOfAAOnScreen { get; set; }
         static MetaDrawSettings()
         {
             InitializeDictionaries();

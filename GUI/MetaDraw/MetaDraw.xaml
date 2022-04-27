@@ -110,7 +110,7 @@
                             <Grid Grid.Row="0" Name="UpperSequenceAnnotaiton">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="1"/>
-                                    <ColumnDefinition Width="57"/>
+                                    <ColumnDefinition Width="63"/>
                                     <ColumnDefinition Width="*" Name="SequenceAnnotationArea"/>
                                     <ColumnDefinition Width="165"/>
                                 </Grid.ColumnDefinitions>
@@ -128,7 +128,7 @@
                                     <Canvas x:Name="sequenceTextScrollable" Grid.Row="0" Background="White" ></Canvas>
                                 </ScrollViewer>
 
-                                <Grid Name="GrayBox" Grid.Column="3" Background="LightGray" Opacity="0.7" Margin="0,0,0,16"></Grid>
+                                <Grid Name="GrayBox" Grid.Column="3" Background="LightGray" Opacity="0" Margin="0,0,0,16"></Grid>
                             </Grid>
 
                             <TabControl Grid.Row="1">

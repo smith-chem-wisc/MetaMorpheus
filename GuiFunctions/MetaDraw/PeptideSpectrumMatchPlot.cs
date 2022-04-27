@@ -31,7 +31,7 @@ namespace GuiFunctions
         protected Canvas SequenceDrawingCanvas;
 
         public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv psm, MsDataScan scan,
-            List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null) : base(plotView)
+            List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null, bool stationarySequence = false) : base(plotView)
         {
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
@@ -43,7 +43,12 @@ namespace GuiFunctions
 
             ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
-            AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
+            if (!stationarySequence)
+                AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
+            else
+            {
+                DrawStationarySequence(psm, sequenceDrawingCanvas);
+            }
             AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
 
             if (annotateProperties)
@@ -489,6 +494,21 @@ namespace GuiFunctions
             }
         }
 
+        /// <summary>
+        /// Redraws the Stationary Sequence on the spectrum in reference to the position of the scrollable sequence
+        /// </summary>
+        /// <param name="lettersOnScreen"></param>
+        /// <param name="firstLetterOnScreen"></param>
+        /// <param name="psm"></param>
+        /// <param name="canvas"></param>
+        public void DrawStationarySequence(PsmFromTsv psm, Canvas canvas)
+        {
+            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            string fullSequence = psm.FullSequence.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
+                                                   p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            this.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, canvas, MetaDrawSettings.FirstAAonScreenIndex);
+        }
         /// <summary>
         /// This method exists because of the mirror plotting of spectral libraries. Library spectral ions are displayed
         /// as having negative intensities for easy visualization, but obviously the ions do not actually have negative

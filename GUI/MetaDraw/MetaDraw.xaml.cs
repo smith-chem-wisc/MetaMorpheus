@@ -148,7 +148,9 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
-            if (dataGridScanNums.SelectedItem == null)
+            GrayBox.Opacity = 0.7;
+
+            if (dataGridScanNums.SelectedItem == null || sender == null)
             {
                 return;
             }
@@ -254,11 +256,13 @@ namespace MetaMorpheusGUI
 
         private void settings_Click(object sender, RoutedEventArgs e)
         {
+            // save current selected PSM
+            var selectedItem = dataGridScanNums.SelectedItem;
             var settingsWindow = new MetaDrawSettingsWindow();
             var result = settingsWindow.ShowDialog();
 
-            // save current selected PSM
-            var selectedItem = dataGridScanNums.SelectedItem;
+            // re-select selected PSM
+            
 
             if (result == true)
             {
@@ -269,7 +273,6 @@ namespace MetaMorpheusGUI
                 MetaDrawLogic.FilterPsms();
             }
 
-            // re-select selected PSM
             if (selectedItem != null)
             {
                 dataGridScanNums.SelectedItem = selectedItem;
@@ -376,7 +379,7 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
-            MetaDrawLogic.ExportToPdf(plotView, canvas, items, itemsControlSampleViewModel, directoryPath, out var errors);
+            MetaDrawLogic.ExportToPdf(plotView, canvas, items, itemsControlSampleViewModel, directoryPath, out var errors, sequenceTextScrollable);
 
             if (errors.Any())
             {
@@ -568,15 +571,9 @@ namespace MetaMorpheusGUI
             {
                 lettersOnScreen = psm.BaseSeq.Length - firstLetterOnScreen;
             }
-
-            string baseSequence = psm.BaseSeq.Substring(firstLetterOnScreen, lettersOnScreen);
-            string fullSequence = psm.FullSequence.Substring(firstLetterOnScreen, lettersOnScreen);
-            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > firstLetterOnScreen &&
-            p.NeutralTheoreticalProduct.AminoAcidPosition < (firstLetterOnScreen + lettersOnScreen)).ToList();
-            double tacos = UpperSequenceAnnotaiton.ActualHeight;
-            MetaDrawLogic.StationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, canvas, firstLetterOnScreen);
-
-
+            MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
+            MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
+            MetaDrawLogic.StationarySequence.DrawStationarySequence(psm, canvas);
         }
     }
 }

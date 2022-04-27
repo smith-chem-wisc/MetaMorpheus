@@ -121,7 +121,7 @@ namespace GuiFunctions
                     librarySpectrum = librarySpectrum1;
                 }
 
-                StationarySequence = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
+                StationarySequence = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum, stationarySequence: true);
 
             }
             else //crosslinked
@@ -422,7 +422,7 @@ namespace GuiFunctions
             Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
-        public void ExportToPdf(PlotView plotView, Canvas canvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
+        public void ExportToPdf(PlotView plotView, Canvas canvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors, Canvas sequenceTextScrollable = null)
         {
             errors = new List<string>();
 
@@ -430,10 +430,10 @@ namespace GuiFunctions
             {
                 Directory.CreateDirectory(directory);
             }
-
+            
             foreach (var psm in spectrumMatches)
             {
-                DisplaySpectrumMatch(plotView, canvas, psm, parentChildScanPlotsView, out var displayErrors);
+                DisplaySpectrumMatch(plotView, canvas, psm, parentChildScanPlotsView, out var displayErrors, sequenceTextScrollable);
 
                 if (displayErrors != null)
                 {
@@ -462,7 +462,7 @@ namespace GuiFunctions
                 }
             }
 
-            DisplaySpectrumMatch(plotView, canvas, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors);
+            DisplaySpectrumMatch(plotView, canvas, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors, sequenceTextScrollable);
         }
 
         public void FilterPsms()
