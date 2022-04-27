@@ -742,29 +742,31 @@ namespace TaskLayer
 
         private void PostQuantificationMbrAnalysis()
         {
+            List<ChromatographicPeak> allPeaks = (List<ChromatographicPeak>)Parameters.FlashLfqResults.Peaks.Select(p => p.Value);
 
-            List<ChromatographicPeak> peaks = (List<ChromatographicPeak>)Parameters.FlashLfqResults.Peaks.Select(p => p.Value);
-
-            var mbrPeaks = peaks.Where(p=>p.IsMbrPeak).ToLookup(p => p.SpectraFileInfo.FullFilePathWithExtension, p => p);
+            var mbrPeaks = allPeaks.Where(p=>p.IsMbrPeak).ToLookup(p => p.SpectraFileInfo.FullFilePathWithExtension, p => p);
 
             List<PeptideSpectralMatch> allPeptides = GetAllPeptides();
-            List<string> spectraFileFullFilePaths = peaks.Select(p => p.SpectraFileInfo.FullFilePathWithExtension).Distinct().ToList();
+            List<string> spectraFileFullFilePaths = allPeaks.Select(p => p.SpectraFileInfo.FullFilePathWithExtension).Distinct().ToList();
 
             foreach (string spectraFile in spectraFileFullFilePaths)
             {
                 List<ChromatographicPeak> fileSpecificMbrPeaks = mbrPeaks[spectraFile].ToList();
-                MyFileManager myFileManager = new MyFileManager(true);
+                MyFileManager myFileManager = new(true);
                 MsDataFile myMsDataFile = myFileManager.LoadFile(spectraFile, CommonParameters);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, spectraFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
-                foreach (ChromatographicPeak pk in fileSpecificMbrPeaks)
+                foreach (ChromatographicPeak mbrPeak in fileSpecificMbrPeaks)
                 {
-                    PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == pk.Identifications.First().ModifiedSequence).First();
+                    //TODO: check if this really is the best donor PSM. Is there a way to get the peptide from the flashLFQ results? Maybe this is better anyway, IDK
+                    PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
                     PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
                     double monoIsotopicMass = bestDonorPsm.PeptideMonisotopicMass.Value;
 
-                    SpectralLibrary mySpectralLibrary = new();
+                    string spectralLibraryPath = Path.Combine(Parameters.OutputFolder, @"spectralLibrary.msp");
 
+                    SpectralLibrary mySpectralLibrary = new(new List<string>() {spectralLibraryPath });
+                    
                     MiniClassicSearchEngine mcse = new(bestDonorPwsm, arrayOfMs2ScansSortedByMass, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.MassDiffAcceptorType, CommonParameters,Parameters.FileSettingsList, mySpectralLibrary, Parameters.SearchTaskId);
                     mcse.Run(); 
                 }
