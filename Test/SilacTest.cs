@@ -7,7 +7,6 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -45,7 +44,11 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
+<<<<<<< HEAD
             Protein theProtein = new Protein("PEPTIDER", "accession1");
+=======
+            Protein theProtein = new("PEPTIDER", "accession1");
+>>>>>>> upstream/master
             _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
@@ -95,7 +98,7 @@ namespace Test
             Residue lightLysine = Residue.GetResidue('K');
             Residue lightArginine = Residue.GetResidue('R');
 
-            SilacLabel krLabel = new SilacLabel(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass);
+            SilacLabel krLabel = new(lightLysine.Letter, heavyLysine.Letter, heavyLysine.ThisChemicalFormula.Formula, heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass);
             krLabel.AddAdditionalSilacLabel(new SilacLabel(lightArginine.Letter, heavyArginine.Letter, heavyArginine.ThisChemicalFormula.Formula, heavyArginine.MonoisotopicMass - lightArginine.MonoisotopicMass));
 
             SearchTask task = new SearchTask
@@ -108,7 +111,11 @@ namespace Test
             };
 
 
+<<<<<<< HEAD
             List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>()) };
+=======
+            List<PeptideWithSetModifications> lightPeptide = new() { new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>()) };
+>>>>>>> upstream/master
             List<List<double>> massDifferences = new() { new List<double> { (heavyLysine.MonoisotopicMass + heavyArginine.MonoisotopicMass) - (lightLysine.MonoisotopicMass + lightArginine.MonoisotopicMass) } };
 
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak: true);
@@ -116,7 +123,11 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
+<<<<<<< HEAD
             Protein theProtein = new Protein("MPRTEINRSEQENEWITHAKANDANRANDSMSTFF", "accession1");
+=======
+            Protein theProtein = new("MPRTEINRSEQENEWITHAKANDANRANDSMSTFF", "accession1");
+>>>>>>> upstream/master
             _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
@@ -162,7 +173,11 @@ namespace Test
             mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
+<<<<<<< HEAD
             _ = Directory.CreateDirectory(outputFolder);
+=======
+            Directory.CreateDirectory(outputFolder);
+>>>>>>> upstream/master
             _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
 
             //Clear the old files
@@ -187,8 +202,8 @@ namespace Test
             };
 
             List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEK", new Dictionary<string, Modification>()) }; //has the additional, but not the original
-            List<List<double>> massDifferences1 = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
-            List<List<double>> massDifferences2 = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } };
+            List<List<double>> massDifferences1 = new() { new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass } };
+            List<List<double>> massDifferences2 = new() { new List<double> { heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass } };
 
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences1);
             string mzmlName = @"silac.mzML";
