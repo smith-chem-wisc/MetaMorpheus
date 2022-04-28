@@ -184,23 +184,15 @@ namespace Test
                         ChemicalFormula cf = new Proteomics.AminoAcidPolymer.Peptide(peptide).GetChemicalFormula();
                         IsotopicDistribution dist = IsotopicDistribution.GetDistribution(cf, 0.125, 1e-8);
                         double[] mz = dist.Masses.Select(v => v.ToMz(1)).ToArray();
-<<<<<<< HEAD
-                        double[] intensities = dist.Intensities.Select(v => v * ionIntensity * (b + f + r + 0.1)).ToArray(); //ion intensity multiplier added b/c of changes rob made to quant in PR #621 https://github.com/smith-chem-wisc/mzLib/pull/624
-=======
                         double[] intensities = dist.Intensities.Select(v => v * ionIntensity * (b + 1)).ToArray();
->>>>>>> upstream/master
 
                         scans[0] = new MsDataScan(massSpectrum: new MzSpectrum(mz, intensities, false), oneBasedScanNumber: 1, msnOrder: 1, isCentroid: true,
                             polarity: Polarity.Positive, retentionTime: 1.0, scanWindowRange: new MzRange(400, 1600), scanFilter: "f",
                             mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=1");
 
                         // create the MS2 scan
-                        PeptideWithSetModifications pep = new(peptide, new Dictionary<string, Proteomics.Modification>());
-<<<<<<< HEAD
-                        List<Product> frags = new();
-=======
+                        var pep = new PeptideWithSetModifications(peptide, new Dictionary<string, Proteomics.Modification>());
                         List<Product> frags = new List<Product>();
->>>>>>> upstream/master
                         pep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
                         double[] mz2 = frags.Select(v => v.NeutralMass.ToMz(1)).ToArray();
                         double[] intensities2 = frags.Select(v => 1e6).ToArray();
@@ -230,12 +222,8 @@ namespace Test
             }
 
             // run the search/quantification
-<<<<<<< HEAD
-            SearchTask task = new();
-=======
             SearchTask task = new SearchTask();
->>>>>>> upstream/master
-            _ = task.RunTask(unitTestFolder, new List<DbForTask> { new DbForTask(dbName, false) }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
+            task.RunTask(unitTestFolder, new List<DbForTask> { new DbForTask(dbName, false) }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
 
             // read in the protein quant results
             Assert.That(File.Exists(Path.Combine(unitTestFolder, "AllQuantifiedProteinGroups.tsv")));
