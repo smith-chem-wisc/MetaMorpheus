@@ -1,7 +1,6 @@
 ﻿using EngineLayer;
 using FlashLFQ;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
@@ -168,11 +167,7 @@ namespace MetaMorpheusGUI
 
         private void Paste(object sender, ExecutedRoutedEventArgs e)
         {
-            var selectedCell = DgQuant.SelectedCells.FirstOrDefault();
-            if (selectedCell == null)
-            {
-                return;
-            }
+            var selectedCell = DgQuant.SelectedCells.FirstOrDefault(); // never null
 
             var selectedSpectraFile = (ExperimentalDesignForDataGrid)selectedCell.Item;
             var listOfSpectraFiles = DgQuant.ItemContainerGenerator.Items.Select(p => (ExperimentalDesignForDataGrid)p).ToList();
