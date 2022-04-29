@@ -156,7 +156,7 @@ namespace MetaMorpheusGUI
             }
 
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
-
+            wholeSequenceCoverageHorizontalScroll_ScrollChanged(null, null);
             // draw the annotated spectrum
             MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
 
@@ -573,7 +573,8 @@ namespace MetaMorpheusGUI
             }
             MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
             MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
-            MetaDrawLogic.StationarySequence.DrawStationarySequence(psm, canvas);
+            if (sender != null)
+                MetaDrawLogic.StationarySequence.DrawStationarySequence(psm, canvas);
         }
     }
 }

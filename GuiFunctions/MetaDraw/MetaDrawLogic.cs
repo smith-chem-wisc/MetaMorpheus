@@ -129,10 +129,7 @@ namespace GuiFunctions
                 StationarySequence = new CrosslinkSpectrumMatchPlot(plotView, canvas, psm, scan);
             }
 
-            if (sequenceText != null)
-            {
-                scrollableSequence = new PeptideSpectrumMatchPlot(plotView, sequenceText, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
-            }
+            scrollableSequence = new PeptideSpectrumMatchPlot(plotView, sequenceText, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
 
             CurrentlyDisplayedPlots.Add(StationarySequence);
 
