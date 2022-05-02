@@ -44,11 +44,13 @@ namespace GuiFunctions
 
             ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
-            if (!stationarySequence)
-                AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
-            else
+            if (stationarySequence)
             {
                 DrawStationarySequence(psm, SequenceDrawingCanvas);
+            }
+            else
+            {
+                AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
             }
             AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
 
@@ -508,7 +510,9 @@ namespace GuiFunctions
             string fullSequence = baseSequence;
 
             // Trim full sequences selectively based upon what is show in scrollable sequence
-            Dictionary<int, string> modDictionary = ParseModifications(psm.FullSequence);
+            Dictionary<int, string> modDictionary = new Dictionary<int, string>();
+            modDictionary.Clear();
+            modDictionary = ParseModifications(psm.FullSequence);
             foreach (var mod in modDictionary)
             {
                 if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
@@ -527,7 +531,7 @@ namespace GuiFunctions
         /// </summary>
         /// <param name="fullSequence"> Full sequence of the peptide in question</param>
         /// <returns> Dictionary with the key being the amino acid position of the mod and the value being the string representing the mod</returns>
-        private Dictionary<int, string> ParseModifications(string fullSequence)
+        public static Dictionary<int, string> ParseModifications(string fullSequence)
         {
             Dictionary<int, string> modDict = new Dictionary<int, string>();
             // use a regex to get all modifications

@@ -88,7 +88,7 @@ namespace GuiFunctions
             return errors;
         }
 
-        public void DisplaySpectrumMatch(PlotView plotView, Canvas canvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas sequenceText = null)
+        public void DisplaySpectrumMatch(PlotView plotView, Canvas stationaryCanvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas scrollableCanvas = null)
         {
             errors = null;
 
@@ -121,15 +121,18 @@ namespace GuiFunctions
                     librarySpectrum = librarySpectrum1;
                 }
 
-                StationarySequence = new PeptideSpectrumMatchPlot(plotView, canvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum, stationarySequence: true);
+                StationarySequence = new PeptideSpectrumMatchPlot(plotView, stationaryCanvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum, stationarySequence: true);
 
             }
             else //crosslinked
             {
-                StationarySequence = new CrosslinkSpectrumMatchPlot(plotView, canvas, psm, scan);
+                StationarySequence = new CrosslinkSpectrumMatchPlot(plotView, stationaryCanvas, psm, scan);
             }
 
-            scrollableSequence = new PeptideSpectrumMatchPlot(plotView, sequenceText, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
+            if (scrollableCanvas != null)
+            {
+                scrollableSequence = new PeptideSpectrumMatchPlot(plotView, scrollableCanvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
+            }
 
             CurrentlyDisplayedPlots.Add(StationarySequence);
 

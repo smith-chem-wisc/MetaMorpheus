@@ -28,6 +28,8 @@ namespace GuiFunctions
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double AnnotatedSequenceTextSpacing { get; set; } = 22;
+        public static int NumberOfAAOnScreen { get; set; }
+        public static int FirstAAonScreenIndex { get; set; }
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -36,9 +38,7 @@ namespace GuiFunctions
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
 
-        // size of window to draw sequence
-        public static int FirstAAonScreenIndex { get; set; } 
-        public static int NumberOfAAOnScreen { get; set; }
+
         static MetaDrawSettings()
         {
             InitializeDictionaries();

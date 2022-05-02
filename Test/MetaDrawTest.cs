@@ -5,6 +5,7 @@ using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -119,6 +120,54 @@ namespace Test
         }
 
         [Test]
+        public static void MetaDraw_TestStationarySequencePositioning()
+        {
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.PsmResultFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv"));
+            metadrawLogic.SpectraFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchSingleSpectra.mzML"));
+            //C:\Users\Nic\source\repos\MetaMorpheus\Test\TopDownTestData\TDGPTMDSearchResults.psmtsv
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(errors.Count == 1); // Singular error should be from not loading in the rest of the spectra that the search came from
+
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = 20; // Will be dynamic based upon window size, 20 is an arbitraty number used for testing purposes
+
+            int numAnnotatedResidues = psm.BaseSeq.Length;
+            int numAnnotatedIons = psm.MatchedIons.Count;
+            int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
+
+
+            // Iterates through the psm, simulating scrolling, until the sequence is scrolled as far as allowed
+            for (; MetaDrawSettings.FirstAAonScreenIndex < psm.BaseSeq.Length - MetaDrawSettings.NumberOfAAOnScreen; MetaDrawSettings.FirstAAonScreenIndex++)
+            {
+                metadrawLogic.DisplaySpectrumMatch(plotView, stationaryCanvas, psm, parentChildView, out errors, scrollableCanvas);
+                Assert.That(errors == null || !errors.Any());
+                // Checks to see if scrollable sequence is the same each time
+                Assert.That(scrollableCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+
+                // Checks to see if the stationary sequence updated with the new positioning
+                string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+                string fullSequence = psm.BaseSeq;
+                Dictionary<int, string> modDictionary = PeptideSpectrumMatchPlot.ParseModifications(psm.FullSequence);
+                foreach (var mod in modDictionary)
+                {
+                    if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
+                    {
+                        fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                    }
+                }
+                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
+                                                       p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+                Assert.That(stationaryCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '['));
+            }
+        }
+
+        [Test]
         public static void MetaDraw_SearchTaskTest()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
@@ -183,11 +232,14 @@ namespace Test
 
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
-            var canvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             var psm = metadrawLogic.FilteredListOfPsms.First();
 
-            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, parentChildView, out errors);
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+            metadrawLogic.DisplaySpectrumMatch(plotView, stationaryCanvas, psm, parentChildView, out errors, scrollableCanvas);
             Assert.That(errors == null || !errors.Any());
 
             // test that plot was drawn
@@ -202,15 +254,31 @@ namespace Test
             var plotAxes = plotView.Model.Axes;
             Assert.That(plotAxes.Count == 2);
 
-            // test that base sequence annotation was drawn
+            // test that scrollable sequence annotation was drawn
             int numAnnotatedResidues = psm.BaseSeq.Length;
             int numAnnotatedIons = psm.MatchedIons.Count;
             int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
-            Assert.That(canvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+            Assert.That(scrollableCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+
+            // test that the stationary sequence annotation was drawn
+            string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            string fullSequence = psm.BaseSeq;
+            Dictionary<int, string> modDictionary = PeptideSpectrumMatchPlot.ParseModifications(psm.FullSequence);
+            foreach (var mod in modDictionary)
+            {
+                if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
+                {
+                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                }
+            }
+            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
+                                                   p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            Assert.That(stationaryCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[' ));
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").Take(3).ToList();
-            metadrawLogic.ExportToPdf(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+            MetaDrawSettings.NumberOfAAOnScreen = psmsToExport.First().BaseSeq.Length;
+            metadrawLogic.ExportToPdf(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"116_QIVHDSGR.pdf")));
@@ -219,9 +287,23 @@ namespace Test
 
             // test displaying a PSM with a mod
             var modPsm = metadrawLogic.FilteredListOfPsms.First(p => p.FullSequence.Contains("["));
-            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, modPsm, parentChildView, out errors);
+            MetaDrawSettings.NumberOfAAOnScreen = modPsm.BaseSeq.Length;
+            metadrawLogic.DisplaySpectrumMatch(plotView, stationaryCanvas, modPsm, parentChildView, out errors, scrollableCanvas);
             Assert.That(errors == null || !errors.Any());
-            Assert.That(canvas.Children.Count == modPsm.BaseSeq.Length + modPsm.MatchedIons.Count + modPsm.FullSequence.Count(p => p == '['));
+            Assert.That(scrollableCanvas.Children.Count == modPsm.BaseSeq.Length + modPsm.MatchedIons.Count + modPsm.FullSequence.Count(p => p == '['));
+            modifiedBaseSeq = modPsm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            fullSequence = modPsm.BaseSeq;
+            modDictionary = PeptideSpectrumMatchPlot.ParseModifications(modPsm.FullSequence);
+            foreach (var mod in modDictionary)
+            {
+                if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
+                {
+                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                }
+            }
+            matchedIons = modPsm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
+                                                p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            Assert.That(stationaryCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '['));
 
             // clean up resources
             metadrawLogic.CleanUpResources();
@@ -429,11 +511,13 @@ namespace Test
 
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
-            var canvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             var psm = metadrawLogic.FilteredListOfPsms.First();
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
 
-            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, parentChildView, out errors);
+            metadrawLogic.DisplaySpectrumMatch(plotView, stationaryCanvas, psm, parentChildView, out errors, scrollableCanvas);
             Assert.That(errors == null || !errors.Any());
 
             // test that plot was drawn
@@ -448,7 +532,7 @@ namespace Test
             Assert.AreEqual(2, plotAxes.Count);
 
             // test that base sequence annotation was drawn
-            Assert.Greater(canvas.Children.Count, 0);
+            Assert.Greater(stationaryCanvas.Children.Count, 0);
 
             // test that the plots were drawn in the parent/child view
             Assert.AreEqual(2, parentChildView.Plots.Count);
@@ -490,7 +574,7 @@ namespace Test
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-Glycosylation:H1N1 on X]SEPLSSK").ToList();
-            metadrawLogic.ExportToPdf(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+            metadrawLogic.ExportToPdf(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors, scrollableCanvas);
 
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan

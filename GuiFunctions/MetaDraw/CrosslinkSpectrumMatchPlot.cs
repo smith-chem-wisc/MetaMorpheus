@@ -13,13 +13,20 @@ namespace GuiFunctions
 {
     public class CrosslinkSpectrumMatchPlot : PeptideSpectrumMatchPlot
     {
-        public CrosslinkSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv csm, MsDataScan scan) 
+        public CrosslinkSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv csm, MsDataScan scan, bool stationarySequence = false)
             : base(plotView, sequenceDrawingCanvas, csm, scan, csm.MatchedIons)
         {
             SequenceDrawingCanvas.Height = 150;
 
             // annotate beta peptide base sequence
-            AnnotateBaseSequence(csm.BetaPeptideBaseSequence, csm.BetaPeptideFullSequence, 100, csm.BetaPeptideMatchedIons, SequenceDrawingCanvas);
+            if (stationarySequence)
+            {
+                DrawStationarySequence(csm, SequenceDrawingCanvas);
+            }
+            else
+            {
+                AnnotateBaseSequence(csm.BetaPeptideBaseSequence, csm.BetaPeptideFullSequence, 100, csm.BetaPeptideMatchedIons, SequenceDrawingCanvas);
+            }
 
             // annotate beta peptide matched ions
             AnnotateMatchedIons(isBetaPeptide: true, csm.BetaPeptideMatchedIons);
