@@ -27,9 +27,10 @@
     <Feature Id="ProductFeature" Level="1">
       <!-- ComponentGroupRef creates a reference to a ComponentGroup in another Fragment-->
       <ComponentGroupRef Id="ExecutablesAndLibrariesComponentGroup" />
-      <ComponentGroupRef Id="NativeMathComponents" />
+      <ComponentGroupRef Id="LinuxNativeMathComponents" />
+      <ComponentGroupRef Id="OsxNativeMathComponents" />
+      <ComponentGroupRef Id="WinNativeMathComponents" />
       <ComponentGroupRef Id="MathNumerics_x64" />
-      <ComponentGroupRef Id="RefComponents" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent" />
 
@@ -63,11 +64,16 @@
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="NativeMathDllFolder_runtimes" Name="runtimes">
             <Directory Id="NativeMathDllFolder_win_x64" Name="win-x64">
-              <Directory Id="NativeMathDllFolder_win_x64_native" Name="native"/>
+              <Directory Id="NativeMathDllFolder_win_x64_native" Name="nativeWin"/>
+            </Directory>
+            <Directory Id="NativeMathDllFolder_linux_x64" Name="linux-x64">
+              <Directory Id="NativeMathDllFolder_linux_x64_native" Name="nativeLinux"/>
+            </Directory>
+            <Directory Id="NativeMathDllFolder_osx_x64" Name="osx-x64">
+              <Directory Id="NativeMathDllFolder_osx_x64_native" Name="nativeOsx"/>
             </Directory>
           </Directory>
           <Directory Id="MathNumericsFolder_x64" Name="x64"/>
-          <Directory Id="RefFolder" Name="ref"/>
         </Directory>
       </Directory>
       
@@ -351,9 +357,6 @@
       <Component Id="src_MetaMorpheusGUI.deps.json" Guid="B5A6A934-76F0-407D-85D9-9DA45109B815">
         <File Id="src_MetaMorpheusGUI.deps.json" Name="MetaMorpheusGUI.deps.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.deps.json" />
       </Component>
-      <Component Id="src_MetaMorpheusGUI.runtimeconfig.dev.json" Guid="0B43BC71-A8C3-4911-8911-2DB999F49DF5">
-        <File Id="src_MetaMorpheusGUI.runtimeconfig.dev.json" Name="MetaMorpheusGUI.runtimeconfig.dev.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.runtimeconfig.dev.json" />
-      </Component>
       <Component Id="src_MetaMorpheusGUI.runtimeconfig.json" Guid="74373586-8FF6-4E06-9108-7648B8590005">
         <File Id="src_MetaMorpheusGUI.runtimeconfig.json" Name="MetaMorpheusGUI.runtimeconfig.json" Source="$(var.GUI_TargetDir)MetaMorpheusGUI.runtimeconfig.json" />
       </Component>
@@ -377,9 +380,6 @@
       <Component Id="src_CMD.pdb" Guid="67AF7BA5-0D22-47B7-A67B-C54D5B6668C7">
         <File Id="src_CMD.pdb" Name="CMD.pdb" Source="$(var.CMD_TargetDir)CMD.pdb" />
       </Component>
-      <Component Id="src_CMD.runtimeconfig.dev.json" Guid="DF119DAD-FFA0-4F2E-8302-759001E4F755">
-        <File Id="src_CMD.runtimeconfig.dev.json" Name="CMD.runtimeconfig.dev.json" Source="$(var.CMD_TargetDir)CMD.runtimeconfig.dev.json" />
-      </Component>
       <Component Id="src_CMD.runtimeconfig.json" Guid="EB901649-9102-4F1C-946E-C844383BECAE">
         <File Id="src_CMD.runtimeconfig.json" Name="CMD.runtimeconfig.json" Source="$(var.CMD_TargetDir)CMD.runtimeconfig.json" />
       </Component>
@@ -392,7 +392,29 @@
     </ComponentGroup>
 
     <!--Runtime Components-->
-    <ComponentGroup Id="NativeMathComponents" Directory="NativeMathDllFolder_win_x64_native">
+	<ComponentGroup Id="LinuxNativeMathComponents" Directory="NativeMathDllFolder_linux_x64_native">
+      <Component Id="src_libCpuMathNative.so" Guid="63f99201-5eab-46e4-b3c7-937322d6a75d">
+        <File Id="src_libCpuMathNative.so" Name="libCpuMathNative.so" Source="$(var.GUI_TargetDir)runtimes\linux-x64\native\libCpuMathNative.so" />
+      </Component>
+      <Component Id="src_libFastTreeNative.so" Guid="d01051e9-2728-4d45-8d16-539b0262d153">
+        <File Id="src_libFastTreeNative.so" Name="libFastTreeNative.so" Source="$(var.GUI_TargetDir)runtimes\linux-x64\native\libFastTreeNative.so" />
+      </Component>
+      <Component Id="src_libLdaNative.so" Guid="a3e5ccaf-37dc-4514-b2d4-db8af94cd135">
+        <File Id="src_libLdaNative.so" Name="libLdaNative.so" Source="$(var.GUI_TargetDir)runtimes\linux-x64\native\libLdaNative.so" />
+      </Component>
+    </ComponentGroup>
+	<ComponentGroup Id="OsxNativeMathComponents" Directory="NativeMathDllFolder_osx_x64_native">
+      <Component Id="src_libCpuMathNative.dylib" Guid="f73a9f22-4c51-46a8-927e-276c6c6abadf">
+        <File Id="src_libCpuMathNative.dylib" Name="libCpuMathNative.dylib" Source="$(var.GUI_TargetDir)runtimes\osx-x64\native\libCpuMathNative.dylib" />
+      </Component>
+      <Component Id="src_libFastTreeNative.dylib" Guid="5c6a425c-6983-458a-975a-103fbfff2a62">
+        <File Id="src_libFastTreeNative.dylib" Name="libFastTreeNative.dylib" Source="$(var.GUI_TargetDir)runtimes\osx-x64\native\libFastTreeNative.dylib" />
+      </Component>
+      <Component Id="src_libLdaNative.dylib" Guid="c842f3ec-c5a5-48d5-8559-7a3149995a6c">
+        <File Id="src_libLdaNative.dylib" Name="libLdaNative.dylib" Source="$(var.GUI_TargetDir)runtimes\osx-x64\native\libLdaNative.dylib" />
+      </Component>
+    </ComponentGroup>
+    <ComponentGroup Id="WinNativeMathComponents" Directory="NativeMathDllFolder_win_x64_native">
       <Component Id="src_CpuMathNative.dll" Guid="436C233C-5BCD-4386-90C7-F2AC489B09CF">
         <File Id="src_CpuMathNative.dll" Name="CpuMathNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\CpuMathNative.dll" />
       </Component>
@@ -411,13 +433,6 @@
       </Component>
       <Component Id="srcMathNet.Numerics.MKL.dll" Guid="9384C245-B63C-48EF-B5DA-8AB2C04A6B27">
         <File Id="src_MathNet.Numerics.MKL.dll" Name="MathNet.Numerics.MKL.dll" Source="$(var.GUI_TargetDir)x64\MathNet.Numerics.MKL.dll" />
-      </Component>
-    </ComponentGroup>
-    
-    <!--Ref components-->
-    <ComponentGroup Id="RefComponents" Directory="RefFolder">
-      <Component Id="ref_MetaMorpheusGUI.dll" Guid="AA2CF3C9-0027-4F1F-B3E4-0BDEAE5F9366">
-        <File Id="ref_MetaMorpheusGUI.dll" Name="MetaMorpheusGUI.dll" Source="$(var.GUI_TargetDir)ref\MetaMorpheusGUI.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>
