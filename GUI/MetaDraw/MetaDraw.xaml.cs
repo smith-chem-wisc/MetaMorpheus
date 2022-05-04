@@ -148,18 +148,40 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
-            GrayBox.Opacity = 0.7;
+            
 
             if (dataGridScanNums.SelectedItem == null || sender == null)
             {
                 return;
             }
+            wholeSequenceCoverageHorizontalScroll_Scroll(null, null);
 
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
-            wholeSequenceCoverageHorizontalScroll_ScrollChanged(null, null);
-            // draw the annotated spectrum
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
+            // If the psm is ambiguous
+            if (psm.FullSequence.Contains('|'))
+            {
+                PeptideSpectrumMatchPlot.ClearCanvas(sequenceTextScrollable);
+                PeptideSpectrumMatchPlot.ClearCanvas(stationarySequenceCanvas);
+                GrayBox.Opacity = 0;
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
+                var baseSeqs = psm.BaseSeq.Split('|');
+                var fullSeqs = psm.FullSequence.Split('|');
+                foreach (var fullSeq in fullSeqs)
+                {
+                    PsmFromTsv oneAmbiguousPsm = new PsmFromTsv(psm, fullSeq);
+                    AmbiguousSequenceOptionBox.Items.Add(fullSeq);
+                }
+                // TODO Spell out that its ambiguous in the scrollable canvas
+                return;
+            }
+            else
+            {
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Hidden;
+            }
 
+            GrayBox.Opacity = 0.7;
+            // draw the annotated spectrum
+            MetaDrawLogic.DisplaySpectrumMatch(plotView, stationarySequenceCanvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
             {
@@ -379,7 +401,7 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
-            MetaDrawLogic.ExportToPdf(plotView, canvas, items, itemsControlSampleViewModel, directoryPath, out var errors, sequenceTextScrollable);
+            MetaDrawLogic.ExportToPdf(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors, sequenceTextScrollable);
 
             if (errors.Any())
             {
@@ -557,13 +579,19 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Adjusts the sequence annotation on the spectum whenever the scrollbar is moved
         /// </summary>
-        /// <param name="sender"></param>
+        /// <param name="sender"> If sender is null, will only adjust MetaDrawSettings Numbers
+        ///                       If sender is not null, will redraw the stationary sequence</param>
         /// <param name="e"></param>
-        private void wholeSequenceCoverageHorizontalScroll_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        private void wholeSequenceCoverageHorizontalScroll_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
         {
             double width = SequenceAnnotationArea.ActualWidth;
             double offset /*woo woo*/ = wholeSequenceCoverageHorizontalScroll.ContentHorizontalOffset;
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            if (psm.FullSequence.Contains('|') && AmbiguousSequenceOptionBox.SelectedItem != null)
+            {
+                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+            }
+
 
             int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
             int firstLetterOnScreen = (int)Math.Round((offset - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
@@ -574,7 +602,20 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
             MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
             if (sender != null)
-                MetaDrawLogic.StationarySequence.DrawStationarySequence(psm, canvas);
+                MetaDrawLogic.StationarySequence.DrawStationarySequence(psm, stationarySequenceCanvas);
+        }
+
+        /// <summary>
+        /// Redraws the Stationary and Scrollable sequences upon the selection of an Ambiguous PSM
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AmbiguousSequenceOptionBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            PsmFromTsv psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+            MetaDrawLogic.DisplaySpectrumMatch(plotView, stationarySequenceCanvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
+
+            int breakpoint = 0;
         }
     }
 }

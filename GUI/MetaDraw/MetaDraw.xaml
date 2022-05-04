@@ -123,12 +123,21 @@
                                     </StackPanel>
                                 </Button>
 
-                                <ScrollViewer Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Name="wholeSequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                                          CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto" ScrollChanged="wholeSequenceCoverageHorizontalScroll_ScrollChanged">
+                                <ScrollViewer Name="wholeSequenceCoverageHorizontalScroll" Grid.Row="0" Grid.Column="2" 
+                                              Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                              CanContentScroll="True" VerticalScrollBarVisibility="Disabled" 
+                                              HorizontalScrollBarVisibility="Auto" Width="Auto"
+                                              ScrollBar.Scroll="wholeSequenceCoverageHorizontalScroll_Scroll">
                                     <Canvas x:Name="sequenceTextScrollable" Grid.Row="0" Background="White" ></Canvas>
                                 </ScrollViewer>
 
                                 <Grid Name="GrayBox" Grid.Column="3" Background="LightGray" Opacity="0" Margin="0,0,0,16"></Grid>
+
+                                <ComboBox Name="AmbiguousSequenceOptionBox" Grid.Column="3" HorizontalContentAlignment="Right"
+                                          VerticalAlignment="Top" Visibility="Hidden" SelectionChanged="AmbiguousSequenceOptionBox_SelectionChanged">
+                                    <ComboBoxItem Content="Select Sequence" />
+                                </ComboBox>
+
                             </Grid>
 
                             <TabControl Grid.Row="1">
@@ -153,7 +162,7 @@
                                                 <RowDefinition Height = "auto" />
                                             </Grid.RowDefinitions>
 
-                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="canvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch"/>
+                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="stationarySequenceCanvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch"/>
                                         </Grid>
                                     </Grid>
                                 </TabItem>

@@ -193,6 +193,71 @@ namespace EngineLayer
             LocalizedGlycan = (parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan]];
         }
 
+        /// <summary>
+        /// Constructor used to disambiguate PsmFromTsv and setting to a single full sequence
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="fullSequence"></param>
+        public PsmFromTsv(PsmFromTsv psm, string fullSequence)
+        {
+            FullSequence = fullSequence;
+            Ms2ScanNumber = psm.Ms2ScanNumber;
+            FileNameWithoutExtension = psm.FileNameWithoutExtension;
+            PrecursorScanNum = psm.PrecursorScanNum;
+            PrecursorCharge = psm.PrecursorCharge;
+            PrecursorMz = psm.PrecursorMz;
+            Score = psm.Score;
+            ProteinAccession = psm.ProteinAccession;
+            MatchedIons = psm.MatchedIons.ToList();
+            ChildScanMatchedIons = psm.ChildScanMatchedIons;
+            QValue = psm.QValue;
+            PEP = psm.PEP;
+            PEP_QValue = psm.PEP_QValue;
+            TotalIonCurrent = psm.TotalIonCurrent;
+            DeltaScore = psm.DeltaScore;
+            BaseSeq = psm.BaseSeq;
+            EssentialSeq = psm.EssentialSeq;
+            AmbiguityLevel = psm.AmbiguityLevel;
+            MissedCleavage = psm.MissedCleavage;
+            PeptideMonoMass = psm.PeptideMonoMass;
+            MassDiffDa = psm.MassDiffDa;
+            MassDiffPpm = psm.MassDiffPpm;
+            ProteinName = psm.ProteinName;
+            GeneName = psm.GeneName;
+            OrganismName = psm.OrganismName;
+            IntersectingSequenceVariations = psm.IntersectingSequenceVariations;
+            SpliceSites = psm.SpliceSites;
+            PeptideDescription = psm.PeptideDescription;
+            StartAndEndResiduesInProtein = psm.StartAndEndResiduesInProtein;
+            PreviousAminoAcid = psm.PreviousAminoAcid;
+            NextAminoAcid = psm.NextAminoAcid;
+            DecoyContamTarget = psm.DecoyContamTarget;
+            QValueNotch = psm.QValueNotch;
+            VariantCrossingIons = psm.VariantCrossingIons?.ToList();
+            CrossType = psm.CrossType;
+            LinkResidues = psm.LinkResidues;
+            ProteinLinkSite = psm.ProteinLinkSite;
+            Rank = psm.Rank;
+            BetaPeptideProteinAccession = psm.BetaPeptideProteinAccession;
+            BetaPeptideProteinLinkSite = psm.BetaPeptideProteinLinkSite;
+            BetaPeptideBaseSequence = psm.BetaPeptideBaseSequence;
+            BetaPeptideFullSequence = psm.BetaPeptideFullSequence;
+            BetaPeptideTheoreticalMass = psm.BetaPeptideTheoreticalMass;
+            BetaPeptideScore = psm.BetaPeptideScore;
+            BetaPeptideRank = psm.BetaPeptideRank;
+            BetaPeptideMatchedIons = psm.BetaPeptideMatchedIons?.ToList();
+            BetaPeptideChildScanMatchedIons = psm.BetaPeptideChildScanMatchedIons;
+            XLTotalScore = psm.XLTotalScore;
+            ParentIons = psm.ParentIons;
+            RetentionTime = psm.RetentionTime;
+            GlycanStructure = psm.GlycanStructure;
+            GlycanMass = psm.GlycanMass;
+            GlycanComposition = psm.GlycanComposition;
+            GlycanLocalizationLevel = psm.GlycanLocalizationLevel;
+            LocalizedGlycan = psm.LocalizedGlycan;
+        }
+
+
         //Used to remove Silac labels for proper annotation
         public static string RemoveParentheses(string baseSequence)
         {

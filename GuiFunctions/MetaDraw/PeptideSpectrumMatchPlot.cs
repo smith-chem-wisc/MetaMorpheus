@@ -44,15 +44,21 @@ namespace GuiFunctions
 
             ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
-            if (stationarySequence)
+
+            if (!psm.FullSequence.Contains('|'))
             {
-                DrawStationarySequence(psm, SequenceDrawingCanvas);
+                if (stationarySequence)
+                {
+                    DrawStationarySequence(psm, SequenceDrawingCanvas);
+                }
+                else
+                {
+                    AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
+                }
+                AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
             }
-            else
-            {
-                AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
-            }
-            AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
+
+            
 
             if (annotateProperties)
             {
@@ -513,7 +519,7 @@ namespace GuiFunctions
             Dictionary<int, string> modDictionary = new Dictionary<int, string>();
             modDictionary.Clear();
             modDictionary = ParseModifications(psm.FullSequence);
-            foreach (var mod in modDictionary)
+            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
             {
                 if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
                 {
@@ -646,7 +652,7 @@ namespace GuiFunctions
         /// <summary>
         /// Clear canvas board
         /// </summary>
-        private static void ClearCanvas(Canvas cav)
+        public static void ClearCanvas(Canvas cav)
         {
             cav.Children.Clear();
         }

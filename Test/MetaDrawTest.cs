@@ -378,10 +378,11 @@ namespace Test
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
             var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             var csm = metadrawLogic.FilteredListOfPsms.First();
 
-            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, csm, parentChildView, out errors);
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, csm, parentChildView, out errors, scrollableCanvas);
             Assert.That(errors == null || !errors.Any());
 
             // test that plot was drawn
@@ -621,10 +622,11 @@ namespace Test
             var psmsFromTsv = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             var plotView = new OxyPlot.Wpf.PlotView();
             var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
             var parentChildScanPlotsView = new ParentChildScanPlotsView();
 
             // plotting PSM should produce an error because spectra are not loaded
-            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psmsFromTsv.First(), parentChildScanPlotsView, out errors);
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psmsFromTsv.First(), parentChildScanPlotsView, out errors, scrollableCanvas);
             Assert.That(errors.Any());
 
             // export to PDF should produce an error because spectra are not loaded
@@ -669,10 +671,12 @@ namespace Test
 
             var plotView = new OxyPlot.Wpf.PlotView();
             var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
             var parentChildScanPlotsView = new ParentChildScanPlotsView();
 
             // plot PSM
-            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, metadrawLogic.FilteredListOfPsms.First(), parentChildScanPlotsView, out errors);
+            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, metadrawLogic.FilteredListOfPsms.First(), parentChildScanPlotsView, out errors, scrollableCanvas);
             Assert.That(errors == null || !errors.Any());
 
             // export to PDF
@@ -724,10 +728,12 @@ namespace Test
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
             var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             var psm = metadrawLogic.FilteredListOfPsms.First();
 
-            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, parentChildView, out errors);
+            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            metadrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, parentChildView, out errors, scrollableCanvas);
             Assert.That(errors == null || !errors.Any());
 
             // test that plot was drawn

@@ -88,7 +88,7 @@ namespace GuiFunctions
             return errors;
         }
 
-        public void DisplaySpectrumMatch(PlotView plotView, Canvas stationaryCanvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas scrollableCanvas = null)
+        public void DisplaySpectrumMatch(PlotView plotView, Canvas stationaryCanvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas scrollableCanvas)
         {
             errors = null;
 
