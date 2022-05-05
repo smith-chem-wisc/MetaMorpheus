@@ -367,6 +367,11 @@ namespace GuiFunctions
             }
         }
 
+        public void RedrawStationarySequence()
+        {
+
+        }
+
         public static void TextDrawing(Canvas sequenceText, Point loc, string txt, Brush clr, int fontSize)
         {
             TextBlock tb = new TextBlock();
@@ -518,6 +523,8 @@ namespace GuiFunctions
             }
         }
 
+        #region Helpers
+
         private void LoadPsms(out List<string> errors, bool haveLoadedSpectra)
         {
             errors = new List<string>();
@@ -628,4 +635,6 @@ namespace GuiFunctions
             }
         }
     }
+
+    #endregion
 }

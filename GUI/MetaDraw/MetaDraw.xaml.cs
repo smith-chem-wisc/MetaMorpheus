@@ -148,39 +148,42 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
-            
-
             if (dataGridScanNums.SelectedItem == null || sender == null)
             {
                 return;
             }
-            wholeSequenceCoverageHorizontalScroll_Scroll(null, null);
 
+            sequenceCoverageHorizontalScroll.ScrollToLeftEnd();
+            sequenceCoverageHorizontalScroll.ScrollToHorizontalOffset(0);
+            sequenceCoverageHorizontalScroll.UpdateLayout();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
-            // If the psm is ambiguous
+            // If psm is ambiguous, split into several psm objects and add each as an option to see
             if (psm.FullSequence.Contains('|'))
             {
+                MetaDrawSettings.DrawMatchedIons = false;
                 PeptideSpectrumMatchPlot.ClearCanvas(sequenceTextScrollable);
                 PeptideSpectrumMatchPlot.ClearCanvas(stationarySequenceCanvas);
+                AmbiguousSequenceOptionBox.Items.Clear();
                 GrayBox.Opacity = 0;
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
-                var baseSeqs = psm.BaseSeq.Split('|');
                 var fullSeqs = psm.FullSequence.Split('|');
                 foreach (var fullSeq in fullSeqs)
                 {
-                    PsmFromTsv oneAmbiguousPsm = new PsmFromTsv(psm, fullSeq);
-                    AmbiguousSequenceOptionBox.Items.Add(fullSeq);
+                    PsmFromTsv oneAmbiguousPsm = new(psm, fullSeq);
+                    AmbiguousSequenceOptionBox.Items.Add(oneAmbiguousPsm);
                 }
-                // TODO Spell out that its ambiguous in the scrollable canvas
-                return;
+                AmbiguousWarningTextBlocks.Visibility = Visibility.Visible;
             }
             else
             {
-                AmbiguousSequenceOptionBox.Visibility = Visibility.Hidden;
+                MetaDrawSettings.DrawMatchedIons = true;
+                AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Collapsed;
+                GrayBox.Opacity = 0.7;
             }
 
-            GrayBox.Opacity = 0.7;
             // draw the annotated spectrum
+            SetSequenceDrawingPositionSettings();
             MetaDrawLogic.DisplaySpectrumMatch(plotView, stationarySequenceCanvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
@@ -577,32 +580,29 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Adjusts the sequence annotation on the spectum whenever the scrollbar is moved
+        /// Redraws the Stationary Sequence whenever the scrolling sequence is scrolled
         /// </summary>
-        /// <param name="sender"> If sender is null, will only adjust MetaDrawSettings Numbers
-        ///                       If sender is not null, will redraw the stationary sequence</param>
+        /// <param name="sender"> 
         /// <param name="e"></param>
         private void wholeSequenceCoverageHorizontalScroll_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
         {
-            double width = SequenceAnnotationArea.ActualWidth;
-            double offset /*woo woo*/ = wholeSequenceCoverageHorizontalScroll.ContentHorizontalOffset;
+            SetSequenceDrawingPositionSettings();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
-            if (psm.FullSequence.Contains('|') && AmbiguousSequenceOptionBox.SelectedItem != null)
+            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
                 psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
-            }
 
-
-            int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
-            int firstLetterOnScreen = (int)Math.Round((offset - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
-            if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
-            {
-                lettersOnScreen = psm.BaseSeq.Length - firstLetterOnScreen;
+                // Draw the matched ions for the first ambiguous sequence only
+                if (AmbiguousSequenceOptionBox.SelectedIndex == 0)
+                {
+                    MetaDrawSettings.DrawMatchedIons = true;
+                }
+                else
+                {
+                    MetaDrawSettings.DrawMatchedIons = false;
+                }
             }
-            MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
-            MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
-            if (sender != null)
-                MetaDrawLogic.StationarySequence.DrawStationarySequence(psm, stationarySequenceCanvas);
+            MetaDrawLogic.StationarySequence.DrawStationarySequence(psm, stationarySequenceCanvas);
         }
 
         /// <summary>
@@ -612,10 +612,53 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void AmbiguousSequenceOptionBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            PsmFromTsv psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, stationarySequenceCanvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
+            if (AmbiguousWarningTextBlocks.Visibility != Visibility.Collapsed)
+            {
+                AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
+            }
 
-            int breakpoint = 0;
+            wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
+            SetSequenceDrawingPositionSettings();
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+            {
+                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+
+                // Draw the matched ions for the first ambiguous sequence only
+                if (AmbiguousSequenceOptionBox.SelectedIndex == 0)
+                {
+                    MetaDrawSettings.DrawMatchedIons = true;
+                }
+                else
+                {
+                    MetaDrawSettings.DrawMatchedIons = false;
+                }
+            }
+
+            MetaDrawLogic.DisplaySpectrumMatch(plotView, stationarySequenceCanvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
+        }
+
+        /// <summary>
+        /// Method to set the MetaDrawSettings fields FirstAAOnScreen and NumberofAAonScreen to the current scrolling sequence position
+        /// </summary>
+        private void SetSequenceDrawingPositionSettings()
+        {
+            double width = SequenceAnnotationArea.ActualWidth;
+            double offset = wholeSequenceCoverageHorizontalScroll.ContentHorizontalOffset;
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+            {
+                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+            }
+
+            int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            int firstLetterOnScreen = (int)Math.Round((offset - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
+            {
+                lettersOnScreen = psm.BaseSeq.Length - firstLetterOnScreen;
+            }
+            MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
+            MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
         }
     }
 }

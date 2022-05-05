@@ -456,5 +456,10 @@ namespace EngineLayer
 
             return tuples;
         }
+
+        public override string ToString()
+        {
+            return FullSequence;
+        }
     }
 }

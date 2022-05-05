@@ -44,6 +44,7 @@ namespace GuiFunctions
 
             ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
+            AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
 
             if (!psm.FullSequence.Contains('|'))
             {
@@ -55,10 +56,7 @@ namespace GuiFunctions
                 {
                     AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
                 }
-                AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
-            }
-
-            
+            } 
 
             if (annotateProperties)
             {
@@ -181,7 +179,7 @@ namespace GuiFunctions
         public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, Canvas canvas)
         {
             ClearCanvas(canvas);
-            // don't draw ambiguous sequences
+            // Only draw disambiguated sequences
             if (fullSequence.Contains("|"))
             {
                 return;
@@ -198,34 +196,37 @@ namespace GuiFunctions
             }
             canvas.Width = Math.Max(canvas.Width, canvasWidth) + 165; // this number is the width of the grayed out box
 
-            // draw the fragment ion annotations on the base sequence
-            foreach (var ion in matchedFragmentIons)
+            if (MetaDrawSettings.DrawMatchedIons)
             {
-                //if it's not an internal fragment
-                if (ion.NeutralTheoreticalProduct.SecondaryProductType == null)
+                // draw the fragment ion annotations on the base sequence
+                foreach (var ion in matchedFragmentIons)
                 {
-                    int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition - MetaDrawSettings.FirstAAonScreenIndex;
-                    string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
-                    OxyColor oxycolor = SpectrumMatch.VariantCrossingIons.Contains(ion) ?
-                        MetaDrawSettings.VariantCrossColor : MetaDrawSettings.ProductTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
-                    Color color = Color.FromArgb(oxycolor.A, oxycolor.R, oxycolor.G, oxycolor.B);
+                    //if it's not an internal fragment
+                    if (ion.NeutralTheoreticalProduct.SecondaryProductType == null)
+                    {
+                        int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition - MetaDrawSettings.FirstAAonScreenIndex;
+                        string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
+                        OxyColor oxycolor = SpectrumMatch.VariantCrossingIons.Contains(ion) ?
+                            MetaDrawSettings.VariantCrossColor : MetaDrawSettings.ProductTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
+                        Color color = Color.FromArgb(oxycolor.A, oxycolor.R, oxycolor.G, oxycolor.B);
 
-                    if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
-                    {
-                        annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
-                    }
-                    double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11;
-                    double y = yLoc + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
+                        if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
+                        {
+                            annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
+                        }
+                        double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11;
+                        double y = yLoc + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
 
-                    if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
-                    {
-                        DrawCTermIon(canvas, new Point(x, y), color, annotation);
+                        if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                        {
+                            DrawCTermIon(canvas, new Point(x, y), color, annotation);
+                        }
+                        else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                        {
+                            DrawNTermIon(canvas, new Point(x, y), color, annotation);
+                        }
+                        // don't draw diagnostic ions, precursor ions, etc
                     }
-                    else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
-                    {
-                        DrawNTermIon(canvas, new Point(x, y), color, annotation);
-                    }
-                    // don't draw diagnostic ions, precursor ions, etc
                 }
             }
             AnnotateModifications(SpectrumMatch, canvas, fullSequence, yLoc);
@@ -264,6 +265,64 @@ namespace GuiFunctions
                     DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
                 }
             }
+        }
+
+        /// <summary>
+        /// Redraws the Stationary Sequence on the spectrum in reference to the position of the scrollable sequence
+        /// </summary>
+        /// <param name="lettersOnScreen"></param>
+        /// <param name="firstLetterOnScreen"></param>
+        /// <param name="psm"></param>
+        /// <param name="canvas"></param>
+        public void DrawStationarySequence(PsmFromTsv psm, Canvas stationarySequenceCanvas)
+        {
+            ClearCanvas(stationarySequenceCanvas);
+            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            string fullSequence = baseSequence;
+
+            // Trim full sequences selectively based upon what is show in scrollable sequence
+            Dictionary<int, string> modDictionary = ParseModifications(psm.FullSequence);
+            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
+            {
+                if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
+                {
+                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                }
+            }
+
+            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
+                                                   p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
+            this.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, stationarySequenceCanvas);
+        }
+
+        /// <summary>
+        /// Parses the full sequence to identify mods
+        /// </summary>
+        /// <param name="fullSequence"> Full sequence of the peptide in question</param>
+        /// <returns> Dictionary with the key being the amino acid position of the mod and the value being the string representing the mod</returns>
+        public static Dictionary<int, string> ParseModifications(string fullSequence)
+        {
+            Dictionary<int, string> modDict = new Dictionary<int, string>();
+            // use a regex to get all modifications
+            string pattern = @"\[(.+?)\]";
+            Regex regex = new(pattern);
+
+            // remove each match after adding to the dict. Otherwise, getting positions
+            // of the modifications will be rather difficult.
+            MatchCollection matches = regex.Matches(fullSequence);
+            int currentPosition = 0;
+            foreach (Match match in matches)
+            {
+                GroupCollection group = match.Groups;
+                string val = group[1].Value;
+                int startIndex = group[0].Index;
+                int captureLength = group[0].Length;
+                int position = group["(.+?)"].Index;
+
+                modDict.Add(startIndex - currentPosition, val);
+                currentPosition += startIndex + captureLength;
+            }
+            return modDict;
         }
 
         protected void AnnotateLibraryIons(bool isBetaPeptide, List<MatchedFragmentIon> libraryIons)
@@ -503,80 +562,22 @@ namespace GuiFunctions
             }
         }
 
-        /// <summary>
-        /// Redraws the Stationary Sequence on the spectrum in reference to the position of the scrollable sequence
-        /// </summary>
-        /// <param name="lettersOnScreen"></param>
-        /// <param name="firstLetterOnScreen"></param>
-        /// <param name="psm"></param>
-        /// <param name="canvas"></param>
-        public void DrawStationarySequence(PsmFromTsv psm, Canvas canvas)
-        {
-            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
-            string fullSequence = baseSequence;
-
-            // Trim full sequences selectively based upon what is show in scrollable sequence
-            Dictionary<int, string> modDictionary = new Dictionary<int, string>();
-            modDictionary.Clear();
-            modDictionary = ParseModifications(psm.FullSequence);
-            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
-            {
-                if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
-                {
-                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
-                }
-            }
-
-            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                   p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-            this.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, canvas);
-        }
 
         /// <summary>
-        /// Parses the full sequence to identify mods
+        /// This method exists because of the mirror plotting of spectral libraries. Library spectral ions are displayed
+        /// as having negative intensities for easy visualization, but obviously the ions do not actually have negative
+        /// intensities. This formatter is used on the Y-axis (intensity) to turn negative values into positive ones
+        /// so the Y-axis doesn't display negative intensities.
         /// </summary>
-        /// <param name="fullSequence"> Full sequence of the peptide in question</param>
-        /// <returns> Dictionary with the key being the amino acid position of the mod and the value being the string representing the mod</returns>
-        public static Dictionary<int, string> ParseModifications(string fullSequence)
+        private static string YAxisLabelFormatter(double d)
+    {
+        if (d < 0)
         {
-            Dictionary<int, string> modDict = new Dictionary<int, string>();
-            // use a regex to get all modifications
-            string pattern = @"\[(.+?)\]";
-            Regex regex = new(pattern);
-
-            // remove each match after adding to the dict. Otherwise, getting positions
-            // of the modifications will be rather difficult.
-            MatchCollection matches = regex.Matches(fullSequence);
-            int currentPosition = 0;
-            foreach (Match match in matches)
-            {
-                GroupCollection group = match.Groups;
-                string val = group[1].Value;
-                int startIndex = group[0].Index;
-                int captureLength = group[0].Length;
-                int position = group["(.+?)"].Index;
-
-                modDict.Add(startIndex - currentPosition, val);
-                currentPosition += startIndex + captureLength;
-            }
-            return modDict;
+            return (-d).ToString("0e-0", CultureInfo.InvariantCulture);
         }
 
-            /// <summary>
-            /// This method exists because of the mirror plotting of spectral libraries. Library spectral ions are displayed
-            /// as having negative intensities for easy visualization, but obviously the ions do not actually have negative
-            /// intensities. This formatter is used on the Y-axis (intensity) to turn negative values into positive ones
-            /// so the Y-axis doesn't display negative intensities.
-            /// </summary>
-            private static string YAxisLabelFormatter(double d)
-        {
-            if (d < 0)
-            {
-                return (-d).ToString("0e-0", CultureInfo.InvariantCulture);
-            }
-
-            return d.ToString("0e-0", CultureInfo.InvariantCulture);
-        }
+        return d.ToString("0e-0", CultureInfo.InvariantCulture);
+    }
 
         /// <summary>
         /// Draw the line seperator @ top

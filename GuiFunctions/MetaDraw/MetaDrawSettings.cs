@@ -30,6 +30,7 @@ namespace GuiFunctions
         public static double AnnotatedSequenceTextSpacing { get; set; } = 22;
         public static int NumberOfAAOnScreen { get; set; }
         public static int FirstAAonScreenIndex { get; set; }
+        public static bool DrawMatchedIons { get; set; }
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
