@@ -683,6 +683,7 @@ namespace Test
             var parentChildScanPlotsView = new ParentChildScanPlotsView();
 
             // plot PSM
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
             MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
             metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, metadrawLogic.FilteredListOfPsms.First());
             metadrawLogic.DisplaySpectrumMatch(plotView, metadrawLogic.FilteredListOfPsms.First(), parentChildScanPlotsView, out errors);
@@ -742,6 +743,7 @@ namespace Test
             var parentChildView = new ParentChildScanPlotsView();
             var psm = metadrawLogic.FilteredListOfPsms.First();
 
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
             MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
             metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, psm);
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
