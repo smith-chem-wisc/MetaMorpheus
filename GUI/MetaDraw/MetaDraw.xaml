@@ -131,7 +131,7 @@
                                               CanContentScroll="True" VerticalScrollBarVisibility="Disabled" 
                                               HorizontalScrollBarVisibility="Auto" Margin="0,0"
                                               ScrollBar.Scroll="wholeSequenceCoverageHorizontalScroll_Scroll">
-                                        <Canvas x:Name="sequenceTextScrollable" Grid.Row="0" Background="White" Margin="-8,-4,0,0" ></Canvas>
+                                        <Canvas x:Name="scrollableSequenceCanvas" Grid.Row="0" Background="White" Margin="-8,-4,0,0" ></Canvas>
                                     </ScrollViewer>
 
                                     <!-- Ambiguous Sequence TextBox -->
@@ -183,8 +183,7 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height = "auto" />
                                             </Grid.RowDefinitions>
-
-                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="stationarySequenceCanvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch"/>
+                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="stationarySequenceCanvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch"/> 
                                         </Grid>
                                     </Grid>
                                 </TabItem>

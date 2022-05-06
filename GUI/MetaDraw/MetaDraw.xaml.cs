@@ -1,5 +1,6 @@
 using EngineLayer;
 using GuiFunctions;
+using GuiFunctions.MetaDraw;
 using OxyPlot;
 using Proteomics.Fragmentation;
 using System;
@@ -153,19 +154,16 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            sequenceCoverageHorizontalScroll.ScrollToLeftEnd();
-            sequenceCoverageHorizontalScroll.ScrollToHorizontalOffset(0);
-            sequenceCoverageHorizontalScroll.UpdateLayout();
+            wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
+            AmbiguousSequenceOptionBox.Items.Clear();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             // If psm is ambiguous, split into several psm objects and add each as an option to see
             if (psm.FullSequence.Contains('|'))
             {
                 MetaDrawSettings.DrawMatchedIons = false;
-                PeptideSpectrumMatchPlot.ClearCanvas(sequenceTextScrollable);
-                PeptideSpectrumMatchPlot.ClearCanvas(stationarySequenceCanvas);
-                AmbiguousSequenceOptionBox.Items.Clear();
+                DrawnSequence.ClearCanvas(scrollableSequenceCanvas);
+                DrawnSequence.ClearCanvas(stationarySequenceCanvas);
                 GrayBox.Opacity = 0;
-                AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
                 var fullSeqs = psm.FullSequence.Split('|');
                 foreach (var fullSeq in fullSeqs)
                 {
@@ -173,18 +171,23 @@ namespace MetaMorpheusGUI
                     AmbiguousSequenceOptionBox.Items.Add(oneAmbiguousPsm);
                 }
                 AmbiguousWarningTextBlocks.Visibility = Visibility.Visible;
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
             }
             else
             {
                 MetaDrawSettings.DrawMatchedIons = true;
                 AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Collapsed;
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
                 GrayBox.Opacity = 0.7;
             }
 
             // draw the annotated spectrum
             SetSequenceDrawingPositionSettings();
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, stationarySequenceCanvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
+            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
+            MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
+
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
             {
@@ -404,7 +407,7 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
-            MetaDrawLogic.ExportToPdf(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors, sequenceTextScrollable);
+            MetaDrawLogic.ExportToPdf(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors) ;
 
             if (errors.Any())
             {
@@ -586,7 +589,6 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void wholeSequenceCoverageHorizontalScroll_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
         {
-            SetSequenceDrawingPositionSettings();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
@@ -602,7 +604,8 @@ namespace MetaMorpheusGUI
                     MetaDrawSettings.DrawMatchedIons = false;
                 }
             }
-            MetaDrawLogic.StationarySequence.DrawStationarySequence(psm, stationarySequenceCanvas);
+            SetSequenceDrawingPositionSettings();
+            DrawnSequence.DrawStationarySequence(psm, MetaDrawLogic.StationarySequence);
         }
 
         /// <summary>
@@ -623,6 +626,7 @@ namespace MetaMorpheusGUI
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
                 psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
 
                 // Draw the matched ions for the first ambiguous sequence only
                 if (AmbiguousSequenceOptionBox.SelectedIndex == 0)
@@ -635,7 +639,7 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, stationarySequenceCanvas, psm, itemsControlSampleViewModel, out var errors, sequenceTextScrollable);
+            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
         }
 
         /// <summary>

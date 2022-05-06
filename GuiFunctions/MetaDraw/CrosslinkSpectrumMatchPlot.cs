@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using Proteomics.Fragmentation;
 using System.Collections.Generic;
@@ -11,47 +12,19 @@ using System.Windows.Shapes;
 
 namespace GuiFunctions
 {
+    /// <summary>
+    /// Class for displaying CrossLinked spectra in MetaDraw
+    /// </summary>
     public class CrosslinkSpectrumMatchPlot : PeptideSpectrumMatchPlot
     {
-        public CrosslinkSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv csm, MsDataScan scan, bool stationarySequence = false)
-            : base(plotView, sequenceDrawingCanvas, csm, scan, csm.MatchedIons)
+        public CrosslinkSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv csm, MsDataScan scan, Canvas stationaryCanvas)
+            : base(plotView, csm, scan, csm.MatchedIons)
         {
-            SequenceDrawingCanvas.Height = 150;
-
-            // annotate beta peptide base sequence
-            if (stationarySequence)
-            {
-                DrawStationarySequence(csm, SequenceDrawingCanvas);
-            }
-            else
-            {
-                AnnotateBaseSequence(csm.BetaPeptideBaseSequence, csm.BetaPeptideFullSequence, 100, csm.BetaPeptideMatchedIons, SequenceDrawingCanvas);
-            }
-
             // annotate beta peptide matched ions
             AnnotateMatchedIons(isBetaPeptide: true, csm.BetaPeptideMatchedIons);
 
-            // annotate crosslinker
-            int alphaSite = int.Parse(Regex.Match(SpectrumMatch.FullSequence, @"\d+").Value);
-            int betaSite = int.Parse(Regex.Match(SpectrumMatch.BetaPeptideFullSequence, @"\d+").Value);
-
-            AnnotateCrosslinker(SequenceDrawingCanvas, 
-                new Point(alphaSite * MetaDrawSettings.AnnotatedSequenceTextSpacing, 50), 
-                new Point(betaSite * MetaDrawSettings.AnnotatedSequenceTextSpacing, 90), 
-                Colors.Black);
-
             ZoomAxes(csm.MatchedIons.Concat(csm.BetaPeptideMatchedIons), yZoom: 1.5);
             RefreshChart();
-        }
-
-        private static void AnnotateCrosslinker(Canvas cav, Point alphaBotLoc, Point betaBotLoc, Color clr)
-        {
-            Polyline bot = new Polyline();
-            double distance = (betaBotLoc.Y - alphaBotLoc.Y) / 2;
-            bot.Points = new PointCollection() { alphaBotLoc, new Point(alphaBotLoc.X, alphaBotLoc.Y + distance), new Point(betaBotLoc.X, alphaBotLoc.Y + distance), betaBotLoc };
-            bot.Stroke = new SolidColorBrush(clr);
-            bot.StrokeThickness = 2;
-            cav.Children.Add(bot);
         }
     }
 }

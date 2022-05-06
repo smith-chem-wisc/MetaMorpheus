@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using GuiFunctions.MetaDraw;
 using IO.Mgf;
 using IO.MzML;
 using IO.ThermoRawFileReader;
@@ -31,7 +32,9 @@ namespace GuiFunctions
         public ObservableCollection<string> SpectralLibraryPaths { get; private set; }
         public ObservableCollection<PsmFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
         public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
-        public PeptideSpectrumMatchPlot StationarySequence { get; private set; }
+        public DrawnSequence StationarySequence { get; set; }
+        public DrawnSequence ScrollableSequence { get; set; }
+        public PeptideSpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
 
@@ -88,7 +91,7 @@ namespace GuiFunctions
             return errors;
         }
 
-        public void DisplaySpectrumMatch(PlotView plotView, Canvas stationaryCanvas, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors, Canvas scrollableCanvas)
+        public void DisplaySpectrumMatch(PlotView plotView, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
         {
             errors = null;
 
@@ -108,9 +111,7 @@ namespace GuiFunctions
 
             LibrarySpectrum librarySpectrum = null;
 
-            // plot the annotated spectrum match
-
-            PeptideSpectrumMatchPlot scrollableSequence;
+            PeptideSpectrumMatchPlot spectrumAnnotation;
             //if not crosslinked
             if (psm.BetaPeptideBaseSequence == null)
             {
@@ -121,20 +122,15 @@ namespace GuiFunctions
                     librarySpectrum = librarySpectrum1;
                 }
 
-                StationarySequence = new PeptideSpectrumMatchPlot(plotView, stationaryCanvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum, stationarySequence: true);
+                SpectrumAnnotation = new PeptideSpectrumMatchPlot(plotView, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum, stationarySequence: true);
 
             }
             else //crosslinked
             {
-                StationarySequence = new CrosslinkSpectrumMatchPlot(plotView, stationaryCanvas, psm, scan);
+                SpectrumAnnotation = new CrosslinkSpectrumMatchPlot(plotView, psm, scan, StationarySequence.SequenceDrawingCanvas);
             }
 
-            if (scrollableCanvas != null)
-            {
-                scrollableSequence = new PeptideSpectrumMatchPlot(plotView, scrollableCanvas, psm, scan, psm.MatchedIons, librarySpectrum: librarySpectrum);
-            }
-
-            CurrentlyDisplayedPlots.Add(StationarySequence);
+            CurrentlyDisplayedPlots.Add(SpectrumAnnotation);
 
             // plot parent/child scans
             if (psm.ChildScanMatchedIons != null)
@@ -148,11 +144,13 @@ namespace GuiFunctions
 
                 var parentPlotView = new PlotView(); // placeholder
                 var parentCanvas = new Canvas();
+                DrawnSequence parentSequence = new(parentCanvas, psm, false);
+                parentSequence.AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, psm.MatchedIons, psm);
                 var item = new ParentChildScanPlotTemplate()
                 {
-                    Plot = new PeptideSpectrumMatchPlot(parentPlotView, parentCanvas, psm, scan, psm.MatchedIons),
+                    Plot = new PeptideSpectrumMatchPlot(parentPlotView, psm, scan, psm.MatchedIons),
                     SpectrumLabel = parentAnnotation,
-                    TheCanvas = parentCanvas
+                    TheCanvas = parentSequence.SequenceDrawingCanvas
                 };
 
                 parentChildScanPlotsView.Plots.Add(item);
@@ -193,14 +191,16 @@ namespace GuiFunctions
                         + " RetentionTime: " + childScan.RetentionTime.ToString("0.##");
 
                     Canvas childCanvas = new Canvas();
+                    DrawnSequence childSequence = new(childCanvas, psm, false);
+                    childSequence.AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedIons, psm);
                     PlotView childPlotView = new PlotView(); // placeholder
 
                     // make the plot
-                    var childPlot = new PeptideSpectrumMatchPlot(childPlotView, childCanvas, psm, childScan, matchedIons, annotateProperties: false);
+                    var childPlot = new PeptideSpectrumMatchPlot(childPlotView, psm, childScan, matchedIons, annotateProperties: false);
                     childPlot.Model.Title = null;
                     childPlot.Model.Subtitle = null;
 
-                    item = new ParentChildScanPlotTemplate() { Plot = childPlot, SpectrumLabel = childAnnotation, TheCanvas = childCanvas };
+                    item = new ParentChildScanPlotTemplate() { Plot = childPlot, SpectrumLabel = childAnnotation, TheCanvas = childSequence.SequenceDrawingCanvas };
 
                     // remove model from placeholder (the model can only be referenced by 1 plotview at a time)
                     childPlotView.Model = null;
@@ -210,6 +210,30 @@ namespace GuiFunctions
                     CurrentlyDisplayedPlots.Add(childPlot);
                 }
             }
+        }
+
+        /// <summary>
+        /// Draws the Sequences, both stationary and scrolling
+        /// </summary>
+        /// <param name="stationaryCanvas"></param>
+        /// <param name="scrollableCanvas"></param>
+        /// <param name="psm"></param>
+        public void DisplaySequences(Canvas stationaryCanvas, Canvas scrollableCanvas, PsmFromTsv psm)
+        {
+
+            if (!psm.FullSequence.Contains('|'))
+            {
+                ScrollableSequence = new(scrollableCanvas, psm, false);
+                if (psm.BetaPeptideBaseSequence == null) // if not crosslinked
+                {
+                    StationarySequence = new(stationaryCanvas, psm, true);
+                }
+                else
+                {
+                    StationarySequence = new(stationaryCanvas, psm, false);
+                    StationarySequence.DrawCrossLinkSequence();
+                }
+            }   
         }
 
         //draw the sequence coverage map: write out the sequence, overlay modifications, and display matched fragments
@@ -245,7 +269,7 @@ namespace GuiFunctions
             //create circles for mods, if needed and able
             if (!psm.FullSequence.Contains("|")) //can't draw mods if not localized/identified
             {
-                PeptideSpectrumMatchPlot.AnnotateModifications(psm, sequenceText, psm.FullSequence, textHeight-4, spacing, xShift+5);
+                DrawnSequence.AnnotateModifications(psm, sequenceText, psm.FullSequence, textHeight-4, spacing, xShift+5);
             }
 
             //draw lines for each matched fragment
@@ -295,7 +319,7 @@ namespace GuiFunctions
                 else
                 {
                     DrawHorizontalLine(peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber, peptideLength, map, heightForThisFragment, cColor, spacing);
-                    cIntensityArray[peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber - 1] += cProduct.Intensity;
+                    cIntensityArray[peptideLength - cProduct.NeutralTheoreticalProduct.FragmentNumber] += cProduct.Intensity;
                     c++;
                 }
                 heightForThisFragment += heightIncrement;
@@ -367,11 +391,6 @@ namespace GuiFunctions
             }
         }
 
-        public void RedrawStationarySequence()
-        {
-
-        }
-
         public static void TextDrawing(Canvas sequenceText, Point loc, string txt, Brush clr, int fontSize)
         {
             TextBlock tb = new TextBlock();
@@ -427,7 +446,7 @@ namespace GuiFunctions
             Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
-        public void ExportToPdf(PlotView plotView, Canvas canvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors, Canvas sequenceTextScrollable = null)
+        public void ExportToPdf(PlotView plotView, Canvas stationarySequence, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
         {
             errors = new List<string>();
 
@@ -438,7 +457,7 @@ namespace GuiFunctions
             
             foreach (var psm in spectrumMatches)
             {
-                DisplaySpectrumMatch(plotView, canvas, psm, parentChildScanPlotsView, out var displayErrors, sequenceTextScrollable);
+                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
 
                 if (displayErrors != null)
                 {
@@ -459,15 +478,15 @@ namespace GuiFunctions
                     int i = 2;
                     while (File.Exists(filePath))
                     {
-                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + ".pdf");
+                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + ".pdf"); 
                         i++;
                     }
 
-                    plot.ExportToPdf(filePath, plotView.ActualWidth, plotView.ActualHeight);
+                    plot.ExportToPdf(filePath, StationarySequence.SequenceDrawingCanvas, plotView.ActualWidth, plotView.ActualHeight);
                 }
             }
 
-            DisplaySpectrumMatch(plotView, canvas, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors, sequenceTextScrollable);
+            DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors);
         }
 
         public void FilterPsms()

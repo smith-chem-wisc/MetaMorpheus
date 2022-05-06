@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using GuiFunctions.MetaDraw;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
@@ -25,38 +26,24 @@ using System.Windows.Shapes;
 
 namespace GuiFunctions
 {
+    /// <summary>
+    /// Class for the peptide spectrum match plot within the metadraw window
+    /// </summary>
     public class PeptideSpectrumMatchPlot : Plot
     {
         public MsDataScan Scan { get; protected set; }
         protected PsmFromTsv SpectrumMatch;
-        protected Canvas SequenceDrawingCanvas;
 
-        public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, Canvas sequenceDrawingCanvas, PsmFromTsv psm, MsDataScan scan,
+        public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm, MsDataScan scan,
             List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null, bool stationarySequence = false) : base(plotView)
         {
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
             SpectrumMatch = psm;
             Scan = scan;
-            SequenceDrawingCanvas = sequenceDrawingCanvas;
-            SequenceDrawingCanvas.Height = 60;
-            sequenceDrawingCanvas.Width = 600;
 
-            ClearCanvas(SequenceDrawingCanvas);
             DrawSpectrum();
             AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
-
-            if (!psm.FullSequence.Contains('|'))
-            {
-                if (stationarySequence)
-                {
-                    DrawStationarySequence(psm, SequenceDrawingCanvas);
-                }
-                else
-                {
-                    AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, matchedFragmentIons, SequenceDrawingCanvas);
-                }
-            } 
 
             if (annotateProperties)
             {
@@ -73,24 +60,24 @@ namespace GuiFunctions
             RefreshChart();
         }
 
-        public new void ExportToPdf(string path, double width = 700, double height = 370)
+        public void ExportToPdf(string path, Canvas stationarySequence, double width = 700, double height = 370)
         {
             // exports spectrum annotation w/o base seq annotation
             string tempPdfPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp.pdf");
             string tempPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
-            base.ExportToPdf(tempPdfPath, width, height);
+            base.ExportToPdf(tempPdfPath, width, height); // Change path back to temp pdf path
 
             // scales for desired DPI
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
             // save base seq as PNG
-            SequenceDrawingCanvas.Measure(new Size((int)SequenceDrawingCanvas.Width, (int)SequenceDrawingCanvas.Height));
-            SequenceDrawingCanvas.Arrange(new Rect(new Size((int)SequenceDrawingCanvas.Width, (int)SequenceDrawingCanvas.Height)));
+            stationarySequence.Measure(new Size((int)stationarySequence.Width, (int)stationarySequence.Height));
+            stationarySequence.Arrange(new Rect(new Size((int)stationarySequence.Width, (int)stationarySequence.Height)));
 
-            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * SequenceDrawingCanvas.Width), (int)(dpiScale * SequenceDrawingCanvas.Height),
+            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequence.Width), (int)(dpiScale * stationarySequence.Height),
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
 
-            renderBitmap.Render(SequenceDrawingCanvas);
+            renderBitmap.Render(stationarySequence);
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
 
@@ -106,9 +93,9 @@ namespace GuiFunctions
 
             ImageData imgData = ImageDataFactory.Create(tempPngPath);
             iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
-            img.SetMarginLeft((float)(-1.0 * SequenceDrawingCanvas.Margin.Left) + 10);
+            img.SetMarginLeft((float)(-1.0 * stationarySequence.Margin.Left) + 10);
             img.SetMarginTop(-30);
-            img.ScaleToFit((float)SequenceDrawingCanvas.Width, (float)SequenceDrawingCanvas.Height);
+            img.ScaleToFit((float)stationarySequence.Width, (float)stationarySequence.Height);
 
             document.Add(img);
 
@@ -176,155 +163,6 @@ namespace GuiFunctions
             }
         }
 
-        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, Canvas canvas)
-        {
-            ClearCanvas(canvas);
-            // Only draw disambiguated sequences
-            if (fullSequence.Contains("|"))
-            {
-                return;
-            }
-
-            // draw base sequence
-            double canvasWidth = canvas.Width;
-            for (int r = 0; r < baseSequence.Length; r++)
-            {
-                double x = r * MetaDrawSettings.AnnotatedSequenceTextSpacing + 10;
-                DrawText(canvas, new Point(x, yLoc), baseSequence[r].ToString(), Brushes.Black);
-
-                canvasWidth = x + 30;
-            }
-            canvas.Width = Math.Max(canvas.Width, canvasWidth) + 165; // this number is the width of the grayed out box
-
-            if (MetaDrawSettings.DrawMatchedIons)
-            {
-                // draw the fragment ion annotations on the base sequence
-                foreach (var ion in matchedFragmentIons)
-                {
-                    //if it's not an internal fragment
-                    if (ion.NeutralTheoreticalProduct.SecondaryProductType == null)
-                    {
-                        int residue = ion.NeutralTheoreticalProduct.AminoAcidPosition - MetaDrawSettings.FirstAAonScreenIndex;
-                        string annotation = ion.NeutralTheoreticalProduct.ProductType + "" + ion.NeutralTheoreticalProduct.FragmentNumber;
-                        OxyColor oxycolor = SpectrumMatch.VariantCrossingIons.Contains(ion) ?
-                            MetaDrawSettings.VariantCrossColor : MetaDrawSettings.ProductTypeToColor[ion.NeutralTheoreticalProduct.ProductType];
-                        Color color = Color.FromArgb(oxycolor.A, oxycolor.R, oxycolor.G, oxycolor.B);
-
-                        if (ion.NeutralTheoreticalProduct.NeutralLoss != 0)
-                        {
-                            annotation += "-" + ion.NeutralTheoreticalProduct.NeutralLoss;
-                        }
-                        double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11;
-                        double y = yLoc + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
-
-                        if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
-                        {
-                            DrawCTermIon(canvas, new Point(x, y), color, annotation);
-                        }
-                        else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
-                        {
-                            DrawNTermIon(canvas, new Point(x, y), color, annotation);
-                        }
-                        // don't draw diagnostic ions, precursor ions, etc
-                    }
-                }
-            }
-            AnnotateModifications(SpectrumMatch, canvas, fullSequence, yLoc);
-        }
-
-        public static void AnnotateModifications(PsmFromTsv spectrumMatch, Canvas sequenceDrawingCanvas, string fullSequence, int yLoc, double? spacer = null, int xShift = 12)
-        {
-            var peptide = new PeptideWithSetModifications(fullSequence, GlobalVariables.AllModsKnownDictionary);
-
-            // read glycans if applicable
-            List<Tuple<int, string, double>> localGlycans = null;
-            if (spectrumMatch.GlycanLocalizationLevel != null)
-            {
-                localGlycans = PsmFromTsv.ReadLocalizedGlycan(spectrumMatch.LocalizedGlycan);
-            }
-
-            // annotate mods
-            foreach (var mod in peptide.AllModsOneIsNterminus)
-            {
-                double xLocation = (mod.Key - 1) * (spacer ?? MetaDrawSettings.AnnotatedSequenceTextSpacing) - xShift;
-                double yLocation = yLoc + 2;
-
-                if (mod.Value.ModificationType == "O-Glycosylation")
-                {
-                    if (localGlycans.Where(p => p.Item1 + 1 == mod.Key).Count() > 0)
-                    {
-                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
-                    }
-                    else
-                    {
-                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), Brushes.Gray);
-                    }
-                }
-                else
-                {
-                    DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
-                }
-            }
-        }
-
-        /// <summary>
-        /// Redraws the Stationary Sequence on the spectrum in reference to the position of the scrollable sequence
-        /// </summary>
-        /// <param name="lettersOnScreen"></param>
-        /// <param name="firstLetterOnScreen"></param>
-        /// <param name="psm"></param>
-        /// <param name="canvas"></param>
-        public void DrawStationarySequence(PsmFromTsv psm, Canvas stationarySequenceCanvas)
-        {
-            ClearCanvas(stationarySequenceCanvas);
-            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
-            string fullSequence = baseSequence;
-
-            // Trim full sequences selectively based upon what is show in scrollable sequence
-            Dictionary<int, string> modDictionary = ParseModifications(psm.FullSequence);
-            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
-            {
-                if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
-                {
-                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
-                }
-            }
-
-            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
-                                                   p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-            this.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, stationarySequenceCanvas);
-        }
-
-        /// <summary>
-        /// Parses the full sequence to identify mods
-        /// </summary>
-        /// <param name="fullSequence"> Full sequence of the peptide in question</param>
-        /// <returns> Dictionary with the key being the amino acid position of the mod and the value being the string representing the mod</returns>
-        public static Dictionary<int, string> ParseModifications(string fullSequence)
-        {
-            Dictionary<int, string> modDict = new Dictionary<int, string>();
-            // use a regex to get all modifications
-            string pattern = @"\[(.+?)\]";
-            Regex regex = new(pattern);
-
-            // remove each match after adding to the dict. Otherwise, getting positions
-            // of the modifications will be rather difficult.
-            MatchCollection matches = regex.Matches(fullSequence);
-            int currentPosition = 0;
-            foreach (Match match in matches)
-            {
-                GroupCollection group = match.Groups;
-                string val = group[1].Value;
-                int startIndex = group[0].Index;
-                int captureLength = group[0].Length;
-                int position = group["(.+?)"].Index;
-
-                modDict.Add(startIndex - currentPosition, val);
-                currentPosition += startIndex + captureLength;
-            }
-            return modDict;
-        }
-
         protected void AnnotateLibraryIons(bool isBetaPeptide, List<MatchedFragmentIon> libraryIons)
         {
             // figure out the sum of the intensities of the matched fragment ions
@@ -367,7 +205,7 @@ namespace GuiFunctions
             this.Model.Axes[1].AbsoluteMinimum = min * 2;
             this.Model.Axes[1].AbsoluteMaximum = -min * 2;
             this.Model.Axes[1].Zoom(min, -min);
-            this.Model.Axes[1].LabelFormatter = YAxisLabelFormatter;
+            this.Model.Axes[1].LabelFormatter = DrawnSequence.YAxisLabelFormatter;
         }
 
         protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide, bool useLiteralPassedValues = false)
@@ -562,101 +400,6 @@ namespace GuiFunctions
             }
         }
 
-
-        /// <summary>
-        /// This method exists because of the mirror plotting of spectral libraries. Library spectral ions are displayed
-        /// as having negative intensities for easy visualization, but obviously the ions do not actually have negative
-        /// intensities. This formatter is used on the Y-axis (intensity) to turn negative values into positive ones
-        /// so the Y-axis doesn't display negative intensities.
-        /// </summary>
-        private static string YAxisLabelFormatter(double d)
-    {
-        if (d < 0)
-        {
-            return (-d).ToString("0e-0", CultureInfo.InvariantCulture);
-        }
-
-        return d.ToString("0e-0", CultureInfo.InvariantCulture);
-    }
-
-        /// <summary>
-        /// Draw the line seperator @ top
-        /// </summary>
-        private static void DrawCTermIon(Canvas cav, Point topLoc, Color clr, string footnote)
-        {
-            double x = topLoc.X, y = topLoc.Y;
-            Polyline bot = new Polyline();
-            bot.Points = new PointCollection() { new Point(x + 10, y + 10), new Point(x, y + 10), new Point(x, y + 24) };
-            bot.Stroke = new SolidColorBrush(clr);
-            bot.StrokeThickness = 1;
-            cav.Children.Add(bot);
-            Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
-        }
-
-        /// <summary>
-        /// Draw the line seperator @ bottom
-        /// </summary>
-        private static void DrawNTermIon(Canvas cav, Point botLoc, Color clr, string footnote)
-        {
-            double x = botLoc.X, y = botLoc.Y;
-            Polyline bot = new Polyline();
-            bot.Points = new PointCollection() { new Point(x - 10, y - 10), new Point(x, y - 10), new Point(x, y - 24) };
-            bot.Stroke = new SolidColorBrush(clr);
-            bot.StrokeThickness = 1;
-            Canvas.SetZIndex(bot, 1); //on top of any other things in canvas
-            cav.Children.Add(bot);
-        }
-
-        /// <summary>
-        /// Create text blocks on canvas
-        /// </summary>
-        private static void DrawText(Canvas cav, Point loc, string txt, Brush clr)
-        {
-            TextBlock tb = new TextBlock();
-            tb.Foreground = clr;
-            tb.Text = txt;
-            tb.Height = 30;
-            tb.FontSize = 25;
-            tb.FontWeight = System.Windows.FontWeights.Bold;
-            tb.FontFamily = new FontFamily("Arial");
-            tb.TextAlignment = TextAlignment.Center;
-            tb.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
-            tb.Width = 24; // W (tryptophan) seems to be widest letter, make sure it fits if you're editing this
-
-            Canvas.SetTop(tb, loc.Y);
-            Canvas.SetLeft(tb, loc.X);
-            Panel.SetZIndex(tb, 2); //lower priority
-            cav.Children.Add(tb);
-            cav.UpdateLayout();
-        }
-
-        /// <summary>
-        /// Draws a circle
-        /// </summary>
-        private static void DrawCircle(Canvas cav, Point loc, SolidColorBrush clr)
-        {
-            Ellipse circle = new Ellipse()
-            {
-                Width = 24,
-                Height = 24,
-                Stroke = clr,
-                StrokeThickness = 1,
-                Fill = clr,
-                Opacity = 0.7
-            };
-            Canvas.SetLeft(circle, loc.X);
-            Canvas.SetTop(circle, loc.Y);
-            Panel.SetZIndex(circle, 1);
-            cav.Children.Add(circle);
-        }
-
-        /// <summary>
-        /// Clear canvas board
-        /// </summary>
-        public static void ClearCanvas(Canvas cav)
-        {
-            cav.Children.Clear();
-        }
     }
 
     //TODO: move this to mzLib (https://github.com/smith-chem-wisc/mzLib/blob/master/mzPlot/Annotations/PlotTextAnnotation.cs)
