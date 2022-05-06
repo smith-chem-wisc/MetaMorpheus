@@ -184,7 +184,7 @@ namespace MetaMorpheusGUI
             }
 
             // draw the annotated spectrum
-            SetSequenceDrawingPositionSettings();
+            SetSequenceDrawingPositionSettings(true);
             MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
             MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
 
@@ -621,7 +621,6 @@ namespace MetaMorpheusGUI
             }
 
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
-            SetSequenceDrawingPositionSettings();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
@@ -638,17 +637,21 @@ namespace MetaMorpheusGUI
                     MetaDrawSettings.DrawMatchedIons = false;
                 }
             }
-
+            SetSequenceDrawingPositionSettings(true);
             MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
         }
 
         /// <summary>
         /// Method to set the MetaDrawSettings fields FirstAAOnScreen and NumberofAAonScreen to the current scrolling sequence position
         /// </summary>
-        private void SetSequenceDrawingPositionSettings()
+        private void SetSequenceDrawingPositionSettings(bool reset = false)
         {
             double width = SequenceAnnotationArea.ActualWidth;
-            double offset = wholeSequenceCoverageHorizontalScroll.ContentHorizontalOffset;
+            double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
+            if (reset)
+            {
+                offset = 0;
+            }
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
             {
