@@ -30,9 +30,11 @@ namespace EngineLayer.ClassicSearch
         {
             PeptideWithSetMods = pwsm;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
+            PeptideSpectralMatches = new PeptideSpectralMatch[arrayOfSortedMS2Scans.Length];
             MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
+
 
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;
@@ -43,11 +45,14 @@ namespace EngineLayer.ClassicSearch
             Status("Getting ms2 scans...");
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
-            var myLocks = new object[PeptideSpectralMatches.Length];
+            var myLocks = new object[ArrayOfSortedMS2Scans.Length]; // There aren't multiple PSMs, just the one we're looking at. 
             for (int i = 0; i < myLocks.Length; i++)
             {
                 myLocks[i] = new object();
             }
+
+            int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
 
             Status("Performing mini classic search...");
 
@@ -73,7 +78,9 @@ namespace EngineLayer.ClassicSearch
             }
 
             // score each scan that has an acceptable precursor mass
-            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(PeptideWithSetMods.MonoisotopicMass, SearchMode))
+            // TODO: Parallelize this section of the code
+            IEnumerable<ScanWithIndexAndNotchInfo> acceptableScans = GetAcceptableScans(PeptideWithSetMods.MonoisotopicMass, SearchMode); // GetAcceptableScans is asynchronous, in case you care
+            foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
             {
                 var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
                     scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
@@ -99,9 +106,15 @@ namespace EngineLayer.ClassicSearch
                 AddPeptideCandidateToPsm(scan, myLocks, thisScore, PeptideWithSetMods, matchedIons);
             }
 
-            foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
+
+            //foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
+            IEnumerable<PeptideSpectralMatch> matchedSpectra = PeptideSpectralMatches.Where(p => p != null);
+            int numMatches = matchedSpectra.Count();
+            int matchScanNumber = 0;
+            foreach (PeptideSpectralMatch psm in matchedSpectra)
             {
                 psm.ResolveAllAmbiguities();
+                matchScanNumber = psm.ScanNumber;
             }
 
             CalculateSpectralAngles(SpectralLibrary, PeptideSpectralMatches, ArrayOfSortedMS2Scans, CommonParameters);
