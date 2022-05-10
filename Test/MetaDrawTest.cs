@@ -155,12 +155,21 @@ namespace Test
                 // Checks to see if the stationary sequence updated with the new positioning
                 string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
                 string fullSequence = psm.BaseSeq;
-                Dictionary<int, string> modDictionary = DrawnSequence.ParseModifications(psm.FullSequence);
-                foreach (var mod in modDictionary)
+                Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
+                foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
                 {
+                    // if modification is within the visible region
                     if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
                     {
-                        fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                        // account for multiple modifications on the same amino acid
+                        for (int i = mod.Value.Count - 1; i > -1; i--)
+                        {
+                            fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value[i] + "]");
+                            if (i >= 1)
+                            {
+                                fullSequence = fullSequence.Insert(mod.Key, "|");
+                            }
+                        }
                     }
                 }
                 List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
@@ -267,12 +276,21 @@ namespace Test
             // test that the stationary sequence annotation was drawn
             string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
             string fullSequence = psm.BaseSeq;
-            Dictionary<int, string> modDictionary = DrawnSequence.ParseModifications(psm.FullSequence);
-            foreach (var mod in modDictionary)
+            Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
+            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
             {
+                // if modification is within the visible region
                 if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
                 {
-                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                    // account for multiple modifications on the same amino acid
+                    for (int i = mod.Value.Count - 1; i > -1; i--)
+                    {
+                        fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value[i] + "]");
+                        if (i >= 1)
+                        {
+                            fullSequence = fullSequence.Insert(mod.Key, "|");
+                        }
+                    }
                 }
             }
             List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
@@ -298,12 +316,21 @@ namespace Test
             Assert.That(metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.Count == modPsm.BaseSeq.Length + modPsm.MatchedIons.Count + modPsm.FullSequence.Count(p => p == '['));
             modifiedBaseSeq = modPsm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
             fullSequence = modPsm.BaseSeq;
-            modDictionary = DrawnSequence.ParseModifications(modPsm.FullSequence);
-            foreach (var mod in modDictionary)
+            modDictionary = PsmFromTsv.ParseModifications(modPsm.FullSequence);
+            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
             {
+                // if modification is within the visible region
                 if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
                 {
-                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                    // account for multiple modifications on the same amino acid
+                    for (int i = mod.Value.Count - 1; i > -1; i--)
+                    {
+                        fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value[i] + "]");
+                        if (i >= 1)
+                        {
+                            fullSequence = fullSequence.Insert(mod.Key, "|");
+                        }
+                    }
                 }
             }
             matchedIons = modPsm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
@@ -884,5 +911,7 @@ namespace Test
             //test no errors
             Assert.That(errors == null || !errors.Any());
         }
+
+ 
     }
 }

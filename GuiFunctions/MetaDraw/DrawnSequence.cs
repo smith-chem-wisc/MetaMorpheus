@@ -175,12 +175,21 @@ namespace GuiFunctions.MetaDraw
             string fullSequence = baseSequence;
 
             // Trim full sequences selectively based upon what is show in scrollable sequence
-            Dictionary<int, string> modDictionary = ParseModifications(psm.FullSequence);
+            Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
             foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
             {
+                // if modification is within the visible region
                 if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
                 {
-                    fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value + "]");
+                    // account for multiple modifications on the same amino acid
+                    for (int i = mod.Value.Count - 1; i > -1; i--)
+                    {
+                        fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value[i] + "]");
+                        if (i >= 1)
+                        {
+                            fullSequence = fullSequence.Insert(mod.Key, "|");
+                        }
+                    }
                 }
             }
 
@@ -200,36 +209,6 @@ namespace GuiFunctions.MetaDraw
                 new Point(alphaSite * MetaDrawSettings.AnnotatedSequenceTextSpacing, 50),
                 new Point(betaSite * MetaDrawSettings.AnnotatedSequenceTextSpacing, 90),
                 Colors.Black);
-        }
-
-        /// <summary>
-        /// Parses the full sequence to identify mods
-        /// </summary>
-        /// <param name="fullSequence"> Full sequence of the peptide in question</param>
-        /// <returns> Dictionary with the key being the amino acid position of the mod and the value being the string representing the mod</returns>
-        public static Dictionary<int, string> ParseModifications(string fullSequence)
-        {
-            Dictionary<int, string> modDict = new Dictionary<int, string>();
-            // use a regex to get all modifications
-            string pattern = @"\[(.+?)\]";
-            Regex regex = new(pattern);
-
-            // remove each match after adding to the dict. Otherwise, getting positions
-            // of the modifications will be rather difficult.
-            MatchCollection matches = regex.Matches(fullSequence);
-            int currentPosition = 0;
-            foreach (Match match in matches)
-            {
-                GroupCollection group = match.Groups;
-                string val = group[1].Value;
-                int startIndex = group[0].Index;
-                int captureLength = group[0].Length;
-                int position = group["(.+?)"].Index;
-
-                modDict.Add(startIndex - currentPosition, val);
-                currentPosition += startIndex + captureLength;
-            }
-            return modDict;
         }
 
         /// <summary>
