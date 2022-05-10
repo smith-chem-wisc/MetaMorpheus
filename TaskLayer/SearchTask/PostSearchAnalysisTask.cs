@@ -523,7 +523,8 @@ namespace TaskLayer
             Status("Writing PSM results...", Parameters.SearchTaskId);
             var FilteredPsmListForOutput = Parameters.AllPsms
                 .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
-                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
+                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
+                && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
 
             if (!Parameters.SearchParameters.WriteDecoys)
             {
