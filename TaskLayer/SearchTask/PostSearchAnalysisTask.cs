@@ -782,8 +782,8 @@ namespace TaskLayer
 
                     string spectralLibraryPath = Path.Combine(Parameters.OutputFolder, @"spectralLibrary.msp");
                     SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
-
-                    MiniClassicSearchEngine mcse = new(bestDonorPwsm, arrayOfMs2ScansSortedByMass, Parameters.VariableModifications, Parameters.FixedModifications,
+                    PeptideSpectralMatch[] peptideSpectralMatches = new PeptideSpectralMatch[arrayOfMs2ScansSortedByRT.Count()];
+                    MiniClassicSearchEngine mcse = new(bestDonorPwsm, peptideSpectralMatches, arrayOfMs2ScansSortedByMass, Parameters.VariableModifications, Parameters.FixedModifications,
                         massDiffAcceptor, CommonParameters, FileSpecificParameters, library, new List<string> { Parameters.SearchTaskId });
 
                     mcse.Run(); 

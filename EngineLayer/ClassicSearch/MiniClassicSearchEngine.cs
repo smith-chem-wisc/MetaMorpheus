@@ -22,7 +22,7 @@ namespace EngineLayer.ClassicSearch
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
 
-        public MiniClassicSearchEngine(PeptideWithSetModifications pwsm, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
+        public MiniClassicSearchEngine(PeptideWithSetModifications pwsm, PeptideSpectralMatch[] peptideSpectralMatches, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications,
             MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
             SpectralLibrary spectralLibrary, List<string> nestedIds)
@@ -30,11 +30,10 @@ namespace EngineLayer.ClassicSearch
         {
             PeptideWithSetMods = pwsm;
             ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
-            PeptideSpectralMatches = new PeptideSpectralMatch[arrayOfSortedMS2Scans.Length];
+            PeptideSpectralMatches = peptideSpectralMatches;
             MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
-
 
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;

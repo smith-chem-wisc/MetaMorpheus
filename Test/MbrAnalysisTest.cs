@@ -64,17 +64,17 @@ namespace Test
         }
 
         [Test]
-        public static void Bubba()
+        public static void MiniClassicSearchEngineTest()
         {
             var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
             string myFile = Path.Combine(testDir, @"slicedMouse.raw");
             MyFileManager myFileManager = new MyFileManager(true);
-            CommonParameters commonParameters = new(maxThreadsToUsePerFile: 1, scoreCutoff: 1);
+            CommonParameters commonParameters = new CommonParameters(maxThreadsToUsePerFile: 1, scoreCutoff: 1);
             MsDataFile myMsDataFile = myFileManager.LoadFile(myFile, commonParameters);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var proteinList = new List<Protein> { new Protein("QTATIAHVTTMLGEVIGFNDHIVK", "P16858") };
+            var proteinList = new List<Protein> { new Protein("VIHDNFGIVEGLMTTVHAITATQK", "P16858") };
 
             string targetSpectralLibrary = Path.Combine(testDir, @"P16858_target.msp");
             string decoySpectralLibrary = Path.Combine(testDir, @"P16858_decoy.msp");
@@ -96,10 +96,10 @@ namespace Test
             Assert.AreEqual(7, allPsmsArray.Length);
             Assert.IsTrue(allPsmsArray[5].Score > 38);
             Assert.AreEqual("VIHDNFGIVEGLMTTVHAITATQK", allPsmsArray[5].BaseSequence);
-            Assert.IsTrue(allPsmsArray[5].IsDecoy);
+            Assert.IsTrue(!allPsmsArray[5].IsDecoy);
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
-            Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.69).Within(0.01));
+            Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
 
 
             foreach (PeptideSpectralMatch psm in allPsmsArray.Where(p=>p != null))
@@ -107,14 +107,14 @@ namespace Test
                 PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
 
                 List<(string FileName, CommonParameters Parameters)> fileSpecificParameters = new() {(myFile,commonParameters) };
+                PeptideSpectralMatch[] peptideSpectralMatches = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
-                new MiniClassicSearchEngine(pwsm, listOfSortedms2Scans, variableModifications, fixedModifications, searchModes,
+                new MiniClassicSearchEngine(pwsm, peptideSpectralMatches, listOfSortedms2Scans, variableModifications, fixedModifications, searchModes,
                     commonParameters, fileSpecificParameters, sl, new List<string>()).Run();
 
+                Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[5].BaseSequence);
+                Assert.That(peptideSpectralMatches[5].SpectralAngle,Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
             }
-
-
-            Assert.IsTrue(false);
         }
 
         [Test]
