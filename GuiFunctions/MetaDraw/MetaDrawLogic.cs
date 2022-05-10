@@ -108,10 +108,7 @@ namespace GuiFunctions
             }
 
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
-
             LibrarySpectrum librarySpectrum = null;
-
-            PeptideSpectrumMatchPlot spectrumAnnotation;
             //if not crosslinked
             if (psm.BetaPeptideBaseSequence == null)
             {
@@ -220,7 +217,6 @@ namespace GuiFunctions
         /// <param name="psm"></param>
         public void DisplaySequences(Canvas stationaryCanvas, Canvas scrollableCanvas, PsmFromTsv psm)
         {
-
             if (!psm.FullSequence.Contains('|'))
             {
                 ScrollableSequence = new(scrollableCanvas, psm, false);

@@ -65,10 +65,8 @@ namespace Test
         {
             string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
             List<string> warnings = new();
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings);
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).Take(20).ToList();
             Assert.That(warnings.Count == 0);
-
-            var ambiguous = psms.Where(p => p.FullSequence.Contains("]|[")).ToList();
 
             // psm with single modificaiton
             PsmFromTsv singleMod = psms[0];
@@ -123,6 +121,19 @@ namespace Test
             PsmFromTsv.RemoveSpecialCharacters(ref toRemove, replacement: @"=", specialCharacter: @"%");
             Assert.That(toRemove.Length == length);
             Assert.That(toRemove.Equals("ANDVHAO=CNVASDF=ABVCUAE"));
+        }
+
+        [Test]
+        public static void TestToString()
+        {
+            string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
+            List<string> warnings = new();
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).Take(3).ToList();
+            Assert.That(warnings.Count == 0);
+
+            Assert.That(psms[0].FullSequence.Equals(psms[0].ToString()));
+            Assert.That(psms[1].FullSequence.Equals(psms[1].ToString()));
+            Assert.That(psms[2].FullSequence.Equals(psms[2].ToString()));
         }
     }
 }

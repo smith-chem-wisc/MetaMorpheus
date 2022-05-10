@@ -20,11 +20,9 @@ namespace GuiFunctions.MetaDraw
     /// </summary>
     public class DrawnSequence
     {
-
         public Canvas SequenceDrawingCanvas;
         public bool Stationary;
         public PsmFromTsv SpectrumMatch;
-
         public DrawnSequence(Canvas sequenceDrawingCanvas, PsmFromTsv psm, bool stationary)
         {
             SequenceDrawingCanvas = sequenceDrawingCanvas;
