@@ -749,6 +749,7 @@ namespace TaskLayer
             }
             List<SpectraFileInfo> spectraFiles = Parameters.FlashLfqResults.Peaks.Select(p => p.Key).ToList();
             List<PeptideSpectralMatch> allPeptides = GetAllPeptides();
+            List<(ChromatographicPeak, PeptideSpectralMatch)> bestPsmsForPeaks = new();
 
             foreach (SpectraFileInfo spectraFile in spectraFiles)
             {
@@ -761,7 +762,7 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, CommonParameters).OrderBy(b => b.RetentionTime).ToArray();
                 double[] arrayOfRTs = arrayOfMs2ScansSortedByRT.Select(p => p.TheScan.RetentionTime).ToArray();
 
-                List<(ChromatographicPeak, PeptideSpectralMatch)> bestPsmForPeak = new();
+                
 
                 foreach (ChromatographicPeak mbrPeak in fileSpecificMbrPeaks)
                 {
@@ -789,8 +790,32 @@ namespace TaskLayer
                         massDiffAcceptor, CommonParameters, FileSpecificParameters, library, new List<string> { Parameters.SearchTaskId });
                     mcse.Run();
 
-                    bestPsmForPeak.Add((mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches)));
+                    bestPsmsForPeaks.Add((mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches)));
                     //write result somewhere. 
+                }
+            }
+            WriteMbrPsmResults(bestPsmsForPeaks);
+        }
+
+        private void WriteMbrPsmResults(List<(ChromatographicPeak, PeptideSpectralMatch)> bestPsmsForPeaks)
+        {
+            List<string> myOutput = new List<string>();
+            myOutput.Add(TaskLayer.MbrWriter.TabSeparatedHeader);
+            string nullPsm = "";
+            for (int i = 0; i < 56; i++)
+            {
+                nullPsm += "\t";
+            }
+
+            foreach (var peak in bestPsmsForPeaks)
+            {
+                if(peak.Item2 != null)
+                {
+                    myOutput.Add(peak.Item2.ToString() + "\t" + peak.Item1.ToString()); 
+                }
+                else
+                {
+                    myOutput.Add(nullPsm + "\t" + peak.Item1.ToString());
                 }
             }
         }
