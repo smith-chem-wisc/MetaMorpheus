@@ -64,7 +64,6 @@ namespace TaskLayer
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
-            PostQuantificationMbrAnalysis();
 
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
 
@@ -76,6 +75,7 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();
+                PostQuantificationMbrAnalysis();
             }
             if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
@@ -818,6 +818,7 @@ namespace TaskLayer
                     myOutput.Add(nullPsm + "\t" + peak.Item1.ToString());
                 }
             }
+            File.WriteAllLines(@"C:\Users\mrsho\Documents\Projects\Hela_1\mbr.psmtsv", myOutput);
         }
 
         private PeptideSpectralMatch BestPsmForMbrPeak(PeptideSpectralMatch[] peptideSpectralMatches)
