@@ -790,7 +790,11 @@ namespace TaskLayer
                         massDiffAcceptor, CommonParameters, FileSpecificParameters, library, new List<string> { Parameters.SearchTaskId });
                     mcse.Run();
 
-                    bestPsmsForPeaks.Add((mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches)));
+                    if (peptideSpectralMatches.Any())
+                    {
+                        bestPsmsForPeaks.Add((mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches)));
+                    }
+
                     //write result somewhere. 
                 }
             }
@@ -823,10 +827,15 @@ namespace TaskLayer
 
         private PeptideSpectralMatch BestPsmForMbrPeak(PeptideSpectralMatch[] peptideSpectralMatches)
         {
-            if(peptideSpectralMatches.Any(p=>p != null))
+            List<PeptideSpectralMatch> nonNullPsms = peptideSpectralMatches.Where(p=>p != null).ToList();
+            if(nonNullPsms.Any())
             {
-                double maxSpectralAngle = peptideSpectralMatches.Select(p => p.SpectralAngle).Max();
-                return peptideSpectralMatches.Where(p=>p.SpectralAngle == maxSpectralAngle).FirstOrDefault();   
+                if(nonNullPsms.Select(p=>p.SpectralAngle).Any(g=>g != double.NaN))
+                {
+                    double maxSpectralAngle = nonNullPsms.Select(p => p.SpectralAngle).Max();
+                    return nonNullPsms.Where(p => p.SpectralAngle == maxSpectralAngle).FirstOrDefault();
+                }
+                return nonNullPsms.FirstOrDefault();  
             }
             return null;
         }
