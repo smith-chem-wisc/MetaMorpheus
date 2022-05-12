@@ -761,6 +761,8 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, CommonParameters).OrderBy(b => b.RetentionTime).ToArray();
                 double[] arrayOfRTs = arrayOfMs2ScansSortedByRT.Select(p => p.TheScan.RetentionTime).ToArray();
 
+                List<(ChromatographicPeak, PeptideSpectralMatch)> bestPsmForPeak = new();
+
                 foreach (ChromatographicPeak mbrPeak in fileSpecificMbrPeaks)
                 {
                     //TODO: check if this really is the best donor PSM. Is there a way to get the peptide from the flashLFQ results? Maybe this is better anyway, IDK
@@ -785,10 +787,22 @@ namespace TaskLayer
                     PeptideSpectralMatch[] peptideSpectralMatches = new PeptideSpectralMatch[arrayOfMs2ScansSortedByRT.Count()];
                     MiniClassicSearchEngine mcse = new(bestDonorPwsm, peptideSpectralMatches, arrayOfMs2ScansSortedByMass, Parameters.VariableModifications, Parameters.FixedModifications,
                         massDiffAcceptor, CommonParameters, FileSpecificParameters, library, new List<string> { Parameters.SearchTaskId });
+                    mcse.Run();
 
-                    mcse.Run(); 
+                    bestPsmForPeak.Add((mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches)));
+                    //write result somewhere. 
                 }
             }
+        }
+
+        private PeptideSpectralMatch BestPsmForMbrPeak(PeptideSpectralMatch[] peptideSpectralMatches)
+        {
+            if(peptideSpectralMatches.Any(p=>p != null))
+            {
+                double maxSpectralAngle = peptideSpectralMatches.Select(p => p.SpectralAngle).Max();
+                return peptideSpectralMatches.Where(p=>p.SpectralAngle == maxSpectralAngle).FirstOrDefault();   
+            }
+            return null;
         }
 
         private List<PeptideSpectralMatch> GetAllPeptides()
