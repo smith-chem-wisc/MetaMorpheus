@@ -469,8 +469,14 @@
                             
                             <!-- filtering options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="1">
+
                                 <!-- q value button -->
-                                <StackPanel Orientation="Horizontal">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="400" />
+                                        <ColumnDefinition Width="50" />
+                                    </Grid.ColumnDefinitions>
+                                    
                                     <RadioButton x:Name="QValueRadioButton" Content="Filter results to q-value:" 
                                                  IsChecked="False" GroupName="Filtering" Checked="QValueRadioButton_Checked">
                                         <ToolTipService.ToolTip>
@@ -478,11 +484,18 @@
                                             Mutually exclusive with filter results to pep q-value
                                         </ToolTipService.ToolTip>
                                     </RadioButton>
-                                    <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=QValueRadioButton}" Width="45" Height="23" />
-                                </StackPanel>
+
+                                    <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
+                                             IsEnabled="{Binding IsChecked, ElementName=QValueRadioButton}" Width="45" Height="23" />
+                                </Grid>
                                 
                                 <!-- pep 1-value button -->
-                                <StackPanel Orientation="Horizontal">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="400" />
+                                        <ColumnDefinition Width="50" />
+                                    </Grid.ColumnDefinitions>
+
                                     <RadioButton x:Name="PepQValueRadioButton" Content="Filter results to pep q-value:" 
                                                  IsChecked="False" GroupName="Filtering" Checked="PepQValueRadioButton_Checked">
                                         <ToolTipService.ToolTip>
@@ -490,12 +503,18 @@
                                             Mutually exclusive with filter results to q-value
                                         </ToolTipService.ToolTip>
                                     </RadioButton>
-                                    <TextBox x:Name="PepQValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" IsEnabled="{Binding IsChecked, ElementName=PepQValueRadioButton}" Width="45" Height="23" />
-                                </StackPanel>
-                                
+                                    <TextBox x:Name="PepQValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
+                                             IsEnabled="{Binding IsChecked, ElementName=PepQValueRadioButton}" Width="45" Height="23" />
+                                </Grid>
+
                                 <!-- min score allowed box -->
-                                <StackPanel Orientation="Horizontal">
-                                    <Label x:Name="minScoreAllowedLabel" Content="Minimum score allowed:" />
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="410" />
+                                        <ColumnDefinition Width="50" />
+                                    </Grid.ColumnDefinitions>
+
+                                    <Label x:Name="minScoreAllowedLabel" Content="    Minimum score allowed:" HorizontalContentAlignment="Left"/>
                                     <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
                                             <TextBlock>
@@ -505,7 +524,7 @@
                                             </TextBlock>
                                         </TextBox.ToolTip>
                                     </TextBox>
-                                </StackPanel>
+                                </Grid>
                             </StackPanel>
                             
                         </Grid>
