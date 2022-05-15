@@ -397,6 +397,43 @@ namespace Test
         }
 
         [Test]
+        public static void TestLibraryUpdate()
+        {
+            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            var outputDir = Path.Combine(testDir, @"SpectralLibraryUpdateTest");
+            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibraryForTestingLibraryUpdate.msp");
+            string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\uniprot-yeast-filtered-reviewed_yes.fasta.gz");
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SmallCalibratible_Yeast.mzML");
+            Directory.CreateDirectory(outputDir);
+            var searchTask = new SearchTask();
+            searchTask.SearchParameters.UpdateSpectralLibrary = true;
+            searchTask.RunTask(outputDir,
+              new List<DbForTask>
+              {
+                    new DbForTask(lib, false),
+                    new DbForTask(db, false)
+              },
+              new List<string> { raw },
+              "");
+            var oldLib = new SpectralLibrary(new List<string> { lib });
+            var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(outputDir, @"spectralLibrary.msp") });
+
+            Assert.That(oldLib.TryGetSpectrum("KAPAGGAADAAAK", 2, out var old_spectrum1));
+            Assert.That(updatedLib.TryGetSpectrum("KAPAGGAADAAAK", 2, out var new_spectrum1));
+            Assert.That(oldLib.TryGetSpectrum("KAPAAAPAASK", 2, out var old_spectrum2));
+            Assert.That(updatedLib.TryGetSpectrum("KAPAAAPAASK", 2, out var new_spectrum2));
+            Assert.That(oldLib.TryGetSpectrum("KQAIETANK", 2, out var old_spectrum3));
+            Assert.That(updatedLib.TryGetSpectrum("KQAIETANK", 2, out var new_spectrum3));
+
+            //test that the updated spectra are better than old spectra
+            Assert.That(old_spectrum1.MatchedFragmentIons.Count < new_spectrum1.MatchedFragmentIons.Count);
+            Assert.That(old_spectrum2.MatchedFragmentIons.Count < new_spectrum2.MatchedFragmentIons.Count);
+            Assert.That(old_spectrum3.MatchedFragmentIons.Count < new_spectrum3.MatchedFragmentIons.Count);
+
+            //Directory.Delete(outputDir, true);
+        }
+
+        [Test]
         public static void TestDecoyLibrarySpectraGenerationFunction()
         {
             Product a = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
