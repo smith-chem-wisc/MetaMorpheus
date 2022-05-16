@@ -30,7 +30,8 @@ namespace Test
             {
                 SearchParameters = new SearchParameters()
                 {
-                    MatchBetweenRuns = true
+                    MatchBetweenRuns = true,
+                    WriteSpectralLibrary = true
                 }
             };
 
@@ -40,19 +41,23 @@ namespace Test
                 {
                     SearchParameters = new SearchParameters()
                     {
-                        MatchBetweenRuns = true
+                        MatchBetweenRuns = true,
+                        WriteSpectralLibrary = true
                     }
                 },
-                CommonParameters = new CommonParameters(),
+                CommonParameters = new CommonParameters()
             };
             List<int> counts = new List<int>();
 
-            List<string> rawSlices = new List<string> { Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrTestData\f1r1_sliced_mbr.raw"),
+            List<string> rawSlices = new List<string> { 
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrTestData\f1r1_sliced_mbr.raw"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrTestData\f1r2_sliced_mbr.raw") };
             string fastaName = @"TestData\MbrTestData\MbrDataPrunedDB.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");
 
-            var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("PostSearchAnalysis", postSearchTask) }, rawSlices, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("PostSearchAnalysis", postSearchTask) },
+                rawSlices, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
 
             // Not sure what's going on here
