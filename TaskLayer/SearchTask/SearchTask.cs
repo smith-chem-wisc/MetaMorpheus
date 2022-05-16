@@ -366,6 +366,7 @@ namespace TaskLayer
             //{
             //    spectralLibrary.CloseConnections();
             //}
+            //
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 
