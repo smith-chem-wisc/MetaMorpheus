@@ -112,7 +112,7 @@
                                     <ColumnDefinition Width="1"/>
                                     <ColumnDefinition Width="63"/>
                                     <ColumnDefinition Width="*" Name="SequenceAnnotationArea"/>
-                                    <ColumnDefinition Width="165"/>
+                                    <ColumnDefinition Width="205"/>
                                 </Grid.ColumnDefinitions>
 
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
@@ -120,6 +120,9 @@
                                 <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" BorderThickness="0">
                                     <StackPanel Name="SettingsButton" Orientation="Horizontal">
                                         <Image Source="Icons\icons8-settings-256.bmp" Margin="0,3,0,0" ></Image>
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Settings" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                        </ToolTipService.ToolTip>
                                     </StackPanel>
                                 </Button>
 
@@ -175,15 +178,17 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height = "0.75*" />
                                             </Grid.RowDefinitions>
-                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0"/>
+                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0"/>
                                         </Grid>
 
                                         <!--Canvas for drawing base sequence annotation-->
-                                        <Grid Grid.Row="0">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height = "auto" />
-                                            </Grid.RowDefinitions>
-                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="stationarySequenceCanvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch"/> 
+                                        <Grid Grid.Row="0" Height="60" VerticalAlignment="Top" Margin="0 0 0 0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="53" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="200" />
+                                            </Grid.ColumnDefinitions>
+                                                <Canvas Grid.Column="1" Margin="0 0 0 0" x:Name="stationarySequenceCanvas" VerticalAlignment="Stretch"/>
                                         </Grid>
                                     </Grid>
                                 </TabItem>

@@ -219,7 +219,10 @@ namespace GuiFunctions
         {
             if (!psm.FullSequence.Contains('|'))
             {
-                ScrollableSequence = new(scrollableCanvas, psm, false);
+                if (scrollableCanvas != null)
+                {
+                    ScrollableSequence = new(scrollableCanvas, psm, false);
+                }
                 if (psm.BetaPeptideBaseSequence == null) // if not crosslinked
                 {
                     StationarySequence = new(stationaryCanvas, psm, true);
@@ -453,6 +456,7 @@ namespace GuiFunctions
             
             foreach (var psm in spectrumMatches)
             {
+                DisplaySequences(stationarySequence, null, psm);
                 DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
 
                 if (displayErrors != null)

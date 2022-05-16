@@ -174,7 +174,7 @@ namespace Test
                 }
                 List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                        p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-                Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '['));
+                Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Count() + (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString().ToCharArray().Count() + 2);
             }
         }
 
@@ -295,7 +295,7 @@ namespace Test
             }
             List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                    p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-            Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[' ));
+            Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[' ) + MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Count() + (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString().ToCharArray().Count() + 2);
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").Take(3).ToList();
@@ -335,7 +335,7 @@ namespace Test
             }
             matchedIons = modPsm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                 p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-            Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '['));
+            Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Count() + (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString().ToCharArray().Count() + 2);
 
             // clean up resources
             metadrawLogic.CleanUpResources();

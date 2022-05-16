@@ -68,15 +68,19 @@ namespace GuiFunctions
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
             // save base seq as PNG
-            stationarySequence.Measure(new Size((int)stationarySequence.Width, (int)stationarySequence.Height));
-            stationarySequence.Arrange(new Rect(new Size((int)stationarySequence.Width, (int)stationarySequence.Height)));
+            stationarySequence.Measure(new Size((int)stationarySequence.Width + 30, (int)stationarySequence.Height));
+            
+            stationarySequence.Arrange(new Rect(new Size((int)stationarySequence.Width + 30, (int)stationarySequence.Height)));
 
-            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequence.Width), (int)(dpiScale * stationarySequence.Height),
+            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequence.Width + 30), (int)(dpiScale * stationarySequence.Height),
                 MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
 
             renderBitmap.Render(stationarySequence);
+
             PngBitmapEncoder encoder = new PngBitmapEncoder();
+
             encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
+
 
             using (FileStream file = File.Create(tempPngPath))
             {
@@ -89,12 +93,15 @@ namespace GuiFunctions
             iText.Layout.Document document = new iText.Layout.Document(pdfDoc);
 
             ImageData imgData = ImageDataFactory.Create(tempPngPath);
+
             iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
             img.SetMarginLeft((float)(-1.0 * stationarySequence.Margin.Left) + 10);
             img.SetMarginTop(-30);
             img.ScaleToFit((float)stationarySequence.Width, (float)stationarySequence.Height);
 
+
             document.Add(img);
+
 
             document.Close();
             pdfDoc.Close();
@@ -291,40 +298,69 @@ namespace GuiFunctions
         protected void AnnotateProperties()
         {
             StringBuilder text = new StringBuilder();
-            text.Append("Precursor Charge: ");
-            text.Append(SpectrumMatch.PrecursorCharge);
-            text.Append("\r\n");
-
-            text.Append("Precursor Mass: ");
-            text.Append(SpectrumMatch.PrecursorMass.ToString("F3"));
-            text.Append("\r\n");
-
-            text.Append("Theoretical Mass: ");
-            text.Append(double.TryParse(SpectrumMatch.PeptideMonoMass, NumberStyles.Any, CultureInfo.InvariantCulture, out var monoMass) ? monoMass.ToString("F3") : SpectrumMatch.PeptideMonoMass);
-            text.Append("\r\n");
-
-            text.Append("Score: ");
-            text.Append(SpectrumMatch.Score.ToString("F3"));
-            text.Append("\r\n");
-
-            text.Append("Protein Accession: ");
-            text.Append(SpectrumMatch.ProteinAccession);
-            text.Append("\r\n");
-
-            if (SpectrumMatch.ProteinName != null)
+            if (MetaDrawSettings.SpectrumDescription["Precursor Charge: "])
             {
+                text.Append("Precursor Charge: ");
+                text.Append(SpectrumMatch.PrecursorCharge);
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Precursor Mass: "])
+            {
+                text.Append("Precursor Mass: ");
+                text.Append(SpectrumMatch.PrecursorMass.ToString("F3"));
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Theoretical Mass: "])
+            {
+                text.Append("Theoretical Mass: ");
+                text.Append(double.TryParse(SpectrumMatch.PeptideMonoMass, NumberStyles.Any, CultureInfo.InvariantCulture, out var monoMass) ? monoMass.ToString("F3") : SpectrumMatch.PeptideMonoMass);
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Score: "])
+            {
+                text.Append("Score: ");
+                text.Append(SpectrumMatch.Score.ToString("F3"));
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
+            {
+                text.Append("Protein Accession: ");
+                text.Append(SpectrumMatch.ProteinAccession);
+                text.Append("\r\n");
+            }
+            if (SpectrumMatch.ProteinName != null && MetaDrawSettings.SpectrumDescription["Protein: "])
+            {
+
                 text.Append("Protein: ");
                 text.Append(SpectrumMatch.ProteinName.Length > 20 ? SpectrumMatch.ProteinName.Substring(0, 18) + "..." : SpectrumMatch.ProteinName);
                 text.Append("\r\n");
+
             }
-
-            text.Append("Decoy/Contaminant/Target: ");
-            text.Append(SpectrumMatch.DecoyContamTarget);
-            text.Append("\r\n");
-
-            text.Append("Q-Value: ");
-            text.Append(SpectrumMatch.QValue.ToString("F3"));
-            text.Append("\r\n");
+            if (MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "])
+            {
+                text.Append("Decoy/Contaminant/Target: ");
+                text.Append(SpectrumMatch.DecoyContamTarget);
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Q-Value: "])
+            {
+                text.Append("Q-Value: ");
+                text.Append(SpectrumMatch.QValue.ToString("F3"));
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Sequence Length: "])
+            {
+                text.Append("Sequence Length: ");
+                text.Append(SpectrumMatch.BaseSeq.Length.ToString("F3").Split('.')[0]);
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["ProForma Level: "])
+            {
+                text.Append("ProForma Level: ");
+                text.Append(SpectrumMatch.AmbiguityLevel);
+                text.Append("\r\n");
+            }
+                       
 
             var annotation = new PlotTextAnnotation()
             {

@@ -31,6 +31,7 @@ namespace GuiFunctions.MetaDraw
             SequenceDrawingCanvas.Width = 600;
             SequenceDrawingCanvas.Height = 60;
 
+
             if (stationary)
             {
                 DrawStationarySequence(psm, this);
@@ -51,23 +52,50 @@ namespace GuiFunctions.MetaDraw
         /// <param name="matchedFragmentIons"></param>
         /// <param name="canvas"></param>
         /// <param name="psm"></param>
-        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, PsmFromTsv psm)
+        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, PsmFromTsv psm, bool stationary = false)
         {
             if (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence))
             {
                 ClearCanvas(SequenceDrawingCanvas);
             }
+            double canvasWidth = SequenceDrawingCanvas.Width;
+            int spacing = 12;
+
+            // draw initial amino acid number
+            if (stationary)
+            {
+                var startAA = MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Reverse().ToArray();
+                double x = -5;
+                DrawText(SequenceDrawingCanvas, new Point(x, 10), "-", Brushes.Black);
+                for (int i = 0; i < startAA.Length; i++)
+                {
+                    x = (i + 1) * -spacing - 5;
+                    DrawText(SequenceDrawingCanvas, new Point(x, 10), startAA[i].ToString(), Brushes.Black);
+                }
+            }
 
             // draw base sequence
-            double canvasWidth = SequenceDrawingCanvas.Width;
             for (int r = 0; r < baseSequence.Length; r++)
             {
                 double x = r * MetaDrawSettings.AnnotatedSequenceTextSpacing + 10;
                 DrawText(SequenceDrawingCanvas, new Point(x, yLoc), baseSequence[r].ToString(), Brushes.Black);
-
-                canvasWidth = x + 30;
+                
+                canvasWidth = x;
             }
             SequenceDrawingCanvas.Width = Math.Max(SequenceDrawingCanvas.Width, canvasWidth) + 165; // this number is the width of the grayed out box
+
+            // draw final amino acid number
+            if (stationary)
+            {
+                var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString();
+                canvasWidth += spacing;
+                DrawText(SequenceDrawingCanvas, new Point(canvasWidth, 10), "-", Brushes.Black);
+                for (int i = 0; i < endAA.Length; i++)
+                {
+                    double x = spacing * (i + 1) + canvasWidth;
+                    DrawText(SequenceDrawingCanvas, new Point(x, 10), endAA[i].ToString(), Brushes.Black);
+                }
+            }
 
             if (MetaDrawSettings.DrawMatchedIons)
             {
@@ -115,7 +143,7 @@ namespace GuiFunctions.MetaDraw
         }
 
         /// <summary>
-        /// Draws tehe Modifications for each sequence
+        /// Draws the Modifications for each sequence
         /// </summary>
         /// <param name="spectrumMatch"></param>
         /// <param name="sequenceDrawingCanvas"></param>
@@ -193,7 +221,7 @@ namespace GuiFunctions.MetaDraw
 
             List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                    p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, psm);
+            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, psm, true);
         }
 
         public void DrawCrossLinkSequence()
@@ -208,6 +236,7 @@ namespace GuiFunctions.MetaDraw
                 new Point(betaSite * MetaDrawSettings.AnnotatedSequenceTextSpacing, 90),
                 Colors.Black);
         }
+
 
         /// <summary>
         /// This method exists because of the mirror plotting of spectral libraries. Library spectral ions are displayed

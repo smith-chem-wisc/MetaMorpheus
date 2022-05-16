@@ -1,6 +1,7 @@
 using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.MetaDraw;
+using Nett;
 using OxyPlot;
 using Proteomics.Fragmentation;
 using System;
@@ -284,6 +285,7 @@ namespace MetaMorpheusGUI
 
         private void settings_Click(object sender, RoutedEventArgs e)
         {
+            
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem;
             var settingsWindow = new MetaDrawSettingsWindow();
@@ -659,7 +661,7 @@ namespace MetaMorpheusGUI
             }
 
             int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
-            int firstLetterOnScreen = (int)Math.Round((offset - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            int firstLetterOnScreen = (int)Math.Round((offset) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
             if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
             {
                 lettersOnScreen = psm.BaseSeq.Length - firstLetterOnScreen;
