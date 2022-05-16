@@ -48,7 +48,6 @@ namespace Test
                 CommonParameters = new CommonParameters()
             };
             List<int> counts = new List<int>();
-
             List<string> rawSlices = new List<string> { 
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrTestData\f1r1_sliced_mbr.raw"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrTestData\f1r2_sliced_mbr.raw") };
