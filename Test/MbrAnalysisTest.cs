@@ -65,7 +65,6 @@ namespace Test
             string classicPath = Path.Combine(outputFolder, @"ClassicSearch\AllPSMs.psmtsv");
             var classicPsms = File.ReadAllLines(classicPath).ToList();
 
-
         }
 
         [Test]
