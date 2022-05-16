@@ -40,7 +40,6 @@ namespace EngineLayer.ClassicSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("Getting ms2 scans...");
 
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
             var myLocks = new object[ArrayOfSortedMS2Scans.Length]; // There aren't multiple PSMs, just the one we're looking at. 

@@ -16,7 +16,9 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
+using System.Collections.Concurrent;
 
 namespace TaskLayer
 {
@@ -743,13 +745,19 @@ namespace TaskLayer
 
         private void PostQuantificationMbrAnalysis()
         {
-            if (!Parameters.SearchParameters.DoMbrAnalysis)
+            if (!Parameters.SearchParameters.DoMbrAnalysis | !Parameters.SearchParameters.MatchBetweenRuns)
             {
                 return;
             }
             List<SpectraFileInfo> spectraFiles = Parameters.FlashLfqResults.Peaks.Select(p => p.Key).ToList();
             List<PeptideSpectralMatch> allPeptides = GetAllPeptides();
-            List<(ChromatographicPeak, PeptideSpectralMatch)> bestPsmsForPeaks = new();
+
+            int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+
+            //ConcurrentDictionary is threadsafe dictionary, initialized to be larger than necessary 
+            ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks = 
+                new ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch>(maxThreadsPerFile, allPeptides.Count);
 
             foreach (SpectraFileInfo spectraFile in spectraFiles)
             {
@@ -763,46 +771,50 @@ namespace TaskLayer
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, CommonParameters)
                     .OrderBy(b => b.RetentionTime).ToArray();
                 double[] arrayOfRTs = arrayOfMs2ScansSortedByRT.Select(p => p.TheScan.RetentionTime).ToArray();
+                string spectralLibraryPath = Path.Combine(Parameters.OutputFolder, @"spectralLibrary.msp");
+                SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
 
-                
-
-                foreach (ChromatographicPeak mbrPeak in fileSpecificMbrPeaks)
+                Parallel.ForEach(threads, (i) =>
                 {
-                    //TODO: check if this really is the best donor PSM. Is there a way to get the peptide from the flashLFQ results? Maybe this is better anyway, IDK
-                    PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
-                    PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
-                    double monoIsotopicMass = bestDonorPsm.PeptideMonisotopicMass.Value;
-
-                    // Find MS2 scans falling within the relevant time window.
-                    double apexRT = mbrPeak.Apex.IndexedPeak.RetentionTime;
-                    double peakHalfWidth = 1.0; //Placeholder value to determine retention time window
-                    int startIndex = Array.BinarySearch(arrayOfRTs, apexRT - peakHalfWidth);
-                    if (startIndex < 0)
-                        startIndex = ~startIndex;
-                    int endIndex = Array.BinarySearch(arrayOfRTs, apexRT + peakHalfWidth);
-                    if (endIndex < 0)
-                        endIndex = ~endIndex;
-                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = arrayOfMs2ScansSortedByRT[startIndex..endIndex].OrderBy(b => b.PrecursorMass).ToArray();
-
-                    string spectralLibraryPath = Path.Combine(Parameters.OutputFolder, @"spectralLibrary.msp");
-                    SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
-                    PeptideSpectralMatch[] peptideSpectralMatches = new PeptideSpectralMatch[arrayOfMs2ScansSortedByRT.Count()];
-                    MiniClassicSearchEngine mcse = new(bestDonorPwsm, peptideSpectralMatches, arrayOfMs2ScansSortedByMass, Parameters.VariableModifications, Parameters.FixedModifications,
-                        massDiffAcceptor, CommonParameters, FileSpecificParameters, library, new List<string> { Parameters.SearchTaskId });
-                    mcse.Run();
-
-                    if (peptideSpectralMatches.Any())
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops) { return; }
+                    for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
                     {
-                        bestPsmsForPeaks.Add((mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches)));
-                    }
+                        ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
+                        PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
+                        PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
+                        double monoIsotopicMass = bestDonorPsm.PeptideMonisotopicMass.Value;
 
-                    //write result somewhere. 
-                }
+                        // Find MS2 scans falling within the relevant time window.
+                        double apexRT = mbrPeak.Apex.IndexedPeak.RetentionTime;
+                        double peakHalfWidth = 1.0; //Placeholder value to determine retention time window
+                        int startIndex = Array.BinarySearch(arrayOfRTs, apexRT - peakHalfWidth);
+                        if (startIndex < 0)
+                            startIndex = ~startIndex;
+                        int endIndex = Array.BinarySearch(arrayOfRTs, apexRT + peakHalfWidth);
+                        if (endIndex < 0)
+                            endIndex = ~endIndex;
+                        Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = arrayOfMs2ScansSortedByRT[startIndex..endIndex].OrderBy(b => b.PrecursorMass).ToArray();
+                        PeptideSpectralMatch[] peptideSpectralMatches = new PeptideSpectralMatch[arrayOfMs2ScansSortedByRT.Count()];
+                        MiniClassicSearchEngine mcse = new(bestDonorPwsm, peptideSpectralMatches, arrayOfMs2ScansSortedByMass, Parameters.VariableModifications, Parameters.FixedModifications,
+                            massDiffAcceptor, CommonParameters, FileSpecificParameters, library, new List<string> { Parameters.SearchTaskId });
+                        mcse.Run();
+
+                        if (peptideSpectralMatches.Any())
+                        {
+                            bestPsmsForPeaks.TryAdd(mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches));
+                        }
+                        else
+                        {
+                            bestPsmsForPeaks.TryAdd(mbrPeak, null);
+                        }
+                    }
+                });
             }
             WriteMbrPsmResults(bestPsmsForPeaks);
         }
 
-        private void WriteMbrPsmResults(List<(ChromatographicPeak, PeptideSpectralMatch)> bestPsmsForPeaks)
+        private void WriteMbrPsmResults(ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks)
         {
             string mbrOutputPath = Path.Combine(Parameters.OutputFolder, @"MbrAnalysis.psmtsv");
             using (StreamWriter output = new StreamWriter(mbrOutputPath))
@@ -810,9 +822,9 @@ namespace TaskLayer
                 output.WriteLine(TaskLayer.MbrWriter.TabSeparatedHeader);
                 foreach (var peak in bestPsmsForPeaks)
                 {
-                    if (peak.Item2 != null)
+                    if (peak.Value != null)
                     {
-                        output.WriteLine(peak.Item2.ToString() + "\t" + peak.Item1.ToString());
+                        output.WriteLine(peak.Value.ToString() + "\t" + peak.Key.ToString());
                     } 
                 }
             }
@@ -823,9 +835,9 @@ namespace TaskLayer
                 output.WriteLine(ChromatographicPeak.TabSeparatedHeader);
                 foreach (var peak in bestPsmsForPeaks)
                 {
-                    if (peak.Item2 == null)
+                    if (peak.Value == null)
                     {
-                        output.WriteLine(peak.Item1.ToString());
+                        output.WriteLine(peak.Key.ToString());
                     }
                 }
             }

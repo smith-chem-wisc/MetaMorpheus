@@ -23,7 +23,7 @@ namespace Test
     public static class
     MbrAnalysisTest
     {
-        [Test]
+        /*[Test]
         public static void MbrPostSearchAnalysisTest()
         {
             SearchTask classicSearch = new SearchTask()
@@ -64,7 +64,7 @@ namespace Test
             string classicPath = Path.Combine(outputFolder, @"ClassicSearch\AllPSMs.psmtsv");
             var classicPsms = File.ReadAllLines(classicPath).ToList();
 
-        }
+        }*/
 
         [Test]
         public static void MiniClassicSearchEngineTest()
@@ -120,7 +120,7 @@ namespace Test
             }
         }
 
-        [Test]
+        /*[Test]
         public static void FalseMbrMCSETest()
         {
             SearchTask classicSearch = new SearchTask()
@@ -149,7 +149,7 @@ namespace Test
             string classicPath = Path.Combine(outputFolder, @"ClassicSearch\AllPSMs.psmtsv");
             var classicPsms = File.ReadAllLines(classicPath).ToList();
 
-        }
+        }*/
 
 
         /*
