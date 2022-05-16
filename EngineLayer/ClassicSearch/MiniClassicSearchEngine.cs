@@ -34,7 +34,6 @@ namespace EngineLayer.ClassicSearch
             MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
             VariableModifications = variableModifications;
             FixedModifications = fixedModifications;
-
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;
         }
