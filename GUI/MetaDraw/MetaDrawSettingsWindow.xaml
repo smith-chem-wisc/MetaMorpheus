@@ -31,14 +31,14 @@
                     <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="5"/>
                     <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5" />
                     <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
-
-                    <StackPanel Orientation="Horizontal">
-                        <Label Content="Filter to q-value:" Margin="5"/>
-                        <TextBox Name ="qValueBox" Width="60" Height="24" />
+ 
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Label Content="Filter to q-value:" Width="120"/>
+                        <TextBox Name ="qValueBox" Width="60" Height="24" Grid.Column="1"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="5">
-                        <Label Content="Text size:" />
+                        <Label Content="Text size:" Width="120"/>
                         <TextBox Name ="TextSizeBox" Width="60" Height="24" />
                     </StackPanel>
                 </StackPanel>

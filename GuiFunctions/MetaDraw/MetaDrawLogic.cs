@@ -456,6 +456,8 @@ namespace GuiFunctions
             
             foreach (var psm in spectrumMatches)
             {
+                MetaDrawSettings.FirstAAonScreenIndex = 0;
+                MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
                 DisplaySequences(stationarySequence, null, psm);
                 DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
 
