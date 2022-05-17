@@ -17,8 +17,10 @@
 
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="4.15.0" />
-    <PackageReference Include="Microsoft.ML" Version="1.7.1" />
-    <PackageReference Include="Microsoft.ML.FastTree" Version="1.7.1" />
+    <PackageReference Include="Microsoft.ML" Version="1.5.0-preview2" />
+    <PackageReference Include="Microsoft.ML.CpuMath" Version="1.5.0-preview2" />
+    <PackageReference Include="Microsoft.ML.DataView" Version="1.5.0-preview2" />
+    <PackageReference Include="Microsoft.ML.FastTree" Version="1.5.0-preview2" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
     <PackageReference Include="mzLib" Version="1.0.529" />
     <PackageReference Include="NetSerializer" Version="4.1.1" />
