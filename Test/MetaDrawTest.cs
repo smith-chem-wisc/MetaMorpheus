@@ -912,6 +912,40 @@ namespace Test
             Assert.That(errors == null || !errors.Any());
         }
 
- 
+        [Test]
+        public static void TestMetaDrawSettingsSnapsho()
+        {
+            MetaDrawSettingsSnapshot snapshot = new();
+            Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
+            Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
+            Assert.That(snapshot.AnnotateCharges.Equals(MetaDrawSettings.AnnotateCharges));
+            Assert.That(snapshot.AnnotationBold.Equals(MetaDrawSettings.AnnotationBold));
+            Assert.That(snapshot.ShowDecoys.Equals(MetaDrawSettings.ShowDecoys));
+            Assert.That(snapshot.ShowContaminants.Equals(MetaDrawSettings.ShowContaminants));
+            Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
+            Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
+            Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
+
+            MetaDrawSettings.ShowContaminants = true;
+            MetaDrawSettings.AnnotateMzValues = false;
+            snapshot = MetaDrawSettings.MakeSnapShot();
+            Assert.That(snapshot.ShowContaminants.Equals(MetaDrawSettings.ShowContaminants));
+            Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
+            Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
+            Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
+
+            snapshot.QValueFilter = 0.5;
+            snapshot.AnnotateCharges = true;
+            MetaDrawSettings.LoadSettings(snapshot);
+            Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
+            Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
+            Assert.That(snapshot.AnnotateCharges.Equals(MetaDrawSettings.AnnotateCharges));
+            Assert.That(snapshot.AnnotationBold.Equals(MetaDrawSettings.AnnotationBold));
+            Assert.That(snapshot.ShowDecoys.Equals(MetaDrawSettings.ShowDecoys));
+            Assert.That(snapshot.ShowContaminants.Equals(MetaDrawSettings.ShowContaminants));
+            Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
+            Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
+            Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
+        }
     }
 }
