@@ -59,7 +59,7 @@ namespace EngineLayer
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
 
             QValueOutputFilter = qValueOutputFilter;
-            PepQValueOutputFilter = pepqValueOutputFilter;
+            PepQValueOutputFilter = pepQValueOutputFilter;
 
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
 

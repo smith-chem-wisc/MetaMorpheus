@@ -555,7 +555,7 @@ namespace MetaMorpheusGUI
                 normalizePeaksAccrossAllWindows: normalizePeaksAccrossAllWindows,//maybe change this some day
                 addCompIons: AddCompIonCheckBox.IsChecked.Value,
                 qValueOutputFilter: QValueRadioButton.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                pepqValueOutputFilter: PepQValueRadioButton.IsChecked.Value ? double.Parse(PepQValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                pepQValueOutputFilter: PepQValueRadioButton.IsChecked.Value ? double.Parse(PepQValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
                 maxHeterozygousVariants: MaxHeterozygousVariants);
