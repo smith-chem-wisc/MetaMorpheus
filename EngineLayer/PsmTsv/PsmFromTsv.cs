@@ -305,14 +305,19 @@ namespace EngineLayer
             }
             return matchedIons;
         }
-
+        /// <summary>
+        /// Trims quotation marks at start or end of the input, removes the enclosing brackets, 
+        /// replaces delimimiters between ion series with comma
+        /// then splits on comma
+        /// </summary>
+        /// <param name="input"> String containing ion series from .psmtsv </param>
+        /// <returns> List of strings, with each entry containing one ion and associated property </returns>
         private static List<string> CleanMatchedIonString(string input)
         {
-            List<string> ionProperty = input.Substring(1, input.Length - 2) //remove the brackets on the ends
-                    .Replace("];[", ", ") //replace delimiter between ion series with the delimiter used between ions
-                    //.Replace("[","")
-                    //.Replace("]","")
-                    .Split(", ") //split by delimiter between ions
+            input = input.Trim('\"'); 
+            List<string> ionProperty = input.Substring(1, input.Length - 2) 
+                    .Replace("];[", ", ") 
+                    .Split(", ") 
                     .ToList();
             ionProperty.RemoveAll(p => p.Contains("\"") || p.Equals(""));
             return ionProperty;
