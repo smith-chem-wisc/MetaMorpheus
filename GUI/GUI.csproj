@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    
+	<TargetFramework>netstandard2.1</TargetFramework>
+	<TargetFramework>net6.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
 	  <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
