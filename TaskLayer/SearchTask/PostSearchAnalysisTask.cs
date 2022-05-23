@@ -239,8 +239,7 @@ namespace TaskLayer
 
             // get PSMs to pass to FlashLFQ
             var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                p.FdrInfo.QValue <= 0.01
-                && p.FdrInfo.QValueNotch <= 0.01
+                p.FdrInfo.PEP_QValue <= 0.01
                 && !p.IsDecoy
                 && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
 
