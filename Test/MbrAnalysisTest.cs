@@ -48,7 +48,29 @@ namespace Test
                 CommonParameters = new CommonParameters()
             };
 
-            List<int> counts = new List<int>();
+            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MsMsids.psmtsv");
+            List<PsmFromTsv> tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            Modification mod1 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl of C]PFTGNVSIR", new Dictionary<string, Modification> { { "Carbamidomethyl of C", mod1 } });
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            MyFileManager myFileManager = new MyFileManager(true);
+
+            foreach (PsmFromTsv readPsm in tsvPsms)
+            {
+                string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "MbrAnalysisTest", readPsm.FileNameWithoutExtension + ".mzML");
+                var myMsDataFile = myFileManager.LoadFile(filePath, new CommonParameters());
+                MsDataScan scan = myMsDataFile.GetOneBasedScan(readPsm.Ms2ScanNumber);
+                Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
+                    readPsm.FileNameWithoutExtension, new CommonParameters());
+                PeptideWithSetModifications pwsm = readPsm.FullSequence.Contains("[") ? modifiedPwsm : new PeptideWithSetModifications(readPsm.FullSequence, null);
+
+                psms.Add(new PeptideSpectralMatch(
+                    pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber,ms2Scan, new CommonParameters(), readPsm.MatchedIons));
+            }
+
+
+            //List<int> counts = new List<int>();
             List<string> rawSlices = new List<string> {
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_J3.mzML"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_K13.mzML") };
