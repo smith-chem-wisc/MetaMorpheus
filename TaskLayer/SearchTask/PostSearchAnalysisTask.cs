@@ -591,7 +591,7 @@ namespace TaskLayer
         private void SpectralLibraryGeneration()
         {
             var FilteredPsmList = Parameters.AllPsms
-               .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
+               .Where(p => p.FdrInfo.PEP_QValue <= 0.01).ToList();
             FilteredPsmList.RemoveAll(b => b.IsDecoy);
             FilteredPsmList.RemoveAll(b => b.IsContaminant);
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
