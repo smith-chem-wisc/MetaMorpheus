@@ -1576,8 +1576,8 @@ namespace TaskLayer
                 }
 
                 string header = "SpecId\tLabel\tScanNr\t";
-                header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
-                header = header + "\tPeptide\tProteins";
+                header += String.Join("\t", PsmData.trainingInfos[searchType]);
+                header += "\tPeptide\tProteins";
 
                 output.WriteLine(header);
 
