@@ -1599,11 +1599,9 @@ namespace TaskLayer
                     foreach (var peptide in psm.BestMatchingPeptides)
                     {
                         output.Write(idNumber.ToString());
-
                         output.Write('\t' + (peptide.Peptide.Protein.IsDecoy ? -1 : 1).ToString());
                         output.Write('\t' + psm.ScanNumber.ToString());
                         output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
-
                         output.Write('\t' + (peptide.Peptide.PreviousAminoAcid + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextAminoAcid).ToString());
                         output.Write('\t' + (peptide.Peptide.Protein.Accession).ToString());
                         output.WriteLine();
