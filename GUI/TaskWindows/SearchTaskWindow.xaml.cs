@@ -305,8 +305,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                QValueTextBox.Text = "0.01";
-                QValueRadioButton.IsChecked = true;
+                PepQValueTextBox.Text = "0.01";
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
