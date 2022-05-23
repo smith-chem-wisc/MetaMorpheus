@@ -9,7 +9,7 @@
     <!-- IMPORTANT: When changing any of these settings, be sure to do each of the following -->
     <!-- Update the MetaDrawSettings.cs to have a field for it, as well as teh MetaDrawSettingsSnapshot class below it -->
     <!-- The methods MakeSnapshot and LoadSettings within metadraw must also be updated -->
-    <Grid>
+    <Grid >
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
@@ -92,10 +92,36 @@
                                             J. Proteome Res. 2018, 17, 3, 1321–1325
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
+                                    <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
+                                    <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
                                 </StackPanel>
                             </ScrollViewer>
                         </Expander>
                         
+                        <!-- Color Selection for each ion -->
+                        <Expander Name="IonColorSelectionExpander" Header="Ion Color Selection"
+                                  DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Hidden">
+                            <Expander.Style>
+                                <Style TargetType="Expander">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsExpanded" Value="True">
+                                            <Setter Property="Header" Value="Hide" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Expander.Style>
+                            <ItemsControl x:Name="IonColorSelectionItemsControl" ItemsSource="{Binding ProductTypeToColor}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Item1}"/>
+                                            <ListBox />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Expander>
+
                         <!-- Color Selection for each ptm -->
                         <Expander Name="PTMColorSelectionExpander" Header="[WIP] PTM Color Selection"
                                   DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Hidden">
@@ -111,10 +137,11 @@
                             <ScrollViewer>
                                 <StackPanel>
                                     <!-- Color selection options -->
-                                    
+
                                 </StackPanel>
                             </ScrollViewer>
                         </Expander>
+
                     </StackPanel>
                 </GroupBox>
             </StackPanel>

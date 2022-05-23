@@ -25,6 +25,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="25"/>
                                 <RowDefinition Height="2*"/>
                                 <RowDefinition Height="25"/>
@@ -43,7 +44,7 @@
                                 </Label>
                             </DockPanel>
 
-                            <!--Select MetaMorpheus output file-->
+                            <!--Select MetaMorpheus output file (psmfromtsv) -->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
                                 <Label Content="PSM files: " Width="75" />
                                 <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
@@ -52,8 +53,18 @@
                                     <TextBlock Name="psmFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
                                 </Label>
                             </DockPanel>
-
-                            <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
+                            
+                            <!-- Select spectral library file -->
+                            <DockPanel Grid.Row="2" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
+                                <Label Content="Library Files:" Width="75" />
+                                <Button Name="resetSpecLibraryButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click" />
+                                <Button Name="selectSpecLibraryButton" Content="Select" DockPanel.Dock="Right" Width="40" Click="selectSpecLibraryButton_Click" />
+                                <Label BorderThickness="1">
+                                    <TextBlock Name="specLibraryLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
+                                </Label>
+                            </DockPanel>
+                            
+                            <Border Grid.Row="3" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
                                 <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
                                     <Button Name="loadFiles" Content="Load Files" Width="80" Click="loadFilesButton_Click" />
                                     <TextBox Width="100" TextChanged="TextBox_TextChanged" DockPanel.Dock="Right"></TextBox>
@@ -62,7 +73,7 @@
                             </Border>
 
                             <!--List of PSMs-->
-                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="3">
+                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="4">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="1*"/>
@@ -78,7 +89,7 @@
                                     </DataGrid>
                                 </Grid>
                             </GroupBox>
-                            <Button Content="Export to PDF" Grid.Row="4" Width="100" Click="PDFButton_Click" />
+                            <Button Content="Export to PDF" Grid.Row="5" Width="100" Click="PDFButton_Click" />
                         </Grid>
 
                         <!--Moveable splitter-->

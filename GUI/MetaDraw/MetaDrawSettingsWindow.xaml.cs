@@ -29,7 +29,7 @@ namespace MetaMorpheusGUI
                 MetaDrawSettings.LoadSettings(settings);
                 LoadedOnce = true;
             }
-
+            this.DataContext = MetaDrawSettingsSnapshot.Instance;
             PopulateChoices();
         }
 
@@ -57,6 +57,8 @@ namespace MetaMorpheusGUI
             QValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Q-Value: "];
             SequenceLengthCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Sequence Length: "];
             ProFormaLevelCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["ProForma Level: "];
+            PEPCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP: "];
+            PEPQValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP Q-Value: "];
             qValueBox.Text = MetaDrawSettings.QValueFilter.ToString();
             TextSizeBox.Text = MetaDrawSettings.AnnotatedFontSize.ToString();
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
@@ -87,6 +89,8 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.SpectrumDescription["Q-Value: "] = QValueCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Sequence Length: "] = SequenceLengthCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["ProForma Level: "] = ProFormaLevelCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["PEP: "] = PEPCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["PEP Q-Value: "] = PEPQValueCheckBox.IsChecked.Value;
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
 

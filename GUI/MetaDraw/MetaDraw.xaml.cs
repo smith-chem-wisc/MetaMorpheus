@@ -137,6 +137,9 @@ namespace MetaMorpheusGUI
                 if (!MetaDrawLogic.SpectralLibraryPaths.Contains(filePath))
                 {
                     MetaDrawLogic.SpectralLibraryPaths.Add(filePath);
+                    specLibraryLabel.Text = filePath;
+                    specLibraryLabel.ToolTip = string.Join("\n", MetaDrawLogic.SpectralLibraryPaths);
+                    resetSpecLibraryButton.IsEnabled = true;
                 }
             }
             else
@@ -271,11 +274,32 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void selectSpecLibraryButton_Click(object sender, RoutedEventArgs e)
+        {
+            string filterString = string.Join(";", AcceptedResultsFormats.Concat(AcceptedSpectralLibraryFormats).Select(p => "*" + p));
+
+            Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Result Files(" + filterString + ")|" + filterString,
+                FilterIndex = 1,
+                RestoreDirectory = true,
+                Multiselect = false
+            };
+            if (openFileDialog1.ShowDialog() == true)
+            {
+                foreach (var filePath in openFileDialog1.FileNames.OrderBy(p => p))
+                {
+                    AddFile(filePath);
+                }
+            }
+        }
+
         private void resetFilesButton_Click(object sender, RoutedEventArgs e)
         {
             MetaDrawLogic.CleanUpResources();
             spectraFileNameLabel.Text = "None Selected";
             psmFileNameLabel.Text = "None Selected";
+            specLibraryLabel.Text = "None Selected";
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
@@ -669,5 +693,6 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
             MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
         }
+
     }
 }

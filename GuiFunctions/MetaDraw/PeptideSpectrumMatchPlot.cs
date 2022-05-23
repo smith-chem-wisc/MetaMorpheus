@@ -360,7 +360,18 @@ namespace GuiFunctions
                 text.Append(SpectrumMatch.AmbiguityLevel);
                 text.Append("\r\n");
             }
-                       
+            if (MetaDrawSettings.SpectrumDescription["PEP: "])
+            {
+                text.Append("PEP: ");
+                text.Append(SpectrumMatch.PEP);
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["PEP Q-Value: "])
+            {
+                text.Append("PEP Q-Value: ");
+                text.Append(SpectrumMatch.PEP_QValue);
+                text.Append("\r\n");
+            }
 
             var annotation = new PlotTextAnnotation()
             {

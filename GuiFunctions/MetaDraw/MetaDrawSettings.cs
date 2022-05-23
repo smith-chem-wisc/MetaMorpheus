@@ -12,16 +12,16 @@ namespace GuiFunctions
 {
     public static class MetaDrawSettings
     {
-        // graphics settings
-        #region Graphic Settings
 
         #region Customizable
-
+        // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = false;
         public static bool AnnotationBold { get; set; } = false;
+        public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
+        public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -33,8 +33,6 @@ namespace GuiFunctions
         #endregion
 
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
-        public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
-        public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
         public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
@@ -46,14 +44,6 @@ namespace GuiFunctions
         public static int NumberOfAAOnScreen { get; set; }
         public static int FirstAAonScreenIndex { get; set; }
         public static bool DrawMatchedIons { get; set; } = true;
-
-        #endregion
-
-
-        // filter settings
-        
-        
-
 
         static MetaDrawSettings()
         {
@@ -112,7 +102,9 @@ namespace GuiFunctions
                 {"Decoy/Contaminant/Target: ", true },
                 {"Q-Value: ", true },
                 {"Sequence Length: ", true },
-                {"ProForma Level: ", true }
+                {"ProForma Level: ", true },
+                {"PEP: ", true },
+                {"PEP Q-Value: ", true }
             };
         }
 
@@ -122,7 +114,7 @@ namespace GuiFunctions
         /// <returns></returns>
         public static MetaDrawSettingsSnapshot MakeSnapShot()
         {
-            return new MetaDrawSettingsSnapshot
+            return new MetaDrawSettingsSnapshot()
             {
                 SpectrumDescription = SpectrumDescription,
                 DisplayIonAnnotations = DisplayIonAnnotations,
@@ -153,25 +145,6 @@ namespace GuiFunctions
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
         }
-    }
-
-    /// <summary>
-    /// Class for exporting and saving an instance of the static class MetaDrawSettings 
-    /// </summary>
-    public class MetaDrawSettingsSnapshot 
-    {
-        public  Dictionary<string, bool> SpectrumDescription { get; set; }
-        public bool DisplayIonAnnotations { get; set; } = true;
-        public bool AnnotateMzValues { get; set; } = false;
-        public bool AnnotateCharges { get; set; } = false;
-        public bool AnnotationBold { get; set; } = false;
-
-        // filter settings
-        public bool ShowDecoys { get; set; } = false;
-        public bool ShowContaminants { get; set; } = true;
-        public double QValueFilter { get; set; } = 0.01;
-        public LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
-        public LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
     }
 
 }
