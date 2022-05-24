@@ -26,59 +26,91 @@ namespace Test
         [Test]
         public static void MbrPostSearchAnalysisTest()
         {
-            SearchTask classicSearch = new SearchTask()
-            {
-                SearchParameters = new SearchParameters()
-                {
-                    MatchBetweenRuns = true,
-                    WriteSpectralLibrary = true
-                }
-            };
-
-            PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
-            {
-                Parameters = new PostSearchAnalysisParameters()
-                {
-                    SearchParameters = new SearchParameters()
-                    {
-                        MatchBetweenRuns = true,
-                        WriteSpectralLibrary = true
-                    }
-                },
-                CommonParameters = new CommonParameters()
-            };
-
+            // This block of code converts from PsmFromTsv to PeptdieSpectralMatch objects.
+            // It also deals with one specific Carbamidomethylation, defined in advance
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MsMsids.psmtsv");
             List<PsmFromTsv> tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
-            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod1 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
-            PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]PFTGNVSIR", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 } });
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            List<Protein> proteinList = new List<Protein>();
             MyFileManager myFileManager = new MyFileManager(true);
 
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            Modification mod1 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Dictionary<string, Modification> carbamidoDict = new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 } };
+            
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
-                string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "MbrAnalysisTest", readPsm.FileNameWithoutExtension + ".mzML");
-                var myMsDataFile = myFileManager.LoadFile(filePath, new CommonParameters());
-                MsDataScan scan = myMsDataFile.GetOneBasedScan(readPsm.Ms2ScanNumber);
+                string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                    "TestData", "MbrAnalysisTest", readPsm.FileNameWithoutExtension + ".mzML");
+                MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
                     readPsm.FileNameWithoutExtension, new CommonParameters());
-                PeptideWithSetModifications pwsm = readPsm.FullSequence.Contains("[") ? modifiedPwsm : new PeptideWithSetModifications(readPsm.FullSequence, null);
-
-                psms.Add(new PeptideSpectralMatch(
-                    pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber,ms2Scan, new CommonParameters(), readPsm.MatchedIons));
+                Protein protein = new Protein(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName);
+                string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
+                int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
+                int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
+                PeptideWithSetModifications pwsm = readPsm.FullSequence.Contains("[") ?
+                    new PeptideWithSetModifications(readPsm.FullSequence, carbamidoDict, p: protein, digestionParams: new DigestionParams(), oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue) :
+                    new PeptideWithSetModifications(readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(), oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
+                PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
+                    new CommonParameters(), readPsm.MatchedIons);
+                
+                psms.Add(psm);
+                proteinList.Add(protein);
             }
 
             List<string> rawSlices = new List<string> {
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_J3.mzML"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_K13.mzML") };
-            string fastaName = @"TestData\MbrAnalysisTest\HumanFastaSlice.fasta";
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput/individual"));
+            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]> { { "", new int[] { 10, 10 } } };
+            List<DbForTask> databaseList = new List<DbForTask>() {new DbForTask(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\HumanFastaSlice.fasta"), false) };
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");
 
-            var engine = new EverythingRunnerEngine(
+            SearchTask searchTask = new SearchTask
+            {
+                SearchParameters = new SearchParameters(),
+                CommonParameters = new CommonParameters()
+            };
+
+            var testTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
+
+            PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
+            {
+                Parameters = new PostSearchAnalysisParameters()
+                {
+                    ProteinList = proteinList,
+                    AllPsms = psms,
+                    CurrentRawFileList = rawSlices,
+                    DatabaseFilenameList = databaseList,
+                    OutputFolder = outputFolder,
+                    NumMs2SpectraPerFile = numSpectraPerFile,
+                    SearchTaskResults = testTaskResults,
+                    SearchParameters = new SearchParameters()
+                    {
+                        DoQuantification = true,
+                        WriteSpectralLibrary = true,
+                        DoMbrAnalysis = true,
+                    }
+                },
+                CommonParameters = new CommonParameters(),
+                FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
+                    (rawSlices[0], new CommonParameters()),
+                    (rawSlices[1], new CommonParameters()) 
+                }
+        };
+         
+            postSearchTask.Run();
+
+            int placholder = 0;
+
+
+
+            /*var engine = new EverythingRunnerEngine(
                 new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("PostSearchAnalysis", postSearchTask) },
                 rawSlices, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
-            engine.Run();
+            engine.Run();*/
 
             // Not sure what's going on here
             // Still have to determine best way to write the results of MBR analysis
