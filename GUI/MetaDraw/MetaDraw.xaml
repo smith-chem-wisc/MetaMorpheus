@@ -36,7 +36,7 @@
 
                             <!--Select spectra file-->
                             <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="Spectra files: " Width="75" />
+                                <Label Content="Spectra files: " Width="95" />
                                 <Button Name="resetSpectraFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
@@ -46,7 +46,7 @@
 
                             <!--Select MetaMorpheus output file (psmfromtsv) -->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="PSM files: " Width="75" />
+                                <Label Content="PSM files: " Width="95" />
                                 <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
@@ -56,11 +56,12 @@
                             
                             <!-- Select spectral library file -->
                             <DockPanel Grid.Row="2" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="Library Files:" Width="75" />
+                                <Label Content="Spectral Library:" Width="95" ToolTip="Optional"/>
                                 <Button Name="resetSpecLibraryButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click" />
-                                <Button Name="selectSpecLibraryButton" Content="Select" DockPanel.Dock="Right" Width="40" Click="selectSpecLibraryButton_Click" />
+                                <Button Name="selectSpecLibraryButton" Content="Select" DockPanel.Dock="Right" Width="40" Click="selectSpecLibraryButton_Click" 
+                                        ToolTip="Optional"/>
                                 <Label BorderThickness="1">
-                                    <TextBlock Name="specLibraryLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Name="specLibraryLabel" Text="None Selected" TextTrimming="CharacterEllipsis" ToolTip="Optional"/>
                                 </Label>
                             </DockPanel>
                             
@@ -123,7 +124,7 @@
                                     <ColumnDefinition Width="1"/>
                                     <ColumnDefinition Width="63"/>
                                     <ColumnDefinition Width="*" Name="SequenceAnnotationArea"/>
-                                    <ColumnDefinition Width="205"/>
+                                    <ColumnDefinition Width="165"/>
                                 </Grid.ColumnDefinitions>
 
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
@@ -144,7 +145,7 @@
                                               HorizontalAlignment="Center" VerticalAlignment="Bottom"
                                               CanContentScroll="True" VerticalScrollBarVisibility="Disabled" 
                                               HorizontalScrollBarVisibility="Auto" Margin="0,0"
-                                              ScrollBar.Scroll="wholeSequenceCoverageHorizontalScroll_Scroll">
+                                              ScrollChanged="wholeSequenceCoverageHorizontalScroll_Scroll">
                                         <Canvas x:Name="scrollableSequenceCanvas" Grid.Row="0" Background="White" Margin="-8,-4,0,0" ></Canvas>
                                     </ScrollViewer>
 
@@ -192,7 +193,7 @@
                                             <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0"/>
                                         </Grid>
 
-                                        <!--Canvas for drawing base sequence annotation-->
+                                        <!--Canvas for drawing stationary sequence annotation-->
                                         <Grid Grid.Row="0" Height="60" VerticalAlignment="Top" Margin="0 0 0 0">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="53" />

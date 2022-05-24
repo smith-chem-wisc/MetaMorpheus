@@ -65,12 +65,17 @@ namespace GuiFunctions.MetaDraw
             if (stationary)
             {
                 var startAA = MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Reverse().ToArray();
-                double x = -5;
-                DrawText(SequenceDrawingCanvas, new Point(x, 10), "-", Brushes.Black);
+                double x = 22;
+
+                Polyline line = new Polyline();
+                line.Points = new PointCollection() { new Point(x, yLoc + 25), new Point(x, yLoc + 35) };
+                line.Stroke = new SolidColorBrush(Colors.Black);
+                line.StrokeThickness = 3;
+                SequenceDrawingCanvas.Children.Add(line);
                 for (int i = 0; i < startAA.Length; i++)
                 {
-                    x = (i + 1) * -spacing - 5;
-                    DrawText(SequenceDrawingCanvas, new Point(x, 10), startAA[i].ToString(), Brushes.Black);
+                    x = MetaDrawSettings.FirstAAonScreenIndex < 10 ? (i + 1) * -spacing + 22 : i  * -spacing + 14;
+                    DrawText(SequenceDrawingCanvas, new Point(x, yLoc + 35), startAA[i].ToString(), Brushes.Black);
                 }
             }
 
@@ -82,18 +87,24 @@ namespace GuiFunctions.MetaDraw
                 
                 canvasWidth = x;
             }
-            SequenceDrawingCanvas.Width = Math.Max(SequenceDrawingCanvas.Width, canvasWidth) + 165; // this number is the width of the grayed out box
+            SequenceDrawingCanvas.Width = Math.Max(SequenceDrawingCanvas.Width, canvasWidth) + 185; // this number is the width of the grayed out box
 
             // draw final amino acid number
             if (stationary)
             {
                 var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString();
                 canvasWidth += spacing;
-                DrawText(SequenceDrawingCanvas, new Point(canvasWidth, 10), "-", Brushes.Black);
+                double x = canvasWidth;
+
+                Polyline line = new Polyline();
+                line.Points = new PointCollection() { new Point(x, yLoc + 25), new Point(x, yLoc + 35) };
+                line.Stroke = new SolidColorBrush(Colors.Black);
+                line.StrokeThickness = 3;
+                SequenceDrawingCanvas.Children.Add(line);
                 for (int i = 0; i < endAA.Length; i++)
                 {
-                    double x = spacing * (i + 1) + canvasWidth;
-                    DrawText(SequenceDrawingCanvas, new Point(x, 10), endAA[i].ToString(), Brushes.Black);
+                    x = spacing * (i) + canvasWidth - 22;
+                    DrawText(SequenceDrawingCanvas, new Point(x, yLoc + 35), endAA[i].ToString(), Brushes.Black);
                 }
             }
 
