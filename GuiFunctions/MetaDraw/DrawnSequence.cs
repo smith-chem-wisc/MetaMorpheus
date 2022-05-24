@@ -64,7 +64,7 @@ namespace GuiFunctions.MetaDraw
             // draw initial amino acid number
             if (stationary)
             {
-                var startAA = MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Reverse().ToArray();
+                var startAA = (MetaDrawSettings.FirstAAonScreenIndex + 1).ToString().ToCharArray().Reverse().ToArray();
                 double x = 22;
 
                 Polyline line = new Polyline();
