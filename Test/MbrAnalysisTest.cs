@@ -69,8 +69,6 @@ namespace Test
                     pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber,ms2Scan, new CommonParameters(), readPsm.MatchedIons));
             }
 
-
-            //List<int> counts = new List<int>();
             List<string> rawSlices = new List<string> {
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_J3.mzML"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_K13.mzML") };
