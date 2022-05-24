@@ -828,8 +828,17 @@ namespace TaskLayer
                 searchType = "top-down";
             }
 
-            Dictionary<string, int> sequenceToPsmCount = PEP_Analysis_Cross_Validation.GetSequenceToPSMCount(Parameters.AllPsms);
-            int chargeStateMode = PEP_Analysis_Cross_Validation.GetChargeStateMode(Parameters.AllPsms);
+            List<PeptideSpectralMatch> allPsms = psms = Parameters.AllPsms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).
+                ThenBy(p => p.FullFilePath).ThenBy(x => x.ScanNumber).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
+
+            Dictionary<string, int> sequenceToPsmCount = PEP_Analysis_Cross_Validation.GetSequenceToPSMCount(allPsms);
+            int chargeStateMode = PEP_Analysis_Cross_Validation.GetChargeStateMode(allPsms);
+
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(allPsms, this.FileSpecificParameters, false);
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(allPsms, this.FileSpecificParameters, true);
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = PEP_Analysis_Cross_Validation.ComputeMobilityValues(allPsms, this.FileSpecificParameters);
+
+            Dictionary<string, float> fileSpecificMedianFragmentMassErrors = PEP_Analysis_Cross_Validation.GetFileSpecificMedianFragmentMassError(allPsms);
 
             PSMDataGroups[0] = PEP_Analysis_Cross_Validation.CreatePsmData(searchType, this.FileSpecificParameters, psms, psmGroupIndices[0], sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
             IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]].Concat(PSMDataGroups[allGroupIndexes[1]].Concat(PSMDataGroups[allGroupIndexes[2]])));

@@ -446,7 +446,7 @@ namespace EngineLayer
             return rtHydrophobicityAvgDev;
         }
 
-        private static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeMobilityValues(List<PeptideSpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        public static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeMobilityValues(List<PeptideSpectralMatch> psms, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
         {
             Dictionary<string, Dictionary<int, Tuple<double, double>>> rtMobilityAvgDev = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
