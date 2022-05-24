@@ -61,13 +61,69 @@ namespace MetaMorpheusGUI
             xIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
             yIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
             zIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            aStarIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            aDegreeIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            bStarIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            bDegreeIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            yStarIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            yDegreeIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            zPlusOneIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            mIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            dIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            yCoreIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            YIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
             aIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.a]];
             bIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.b]];
             cIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.c]];
             xIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.x]];
             yIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.y]];
             zIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.zDot]];
+            aStarIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.aStar]];
+            aDegreeIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.aDegree]];
+            bStarIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.bStar]];
+            bDegreeIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.bDegree]];
+            yStarIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.yStar]];
+            yDegreeIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.yDegree]];
+            zPlusOneIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.zPlusOne]];
+            mIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.M]];
+            dIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.D]];
+            yCoreIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.Ycore]];
+            YIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.Y]];
 
+            BetaaIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetabIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetacIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetaxIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetayIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetazIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetaaStarIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetaaDegreeIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetabStarIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetabDegreeIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetayStarIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetayDegreeIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetazPlusOneIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetamIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetadIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetayCoreIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetaYIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            BetaaIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.a]];
+            BetabIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.b]];
+            BetacIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.c]];
+            BetaxIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.x]];
+            BetayIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.y]];
+            BetazIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.zDot]];
+            BetaaStarIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.aStar]];
+            BetaaDegreeIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.aDegree]];
+            BetabStarIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.bStar]];
+            BetabDegreeIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.bDegree]];
+            BetayStarIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.yStar]];
+            BetayDegreeIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.yDegree]];
+            BetazPlusOneIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.zPlusOne]];
+            BetamIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.M]];
+            BetadIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.D]];
+            BetayCoreIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.Ycore]];
+            BetaYIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.BetaProductTypeToColor[ProductType.Y]];
             #endregion
         }
 
@@ -107,11 +163,37 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.ProductTypeToColor[ProductType.x] = MetaDrawSettings.NameToOxyColorConverter(xIonComboBox.SelectedItem.ToString());
             MetaDrawSettings.ProductTypeToColor[ProductType.y] = MetaDrawSettings.NameToOxyColorConverter(yIonComboBox.SelectedItem.ToString());
             MetaDrawSettings.ProductTypeToColor[ProductType.zDot] = MetaDrawSettings.NameToOxyColorConverter(zIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.aStar] = MetaDrawSettings.NameToOxyColorConverter(aStarIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.aDegree] = MetaDrawSettings.NameToOxyColorConverter(aDegreeIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.bStar] = MetaDrawSettings.NameToOxyColorConverter(bStarIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.bDegree] = MetaDrawSettings.NameToOxyColorConverter(bDegreeIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.yStar] = MetaDrawSettings.NameToOxyColorConverter(yStarIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.yDegree] = MetaDrawSettings.NameToOxyColorConverter(yDegreeIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.zPlusOne] = MetaDrawSettings.NameToOxyColorConverter(zPlusOneIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.M] = MetaDrawSettings.NameToOxyColorConverter(mIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.D] = MetaDrawSettings.NameToOxyColorConverter(dIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.Ycore] = MetaDrawSettings.NameToOxyColorConverter(yCoreIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.Y] = MetaDrawSettings.NameToOxyColorConverter(yIonComboBox.SelectedItem.ToString());
 
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.a] = MetaDrawSettings.NameToOxyColorConverter(BetaaIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.b] = MetaDrawSettings.NameToOxyColorConverter(BetabIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.c] = MetaDrawSettings.NameToOxyColorConverter(BetacIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.x] = MetaDrawSettings.NameToOxyColorConverter(BetaxIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.y] = MetaDrawSettings.NameToOxyColorConverter(BetayIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.zDot] = MetaDrawSettings.NameToOxyColorConverter(BetazIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.aStar] = MetaDrawSettings.NameToOxyColorConverter(BetaaStarIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.aDegree] = MetaDrawSettings.NameToOxyColorConverter(BetaaDegreeIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.bStar] = MetaDrawSettings.NameToOxyColorConverter(BetabStarIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.bDegree] = MetaDrawSettings.NameToOxyColorConverter(BetabDegreeIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.yStar] = MetaDrawSettings.NameToOxyColorConverter(BetayStarIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.yDegree] = MetaDrawSettings.NameToOxyColorConverter(BetayDegreeIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.zPlusOne] = MetaDrawSettings.NameToOxyColorConverter(BetazPlusOneIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.M] = MetaDrawSettings.NameToOxyColorConverter(BetamIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.D] = MetaDrawSettings.NameToOxyColorConverter(BetadIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.Ycore] = MetaDrawSettings.NameToOxyColorConverter(BetayCoreIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.BetaProductTypeToColor[ProductType.Y] = MetaDrawSettings.NameToOxyColorConverter(BetayIonComboBox.SelectedItem.ToString());
 
             #endregion
-
-
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {
@@ -158,9 +240,9 @@ namespace MetaMorpheusGUI
 
         private void setDefaultbutton_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
             Save_Click(sender, e);
-            Toml.WriteFile(settings, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml"));
+            MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
+            Toml.WriteFile<MetaDrawSettingsSnapshot>(settings, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml"));
         }
     }
 }

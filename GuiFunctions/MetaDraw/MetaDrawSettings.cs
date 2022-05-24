@@ -33,6 +33,9 @@ namespace GuiFunctions
 
         #endregion
 
+        public static string[] SpectrumDescriptors { get; set; } = 
+        {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Score: ", "Protein Accession: ", "Protein: ",
+        "Decoy/Contaminant/Target: ", "Q-Value: ", "Sequence Length: ", "ProForma Level: ", "PEP: ", "PEP Q-Value: "};
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
         public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
@@ -92,25 +95,11 @@ namespace GuiFunctions
             ProductTypeToYOffset[ProductType.zDot] = -13.6;
 
             // lines to be written on the spectrum
-            SpectrumDescription = new Dictionary<string, bool>()
-            {
-                {"Precursor Charge: ", true },
-                {"Precursor Mass: ", true },
-                {"Theoretical Mass: ", true },
-                {"Score: ", true },
-                {"Protein Accession: ", true },
-                {"Protein: ", true },
-                {"Decoy/Contaminant/Target: ", true },
-                {"Q-Value: ", true },
-                {"Sequence Length: ", true },
-                {"ProForma Level: ", true },
-                {"PEP: ", true },
-                {"PEP Q-Value: ", true }
-            };
 
+            SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             PossibleColors = ((ColorEnum[])Enum.GetValues(typeof(ColorEnum))).ToDictionary(p => NameToOxyColorConverter(p.ToString()), p => p.ToString());
-
         }
+
 
         /// <summary>
         /// Create an instance of the metadraw settings to be saved
@@ -120,7 +109,6 @@ namespace GuiFunctions
         {
             return new MetaDrawSettingsSnapshot()
             {
-                SpectrumDescription = SpectrumDescription,
                 DisplayIonAnnotations = DisplayIonAnnotations,
                 AnnotateMzValues = AnnotateMzValues,
                 AnnotateCharges = AnnotateCharges,
@@ -129,7 +117,10 @@ namespace GuiFunctions
                 ShowContaminants = ShowContaminants,
                 QValueFilter = QValueFilter,
                 LocalizationLevelStart = LocalizationLevelStart,
-                LocalizationLevelEnd = LocalizationLevelEnd
+                LocalizationLevelEnd = LocalizationLevelEnd,
+                ProductTypeToColorValues = ProductTypeToColor.Values.Select(p => OxyColorToNameConverter(p)).ToList(),
+                BetaProductTypeToColorValues = BetaProductTypeToColor.Values.Select(p => OxyColorToNameConverter(p)).ToList(),
+                SpectrumDescriptionValues = SpectrumDescription.Values.ToList()
             };
         }
 
@@ -138,7 +129,7 @@ namespace GuiFunctions
         /// </summary>
         public static void LoadSettings(MetaDrawSettingsSnapshot settings)
         {
-            SpectrumDescription = settings.SpectrumDescription;
+            //SpectrumDescription = settings.SpectrumDescription;
             DisplayIonAnnotations = settings.DisplayIonAnnotations;
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
@@ -148,6 +139,10 @@ namespace GuiFunctions
             QValueFilter = settings.QValueFilter;
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
+
+            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => NameToOxyColorConverter(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
+            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => NameToOxyColorConverter(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
+            SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
         }
 
         /// <summary>
@@ -157,37 +152,60 @@ namespace GuiFunctions
         /// <returns></returns>
         public static OxyColor NameToOxyColorConverter(string name)
         {
-            switch (name)
+            
+            return name switch
             {
-                case "Blue":
-                    return OxyColors.Blue;
-                case "Red":
-                    return OxyColors.Red;
-                case "Orange":
-                    return OxyColors.Orange;
-                case "Gold":
-                    return OxyColors.Gold;
-                case "DodgerBlue":
-                    return OxyColors.DodgerBlue;
-                case "Firebrick":
-                    return OxyColors.Firebrick;
-                case "LightBlue":
-                    return OxyColors.LightBlue;
-                case "OrangeRed":
-                    return OxyColors.OrangeRed;
-                case "LightGoldenrodYellow":
-                    return OxyColors.LightGoldenrodYellow;
-                case "AliceBlue":
-                    return OxyColors.AliceBlue;
-                case "LightCoral":
-                    return OxyColors.LightCoral;
-                case "Aqua":
-                    return OxyColors.Aqua;
+                "Blue" => OxyColors.Blue,
+                "Red" => OxyColors.Red,
+                "Orange" => OxyColors.Orange,
+                "Gold" => OxyColors.Gold,
+                "DodgerBlue" => OxyColors.DodgerBlue,
+                "Firebrick" => OxyColors.Firebrick,
+                "LightBlue" => OxyColors.LightBlue,
+                "OrangeRed" => OxyColors.OrangeRed,
+                "LightGoldenrodYellow" => OxyColors.LightGoldenrodYellow,
+                "AliceBlue" => OxyColors.AliceBlue,
+                "LightCoral" => OxyColors.LightCoral,
+                "Aqua" => OxyColors.Aqua,
+                _ => OxyColors.Blue,
+            };
+        }
 
+        /// <summary>
+        /// Converts OxyColor to a string representation
+        /// </summary>
+        /// <param name="color"></param>
+        /// <returns></returns>
+        public static string OxyColorToNameConverter(OxyColor color)
+        {
+            string name = color.ToString();
 
-                default:
-                    return OxyColors.Blue;
-            }
+            if (color == OxyColors.Blue)
+                return "Blue";
+            else if (color == OxyColors.Red)
+                return "Red";
+            else if (color == OxyColors.Orange)
+                return "Orange";
+            else if (color == OxyColors.Gold)
+                return "Gold";
+            else if (color == OxyColors.DodgerBlue)
+                return "DodgerBlue";
+            else if (color == OxyColors.Firebrick)
+                return "FireBrick";
+            else if (color == OxyColors.LightBlue)
+                return "LightBlue";
+            else if (color == OxyColors.OrangeRed)
+                return "OrangeRed";
+            else if (color == OxyColors.LightGoldenrodYellow)
+                return "LightGOldenrodYellow";
+            else if (color == OxyColors.AliceBlue)
+                return "AliceBlue";
+            else if (color == OxyColors.LightCoral)
+                return "LightCoral";
+            else if (color == OxyColors.Aqua)
+                return "Aqua";
+            else
+                return "Blue";
         }
 
         /// <summary>
@@ -208,5 +226,6 @@ namespace GuiFunctions
             LightCoral,
             Aqua
         }
+
     }
 }
