@@ -44,7 +44,7 @@ namespace Test
                     "TestData", "MbrAnalysisTest", readPsm.FileNameWithoutExtension + ".mzML");
                 MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
-                    readPsm.FileNameWithoutExtension, new CommonParameters());
+                    filePath, new CommonParameters());
                 Protein protein = new Protein(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName);
                 string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
@@ -70,7 +70,14 @@ namespace Test
 
             SearchTask searchTask = new SearchTask
             {
-                SearchParameters = new SearchParameters(),
+                SearchParameters = new SearchParameters()
+                {
+                    DoQuantification = false,
+                    WriteSpectralLibrary = false,
+                    MatchBetweenRuns = false,
+                    DoMbrAnalysis = false,
+                    WriteMzId = false
+                },
                 CommonParameters = new CommonParameters()
             };
 
@@ -86,6 +93,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
+                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
                     SearchTaskResults = testTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
@@ -93,6 +101,7 @@ namespace Test
                     {
                         DoQuantification = true,
                         WriteSpectralLibrary = true,
+                        MatchBetweenRuns = true,
                         DoMbrAnalysis = true,
                         WriteMzId = false
                     }
@@ -102,11 +111,13 @@ namespace Test
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters()) 
                 }
-        };
-         
+            };
+
+            int placeholder = 1;
+
             postSearchTask.Run();
 
-            int placeholder = 0;
+            placeholder = 0;
 
             Assert.That(placeholder == 0);
 
