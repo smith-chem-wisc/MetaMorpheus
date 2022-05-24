@@ -4,6 +4,7 @@ using GuiFunctions;
 using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using NUnit.Framework;
+using OxyPlot;
 using OxyPlot.Series;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -126,7 +127,6 @@ namespace Test
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.PsmResultFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv"));
             metadrawLogic.SpectraFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchSingleSpectra.mzML"));
-            //C:\Users\Nic\source\repos\MetaMorpheus\Test\TopDownTestData\TDGPTMDSearchResults.psmtsv
             var errors = metadrawLogic.LoadFiles(true, true);
             Assert.That(errors.Count == 1); // Singular error should be from not loading in the rest of the spectra that the search came from
 
@@ -174,7 +174,10 @@ namespace Test
                 }
                 List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                        p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-                Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Count() + (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString().ToCharArray().Count() + 2);
+                var expected = modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Count() + (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString().ToCharArray().Count() + 2;
+                if (MetaDrawSettings.FirstAAonScreenIndex == 9)
+                    expected += 1;
+                Assert.AreEqual(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, expected);
             }
         }
 
@@ -913,7 +916,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestMetaDrawSettingsSnapsho()
+        public static void TestMetaDrawSettingsSnapshot()
         {
             MetaDrawSettingsSnapshot snapshot = new();
             Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
@@ -949,7 +952,22 @@ namespace Test
         }
 
         [Test]
-        public static void TestMetaDrawLogicCleanU()
+        public static void TestSettingsColorConverters()
+        {
+            List<string> colors = new List<string> { "Red", "AliceBlue", "VelociraptorPurple" };
+            Assert.AreEqual(OxyColors.Red, MetaDrawSettings.NameToOxyColorConverter(colors[0]));
+            Assert.AreEqual(OxyColors.AliceBlue, MetaDrawSettings.NameToOxyColorConverter(colors[1]));
+            Assert.AreEqual(OxyColors.Blue, MetaDrawSettings.NameToOxyColorConverter(colors[2]));
+
+            List<OxyColor> colors2 = new List<OxyColor> { OxyColors.Violet, OxyColors.AliceBlue, OxyColors.BurlyWood };
+            Assert.AreEqual("Violet", MetaDrawSettings.OxyColorToNameConverter(colors2[0]));
+            Assert.AreEqual("AliceBlue", MetaDrawSettings.OxyColorToNameConverter(colors2[1]));
+            Assert.AreEqual("Blue", MetaDrawSettings.OxyColorToNameConverter(colors2[2]));
+
+        }
+
+        [Test]
+        public static void TestMetaDrawLogicCleanUp()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");

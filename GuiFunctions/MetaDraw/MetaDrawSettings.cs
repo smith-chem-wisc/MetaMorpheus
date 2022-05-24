@@ -69,7 +69,7 @@ namespace GuiFunctions
 
         private static void InitializeDictionaries()
         {
-            // colors of each fragment to annotate
+            // default color of each fragment to annotate
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             ProductTypeToColor[ProductType.b] = OxyColors.Blue;
             ProductTypeToColor[ProductType.y] = OxyColors.Red;
@@ -78,7 +78,7 @@ namespace GuiFunctions
             ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
             ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
 
-            // colors of each fragment to annotate
+            // default color of each fragment to annotate
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
             BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
             BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
@@ -95,7 +95,6 @@ namespace GuiFunctions
             ProductTypeToYOffset[ProductType.zDot] = -13.6;
 
             // lines to be written on the spectrum
-
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             PossibleColors = ((ColorEnum[])Enum.GetValues(typeof(ColorEnum))).ToDictionary(p => NameToOxyColorConverter(p.ToString()), p => p.ToString());
         }
@@ -158,6 +157,7 @@ namespace GuiFunctions
                 "Blue" => OxyColors.Blue,
                 "Red" => OxyColors.Red,
                 "Orange" => OxyColors.Orange,
+                "Violet" => OxyColors.Violet,
                 "Gold" => OxyColors.Gold,
                 "DodgerBlue" => OxyColors.DodgerBlue,
                 "Firebrick" => OxyColors.Firebrick,
@@ -186,6 +186,8 @@ namespace GuiFunctions
                 return "Red";
             else if (color == OxyColors.Orange)
                 return "Orange";
+            else if (color == OxyColors.Violet)
+                return "Violet";
             else if (color == OxyColors.Gold)
                 return "Gold";
             else if (color == OxyColors.DodgerBlue)
@@ -216,6 +218,7 @@ namespace GuiFunctions
             Blue,
             Red,
             Orange,
+            Violet,
             Gold,
             DodgerBlue,
             Firebrick,
