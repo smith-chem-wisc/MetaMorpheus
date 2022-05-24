@@ -524,19 +524,40 @@ namespace GuiFunctions
         {
             lock (ThreadLocker)
             {
-                AllPsms.Clear();
-                FilteredListOfPsms.Clear();
-                PsmResultFilePaths.Clear();
-                SpectraFilePaths.Clear();
-                SpectralLibraryPaths.Clear();
+                CleanUpPSMFiles();
+                CleanUpSpectraFiles();
+                CleanUpSpectralLibraryFiles();
+            }
+        }
 
+        public void CleanUpSpectraFiles()
+        {
+            lock (ThreadLocker)
+            {
+                SpectraFilePaths.Clear();
                 foreach (var connection in MsDataFiles)
                 {
                     connection.Value.CloseDynamicConnection();
                 }
-
                 MsDataFiles.Clear();
+            }
+        }
 
+        public void CleanUpPSMFiles()
+        {
+            lock (ThreadLocker)
+            {
+                AllPsms.Clear();
+                FilteredListOfPsms.Clear();
+                PsmResultFilePaths.Clear();
+            }
+        }
+
+        public void CleanUpSpectralLibraryFiles()
+        {
+            lock (ThreadLocker)
+            {
+                SpectralLibraryPaths.Clear();
                 if (SpectralLibrary != null)
                 {
                     SpectralLibrary.CloseConnections();
@@ -544,7 +565,7 @@ namespace GuiFunctions
             }
         }
 
-        #region Helpers
+        #region Private Helpers
 
         private void LoadPsms(out List<string> errors, bool haveLoadedSpectra)
         {

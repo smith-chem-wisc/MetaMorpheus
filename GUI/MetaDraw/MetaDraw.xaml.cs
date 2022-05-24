@@ -66,6 +66,15 @@ namespace MetaMorpheusGUI
             plotTypes = new ObservableCollection<string>();
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
+
+            // checks to see if default settings have been saved, and loads them for the first opening of the window
+            MetaDrawSettingsSnapshot settings = null;
+            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml");
+            if (File.Exists(settingsPath))
+            {
+                settings = Toml.ReadFile<MetaDrawSettingsSnapshot>(settingsPath);
+                MetaDrawSettings.LoadSettings(settings);
+            }
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -160,7 +169,9 @@ namespace MetaMorpheusGUI
 
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
             AmbiguousSequenceOptionBox.Items.Clear();
+            plotView.Visibility = Visibility.Visible;
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SetSequenceDrawingPositionSettings(true);
             // If psm is ambiguous, split into several psm objects and add each as an option to see
             if (psm.FullSequence.Contains('|'))
             {
@@ -184,11 +195,13 @@ namespace MetaMorpheusGUI
                 AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Collapsed;
                 wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
-                GrayBox.Opacity = 0.7;
+                if (psm.BaseSeq.Length > MetaDrawSettings.NumberOfAAOnScreen)
+                    GrayBox.Opacity = 0.7;
+                else
+                    GrayBox.Opacity = 0;
             }
 
             // draw the annotated spectrum
-            SetSequenceDrawingPositionSettings(true);
             MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
             MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
 
@@ -296,10 +309,36 @@ namespace MetaMorpheusGUI
 
         private void resetFilesButton_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawLogic.CleanUpResources();
-            spectraFileNameLabel.Text = "None Selected";
-            psmFileNameLabel.Text = "None Selected";
-            specLibraryLabel.Text = "None Selected";
+            if (((Button)sender).Name.Equals("resetSpectraFileButton"))
+            {
+                spectraFileNameLabel.Text = "None Selected";
+                MetaDrawLogic.CleanUpSpectraFiles();
+            }
+
+            else if (((Button)sender).Name.Equals("resetPsmFileButton"))
+            {
+                psmFileNameLabel.Text = "None Selected";
+                MetaDrawLogic.CleanUpPSMFiles();
+            }
+
+            else if (((Button)sender).Name.Equals("resetSpecLibraryButton"))
+            {
+                specLibraryLabel.Text = "None Selected";
+                MetaDrawLogic.CleanUpSpectralLibraryFiles();
+            }
+            else
+            {
+                MetaDrawLogic.CleanUpResources();
+            }
+
+            // if a psm is selected
+            if (MetaDrawLogic.ScrollableSequence != null)
+            {
+                DrawnSequence.ClearCanvas(MetaDrawLogic.ScrollableSequence.SequenceDrawingCanvas);
+                DrawnSequence.ClearCanvas(MetaDrawLogic.StationarySequence.SequenceDrawingCanvas);
+                plotView.Visibility = Visibility.Hidden;
+                MetaDrawLogic.FilteredListOfPsms.Clear();
+            }
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
@@ -353,8 +392,8 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = false;
             selectSpectraFileButton.IsEnabled = false;
             selectPsmFileButton.IsEnabled = false;
-            resetSpectraFileButton.IsEnabled = false;
-            resetPsmFileButton.IsEnabled = false;
+            selectSpecLibraryButton.IsEnabled = false;
+ 
             prgsFeed.IsOpen = true;
             prgsText.Content = "Loading data...";
 
@@ -388,8 +427,7 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = true;
             selectSpectraFileButton.IsEnabled = true;
             selectPsmFileButton.IsEnabled = true;
-            resetSpectraFileButton.IsEnabled = true;
-            resetPsmFileButton.IsEnabled = true;
+            selectSpecLibraryButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -613,7 +651,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         /// <param name="sender"> 
         /// <param name="e"></param>
-        private void wholeSequenceCoverageHorizontalScroll_Scroll(object sender, System.Windows.Controls.Primitives.ScrollEventArgs e)
+        private void wholeSequenceCoverageHorizontalScroll_Scroll(object sender, ScrollChangedEventArgs e)
         {
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
@@ -631,7 +669,8 @@ namespace MetaMorpheusGUI
                 }
             }
             SetSequenceDrawingPositionSettings();
-            DrawnSequence.DrawStationarySequence(psm, MetaDrawLogic.StationarySequence);
+            if (MetaDrawLogic.StationarySequence != null)
+                DrawnSequence.DrawStationarySequence(psm, MetaDrawLogic.StationarySequence);
         }
 
         /// <summary>
@@ -693,6 +732,5 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
             MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
         }
-
     }
 }

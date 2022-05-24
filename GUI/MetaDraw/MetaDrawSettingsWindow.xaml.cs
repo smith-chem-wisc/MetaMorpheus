@@ -14,22 +14,10 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDrawSettingsWindow : Window
     {
-        private static bool LoadedOnce = false;
         
         public MetaDrawSettingsWindow()
         {
             InitializeComponent();
-
-            // checks to see if default settings have been saved, and loads them for the first opening of the window
-            MetaDrawSettingsSnapshot settings = null;
-            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml");
-            if (File.Exists(settingsPath) && !LoadedOnce)
-            {
-                settings = Toml.ReadFile<MetaDrawSettingsSnapshot>(settingsPath);
-                MetaDrawSettings.LoadSettings(settings);
-                LoadedOnce = true;
-            }
-            this.DataContext = MetaDrawSettingsSnapshot.Instance;
             PopulateChoices();
         }
 

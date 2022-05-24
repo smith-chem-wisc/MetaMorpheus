@@ -947,5 +947,86 @@ namespace Test
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
         }
+
+        [Test]
+        public static void TestMetaDrawLogicCleanU()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
+            string library1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_target.msp");
+            string library2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_decoy.msp");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder,
+                new List<DbForTask>
+                {
+                    new DbForTask(proteinDatabase, false),
+                    new DbForTask(library1, false),
+                    new DbForTask(library2, false),
+                },
+                new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralLibraryPaths.Add(library1);
+            metadrawLogic.SpectralLibraryPaths.Add(library2);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var plotSeries = plotView.Model.Series;
+
+            // test that library peaks were drawn in the mirror plot (these peaks have negative intensities)
+            var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
+            Assert.That(mirrorPlotPeaks.Count == 52);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "VIHDNFGIVEGLMTTVHAITATQK").Take(1).ToList();
+            metadrawLogic.ExportToPdf(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"6_VIHDNFGIVEGLMTTVHAITATQK.pdf")));
+
+            // clean up resources
+            metadrawLogic.CleanUpSpectraFiles();
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+
+            metadrawLogic.CleanUpPSMFiles();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+
+            metadrawLogic.CleanUpSpectralLibraryFiles();
+            Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+
+        }
     }
 }
