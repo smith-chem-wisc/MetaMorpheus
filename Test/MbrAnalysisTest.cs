@@ -51,8 +51,8 @@ namespace Test
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MsMsids.psmtsv");
             List<PsmFromTsv> tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod1 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
-            PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl of C]PFTGNVSIR", new Dictionary<string, Modification> { { "Carbamidomethyl of C", mod1 } });
+            Modification mod1 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            PeptideWithSetModifications modifiedPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]PFTGNVSIR", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 } });
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
             MyFileManager myFileManager = new MyFileManager(true);
 
