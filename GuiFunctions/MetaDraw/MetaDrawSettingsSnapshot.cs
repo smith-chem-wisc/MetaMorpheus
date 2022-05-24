@@ -19,8 +19,10 @@ namespace GuiFunctions
         public bool AnnotateMzValues { get; set; } = false;
         public bool AnnotateCharges { get; set; } = false;
         public bool AnnotationBold { get; set; } = false;
-        public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
-        public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
+        public Dictionary<OxyColor, string> PossibleColors { get; set; }
+        public Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
+        public Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
+        public Dictionary<ProductType, Dictionary<string, OxyColor>> ProductTypeToColor2 { get; set; }
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
@@ -48,6 +50,8 @@ namespace GuiFunctions
             LocalizationLevelEnd = MetaDrawSettings.LocalizationLevelEnd;
             ProductTypeToColor = MetaDrawSettings.ProductTypeToColor;
             BetaProductTypeToColor = MetaDrawSettings.BetaProductTypeToColor;
+            PossibleColors = MetaDrawSettings.PossibleColors;
         }
+
     }
 }

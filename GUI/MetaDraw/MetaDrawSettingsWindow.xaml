@@ -100,7 +100,7 @@
                         
                         <!-- Color Selection for each ion -->
                         <Expander Name="IonColorSelectionExpander" Header="Ion Color Selection"
-                                  DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Hidden">
+                                  DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
                             <Expander.Style>
                                 <Style TargetType="Expander">
                                     <Style.Triggers>
@@ -110,20 +110,39 @@
                                     </Style.Triggers>
                                 </Style>
                             </Expander.Style>
-                            <ItemsControl x:Name="IonColorSelectionItemsControl" ItemsSource="{Binding ProductTypeToColor}">
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Text="{Binding Item1}"/>
-                                            <ListBox />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
+                            <StackPanel HorizontalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="a - ion" Width="80" />
+                                    <ComboBox x:Name="aIonComboBox" Width="80" HorizontalContentAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="b - ion" Width="80"/>
+                                    <ComboBox x:Name="bIonComboBox" Width="80" HorizontalContentAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="c - ion" Width="80"/>
+                                    <ComboBox x:Name="cIonComboBox" Width="80" HorizontalContentAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="x - ion" Width="80"/>
+                                    <ComboBox x:Name="xIonComboBox" Width="80" HorizontalContentAlignment="Center" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="y - ion" Width="80"/>
+                                    <ComboBox x:Name="yIonComboBox" Width="80" HorizontalContentAlignment="Center"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="z - ion" Width="80"/>
+                                    <ComboBox x:Name="zIonComboBox" Width="80" HorizontalContentAlignment="Center"/>
+                                </StackPanel>
+                            </StackPanel>
+                            
+                            
+                            
                         </Expander>
 
                         <!-- Color Selection for each ptm -->
-                        <Expander Name="PTMColorSelectionExpander" Header="[WIP] PTM Color Selection"
+                        <Expander Name="PTMColorSelectionExpander" Header="PTM Color Selection"
                                   DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Hidden">
                             <Expander.Style>
                                 <Style TargetType="Expander">

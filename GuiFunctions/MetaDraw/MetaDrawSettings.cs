@@ -20,6 +20,7 @@ namespace GuiFunctions
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = false;
         public static bool AnnotationBold { get; set; } = false;
+        public static Dictionary<OxyColor, string> PossibleColors { get; set; }
         public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
         public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
 
@@ -106,6 +107,9 @@ namespace GuiFunctions
                 {"PEP: ", true },
                 {"PEP Q-Value: ", true }
             };
+
+            PossibleColors = ((ColorEnum[])Enum.GetValues(typeof(ColorEnum))).ToDictionary(p => NameToOxyColorConverter(p.ToString()), p => p.ToString());
+
         }
 
         /// <summary>
@@ -121,9 +125,9 @@ namespace GuiFunctions
                 AnnotateMzValues = AnnotateMzValues,
                 AnnotateCharges = AnnotateCharges,
                 AnnotationBold = AnnotationBold,
-                ShowDecoys = ShowDecoys,    
+                ShowDecoys = ShowDecoys,
                 ShowContaminants = ShowContaminants,
-                QValueFilter = QValueFilter,    
+                QValueFilter = QValueFilter,
                 LocalizationLevelStart = LocalizationLevelStart,
                 LocalizationLevelEnd = LocalizationLevelEnd
             };
@@ -139,12 +143,70 @@ namespace GuiFunctions
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
             AnnotationBold = settings.AnnotationBold;
-            ShowDecoys = settings.ShowDecoys;    
+            ShowDecoys = settings.ShowDecoys;
             ShowContaminants = settings.ShowContaminants;
             QValueFilter = settings.QValueFilter;
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
         }
-    }
 
+        /// <summary>
+        /// Converts the string representation of the color to a OxyColor
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static OxyColor NameToOxyColorConverter(string name)
+        {
+            switch (name)
+            {
+                case "Blue":
+                    return OxyColors.Blue;
+                case "Red":
+                    return OxyColors.Red;
+                case "Orange":
+                    return OxyColors.Orange;
+                case "Gold":
+                    return OxyColors.Gold;
+                case "DodgerBlue":
+                    return OxyColors.DodgerBlue;
+                case "Firebrick":
+                    return OxyColors.Firebrick;
+                case "LightBlue":
+                    return OxyColors.LightBlue;
+                case "OrangeRed":
+                    return OxyColors.OrangeRed;
+                case "LightGoldenrodYellow":
+                    return OxyColors.LightGoldenrodYellow;
+                case "AliceBlue":
+                    return OxyColors.AliceBlue;
+                case "LightCoral":
+                    return OxyColors.LightCoral;
+                case "Aqua":
+                    return OxyColors.Aqua;
+
+
+                default:
+                    return OxyColors.Blue;
+            }
+        }
+
+        /// <summary>
+        /// Enum full of all selectable colors
+        /// </summary>
+        public enum ColorEnum
+        {
+            Blue,
+            Red,
+            Orange,
+            Gold,
+            DodgerBlue,
+            Firebrick,
+            LightBlue,
+            OrangeRed,
+            LightGoldenrodYellow,
+            AliceBlue,
+            LightCoral,
+            Aqua
+        }
+    }
 }

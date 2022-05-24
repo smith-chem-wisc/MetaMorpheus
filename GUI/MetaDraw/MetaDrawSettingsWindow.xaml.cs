@@ -2,6 +2,7 @@
 using EngineLayer.GlycoSearch;
 using GuiFunctions;
 using Nett;
+using Proteomics.Fragmentation;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
@@ -29,7 +30,6 @@ namespace MetaMorpheusGUI
                 MetaDrawSettings.LoadSettings(settings);
                 LoadedOnce = true;
             }
-            this.DataContext = MetaDrawSettingsSnapshot.Instance;
             PopulateChoices();
         }
 
@@ -64,6 +64,22 @@ namespace MetaMorpheusGUI
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
 
+            #region Colors
+
+            aIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            bIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            cIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            xIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            yIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            zIonComboBox.ItemsSource = MetaDrawSettings.PossibleColors.Values;
+            aIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.a]];
+            bIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.b]];
+            cIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.c]];
+            xIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.x]];
+            yIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.y]];
+            zIonComboBox.SelectedItem = MetaDrawSettings.PossibleColors[MetaDrawSettings.ProductTypeToColor[ProductType.zDot]];
+
+            #endregion
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -93,6 +109,20 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.SpectrumDescription["PEP Q-Value: "] = PEPQValueCheckBox.IsChecked.Value;
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
+
+            #region Colors
+
+            MetaDrawSettings.ProductTypeToColor[ProductType.a] = MetaDrawSettings.NameToOxyColorConverter(aIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.b] = MetaDrawSettings.NameToOxyColorConverter(bIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.c] = MetaDrawSettings.NameToOxyColorConverter(cIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.x] = MetaDrawSettings.NameToOxyColorConverter(xIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.y] = MetaDrawSettings.NameToOxyColorConverter(yIonComboBox.SelectedItem.ToString());
+            MetaDrawSettings.ProductTypeToColor[ProductType.zDot] = MetaDrawSettings.NameToOxyColorConverter(zIonComboBox.SelectedItem.ToString());
+
+
+            #endregion
+
+
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {
