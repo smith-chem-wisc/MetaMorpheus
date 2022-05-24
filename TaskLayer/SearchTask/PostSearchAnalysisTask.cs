@@ -19,6 +19,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 using System.Collections.Concurrent;
+using Microsoft.ML;
 
 namespace TaskLayer
 {
@@ -810,7 +811,28 @@ namespace TaskLayer
                     }
                 });
             }
+            FDRAnalysisOfMbrPsms(bestPsmsForPeaks);
             WriteMbrPsmResults(bestPsmsForPeaks);
+        }
+
+        private void FDRAnalysisOfMbrPsms(ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks)
+        {
+            List<PeptideSpectralMatch> psms = bestPsmsForPeaks.Values.ToList();
+            List<int>[] psmGroupIndices = PEP_Analysis_Cross_Validation.Get_PSM_Group_Indices(psms, 1);
+            MLContext mlContext = new MLContext();
+            IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[1];
+
+            string searchType = "standard";
+            if (psms[0].DigestionParams.Protease.Name == "top-down")
+            {
+                searchType = "top-down";
+            }
+
+            Dictionary<string, int> sequenceToPsmCount = PEP_Analysis_Cross_Validation.GetSequenceToPSMCount(Parameters.AllPsms);
+            int chargeStateMode = PEP_Analysis_Cross_Validation.GetChargeStateMode(Parameters.AllPsms);
+
+            PSMDataGroups[0] = PEP_Analysis_Cross_Validation.CreatePsmData(searchType, this.FileSpecificParameters, psms, psmGroupIndices[0], sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
+            IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]].Concat(PSMDataGroups[allGroupIndexes[1]].Concat(PSMDataGroups[allGroupIndexes[2]])));
         }
 
         private void WriteMbrPsmResults(ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks)

@@ -336,7 +336,7 @@ namespace EngineLayer
         /// <summary>
         /// Here we're getting the most common charge state for precursors that are Targets with q<=0.01.
 
-        private static int GetChargeStateMode(List<PeptideSpectralMatch> psms)
+        public static int GetChargeStateMode(List<PeptideSpectralMatch> psms)
         {
             return psms.Where(p => p.IsDecoy != true && p.FdrInfo.QValue <= 0.01).Select(p => p.ScanPrecursorCharge).GroupBy(n => n).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
         }
@@ -607,7 +607,7 @@ namespace EngineLayer
             return (float)mobilityZScore;
         }
 
-        private static Dictionary<string, int> GetSequenceToPSMCount(List<PeptideSpectralMatch> psms)
+        public static Dictionary<string, int> GetSequenceToPSMCount(List<PeptideSpectralMatch> psms)
         {
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
 
