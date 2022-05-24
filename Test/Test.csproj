@@ -130,6 +130,9 @@
     <None Update="TestData\empty.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\ExcelEditedPeptide.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\frameshift.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
