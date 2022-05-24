@@ -85,7 +85,7 @@ namespace EngineLayer
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
-            var spl = line.Split(split);
+            var spl = line.Split(split).Select(p => p.Trim('\"')).ToArray();
 
             //Required properties
             FileNameWithoutExtension = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
@@ -306,7 +306,7 @@ namespace EngineLayer
             return matchedIons;
         }
         /// <summary>
-        /// Trims quotation marks at start or end of the input, removes the enclosing brackets, 
+        /// Removes enclosing brackets and
         /// replaces delimimiters between ion series with comma
         /// then splits on comma
         /// </summary>
@@ -314,7 +314,6 @@ namespace EngineLayer
         /// <returns> List of strings, with each entry containing one ion and associated property </returns>
         private static List<string> CleanMatchedIonString(string input)
         {
-            input = input.Trim('\"'); 
             List<string> ionProperty = input.Substring(1, input.Length - 2) 
                     .Replace("];[", ", ") 
                     .Split(", ") 
