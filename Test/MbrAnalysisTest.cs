@@ -63,7 +63,7 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_J3.mzML"),
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_K13.mzML") };
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput/individual"));
-            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]> { { "", new int[] { 10, 10 } } };
+            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]> { { "MbrTest_J3", new int[] { 8, 8 } }, { "MbrTest_K13", new int[] { 8, 8 } } };
             List<DbForTask> databaseList = new List<DbForTask>() {new DbForTask(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\HumanFastaSlice.fasta"), false) };
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");
@@ -87,11 +87,14 @@ namespace Test
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
                     SearchTaskResults = testTaskResults,
+                    MyFileManager = myFileManager,
+                    IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
                     SearchParameters = new SearchParameters()
                     {
                         DoQuantification = true,
                         WriteSpectralLibrary = true,
                         DoMbrAnalysis = true,
+                        WriteMzId = false
                     }
                 },
                 CommonParameters = new CommonParameters(),
@@ -103,19 +106,9 @@ namespace Test
          
             postSearchTask.Run();
 
-            int placholder = 0;
+            int placeholder = 0;
 
-
-
-            /*var engine = new EverythingRunnerEngine(
-                new List<(string, MetaMorpheusTask)> { ("ClassicSearch", classicSearch), ("PostSearchAnalysis", postSearchTask) },
-                rawSlices, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
-            engine.Run();*/
-
-            // Not sure what's going on here
-            // Still have to determine best way to write the results of MBR analysis
-            string classicPath = Path.Combine(outputFolder, @"ClassicSearch\AllPSMs.psmtsv");
-            var classicPsms = File.ReadAllLines(classicPath).ToList();
+            Assert.That(placeholder == 0);
 
         }
 
