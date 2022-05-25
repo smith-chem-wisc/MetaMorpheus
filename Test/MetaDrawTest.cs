@@ -43,6 +43,17 @@ namespace Test
         }
 
         [Test]
+        public static void TestMetaDrawReadPsmFileWithoutSpectralAngle()
+        {
+            //test if the reader still works when psm file doesn't contain spectral angle as header
+            string noSA = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\noSAreaderTest.psmtsv");
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(noSA, out var warnings);
+
+            Assert.AreEqual(15, parsedPsms.Count);
+            Assert.AreEqual(0, warnings.Count);
+        }
+
+        [Test]
         public static void TestParenthesesRemovalForSilac()
         {
             string baseSequence = "ASDF(+8.01)ASDF";
