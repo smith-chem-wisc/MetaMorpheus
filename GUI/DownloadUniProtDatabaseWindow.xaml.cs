@@ -1,10 +1,12 @@
 ﻿using EngineLayer;
 using GuiFunctions.Databases;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -15,8 +17,8 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class DownloadUniProtDatabaseWindow : Window
     {
-        private List<string> availableProteomes = new List<string>();
-        private ObservableCollection<string> filteredProteomes = new ObservableCollection<string>();
+        private List<string> availableProteomes = new();
+        private ObservableCollection<string> filteredProteomes = new();
         private string selectedProteome;
         private ObservableCollection<ProteinDbForDataGrid> proteinDatabases;
         private string AbsolutePathToStorageDirectory = Path.Combine(GlobalVariables.DataDir, @"Proteomes");
@@ -47,31 +49,35 @@ namespace MetaMorpheusGUI
 
         private void DownloadProteomeWithProgress(string DownloadLink, string TargetPath)
         {
-            using (WebClient Client = new WebClient())
+            Uri uri = new(DownloadLink);
+            HttpClient client = new();
+            ProgressBarIndeterminate progress = new ProgressBarIndeterminate
             {
-                ProgressBarIndeterminate progress = new ProgressBarIndeterminate
+                WindowStartupLocation = WindowStartupLocation.CenterScreen
+            };
+            progress.Show();
+            Task.Factory.StartNew(() =>
+            {
+                HttpResponseMessage urlResponse = Task.Run(() => client.GetAsync(uri)).Result;
+                using (FileStream stream = new(TargetPath, FileMode.CreateNew))
                 {
-                    WindowStartupLocation = WindowStartupLocation.CenterScreen
-                };
-                progress.Show();
-                System.Threading.Tasks.Task.Factory.StartNew(() =>
+                    Task.Run(() => urlResponse.Content.CopyToAsync(stream)).Wait();
+                }
+            }).ContinueWith(task =>
+            {
+                progress.Close();
+                if (ProteomeDownloaded(TargetPath))
                 {
-                    Client.DownloadFile(DownloadLink, TargetPath);
-                }).ContinueWith(task =>
-                {
-                    progress.Close();
-                    if (ProteomeDownloaded(TargetPath))
+                    FileInfo fi = new(TargetPath);
+                    if (fi.Length > 0)
                     {
-                        FileInfo fi = new FileInfo(TargetPath);
-                        if (fi.Length > 0)
-                        {
-                            proteinDatabases.Add(new ProteinDbForDataGrid(TargetPath));
-                        }
-                        File.SetCreationTime(TargetPath, System.DateTime.Now); //this is needed because overwriting an old file will not update the file creation time
+                        proteinDatabases.Add(new ProteinDbForDataGrid(TargetPath));
                     }
-                    this.Close();
-                }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None, System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
-            }
+                    File.SetCreationTime(TargetPath, DateTime.Now); //this is needed because overwriting an old file will not update the file creation time
+                }
+                this.Close();
+            }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None,
+            System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void DownloadProteomeButton_Click(object sender, RoutedEventArgs e)
@@ -84,12 +90,12 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private bool ProteomeDownloaded(string downloadedProteomeFullPath)
+        private static bool ProteomeDownloaded(string downloadedProteomeFullPath)
         {
             return File.Exists(downloadedProteomeFullPath);
         }
 
-        private string GetProteomeId(string selectedProteome)
+        private static string GetProteomeId(string selectedProteome)
         {
             return (GlobalVariables.AvailableUniProtProteomes.FirstOrDefault(x => x.Value == selectedProteome).Key);
         }

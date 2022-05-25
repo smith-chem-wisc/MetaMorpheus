@@ -329,7 +329,7 @@ namespace TaskLayer
                 var originalUncalibratedFilenameWithoutExtension = GlobalVariables.GetFilenameWithoutExtension(originalUncalibratedFilePath);
                 string calibratedFilePath = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
 
-                var calibratedSpectraFile = new SpectraFileInfo(calibratedFilePath, 
+                var calibratedSpectraFile = new SpectraFileInfo(calibratedFilePath,
                     uncalibratedSpectraFile.Condition, uncalibratedSpectraFile.BiologicalReplicate, uncalibratedSpectraFile.TechnicalReplicate, uncalibratedSpectraFile.Fraction);
 
                 if (unsuccessfullyCalibratedFilePaths.Contains(uncalibratedSpectraFile.FullFilePathWithExtension))
