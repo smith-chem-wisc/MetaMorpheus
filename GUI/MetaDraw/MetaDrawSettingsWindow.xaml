@@ -77,18 +77,16 @@
                             To make changes here, add a checkbox then add it to Save_Click and PopulateChoices, 
                             then add a new item to SpectrumDescripion Dictionary in Settings, 
                             finally update PeptideSpectrumMatchPlot.AnnotateProperties() -->
-                                <ScrollViewer>
-                                    <StackPanel>
-                                        <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
-                                        <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
-                                        <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
-                                        <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
-                                        <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
-                                        <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
-                                        <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
-                                        <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
-                                        <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
-                                        <CheckBox Name="ProFormaLevelCheckBox" Content="ProForma Level" Margin="3" 
+                            <ScrollViewer>
+                                <StackPanel>
+                                    <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
+                                    <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
+                                    <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
+                                    <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
+                                    <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
+                                    <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
+                                    <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
+                                    <CheckBox Name="ProFormaLevelCheckBox" Content="ProForma Level" Margin="3" 
                                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <ToolTipService.ToolTip>
                                                 J. Proteome Res. 2018, 17, 3, 1321–1325

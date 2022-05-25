@@ -316,12 +316,6 @@ namespace GuiFunctions
                 text.Append(double.TryParse(SpectrumMatch.PeptideMonoMass, NumberStyles.Any, CultureInfo.InvariantCulture, out var monoMass) ? monoMass.ToString("F3") : SpectrumMatch.PeptideMonoMass);
                 text.Append("\r\n");
             }
-            if (MetaDrawSettings.SpectrumDescription["Score: "])
-            {
-                text.Append("Score: ");
-                text.Append(SpectrumMatch.Score.ToString("F3"));
-                text.Append("\r\n");
-            }
             if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
             {
                 text.Append("Protein Accession: ");
@@ -342,12 +336,6 @@ namespace GuiFunctions
                 text.Append(SpectrumMatch.DecoyContamTarget);
                 text.Append("\r\n");
             }
-            if (MetaDrawSettings.SpectrumDescription["Q-Value: "])
-            {
-                text.Append("Q-Value: ");
-                text.Append(SpectrumMatch.QValue.ToString("F3"));
-                text.Append("\r\n");
-            }
             if (MetaDrawSettings.SpectrumDescription["Sequence Length: "])
             {
                 text.Append("Sequence Length: ");
@@ -358,6 +346,18 @@ namespace GuiFunctions
             {
                 text.Append("ProForma Level: ");
                 text.Append(SpectrumMatch.AmbiguityLevel);
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Score: "])
+            {
+                text.Append("Score: ");
+                text.Append(SpectrumMatch.Score.ToString("F3"));
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Q-Value: "])
+            {
+                text.Append("Q-Value: ");
+                text.Append(SpectrumMatch.QValue.ToString("F3"));
                 text.Append("\r\n");
             }
             if (MetaDrawSettings.SpectrumDescription["PEP: "])

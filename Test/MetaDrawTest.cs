@@ -177,7 +177,7 @@ namespace Test
                 var expected = modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + MetaDrawSettings.FirstAAonScreenIndex.ToString().ToCharArray().Count() + (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString().ToCharArray().Count() + 2;
                 if (MetaDrawSettings.FirstAAonScreenIndex == 9)
                     expected += 1;
-                Assert.AreEqual(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, expected);
+            Assert.AreEqual(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, expected);
             }
         }
 
