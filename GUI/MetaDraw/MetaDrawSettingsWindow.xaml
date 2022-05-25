@@ -80,11 +80,9 @@
                                     <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
                                     <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
                                     <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
-                                    <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
                                     <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
                                     <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
                                     <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
-                                    <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
                                     <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
                                     <CheckBox Name="ProFormaLevelCheckBox" Content="ProForma Level" Margin="3" 
                                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -92,6 +90,8 @@
                                             J. Proteome Res. 2018, 17, 3, 1321–1325
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
+                                    <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
+                                    <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
                                     <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
                                     <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
                                 </StackPanel>
