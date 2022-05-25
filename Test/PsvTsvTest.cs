@@ -26,6 +26,14 @@ namespace Test
         }
 
         [Test]
+        public static void ReadExcelEditedPsms()
+        {
+            string psmFile = @"TestData\ExcelEditedPeptide.psmtsv";
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            Assert.AreEqual(1, parsedPsms.Count);
+        }
+
+        [Test]
         public static void MetaDrawLogicTestOglyco()
         {
             var metadrawLogic = new MetaDrawLogic();
