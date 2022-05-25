@@ -930,8 +930,7 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(mbrOutputPath))
             {
                 output.WriteLine(TaskLayer.MbrWriter.TabSeparatedHeader);
-                List<PeptideSpectralMatch> bestPsms = bestPsmsForPeaks.Values.Where(v => v != null).OrderByDescending(v => v.Score).ToList();
-                foreach (var peak in bestPsmsForPeaks)
+                foreach (var peak in bestPsmsForPeaks.Where(p=>p.Value != null).OrderByDescending(p=>p.Value.Score))
                 {
                     if (peak.Value != null)
                     {
