@@ -842,7 +842,7 @@ namespace TaskLayer
                 if (bestPsmsForPeaks[peak] != null)
                 {
                     int myIndex = 0;
-                    while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] >= bestPsmsForPeaks[peak].FdrInfo.PEP)
+                    while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= bestPsmsForPeaks[peak].FdrInfo.PEP)
                     {
                         myIndex++;
                     }
@@ -852,7 +852,7 @@ namespace TaskLayer
                     }
                     else
                     {
-                        double estimatedQ = (pepValues[myIndex] + pepValues[myIndex + 1]) / 2;
+                        double estimatedQ = (pepValues[myIndex-1] + pepValues[myIndex]) / 2;
                         bestPsmsForPeaks[peak].FdrInfo.PEP_QValue = estimatedQ;
                     }
                 }
