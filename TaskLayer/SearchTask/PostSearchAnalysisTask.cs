@@ -871,22 +871,25 @@ namespace TaskLayer
 
         private static void AssignEstimatedPsmQvalue(ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks, List<PeptideSpectralMatch> allPsms)
         {
+            double[] allScores = allPsms.Select(s => s.Score).OrderByDescending(s=>s).ToArray();
+            double[] allQValues = allPsms.OrderByDescending(s=>s.Score).Select(q => q.FdrInfo.QValue).ToArray();
+            
             foreach (ChromatographicPeak peak in bestPsmsForPeaks.Keys)
             {
                 if(bestPsmsForPeaks[peak] != null)
                 {
                     int myIndex = 0;
-                    while (myIndex < (allPsms.Count-1) && allPsms[myIndex].Score >= bestPsmsForPeaks[peak].Score)
+                    while (myIndex < (allScores.Length-1) && allScores[myIndex] >= bestPsmsForPeaks[peak].Score)
                     {
                         myIndex++;
                     }
-                    if (myIndex == allPsms.Count - 1)
+                    if (myIndex == allScores.Length - 1)
                     {
-                        bestPsmsForPeaks[peak].FdrInfo.QValue = allPsms.Last().FdrInfo.QValue;
+                        bestPsmsForPeaks[peak].FdrInfo.QValue = allQValues.Last();
                     }
                     else
                     {
-                        double estimatedQ = (allPsms[myIndex].FdrInfo.QValue + allPsms[myIndex + 1].FdrInfo.QValue) / 2;
+                        double estimatedQ = (allQValues[myIndex] + allQValues[myIndex + 1]) / 2;
                         bestPsmsForPeaks[peak].FdrInfo.QValue = estimatedQ;
                     }
                 }
