@@ -1,6 +1,5 @@
 using EngineLayer;
 using GuiFunctions;
-using GuiFunctions.MetaDraw;
 using Nett;
 using OxyPlot;
 using Proteomics.Fragmentation;
@@ -30,6 +29,7 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
+        private ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
@@ -69,11 +69,23 @@ namespace MetaMorpheusGUI
 
             // checks to see if default settings have been saved, and loads them for the first opening of the window
             MetaDrawSettingsSnapshot settings = null;
-            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml");
+            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
             if (File.Exists(settingsPath))
             {
-                settings = Toml.ReadFile<MetaDrawSettingsSnapshot>(settingsPath);
+                settings = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(settingsPath);
                 MetaDrawSettings.LoadSettings(settings);
+            }
+
+            var colors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
+            var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType);
+            foreach (var group in modGroups)
+            {
+                var theModType = new ModTypeForTreeView(group.Key, false);
+                Modifications.Add(theModType);
+                foreach (var mod in group)
+                {
+                    theModType.Children.Add(new ModForTreeView(mod.ToString(), false, mod.IdWithMotif, false, theModType, colors));
+                }
             }
         }
 
@@ -351,7 +363,7 @@ namespace MetaMorpheusGUI
             
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem;
-            var settingsWindow = new MetaDrawSettingsWindow();
+            var settingsWindow = new MetaDrawSettingsWindow(Modifications);
             var result = settingsWindow.ShowDialog();
 
             // re-select selected PSM

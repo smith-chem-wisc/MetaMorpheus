@@ -12,7 +12,7 @@ using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
 
-namespace GuiFunctions.MetaDraw
+namespace GuiFunctions
 {
 
     /// <summary>
@@ -192,7 +192,7 @@ namespace GuiFunctions.MetaDraw
                 }
                 else
                 {
-                    DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
+                    DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.Value.IdWithMotif]));
                 }
             }
         }
@@ -271,6 +271,23 @@ namespace GuiFunctions.MetaDraw
         public static void ClearCanvas(Canvas cav)
         {
             cav.Children.Clear();
+        }
+
+        public static SolidColorBrush ParseColorBrushFromOxyColor(OxyColor color)
+        {
+            var colorVal = color.ToByteString().Split(',');
+            return new SolidColorBrush(System.Windows.Media.Color.FromArgb(Byte.Parse(colorVal[0]), Byte.Parse(colorVal[1]), Byte.Parse(colorVal[2]), Byte.Parse(colorVal[3])));
+        }
+
+        public static SolidColorBrush ParseColorBrushFromName(string name)
+        {
+            OxyColor color = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(name.Replace(" ", ""))).First();
+            return ParseColorBrushFromOxyColor(color);
+        }
+
+        public static OxyColor ParseOxyColorFromName(string name)
+        {
+            return MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(name.Replace(" ", ""))).First();
         }
 
         /// <summary>

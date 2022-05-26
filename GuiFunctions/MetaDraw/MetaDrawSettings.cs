@@ -1,11 +1,13 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using OxyPlot;
+using Proteomics;
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Windows.Media;
 
@@ -24,6 +26,7 @@ namespace GuiFunctions
         public static Dictionary<OxyColor, string> PossibleColors { get; set; }
         public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
         public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
+        public static Dictionary<string, OxyColor> ModificationTypeToColor { get; set; }
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -34,6 +37,27 @@ namespace GuiFunctions
 
         #endregion
 
+        public static List<OxyColor> AllColors { get; set; } = new List<OxyColor>()
+        {   OxyColors.Undefined, OxyColors.Automatic, OxyColors.AliceBlue, OxyColors.AntiqueWhite, OxyColors.Aqua, OxyColors.Aquamarine, 
+            OxyColors.Azure, OxyColors.Beige, OxyColors.Bisque, OxyColors.Black, OxyColors.BlanchedAlmond, OxyColors.Blue, OxyColors.BlueViolet, 
+            OxyColors.Brown, OxyColors.BurlyWood, OxyColors.CadetBlue, OxyColors.Chartreuse, OxyColors.Chocolate, OxyColors.Coral, OxyColors.CornflowerBlue, 
+            OxyColors.Cornsilk, OxyColors.Crimson, OxyColors.DarkBlue, OxyColors.DarkCyan, OxyColors.DarkGoldenrod, OxyColors.DarkGray, OxyColors.YellowGreen,
+            OxyColors.DarkGreen, OxyColors.DarkKhaki, OxyColors.DarkMagenta, OxyColors.DarkOliveGreen, OxyColors.DarkOrange, OxyColors.DarkOrchid, 
+            OxyColors.DarkRed, OxyColors.DarkSalmon, OxyColors.DarkSeaGreen, OxyColors.DarkSlateBlue, OxyColors.DarkSlateGray, OxyColors.DarkTurquoise, 
+            OxyColors.DarkViolet, OxyColors.DeepPink, OxyColors.DeepSkyBlue, OxyColors.DimGray, OxyColors.DodgerBlue, OxyColors.Firebrick, OxyColors.FloralWhite, 
+            OxyColors.ForestGreen, OxyColors.Gainsboro, OxyColors.GhostWhite, OxyColors.Gold, OxyColors.Goldenrod, OxyColors.Gray, OxyColors.Green, 
+            OxyColors.GreenYellow, OxyColors.Honeydew, OxyColors.HotPink, OxyColors.IndianRed, OxyColors.Indigo, OxyColors.Ivory, OxyColors.Khaki, OxyColors.Lavender, 
+            OxyColors.LavenderBlush, OxyColors.LawnGreen, OxyColors.LemonChiffon, OxyColors.LightBlue, OxyColors.LightCoral, OxyColors.LightCyan, OxyColors.LightGoldenrodYellow,
+            OxyColors.LightGray, OxyColors.LightGreen, OxyColors.LightPink, OxyColors.LightSalmon, OxyColors.LightSeaGreen, OxyColors.LightSkyBlue, OxyColors.LightSlateGray, 
+            OxyColors.LightSteelBlue, OxyColors.LightYellow, OxyColors.Lime, OxyColors.LimeGreen, OxyColors.Linen, OxyColors.Fuchsia, OxyColors.Maroon, OxyColors.MediumAquamarine, 
+            OxyColors.MediumBlue, OxyColors.MediumOrchid, OxyColors.MediumPurple, OxyColors.MediumSeaGreen, OxyColors.MediumSlateBlue, OxyColors.MediumSpringGreen, OxyColors.MediumTurquoise, 
+            OxyColors.MediumVioletRed, OxyColors.MidnightBlue, OxyColors.MintCream, OxyColors.MistyRose, OxyColors.Moccasin, OxyColors.NavajoWhite, OxyColors.Navy, OxyColors.OldLace, 
+            OxyColors.Olive, OxyColors.OliveDrab, OxyColors.Orange, OxyColors.OrangeRed, OxyColors.Orchid, OxyColors.PaleGoldenrod, OxyColors.PaleGreen, OxyColors.PaleTurquoise, 
+            OxyColors.PaleVioletRed, OxyColors.PapayaWhip, OxyColors.PeachPuff, OxyColors.Peru, OxyColors.Pink, OxyColors.Plum, OxyColors.PowderBlue, OxyColors.Purple, OxyColors.Red, 
+            OxyColors.RosyBrown, OxyColors.RoyalBlue, OxyColors.SaddleBrown, OxyColors.Salmon, OxyColors.SandyBrown, OxyColors.SeaGreen, OxyColors.SeaShell, OxyColors.Sienna, 
+            OxyColors.Silver, OxyColors.SkyBlue, OxyColors.SlateBlue, OxyColors.SlateGray, OxyColors.Snow, OxyColors.SpringGreen, OxyColors.SteelBlue, OxyColors.Tan, OxyColors.Teal, 
+            OxyColors.Thistle, OxyColors.Tomato, OxyColors.Transparent, OxyColors.Turquoise, OxyColors.Violet, OxyColors.Wheat, OxyColors.White, OxyColors.WhiteSmoke, OxyColors.Yellow 
+        };
         public static string[] SpectrumDescriptors { get; set; } = 
         {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
         "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
@@ -71,7 +95,7 @@ namespace GuiFunctions
         private static void InitializeDictionaries()
         {
             // If no default settings are saved
-            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml");
+            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
             if (!File.Exists(settingsPath))
             {
                 // default color of each fragment to annotate
@@ -92,6 +116,17 @@ namespace GuiFunctions
                 BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
                 BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
 
+                // default color of each ptm
+                ModificationTypeToColor = GlobalVariables.AllModsKnown.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
+                ModificationTypeToColor["Acetylation on K"] = OxyColors.Aqua;
+                ModificationTypeToColor["Acetylation on X"] = OxyColors.Aqua;
+                ModificationTypeToColor["Acetylation on S"] = OxyColors.Purple;
+                ModificationTypeToColor["Acetylation on T"] = OxyColors.Purple;
+                ModificationTypeToColor["Acetylation on Y"] = OxyColors.Purple;
+                ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
+                ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
+                ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
+
                 // lines to be written on the spectrum
                 SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             }
@@ -103,7 +138,7 @@ namespace GuiFunctions
             ProductTypeToYOffset[ProductType.c] = 43.6;
             ProductTypeToYOffset[ProductType.zDot] = -13.6;
 
-            PossibleColors = ((ColorEnum[])Enum.GetValues(typeof(ColorEnum))).ToDictionary(p => NameToOxyColorConverter(p.ToString()), p => p.ToString());
+            PossibleColors = AllColors.ToDictionary(p => p, p => p.GetColorName());
         }
 
 
@@ -124,9 +159,10 @@ namespace GuiFunctions
                 QValueFilter = QValueFilter,
                 LocalizationLevelStart = LocalizationLevelStart,
                 LocalizationLevelEnd = LocalizationLevelEnd,
-                ProductTypeToColorValues = ProductTypeToColor.Values.Select(p => OxyColorToNameConverter(p)).ToList(),
-                BetaProductTypeToColorValues = BetaProductTypeToColor.Values.Select(p => OxyColorToNameConverter(p)).ToList(),
-                SpectrumDescriptionValues = SpectrumDescription.Values.ToList()
+                ProductTypeToColorValues = ProductTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
+                BetaProductTypeToColorValues = BetaProductTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
+                ModificationTypeToColorValues = ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
+                SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
             };
         }
 
@@ -145,141 +181,10 @@ namespace GuiFunctions
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
 
-            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => NameToOxyColorConverter(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
-            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => NameToOxyColorConverter(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
+            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
+            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
+            ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
-
-        }
-
-        /// <summary>
-        /// Converts the string representation of the color to a OxyColor
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static OxyColor NameToOxyColorConverter(string name)
-        {
-            return name switch
-            {
-                "Blue" => OxyColors.Blue,
-                "Red" => OxyColors.Red,
-                "Orange" => OxyColors.Orange,
-                "Violet" => OxyColors.Violet,
-                "Gold" => OxyColors.Gold,
-                "Black" => OxyColors.Black,
-                "Green" => OxyColors.Green,
-                "HotPink" => OxyColors.HotPink,
-                "Indigo" => OxyColors.Indigo,
-                "Lime" => OxyColors.Lime,
-                "Magenta" => OxyColors.Magenta,
-                "MidnightBlue" => OxyColors.MidnightBlue,
-                "Olive" => OxyColors.Olive,
-                "Purple" => OxyColors.Purple,
-                "DodgerBlue" => OxyColors.DodgerBlue,
-                "Firebrick" => OxyColors.Firebrick,
-                "LightBlue" => OxyColors.LightBlue,
-                "OrangeRed" => OxyColors.OrangeRed,
-                "LightGoldenrodYellow" => OxyColors.LightGoldenrodYellow,
-                "AliceBlue" => OxyColors.AliceBlue,
-                "LightCoral" => OxyColors.LightCoral,
-                "Aqua" => OxyColors.Aqua,
-                "Chartreuse" => OxyColors.Chartreuse,
-                "BurlyWood" => OxyColors.BurlyWood,
-                _ => OxyColors.Sienna,
-            };
-        }
-
-        /// <summary>
-        /// Converts OxyColor to a string representation
-        /// </summary>
-        /// <param name="color"></param>
-        /// <returns></returns>
-        public static string OxyColorToNameConverter(OxyColor color)
-        {
-            string name = color.ToString();
-
-            if (color == OxyColors.Blue)
-                return "Blue";
-            else if (color == OxyColors.Red)
-                return "Red";
-            else if (color == OxyColors.Orange)
-                return "Orange";
-            else if (color == OxyColors.Violet)
-                return "Violet";
-            else if (color == OxyColors.Gold)
-                return "Gold";
-            else if (color == OxyColors.Black)
-                return "Black";
-            else if (color == OxyColors.Green)
-                return "Green";
-            else if (color == OxyColors.HotPink)
-                return "HotPink";
-            else if (color == OxyColors.Indigo)
-                return "Indigo";
-            else if (color == OxyColors.Lime)
-                return "Lime";
-            else if (color == OxyColors.Magenta)
-                return "Magenta";
-            else if (color == OxyColors.MidnightBlue)
-                return "MidnightBlue";
-            else if (color == OxyColors.Olive)
-                return "Olive";
-            else if (color == OxyColors.Purple)
-                return "Purple";
-            else if (color == OxyColors.DodgerBlue)
-                return "DodgerBlue";
-            else if (color == OxyColors.Firebrick)
-                return "Firebrick";
-            else if (color == OxyColors.LightBlue)
-                return "LightBlue";
-            else if (color == OxyColors.OrangeRed)
-                return "OrangeRed";
-            else if (color == OxyColors.LightGoldenrodYellow)
-                return "LightGoldenrodYellow";
-            else if (color == OxyColors.AliceBlue)
-                return "AliceBlue";
-            else if (color == OxyColors.LightCoral)
-                return "LightCoral";
-            else if (color == OxyColors.Aqua)
-                return "Aqua";
-            else if (color == OxyColors.Chartreuse)
-                return "Chartreuse";
-            else if (color == OxyColors.BurlyWood)
-                return "BurlyWood";
-            else if (color == OxyColors.Sienna)
-                return "Sienna";
-            else
-                return "Blue";
-        }
-
-        /// <summary>
-        /// Enum full of all selectable colors
-        /// </summary>
-        public enum ColorEnum
-        {
-            Blue,
-            Red,
-            Orange,
-            Violet,
-            Gold,
-            Black,
-            Green,
-            HotPink,
-            Indigo,
-            Lime,
-            Magenta,
-            MidnightBlue,
-            Olive,
-            Purple,
-            DodgerBlue,
-            Firebrick,
-            LightBlue,
-            OrangeRed,
-            LightGoldenrodYellow,
-            AliceBlue,
-            LightCoral,
-            Aqua,
-            Chartreuse,
-            BurlyWood
         }
     }
 }

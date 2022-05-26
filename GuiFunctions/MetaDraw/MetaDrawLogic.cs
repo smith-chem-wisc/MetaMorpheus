@@ -1,5 +1,5 @@
 ﻿using EngineLayer;
-using GuiFunctions.MetaDraw;
+using GuiFunctions;
 using IO.Mgf;
 using IO.MzML;
 using IO.ThermoRawFileReader;

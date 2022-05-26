@@ -21,6 +21,7 @@ namespace MetaMorpheusGUI
         #region Private Properties
 
         protected string _selectedColor;
+        protected SolidColorBrush _colorBrush;
 
         #endregion
 
@@ -35,11 +36,20 @@ namespace MetaMorpheusGUI
             set 
             { 
                 _selectedColor = value;
+                ColorBrush = DrawnSequence.ParseColorBrushFromName(_selectedColor);
                 OnPropertyChanged(nameof(SelectedColor));
             }
         }
-        SolidColorBrush ColorBrush { get; set; }
-            
+        public SolidColorBrush ColorBrush
+        {
+            get { return _colorBrush; }
+            set
+            {
+                _colorBrush = value;
+                OnPropertyChanged(nameof(ColorBrush));
+            }
+        }
+
         public bool IsBeta { get; set; }
         public bool HasChanged { get; set; } = false;
 
@@ -47,43 +57,22 @@ namespace MetaMorpheusGUI
 
         #region Constructor
 
-        public IonForTreeViewModel(ProductType type, bool beta)
+        public IonForTreeViewModel(ProductType type, bool beta, ObservableCollection<string> colors)
         {
             IonType = type;
-            IonName = IonType.ToString();
-            PossibleColors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
+            IonName = IonType.ToString() + " - Ion";
+            PossibleColors = colors;
             AddSpaces(PossibleColors);
             IsBeta = beta;
-            OxyColor color = MetaDrawSettings.BetaProductTypeToColor[IonType];
 
+            OxyColor color;
             if (IsBeta)
-                SelectedColor = AddSpaces(color.GetColorName());
+                color = MetaDrawSettings.BetaProductTypeToColor[IonType];
             else
-                SelectedColor = AddSpaces(color.GetColorName());
-
-            var colorVal = color.ToByteString().Split(',');
-            ColorBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(Byte.Parse(colorVal[0]), Byte.Parse(colorVal[1]), Byte.Parse(colorVal[2]), Byte.Parse(colorVal[3])));
-
+                color = MetaDrawSettings.ProductTypeToColor[IonType];
+            SelectedColor = AddSpaces(color.GetColorName());
+            ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
         }
-
-
-        ///// <summary>
-        ///// static instance with example data for design time editing
-        ///// </summary>
-        //public static IonForTreeViewModel Instance => new IonForTreeViewModel();
-
-        //public IonForTreeViewModel()
-        //{
-        //    IonType = ((ProductType[])Enum.GetValues(typeof(ProductType))).First();
-        //    PossibleColors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
-        //    AddSpaces(PossibleColors);
-        //    IsBeta = false;
-
-        //    if (IsBeta)
-        //        SelectedColor = AddSpaces(MetaDrawSettings.BetaProductTypeToColor[IonType].GetColorName());
-        //    else
-        //        SelectedColor = AddSpaces(MetaDrawSettings.ProductTypeToColor[IonType].GetColorName());
-        //}
 
         #endregion
 
@@ -91,29 +80,6 @@ namespace MetaMorpheusGUI
         {
             SelectedColor = newColor;
             HasChanged = true;
-        }
-
-        protected string AddSpaces(string text)
-        {
-            if (string.IsNullOrWhiteSpace(text))
-                return "";
-            StringBuilder newText = new StringBuilder(text.Length * 2);
-            newText.Append(text[0]);
-            for (int i = 1; i < text.Length; i++)
-            {
-                if (char.IsUpper(text[i]) && text[i - 1] != ' ')
-                    newText.Append(' ');
-                newText.Append(text[i]);
-            }
-            return newText.ToString();
-        }
-
-        protected void AddSpaces(ObservableCollection<string> strings)
-        {
-            for (int i = 0; i < strings.Count; i++)
-            {
-                strings[i] = AddSpaces(strings[i]);
-            }
         }
 
     }

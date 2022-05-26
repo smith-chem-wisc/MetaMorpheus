@@ -14,6 +14,7 @@ namespace GuiFunctions
     /// </summary>
     public class MetaDrawSettingsSnapshot 
     {
+        // graphic settings
         public bool DisplayIonAnnotations { get; set; } = true;
         public bool AnnotateMzValues { get; set; } = false;
         public bool AnnotateCharges { get; set; } = false;
@@ -21,6 +22,7 @@ namespace GuiFunctions
         public List<bool> SpectrumDescriptionValues { get; set; }
         public List<string> ProductTypeToColorValues { get; set; }
         public List<string> BetaProductTypeToColorValues { get; set; }
+        public List<string> ModificationTypeToColorValues { get; set; }
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;

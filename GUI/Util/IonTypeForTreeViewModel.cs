@@ -24,30 +24,14 @@ namespace MetaMorpheusGUI
 
         #region Constructor
 
-        public IonTypeForTreeViewModel(string groupName, IEnumerable<ProductType> ions, bool beta)
+        public IonTypeForTreeViewModel(string groupName, IEnumerable<ProductType> ions, bool beta, ObservableCollection<string> colors)
         {
             GroupName = groupName;
             Ions = new ObservableCollection<IonForTreeViewModel>();
 
             foreach (var ion in ions)
             {
-                Ions.Add(new IonForTreeViewModel(ion, beta));
-            }
-        }
-
-        /// <summary>
-        /// static instance with example data for design time editing
-        /// </summary>
-        public static IonTypeForTreeViewModel Instance => new IonTypeForTreeViewModel();
-
-        public IonTypeForTreeViewModel()
-        {
-            GroupName = "Design Time Ions";
-            Ions = new ObservableCollection<IonForTreeViewModel>();
-            var ionTypes = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToList();
-            foreach (var ionType in ionTypes)
-            {
-                Ions.Add(new IonForTreeViewModel(ionType, false));
+                Ions.Add(new IonForTreeViewModel(ion, beta, colors));
             }
         }
 

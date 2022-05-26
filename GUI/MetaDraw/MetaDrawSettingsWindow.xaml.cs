@@ -24,9 +24,10 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<IonTypeForTreeViewModel> IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
 
-        public MetaDrawSettingsWindow()
+        public MetaDrawSettingsWindow(ObservableCollection<ModTypeForTreeView> mods)
         {
             InitializeComponent();
+            Modifications = mods;
             PopulateChoices();
         }
 
@@ -67,22 +68,13 @@ namespace MetaMorpheusGUI
                                           || p.ToString().Equals("x") || p.ToString().Equals("y") || p.ToString().Equals("zDot"));
             var lessCommon = ions.Where(p => !p.ToString().Equals("a") || !p.ToString().Equals("b") || !p.ToString().Equals("c")
                                           || !p.ToString().Equals("x") || !p.ToString().Equals("y") || !p.ToString().Equals("zDot"));
-            IonGroups.Add(new IonTypeForTreeViewModel("Common Ions", common, false));
-            IonGroups.Add(new IonTypeForTreeViewModel("Less Common Ions", lessCommon, false));
-            IonGroups.Add(new IonTypeForTreeViewModel("Cross Linked Beta Peptide", ions, true));
+            ObservableCollection<string> colors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
+            IonGroups.Add(new IonTypeForTreeViewModel("Common Ions", common, false, colors));
+            IonGroups.Add(new IonTypeForTreeViewModel("Less Common Ions", lessCommon, false, colors));
+            IonGroups.Add(new IonTypeForTreeViewModel("Cross Linked Beta Peptide", ions, true, colors));
 
-            TestIonColorTreeView.DataContext = IonGroups;
-
-            foreach (var modGroup in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
-            {
-                var theModType = new ModTypeForTreeView(modGroup.Key, false);
-                Modifications.Add(theModType);
-                foreach (var mod in modGroup)
-                {
-                    theModType.Children.Add(new ModForTreeView(mod.ToString(), false, mod.IdWithMotif, false, theModType));
-                }
-            }
-            gptmdModsTreeView.DataContext = Modifications;
+            IonColorExpander.ItemsSource = IonGroups;
+            PTMColorExpander.ItemsSource = Modifications;
 
         }
 
@@ -125,6 +117,15 @@ namespace MetaMorpheusGUI
                         else
                             MetaDrawSettings.ProductTypeToColor[ion.IonType] = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(ion.SelectedColor.Replace(" ", ""))).First();
                     }
+                }
+            }
+
+            foreach (var group in Modifications)
+            {
+                foreach (var mod in group)
+                {
+                    if (mod.HasChanged)
+                        MetaDrawSettings.ModificationTypeToColor[mod.ModName] = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(mod.SelectedColor.Replace(" ", ""))).First();
                 }
             }
 
@@ -175,12 +176,27 @@ namespace MetaMorpheusGUI
         {
             Save_Click(sender, e);
             MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
-            Toml.WriteFile<MetaDrawSettingsSnapshot>(settings, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml"));
+            XmlReaderWriter.WriteToXmlFile<MetaDrawSettingsSnapshot>(Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml"), settings);
         }
 
+        /// <summary>
+        /// Event handler for the ion type color selection. Runs the SelectionChanged command in its respective view model
+        /// </summary>
+        /// <param name="sender">ComboBox which was changed</param>
+        /// <param name="e"></param>
         private void ComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             ((IonForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+        }
+
+        /// <summary>
+        /// Event handler for the ptm type color selection. Runs the SelectionChanged command in its respective view model
+        /// </summary>
+        /// <param name="sender">ComboBox which was changed</param>
+        /// <param name="e"></param>
+        private void ComboBox_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
+        {
+            ((ModForTreeView)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
     }
 }

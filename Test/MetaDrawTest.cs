@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
 using GuiFunctions;
-using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot;
@@ -949,21 +948,6 @@ namespace Test
             Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
-        }
-
-        [Test]
-        public static void TestSettingsColorConverters()
-        {
-            List<string> colors = new List<string> { "Red", "AliceBlue", "VelociraptorPurple" };
-            Assert.AreEqual(OxyColors.Red, MetaDrawSettings.NameToOxyColorConverter(colors[0]));
-            Assert.AreEqual(OxyColors.AliceBlue, MetaDrawSettings.NameToOxyColorConverter(colors[1]));
-            Assert.AreEqual(OxyColors.Blue, MetaDrawSettings.NameToOxyColorConverter(colors[2]));
-
-            List<OxyColor> colors2 = new List<OxyColor> { OxyColors.Violet, OxyColors.AliceBlue, OxyColors.BurlyWood };
-            Assert.AreEqual("Violet", MetaDrawSettings.OxyColorToNameConverter(colors2[0]));
-            Assert.AreEqual("AliceBlue", MetaDrawSettings.OxyColorToNameConverter(colors2[1]));
-            Assert.AreEqual("Blue", MetaDrawSettings.OxyColorToNameConverter(colors2[2]));
-
         }
 
         [Test]
