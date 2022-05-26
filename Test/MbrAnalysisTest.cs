@@ -103,7 +103,8 @@ namespace Test
                         WriteSpectralLibrary = true,
                         MatchBetweenRuns = true,
                         DoMbrAnalysis = true,
-                        WriteMzId = false
+                        WriteMzId = false,
+                        QuantifyPpmTol = 25
                     }
                 },
                 CommonParameters = new CommonParameters(),
