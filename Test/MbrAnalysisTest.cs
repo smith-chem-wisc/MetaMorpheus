@@ -34,9 +34,6 @@ namespace Test
             List<Protein> proteinList = new List<Protein>();
             MyFileManager myFileManager = new MyFileManager(true);
 
-            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod1 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
-            Dictionary<string, Modification> carbamidoDict = new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 } };
             
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
@@ -49,8 +46,7 @@ namespace Test
                 string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
-                PeptideWithSetModifications pwsm = readPsm.FullSequence.Contains("[") ?
-                    new PeptideWithSetModifications(readPsm.FullSequence, carbamidoDict, p: protein, digestionParams: new DigestionParams(), oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue) :
+                PeptideWithSetModifications pwsm = 
                     new PeptideWithSetModifications(readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(), oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
                 PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
