@@ -4,6 +4,7 @@ using OxyPlot;
 using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Windows.Media;
@@ -69,24 +70,32 @@ namespace GuiFunctions
 
         private static void InitializeDictionaries()
         {
-            // default color of each fragment to annotate
-            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
-            ProductTypeToColor[ProductType.b] = OxyColors.Blue;
-            ProductTypeToColor[ProductType.y] = OxyColors.Red;
-            ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
-            ProductTypeToColor[ProductType.c] = OxyColors.Gold;
-            ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
-            ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
+            // If no default settings are saved
+            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml");
+            if (!File.Exists(settingsPath))
+            {
+                // default color of each fragment to annotate
+                ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+                ProductTypeToColor[ProductType.b] = OxyColors.Blue;
+                ProductTypeToColor[ProductType.y] = OxyColors.Red;
+                ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
+                ProductTypeToColor[ProductType.c] = OxyColors.Gold;
+                ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
+                ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
 
-            // default color of each fragment to annotate
-            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
-            BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
-            BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
-            BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
-            BetaProductTypeToColor[ProductType.c] = OxyColors.Orange;
-            BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
-            BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
+                // default color of each fragment to annotate
+                BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+                BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
+                BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
+                BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
+                BetaProductTypeToColor[ProductType.c] = OxyColors.Orange;
+                BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
+                BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
 
+                // lines to be written on the spectrum
+                SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
+            }
+            
             // offset for annotation on base sequence
             ProductTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
             ProductTypeToYOffset[ProductType.b] = 40;
@@ -94,8 +103,6 @@ namespace GuiFunctions
             ProductTypeToYOffset[ProductType.c] = 43.6;
             ProductTypeToYOffset[ProductType.zDot] = -13.6;
 
-            // lines to be written on the spectrum
-            SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             PossibleColors = ((ColorEnum[])Enum.GetValues(typeof(ColorEnum))).ToDictionary(p => NameToOxyColorConverter(p.ToString()), p => p.ToString());
         }
 

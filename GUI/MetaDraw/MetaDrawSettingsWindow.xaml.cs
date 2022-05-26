@@ -4,6 +4,7 @@ using GuiFunctions;
 using Nett;
 using OxyPlot;
 using Proteomics.Fragmentation;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -11,6 +12,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace MetaMorpheusGUI
 {
@@ -20,7 +22,7 @@ namespace MetaMorpheusGUI
     public partial class MetaDrawSettingsWindow : Window
     {
         private readonly ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<IonTypeForTreeView> Ions = new ObservableCollection<IonTypeForTreeView>();
+        private readonly ObservableCollection<IonTypeForTreeViewModel> IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
 
         public MetaDrawSettingsWindow()
         {
@@ -59,17 +61,17 @@ namespace MetaMorpheusGUI
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
 
-            List<string> common = new List<string>() { "a - ion", "b - ion", "c - ion", "x - ion", "y - ion", "z - ion" };
-            List<string> lessCommon = new List<string>() { "a* - ion", "a\u00B0 - ion", "b* - ion", "b\u00B0 - ion", "y* - ion", "y\u00B0 - ion", "z+1 - ion", "M - ion", "D - ion", "Y core - ion", "Y - ion" };
-            List<string> all = new List<string>(common);
-            all.AddRange(lessCommon);
-            IonTypeForTreeView mostCommon = new IonTypeForTreeView("Common Ions", common);
-            IonTypeForTreeView leastCommon = new IonTypeForTreeView("Less Common Ions", lessCommon);
-            IonTypeForTreeView beta = new IonTypeForTreeView("Cross-Linked Beta Peptide", all);
-            Ions.Add(mostCommon);
-            Ions.Add(leastCommon);
-            Ions.Add(beta);
-            TestIonColorTreeView.DataContext = Ions;
+
+            var ions = ((ProductType[])Enum.GetValues(typeof(ProductType)));
+            var common = ions.Where(p => p.ToString().Equals("a") || p.ToString().Equals("b") || p.ToString().Equals("c")
+                                          || p.ToString().Equals("x") || p.ToString().Equals("y") || p.ToString().Equals("zDot"));
+            var lessCommon = ions.Where(p => !p.ToString().Equals("a") || !p.ToString().Equals("b") || !p.ToString().Equals("c")
+                                          || !p.ToString().Equals("x") || !p.ToString().Equals("y") || !p.ToString().Equals("zDot"));
+            IonGroups.Add(new IonTypeForTreeViewModel("Common Ions", common, false));
+            IonGroups.Add(new IonTypeForTreeViewModel("Less Common Ions", lessCommon, false));
+            IonGroups.Add(new IonTypeForTreeViewModel("Cross Linked Beta Peptide", ions, true));
+
+            TestIonColorTreeView.DataContext = IonGroups;
 
             foreach (var modGroup in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
@@ -225,6 +227,24 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.BetaProductTypeToColor[ProductType.Ycore] = MetaDrawSettings.NameToOxyColorConverter(BetayCoreIonComboBox.SelectedItem.ToString());
             MetaDrawSettings.BetaProductTypeToColor[ProductType.Y] = MetaDrawSettings.NameToOxyColorConverter(BetayIonComboBox.SelectedItem.ToString());
 
+            foreach (var group in IonGroups)
+            {
+                foreach (var ion in group)
+                {
+                    if (ion.HasChanged)
+                    {
+                        if (ion.IsBeta)
+                            MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(ion.SelectedColor.Replace(" ", ""))).First();
+                        else
+                            MetaDrawSettings.ProductTypeToColor[ion.IonType] = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(ion.SelectedColor.Replace(" ", ""))).First();
+                    }
+                }
+            }
+
+
+
+
+
             #endregion
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
@@ -279,7 +299,7 @@ namespace MetaMorpheusGUI
 
         private void ComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            int breakpoint = 0;
+            ((IonForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
     }
 }

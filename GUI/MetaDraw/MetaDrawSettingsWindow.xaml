@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        xmlns:local="clr-namespace:MetaMorpheusGUI" d:DataContext="{d:DesignInstance Type=local:IonForTreeViewModel}"
         mc:Ignorable="d"
         Title="Graphical Settings" Width="500" SizeToContent="Height" WindowStartupLocation="CenterScreen"
         Height="400" MaxHeight="600">
@@ -275,12 +275,12 @@
                                         </Style.Triggers>
                                     </Style>
                                 </Expander.Style>
-                                <TreeView x:Name="TestIonColorTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:IonTypeForTreeView}">
+                                <TreeView x:Name="TestIonColorTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:IonTypeForTreeViewModel}">
                                     <TreeView.Resources>
-                                        <HierarchicalDataTemplate DataType="{x:Type local:IonTypeForTreeView}" ItemsSource="{Binding Ions}">
+                                        <HierarchicalDataTemplate DataType="{x:Type local:IonTypeForTreeViewModel}" ItemsSource="{Binding Ions}">
                                             <TextBlock Text="{Binding GroupName}" />
                                         </HierarchicalDataTemplate>
-                                        <DataTemplate DataType="{x:Type local:IonForTreeView}">
+                                        <DataTemplate DataType="{x:Type local:IonForTreeViewModel}" >
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock Text="{Binding IonName}" Width="80" />
                                                 <ComboBox ItemsSource="{Binding PossibleColors}" Width="80" HorizontalAlignment="Center" 
