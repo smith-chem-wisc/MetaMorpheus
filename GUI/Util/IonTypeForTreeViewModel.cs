@@ -35,6 +35,22 @@ namespace MetaMorpheusGUI
             }
         }
 
+        /// <summary>
+        /// static instance with example data for design time editing
+        /// </summary>
+        public static IonTypeForTreeViewModel Instance => new IonTypeForTreeViewModel();
+
+        public IonTypeForTreeViewModel()
+        {
+            GroupName = "Design Time Ions";
+            Ions = new ObservableCollection<IonForTreeViewModel>();
+            var ionTypes = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToList();
+            foreach (var ionType in ionTypes)
+            {
+                Ions.Add(new IonForTreeViewModel(ionType, false));
+            }
+        }
+
         #endregion
 
     }

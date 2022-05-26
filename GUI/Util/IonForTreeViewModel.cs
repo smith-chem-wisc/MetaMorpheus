@@ -5,10 +5,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 namespace MetaMorpheusGUI
 {
@@ -16,14 +20,14 @@ namespace MetaMorpheusGUI
     {
         #region Private Properties
 
-        private string _selectedColor;
+        protected string _selectedColor;
 
         #endregion
 
         #region Public Properties
 
         public ProductType IonType { get; set; }    
-        public string IonName { get { return IonType.ToString(); } }
+        public string IonName { get; set; }
         public ObservableCollection<string> PossibleColors { get; set; }
         public string SelectedColor
         {
@@ -34,6 +38,7 @@ namespace MetaMorpheusGUI
                 OnPropertyChanged(nameof(SelectedColor));
             }
         }
+        SolidColorBrush ColorBrush { get; set; }
             
         public bool IsBeta { get; set; }
         public bool HasChanged { get; set; } = false;
@@ -45,16 +50,40 @@ namespace MetaMorpheusGUI
         public IonForTreeViewModel(ProductType type, bool beta)
         {
             IonType = type;
+            IonName = IonType.ToString();
             PossibleColors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
             AddSpaces(PossibleColors);
             IsBeta = beta;
+            OxyColor color = MetaDrawSettings.BetaProductTypeToColor[IonType];
 
             if (IsBeta)
-                SelectedColor = AddSpaces(MetaDrawSettings.BetaProductTypeToColor[type].GetColorName());
+                SelectedColor = AddSpaces(color.GetColorName());
             else
-                SelectedColor = AddSpaces(MetaDrawSettings.ProductTypeToColor[type].GetColorName());
+                SelectedColor = AddSpaces(color.GetColorName());
+
+            var colorVal = color.ToByteString().Split(',');
+            ColorBrush = new SolidColorBrush(System.Windows.Media.Color.FromArgb(Byte.Parse(colorVal[0]), Byte.Parse(colorVal[1]), Byte.Parse(colorVal[2]), Byte.Parse(colorVal[3])));
 
         }
+
+
+        ///// <summary>
+        ///// static instance with example data for design time editing
+        ///// </summary>
+        //public static IonForTreeViewModel Instance => new IonForTreeViewModel();
+
+        //public IonForTreeViewModel()
+        //{
+        //    IonType = ((ProductType[])Enum.GetValues(typeof(ProductType))).First();
+        //    PossibleColors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
+        //    AddSpaces(PossibleColors);
+        //    IsBeta = false;
+
+        //    if (IsBeta)
+        //        SelectedColor = AddSpaces(MetaDrawSettings.BetaProductTypeToColor[IonType].GetColorName());
+        //    else
+        //        SelectedColor = AddSpaces(MetaDrawSettings.ProductTypeToColor[IonType].GetColorName());
+        //}
 
         #endregion
 
@@ -64,7 +93,7 @@ namespace MetaMorpheusGUI
             HasChanged = true;
         }
 
-        private string AddSpaces(string text)
+        protected string AddSpaces(string text)
         {
             if (string.IsNullOrWhiteSpace(text))
                 return "";
@@ -79,7 +108,7 @@ namespace MetaMorpheusGUI
             return newText.ToString();
         }
 
-        private void AddSpaces(ObservableCollection<string> strings)
+        protected void AddSpaces(ObservableCollection<string> strings)
         {
             for (int i = 0; i < strings.Count; i++)
             {
