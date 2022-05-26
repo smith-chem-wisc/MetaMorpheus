@@ -28,7 +28,7 @@ namespace Test
         {
             // This block of code converts from PsmFromTsv to PeptdieSpectralMatch objects.
             // It also deals with one specific Carbamidomethylation, defined in advance
-            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MsMsids.psmtsv");
+            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MSMSids.psmtsv");
             List<PsmFromTsv> tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
             List<Protein> proteinList = new List<Protein>();
@@ -60,10 +60,10 @@ namespace Test
             }
 
             List<string> rawSlices = new List<string> {
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_J3.mzML"),
-                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MbrTest_K13.mzML") };
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\K13_02ng_1min_frac1.mzML"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\K13_20ng_1min_frac1.mzML") };
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput/individual"));
-            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]> { { "MbrTest_J3", new int[] { 8, 8 } }, { "MbrTest_K13", new int[] { 8, 8 } } };
+            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]> { { "K13_02ng_1min_frac1", new int[] { 8, 8 } }, { "K13_20ng_1min_frac1", new int[] { 8, 8 } } };
             List<DbForTask> databaseList = new List<DbForTask>() {new DbForTask(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\HumanFastaSlice.fasta"), false) };
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");

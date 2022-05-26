@@ -175,6 +175,12 @@
     <None Update="TestData\MbrAnalysisTest\HumanFastaSlice.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\MbrAnalysisTest\K13_02ng_1min_frac1.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\K13_20ng_1min_frac1.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\MbrAnalysisTest\MbrTest_J3.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
