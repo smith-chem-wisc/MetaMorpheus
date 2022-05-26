@@ -2,10 +2,14 @@
 using EngineLayer.GlycoSearch;
 using GuiFunctions;
 using Nett;
+using OxyPlot;
 using Proteomics.Fragmentation;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -15,7 +19,9 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDrawSettingsWindow : Window
     {
-        
+        private readonly ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<IonTypeForTreeView> Ions = new ObservableCollection<IonTypeForTreeView>();
+
         public MetaDrawSettingsWindow()
         {
             InitializeComponent();
@@ -52,6 +58,32 @@ namespace MetaMorpheusGUI
             TextSizeBox.Text = MetaDrawSettings.AnnotatedFontSize.ToString();
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
+
+            List<string> common = new List<string>() { "a - ion", "b - ion", "c - ion", "x - ion", "y - ion", "z - ion" };
+            List<string> lessCommon = new List<string>() { "a* - ion", "a\u00B0 - ion", "b* - ion", "b\u00B0 - ion", "y* - ion", "y\u00B0 - ion", "z+1 - ion", "M - ion", "D - ion", "Y core - ion", "Y - ion" };
+            List<string> all = new List<string>(common);
+            all.AddRange(lessCommon);
+            IonTypeForTreeView mostCommon = new IonTypeForTreeView("Common Ions", common);
+            IonTypeForTreeView leastCommon = new IonTypeForTreeView("Less Common Ions", lessCommon);
+            IonTypeForTreeView beta = new IonTypeForTreeView("Cross-Linked Beta Peptide", all);
+            Ions.Add(mostCommon);
+            Ions.Add(leastCommon);
+            Ions.Add(beta);
+            TestIonColorTreeView.DataContext = Ions;
+
+            foreach (var modGroup in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
+            {
+                var theModType = new ModTypeForTreeView(modGroup.Key, false);
+                Modifications.Add(theModType);
+                foreach (var mod in modGroup)
+                {
+                    theModType.Children.Add(new ModForTreeView(mod.ToString(), false, mod.IdWithMotif, false, theModType));
+                }
+            }
+            gptmdModsTreeView.DataContext = Modifications;
+
+
+
 
             #region Colors
 
@@ -243,6 +275,11 @@ namespace MetaMorpheusGUI
             Save_Click(sender, e);
             MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
             Toml.WriteFile<MetaDrawSettingsSnapshot>(settings, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml"));
+        }
+
+        private void ComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            int breakpoint = 0;
         }
     }
 }

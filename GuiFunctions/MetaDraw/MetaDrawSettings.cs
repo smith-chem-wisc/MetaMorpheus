@@ -34,8 +34,8 @@ namespace GuiFunctions
         #endregion
 
         public static string[] SpectrumDescriptors { get; set; } = 
-        {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Score: ", "Protein Accession: ", "Protein: ",
-        "Decoy/Contaminant/Target: ", "Q-Value: ", "Sequence Length: ", "ProForma Level: ", "PEP: ", "PEP Q-Value: "};
+        {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
+        "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
         public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
@@ -128,7 +128,6 @@ namespace GuiFunctions
         /// </summary>
         public static void LoadSettings(MetaDrawSettingsSnapshot settings)
         {
-            //SpectrumDescription = settings.SpectrumDescription;
             DisplayIonAnnotations = settings.DisplayIonAnnotations;
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
@@ -142,6 +141,7 @@ namespace GuiFunctions
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => NameToOxyColorConverter(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => NameToOxyColorConverter(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
+
         }
 
         /// <summary>
@@ -151,7 +151,6 @@ namespace GuiFunctions
         /// <returns></returns>
         public static OxyColor NameToOxyColorConverter(string name)
         {
-            
             return name switch
             {
                 "Blue" => OxyColors.Blue,
@@ -159,6 +158,15 @@ namespace GuiFunctions
                 "Orange" => OxyColors.Orange,
                 "Violet" => OxyColors.Violet,
                 "Gold" => OxyColors.Gold,
+                "Black" => OxyColors.Black,
+                "Green" => OxyColors.Green,
+                "HotPink" => OxyColors.HotPink,
+                "Indigo" => OxyColors.Indigo,
+                "Lime" => OxyColors.Lime,
+                "Magenta" => OxyColors.Magenta,
+                "MidnightBlue" => OxyColors.MidnightBlue,
+                "Olive" => OxyColors.Olive,
+                "Purple" => OxyColors.Purple,
                 "DodgerBlue" => OxyColors.DodgerBlue,
                 "Firebrick" => OxyColors.Firebrick,
                 "LightBlue" => OxyColors.LightBlue,
@@ -167,7 +175,9 @@ namespace GuiFunctions
                 "AliceBlue" => OxyColors.AliceBlue,
                 "LightCoral" => OxyColors.LightCoral,
                 "Aqua" => OxyColors.Aqua,
-                _ => OxyColors.Blue,
+                "Chartreuse" => OxyColors.Chartreuse,
+                "BurlyWood" => OxyColors.BurlyWood,
+                _ => OxyColors.Sienna,
             };
         }
 
@@ -190,22 +200,46 @@ namespace GuiFunctions
                 return "Violet";
             else if (color == OxyColors.Gold)
                 return "Gold";
+            else if (color == OxyColors.Black)
+                return "Black";
+            else if (color == OxyColors.Green)
+                return "Green";
+            else if (color == OxyColors.HotPink)
+                return "HotPink";
+            else if (color == OxyColors.Indigo)
+                return "Indigo";
+            else if (color == OxyColors.Lime)
+                return "Lime";
+            else if (color == OxyColors.Magenta)
+                return "Magenta";
+            else if (color == OxyColors.MidnightBlue)
+                return "MidnightBlue";
+            else if (color == OxyColors.Olive)
+                return "Olive";
+            else if (color == OxyColors.Purple)
+                return "Purple";
             else if (color == OxyColors.DodgerBlue)
                 return "DodgerBlue";
             else if (color == OxyColors.Firebrick)
-                return "FireBrick";
+                return "Firebrick";
             else if (color == OxyColors.LightBlue)
                 return "LightBlue";
             else if (color == OxyColors.OrangeRed)
                 return "OrangeRed";
             else if (color == OxyColors.LightGoldenrodYellow)
-                return "LightGOldenrodYellow";
+                return "LightGoldenrodYellow";
             else if (color == OxyColors.AliceBlue)
                 return "AliceBlue";
             else if (color == OxyColors.LightCoral)
                 return "LightCoral";
             else if (color == OxyColors.Aqua)
                 return "Aqua";
+            else if (color == OxyColors.Chartreuse)
+                return "Chartreuse";
+            else if (color == OxyColors.BurlyWood)
+                return "BurlyWood";
+            else if (color == OxyColors.Sienna)
+                return "Sienna";
             else
                 return "Blue";
         }
@@ -220,6 +254,15 @@ namespace GuiFunctions
             Orange,
             Violet,
             Gold,
+            Black,
+            Green,
+            HotPink,
+            Indigo,
+            Lime,
+            Magenta,
+            MidnightBlue,
+            Olive,
+            Purple,
             DodgerBlue,
             Firebrick,
             LightBlue,
@@ -227,8 +270,9 @@ namespace GuiFunctions
             LightGoldenrodYellow,
             AliceBlue,
             LightCoral,
-            Aqua
+            Aqua,
+            Chartreuse,
+            BurlyWood
         }
-
     }
 }
