@@ -2,7 +2,9 @@ using EngineLayer;
 using GuiFunctions;
 using Nett;
 using OxyPlot;
+using Proteomics;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -29,6 +31,7 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
+        private ObservableCollection<PtmLegendViewModel> PtmLegend;
         private ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
@@ -87,6 +90,9 @@ namespace MetaMorpheusGUI
                     theModType.Children.Add(new ModForTreeView(mod.ToString(), false, mod.IdWithMotif, false, theModType, colors));
                 }
             }
+
+            PtmLegend = new ObservableCollection<PtmLegendViewModel>();
+            PtmLegendControl.ItemsSource = PtmLegend;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -203,18 +209,31 @@ namespace MetaMorpheusGUI
             }
             else
             {
+                // display the ion and elements correctly
                 MetaDrawSettings.DrawMatchedIons = true;
                 AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Collapsed;
                 wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
                 if (psm.BaseSeq.Length > MetaDrawSettings.NumberOfAAOnScreen)
+                {
                     GrayBox.Opacity = 0.7;
+                }
                 else
+                {
                     GrayBox.Opacity = 0;
+                }
+
+                PtmLegend.Clear();
+                if (MetaDrawSettings.ShowLegend)
+                {
+                    PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+                    List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
+                    PtmLegend.Add(new PtmLegendViewModel(mods));                    
+                }
             }
 
             // draw the annotated spectrum
-            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
+            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
             MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
 
             //draw the sequence coverage if not crosslinked
@@ -682,7 +701,7 @@ namespace MetaMorpheusGUI
             }
             SetSequenceDrawingPositionSettings();
             if (MetaDrawLogic.StationarySequence != null)
-                DrawnSequence.DrawStationarySequence(psm, MetaDrawLogic.StationarySequence);
+                DrawnSequence.DrawStationarySequence(psm, MetaDrawLogic.StationarySequence, 10);
         }
 
         /// <summary>
@@ -715,7 +734,7 @@ namespace MetaMorpheusGUI
                 }
             }
             SetSequenceDrawingPositionSettings(true);
-            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
+            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, null, psm);
         }
 
         /// <summary>

@@ -67,61 +67,58 @@
                                 Margin="20,0,0,0"/>
 
             <!-- right column -->
-            <ScrollViewer Grid.Column="2" HorizontalAlignment="Center">
-                <StackPanel  >
+            <ScrollViewer Grid.Column="2" HorizontalAlignment="Stretch">
+                <StackPanel>
 
                     <!-- Spectrum Customization Options -->
                     <GroupBox Header="Spectrum Customization" x:Name="SpectrumCustomization">
                         <StackPanel>
                             <Expander Name="SpectrumDescriptionExpander"  Header="Spectrum Description" 
                                   DockPanel.Dock="Top" Margin="10 5 5 5">
-                                <Expander.Style>
-                                    <Style TargetType="Expander">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsExpanded" Value="True">
-                                                <Setter Property="Header" Value="Hide" />
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Expander.Style>
 
                                 <!-- Spectrum Description Text Customization Options 
                                 To make changes here, add a checkbox then add it to Save_Click and PopulateChoices, 
                                 then add a new item to SpectrumDescripion Dictionary in Settings, 
                                 finally update PeptideSpectrumMatchPlot.AnnotateProperties() -->
-                                <ScrollViewer>
-                                    <StackPanel>
-                                        <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
-                                        <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
-                                        <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
-                                        <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
-                                        <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
-                                        <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
-                                        <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
-                                        <CheckBox Name="ProFormaLevelCheckBox" Content="ProForma Level" Margin="3" 
-                                            ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <ToolTipService.ToolTip>
-                                                J. Proteome Res. 2018, 17, 3, 1321–1325
-                                            </ToolTipService.ToolTip>
-                                        </CheckBox>
-                                        <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
-                                        <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
-                                        <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
-                                        <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
-                                    </StackPanel>
-                                </ScrollViewer>
+                                <StackPanel>
+                                    <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
+                                    <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
+                                    <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
+                                    <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
+                                    <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
+                                    <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
+                                    <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
+                                    <CheckBox Name="ProFormaLevelCheckBox" Content="ProForma Level" Margin="3" 
+                                        ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ToolTipService.ToolTip>
+                                            J. Proteome Res. 2018, 17, 3, 1321–1325
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
+                                    <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
+                                    <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
+                                    <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
+                                </StackPanel>
+                            </Expander>
+
+                            <!-- spectrum components -->
+                            <Expander Header="Spectrum Components" DockPanel.Dock="Top" Margin="10 5 5 5">
+                                <StackPanel>
+                                    <CheckBox Name="StationarySequenceCheckBox" Content="Stationary Sequence" Margin="3" />
+                                    <CheckBox Name="SequencenNumbersCheckBox" Content="Sequence Numbering" Margin="3" />
+                                    <CheckBox Name="ShowLegendCheckBox" Content="PTM Color Legend" Margin="3" />
+                                </StackPanel>
                             </Expander>
 
                             <!-- ion color selection -->
                             <Expander x:Name="IonColorSelection" Header="Ion Color Selection"
-                                      DockPanel.Dock="Top" Margin="10 5 5 5 " IsExpanded="True">
+                                      DockPanel.Dock="Top" Margin="10 5 5 5 " >
                                 <StackPanel >
                                     <ItemsControl x:Name="IonColorExpander"  ItemsSource="{Binding}" DataContext="{x:Type local:IonTypeForTreeViewModel}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
-                                                <Expander Header="{Binding GroupName, FallbackValue=tacos}" Margin="10 2 0 0 ">
+                                                <Expander Header="{Binding GroupName}" Margin="10 2 0 0 ">
                                                     <ItemsControl ItemsSource="{Binding Ions}" >
-
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel Orientation="Horizontal"  >
@@ -146,15 +143,6 @@
                             <!-- ptm color selection -->
                             <Expander Name="PTMColorSelection" Header="PTM Color Selection"
                                   DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
-                                <Expander.Style>
-                                    <Style TargetType="Expander">
-                                        <Style.Triggers>
-                                            <Trigger Property="IsExpanded" Value="True">
-                                                <Setter Property="Header" Value="Hide" />
-                                            </Trigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </Expander.Style>
                                 <StackPanel>
                                     <ItemsControl x:Name="PTMColorExpander" ItemBindingGroup="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}">
                                         <ItemsControl.ItemTemplate>
@@ -182,6 +170,31 @@
                                     </ItemsControl>
                                 </StackPanel>
                             </Expander>
+                            
+                            <!-- Sequence coverage colors -->
+                            <Expander  Header="Sequence Coverage Color Selection" 
+                                      DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
+                                <StackPanel>
+                                    <ItemsControl x:Name="SequenceCoverageColorExpander" ItemsSource="{Binding}" DataContext="{x:Type local:CoverageTypeForTreeViewModel}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal"  >
+                                                    <TextBlock Text="{Binding Name, FallbackValue='y - ion'}" Margin="5 0 5 0" Width="180" TextAlignment="Center"/>
+                                                    <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                            Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                                    <ComboBox ItemsSource="{Binding PossibleColors}" Width="80" HorizontalAlignment="Right" 
+                                                                            SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged_2"
+                                                                            Margin="5 0 5 0" HorizontalContentAlignment="Center">
+                                                    </ComboBox>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </Expander>
+                            
+                            
+                            
                         </StackPanel>
                     </GroupBox>
                 </StackPanel>

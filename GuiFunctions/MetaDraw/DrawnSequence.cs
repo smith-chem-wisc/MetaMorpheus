@@ -22,25 +22,29 @@ namespace GuiFunctions
     {
         public Canvas SequenceDrawingCanvas;
         public bool Stationary;
+        public bool Annotation;
         public PsmFromTsv SpectrumMatch;
-        public DrawnSequence(Canvas sequenceDrawingCanvas, PsmFromTsv psm, bool stationary)
+        public DrawnSequence(Canvas sequenceDrawingCanvas, PsmFromTsv psm, bool stationary, bool annotation = false)
         {
             SequenceDrawingCanvas = sequenceDrawingCanvas;
             SpectrumMatch = psm;
             Stationary = stationary;
+            Annotation = annotation;
             SequenceDrawingCanvas.Width = 600;
             SequenceDrawingCanvas.Height = 60;
 
-
-            if (stationary)
+            if (Annotation)
             {
-                DrawStationarySequence(psm, this);
+                DrawSequenceAnnotation(psm, this);
+            }
+            else if (Stationary)
+            {
+                DrawStationarySequence(psm, this, 10);
             }
             else
             {
                 AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, psm.MatchedIons, SpectrumMatch);
             }
-
         }
 
         /// <summary>
@@ -52,9 +56,9 @@ namespace GuiFunctions
         /// <param name="matchedFragmentIons"></param>
         /// <param name="canvas"></param>
         /// <param name="psm"></param>
-        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, PsmFromTsv psm, bool stationary = false)
+        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, PsmFromTsv psm, bool stationary = false, int annotationLoops = 0)
         {
-            if (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence))
+            if (!Annotation && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence)))
             {
                 ClearCanvas(SequenceDrawingCanvas);
             }
@@ -62,7 +66,7 @@ namespace GuiFunctions
             int spacing = 12;
 
             // draw initial amino acid number
-            if (stationary)
+            if (stationary && MetaDrawSettings.DrawNumbersUnderStationary)
             {
                 var startAA = (MetaDrawSettings.FirstAAonScreenIndex + 1).ToString().ToCharArray().Reverse().ToArray();
                 double x = 22;
@@ -90,7 +94,7 @@ namespace GuiFunctions
             SequenceDrawingCanvas.Width = Math.Max(SequenceDrawingCanvas.Width, canvasWidth) + 185; // this number is the width of the grayed out box
 
             // draw final amino acid number
-            if (stationary)
+            if (stationary && MetaDrawSettings.DrawNumbersUnderStationary)
             {
                 var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString();
                 canvasWidth += spacing;
@@ -120,6 +124,10 @@ namespace GuiFunctions
                         if (Stationary)
                         {
                             residue = ion.NeutralTheoreticalProduct.AminoAcidPosition - MetaDrawSettings.FirstAAonScreenIndex;
+                        }
+                        else if (Annotation)
+                        {
+                            residue = ion.NeutralTheoreticalProduct.AminoAcidPosition - MetaDrawSettings.NumberOfAAOnScreen * annotationLoops;
                         }
                         else
                         {
@@ -183,7 +191,7 @@ namespace GuiFunctions
                 {
                     if (localGlycans.Where(p => p.Item1 + 1 == mod.Key).Count() > 0)
                     {
-                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), MetaDrawSettings.ModificationAnnotationColor);
+                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.Value.IdWithMotif]));
                     }
                     else
                     {
@@ -205,7 +213,7 @@ namespace GuiFunctions
         /// <param name="firstLetterOnScreen"></param>
         /// <param name="psm"></param>
         /// <param name="canvas"></param>
-        public static void DrawStationarySequence(PsmFromTsv psm, DrawnSequence stationarySequence)
+        public static void DrawStationarySequence(PsmFromTsv psm, DrawnSequence stationarySequence, int yLoc)
         {
             ClearCanvas(stationarySequence.SequenceDrawingCanvas);
             string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
@@ -232,7 +240,62 @@ namespace GuiFunctions
 
             List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                    p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, 10, matchedIons, psm, true);
+            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, psm, true);
+        }
+
+        public static void DrawSequenceAnnotation(PsmFromTsv psm, DrawnSequence sequence)
+        {
+            ClearCanvas(sequence.SequenceDrawingCanvas);
+            int perRow = MetaDrawSettings.NumberOfAAOnScreen;
+            int length = psm.BaseSeq.Length;
+            int remaining = length;
+            int yLoc = 10;
+            string baseSequence;
+            int toDraw;
+            int start;
+            Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
+
+            for (int i = 0; i < length; i += perRow)
+            {
+                if (remaining > perRow)
+                {
+                    toDraw = perRow;
+                }
+                else
+                {
+                    toDraw = remaining;
+                }
+                    
+                start = length - remaining;
+
+                baseSequence = psm.BaseSeq.Substring(start, toDraw);
+                string fullSequence = baseSequence;
+
+                // Trim full sequences selectively based upon what is show in scrollable sequence
+                foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
+                {
+                    // if modification is within the visible region
+                    if (mod.Key >= start && mod.Key < start + toDraw)
+                    {
+                        // account for multiple modifications on the same amino acid
+                        for (int j = mod.Value.Count - 1; j > -1; j--)
+                        {
+                            fullSequence = fullSequence.Insert(mod.Key - start, "[" + mod.Value[j] + "]");
+                            if (j >= 1)
+                            {
+                                fullSequence = fullSequence.Insert(mod.Key, "|");
+                            }
+                        }
+                    }
+                }
+
+                
+                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > start &&
+                                                   p.NeutralTheoreticalProduct.AminoAcidPosition < start + toDraw).ToList();
+                sequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, psm, false, i / MetaDrawSettings.NumberOfAAOnScreen);
+                yLoc += 40;
+                remaining -= toDraw; 
+            }
         }
 
         public void DrawCrossLinkSequence()
@@ -288,6 +351,12 @@ namespace GuiFunctions
         public static OxyColor ParseOxyColorFromName(string name)
         {
             return MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(name.Replace(" ", ""))).First();
+        }
+
+        public static Color ParseColorFromOxyColor(OxyColor color)
+        {
+            var colorVal = color.ToByteString().Split(',');
+            return System.Windows.Media.Color.FromArgb(Byte.Parse(colorVal[0]), Byte.Parse(colorVal[1]), Byte.Parse(colorVal[2]), Byte.Parse(colorVal[3]));
         }
 
         /// <summary>

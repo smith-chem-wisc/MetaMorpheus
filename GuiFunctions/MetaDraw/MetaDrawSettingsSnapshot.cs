@@ -19,10 +19,14 @@ namespace GuiFunctions
         public bool AnnotateMzValues { get; set; } = false;
         public bool AnnotateCharges { get; set; } = false;
         public bool AnnotationBold { get; set; } = false;
+        public bool DrawStationarySequence { get; set; } = true;
+        public bool DrawNumbersUnderStationary { get; set; } = true;
+        public bool ShowLegend { get; set; } = true;
         public List<bool> SpectrumDescriptionValues { get; set; }
         public List<string> ProductTypeToColorValues { get; set; }
         public List<string> BetaProductTypeToColorValues { get; set; }
         public List<string> ModificationTypeToColorValues { get; set; }
+        public List<string> CoverageTypeToColorValues { get; set; }
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;

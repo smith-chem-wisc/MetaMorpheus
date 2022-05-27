@@ -286,6 +286,7 @@ namespace GuiFunctions
             peakAnnotation.TextPosition = new DataPoint(mz, intensity);
             peakAnnotation.TextVerticalAlignment = intensity < 0 ? OxyPlot.VerticalAlignment.Top : OxyPlot.VerticalAlignment.Bottom;
             peakAnnotation.TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center;
+            
 
             if (!MetaDrawSettings.DisplayIonAnnotations)
             {
@@ -319,16 +320,36 @@ namespace GuiFunctions
             if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
             {
                 text.Append("Protein Accession: ");
-                text.Append(SpectrumMatch.ProteinAccession);
+                if (SpectrumMatch.ProteinAccession.Length > 10)
+                {
+                    text.Append("\r\n   " + SpectrumMatch.ProteinAccession);
+                }
+                else
+                    text.Append(SpectrumMatch.ProteinAccession);
                 text.Append("\r\n");
             }
             if (SpectrumMatch.ProteinName != null && MetaDrawSettings.SpectrumDescription["Protein: "])
             {
-
                 text.Append("Protein: ");
-                text.Append(SpectrumMatch.ProteinName.Length > 20 ? SpectrumMatch.ProteinName.Substring(0, 18) + "..." : SpectrumMatch.ProteinName);
+                if (SpectrumMatch.ProteinName.Length > 20)
+                {
+                    text.Append(SpectrumMatch.ProteinName.Substring(0, 20));
+                    int length = SpectrumMatch.ProteinName.Length;
+                    int remaining = length - 20;
+                    for (int i = 21; i < SpectrumMatch.ProteinName.Length; i += 26)
+                    {
+                        if (remaining <= 26)
+                            text.Append("\r\n   " + SpectrumMatch.ProteinName.Substring(i, remaining - 1));
+                        else
+                        {
+                            text.Append("\r\n   " + SpectrumMatch.ProteinName.Substring(i, 26));
+                            remaining -= 26;
+                        }
+                    }
+                }
+                else
+                    text.Append(SpectrumMatch.ProteinName);
                 text.Append("\r\n");
-
             }
             if (MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "])
             {
@@ -387,6 +408,7 @@ namespace GuiFunctions
 
             this.Model.Annotations.Add(annotation);
         }
+
 
         protected void DrawPeak(double mz, double intensity, double strokeWidth, OxyColor color, TextAnnotation annotation)
         {

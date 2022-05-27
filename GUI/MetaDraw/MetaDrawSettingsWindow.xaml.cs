@@ -23,6 +23,7 @@ namespace MetaMorpheusGUI
     {
         private readonly ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
         private readonly ObservableCollection<IonTypeForTreeViewModel> IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
+        private readonly ObservableCollection<CoverageTypeForTreeViewModel> CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
 
         public MetaDrawSettingsWindow(ObservableCollection<ModTypeForTreeView> mods)
         {
@@ -57,18 +58,24 @@ namespace MetaMorpheusGUI
             ProFormaLevelCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["ProForma Level: "];
             PEPCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP: "];
             PEPQValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP Q-Value: "];
+            StationarySequenceCheckBox.IsChecked = MetaDrawSettings.DrawStationarySequence;
+            SequencenNumbersCheckBox.IsChecked = MetaDrawSettings.DrawNumbersUnderStationary;
+            ShowLegendCheckBox.IsChecked = MetaDrawSettings.ShowLegend;
             qValueBox.Text = MetaDrawSettings.QValueFilter.ToString();
             TextSizeBox.Text = MetaDrawSettings.AnnotatedFontSize.ToString();
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
 
+            ObservableCollection<string> colors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
+            CoverageColors.Add(new CoverageTypeForTreeViewModel("N-Terminal Color", colors));
+            CoverageColors.Add(new CoverageTypeForTreeViewModel("C-Terminal Color", colors));
+            CoverageColors.Add(new CoverageTypeForTreeViewModel("Internal Color", colors));
+            SequenceCoverageColorExpander.ItemsSource = CoverageColors;
 
             var ions = ((ProductType[])Enum.GetValues(typeof(ProductType)));
             var common = ions.Where(p => p.ToString().Equals("a") || p.ToString().Equals("b") || p.ToString().Equals("c")
                                           || p.ToString().Equals("x") || p.ToString().Equals("y") || p.ToString().Equals("zDot"));
-            var lessCommon = ions.Where(p => !p.ToString().Equals("a") || !p.ToString().Equals("b") || !p.ToString().Equals("c")
-                                          || !p.ToString().Equals("x") || !p.ToString().Equals("y") || !p.ToString().Equals("zDot"));
-            ObservableCollection<string> colors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
+            var lessCommon = ions.Where(p => !common.Any(m => m == p));
             IonGroups.Add(new IonTypeForTreeViewModel("Common Ions", common, false, colors));
             IonGroups.Add(new IonTypeForTreeViewModel("Less Common Ions", lessCommon, false, colors));
             IonGroups.Add(new IonTypeForTreeViewModel("Cross Linked Beta Peptide", ions, true, colors));
@@ -103,9 +110,13 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.SpectrumDescription["ProForma Level: "] = ProFormaLevelCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["PEP: "] = PEPCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["PEP Q-Value: "] = PEPQValueCheckBox.IsChecked.Value;
+            MetaDrawSettings.DrawStationarySequence = StationarySequenceCheckBox.IsChecked.Value;
+            MetaDrawSettings.DrawNumbersUnderStationary = SequencenNumbersCheckBox.IsChecked.Value;
+            MetaDrawSettings.ShowLegend = ShowLegendCheckBox.IsChecked.Value;
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
 
+            // save ion colors if changed
             foreach (var group in IonGroups)
             {
                 foreach (var ion in group)
@@ -113,19 +124,29 @@ namespace MetaMorpheusGUI
                     if (ion.HasChanged)
                     {
                         if (ion.IsBeta)
-                            MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(ion.SelectedColor.Replace(" ", ""))).First();
+                            MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                         else
-                            MetaDrawSettings.ProductTypeToColor[ion.IonType] = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(ion.SelectedColor.Replace(" ", ""))).First();
+                            MetaDrawSettings.ProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                     }
                 }
             }
 
+            // save modification colors if changed
             foreach (var group in Modifications)
             {
                 foreach (var mod in group)
                 {
                     if (mod.HasChanged)
-                        MetaDrawSettings.ModificationTypeToColor[mod.ModName] = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(mod.SelectedColor.Replace(" ", ""))).First();
+                        MetaDrawSettings.ModificationTypeToColor[mod.ModName] = DrawnSequence.ParseOxyColorFromName(mod.SelectedColor.Replace(" ", ""));
+                }
+            }
+
+            // save sequence coverage colors if changed
+            foreach (var color in CoverageColors)
+            {
+                if (color.HasChanged)
+                {
+                    MetaDrawSettings.CoverageTypeToColor[color.Name] = DrawnSequence.ParseOxyColorFromName( color.SelectedColor.Replace(" ", ""));
                 }
             }
 
@@ -197,6 +218,16 @@ namespace MetaMorpheusGUI
         private void ComboBox_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
             ((ModForTreeView)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+        }
+
+        /// <summary>
+        /// Event handler for the sequence coverage type color selection. Runs the SelectionChanged command in its respective view model
+        /// </summary>
+        /// <param name="sender">ComboBox which was changed</param>
+        /// <param name="e"></param>
+        private void ComboBox_SelectionChanged_2(object sender, SelectionChangedEventArgs e)
+        {
+            ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
     }
 }

@@ -27,6 +27,10 @@ namespace GuiFunctions
         public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
         public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
         public static Dictionary<string, OxyColor> ModificationTypeToColor { get; set; }
+        public static Dictionary<string, OxyColor> CoverageTypeToColor { get; set; }
+        public static bool DrawStationarySequence { get; set; } = true;
+        public static bool DrawNumbersUnderStationary { get; set; } = true;
+        public static bool ShowLegend { get; set; } = true;
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -61,6 +65,7 @@ namespace GuiFunctions
         public static string[] SpectrumDescriptors { get; set; } = 
         {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
         "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
+        public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
         public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
@@ -127,6 +132,10 @@ namespace GuiFunctions
                 ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
                 ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
 
+                CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
+                CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
+                CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
+
                 // lines to be written on the spectrum
                 SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
             }
@@ -157,12 +166,17 @@ namespace GuiFunctions
                 ShowDecoys = ShowDecoys,
                 ShowContaminants = ShowContaminants,
                 QValueFilter = QValueFilter,
+                DrawStationarySequence = DrawStationarySequence,
+                DrawNumbersUnderStationary = DrawNumbersUnderStationary,
+                ShowLegend = ShowLegend,
                 LocalizationLevelStart = LocalizationLevelStart,
                 LocalizationLevelEnd = LocalizationLevelEnd,
                 ProductTypeToColorValues = ProductTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 BetaProductTypeToColorValues = BetaProductTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 ModificationTypeToColorValues = ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
+                CoverageTypeToColorValues = CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
+                
             };
         }
 
@@ -178,12 +192,16 @@ namespace GuiFunctions
             ShowDecoys = settings.ShowDecoys;
             ShowContaminants = settings.ShowContaminants;
             QValueFilter = settings.QValueFilter;
+            DrawStationarySequence = settings.DrawStationarySequence;
+            DrawNumbersUnderStationary = settings.DrawNumbersUnderStationary;
+            ShowLegend = settings.ShowLegend;
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
 
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
             ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
+            CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.CoverageTypeToColorValues[Array.IndexOf(CoverageTypes, p)]));
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
         }
     }
