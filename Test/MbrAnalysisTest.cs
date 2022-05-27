@@ -34,7 +34,6 @@ namespace Test
             List<Protein> proteinList = new List<Protein>();
             MyFileManager myFileManager = new MyFileManager(true);
 
-            
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
@@ -110,13 +109,16 @@ namespace Test
                 }
             };
 
-            int placeholder = 1;
-
             postSearchTask.Run();
 
-            placeholder = 0;
+            string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\MbrAnalysis.psmtsv");
+            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
 
-            Assert.That(placeholder == 0);
+            List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
+            List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
+
+            Assert.That(matches2ng.Count >= 5);
+            Assert.That(matches02ng.Count >= 8);
 
         }
 
