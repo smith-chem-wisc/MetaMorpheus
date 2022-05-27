@@ -807,6 +807,7 @@ namespace TaskLayer
                     {
                         ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
                         PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
+                        if (bestDonorPsm == null) break; //Hopefully this fixes Hannah's bug
                         PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
                         double monoIsotopicMass = bestDonorPsm.PeptideMonisotopicMass.Value;
 
