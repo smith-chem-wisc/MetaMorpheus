@@ -71,7 +71,11 @@ namespace TaskLayer
             WriteProteinResults();
             WriteQuantificationResults();
             WritePrunedDatabase();
-            if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count() > 0)))
+            if (Parameters.SearchParameters.WriteSpectralLibrary)
+            {
+                SpectralLibraryGeneration();
+            }
+            if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
                 WriteVariantResults();
             }
@@ -198,7 +202,7 @@ namespace TaskLayer
                     File.Copy(assumedExperimentalDesignPath, writtenFile, overwrite: true);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
                 }
-                catch (Exception e)
+                catch
                 {
                     Warn("Could not copy Experimental Design file to search task output. That's ok, the search will continue");
                 }
@@ -580,6 +584,34 @@ namespace TaskLayer
             }
         }
 
+        //for those spectra matching the same peptide/protein with same charge, save the one with highest score
+        private void SpectralLibraryGeneration()
+        {
+            var FilteredPsmList = Parameters.AllPsms
+               .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
+            FilteredPsmList.RemoveAll(b => b.IsDecoy);
+            FilteredPsmList.RemoveAll(b => b.IsContaminant);
+            //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
+            Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
+            foreach (var x in FilteredPsmList)
+            {
+                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
+                (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
+
+                if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
+                {
+                    PsmsGroupByPeptideAndCharge.Add(peptideWithChargeState, psmsWithSamePeptideAndSameCharge);
+                }
+            }
+            var spectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in PsmsGroupByPeptideAndCharge)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.Value[0].FullSequence, psm.Value[0].ScanPrecursorMonoisotopicPeakMz, psm.Value[0].ScanPrecursorCharge, psm.Value[0].MatchedFragmentIons, psm.Value[0].ScanRetentionTime);
+                spectraLibrary.Add(standardSpectrum);
+            }
+            WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
+        }
+
         private void WriteProteinResults()
         {
             if (Parameters.SearchParameters.DoParsimony)
@@ -653,15 +685,14 @@ namespace TaskLayer
                         {
                             mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
                         }
-                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter), 
+                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter),
                             subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.SearchParameters.SilacLabels,
                             new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
-                            CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath, 
+                            CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath,
                             Parameters.SearchParameters.IncludeModMotifInMzid);
 
                         FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
-
 
                     // write pepXML
                     if (Parameters.SearchParameters.WritePepXml)
@@ -923,7 +954,6 @@ namespace TaskLayer
                                 sv.OneBasedModifications.Add(kvp.Key.Item2, kvp.Value);
                             }
                         }
-
                     }
                 }
 
@@ -973,7 +1003,6 @@ namespace TaskLayer
                             }
                         }
                     }
-
                 }
             }
         }
@@ -1117,7 +1146,7 @@ namespace TaskLayer
                     var residue = mod.Key;
                     var peptideModsIdentified = mod.Value.Intersect(peptideMods).ToList().Count;
                     var modOnVariant = variants.Where(p => p.OneBasedBeginPosition >= residue && p.OneBasedEndPosition <= residue);
-                    if (modOnVariant.Count() > 0 && peptideModsIdentified != 0)
+                    if (modOnVariant.Any() && peptideModsIdentified != 0)
                     {
                         modifiedVariant = true;
                     }
@@ -1394,7 +1423,7 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
                 string searchType;
-                if (psmList.Where(p => p != null).Count() > 0 && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
+                if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
                 {
                     searchType = "top-down";
                 }
@@ -1437,7 +1466,6 @@ namespace TaskLayer
                         output.WriteLine();
                     }
                     idNumber++;
-
                 }
             }
         }

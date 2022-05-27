@@ -17,7 +17,7 @@
             this.ScanNumber = scanNumber;
             this.LogTotalIonCurrent = logTotalIonCurrent;
             this.LogInjectionTime = logInjectionTime;
-            this.LogIntensity = logIntensity;
+            this.LogIntensity = logIntensity > 0 ? logIntensity : 0; //peaks with zero intensity can cause downstream crash
             this.TheoreticalMz = theoreticalMz;
             this.Identification = identification;
             this.RelativeMzError = (experimentalMz - theoreticalMz) / theoreticalMz;
