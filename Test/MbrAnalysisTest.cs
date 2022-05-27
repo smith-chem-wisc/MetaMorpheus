@@ -35,6 +35,10 @@ namespace Test
             List<Protein> proteinList = new List<Protein>();
             MyFileManager myFileManager = new MyFileManager(true);
 
+            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
+            Modification mod1 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Dictionary<string, Modification> carbamidoDict = new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 } };
+            
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
@@ -110,8 +114,8 @@ namespace Test
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters()) 
                 }
-            };
-
+        };
+         
             postSearchTask.Run();
 
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\MbrAnalysis.psmtsv");
@@ -127,16 +131,9 @@ namespace Test
             Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 8);
 
-            var spectraFiles = postSearchTask.Parameters.FlashLfqResults.SpectraFiles;
-            var x = postSearchTask.Parameters.FlashLfqResults.Peaks[spectraFiles[0]].Where(p => p.IsMbrPeak);
-
-            int place = 1;
-
-            var y = x.SelectMany(p => p.Identifications).ToList();
-
-            place = 2;
-
-            
+            //FlashLFQ fails to detect peaks that were found by ClassicSearch
+            //var spectraFiles = postSearchTask.Parameters.FlashLfqResults.SpectraFiles;
+            //var x = postSearchTask.Parameters.FlashLfqResults.Peaks[spectraFiles[0]].Where(p => p.IsMbrPeak).SelectMany(p => p.Identifications).ToList();
 
         }
 
