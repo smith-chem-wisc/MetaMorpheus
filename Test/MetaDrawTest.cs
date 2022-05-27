@@ -45,7 +45,7 @@ namespace Test
         [Test]
         public static void TestMetaDrawReadPsmFileWithoutSpectralAngle()
         {
-            //test if the reader still works when psm file doesn't contain spectral angle as header
+            //test if the reader still works when psm file doesn't contain spectral angle as header.
             string noSA = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\noSAreaderTest.psmtsv");
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(noSA, out var warnings);
 
