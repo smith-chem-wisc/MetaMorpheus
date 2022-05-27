@@ -35,7 +35,8 @@ namespace Test
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-
+            
+            Assert.AreEqual(-1, parsedPsms.First().SpectralAngle);
             Assert.AreEqual(10, parsedPsms.Count);
             Assert.AreEqual(0, warnings.Count);
 
@@ -50,6 +51,7 @@ namespace Test
             string noSA = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\noSAreaderTest.psmtsv");
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(noSA, out var warnings);
 
+            
             Assert.AreEqual(15, parsedPsms.Count);
             Assert.AreEqual(0, warnings.Count);
         }
