@@ -34,5 +34,6 @@ namespace GuiFunctions
         public double QValueFilter { get; set; } = 0.01;
         public LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
+        public string ExportType { get; set; }
     }
 }

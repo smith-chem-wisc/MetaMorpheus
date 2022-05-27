@@ -16,7 +16,7 @@ namespace GuiFunctions
     public static class MetaDrawSettings
     {
 
-        #region Customizable
+        #region Customizable Settings
         // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
@@ -38,34 +38,41 @@ namespace GuiFunctions
         public static double QValueFilter { get; set; } = 0.01;
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
+        public static string ExportType { get; set; } = ".pdf"; // TODO: Change to svg when fully implemented
 
         #endregion
 
+        #region Data Lists
         public static List<OxyColor> AllColors { get; set; } = new List<OxyColor>()
-        {   OxyColors.Undefined, OxyColors.Automatic, OxyColors.AliceBlue, OxyColors.AntiqueWhite, OxyColors.Aqua, OxyColors.Aquamarine, 
-            OxyColors.Azure, OxyColors.Beige, OxyColors.Bisque, OxyColors.Black, OxyColors.BlanchedAlmond, OxyColors.Blue, OxyColors.BlueViolet, 
-            OxyColors.Brown, OxyColors.BurlyWood, OxyColors.CadetBlue, OxyColors.Chartreuse, OxyColors.Chocolate, OxyColors.Coral, OxyColors.CornflowerBlue, 
+        {   OxyColors.Undefined, OxyColors.Automatic, OxyColors.AliceBlue, OxyColors.AntiqueWhite, OxyColors.Aqua, OxyColors.Aquamarine,
+            OxyColors.Azure, OxyColors.Beige, OxyColors.Bisque, OxyColors.Black, OxyColors.BlanchedAlmond, OxyColors.Blue, OxyColors.BlueViolet,
+            OxyColors.Brown, OxyColors.BurlyWood, OxyColors.CadetBlue, OxyColors.Chartreuse, OxyColors.Chocolate, OxyColors.Coral, OxyColors.CornflowerBlue,
             OxyColors.Cornsilk, OxyColors.Crimson, OxyColors.DarkBlue, OxyColors.DarkCyan, OxyColors.DarkGoldenrod, OxyColors.DarkGray, OxyColors.YellowGreen,
-            OxyColors.DarkGreen, OxyColors.DarkKhaki, OxyColors.DarkMagenta, OxyColors.DarkOliveGreen, OxyColors.DarkOrange, OxyColors.DarkOrchid, 
-            OxyColors.DarkRed, OxyColors.DarkSalmon, OxyColors.DarkSeaGreen, OxyColors.DarkSlateBlue, OxyColors.DarkSlateGray, OxyColors.DarkTurquoise, 
-            OxyColors.DarkViolet, OxyColors.DeepPink, OxyColors.DeepSkyBlue, OxyColors.DimGray, OxyColors.DodgerBlue, OxyColors.Firebrick, OxyColors.FloralWhite, 
-            OxyColors.ForestGreen, OxyColors.Gainsboro, OxyColors.GhostWhite, OxyColors.Gold, OxyColors.Goldenrod, OxyColors.Gray, OxyColors.Green, 
-            OxyColors.GreenYellow, OxyColors.Honeydew, OxyColors.HotPink, OxyColors.IndianRed, OxyColors.Indigo, OxyColors.Ivory, OxyColors.Khaki, OxyColors.Lavender, 
+            OxyColors.DarkGreen, OxyColors.DarkKhaki, OxyColors.DarkMagenta, OxyColors.DarkOliveGreen, OxyColors.DarkOrange, OxyColors.DarkOrchid,
+            OxyColors.DarkRed, OxyColors.DarkSalmon, OxyColors.DarkSeaGreen, OxyColors.DarkSlateBlue, OxyColors.DarkSlateGray, OxyColors.DarkTurquoise,
+            OxyColors.DarkViolet, OxyColors.DeepPink, OxyColors.DeepSkyBlue, OxyColors.DimGray, OxyColors.DodgerBlue, OxyColors.Firebrick, OxyColors.FloralWhite,
+            OxyColors.ForestGreen, OxyColors.Gainsboro, OxyColors.GhostWhite, OxyColors.Gold, OxyColors.Goldenrod, OxyColors.Gray, OxyColors.Green,
+            OxyColors.GreenYellow, OxyColors.Honeydew, OxyColors.HotPink, OxyColors.IndianRed, OxyColors.Indigo, OxyColors.Ivory, OxyColors.Khaki, OxyColors.Lavender,
             OxyColors.LavenderBlush, OxyColors.LawnGreen, OxyColors.LemonChiffon, OxyColors.LightBlue, OxyColors.LightCoral, OxyColors.LightCyan, OxyColors.LightGoldenrodYellow,
-            OxyColors.LightGray, OxyColors.LightGreen, OxyColors.LightPink, OxyColors.LightSalmon, OxyColors.LightSeaGreen, OxyColors.LightSkyBlue, OxyColors.LightSlateGray, 
-            OxyColors.LightSteelBlue, OxyColors.LightYellow, OxyColors.Lime, OxyColors.LimeGreen, OxyColors.Linen, OxyColors.Fuchsia, OxyColors.Maroon, OxyColors.MediumAquamarine, 
-            OxyColors.MediumBlue, OxyColors.MediumOrchid, OxyColors.MediumPurple, OxyColors.MediumSeaGreen, OxyColors.MediumSlateBlue, OxyColors.MediumSpringGreen, OxyColors.MediumTurquoise, 
-            OxyColors.MediumVioletRed, OxyColors.MidnightBlue, OxyColors.MintCream, OxyColors.MistyRose, OxyColors.Moccasin, OxyColors.NavajoWhite, OxyColors.Navy, OxyColors.OldLace, 
-            OxyColors.Olive, OxyColors.OliveDrab, OxyColors.Orange, OxyColors.OrangeRed, OxyColors.Orchid, OxyColors.PaleGoldenrod, OxyColors.PaleGreen, OxyColors.PaleTurquoise, 
-            OxyColors.PaleVioletRed, OxyColors.PapayaWhip, OxyColors.PeachPuff, OxyColors.Peru, OxyColors.Pink, OxyColors.Plum, OxyColors.PowderBlue, OxyColors.Purple, OxyColors.Red, 
-            OxyColors.RosyBrown, OxyColors.RoyalBlue, OxyColors.SaddleBrown, OxyColors.Salmon, OxyColors.SandyBrown, OxyColors.SeaGreen, OxyColors.SeaShell, OxyColors.Sienna, 
-            OxyColors.Silver, OxyColors.SkyBlue, OxyColors.SlateBlue, OxyColors.SlateGray, OxyColors.Snow, OxyColors.SpringGreen, OxyColors.SteelBlue, OxyColors.Tan, OxyColors.Teal, 
-            OxyColors.Thistle, OxyColors.Tomato, OxyColors.Transparent, OxyColors.Turquoise, OxyColors.Violet, OxyColors.Wheat, OxyColors.White, OxyColors.WhiteSmoke, OxyColors.Yellow 
+            OxyColors.LightGray, OxyColors.LightGreen, OxyColors.LightPink, OxyColors.LightSalmon, OxyColors.LightSeaGreen, OxyColors.LightSkyBlue, OxyColors.LightSlateGray,
+            OxyColors.LightSteelBlue, OxyColors.LightYellow, OxyColors.Lime, OxyColors.LimeGreen, OxyColors.Linen, OxyColors.Fuchsia, OxyColors.Maroon, OxyColors.MediumAquamarine,
+            OxyColors.MediumBlue, OxyColors.MediumOrchid, OxyColors.MediumPurple, OxyColors.MediumSeaGreen, OxyColors.MediumSlateBlue, OxyColors.MediumSpringGreen, OxyColors.MediumTurquoise,
+            OxyColors.MediumVioletRed, OxyColors.MidnightBlue, OxyColors.MintCream, OxyColors.MistyRose, OxyColors.Moccasin, OxyColors.NavajoWhite, OxyColors.Navy, OxyColors.OldLace,
+            OxyColors.Olive, OxyColors.OliveDrab, OxyColors.Orange, OxyColors.OrangeRed, OxyColors.Orchid, OxyColors.PaleGoldenrod, OxyColors.PaleGreen, OxyColors.PaleTurquoise,
+            OxyColors.PaleVioletRed, OxyColors.PapayaWhip, OxyColors.PeachPuff, OxyColors.Peru, OxyColors.Pink, OxyColors.Plum, OxyColors.PowderBlue, OxyColors.Purple, OxyColors.Red,
+            OxyColors.RosyBrown, OxyColors.RoyalBlue, OxyColors.SaddleBrown, OxyColors.Salmon, OxyColors.SandyBrown, OxyColors.SeaGreen, OxyColors.SeaShell, OxyColors.Sienna,
+            OxyColors.Silver, OxyColors.SkyBlue, OxyColors.SlateBlue, OxyColors.SlateGray, OxyColors.Snow, OxyColors.SpringGreen, OxyColors.SteelBlue, OxyColors.Tan, OxyColors.Teal,
+            OxyColors.Thistle, OxyColors.Tomato, OxyColors.Transparent, OxyColors.Turquoise, OxyColors.Violet, OxyColors.Wheat, OxyColors.White, OxyColors.WhiteSmoke, OxyColors.Yellow
         };
-        public static string[] SpectrumDescriptors { get; set; } = 
+        public static string[] SpectrumDescriptors { get; set; } =
         {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
         "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
+
+        public static string[] ExportTypes { get; set; } = { ".pdf", ".svg", ".png" };
+
+        #endregion
+
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
         public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
@@ -171,12 +178,12 @@ namespace GuiFunctions
                 ShowLegend = ShowLegend,
                 LocalizationLevelStart = LocalizationLevelStart,
                 LocalizationLevelEnd = LocalizationLevelEnd,
+                ExportType = ExportType,
                 ProductTypeToColorValues = ProductTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 BetaProductTypeToColorValues = BetaProductTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 ModificationTypeToColorValues = ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 CoverageTypeToColorValues = CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
-                
             };
         }
 
@@ -197,6 +204,7 @@ namespace GuiFunctions
             ShowLegend = settings.ShowLegend;
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
+            ExportType = settings.ExportType;
 
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));

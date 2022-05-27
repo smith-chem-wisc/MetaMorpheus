@@ -93,6 +93,7 @@ namespace MetaMorpheusGUI
 
             PtmLegend = new ObservableCollection<PtmLegendViewModel>();
             PtmLegendControl.ItemsSource = PtmLegend;
+            SequenceCoveragePtmLegendControl.ItemsSource = PtmLegend;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)

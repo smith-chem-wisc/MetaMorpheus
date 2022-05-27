@@ -318,7 +318,41 @@
 
                                 <TabItem Header="Sequence Annotation" Name="SequenceAnnotationTabItem">
                                     <Grid>
-                                        <Canvas x:Name="sequenceAnnotationCanvas" />
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="100" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Canvas x:Name="sequenceAnnotationCanvas" Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" />
+                                        <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendViewModel}" 
+                                                          Grid.Row="0" Grid.Column="1" Margin="0 20 0 0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="20" FontWeight="DemiBold" />
+                                                        <ItemsControl ItemsSource="{Binding LegendItems}" >
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                        <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                                                    FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
+                                                                        <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                    Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
                                     </Grid>
                                 </TabItem>
                             </TabControl>
