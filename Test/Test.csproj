@@ -169,6 +169,9 @@
     <None Update="TestData\LowResSnip_B6_mouse_11700_117500pruned.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\MbrAnalysisTest\ExpectedMBRHits.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\MbrAnalysisTest\ExperimentalDesign.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

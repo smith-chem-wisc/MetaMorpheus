@@ -2,6 +2,7 @@
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.IO;
 using System.Linq;
 using TaskLayer;
@@ -45,8 +46,10 @@ namespace Test
                 string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
-                PeptideWithSetModifications pwsm = 
-                    new PeptideWithSetModifications(readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(), oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
+
+                PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
+                    readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
+                    oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
                 PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
                 
@@ -112,13 +115,28 @@ namespace Test
             postSearchTask.Run();
 
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\MbrAnalysis.psmtsv");
+            string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\ExpectedMBRHits.psmtsv");
             List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
+            // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
+            List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings); 
 
             List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
+            List<PsmFromTsv> expectedMatches = mbrPsms.Intersect(expectedMbrPsms).ToList();
 
-            Assert.That(matches2ng.Count >= 5);
+            Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 8);
+
+            var spectraFiles = postSearchTask.Parameters.FlashLfqResults.SpectraFiles;
+            var x = postSearchTask.Parameters.FlashLfqResults.Peaks[spectraFiles[0]].Where(p => p.IsMbrPeak);
+
+            int place = 1;
+
+            var y = x.SelectMany(p => p.Identifications).ToList();
+
+            place = 2;
+
+            
 
         }
 
