@@ -114,7 +114,7 @@ namespace Test
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters()) 
                 }
-        };
+            };
          
             postSearchTask.Run();
 
@@ -126,14 +126,11 @@ namespace Test
 
             List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
-            List<PsmFromTsv> expectedMatches = mbrPsms.Intersect(expectedMbrPsms).ToList();
+            List<string> expectedMatches = mbrPsms.Select(p => p.BaseSeq).Intersect(expectedMbrPsms.Select(p => p.BaseSeq).ToList()).ToList();
 
             Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 8);
-
-            //FlashLFQ fails to detect peaks that were found by ClassicSearch
-            //var spectraFiles = postSearchTask.Parameters.FlashLfqResults.SpectraFiles;
-            //var x = postSearchTask.Parameters.FlashLfqResults.Peaks[spectraFiles[0]].Where(p => p.IsMbrPeak).SelectMany(p => p.Identifications).ToList();
+            Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
 
         }
 
