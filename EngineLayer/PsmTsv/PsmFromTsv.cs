@@ -25,6 +25,7 @@ namespace EngineLayer
         public double PrecursorMass { get; }
         public double Score { get; }
         public string ProteinAccession { get; }
+        public double? SpectralAngle { get; }
         public List<MatchedFragmentIon> MatchedIons { get; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildScanMatchedIons { get; } // this is only used in crosslink for now, but in the future will be used for other experiment types
         public double QValue { get; }
@@ -148,6 +149,7 @@ namespace EngineLayer
             PEP = double.Parse(spl[parsedHeader[PsmTsvHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
             PEP_QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.PEP_QValue]].Trim(), CultureInfo.InvariantCulture);
             VariantCrossingIons = findVariantCrossingIons();
+            SpectralAngle = (parsedHeader[PsmTsvHeader.SpectralAngle] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.SpectralAngle]].Trim(), CultureInfo.InvariantCulture);
 
             //For crosslinks
             CrossType = (parsedHeader[PsmTsvHeader.CrossTypeLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.CrossTypeLabel]].Trim();
