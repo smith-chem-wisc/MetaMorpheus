@@ -35,12 +35,50 @@ namespace Test
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-
+          
             Assert.AreEqual(10, parsedPsms.Count);
             Assert.AreEqual(0, warnings.Count);
 
             Directory.Delete(folderPath, true);
         }
+
+
+        [Test]
+        public static void TestMetaDrawReadPsmFileWithoutSpectralAngle()
+        {
+            //test if the reader still works when psm file doesn't contain spectral angle as header.
+            string noSA = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\noSAreaderTest.psmtsv");
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(noSA, out var warnings);
+
+            
+            Assert.AreEqual(15, parsedPsms.Count);
+            Assert.AreEqual(0, warnings.Count);
+        }
+
+        [Test]
+        public static void TestMetaDrawReadSAwhenReadingPsmFile()
+        {
+            SearchTask searchTask = new SearchTask();
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawReadPsmFile");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
+
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+
+            Assert.AreEqual(-1, parsedPsms.First().SpectralAngle);
+            Assert.AreEqual(10, parsedPsms.Count);
+            Assert.AreEqual(0, warnings.Count);
+
+            Directory.Delete(folderPath, true);
+        }
+
 
         [Test]
         public static void TestParenthesesRemovalForSilac()
