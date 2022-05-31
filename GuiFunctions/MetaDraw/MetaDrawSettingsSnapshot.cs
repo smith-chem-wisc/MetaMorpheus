@@ -14,13 +14,19 @@ namespace GuiFunctions
     /// </summary>
     public class MetaDrawSettingsSnapshot 
     {
-        public Dictionary<string, bool> SpectrumDescription { get; set; }
+        // graphic settings
         public bool DisplayIonAnnotations { get; set; } = true;
         public bool AnnotateMzValues { get; set; } = false;
         public bool AnnotateCharges { get; set; } = false;
         public bool AnnotationBold { get; set; } = false;
-        public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
-        public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
+        public bool DrawStationarySequence { get; set; } = true;
+        public bool DrawNumbersUnderStationary { get; set; } = true;
+        public bool ShowLegend { get; set; } = true;
+        public List<bool> SpectrumDescriptionValues { get; set; }
+        public List<string> ProductTypeToColorValues { get; set; }
+        public List<string> BetaProductTypeToColorValues { get; set; }
+        public List<string> ModificationTypeToColorValues { get; set; }
+        public List<string> CoverageTypeToColorValues { get; set; }
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
@@ -28,26 +34,6 @@ namespace GuiFunctions
         public double QValueFilter { get; set; } = 0.01;
         public LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
-
-        /// <summary>
-        /// Creates an instance of the snapshot based upon default settings for design time display
-        /// </summary>
-        public static MetaDrawSettingsSnapshot Instance => new MetaDrawSettingsSnapshot();
-
-        public MetaDrawSettingsSnapshot()
-        {
-            SpectrumDescription = MetaDrawSettings.SpectrumDescription;
-            DisplayIonAnnotations = MetaDrawSettings.DisplayIonAnnotations;
-            AnnotateMzValues = MetaDrawSettings.AnnotateMzValues;
-            AnnotateCharges = MetaDrawSettings.AnnotateCharges;
-            AnnotationBold = MetaDrawSettings.AnnotationBold;
-            ShowDecoys = MetaDrawSettings.ShowDecoys;
-            ShowContaminants = MetaDrawSettings.ShowContaminants;
-            QValueFilter = MetaDrawSettings.QValueFilter;
-            LocalizationLevelStart = MetaDrawSettings.LocalizationLevelStart;
-            LocalizationLevelEnd = MetaDrawSettings.LocalizationLevelEnd;
-            ProductTypeToColor = MetaDrawSettings.ProductTypeToColor;
-            BetaProductTypeToColor = MetaDrawSettings.BetaProductTypeToColor;
-        }
+        public string ExportType { get; set; }
     }
 }

@@ -1,21 +1,88 @@
-﻿using System.ComponentModel;
+﻿using GuiFunctions;
+using OxyPlot;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Windows.Media;
 
 namespace MetaMorpheusGUI
 {
-    public class ModForTreeView : INotifyPropertyChanged
+    public class ModForTreeView : BaseViewModel
     {
-        private bool _isChecked;
+        #region Private Properties
 
-        public ModForTreeView(string toolTip, bool use, string modName, bool bad, ModTypeForTreeView parent)
+        private bool _isChecked;
+        private string _selectedColor;
+        private SolidColorBrush _colorBrush;
+
+        #endregion
+
+        #region Public Properties
+        public ModTypeForTreeView Parent { get; }
+        public string ToolTipStuff { get; }
+
+        public bool Use
+        {
+            get
+            {
+                return _isChecked;
+            }
+            set
+            {
+                _isChecked = value;
+                OnPropertyChanged(nameof(Use));
+            }
+        }
+
+        public string ModName { get; }
+        public bool HasChanged { get; set; }
+        public string DisplayName { get; }
+        public Brush Background { get; }
+        public ObservableCollection<string> PossibleColors { get; set; }
+        public string SelectedColor
+        {
+            get { return _selectedColor; }
+            set
+            {
+                _selectedColor = value;
+                ColorBrush = DrawnSequence.ParseColorBrushFromName(_selectedColor);
+                OnPropertyChanged(nameof(SelectedColor));
+            }
+        }
+        public SolidColorBrush ColorBrush
+        {
+            get { return _colorBrush; }
+            set
+            {
+                _colorBrush = value;
+                OnPropertyChanged(nameof(ColorBrush));
+            }
+        }
+
+        #endregion
+
+        #region Constructor
+
+        /// <summary>
+        /// Constructor for use in GPTMD task window
+        /// </summary>
+        /// <param name="toolTip"></param>
+        /// <param name="use"></param>
+        /// <param name="modName"></param>
+        /// <param name="bad"></param>
+        /// <param name="parent"></param>
+        public ModForTreeView(string toolTip, bool use, string modName, bool bad, ModTypeForTreeView parent, ObservableCollection<string> colors = null)
         {
             ToolTipStuff = toolTip;
             Parent = parent;
             Use = use;
             ModName = modName;
-
             DisplayName = modName;
+            PossibleColors = colors;
+            AddSpaces(PossibleColors);
+            OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];
+            SelectedColor = AddSpaces(color.GetColorName());
+            ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
 
             if (toolTip.ToLower().Contains("terminal"))
             {
@@ -39,41 +106,12 @@ namespace MetaMorpheusGUI
                 Background = new SolidColorBrush(Colors.Transparent);
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
+        #endregion
 
-        public ModTypeForTreeView Parent { get; }
-        public string ToolTipStuff { get; }
-
-        public bool Use
+        public void SelectionChanged(string newColor)
         {
-            get
-            {
-                return _isChecked;
-            }
-            set
-            {
-                SetUseStatus(value);
-            }
-        }
-
-        public string ModName { get; }
-        public string DisplayName { get; }
-        public Brush Background { get; }
-
-        internal void SetUseStatus(bool value)
-        {
-            if (value == Use)
-                return;
-
-            _isChecked = value;
-            Parent.VerifyCheckState();
-
-            RaisePropertyChanged("Use");
-        }
-
-        protected void RaisePropertyChanged(string name)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            SelectedColor = newColor;
+            HasChanged = true;
         }
     }
 }

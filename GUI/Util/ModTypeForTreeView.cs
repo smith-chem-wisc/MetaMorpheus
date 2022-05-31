@@ -4,9 +4,43 @@ using System.Windows.Media;
 
 namespace MetaMorpheusGUI
 {
-    public class ModTypeForTreeView : INotifyPropertyChanged
+    public class ModTypeForTreeView : BaseViewModel
     {
+        #region Private Properties
+
         private bool? _isChecked;
+
+        #endregion
+
+        #region Public Properties
+        
+        public bool Expanded { get; set; }
+        public string DisplayName { get; }
+        public ObservableCollection<ModForTreeView> Children { get; }
+        public Brush Background { get; }
+        public MyEnumerator GetEnumerator()
+        {
+            return new MyEnumerator(this);
+        }
+        public bool? Use
+        {
+            get
+            {
+                return _isChecked;
+            }
+            set
+            {
+                _isChecked = value;
+                if (value.HasValue)
+                    foreach (var child in Children)
+                        child.Use = (value.Value);
+                OnPropertyChanged(nameof(Use));
+            }
+        }
+
+        #endregion
+
+        #region Constructor
 
         public ModTypeForTreeView(string displayName, bool bad)
         {
@@ -19,27 +53,7 @@ namespace MetaMorpheusGUI
                 Background = new SolidColorBrush(Colors.Transparent);
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        public bool? Use
-        {
-            get
-            {
-                return _isChecked;
-            }
-            set
-            {
-                SetUseStatus(value);
-            }
-        }
-
-        public bool Expanded { get; set; }
-
-        public string DisplayName { get; }
-
-        public ObservableCollection<ModForTreeView> Children { get; }
-
-        public Brush Background { get; }
+        #endregion
 
         public void VerifyCheckState()
         {
@@ -55,26 +69,27 @@ namespace MetaMorpheusGUI
                     break;
                 }
             }
-            SetUseStatus(state);
+            Use = state;
         }
 
-        protected void RaisePropertyChanged(string name)
+        public class MyEnumerator
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            int nIndex;
+            ModTypeForTreeView collection;
+            public MyEnumerator(ModTypeForTreeView coll)
+            {
+                collection = coll;
+                nIndex = -1;
+            }
+
+            public bool MoveNext()
+            {
+                nIndex++;
+                return (nIndex < collection.Children.Count);
+            }
+
+            public ModForTreeView Current => collection.Children[nIndex];
         }
 
-        private void SetUseStatus(bool? value)
-        {
-            if (value == Use)
-                return;
-
-            _isChecked = value;
-
-            if (value.HasValue)
-                foreach (var child in Children)
-                    child.SetUseStatus(value.Value);
-
-            RaisePropertyChanged("Use");
-        }
     }
 }

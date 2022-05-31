@@ -1,9 +1,9 @@
 ﻿using Chemistry;
 using EngineLayer;
 using GuiFunctions;
-using GuiFunctions.MetaDraw;
 using MassSpectrometry;
 using NUnit.Framework;
+using OxyPlot;
 using OxyPlot.Series;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -164,7 +164,6 @@ namespace Test
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.PsmResultFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv"));
             metadrawLogic.SpectraFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchSingleSpectra.mzML"));
-            //C:\Users\Nic\source\repos\MetaMorpheus\Test\TopDownTestData\TDGPTMDSearchResults.psmtsv
             var errors = metadrawLogic.LoadFiles(true, true);
             Assert.That(errors.Count == 1); // Singular error should be from not loading in the rest of the spectra that the search came from
 
@@ -954,7 +953,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestMetaDrawSettingsSnapsho()
+        public static void TestMetaDrawSettingsSnapshot()
         {
             MetaDrawSettingsSnapshot snapshot = new();
             Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
@@ -990,7 +989,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestMetaDrawLogicCleanU()
+        public static void TestMetaDrawLogicCleanUp()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");

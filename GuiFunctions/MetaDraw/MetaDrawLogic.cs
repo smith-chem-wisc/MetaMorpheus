@@ -1,5 +1,5 @@
 ﻿using EngineLayer;
-using GuiFunctions.MetaDraw;
+using GuiFunctions;
 using IO.Mgf;
 using IO.MzML;
 using IO.ThermoRawFileReader;
@@ -34,6 +34,7 @@ namespace GuiFunctions
         public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
+        public DrawnSequence SequenceAnnotation { get; set; }
         public PeptideSpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
@@ -215,7 +216,7 @@ namespace GuiFunctions
         /// <param name="stationaryCanvas"></param>
         /// <param name="scrollableCanvas"></param>
         /// <param name="psm"></param>
-        public void DisplaySequences(Canvas stationaryCanvas, Canvas scrollableCanvas, PsmFromTsv psm)
+        public void DisplaySequences(Canvas stationaryCanvas, Canvas scrollableCanvas, Canvas sequenceAnnotationCanvas, PsmFromTsv psm)
         {
             if (!psm.FullSequence.Contains('|'))
             {
@@ -223,14 +224,23 @@ namespace GuiFunctions
                 {
                     ScrollableSequence = new(scrollableCanvas, psm, false);
                 }
-                if (psm.BetaPeptideBaseSequence == null) // if not crosslinked
+
+                if (MetaDrawSettings.DrawStationarySequence)
                 {
-                    StationarySequence = new(stationaryCanvas, psm, true);
+                    if (psm.BetaPeptideBaseSequence == null) // if not crosslinked
+                    {
+                        StationarySequence = new(stationaryCanvas, psm, true);
+                    }
+                    else
+                    {
+                        StationarySequence = new(stationaryCanvas, psm, false);
+                        StationarySequence.DrawCrossLinkSequence();
+                    }
                 }
-                else
+
+                if (sequenceAnnotationCanvas != null)
                 {
-                    StationarySequence = new(stationaryCanvas, psm, false);
-                    StationarySequence.DrawCrossLinkSequence();
+                   SequenceAnnotation = new(sequenceAnnotationCanvas, psm, false, true);
                 }
             }   
         }
@@ -253,9 +263,9 @@ namespace GuiFunctions
             double[] internalIntensityArray = new double[peptideLength - 1];
 
             //colors for annotation
-            Color nColor = Colors.Blue;
-            Color cColor = Colors.Red;
-            Color internalColor = Colors.Purple;
+            Color nColor = DrawnSequence.ParseColorFromOxyColor(MetaDrawSettings.CoverageTypeToColor["N-Terminal Color"]);
+            Color cColor = DrawnSequence.ParseColorFromOxyColor(MetaDrawSettings.CoverageTypeToColor["C-Terminal Color"]);
+            Color internalColor = DrawnSequence.ParseColorFromOxyColor(MetaDrawSettings.CoverageTypeToColor["Internal Color"]);
 
             //draw sequence text
             for (int r = 0; r < psm.BaseSeq.Length; r++)
@@ -458,7 +468,7 @@ namespace GuiFunctions
             {
                 MetaDrawSettings.FirstAAonScreenIndex = 0;
                 MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
-                DisplaySequences(stationarySequence, null, psm);
+                DisplaySequences(stationarySequence, null, null, psm);
                 DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
 
                 if (displayErrors != null)

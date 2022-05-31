@@ -118,7 +118,9 @@
                         <!--PSM annotated peaks-->
                         <Grid Grid.Column="2">
                             <Grid.RowDefinitions>
+                                <!-- Region above the Spectrum -->
                                 <RowDefinition Height="57" />
+                                <!-- spectrum -->
                                 <RowDefinition Height="8*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
@@ -147,10 +149,10 @@
                                 <Grid Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" >
                                     <!-- Scrolling Sequence -->
                                     <ScrollViewer Name="wholeSequenceCoverageHorizontalScroll" 
-                                              HorizontalAlignment="Center" VerticalAlignment="Bottom"
-                                              CanContentScroll="True" VerticalScrollBarVisibility="Disabled" 
-                                              HorizontalScrollBarVisibility="Auto" Margin="0,0"
-                                              ScrollChanged="wholeSequenceCoverageHorizontalScroll_Scroll">
+                                            HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                            CanContentScroll="True" VerticalScrollBarVisibility="Disabled" 
+                                            HorizontalScrollBarVisibility="Auto" Margin="0,0"
+                                            ScrollChanged="wholeSequenceCoverageHorizontalScroll_Scroll">
                                         <Canvas x:Name="scrollableSequenceCanvas" Grid.Row="0" Background="White" Margin="-8,-4,0,0" ></Canvas>
                                     </ScrollViewer>
 
@@ -162,27 +164,26 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <TextBlock Name="AmbiguousTextBlock" Text="PSM is ambiguous, please select a sequence"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1"
-                                                   FontWeight="DemiBold"  />
+                                                HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1"
+                                                FontWeight="DemiBold"  />
                                         <TextBlock Name="MatchedIonTextBlock" Text="Matched ions will only be annotated for the first sequence"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="2" 
-                                                   FontWeight="DemiBold" />
+                                                HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="2" 
+                                                FontWeight="DemiBold" />
                                     </Grid>
                                 </Grid>
 
                                 <!-- Box to cover scrolling sequence that is not shown -->
                                 <Grid Name="GrayBox" Grid.Column="3" Background="LightGray" Opacity="0" Margin="0,0,0,16"></Grid>
-                                
+
                                 <!-- Ambiguous sequence selector -->
-                                <ComboBox Name="AmbiguousSequenceOptionBox" Grid.Column="3" Visibility="Hidden"
+                                <ComboBox Name="AmbiguousSequenceOptionBox" Grid.Column="3" 
                                           HorizontalContentAlignment="Right" VerticalContentAlignment="Center"
                                           SelectionChanged="AmbiguousSequenceOptionBox_SelectionChanged" 
-                                          Margin="0, 0, 0, 16" >
+                                          Margin="0, 0, 0, 16" Visibility="Hidden">
                                 </ComboBox>
-
                             </Grid>
-
-                            <TabControl Grid.Row="1">
+                            
+                            <TabControl Grid.Row="1" >
                                 <!--MS2 Scan Annotations-->
                                 <TabItem Header="Parent Scan View" Name="ParentScanView">
                                     <Grid Name="PsmAnnotationGrid">
@@ -205,7 +206,46 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="200" />
                                             </Grid.ColumnDefinitions>
-                                                <Canvas Grid.Column="1" Margin="0 0 0 0" x:Name="stationarySequenceCanvas" VerticalAlignment="Stretch"/>
+                                            <Canvas Grid.Column="1" Margin="0 0 0 0" x:Name="stationarySequenceCanvas" VerticalAlignment="Stretch"/>
+                                        </Grid>
+
+                                        <!-- ptm legend -->
+                                        <Grid Grid.Row="0">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="*" />
+                                            </Grid.RowDefinitions>
+
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="165" />
+                                                <ColumnDefinition Width="8" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendViewModel}" 
+                                                          Grid.Row="1" Grid.Column="1">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border BorderBrush="Black" BorderThickness="1">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
+                                                                <ItemsControl ItemsSource="{Binding LegendItems}" >
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                                <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                                                    FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
+                                                                                <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                    Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
+                                                                            </StackPanel>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </StackPanel>
+                                                        </Border>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
                                         </Grid>
                                     </Grid>
                                 </TabItem>
@@ -280,10 +320,50 @@
                                         </ScrollViewer>
                                     </Grid>
                                 </TabItem>
+
+                                <TabItem Header="Sequence Annotation" Name="SequenceAnnotationTabItem">
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="100" />
+                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="*" />
+                                        </Grid.RowDefinitions>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="100" />
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <Canvas x:Name="sequenceAnnotationCanvas" Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" />
+                                        <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendViewModel}" 
+                                                          Grid.Row="0" Grid.Column="1" Margin="0 20 0 0">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="20" FontWeight="DemiBold" />
+                                                        <ItemsControl ItemsSource="{Binding LegendItems}" >
+                                                            <ItemsControl.ItemTemplate>
+                                                                <DataTemplate>
+                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                        <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                                                    FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
+                                                                        <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                    Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
+                                                                    </StackPanel>
+                                                                </DataTemplate>
+                                                            </ItemsControl.ItemTemplate>
+                                                        </ItemsControl>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </Grid>
+                                </TabItem>
                             </TabControl>
 
                             <!--Detailed PSM properties-->
-                            <StackPanel Grid.Row="2">
+                            <StackPanel Grid.Row="2" >
                                 <Expander x:Name="NotificationExpander" FlowDirection="RightToLeft" >
                                     <Expander.Header>
                                         <StackPanel>
