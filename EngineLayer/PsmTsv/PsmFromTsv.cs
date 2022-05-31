@@ -195,6 +195,70 @@ namespace EngineLayer
             LocalizedGlycan = (parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan]];
         }
 
+        /// <summary>
+        /// Constructor used to disambiguate PsmFromTsv and setting to a single full sequence
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="fullSequence"></param>
+        public PsmFromTsv(PsmFromTsv psm, string fullSequence)
+        {
+            FullSequence = fullSequence;
+            Ms2ScanNumber = psm.Ms2ScanNumber;
+            FileNameWithoutExtension = psm.FileNameWithoutExtension;
+            PrecursorScanNum = psm.PrecursorScanNum;
+            PrecursorCharge = psm.PrecursorCharge;
+            PrecursorMz = psm.PrecursorMz;
+            Score = psm.Score;
+            ProteinAccession = psm.ProteinAccession;
+            MatchedIons = psm.MatchedIons.ToList();
+            ChildScanMatchedIons = psm.ChildScanMatchedIons;
+            QValue = psm.QValue;
+            PEP = psm.PEP;
+            PEP_QValue = psm.PEP_QValue;
+            TotalIonCurrent = psm.TotalIonCurrent;
+            DeltaScore = psm.DeltaScore;
+            BaseSeq = psm.BaseSeq;
+            EssentialSeq = psm.EssentialSeq;
+            AmbiguityLevel = psm.AmbiguityLevel;
+            MissedCleavage = psm.MissedCleavage;
+            PeptideMonoMass = psm.PeptideMonoMass;
+            MassDiffDa = psm.MassDiffDa;
+            MassDiffPpm = psm.MassDiffPpm;
+            ProteinName = psm.ProteinName;
+            GeneName = psm.GeneName;
+            OrganismName = psm.OrganismName;
+            IntersectingSequenceVariations = psm.IntersectingSequenceVariations;
+            SpliceSites = psm.SpliceSites;
+            PeptideDescription = psm.PeptideDescription;
+            StartAndEndResiduesInProtein = psm.StartAndEndResiduesInProtein;
+            PreviousAminoAcid = psm.PreviousAminoAcid;
+            NextAminoAcid = psm.NextAminoAcid;
+            DecoyContamTarget = psm.DecoyContamTarget;
+            QValueNotch = psm.QValueNotch;
+            VariantCrossingIons = psm.VariantCrossingIons?.ToList();
+            CrossType = psm.CrossType;
+            LinkResidues = psm.LinkResidues;
+            ProteinLinkSite = psm.ProteinLinkSite;
+            Rank = psm.Rank;
+            BetaPeptideProteinAccession = psm.BetaPeptideProteinAccession;
+            BetaPeptideProteinLinkSite = psm.BetaPeptideProteinLinkSite;
+            BetaPeptideBaseSequence = psm.BetaPeptideBaseSequence;
+            BetaPeptideFullSequence = psm.BetaPeptideFullSequence;
+            BetaPeptideTheoreticalMass = psm.BetaPeptideTheoreticalMass;
+            BetaPeptideScore = psm.BetaPeptideScore;
+            BetaPeptideRank = psm.BetaPeptideRank;
+            BetaPeptideMatchedIons = psm.BetaPeptideMatchedIons?.ToList();
+            BetaPeptideChildScanMatchedIons = psm.BetaPeptideChildScanMatchedIons;
+            XLTotalScore = psm.XLTotalScore;
+            ParentIons = psm.ParentIons;
+            RetentionTime = psm.RetentionTime;
+            GlycanStructure = psm.GlycanStructure;
+            GlycanMass = psm.GlycanMass;
+            GlycanComposition = psm.GlycanComposition;
+            GlycanLocalizationLevel = psm.GlycanLocalizationLevel;
+            LocalizedGlycan = psm.LocalizedGlycan;
+        }
+
         //Used to remove Silac labels for proper annotation
         public static string RemoveParentheses(string baseSequence)
         {
@@ -222,6 +286,71 @@ namespace EngineLayer
             }
             return baseSequence;
         }
+
+        /// <summary>
+        /// Parses the full sequence to identify mods
+        /// </summary>
+        /// <param name="fullSequence"> Full sequence of the peptide in question</param>
+        /// <returns> Dictionary with the key being the amino acid position of the mod and the value being the string representing the mod</returns>
+        public static Dictionary<int, List<string>> ParseModifications(string fullSeq)
+        {
+            // use a regex to get all modifications
+            string pattern = @"\[(.+?)\]";
+            Regex regex = new(pattern);
+
+            // remove each match after adding to the dict. Otherwise, getting positions
+            // of the modifications will be rather difficult.
+            //int patternMatches = regex.Matches(fullSeq).Count;
+            Dictionary<int, List<string>> modDict = new();
+            
+            RemoveSpecialCharacters(ref fullSeq);
+            MatchCollection matches = regex.Matches(fullSeq);
+            int currentPosition = 0;
+            foreach (Match match in matches)
+            {
+                GroupCollection group = match.Groups;
+                string val = group[1].Value;
+                int startIndex = group[0].Index;
+                int captureLength = group[0].Length;
+                int position = group["(.+?)"].Index;
+
+                List<string> modList = new List<string>();
+                modList.Add(val);
+                // check to see if key already exist
+                // if there is a missed cleavage, then there will be a label on K and a Label on X modification.
+                // And, it'll be like [label]|[label] which complicates the positional stuff a little bit.
+                // if the already key exists, update the current position with the capture length + 1.
+                // otherwise, add the modification to the dict.
+
+                // int to add is startIndex - current position
+                int positionToAddToDict = startIndex - currentPosition;
+                if (modDict.ContainsKey(positionToAddToDict))
+                {
+                    modDict[positionToAddToDict].Add(val);
+                }
+                else
+                {
+                    modDict.Add(positionToAddToDict, modList);
+                }
+                currentPosition += startIndex + captureLength;
+            }
+            return modDict;
+        }
+
+        /// <summary>
+        /// Fixes an issue where the | appears and throws off the numbering if there are multiple mods on a single amino acid.
+        /// </summary>
+        /// <param name="fullSeq"></param>
+        /// <param name="replacement"></param>
+        /// <param name="specialCharacter"></param>
+        /// <returns></returns>
+        public static void RemoveSpecialCharacters(ref string fullSeq, string replacement = @"", string specialCharacter = @"\|")
+        {
+            // next regex is used in the event that multiple modifications are on a missed cleavage Lysine (K)
+            Regex regexSpecialChar = new(specialCharacter);
+            fullSeq = regexSpecialChar.Replace(fullSeq, replacement);
+        }
+
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string matchedIntensityString, string peptideBaseSequence)
         {
@@ -392,6 +521,11 @@ namespace EngineLayer
             }
 
             return tuples;
+        }
+
+        public override string ToString()
+        {
+            return FullSequence;
         }
     }
 }
