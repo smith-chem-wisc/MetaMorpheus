@@ -172,6 +172,9 @@
     <None Update="TestData\myPrositLib.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\noSAreaderTest.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\oglyco.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -329,6 +332,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TopDownTestData\slicedTDYeast.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TopDownTestData\TDGPTMDSearchResults.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TopDownTestData\TDGPTMDSearchSingleSpectra.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="VariantSearchTaskconfig.toml">

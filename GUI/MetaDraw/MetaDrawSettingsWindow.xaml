@@ -6,35 +6,161 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Title="Graphical Settings" Width="400" SizeToContent="Height" WindowStartupLocation="CenterScreen">
-    <StackPanel>
-        <StackPanel>
-            <CheckBox Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
-            <CheckBox Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
-            <CheckBox Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
-            <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="5"/>
-            <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5" />
-            <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
-
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Filter to q-value:" Margin="5"/>
-                <TextBox Name ="qValueBox" Width="60" Height="24" />
-            </StackPanel>
+    <!-- IMPORTANT: When changing any of these settings, be sure to do each of the following -->
+    <!-- Update the MetaDrawSettings.cs to have a field for it, as well as teh MetaDrawSettingsSnapshot class below it -->
+    <!-- The methods MakeSnapshot and LoadSettings within metadraw must also be updated -->
+    <Grid >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        
+        <!-- main settings content -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
             
-            <StackPanel Orientation="Horizontal">
-                <Label Content="Glycan Localization Level:" Margin="5"/>
-                <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24" />
-                <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" />
-            </StackPanel>
-            
-            <StackPanel Orientation="Horizontal" Margin="5">
-                <Label Content="Text size:" />
-                <TextBox Name ="TextSizeBox" Width="60" Height="24" />
+            <!-- left column -->
+            <StackPanel>
+                <StackPanel>
+                    <CheckBox Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
+                    <CheckBox Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
+                    <CheckBox Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
+                    <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="5"/>
+                    <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5" />
+                    <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
+ 
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Label Content="Filter to q-value:" Width="120"/>
+                        <TextBox Name ="qValueBox" Width="60" Height="24" Grid.Column="1"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Label Content="Text size:" Width="120"/>
+                        <TextBox Name ="TextSizeBox" Width="60" Height="24" />
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
 
+            <!-- right column -->
+            <StackPanel Grid.Column="1">
+                
+                <!-- glycan localization level -->
+                <StackPanel Orientation="Vertical">
+                    <Label Content="Glycan Localization Level:" Margin="5" HorizontalAlignment="Center"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20 5 20 0">
+                        <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24" />
+                        <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Spectrum Customization Options -->
+                <GroupBox Header="Spectrum Customization" x:Name="SpectrumCustomization">
+                    <StackPanel>
+                        <Expander Name="SpectrumDescriptionExpander"  Header="Spectrum Description" 
+                                  DockPanel.Dock="Top" Margin="10 5 5 5">
+                            <Expander.Style>
+                                <Style TargetType="Expander">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsExpanded" Value="True">
+                                            <Setter Property="Header" Value="Hide" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Expander.Style>
+
+                            <!-- Spectrum Description Text Customization Options 
+                            To make changes here, add a checkbox then add it to Save_Click and PopulateChoices, 
+                            then add a new item to SpectrumDescripion Dictionary in Settings, 
+                            finally update PeptideSpectrumMatchPlot.AnnotateProperties() -->
+                            <ScrollViewer>
+                                <StackPanel>
+                                    <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
+                                    <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
+                                    <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
+                                    <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
+                                    <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
+                                    <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
+                                    <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
+                                    <CheckBox Name="ProFormaLevelCheckBox" Content="ProForma Level" Margin="3" 
+                                        ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <ToolTipService.ToolTip>
+                                            J. Proteome Res. 2018, 17, 3, 1321–1325
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
+                                    <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
+                                    <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
+                                    <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
+                                    <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Expander>
+                        
+                        <!-- Color Selection for each ion -->
+                        <Expander Name="IonColorSelectionExpander" Header="Ion Color Selection"
+                                  DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Hidden">
+                            <Expander.Style>
+                                <Style TargetType="Expander">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsExpanded" Value="True">
+                                            <Setter Property="Header" Value="Hide" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Expander.Style>
+                            <ItemsControl x:Name="IonColorSelectionItemsControl" ItemsSource="{Binding ProductTypeToColor}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="{Binding Item1}"/>
+                                            <ListBox />
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Expander>
+
+                        <!-- Color Selection for each ptm -->
+                        <Expander Name="PTMColorSelectionExpander" Header="[WIP] PTM Color Selection"
+                                  DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Hidden">
+                            <Expander.Style>
+                                <Style TargetType="Expander">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsExpanded" Value="True">
+                                            <Setter Property="Header" Value="Hide" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Expander.Style>
+                            <ScrollViewer>
+                                <StackPanel>
+                                    <!-- Color selection options -->
+
+                                </StackPanel>
+                            </ScrollViewer>
+                        </Expander>
+
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </Grid>
+
+        <!-- save and close buttons -->
+        <Grid Grid.Row="1">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Center" >
-                <Button x:Name="Save" Content="Save" Click="Save_Click" FontSize="15" Width="100" Margin="0,5" />
-                <Button x:Name="Cancel" Content="Cancel" Click="Cancel_Click" FontSize="15" Width="100" Margin="0,5" />
+                <Button x:Name="Cancel" Content="Cancel" Click="Cancel_Click" FontSize="15" Width="120" Margin="0,5" />
+                <Button x:Name="Save" Content="Save" Click="Save_Click" FontSize="15" Width="120" Margin="0,5" />
+                <Button x:Name="setDefaultbutton" Content ="Save As Default" Click="setDefaultbutton_Click" 
+                        FontSize="15" Width="120" Margin="0,5" >
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" 
+                                 ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                    </ToolTipService.ToolTip>
+                </Button>
             </StackPanel>
-        </StackPanel>
-    </StackPanel>
+        </Grid>
+    </Grid>
+    
 </Window>
