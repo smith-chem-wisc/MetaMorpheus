@@ -367,5 +367,40 @@ namespace Test
 
         }
 
+
+        [Test]
+        public static void OGlycotest_xcorr_score()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
+
+            Protein protein = new Protein("DKAETLKK", "P00950");
+            var peptides = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>());
+
+            List<Product> products0 = new List<Product>();
+            peptides.First().Fragment(DissociationType.HCD, FragmentationTerminus.Both, products0);
+            List<Product> products1 = new List<Product>();
+            peptides.Last().Fragment(DissociationType.HCD, FragmentationTerminus.Both, products1);
+
+
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast_trunct.mgf");
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false);
+            var file = new MyFileManager(true).LoadFile(spectraFile, commonParameters);
+            var scans = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).ToArray();
+
+            var scores = new List<(double, double)>();
+            foreach (var scan in scans)
+            {
+                //var xcorr = GlycoPeptides.CalcXcorr(scan112, products, 0.01);
+                var kojakSparseArray = GlycoPeptides.kojakXCorr(scan, 0.01, 1);
+                var dXcorr0 = GlycoPeptides.KojakScoring(scan, products0, 0.01, 1, kojakSparseArray);
+                var dXcorr1 = GlycoPeptides.KojakScoring(scan, products1, 0.01, 1, kojakSparseArray);
+                scores.Add((dXcorr0, dXcorr1));
+            }
+
+            Assert.That(2.5 <= scores[0].Item2 && scores[0].Item2  < 2.6);
+            Assert.That(2.0 < scores[1].Item2 && scores[1].Item2 < 2.1);
+            Assert.That(1.1 < scores[2].Item1 && scores[2].Item1 < 1.2);
+            Assert.That(1.3 < scores[3].Item1 && scores[3].Item1 < 1.4);
+        }
     }
 }
