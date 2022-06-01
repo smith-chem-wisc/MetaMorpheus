@@ -1,6 +1,9 @@
 using EngineLayer;
 using GuiFunctions;
+using GuiFunctions.MetaDraw;
+using Nett;
 using OxyPlot;
+using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -63,6 +66,15 @@ namespace MetaMorpheusGUI
             plotTypes = new ObservableCollection<string>();
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
+
+            // checks to see if default settings have been saved, and loads them for the first opening of the window
+            MetaDrawSettingsSnapshot settings = null;
+            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml");
+            if (File.Exists(settingsPath))
+            {
+                settings = Toml.ReadFile<MetaDrawSettingsSnapshot>(settingsPath);
+                MetaDrawSettings.LoadSettings(settings);
+            }
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -134,6 +146,9 @@ namespace MetaMorpheusGUI
                 if (!MetaDrawLogic.SpectralLibraryPaths.Contains(filePath))
                 {
                     MetaDrawLogic.SpectralLibraryPaths.Add(filePath);
+                    specLibraryLabel.Text = filePath;
+                    specLibraryLabel.ToolTip = string.Join("\n", MetaDrawLogic.SpectralLibraryPaths);
+                    resetSpecLibraryButton.IsEnabled = true;
                 }
             }
             else
@@ -147,15 +162,48 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
-            if (dataGridScanNums.SelectedItem == null)
+            if (dataGridScanNums.SelectedItem == null || sender == null)
             {
                 return;
             }
 
+            wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
+            AmbiguousSequenceOptionBox.Items.Clear();
+            plotView.Visibility = Visibility.Visible;
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            SetSequenceDrawingPositionSettings(true);
+            // If psm is ambiguous, split into several psm objects and add each as an option to see
+            if (psm.FullSequence.Contains('|'))
+            {
+                MetaDrawSettings.DrawMatchedIons = false;
+                DrawnSequence.ClearCanvas(scrollableSequenceCanvas);
+                DrawnSequence.ClearCanvas(stationarySequenceCanvas);
+                GrayBox.Opacity = 0;
+                var fullSeqs = psm.FullSequence.Split('|');
+                foreach (var fullSeq in fullSeqs)
+                {
+                    PsmFromTsv oneAmbiguousPsm = new(psm, fullSeq);
+                    AmbiguousSequenceOptionBox.Items.Add(oneAmbiguousPsm);
+                }
+                AmbiguousWarningTextBlocks.Visibility = Visibility.Visible;
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                MetaDrawSettings.DrawMatchedIons = true;
+                AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Collapsed;
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
+                if (psm.BaseSeq.Length > MetaDrawSettings.NumberOfAAOnScreen)
+                    GrayBox.Opacity = 0.7;
+                else
+                    GrayBox.Opacity = 0;
+            }
 
             // draw the annotated spectrum
-            MetaDrawLogic.DisplaySpectrumMatch(plotView, canvas, psm, itemsControlSampleViewModel, out var errors);
+            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
+            MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
 
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
@@ -239,11 +287,58 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void selectSpecLibraryButton_Click(object sender, RoutedEventArgs e)
+        {
+            string filterString = string.Join(";", AcceptedResultsFormats.Concat(AcceptedSpectralLibraryFormats).Select(p => "*" + p));
+
+            Microsoft.Win32.OpenFileDialog openFileDialog1 = new Microsoft.Win32.OpenFileDialog
+            {
+                Filter = "Result Files(" + filterString + ")|" + filterString,
+                FilterIndex = 1,
+                RestoreDirectory = true,
+                Multiselect = false
+            };
+            if (openFileDialog1.ShowDialog() == true)
+            {
+                foreach (var filePath in openFileDialog1.FileNames.OrderBy(p => p))
+                {
+                    AddFile(filePath);
+                }
+            }
+        }
+
         private void resetFilesButton_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawLogic.CleanUpResources();
-            spectraFileNameLabel.Text = "None Selected";
-            psmFileNameLabel.Text = "None Selected";
+            if (((Button)sender).Name.Equals("resetSpectraFileButton"))
+            {
+                spectraFileNameLabel.Text = "None Selected";
+                MetaDrawLogic.CleanUpSpectraFiles();
+            }
+
+            else if (((Button)sender).Name.Equals("resetPsmFileButton"))
+            {
+                psmFileNameLabel.Text = "None Selected";
+                MetaDrawLogic.CleanUpPSMFiles();
+            }
+
+            else if (((Button)sender).Name.Equals("resetSpecLibraryButton"))
+            {
+                specLibraryLabel.Text = "None Selected";
+                MetaDrawLogic.CleanUpSpectralLibraryFiles();
+            }
+            else
+            {
+                MetaDrawLogic.CleanUpResources();
+            }
+
+            // if a psm is selected
+            if (MetaDrawLogic.ScrollableSequence != null)
+            {
+                DrawnSequence.ClearCanvas(MetaDrawLogic.ScrollableSequence.SequenceDrawingCanvas);
+                DrawnSequence.ClearCanvas(MetaDrawLogic.StationarySequence.SequenceDrawingCanvas);
+                plotView.Visibility = Visibility.Hidden;
+                MetaDrawLogic.FilteredListOfPsms.Clear();
+            }
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
@@ -253,11 +348,14 @@ namespace MetaMorpheusGUI
 
         private void settings_Click(object sender, RoutedEventArgs e)
         {
+            
+            // save current selected PSM
+            var selectedItem = dataGridScanNums.SelectedItem;
             var settingsWindow = new MetaDrawSettingsWindow();
             var result = settingsWindow.ShowDialog();
 
-            // save current selected PSM
-            var selectedItem = dataGridScanNums.SelectedItem;
+            // re-select selected PSM
+            
 
             if (result == true)
             {
@@ -268,7 +366,6 @@ namespace MetaMorpheusGUI
                 MetaDrawLogic.FilterPsms();
             }
 
-            // re-select selected PSM
             if (selectedItem != null)
             {
                 dataGridScanNums.SelectedItem = selectedItem;
@@ -295,8 +392,8 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = false;
             selectSpectraFileButton.IsEnabled = false;
             selectPsmFileButton.IsEnabled = false;
-            resetSpectraFileButton.IsEnabled = false;
-            resetPsmFileButton.IsEnabled = false;
+            selectSpecLibraryButton.IsEnabled = false;
+ 
             prgsFeed.IsOpen = true;
             prgsText.Content = "Loading data...";
 
@@ -330,8 +427,7 @@ namespace MetaMorpheusGUI
             (sender as Button).IsEnabled = true;
             selectSpectraFileButton.IsEnabled = true;
             selectPsmFileButton.IsEnabled = true;
-            resetSpectraFileButton.IsEnabled = true;
-            resetPsmFileButton.IsEnabled = true;
+            selectSpecLibraryButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -375,7 +471,7 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
 
-            MetaDrawLogic.ExportToPdf(plotView, canvas, items, itemsControlSampleViewModel, directoryPath, out var errors);
+            MetaDrawLogic.ExportToPdf(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors) ;
 
             if (errors.Any())
             {
@@ -548,6 +644,93 @@ namespace MetaMorpheusGUI
         {
             mapViewer.Height = .8 * SequenceAnnotationGrid.ActualHeight;
             mapViewer.Width = .99 * SequenceAnnotationGrid.ActualWidth;
+        }
+
+        /// <summary>
+        /// Redraws the Stationary Sequence whenever the scrolling sequence is scrolled
+        /// </summary>
+        /// <param name="sender"> 
+        /// <param name="e"></param>
+        private void wholeSequenceCoverageHorizontalScroll_Scroll(object sender, ScrollChangedEventArgs e)
+        {
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+            {
+                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+
+                // Draw the matched ions for the first ambiguous sequence only
+                if (AmbiguousSequenceOptionBox.SelectedIndex == 0)
+                {
+                    MetaDrawSettings.DrawMatchedIons = true;
+                }
+                else
+                {
+                    MetaDrawSettings.DrawMatchedIons = false;
+                }
+            }
+            SetSequenceDrawingPositionSettings();
+            if (MetaDrawLogic.StationarySequence != null)
+                DrawnSequence.DrawStationarySequence(psm, MetaDrawLogic.StationarySequence);
+        }
+
+        /// <summary>
+        /// Redraws the Stationary and Scrollable sequences upon the selection of an Ambiguous PSM
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AmbiguousSequenceOptionBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (AmbiguousWarningTextBlocks.Visibility != Visibility.Collapsed)
+            {
+                AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
+            }
+
+            wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+            {
+                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
+
+                // Draw the matched ions for the first ambiguous sequence only
+                if (AmbiguousSequenceOptionBox.SelectedIndex == 0)
+                {
+                    MetaDrawSettings.DrawMatchedIons = true;
+                }
+                else
+                {
+                    MetaDrawSettings.DrawMatchedIons = false;
+                }
+            }
+            SetSequenceDrawingPositionSettings(true);
+            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, psm);
+        }
+
+        /// <summary>
+        /// Method to set the MetaDrawSettings fields FirstAAOnScreen and NumberofAAonScreen to the current scrolling sequence position
+        /// </summary>
+        private void SetSequenceDrawingPositionSettings(bool reset = false)
+        {
+            double width = SequenceAnnotationArea.ActualWidth;
+            double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
+            if (reset)
+            {
+                offset = 0;
+            }
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+            {
+                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+            }
+
+            int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            int firstLetterOnScreen = (int)Math.Round((offset) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
+            {
+                lettersOnScreen = psm.BaseSeq.Length - firstLetterOnScreen;
+            }
+            MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
+            MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
         }
     }
 }

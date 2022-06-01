@@ -31,7 +31,8 @@ namespace MetaMorpheusGUI
             string numberOfDatabaseSearches,
             string maxModsPerPeptide,
             string maxFragmentMass,
-            string qValueFilter
+            string qValueFilter,
+            string pepqValueFilter = "1"
             )
         {
             maxMissedCleavages = MaxValueConversion(maxMissedCleavages);
@@ -56,7 +57,7 @@ namespace MetaMorpheusGUI
                 (CheckNumberOfDatabasePartitions(numberOfDatabaseSearches)),
                 (CheckMaxModsPerPeptide(maxModsPerPeptide)),
                 (CheckMaxFragementMass(maxFragmentMass)),
-                (CheckQValueFilter(qValueFilter))
+                (CheckQValueFilters(qValueFilter, pepqValueFilter))
             };
 
             if (results.Contains(false))
@@ -162,140 +163,156 @@ namespace MetaMorpheusGUI
                 return true;
             }
 
-            public static bool CheckProductMassTolerance(string text)
+        public static bool CheckProductMassTolerance(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double productMassTolerance) || productMassTolerance <= 0)
             {
-                if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double productMassTolerance) || productMassTolerance <= 0)
-                {
-                    MessageBox.Show("The product mass tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("The product mass tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
+                return false;
+            }
+            return true;
+        }
+
+        public static bool CheckNumberOfDatabasePartitions(string text)
+        {
+            if (!int.TryParse(text, out int numberOfDatabaseSearches) || numberOfDatabaseSearches <= 0)
+            {
+                MessageBox.Show("The number of database partitions is invalid. At least one database is required for searching.");
+                return false;
+            }
+            return true;
+        }
+
+        public static bool CheckMaxMissedCleavages(string text)
+        {
+            if (!int.TryParse(text, out int maxMissedCleavages) || maxMissedCleavages < 0)
+            {
+                MessageBox.Show("The number of missed cleavages is invalid. Please enter an integer zero or greater.");
+                return false;
             }
 
-            public static bool CheckNumberOfDatabasePartitions(string text)
+            return true;
+        }
+
+        public static bool CheckMaxModificationIsoForms(string text)
+        {
+            if (!int.TryParse(text, out int maxModificationIsoforms) || maxModificationIsoforms < 1)
             {
-                if (!int.TryParse(text, out int numberOfDatabaseSearches) || numberOfDatabaseSearches <= 0)
-                {
-                    MessageBox.Show("The number of database partitions is invalid. At least one database is required for searching.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("The maximum number of modification isoforms is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
+                return false;
+            }
+            return true;
+        }
+
+        public static bool CheckPeptideLength(string min, string max)
+        {
+            if (!int.TryParse(min, out int minPeptideLength) || minPeptideLength < 1)
+            {
+                MessageBox.Show("The minimum peptide length must be a positive integer");
+                return false;
             }
 
-            public static bool CheckMaxMissedCleavages(string text)
+            if (!int.TryParse(max, out int maxPeptideLength) || maxPeptideLength < 1)
             {
-                if (!int.TryParse(text, out int maxMissedCleavages) || maxMissedCleavages < 0)
-                {
-                    MessageBox.Show("The number of missed cleavages is invalid. Please enter an integer zero or greater.");
-                    return false;
-                }
-
-                return true;
+                MessageBox.Show("The maximum peptide length must be a positive integer");
+                return false;
             }
 
-            public static bool CheckMaxModificationIsoForms(string text)
+            if (Convert.ToInt32(min) > Convert.ToInt32(max))
             {
-                if (!int.TryParse(text, out int maxModificationIsoforms) || maxModificationIsoforms < 1)
-                {
-                    MessageBox.Show("The maximum number of modification isoforms is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("The maximum peptide length must be greater than or equal to the minimum peptide length.");
+                return false;
             }
+            return true;
+        }
 
-            public static bool CheckPeptideLength(string min, string max)
+        public static bool CheckMaxModsPerPeptide(string text)
+        {
+            if (!int.TryParse(text, out int maxModsPerPeptide) || maxModsPerPeptide < 0)
             {
-                if (!int.TryParse(min, out int minPeptideLength) || minPeptideLength < 1)
-                {
-                    MessageBox.Show("The minimum peptide length must be a positive integer");
-                    return false;
-                }
-
-                if (!int.TryParse(max, out int maxPeptideLength) || maxPeptideLength < 1)
-                {
-                    MessageBox.Show("The maximum peptide length must be a positive integer");
-                    return false;
-                }
-
-                if (Convert.ToInt32(min) > Convert.ToInt32(max))
-                {
-                    MessageBox.Show("The maximum peptide length must be greater than or equal to the minimum peptide length.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("The max mods per peptide allowed is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a number greater than or equal to zero.");
+                return false;
             }
+            return true;
+        }
 
-            public static bool CheckMaxModsPerPeptide(string text)
+        public static bool CheckMaxFragementMass(string text)
+        {
+            if (!int.TryParse(text, out int maxFragmentMass) || maxFragmentMass < 0)
             {
-                if (!int.TryParse(text, out int maxModsPerPeptide) || maxModsPerPeptide < 0)
-                {
-                    MessageBox.Show("The max mods per peptide allowed is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a number greater than or equal to zero.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("The max fragment mass is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
+                return false;
             }
+            return true;
+        }
 
-            public static bool CheckMaxFragementMass(string text)
+        public static bool CheckMaxThreads(string text)
+        {
+            if (!int.TryParse(text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads < 1)
             {
-                if (!int.TryParse(text, out int maxFragmentMass) || maxFragmentMass < 0)
-                {
-                    MessageBox.Show("The max fragment mass is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("Your current device has " + Environment.ProcessorCount + " processors. \n Please select a positive value less than or equal to this number.");
+                return false;
             }
+            return true;
+        }
 
-            public static bool CheckMaxThreads(string text)
+        public static bool CheckMinScoreAllowed(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minScore) || minScore < 1)
             {
-                if (!int.TryParse(text, out int maxThreads) || maxThreads > Environment.ProcessorCount || maxThreads < 1)
-                {
-                    MessageBox.Show("Your current device has " + Environment.ProcessorCount + " processors. \n Please select a positive value less than or equal to this number.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("The minimum score allowed is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
+                return false;
             }
+            return true;
+        }
 
-            public static bool CheckMinScoreAllowed(string text)
+        public static bool CheckPeakFindingTolerance(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double peakFindingTolerance) || peakFindingTolerance <= 0)
             {
-                if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minScore) || minScore < 1)
-                {
-                    MessageBox.Show("The minimum score allowed is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive, non-zero number.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("The peak finding tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
+                return false;
             }
+            return true;
+        }
 
-            public static bool CheckPeakFindingTolerance(string text)
+        public static bool CheckHistogramBinWidth(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double binWidth) || binWidth < 0 || binWidth > 1)
             {
-                if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double peakFindingTolerance) || peakFindingTolerance <= 0)
-                {
-                    MessageBox.Show("The peak finding tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
-                    return false;
-                }
-                return true;
+                MessageBox.Show("The histogram bin width must be between zero and one Daltons. \n You entered " + '"' + text + '"');
+                return false;
             }
+            return true;
+        }
 
-            public static bool CheckHistogramBinWidth(string text)
+        public static bool CheckQValueFilters(string qValue, string pepqValue)
+        {
+            if (qValue.Equals("") && pepqValue.Equals("") || !qValue.Equals("") && !pepqValue.Equals(""))
             {
-                if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double binWidth) || binWidth < 0 || binWidth > 1)
-                {
-                    MessageBox.Show("The histogram bin width must be between zero and one Daltons. \n You entered " + '"' + text + '"');
-                    return false;
-                }
-                return true;
+                MessageBox.Show("Must specify a value for qValue or pep qValue, but not both");
+                return false;
             }
-
-            public static bool CheckQValueFilter(string text)
+            else if (pepqValue.Equals("") && !qValue.Equals(""))
             {
-                if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValue) || qValue < 0 || qValue > 1)
+                if (!double.TryParse(qValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValueOut) || qValueOut < 0 || qValueOut > 1)
                 {
                     MessageBox.Show("The q-value cutoff must be a number between 0 and 1");
                     return false;
                 }
-                return true;
             }
+            else if (!pepqValue.Equals("") && qValue.Equals(""))
+            {
+                if (!double.TryParse(pepqValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double pepqValueOut) || pepqValueOut < 0 || pepqValueOut > 1)
+                {
+                    MessageBox.Show("The q-value cutoff must be a number between 0 and 1");
+                    return false;
+                }
+            }
+            return true;
+        }
 
-            public static bool VariableModCheck(List<(string, string)> listOfModsVariable)
+        public static bool VariableModCheck(List<(string, string)> listOfModsVariable)
             {
                 if (listOfModsVariable.Count > 1)
                 {
