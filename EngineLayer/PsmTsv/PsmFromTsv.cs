@@ -86,7 +86,7 @@ namespace EngineLayer
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
-            var spl = line.Split(split);
+            var spl = line.Split(split).Select(p => p.Trim('\"')).ToArray();
 
             //Required properties
             FileNameWithoutExtension = spl[parsedHeader[PsmTsvHeader.FileName]].Trim();
@@ -436,14 +436,18 @@ namespace EngineLayer
             }
             return matchedIons;
         }
-
+        /// <summary>
+        /// Removes enclosing brackets and
+        /// replaces delimimiters between ion series with comma
+        /// then splits on comma
+        /// </summary>
+        /// <param name="input"> String containing ion series from .psmtsv </param>
+        /// <returns> List of strings, with each entry containing one ion and associated property </returns>
         private static List<string> CleanMatchedIonString(string input)
         {
-            List<string> ionProperty = input.Substring(1, input.Length - 2) //remove the brackets on the ends
-                    .Replace("];[", ", ") //replace delimiter between ion series with the delimiter used between ions
-                    //.Replace("[","")
-                    //.Replace("]","")
-                    .Split(", ") //split by delimiter between ions
+            List<string> ionProperty = input.Substring(1, input.Length - 2) 
+                    .Replace("];[", ", ") 
+                    .Split(", ") 
                     .ToList();
             ionProperty.RemoveAll(p => p.Contains("\"") || p.Equals(""));
             return ionProperty;
