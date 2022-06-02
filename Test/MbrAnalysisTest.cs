@@ -101,7 +101,7 @@ namespace Test
                         QuantifyPpmTol = 25
                     }
                 },
-                CommonParameters = new CommonParameters(),
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters())
