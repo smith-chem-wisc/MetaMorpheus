@@ -1,22 +1,14 @@
-﻿using Nett;
+﻿using EngineLayer;
+using EngineLayer.ClassicSearch;
+using MassSpectrometry;
 using NUnit.Framework;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.Collections;
 using System.IO;
 using System.Linq;
 using TaskLayer;
-using EngineLayer;
-using FlashLFQ;
-using MathNet.Numerics.Statistics; // Necessary for calculating correlation 
-using System.Text.RegularExpressions;
-using MassSpectrometry;
-using MzLibUtil;
-using Proteomics;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
-using EngineLayer.ClassicSearch;
-
 
 namespace Test
 {
@@ -38,7 +30,7 @@ namespace Test
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
             Modification mod1 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             Dictionary<string, Modification> carbamidoDict = new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 } };
-            
+
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
@@ -56,7 +48,7 @@ namespace Test
                     oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
                 PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
-                
+
                 psms.Add(psm);
                 proteinList.Add(protein);
             }
@@ -112,17 +104,17 @@ namespace Test
                 CommonParameters = new CommonParameters(),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
                     (rawSlices[0], new CommonParameters()),
-                    (rawSlices[1], new CommonParameters()) 
+                    (rawSlices[1], new CommonParameters())
                 }
-        };
-         
+            };
+
             postSearchTask.Run();
 
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\MbrAnalysis.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\ExpectedMBRHits.psmtsv");
             List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
             // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
-            List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings); 
+            List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings);
 
             List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
@@ -134,7 +126,6 @@ namespace Test
             //FlashLFQ fails to detect peaks that were found by ClassicSearch
             //var spectraFiles = postSearchTask.Parameters.FlashLfqResults.SpectraFiles;
             //var x = postSearchTask.Parameters.FlashLfqResults.Peaks[spectraFiles[0]].Where(p => p.IsMbrPeak).SelectMany(p => p.Identifications).ToList();
-
         }
 
         [Test]
@@ -174,7 +165,6 @@ namespace Test
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
-
 
             foreach (PeptideSpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
