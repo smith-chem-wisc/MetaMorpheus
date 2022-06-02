@@ -836,17 +836,15 @@ namespace TaskLayer
                             massDiffAcceptor, CommonParameters, FileSpecificParameters, library, new List<string> { Parameters.SearchTaskId });
                         mcse.Run();
 
-                        lock (myLocks[i])
+                        if (peptideSpectralMatches.Any())
                         {
-                            if (peptideSpectralMatches.Any())
-                            {
-                                bestPsmsForPeaks.TryAdd(mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches));
-                            }
-                            else
-                            {
-                                bestPsmsForPeaks.TryAdd(mbrPeak, null);
-                            }
+                            bestPsmsForPeaks.TryAdd(mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches));
                         }
+                        else
+                        {
+                            bestPsmsForPeaks.TryAdd(mbrPeak, null);
+                        }
+
                     }
                 });
             }
