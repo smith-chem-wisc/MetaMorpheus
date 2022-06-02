@@ -6,13 +6,8 @@ namespace TaskLayer
 {
     public class MbrWriter
     {
-        public MbrWriter()
-        {
-
-        }
         public static string TabSeparatedHeader
         {
-
             get
             {
                 var sb = new StringBuilder();
@@ -23,14 +18,13 @@ namespace TaskLayer
             }
         }
 
-        public static string MbrPsmOutputString(ChromatographicPeak peak, PeptideSpectralMatch psm)
+        /*public static string MbrPsmOutputString(ChromatographicPeak peak, PeptideSpectralMatch psm)
         {
             var sb = new StringBuilder();
             sb.Append(psm.ToString());
             sb.Append('\t');
             sb.Append(peak.ToString());
             return sb.ToString();
-        }
-
+        }*/
     }
 }

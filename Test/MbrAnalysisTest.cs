@@ -19,7 +19,7 @@ namespace Test
         [Test]
         public static void MbrPostSearchAnalysisTest()
         {
-            // This block of code converts from PsmFromTsv to PeptdieSpectralMatch objects.
+            // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects.
             // It also deals with one specific Carbamidomethylation, defined in advance
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MSMSids.psmtsv");
             List<PsmFromTsv> tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
@@ -124,7 +124,11 @@ namespace Test
             Assert.That(matches02ng.Count >= 8);
             Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
         }
-
+        [Test]
+        public static void MbrWriterTest()
+        {
+            MbrWriter mbrWriter = new MbrWriter();
+        }
         [Test]
         public static void MiniClassicSearchEngineTest()
         {
