@@ -44,6 +44,7 @@
     <None Remove="Icons\wiki_20.bmp" />
     <None Remove="Icons\youtube-256.bmp" />
     <None Remove="Icons\youtube_20.bmp" />
+    <None Remove="MetaDraw\Icons\icons8-settings-256.bmp" />
   </ItemGroup>
 
   <ItemGroup>
@@ -119,10 +120,16 @@
     <Resource Include="Icons\youtube_20.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Content Include="MetaDraw\Icons\icons8-settings-256.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <None Update="app.manifest">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="MetaDraw\Icons\icons8-settings-48.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

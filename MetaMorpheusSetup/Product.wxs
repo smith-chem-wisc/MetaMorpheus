@@ -64,7 +64,7 @@
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="NativeMathDllFolder_runtimes" Name="runtimes">
             <Directory Id="NativeMathDllFolder_win_x64" Name="win-x64">
-              <Directory Id="NativeMathDllFolder_win_x64_native" Name="nativeWin"/>
+              <Directory Id="NativeMathDllFolder_win_x64_native" Name="native"/>
             </Directory>
             <Directory Id="NativeMathDllFolder_linux_x64" Name="linux-x64">
               <Directory Id="NativeMathDllFolder_linux_x64_native" Name="nativeLinux"/>

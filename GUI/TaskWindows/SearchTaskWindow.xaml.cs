@@ -146,6 +146,10 @@ namespace MetaMorpheusGUI
             }
         }
 
+        /// <summary>
+        /// Initializes the fields in the search task window upon opening to the settings of the param Task
+        /// </summary>
+        /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
             ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
@@ -293,12 +297,16 @@ namespace MetaMorpheusGUI
             if (task.CommonParameters.QValueOutputFilter < 1)
             {
                 QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
-                QValueCheckBox.IsChecked = true;
+                QValueRadioButton.IsChecked = true;
+            }
+            else if (task.CommonParameters.PepQValueOutputFilter < 1)
+            {
+                PepQValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
+                PepQValueRadioButton.IsChecked = true;
             }
             else
             {
-                QValueTextBox.Text = "0.01";
-                QValueCheckBox.IsChecked = false;
+                PepQValueTextBox.Text = "0.01";
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -400,7 +408,8 @@ namespace MetaMorpheusGUI
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
                 PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
-                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
+                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, 
+                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text))
             {
                 return;
             }
@@ -547,7 +556,8 @@ namespace MetaMorpheusGUI
                 numberOfWindows: numberOfWindows,//maybe change this some day
                 normalizePeaksAccrossAllWindows: normalizePeaksAccrossAllWindows,//maybe change this some day
                 addCompIons: AddCompIonCheckBox.IsChecked.Value,
-                qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                qValueOutputFilter: QValueRadioButton.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                pepQValueOutputFilter: PepQValueRadioButton.IsChecked.Value ? double.Parse(PepQValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
                 maxHeterozygousVariants: MaxHeterozygousVariants);
@@ -1236,6 +1246,28 @@ namespace MetaMorpheusGUI
         {
             SaveButton_Click(sender, e);
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+        }
+
+        /// <summary>
+        /// Event Handler for when the pepQvalue radio button is checked. Sets value to default then uncecks and clears qValue
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PepQValueRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            QValueTextBox.Clear();
+            PepQValueTextBox.Text = "0.01";
+        }
+
+        /// <summary>
+        /// Event Handler for when the qvalue radio button is checked. Sets value to default then unchecks and clears pepQvalue.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void QValueRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            PepQValueTextBox.Clear();
+            QValueTextBox.Text = "0.01";
         }
 
         /// <summary>
