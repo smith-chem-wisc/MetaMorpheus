@@ -792,13 +792,6 @@ namespace TaskLayer
                 List<ChromatographicPeak> fileSpecificMbrPeaks = Parameters.FlashLfqResults.Peaks[spectraFile].Where(p => p.IsMbrPeak).ToList();
                 if (fileSpecificMbrPeaks == null || (!fileSpecificMbrPeaks.Any())) break;
 
-                // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
-                var myLocks = new object[fileSpecificMbrPeaks.Count];
-                for (int i = 0; i < myLocks.Length; i++)
-                {
-                    myLocks[i] = new object();
-                }
-
                 MyFileManager myFileManager = new(true);
                 MsDataFile myMsDataFile = myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, CommonParameters);
                 MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance,
