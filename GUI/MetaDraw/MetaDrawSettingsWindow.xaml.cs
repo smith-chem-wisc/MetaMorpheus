@@ -1,8 +1,10 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using GuiFunctions;
+using Nett;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -12,6 +14,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDrawSettingsWindow : Window
     {
+        
         public MetaDrawSettingsWindow()
         {
             InitializeComponent();
@@ -32,10 +35,23 @@ namespace MetaMorpheusGUI
             BoldTextCheckBox.IsChecked = MetaDrawSettings.AnnotationBold;
             DecoysCheckBox.IsChecked = MetaDrawSettings.ShowDecoys;
             ContaminantsCheckBox.IsChecked = MetaDrawSettings.ShowContaminants;
+            PrecursorChargeCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Charge: "];
+            PrecursorMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Mass: "];
+            TheoreticalMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Theoretical Mass: "];
+            ScoreCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Score: "];
+            ProteinAccessionCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Protein Accession: "];
+            ProteinCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Protein: "];
+            DecoyContaminantTargetCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "];
+            QValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Q-Value: "];
+            SequenceLengthCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Sequence Length: "];
+            ProFormaLevelCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["ProForma Level: "];
+            PEPCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP: "];
+            PEPQValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP Q-Value: "];
             qValueBox.Text = MetaDrawSettings.QValueFilter.ToString();
             TextSizeBox.Text = MetaDrawSettings.AnnotatedFontSize.ToString();
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
+
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -51,6 +67,18 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.AnnotationBold = BoldTextCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowDecoys = BoldTextCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowContaminants = BoldTextCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Precursor Charge: "] = PrecursorChargeCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Precursor Mass: "] = PrecursorMassCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Theoretical Mass: "] = TheoreticalMassCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Score: "] = ScoreCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Protein Accession: "] = ProteinAccessionCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Protein: "] = ProteinCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "] = DecoyContaminantTargetCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Q-Value: "] = QValueCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Sequence Length: "] = SequenceLengthCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["ProForma Level: "] = ProFormaLevelCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["PEP: "] = PEPCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["PEP Q-Value: "] = PEPQValueCheckBox.IsChecked.Value;
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
 
@@ -95,6 +123,13 @@ namespace MetaMorpheusGUI
             }
 
             DialogResult = true;
+        }
+
+        private void setDefaultbutton_Click(object sender, RoutedEventArgs e)
+        {
+            MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
+            Save_Click(sender, e);
+            Toml.WriteFile(settings, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml"));
         }
     }
 }

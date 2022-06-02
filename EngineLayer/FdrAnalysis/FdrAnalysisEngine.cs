@@ -179,6 +179,7 @@ namespace EngineLayer.FdrAnalysis
 
                     Compute_PEPValue_Based_QValue(AllPsms);
                 }
+                CountPsm(); // recounting Psm's after PEP based disambiguation
             }
 
             if (AnalysisType == "Peptide")
