@@ -27,10 +27,6 @@ namespace Test
             List<Protein> proteinList = new List<Protein>();
             MyFileManager myFileManager = new MyFileManager(true);
 
-            ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod1 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
-            Dictionary<string, Modification> carbamidoDict = new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 } };
-
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
@@ -40,7 +36,7 @@ namespace Test
                     filePath, new CommonParameters());
                 Protein protein = new Protein(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName,
                     isDecoy: readPsm.DecoyContamTarget == "D" ? true : false,
-                    isContaminant: readPsm.DecoyContamTarget == "C" ? true : false) ;
+                    isContaminant: readPsm.DecoyContamTarget == "C" ? true : false);
                 string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
@@ -179,6 +175,109 @@ namespace Test
                 Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[5].BaseSequence);
                 Assert.That(peptideSpectralMatches[5].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
             }
+        }
+
+        // TODO: Add WriteSpectralLibraryTest for < 100 PSMs
+        [Test]
+        public static void SpectralWriterTest()
+        {
+            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MSMSids.psmtsv");
+            List<PsmFromTsv> tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings).GetRange(2, 75);
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            List<Protein> proteinList = new List<Protein>();
+            MyFileManager myFileManager = new MyFileManager(true);
+
+            foreach (PsmFromTsv readPsm in tsvPsms)
+            {
+                string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                    "TestData", "MbrAnalysisTest", readPsm.FileNameWithoutExtension + ".mzML");
+                MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
+                Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
+                    filePath, new CommonParameters());
+                Protein protein = new Protein(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName,
+                    isDecoy: readPsm.DecoyContamTarget == "D" ? true : false,
+                    isContaminant: readPsm.DecoyContamTarget == "C" ? true : false);
+                string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
+                int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
+                int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
+
+                PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
+                    readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
+                    oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
+                PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
+                    new CommonParameters(), readPsm.MatchedIons);
+                psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                psms.Add(psm);
+                proteinList.Add(protein);
+            }
+
+            List<string> rawSlices = new List<string> {
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\K13_02ng_1min_frac1.mzML"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\K13_20ng_1min_frac1.mzML") };
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput"));
+            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]> { { "K13_02ng_1min_frac1", new int[] { 8, 8 } }, { "K13_20ng_1min_frac1", new int[] { 8, 8 } } };
+            List<DbForTask> databaseList = new List<DbForTask>() {new DbForTask(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\HumanFastaSlice.fasta"), false) };
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");
+
+            SearchTask searchTask = new SearchTask
+            {
+                SearchParameters = new SearchParameters()
+                {
+                    DoQuantification = false,
+                    WriteSpectralLibrary = false,
+                    MatchBetweenRuns = false,
+                    DoMbrAnalysis = false,
+                    WriteMzId = false
+                },
+                CommonParameters = new CommonParameters()
+            };
+
+            var testTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
+
+            PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
+            {
+                Parameters = new PostSearchAnalysisParameters()
+                {
+                    ProteinList = proteinList,
+                    AllPsms = psms,
+                    CurrentRawFileList = rawSlices,
+                    DatabaseFilenameList = databaseList,
+                    OutputFolder = outputFolder,
+                    NumMs2SpectraPerFile = numSpectraPerFile,
+                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    SearchTaskResults = testTaskResults,
+                    MyFileManager = myFileManager,
+                    IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
+                    SearchParameters = new SearchParameters()
+                    {
+                        DoQuantification = true,
+                        WriteSpectralLibrary = true,
+                        MatchBetweenRuns = true,
+                        DoMbrAnalysis = true,
+                        WriteMzId = false,
+                        WriteDecoys = false,
+                        WriteContaminants = false,
+                        QuantifyPpmTol = 25
+                    }
+                },
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
+                    (rawSlices[0], new CommonParameters()),
+                    (rawSlices[1], new CommonParameters())
+                }
+            };
+
+            postSearchTask.Run();
+            
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\spectralLibrary.msp");
+
+            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+            var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
+
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("IAGQVAAANK", 2, out var spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("HEVSASTQSTPASSR", 3, out spectrum));
+
         }
     }
 }
