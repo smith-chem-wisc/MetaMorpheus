@@ -38,7 +38,9 @@ namespace Test
                 MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
                     filePath, new CommonParameters());
-                Protein protein = new Protein(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName);
+                Protein protein = new Protein(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName,
+                    isDecoy: readPsm.DecoyContamTarget == "D" ? true : false,
+                    isContaminant: readPsm.DecoyContamTarget == "C" ? true : false) ;
                 string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
@@ -98,6 +100,8 @@ namespace Test
                         MatchBetweenRuns = true,
                         DoMbrAnalysis = true,
                         WriteMzId = false,
+                        WriteDecoys = false,
+                        WriteContaminants = false,
                         QuantifyPpmTol = 25
                     }
                 },
@@ -123,11 +127,6 @@ namespace Test
             Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 8);
             Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
-        }
-        [Test]
-        public static void MbrWriterTest()
-        {
-            MbrWriter mbrWriter = new MbrWriter();
         }
         [Test]
         public static void MiniClassicSearchEngineTest()
