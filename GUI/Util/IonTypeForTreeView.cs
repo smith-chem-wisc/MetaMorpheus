@@ -9,12 +9,12 @@ using System.Threading.Tasks;
 
 namespace MetaMorpheusGUI
 {
-    public class IonTypeForTreeViewModel : BaseViewModel
+    public class IonTypeForTreeView : BaseView
     {
         #region Public Properties
 
         public string GroupName { get; set; }
-        public ObservableCollection<IonForTreeViewModel> Ions { get; }
+        public ObservableCollection<IonForTreeView> Ions { get; }
         public MyEnumerator GetEnumerator()
         {
             return new MyEnumerator(this);
@@ -24,14 +24,14 @@ namespace MetaMorpheusGUI
 
         #region Constructor
 
-        public IonTypeForTreeViewModel(string groupName, IEnumerable<ProductType> ions, bool beta, ObservableCollection<string> colors)
+        public IonTypeForTreeView(string groupName, IEnumerable<ProductType> ions, bool beta)
         {
             GroupName = groupName;
-            Ions = new ObservableCollection<IonForTreeViewModel>();
+            Ions = new ObservableCollection<IonForTreeView>();
 
             foreach (var ion in ions)
             {
-                Ions.Add(new IonForTreeViewModel(ion, beta, colors));
+                Ions.Add(new IonForTreeView(ion, beta));
             }
         }
 
@@ -42,8 +42,8 @@ namespace MetaMorpheusGUI
     public class MyEnumerator
     {
         int nIndex;
-        IonTypeForTreeViewModel collection;
-        public MyEnumerator(IonTypeForTreeViewModel coll)
+        IonTypeForTreeView collection;
+        public MyEnumerator(IonTypeForTreeView coll)
         {
             collection = coll;
             nIndex = -1;
@@ -55,6 +55,6 @@ namespace MetaMorpheusGUI
             return (nIndex < collection.Ions.Count);
         }
 
-        public IonForTreeViewModel Current => collection.Ions[nIndex];
+        public IonForTreeView Current => collection.Ions[nIndex];
     }
 }

@@ -12,7 +12,7 @@ namespace MetaMorpheusGUI
     /// <summary>
     /// View Model class for each mod in the ptm legend
     /// </summary>
-    public class PtmLegendItemViewModel : BaseViewModel
+    public class PtmLegendItemView : BaseView
     {
         #region Private Properties
 
@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
 
         #region Constructor
 
-        public PtmLegendItemViewModel(string modName)
+        public PtmLegendItemView(string modName)
         {
             ModName = modName;
             OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];

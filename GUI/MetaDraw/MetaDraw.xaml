@@ -136,7 +136,8 @@
 
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
                                 <!--Settings menu-->
-                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" BorderThickness="0">
+                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" 
+                                        BorderThickness="0" IsEnabled="{Binding SettingsView.CanOpen}">
                                     <StackPanel Name="SettingsButton" Orientation="Horizontal">
                                         <Image Source="Icons\icons8-settings-256.bmp" Margin="0,3,0,0" ></Image>
                                         <ToolTipService.ToolTip>
@@ -222,7 +223,7 @@
                                                 <ColumnDefinition Width="8" />
                                             </Grid.ColumnDefinitions>
 
-                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendViewModel}" 
+                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendView}" 
                                                           Grid.Row="1" Grid.Column="1">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
@@ -336,7 +337,7 @@
                                         </Grid.ColumnDefinitions>
                                         
                                         <Canvas x:Name="sequenceAnnotationCanvas" Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" />
-                                        <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendViewModel}" 
+                                        <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendView}" 
                                                           Grid.Row="0" Grid.Column="1" Margin="0 20 0 0">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>

@@ -31,11 +31,13 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
-        private ObservableCollection<PtmLegendViewModel> PtmLegend;
+        private ObservableCollection<PtmLegendView> PtmLegend;
         private ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
+
+        private SettingsView SettingsView;
 
         public MetaDraw()
         {
@@ -43,6 +45,7 @@ namespace MetaMorpheusGUI
 
             InitializeComponent();
 
+            InitializeColorSettingsView();
             MetaDrawLogic = new MetaDrawLogic();
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.PsmResultFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectraFilePaths, MetaDrawLogic.ThreadLocker);
@@ -69,29 +72,8 @@ namespace MetaMorpheusGUI
             plotTypes = new ObservableCollection<string>();
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
-
-            // checks to see if default settings have been saved, and loads them for the first opening of the window
-            MetaDrawSettingsSnapshot settings = null;
-            string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
-            if (File.Exists(settingsPath))
-            {
-                settings = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(settingsPath);
-                MetaDrawSettings.LoadSettings(settings);
-            }
-
-            var colors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
-            var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType);
-            foreach (var group in modGroups)
-            {
-                var theModType = new ModTypeForTreeView(group.Key, false);
-                Modifications.Add(theModType);
-                foreach (var mod in group)
-                {
-                    theModType.Children.Add(new ModForTreeView(mod.ToString(), false, mod.IdWithMotif, false, theModType, colors));
-                }
-            }
-
-            PtmLegend = new ObservableCollection<PtmLegendViewModel>();
+            
+            PtmLegend = new ObservableCollection<PtmLegendView>();
             PtmLegendControl.ItemsSource = PtmLegend;
             SequenceCoveragePtmLegendControl.ItemsSource = PtmLegend;
         }
@@ -229,7 +211,7 @@ namespace MetaMorpheusGUI
                 {
                     PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
                     List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
-                    PtmLegend.Add(new PtmLegendViewModel(mods));                    
+                    PtmLegend.Add(new PtmLegendView(mods));                    
                 }
             }
 
@@ -383,12 +365,10 @@ namespace MetaMorpheusGUI
             
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem;
-            var settingsWindow = new MetaDrawSettingsWindow(Modifications);
+            var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
             var result = settingsWindow.ShowDialog();
 
             // re-select selected PSM
-            
-
             if (result == true)
             {
                 // refresh chart
@@ -763,6 +743,16 @@ namespace MetaMorpheusGUI
             }
             MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
             MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
+        }
+
+        /// <summary>
+        /// Allows the color settings to load asynchronously, avoiding a minor delay in MetaDraw Launch
+        /// </summary>
+        private async void InitializeColorSettingsView()
+        {
+            SettingsView view = new SettingsView();
+            await view.Initialization;
+            SettingsView = view;
         }
     }
 }

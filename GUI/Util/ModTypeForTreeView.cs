@@ -4,7 +4,7 @@ using System.Windows.Media;
 
 namespace MetaMorpheusGUI
 {
-    public class ModTypeForTreeView : BaseViewModel
+    public class ModTypeForTreeView : BaseView
     {
         #region Private Properties
 

@@ -11,18 +11,18 @@ namespace MetaMorpheusGUI
     /// <summary>
     /// View Model class for the ptm color legend
     /// </summary>
-    public class PtmLegendViewModel : BaseViewModel
+    public class PtmLegendView : BaseView
     {
         public string Header { get; set; } = "Legend";
         public int HeaderSize { get; set; } = 12;
-        public ObservableCollection<PtmLegendItemViewModel> LegendItems { get; }
+        public ObservableCollection<PtmLegendItemView> LegendItems { get; }
 
-        public PtmLegendViewModel(List<Modification> mods)
+        public PtmLegendView(List<Modification> mods)
         {
-            LegendItems = new ObservableCollection<PtmLegendItemViewModel>();
+            LegendItems = new ObservableCollection<PtmLegendItemView>();
             foreach (var mod in mods)
             {
-                var modItem = new PtmLegendItemViewModel(mod.IdWithMotif);
+                var modItem = new PtmLegendItemView(mod.IdWithMotif);
                 LegendItems.Add(modItem);
             }
         }

@@ -16,7 +16,7 @@ using System.Windows.Shapes;
 
 namespace MetaMorpheusGUI
 {
-    public class IonForTreeViewModel : BaseViewModel
+    public class IonForTreeView : BaseView
     {
         #region Private Properties
 
@@ -29,7 +29,6 @@ namespace MetaMorpheusGUI
 
         public ProductType IonType { get; set; }    
         public string IonName { get; set; }
-        public ObservableCollection<string> PossibleColors { get; set; }
         public string SelectedColor
         {
             get { return _selectedColor; }
@@ -57,14 +56,11 @@ namespace MetaMorpheusGUI
 
         #region Constructor
 
-        public IonForTreeViewModel(ProductType type, bool beta, ObservableCollection<string> colors)
+        public IonForTreeView(ProductType type, bool beta)
         {
             IonType = type;
             IonName = IonType.ToString() + " - Ion";
-            PossibleColors = colors;
-            AddSpaces(PossibleColors);
             IsBeta = beta;
-
             OxyColor color;
             if (IsBeta)
                 color = MetaDrawSettings.BetaProductTypeToColor[IonType];

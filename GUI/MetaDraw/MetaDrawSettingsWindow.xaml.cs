@@ -22,13 +22,16 @@ namespace MetaMorpheusGUI
     public partial class MetaDrawSettingsWindow : Window
     {
         private readonly ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<IonTypeForTreeViewModel> IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
-        private readonly ObservableCollection<CoverageTypeForTreeViewModel> CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
+        private readonly ObservableCollection<IonTypeForTreeView> IonGroups = new ObservableCollection<IonTypeForTreeView>();
+        private readonly ObservableCollection<CoverageTypeForTreeView> CoverageColors = new ObservableCollection<CoverageTypeForTreeView>();
 
-        public MetaDrawSettingsWindow(ObservableCollection<ModTypeForTreeView> mods)
+        private SettingsView SettingsView;
+
+        public MetaDrawSettingsWindow(SettingsView view)
         {
             InitializeComponent();
-            Modifications = mods;
+            SettingsView = view;
+            DataContext = SettingsView;
             PopulateChoices();
         }
 
@@ -66,23 +69,10 @@ namespace MetaMorpheusGUI
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
 
-            ObservableCollection<string> colors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
-            CoverageColors.Add(new CoverageTypeForTreeViewModel("N-Terminal Color", colors));
-            CoverageColors.Add(new CoverageTypeForTreeViewModel("C-Terminal Color", colors));
-            CoverageColors.Add(new CoverageTypeForTreeViewModel("Internal Color", colors));
-            SequenceCoverageColorExpander.ItemsSource = CoverageColors;
-
-            var ions = ((ProductType[])Enum.GetValues(typeof(ProductType)));
-            var common = ions.Where(p => p.ToString().Equals("a") || p.ToString().Equals("b") || p.ToString().Equals("c")
-                                          || p.ToString().Equals("x") || p.ToString().Equals("y") || p.ToString().Equals("zDot"));
-            var lessCommon = ions.Where(p => !common.Any(m => m == p));
-            IonGroups.Add(new IonTypeForTreeViewModel("Common Ions", common, false, colors));
-            IonGroups.Add(new IonTypeForTreeViewModel("Less Common Ions", lessCommon, false, colors));
-            IonGroups.Add(new IonTypeForTreeViewModel("Cross Linked Beta Peptide", ions, true, colors));
-
-            IonColorExpander.ItemsSource = IonGroups;
-            PTMColorExpander.ItemsSource = Modifications;
-
+            
+            IonColorExpander.ItemsSource = SettingsView.IonGroups;
+            PTMColorExpander.ItemsSource = SettingsView.Modifications;
+            SequenceCoverageColorExpander.ItemsSource = SettingsView.CoverageColors;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -116,39 +106,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
 
-            // save ion colors if changed
-            foreach (var group in IonGroups)
-            {
-                foreach (var ion in group)
-                {
-                    if (ion.HasChanged)
-                    {
-                        if (ion.IsBeta)
-                            MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
-                        else
-                            MetaDrawSettings.ProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
-                    }
-                }
-            }
-
-            // save modification colors if changed
-            foreach (var group in Modifications)
-            {
-                foreach (var mod in group)
-                {
-                    if (mod.HasChanged)
-                        MetaDrawSettings.ModificationTypeToColor[mod.ModName] = DrawnSequence.ParseOxyColorFromName(mod.SelectedColor.Replace(" ", ""));
-                }
-            }
-
-            // save sequence coverage colors if changed
-            foreach (var color in CoverageColors)
-            {
-                if (color.HasChanged)
-                {
-                    MetaDrawSettings.CoverageTypeToColor[color.Name] = DrawnSequence.ParseOxyColorFromName( color.SelectedColor.Replace(" ", ""));
-                }
-            }
+            SettingsView.Save();
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {
@@ -196,8 +154,8 @@ namespace MetaMorpheusGUI
         private void setDefaultbutton_Click(object sender, RoutedEventArgs e)
         {
             Save_Click(sender, e);
-            MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
-            XmlReaderWriter.WriteToXmlFile<MetaDrawSettingsSnapshot>(Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml"), settings);
+            SettingsView.SaveAsDefault();
+            
         }
 
         /// <summary>
@@ -207,7 +165,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void ComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            ((IonForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+            ((IonForTreeView)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
 
         /// <summary>
@@ -227,7 +185,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void ComboBox_SelectionChanged_2(object sender, SelectionChangedEventArgs e)
         {
-            ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+            ((CoverageTypeForTreeView)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
     }
 }

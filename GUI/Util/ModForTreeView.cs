@@ -7,7 +7,7 @@ using System.Windows.Media;
 
 namespace MetaMorpheusGUI
 {
-    public class ModForTreeView : BaseViewModel
+    public class ModForTreeView : BaseView
     {
         #region Private Properties
 
@@ -38,7 +38,6 @@ namespace MetaMorpheusGUI
         public bool HasChanged { get; set; }
         public string DisplayName { get; }
         public Brush Background { get; }
-        public ObservableCollection<string> PossibleColors { get; set; }
         public string SelectedColor
         {
             get { return _selectedColor; }
@@ -63,23 +62,13 @@ namespace MetaMorpheusGUI
 
         #region Constructor
 
-        /// <summary>
-        /// Constructor for use in GPTMD task window
-        /// </summary>
-        /// <param name="toolTip"></param>
-        /// <param name="use"></param>
-        /// <param name="modName"></param>
-        /// <param name="bad"></param>
-        /// <param name="parent"></param>
-        public ModForTreeView(string toolTip, bool use, string modName, bool bad, ModTypeForTreeView parent, ObservableCollection<string> colors = null)
+        public ModForTreeView(string toolTip, bool use, string modName, bool bad, ModTypeForTreeView parent)
         {
             ToolTipStuff = toolTip;
             Parent = parent;
             Use = use;
             ModName = modName;
             DisplayName = modName;
-            PossibleColors = colors;
-            AddSpaces(PossibleColors);
             OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];
             SelectedColor = AddSpaces(color.GetColorName());
             ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);

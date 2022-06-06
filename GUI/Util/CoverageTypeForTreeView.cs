@@ -10,7 +10,7 @@ using System.Windows.Media;
 
 namespace MetaMorpheusGUI
 {
-    public class CoverageTypeForTreeViewModel : BaseViewModel
+    public class CoverageTypeForTreeView : BaseView
     {
         #region Private Properties
 
@@ -23,7 +23,6 @@ namespace MetaMorpheusGUI
 
         public string Name { get; set; }
         public bool HasChanged { get; set; } = false;
-        public ObservableCollection<string> PossibleColors { get; set; }
         public string SelectedColor
         {
             get { return _selectedColor; }
@@ -48,11 +47,9 @@ namespace MetaMorpheusGUI
 
         #region Constructor
 
-        public CoverageTypeForTreeViewModel(string name, ObservableCollection<string> colors)
+        public CoverageTypeForTreeView(string name)
         {
             Name = name;
-            PossibleColors = colors;
-            AddSpaces(PossibleColors);
             OxyColor color = MetaDrawSettings.CoverageTypeToColor[name];
             SelectedColor = AddSpaces(color.GetColorName());
             ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);

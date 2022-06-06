@@ -171,6 +171,7 @@ namespace Test
             var plotView = new OxyPlot.Wpf.PlotView();
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             MetaDrawSettings.FirstAAonScreenIndex = 0;
             MetaDrawSettings.NumberOfAAOnScreen = 20; // Will be dynamic based upon window size, 20 is an arbitraty number used for testing purposes
@@ -183,11 +184,12 @@ namespace Test
             // Iterates through the psm, simulating scrolling, until the sequence is scrolled as far as allowed
             for (; MetaDrawSettings.FirstAAonScreenIndex < psm.BaseSeq.Length - MetaDrawSettings.NumberOfAAOnScreen; MetaDrawSettings.FirstAAonScreenIndex++)
             {
-                metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, psm);
+                metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
                 metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
                 Assert.That(errors == null || !errors.Any());
                 // Checks to see if scrollable sequence is the same each time
                 Assert.That(metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+                Assert.That(sequenceAnnotationCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
 
                 // Checks to see if the stationary sequence updated with the new positioning
                 string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
@@ -285,13 +287,14 @@ namespace Test
             var plotView = new OxyPlot.Wpf.PlotView();
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             var psm = metadrawLogic.FilteredListOfPsms.First();
 
             MetaDrawSettings.FirstAAonScreenIndex = 0;
             MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
             MetaDrawSettings.DrawMatchedIons = true;
-            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, psm);
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
 
@@ -312,6 +315,7 @@ namespace Test
             int numAnnotatedIons = psm.MatchedIons.Count;
             int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
             Assert.That(metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
+            Assert.That(sequenceAnnotationCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
 
             // test that the stationary sequence annotation was drawn
             string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
@@ -350,10 +354,11 @@ namespace Test
             // test displaying a PSM with a mod
             var modPsm = metadrawLogic.FilteredListOfPsms.First(p => p.FullSequence.Contains("["));
             MetaDrawSettings.NumberOfAAOnScreen = modPsm.BaseSeq.Length;
-            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, modPsm);
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, modPsm);
             metadrawLogic.DisplaySpectrumMatch(plotView, modPsm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
             Assert.That(metadrawLogic.ScrollableSequence.SequenceDrawingCanvas.Children.Count == modPsm.BaseSeq.Length + modPsm.MatchedIons.Count + modPsm.FullSequence.Count(p => p == '['));
+            Assert.That(sequenceAnnotationCanvas.Children.Count == modPsm.BaseSeq.Length + modPsm.MatchedIons.Count + modPsm.FullSequence.Count(p => p == '['));
             modifiedBaseSeq = modPsm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
             fullSequence = modPsm.BaseSeq;
             modDictionary = PsmFromTsv.ParseModifications(modPsm.FullSequence);
@@ -451,10 +456,11 @@ namespace Test
             var plotView = new OxyPlot.Wpf.PlotView();
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             var csm = metadrawLogic.FilteredListOfPsms.First();
 
-            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, csm);
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, csm);
             metadrawLogic.DisplaySpectrumMatch(plotView, csm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
 
@@ -588,10 +594,11 @@ namespace Test
             var parentChildView = new ParentChildScanPlotsView();
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
             var psm = metadrawLogic.FilteredListOfPsms.First();
             MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
 
-            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, psm);
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
 
@@ -747,12 +754,13 @@ namespace Test
             var canvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
             var parentChildScanPlotsView = new ParentChildScanPlotsView();
 
             // plot PSM
             MetaDrawSettings.FirstAAonScreenIndex = 0;
             MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
-            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, metadrawLogic.FilteredListOfPsms.First());
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, metadrawLogic.FilteredListOfPsms.First());
             metadrawLogic.DisplaySpectrumMatch(plotView, metadrawLogic.FilteredListOfPsms.First(), parentChildScanPlotsView, out errors);
             Assert.That(errors == null || !errors.Any());
 
@@ -807,12 +815,13 @@ namespace Test
             var canvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             var psm = metadrawLogic.FilteredListOfPsms.First();
 
             MetaDrawSettings.FirstAAonScreenIndex = 0;
             MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
-            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, psm);
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
 
@@ -952,41 +961,7 @@ namespace Test
             Assert.That(errors == null || !errors.Any());
         }
 
-        [Test]
-        public static void TestMetaDrawSettingsSnapshot()
-        {
-            MetaDrawSettingsSnapshot snapshot = new();
-            Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
-            Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
-            Assert.That(snapshot.AnnotateCharges.Equals(MetaDrawSettings.AnnotateCharges));
-            Assert.That(snapshot.AnnotationBold.Equals(MetaDrawSettings.AnnotationBold));
-            Assert.That(snapshot.ShowDecoys.Equals(MetaDrawSettings.ShowDecoys));
-            Assert.That(snapshot.ShowContaminants.Equals(MetaDrawSettings.ShowContaminants));
-            Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
-            Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
-            Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
-
-            MetaDrawSettings.ShowContaminants = true;
-            MetaDrawSettings.AnnotateMzValues = false;
-            snapshot = MetaDrawSettings.MakeSnapShot();
-            Assert.That(snapshot.ShowContaminants.Equals(MetaDrawSettings.ShowContaminants));
-            Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
-            Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
-            Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
-
-            snapshot.QValueFilter = 0.5;
-            snapshot.AnnotateCharges = true;
-            MetaDrawSettings.LoadSettings(snapshot);
-            Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
-            Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
-            Assert.That(snapshot.AnnotateCharges.Equals(MetaDrawSettings.AnnotateCharges));
-            Assert.That(snapshot.AnnotationBold.Equals(MetaDrawSettings.AnnotationBold));
-            Assert.That(snapshot.ShowDecoys.Equals(MetaDrawSettings.ShowDecoys));
-            Assert.That(snapshot.ShowContaminants.Equals(MetaDrawSettings.ShowContaminants));
-            Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
-            Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
-            Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
-        }
+        
 
         [Test]
         public static void TestMetaDrawLogicCleanUp()
@@ -1027,12 +1002,13 @@ namespace Test
             var canvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
             var psm = metadrawLogic.FilteredListOfPsms.First();
 
             MetaDrawSettings.FirstAAonScreenIndex = 0;
             MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
-            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, psm);
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
 

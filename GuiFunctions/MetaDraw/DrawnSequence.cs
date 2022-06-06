@@ -197,7 +197,7 @@ namespace GuiFunctions
                 {
                     if (localGlycans.Where(p => p.Item1 + 1 == mod.Key).Count() > 0)
                     {
-                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.Value.IdWithMotif]));
+                        DrawCircle(sequenceDrawingCanvas, new Point(xLocation, yLocation), ParseColorBrushFromOxyColor(MetaDrawSettings.GetValueOrDefault(MetaDrawSettings.ModificationTypeToColor, mod.Value.IdWithMotif, OxyColors.Blue)));
                     }
                     else
                     {
@@ -309,13 +309,13 @@ namespace GuiFunctions
                     // Trim full sequences selectively based upon what is show in scrollable sequence
                     foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
                     {
-                        // if modification is within the visible region
-                        if (mod.Key >= startIndex + i * perRow && mod.Key <= endIndex + i * perRow)
+                        // account for multiple modifications on the same amino acid
+                        for (int k = mod.Value.Count - 1; k > -1; k--)
                         {
-                            // account for multiple modifications on the same amino acid
-                            for (int k = mod.Value.Count - 1; k > -1; k--)
+                            // if modification is within the visible region
+                            if (mod.Key >= startIndex + i * perRow && mod.Key <= endIndex + i * perRow)
                             {
-                                fullSequence = fullSequence.Insert(mod.Key - startIndex, "[" + mod.Value[k] + "]");
+                                fullSequence = fullSequence.Insert(mod.Key - (startIndex + i * perRow), "[" + mod.Value[k] + "]");
                                 if (k >= 1)
                                 {
                                     fullSequence = fullSequence.Insert(mod.Key, "|");

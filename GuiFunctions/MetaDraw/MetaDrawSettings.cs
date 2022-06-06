@@ -26,7 +26,7 @@ namespace GuiFunctions
         public static Dictionary<OxyColor, string> PossibleColors { get; set; }
         public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
         public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
-        public static Dictionary<string, OxyColor> ModificationTypeToColor { get; set; }
+        public static Dictionary<string, OxyColor> ModificationTypeToColor {get; set; }
         public static Dictionary<string, OxyColor> CoverageTypeToColor { get; set; }
         public static bool DrawStationarySequence { get; set; } = true;
         public static bool DrawNumbersUnderStationary { get; set; } = true;
@@ -211,6 +211,11 @@ namespace GuiFunctions
             ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.CoverageTypeToColorValues[Array.IndexOf(CoverageTypes, p)]));
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
+        }
+
+        public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
+        {
+            return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
         }
     }
 }
