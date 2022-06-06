@@ -156,7 +156,7 @@ namespace Test
         public static void TestCoverageTypeForTreeView()
         {
             CoverageTypeForTreeView coverageTypeForTreeView = new("N-Terminal Color");
-            Assert.That(coverageTypeForTreeView.Name == "N - Terminal Color");
+            Assert.That(coverageTypeForTreeView.Name == "N-Terminal Color");
             var color = MetaDrawSettings.CoverageTypeToColor["N-Terminal Color"];
             Assert.That(coverageTypeForTreeView.SelectedColor == color.GetColorName());
             Assert.That(coverageTypeForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
@@ -170,11 +170,11 @@ namespace Test
             ModTypeForTreeView modTypeForTreeView = new(key, false);
             Assert.That(!modTypeForTreeView.Expanded);
             Assert.That(modTypeForTreeView.DisplayName == key);
-            Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color == new SolidColorBrush(Colors.Red).Color);
+            Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color == new SolidColorBrush(Colors.Transparent).Color);
             Assert.That(modTypeForTreeView.Children != null);
 
             modTypeForTreeView = new(modGroups.First().Key, true);
-            Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color == new SolidColorBrush(Colors.Transparent).Color);
+            Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color == new SolidColorBrush(Colors.Red).Color);
         }
 
         [Test]
@@ -201,7 +201,7 @@ namespace Test
             Assert.That(ionForTreeViews.GroupName == "Common Ions");
             Assert.That(ionForTreeViews.Ions.Count == ions.Length);
             Assert.That(!ionForTreeViews.Ions.Any(p => p.IsBeta));
-            ionForTreeViews = new("Common Ions", ions, false);
+            ionForTreeViews = new("Common Ions", ions, true);
             Assert.That(ionForTreeViews.Ions.Any(p => p.IsBeta));
         }
 
