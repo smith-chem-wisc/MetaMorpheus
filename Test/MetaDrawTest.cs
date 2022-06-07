@@ -223,6 +223,7 @@ namespace Test
         [Test]
         public static void MetaDraw_SearchTaskTest()
         {
+            MetaDrawSettings.ResetSettings();
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");

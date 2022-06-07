@@ -213,6 +213,29 @@ namespace GuiFunctions
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
         }
 
+        /// <summary>
+        /// Used to reset the settings to their default value
+        /// </summary>
+        public static void ResetSettings()
+        {
+            InitializeDictionaries();
+            DrawMatchedIons = true;
+            DisplayIonAnnotations  = true;
+            AnnotateMzValues = false;
+            AnnotateCharges = false;
+            AnnotationBold = false;
+            DrawStationarySequence = true;
+            DrawNumbersUnderStationary = true;
+            ShowLegend = true;
+            ShowDecoys = false;
+            ShowContaminants = true;
+            QValueFilter = 0.01;
+            LocalizationLevelStart = LocalizationLevel.Level1;
+            LocalizationLevelEnd = LocalizationLevel.Level3;
+            DrawMatchedIons  = true;
+            AnnotatedFontSize = 12;
+        }
+
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
         {
             return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
