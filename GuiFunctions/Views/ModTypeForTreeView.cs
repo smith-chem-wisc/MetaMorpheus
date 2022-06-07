@@ -1,8 +1,9 @@
-﻿using System.Collections.ObjectModel;
+﻿using GuiFunctions;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Media;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     public class ModTypeForTreeView : BaseView
     {

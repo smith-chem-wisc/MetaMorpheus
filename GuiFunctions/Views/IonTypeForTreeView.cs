@@ -1,4 +1,5 @@
-﻿using Proteomics.Fragmentation;
+﻿using GuiFunctions;
+using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     public class IonTypeForTreeView : BaseView
     {

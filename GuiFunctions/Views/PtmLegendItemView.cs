@@ -1,5 +1,4 @@
-﻿using GuiFunctions;
-using OxyPlot;
+﻿using OxyPlot;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     /// <summary>
     /// View Model class for each mod in the ptm legend

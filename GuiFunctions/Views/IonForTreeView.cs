@@ -1,16 +1,22 @@
 ﻿using GuiFunctions;
 using OxyPlot;
+using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Shapes;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
-    public class CoverageTypeForTreeView : BaseView
+    public class IonForTreeView : BaseView
     {
         #region Private Properties
 
@@ -21,13 +27,13 @@ namespace MetaMorpheusGUI
 
         #region Public Properties
 
-        public string Name { get; set; }
-        public bool HasChanged { get; set; } = false;
+        public ProductType IonType { get; set; }    
+        public string IonName { get; set; }
         public string SelectedColor
         {
             get { return _selectedColor; }
-            set
-            {
+            set 
+            { 
                 _selectedColor = value;
                 ColorBrush = DrawnSequence.ParseColorBrushFromName(_selectedColor);
                 OnPropertyChanged(nameof(SelectedColor));
@@ -43,14 +49,23 @@ namespace MetaMorpheusGUI
             }
         }
 
+        public bool IsBeta { get; set; }
+        public bool HasChanged { get; set; } = false;
+
         #endregion
 
         #region Constructor
 
-        public CoverageTypeForTreeView(string name)
+        public IonForTreeView(ProductType type, bool beta)
         {
-            Name = name;
-            OxyColor color = MetaDrawSettings.CoverageTypeToColor[name];
+            IonType = type;
+            IonName = IonType.ToString() + " - Ion";
+            IsBeta = beta;
+            OxyColor color;
+            if (IsBeta)
+                color = MetaDrawSettings.BetaProductTypeToColor[IonType];
+            else
+                color = MetaDrawSettings.ProductTypeToColor[IonType];
             SelectedColor = AddSpaces(color.GetColorName());
             ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
         }
@@ -62,5 +77,6 @@ namespace MetaMorpheusGUI
             SelectedColor = newColor;
             HasChanged = true;
         }
+
     }
 }

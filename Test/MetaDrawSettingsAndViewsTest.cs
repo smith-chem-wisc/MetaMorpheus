@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using GuiFunctions;
-using MetaMorpheusGUI;
+using IO.MzML;
 using NUnit.Framework;
 using OxyPlot;
 using Proteomics.Fragmentation;
@@ -16,7 +16,6 @@ namespace Test
 {
     public static class MetaDrawSettingsAndViewsTest
     {
-
         [Test]
         public static void TestMetaDrawSettingsSnapshot()
         {
@@ -226,6 +225,44 @@ namespace Test
             color = MetaDrawSettings.BetaProductTypeToColor[ion];
             Assert.That(ionForTreeView.SelectedColor == color.GetColorName());
             Assert.That(ionForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
+        }
+
+        [Test]
+        public static void TestPtmLegendViews()
+        {
+            var modGroup = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).First();
+            var twoMods = modGroup.Take(2).ToList();
+            PtmLegendView PtmLegendView = new PtmLegendView(twoMods);
+            Assert.That(PtmLegendView.Header == "Legend");
+            Assert.That(PtmLegendView.HeaderSize == 12);
+            Assert.That(PtmLegendView.LegendItems.Count == 2);
+            Assert.That(PtmLegendView.LegendItems.First().ModName == twoMods.First().IdWithMotif);
+            Assert.That(PtmLegendView.LegendItems.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif]).Color);
+            Assert.That(PtmLegendView.LegendItems.First().ModName == twoMods.First().IdWithMotif);
+            var mod = twoMods.First();
+            PtmLegendItemView ptmLegendItemView = new(mod.IdWithMotif);
+            Assert.That(ptmLegendItemView.ModName == mod.IdWithMotif);
+            Assert.That(ptmLegendItemView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.IdWithMotif]).Color);
+        }
+
+        [Test]
+        public static void TestDrawnSequenceColorConversions()
+        {
+            OxyColor oxyBlue = OxyColors.Blue;
+            Color colorBlue = Colors.Blue;
+            SolidColorBrush brushBlue = new SolidColorBrush(colorBlue);
+
+            var colorBrushFromOxy = DrawnSequence.ParseColorBrushFromOxyColor(oxyBlue);
+            Assert.That(colorBrushFromOxy.Color == brushBlue.Color);
+
+            var colorBrushfromName = DrawnSequence.ParseColorBrushFromName(oxyBlue.GetColorName());
+            Assert.That(colorBrushfromName.Color == brushBlue.Color);
+
+            var oxyFromName = DrawnSequence.ParseOxyColorFromName(oxyBlue.GetColorName());
+            Assert.That(oxyFromName == oxyBlue);
+
+            var colorFromOxy = DrawnSequence.ParseColorFromOxyColor(oxyBlue);
+            Assert.That(colorFromOxy == colorBlue);
         }
     }
 }

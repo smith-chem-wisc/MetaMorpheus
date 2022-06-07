@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     public class SettingsView : BaseView, IAsyncInitialization
     {

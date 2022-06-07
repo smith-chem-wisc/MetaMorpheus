@@ -15,6 +15,7 @@ using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using System.IO;
+using GuiFunctions;
 
 
 namespace MetaMorpheusGUI

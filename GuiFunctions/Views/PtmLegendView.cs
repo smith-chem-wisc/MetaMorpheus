@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     /// <summary>
     /// View Model class for the ptm color legend

@@ -7,7 +7,7 @@ using System.IO;
 using System.Xml.Linq;
 using System.Xml.Serialization;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     public class XmlReaderWriter
     {

@@ -6,6 +6,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="MetaDraw" 
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
@@ -223,7 +224,7 @@
                                                 <ColumnDefinition Width="8" />
                                             </Grid.ColumnDefinitions>
 
-                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendView}" 
+                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}" 
                                                           Grid.Row="1" Grid.Column="1">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
@@ -337,7 +338,7 @@
                                         </Grid.ColumnDefinitions>
                                         
                                         <Canvas x:Name="sequenceAnnotationCanvas" Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" />
-                                        <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type local:PtmLegendView}" 
+                                        <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}" 
                                                           Grid.Row="0" Grid.Column="1" Margin="0 20 0 0">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>

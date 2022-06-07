@@ -5,7 +5,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Windows.Media;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     public class ModForTreeView : BaseView
     {
