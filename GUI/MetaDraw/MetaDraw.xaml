@@ -16,7 +16,7 @@
          where the view is what is displayed, the model or viewmodel holds the data to be displayed, and the controller instantiates and controls each of 
          the other components  -->
     <Grid>
-        <TabControl>
+        <TabControl >
             <TabItem Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
                     <Grid>
@@ -59,7 +59,7 @@
                                     <TextBlock Name="psmFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
                                 </Label>
                             </DockPanel>
-                            
+
                             <!-- Select spectral library file -->
                             <DockPanel Grid.Row="2" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
                                 <Label Content="Spectral Library:" Width="95" ToolTip="Optional"/>
@@ -70,7 +70,7 @@
                                     <TextBlock Name="specLibraryLabel" Text="None Selected" TextTrimming="CharacterEllipsis" ToolTip="Optional"/>
                                 </Label>
                             </DockPanel>
-                            
+
                             <Border Grid.Row="3" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
                                 <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
                                     <Button Name="loadFiles" Content="Load Files" Width="80" Click="loadFilesButton_Click" />
@@ -96,7 +96,7 @@
                                     </DataGrid>
                                 </Grid>
                             </GroupBox>
-                            <Button Content="Export to PDF" Grid.Row="5" Width="100" Click="PDFButton_Click" />
+                            <Button Content="{Binding}" Grid.Row="5" Width="100" Click="PDFButton_Click" x:Name="ExportButton" />
                         </Grid>
 
                         <!--Moveable splitter-->
@@ -125,7 +125,7 @@
                                 <RowDefinition Height="8*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            
+
                             <!-- Region above the Spectrum -->
                             <Grid Grid.Row="0" Name="UpperSequenceAnnotaiton">
                                 <Grid.ColumnDefinitions>
@@ -184,8 +184,8 @@
                                           Margin="0, 0, 0, 16" Visibility="Hidden">
                                 </ComboBox>
                             </Grid>
-                            
-                            <TabControl Grid.Row="1" >
+
+                            <TabControl Grid.Row="1" x:Name="MetaDrawTabControl">
                                 <!--MS2 Scan Annotations-->
                                 <TabItem Header="Parent Scan View" Name="ParentScanView">
                                     <Grid Name="PsmAnnotationGrid">
@@ -208,7 +208,8 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="200" />
                                             </Grid.ColumnDefinitions>
-                                            <Canvas Grid.Column="1" Margin="0 0 0 0" x:Name="stationarySequenceCanvas" VerticalAlignment="Stretch"/>
+                                            <Canvas Grid.Column="1" Margin="0 0 0 0" x:Name="stationarySequenceCanvas" VerticalAlignment="Stretch"
+                                                    Background="Transparent"/>
                                         </Grid>
 
                                         <!-- ptm legend -->
@@ -226,6 +227,13 @@
 
                                             <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}" 
                                                           Grid.Row="1" Grid.Column="1">
+
+                                                <ItemsControl.Resources>
+                                                    <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ItemsControl">
+                                                        <ContentPresenter Content="{TemplateBinding ItemsControl.ItemsSource}" />
+                                                    </ControlTemplate>
+                                                </ItemsControl.Resources>
+
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <Border BorderBrush="Black" BorderThickness="1">
@@ -248,6 +256,39 @@
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
+
+                                            <ItemsControl x:Name="PtmLegendControl2" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}" 
+                                                          Grid.Row="1" Grid.Column="1">
+                                                <ItemsControl.Resources>
+                                                    <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
+                                                        <ContentPresenter Content="{TemplateBinding ContentControl.Content}" />
+                                                    </ControlTemplate>
+                                                </ItemsControl.Resources>
+
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <ContentControl Name="PtmLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
+                                                                BorderBrush="Black" BorderThickness="1">
+                                                            <StackPanel>
+                                                                <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
+                                                                <ItemsControl ItemsSource="{Binding LegendItems}" >
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                                <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                                                            FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
+                                                                                <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                            Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
+                                                                            </StackPanel>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </StackPanel>
+                                                        </ContentControl>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+
                                         </Grid>
                                     </Grid>
                                 </TabItem>
@@ -295,7 +336,7 @@
                                     </ItemsControl>
                                 </TabItem>
                                 <!--Sequence Coverage Annotation-->
-                                <TabItem Header="Sequence Coverage" Name="SequenceCoverageAnnotationView">
+                                <TabItem Header="Sequence Coverage" x:Name="SequenceCoverageAnnotationView">
                                     <Grid Grid.Row="1" Name="SequenceAnnotationGrid" SizeChanged="AnnotationSizeChanged" Style="{StaticResource InternalGridStyle}">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height = "35"></RowDefinition>
@@ -323,7 +364,7 @@
                                     </Grid>
                                 </TabItem>
 
-                                <TabItem Header="Sequence Annotation" Name="SequenceAnnotationTabItem">
+                                <TabItem Header="Sequence Annotation" x:Name="SequenceAnnotationView">
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="100" />
@@ -333,13 +374,14 @@
 
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="100" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="97*" />
+                                            <ColumnDefinition Width="623*"/>
                                             <ColumnDefinition Width="100" />
                                         </Grid.ColumnDefinitions>
-                                        
-                                        <Canvas x:Name="sequenceAnnotationCanvas" Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" />
+
+                                        <Canvas x:Name="sequenceAnnotationCanvas" Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" Grid.ColumnSpan="2" />
                                         <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}" 
-                                                          Grid.Row="0" Grid.Column="1" Margin="0 20 0 0">
+                                                          Grid.Row="0" Grid.Column="1" Margin="0 20 0 0" Grid.ColumnSpan="2">
                                             <ItemsControl.ItemTemplate>
                                                 <DataTemplate>
                                                     <StackPanel>

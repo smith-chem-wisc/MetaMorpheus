@@ -455,7 +455,7 @@ namespace GuiFunctions
             Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
-        public void ExportToPdf(PlotView plotView, Canvas stationarySequence, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
+        public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
         {
             errors = new List<string>();
 
@@ -466,9 +466,8 @@ namespace GuiFunctions
             
             foreach (var psm in spectrumMatches)
             {
-                MetaDrawSettings.FirstAAonScreenIndex = 0;
-                MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
-                DisplaySequences(stationarySequence, null, null, psm);
+
+                DisplaySequences(stationaryCanvas, null, null, psm);
                 DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
 
                 if (displayErrors != null)
@@ -485,21 +484,22 @@ namespace GuiFunctions
 
                 foreach (var plot in CurrentlyDisplayedPlots)
                 {
-                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + ".pdf");
+                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "." + MetaDrawSettings.ExportType);
 
                     int i = 2;
                     while (File.Exists(filePath))
                     {
-                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + ".pdf"); 
+                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType);
                         i++;
                     }
-
-                    plot.ExportToPdf(filePath, StationarySequence.SequenceDrawingCanvas, plotView.ActualWidth, plotView.ActualHeight);
+                    plot.ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas, plotView.ActualWidth, plotView.ActualHeight);
                 }
             }
 
+            DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
             DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors);
         }
+
 
         public void FilterPsms()
         {

@@ -345,7 +345,7 @@ namespace Test
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").Take(3).ToList();
             MetaDrawSettings.NumberOfAAOnScreen = psmsToExport.First().BaseSeq.Length;
-            metadrawLogic.ExportToPdf(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"116_QIVHDSGR.pdf")));
@@ -516,7 +516,7 @@ namespace Test
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "SLGKVGTR(4)").ToList();
-            metadrawLogic.ExportToPdf(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"2_SLGKVGTR(4).pdf"))); // parent scan
@@ -657,7 +657,7 @@ namespace Test
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-Glycosylation:H1N1 on X]SEPLSSK").ToList();
-            metadrawLogic.ExportToPdf(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
@@ -712,7 +712,7 @@ namespace Test
             Assert.That(errors.Any());
 
             // export to PDF should produce an error because spectra are not loaded
-            metadrawLogic.ExportToPdf(plotView, canvas, new List<PsmFromTsv> { psmsFromTsv.First() }, parentChildScanPlotsView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, canvas, new List<PsmFromTsv> { psmsFromTsv.First() }, parentChildScanPlotsView, outputFolder, out errors);
             Assert.That(errors.Any());
 
             // clean up resources
@@ -766,7 +766,7 @@ namespace Test
             Assert.That(errors == null || !errors.Any());
 
             // export to PDF
-            metadrawLogic.ExportToPdf(plotView, canvas, new List<PsmFromTsv> { metadrawLogic.FilteredListOfPsms.First() }, parentChildScanPlotsView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, canvas, new List<PsmFromTsv> { metadrawLogic.FilteredListOfPsms.First() }, parentChildScanPlotsView, outputFolder, out errors);
             Assert.That(!errors.Any());
 
             // clean up resources
@@ -838,7 +838,7 @@ namespace Test
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "VIHDNFGIVEGLMTTVHAITATQK").Take(1).ToList();
-            metadrawLogic.ExportToPdf(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"6_VIHDNFGIVEGLMTTVHAITATQK.pdf")));
@@ -962,8 +962,6 @@ namespace Test
             Assert.That(errors == null || !errors.Any());
         }
 
-        
-
         [Test]
         public static void TestMetaDrawLogicCleanUp()
         {
@@ -1025,7 +1023,7 @@ namespace Test
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "VIHDNFGIVEGLMTTVHAITATQK").Take(1).ToList();
-            metadrawLogic.ExportToPdf(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"6_VIHDNFGIVEGLMTTVHAITATQK.pdf")));
@@ -1045,5 +1043,6 @@ namespace Test
             Directory.Delete(outputFolder, true);
 
         }
+
     }
 }

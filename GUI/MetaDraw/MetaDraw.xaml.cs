@@ -36,7 +36,6 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
-
         private SettingsView SettingsView;
 
         public MetaDraw()
@@ -74,8 +73,9 @@ namespace MetaMorpheusGUI
             plotsListBox.ItemsSource = plotTypes;
             
             PtmLegend = new ObservableCollection<PtmLegendView>();
-            PtmLegendControl.ItemsSource = PtmLegend;
+            PtmLegendControl2.ItemsSource = PtmLegend;
             SequenceCoveragePtmLegendControl.ItemsSource = PtmLegend;
+            ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -368,6 +368,7 @@ namespace MetaMorpheusGUI
             var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
             var result = settingsWindow.ShowDialog();
 
+            ExportButton.Content = "Export As " + MetaDrawSettings.ExportType.Replace(".", "");
             // re-select selected PSM
             if (result == true)
             {
@@ -472,6 +473,7 @@ namespace MetaMorpheusGUI
                 return;
             }
 
+            SetSequenceDrawingPositionSettings();
             List<PsmFromTsv> items = new List<PsmFromTsv>();
 
             foreach (var cell in dataGridScanNums.SelectedItems)
@@ -481,18 +483,19 @@ namespace MetaMorpheusGUI
             }
 
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
-                    DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture));
+                    DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
-            MetaDrawLogic.ExportToPdf(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors) ;
 
+            MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors);
             if (errors.Any())
             {
                 MessageBox.Show(errors.First());
             }
             else
             {
-                MessageBox.Show("PDFs exported to: " + directoryPath);
+                MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
             }
+            
         }
 
         private void SetUpPlots()
@@ -534,6 +537,11 @@ namespace MetaMorpheusGUI
             resetPsmFileButtonStat.IsEnabled = true;
         }
 
+        /// <summary>
+        /// I believe this one is never used
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void CreatePlotPdf_Click(object sender, RoutedEventArgs e)
         {
             var selectedItem = plotsListBox.SelectedItem;
@@ -574,7 +582,7 @@ namespace MetaMorpheusGUI
             }
             plotViewStat.Width = tmpW;
             plotViewStat.Height = tmpH;
-            MessageBox.Show("PDF Created at " + Path.Combine(fileDirectory, fileName) + "!");
+            MessageBox.Show(MetaDrawSettings.ExportType + " Created at " + Path.Combine(fileDirectory, fileName) + "!");
         }
 
         private async void PlotSelected(object sender, SelectionChangedEventArgs e)

@@ -59,6 +59,7 @@ namespace MetaMorpheusGUI
             QValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Q-Value: "];
             SequenceLengthCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Sequence Length: "];
             ProFormaLevelCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["ProForma Level: "];
+            SpectralAngleCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Spectral Angle: "];
             PEPCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP: "];
             PEPQValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP Q-Value: "];
             StationarySequenceCheckBox.IsChecked = MetaDrawSettings.DrawStationarySequence;
@@ -69,7 +70,8 @@ namespace MetaMorpheusGUI
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
 
-            
+            ExportFileFormatComboBox.ItemsSource = MetaDrawSettings.ExportTypes;
+            ExportFileFormatComboBox.SelectedItem = MetaDrawSettings.ExportType;
             IonColorExpander.ItemsSource = SettingsView.IonGroups;
             PTMColorExpander.ItemsSource = SettingsView.Modifications;
             SequenceCoverageColorExpander.ItemsSource = SettingsView.CoverageColors;
@@ -98,6 +100,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.SpectrumDescription["Q-Value: "] = QValueCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Sequence Length: "] = SequenceLengthCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["ProForma Level: "] = ProFormaLevelCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Spectral Angle: "] = SpectralAngleCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["PEP: "] = PEPCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["PEP Q-Value: "] = PEPQValueCheckBox.IsChecked.Value;
             MetaDrawSettings.DrawStationarySequence = StationarySequenceCheckBox.IsChecked.Value;
@@ -105,7 +108,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.ShowLegend = ShowLegendCheckBox.IsChecked.Value;
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
-
+            MetaDrawSettings.ExportType = ExportFileFormatComboBox.SelectedItem.ToString();
             SettingsView.Save();
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))

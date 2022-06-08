@@ -38,7 +38,7 @@ namespace GuiFunctions
         public static double QValueFilter { get; set; } = 0.01;
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
-        public static string ExportType { get; set; } = ".pdf"; // TODO: Change to svg when fully implemented
+        public static string ExportType { get; set; } = "Pdf"; // TODO: Change to svg when fully implemented
 
         #endregion
 
@@ -66,10 +66,10 @@ namespace GuiFunctions
         };
         public static string[] SpectrumDescriptors { get; set; } =
         {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
-        "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
+        "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Spectral Angle: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
 
-        public static string[] ExportTypes { get; set; } = { ".pdf", ".svg", ".png" };
+        public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
 
         #endregion
 

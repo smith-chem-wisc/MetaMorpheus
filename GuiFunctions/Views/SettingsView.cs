@@ -71,7 +71,6 @@ namespace GuiFunctions
 
         public string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
 
-
         #endregion
 
         #region Constructor

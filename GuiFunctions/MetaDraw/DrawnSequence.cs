@@ -222,7 +222,7 @@ namespace GuiFunctions
         public static void DrawStationarySequence(PsmFromTsv psm, DrawnSequence stationarySequence, int yLoc)
         {
             ClearCanvas(stationarySequence.SequenceDrawingCanvas);
-            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, Math.Min(MetaDrawSettings.NumberOfAAOnScreen, psm.BaseSeq.Length));
             string fullSequence = baseSequence;
 
             // Trim full sequences selectively based upon what is show in scrollable sequence

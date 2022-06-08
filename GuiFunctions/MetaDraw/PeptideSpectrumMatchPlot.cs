@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-using GuiFunctions;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
@@ -57,58 +56,92 @@ namespace GuiFunctions
             RefreshChart();
         }
 
-        public void ExportToPdf(string path, Canvas stationarySequence, double width = 700, double height = 370)
+        public void ExportPlot(string path, Canvas stationarySequence, double width = 700, double height = 370)
         {
-            // exports spectrum annotation w/o base seq annotation
-            string tempPdfPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp.pdf");
-            string tempPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
-            base.ExportToPdf(tempPdfPath, width, height); // Change path back to temp pdf path
+            width = width > 0 ? width : 700;
+            height = height > 0 ? height : 300;
+            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType.ToLower());
+            string tempStationarySequencePngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
 
             // scales for desired DPI
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
-            // save base seq as PNG
-            stationarySequence.Measure(new Size((int)stationarySequence.Width + 30, (int)stationarySequence.Height));
-            
-            stationarySequence.Arrange(new Rect(new Size((int)stationarySequence.Width + 30, (int)stationarySequence.Height)));
+            // render stationary sequence as bitmap
+            stationarySequence.Height += 30;
+            stationarySequence.Width += 30;
+            Size stationarySequenceSize = new Size((int)stationarySequence.Width, (int)stationarySequence.Height);
+            stationarySequence.Measure(stationarySequenceSize);
+            stationarySequence.Arrange(new Rect(stationarySequenceSize));
 
-            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequence.Width + 30), (int)(dpiScale * stationarySequence.Height),
-                MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+            RenderTargetBitmap renderStationaryBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequence.Width), (int)(dpiScale * stationarySequence.Height),
+                                                  MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+            renderStationaryBitmap.Render(stationarySequence);
 
-            renderBitmap.Render(stationarySequence);
-
+            // save stationary sequence as png
             PngBitmapEncoder encoder = new PngBitmapEncoder();
-
-            encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
-
-
-            using (FileStream file = File.Create(tempPngPath))
+            encoder.Frames.Add(BitmapFrame.Create(renderStationaryBitmap));
+            using (FileStream file = File.Create(tempStationarySequencePngPath))
             {
                 encoder.Save(file);
             }
 
-            // adds base seq annotation to pdf
-            PdfDocument pdfDoc = new PdfDocument(new PdfReader(tempPdfPath), new PdfWriter(path));
+            // export model as png and load both stationary and model as bitmap
+            base.ExportToPng(tempModelPath, (int)width, (int)height);
+            System.Drawing.Bitmap modelBitmap = new(tempModelPath);
+            Point modelPoint = new Point(0, 0);
 
-            iText.Layout.Document document = new iText.Layout.Document(pdfDoc);
+            var tempStatSequenceBitmap = new System.Drawing.Bitmap(tempStationarySequencePngPath);
+            System.Drawing.Bitmap stationaryBitmap = new(tempStatSequenceBitmap, new System.Drawing.Size((int)stationarySequence.Width, (int)stationarySequence.Height));
+            Point stationaryPoint = new Point(stationarySequence.Margin.Left + 50, stationarySequence.Margin.Top);
 
-            ImageData imgData = ImageDataFactory.Create(tempPngPath);
+            // combine the bitmaps
+            List<System.Drawing.Bitmap> bitmaps = new() { modelBitmap, stationaryBitmap };
+            List<Point> points = new() { modelPoint, stationaryPoint };
+            System.Drawing.Bitmap combinedBitmaps = CombineBitmap(bitmaps, points);
+            tempStatSequenceBitmap.Dispose();
 
-            iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
-            img.SetMarginLeft((float)(-1.0 * stationarySequence.Margin.Left) + 10);
-            img.SetMarginTop(-30);
-            img.ScaleToFit((float)stationarySequence.Width, (float)stationarySequence.Height);
+            switch (MetaDrawSettings.ExportType)
+            {
+                case "Pdf":
+                    base.ExportToPdf(tempModelPath, width, height);
+                    PdfDocument pdfDoc = new(new PdfReader(tempModelPath), new PdfWriter(path));
+                    iText.Layout.Document document = new(pdfDoc);
 
+                    // prepare stationary sequence sequence image for addition to pdf
+                    ImageData imgData = ImageDataFactory.Create(tempStationarySequencePngPath);
+                    iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
+                    img.SetMarginLeft((float)(-1.0 * stationarySequence.Margin.Left) + 10);
+                    img.SetMarginTop(-30);
+                    img.ScaleToFit((float)stationarySequence.Width, (float)stationarySequence.Height);
 
-            document.Add(img);
+                    document.Add(img);
+                    pdfDoc.Close();
+                    document.Close();
+                    break;
 
+                case "Png":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                    break;
 
-            document.Close();
-            pdfDoc.Close();
+                case "Jpeg":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    break;
 
-            // delete temp files
-            File.Delete(tempPdfPath);
-            File.Delete(tempPngPath);
+                case "Tiff":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Tiff);
+                    break;
+
+                case "Wmf":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Wmf);
+                    break;
+
+                case "Bmp":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Bmp);
+                    break;
+            }
+
+            File.Delete(tempModelPath);
+            File.Delete(tempStationarySequencePngPath);
         }
 
         protected void DrawSpectrum()
@@ -369,6 +402,15 @@ namespace GuiFunctions
                 text.Append(SpectrumMatch.AmbiguityLevel);
                 text.Append("\r\n");
             }
+            if (MetaDrawSettings.SpectrumDescription["Spectral Angle: "])
+            {
+                text.Append("Spectral Angle: ");
+                if (SpectrumMatch.SpectralAngle != null)
+                    text.Append(SpectrumMatch.SpectralAngle.ToString());
+                else
+                    text.Append("N/A");
+                text.Append("\r\n");
+            }
             if (MetaDrawSettings.SpectrumDescription["Score: "])
             {
                 text.Append("Score: ");
@@ -463,6 +505,58 @@ namespace GuiFunctions
             if (highestAnnotatedMz > double.MinValue && lowestAnnotatedMz < double.MaxValue)
             {
                 this.Model.Axes[0].Zoom(lowestAnnotatedMz - 100, highestAnnotatedMz + 100);
+            }
+        }
+
+        private static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points)
+        {
+            System.Drawing.Bitmap finalImage = null;
+
+            try
+            {
+                int width = 0;
+                int height = 0;
+
+                foreach (var image in images)
+                {
+                    //update the size of the final bitmap
+                    width = image.Width > width ? image.Width : width;
+                    height = image.Height > height ? image.Height : height;
+                }
+
+                //create a bitmap to hold the combined image
+                finalImage = new System.Drawing.Bitmap(width, height);
+
+                //get a graphics object from the image so we can draw on it
+                using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
+                {
+                    //set background color
+                    g.Clear(System.Drawing.Color.Transparent);
+
+                    //go through each image and draw it on the final image
+                    for (int i = 0; i < images.Count; i++)
+                    {
+                        g.DrawImage(images[i],
+                          new System.Drawing.Rectangle((int)points[i].X, (int)points[i].Y, images[i].Width, images[i].Height));
+                    }
+                }
+
+                return finalImage;
+            }
+            catch (Exception ex)
+            {
+                if (finalImage != null)
+                    finalImage.Dispose();
+
+                throw ex;
+            }
+            finally
+            {
+                //clean up memory
+                foreach (System.Drawing.Bitmap image in images)
+                {
+                    image.Dispose();
+                }
             }
         }
 

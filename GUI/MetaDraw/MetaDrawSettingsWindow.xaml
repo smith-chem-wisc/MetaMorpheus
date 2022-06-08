@@ -59,8 +59,9 @@
                     <!-- exportation type options -->
                     <StackPanel>
                         <Label Content="Export File Type" Margin="5" HorizontalAlignment="Center" />
-                        <ComboBox x:Name="ExportFileFormat" Height="24" HorizontalAlignment="Center" 
-                                  HorizontalContentAlignment="Center" Margin="20 5 20 0" />
+                        <ComboBox x:Name="ExportFileFormatComboBox" Height="24" HorizontalAlignment="Center" 
+                                  HorizontalContentAlignment="Center" Margin="20 5 20 0" 
+                                  ItemsSource="{Binding}"/>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>
@@ -101,6 +102,7 @@
                                             J. Proteome Res. 2018, 17, 3, 1321–1325
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
+                                    <CheckBox Name="SpectralAngleCheckBox" Content="Spectral Angle" Margin="3" />
                                     <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
                                     <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
                                     <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
