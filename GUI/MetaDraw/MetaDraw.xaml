@@ -261,7 +261,9 @@
                                                           Grid.Row="1" Grid.Column="1">
                                                 <ItemsControl.Resources>
                                                     <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
-                                                        <ContentPresenter Content="{TemplateBinding ContentControl.Content}" />
+                                                        <Grid>
+                                                            <ContentPresenter Content="{TemplateBinding ContentControl.Content}" />
+                                                        </Grid>
                                                     </ControlTemplate>
                                                 </ItemsControl.Resources>
 
@@ -269,7 +271,7 @@
                                                     <DataTemplate>
                                                         <ContentControl Name="PtmLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
                                                                 BorderBrush="Black" BorderThickness="1">
-                                                            <StackPanel>
+                                                            <StackPanel Visibility="{Binding Visibility}">
                                                                 <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
                                                                 <ItemsControl ItemsSource="{Binding LegendItems}" >
                                                                     <ItemsControl.ItemTemplate>
@@ -341,8 +343,8 @@
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height = "35"></RowDefinition>
                                             <RowDefinition Height = "*"></RowDefinition>
-                                            <RowDefinition Height="5"></RowDefinition>
-                                            <RowDefinition Height = "30"></RowDefinition>
+                                            <RowDefinition Height="Auto"></RowDefinition>
+                                            <RowDefinition Height = "Auto"></RowDefinition>
                                         </Grid.RowDefinitions>
 
                                         <!--Header label-->
@@ -354,61 +356,55 @@
                                                     <RowDefinition Height="160" ></RowDefinition>
                                                     <RowDefinition Height=" *"></RowDefinition>
                                                 </Grid.RowDefinitions>
+                                                <!-- coverage text-->
                                                 <Canvas x:Name="sequenceText" Grid.Row="0" Background="White"></Canvas>
+                                                <!-- coverage map-->
                                                 <ScrollViewer Grid.Row="1" Name="mapViewer" HorizontalAlignment="Center" VerticalAlignment="Center" Width="Auto" 
                                                     CanContentScroll="True" VerticalScrollBarVisibility="Auto">
                                                     <Canvas x:Name="map" Background="White"></Canvas>
                                                 </ScrollViewer>
                                             </Grid>
                                         </ScrollViewer>
-                                    </Grid>
-                                </TabItem>
 
-                                <TabItem Header="Sequence Annotation" x:Name="SequenceAnnotationView">
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="100" />
-                                            <RowDefinition Height="*" />
-                                            <RowDefinition Height="*" />
-                                        </Grid.RowDefinitions>
+                                        <!--Moveable splitter-->
+                                        <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Silver" Width="5"/>
 
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="100" />
-                                            <ColumnDefinition Width="97*" />
-                                            <ColumnDefinition Width="623*"/>
-                                            <ColumnDefinition Width="100" />
-                                        </Grid.ColumnDefinitions>
-
-                                        <Canvas x:Name="sequenceAnnotationCanvas" Grid.Row="1" Grid.Column="1" VerticalAlignment="Top" Grid.ColumnSpan="2" />
-                                        <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}" 
-                                                          Grid.Row="0" Grid.Column="1" Margin="0 20 0 0" Grid.ColumnSpan="2">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate>
-                                                    <StackPanel>
-                                                        <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="20" FontWeight="DemiBold" />
-                                                        <ItemsControl ItemsSource="{Binding LegendItems}" >
-                                                            <ItemsControl.ItemTemplate>
-                                                                <DataTemplate>
-                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                        <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                        <!-- Sequence Annotation Expander -->
+                                        <Expander Grid.Row="3" Header="Sequence Annotation" VerticalAlignment="Bottom" HorizontalAlignment="Left" 
+                                                  x:Name="SequenceAnnotationView" >
+                                            <StackPanel>
+                                                <Canvas x:Name="sequenceAnnotationCanvas"  VerticalAlignment="Top" Margin="100 0 100 0"  />
+                                                <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}"  Margin="0 20 0 0" >
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Visibility="{Binding Visibility}">
+                                                                <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="20" FontWeight="DemiBold" />
+                                                                <ItemsControl ItemsSource="{Binding LegendItems}" >
+                                                                    <ItemsControl.ItemTemplate>
+                                                                        <DataTemplate>
+                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                                <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
                                                                                     FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
-                                                                        <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
                                                                                     Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                                    </StackPanel>
-                                                                </DataTemplate>
-                                                            </ItemsControl.ItemTemplate>
-                                                        </ItemsControl>
-                                                    </StackPanel>
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
+                                                                            </StackPanel>
+                                                                        </DataTemplate>
+                                                                    </ItemsControl.ItemTemplate>
+                                                                </ItemsControl>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+
+                                        </Expander>
                                     </Grid>
                                 </TabItem>
                             </TabControl>
 
                             <!--Detailed PSM properties-->
                             <StackPanel Grid.Row="2" >
-                                <Expander x:Name="NotificationExpander" FlowDirection="RightToLeft" >
+                                <Expander x:Name="NotificationExpander" Margin="3 0 0 0" >
                                     <Expander.Header>
                                         <StackPanel>
                                             <TextBlock>PSM Properties</TextBlock>
