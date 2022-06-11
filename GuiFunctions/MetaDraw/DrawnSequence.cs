@@ -56,7 +56,8 @@ namespace GuiFunctions
         /// <param name="matchedFragmentIons"></param>
         /// <param name="canvas"></param>
         /// <param name="psm"></param>
-        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, PsmFromTsv psm, bool stationary = false, int annotationRow = 0, int residuesPerRow = 0, int chunkNumber = 0)
+        public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, PsmFromTsv psm, 
+            bool stationary = false, int annotationRow = 0, int chunkPositionInRow = 0)
         {
             if (!Annotation && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence)))
             {
@@ -87,9 +88,11 @@ namespace GuiFunctions
             for (int r = 0; r < baseSequence.Length; r++)
             {
                 double x = r * MetaDrawSettings.AnnotatedSequenceTextSpacing + 10;
+
+                // adjust for spacing in sequence annotation
                 if (Annotation)
                 {
-                    x = ((r + 11 * chunkNumber) * MetaDrawSettings.AnnotatedSequenceTextSpacing) + 10 ;
+                    x = ((r + (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1) * chunkPositionInRow) * MetaDrawSettings.AnnotatedSequenceTextSpacing) + 10 ;
                 }
 
                 DrawText(SequenceDrawingCanvas, new Point(x, yLoc), baseSequence[r].ToString(), Brushes.Black);
@@ -142,7 +145,7 @@ namespace GuiFunctions
                         }
                         else if (Annotation)
                         {
-                            residue = ion.NeutralTheoreticalProduct.AminoAcidPosition + (chunkNumber) - (residuesPerRow * annotationRow);
+                            residue = ion.NeutralTheoreticalProduct.AminoAcidPosition + (chunkPositionInRow) - (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment * MetaDrawSettings.SequenceAnnotationSegmentPerRow * annotationRow);
                         }
                         else
                         {
@@ -221,8 +224,8 @@ namespace GuiFunctions
         /// <param name="canvas"></param>
         public static void DrawStationarySequence(PsmFromTsv psm, DrawnSequence stationarySequence, int yLoc)
         {
-            ClearCanvas(stationarySequence.SequenceDrawingCanvas);
-            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, Math.Min(MetaDrawSettings.NumberOfAAOnScreen, psm.BaseSeq.Length -  1));
+            ClearCanvas(stationarySequence.SequenceDrawingCanvas); 
+            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
             string fullSequence = baseSequence;
 
             // Trim full sequences selectively based upon what is show in scrollable sequence
@@ -249,92 +252,83 @@ namespace GuiFunctions
             stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, psm, true);
         }
 
+        /// <summary>
+        /// Draws the annotated sequence located below sequence coverage view taking into account the mutable display settings
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="sequence"></param>
         public static void DrawSequenceAnnotation(PsmFromTsv psm, DrawnSequence sequence)
         {
             ClearCanvas(sequence.SequenceDrawingCanvas);
+            int segmentsPerRow = MetaDrawSettings.SequenceAnnotationSegmentPerRow;
+            int residuesPerSegment = MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment;
             Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
-            int length = psm.BaseSeq.Length;
-            int remaining = length;
-            int yLoc = 10;
-            int perChunk = 10;
-            int maxAA = MetaDrawSettings.NumberOfAAOnScreen + 7;
-            int perRow = ((int)(maxAA - (int)(maxAA / 10)) / 10) * 10;
-            int rows = (int)Math.Ceiling(length / (double)perRow);
-            int toDraw;
-            int rowToDraw;
-            int startIndex;
-            int endIndex;
-            int rowLength;
-            int rowRemaining;
-            string rowSequence;
-            string baseSequence;          
+            int numberOfRows = (int)Math.Ceiling(((double)psm.BaseSeq.Length / residuesPerSegment) / segmentsPerRow);
+            int remaining = psm.BaseSeq.Length;
 
-            // draw each row
-            for (int i = 0; i < rows; i++)
+            // create an individual psm for each chunk to be drawn
+            List<PsmFromTsv> segments = new();
+            List<List<MatchedFragmentIon>> matchedIonSegments = new();
+            for (int i = 0; i < psm.BaseSeq.Length; i += residuesPerSegment)
             {
-                if (remaining > perRow)
+                // split base seq
+                string baseSequence;
+                List<MatchedFragmentIon> ions = new();
+                if (i + residuesPerSegment < psm.BaseSeq.Length)
                 {
-                    rowToDraw = perRow;
+                    baseSequence = psm.BaseSeq.Substring(i, residuesPerSegment);
+                    ions = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > i && p.NeutralTheoreticalProduct.AminoAcidPosition < (i + residuesPerSegment)).ToList();
+                    ions.AddRange(psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition == i && p.NeutralTheoreticalProduct.Annotation.Contains('y')));
+                    ions.AddRange(psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition == (i + residuesPerSegment) && p.NeutralTheoreticalProduct.Annotation.Contains('b')));
+                    remaining -= residuesPerSegment;
                 }
                 else
                 {
-                    rowToDraw = remaining;
+                    baseSequence = psm.BaseSeq.Substring(i, remaining);
+                    ions = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > i && p.NeutralTheoreticalProduct.AminoAcidPosition < (i + remaining)).ToList();
+                    ions.AddRange(psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition == i && p.NeutralTheoreticalProduct.Annotation.Contains('y')));
+                    ions.AddRange(psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition == (i + residuesPerSegment) && p.NeutralTheoreticalProduct.Annotation.Contains('b')));
+                    remaining -= remaining;
                 }
 
-                int rowStartIndex = length - remaining;
-                int rowEndIndex = rowStartIndex + rowToDraw;
-
-                rowSequence = psm.BaseSeq.Substring(rowStartIndex, rowToDraw);
-                rowLength = rowSequence.Length;
-                rowRemaining = rowLength;
-
-                // draw each chunk
-                for (int j = 0; j < rowLength; j += perChunk)
+                // add the mods onto the trimmed full sequence
+                string fullSequence = baseSequence;
+                foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
                 {
-                    if (rowRemaining > perChunk)
+                    // account for multiple modifications on the same amino acid
+                    for (int k = mod.Value.Count - 1; k > -1; k--)
                     {
-                        toDraw = perChunk;
-                    }
-                    else
-                    {
-                        toDraw = rowRemaining;
-                    }
-
-                    startIndex = rowLength - rowRemaining;
-                    endIndex = startIndex + toDraw;
-
-                    baseSequence = rowSequence.Substring(startIndex, toDraw);
-                    string fullSequence = baseSequence;
-
-                    // Trim full sequences selectively based upon what is show in scrollable sequence
-                    foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
-                    {
-                        // account for multiple modifications on the same amino acid
-                        for (int k = mod.Value.Count - 1; k > -1; k--)
+                        // if modification is within the visible region
+                        if (mod.Key >= i && mod.Key <= i + residuesPerSegment)
                         {
-                            // if modification is within the visible region
-                            if (mod.Key >= startIndex + i * perRow && mod.Key <= endIndex + i * perRow)
+                            fullSequence = fullSequence.Insert(mod.Key - i, "[" + mod.Value[k] + "]");
+                            if (k >= 1)
                             {
-                                fullSequence = fullSequence.Insert(mod.Key - (startIndex + i * perRow), "[" + mod.Value[k] + "]");
-                                if (k >= 1)
-                                {
-                                    fullSequence = fullSequence.Insert(mod.Key, "|");
-                                }
+                                fullSequence = fullSequence.Insert(mod.Key - i, "|");
                             }
                         }
                     }
-
-                    int ionStartIndex = rowStartIndex + j;
-                    int ionEndIndex = ionStartIndex + 11;
-                    List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > ionStartIndex &&
-                                                       p.NeutralTheoreticalProduct.AminoAcidPosition < ionEndIndex).ToList();
-                    sequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, psm, false, i, perRow , j / perChunk);
-                    rowRemaining -= toDraw;
                 }
-                yLoc += 40;
-                remaining -= rowToDraw;
+                PsmFromTsv tempPsm = new(psm, fullSequence, baseSequence);
+                segments.Add(tempPsm);
+                matchedIonSegments.Add(ions);
+            }
+
+            // draw each resulting psm
+            for (int i = 0; i < segments.Count; i++)
+            {
+                int startPosition = i * residuesPerSegment;
+                int endPosition = (i + 1) * residuesPerSegment;
+                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > startPosition &&
+                                                       p.NeutralTheoreticalProduct.AminoAcidPosition < endPosition).ToList();
+                int currentRowZeroIndexed = i / segmentsPerRow;
+                int yLoc = 10 + (currentRowZeroIndexed * 42);
+                int chunkPositionInRow = (i % segmentsPerRow);
+
+                sequence.AnnotateBaseSequence(segments[i].BaseSeq, segments[i].FullSequence, yLoc, matchedIonSegments[i], segments[i], false, currentRowZeroIndexed, chunkPositionInRow);
             }
         }
+
 
         public void DrawCrossLinkSequence()
         {

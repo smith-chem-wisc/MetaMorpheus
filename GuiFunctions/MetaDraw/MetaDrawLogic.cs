@@ -225,7 +225,7 @@ namespace GuiFunctions
                     ScrollableSequence = new(scrollableCanvas, psm, false);
                 }
 
-                if (MetaDrawSettings.DrawStationarySequence)
+                if (stationaryCanvas != null && MetaDrawSettings.DrawStationarySequence)
                 {
                     if (psm.BetaPeptideBaseSequence == null) // if not crosslinked
                     {
@@ -466,6 +466,12 @@ namespace GuiFunctions
             
             foreach (var psm in spectrumMatches)
             {
+                // get the scan
+                if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+                {
+                    errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
+                    return;
+                }
 
                 DisplaySequences(stationaryCanvas, null, null, psm);
                 DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
@@ -499,7 +505,6 @@ namespace GuiFunctions
             DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
             DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors);
         }
-
 
         public void FilterPsms()
         {
@@ -562,7 +567,6 @@ namespace GuiFunctions
                 PsmResultFilePaths.Clear();
             }
         }
-
         public void CleanUpSpectralLibraryFiles()
         {
             lock (ThreadLocker)

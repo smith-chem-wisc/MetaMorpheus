@@ -21,6 +21,12 @@ namespace Test
     [TestFixture]
     public class MetaDrawTest
     {
+        [SetUp]
+        public static void SetUp()
+        {
+            MetaDrawSettings.ResetSettings();
+        }
+
         [Test]
         public static void TestMetaDrawReadPsmFile()
         {
@@ -223,7 +229,6 @@ namespace Test
         [Test]
         public static void MetaDraw_SearchTaskTest()
         {
-            MetaDrawSettings.ResetSettings();
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
@@ -712,6 +717,7 @@ namespace Test
             Assert.That(errors.Any());
 
             // export to PDF should produce an error because spectra are not loaded
+            MetaDrawSettings.NumberOfAAOnScreen = psmsFromTsv.First().BaseSeq.Length - 1;
             metadrawLogic.ExportPlot(plotView, canvas, new List<PsmFromTsv> { psmsFromTsv.First() }, parentChildScanPlotsView, outputFolder, out errors);
             Assert.That(errors.Any());
 
@@ -1044,5 +1050,72 @@ namespace Test
 
         }
 
+        [Test] 
+        public static  void TestMetaDrawOutputFormats()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            var plotView = new OxyPlot.Wpf.PlotView();
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First();
+
+            // drawing the first psm
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
+            MetaDrawSettings.DrawMatchedIons = true;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // export each file type and ensure they exist
+            var psmsToExport = new List<PsmFromTsv> { metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First() };
+            MetaDrawSettings.NumberOfAAOnScreen = psmsToExport.First().BaseSeq.Length;
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.pdf")));
+
+            MetaDrawSettings.ExportType = "Png";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.png")));
+
+            MetaDrawSettings.ExportType = "Jpeg";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.jpeg")));
+
+            MetaDrawSettings.ExportType = "Tiff";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.tiff")));
+
+            MetaDrawSettings.ExportType = "Wmf";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.wmf")));
+
+            MetaDrawSettings.ExportType = "Bmp";
+            metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.bmp")));
+
+            Directory.Delete(outputFolder, true);
+        }
     }
 }

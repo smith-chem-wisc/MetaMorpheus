@@ -200,7 +200,7 @@ namespace EngineLayer
         /// </summary>
         /// <param name="psm"></param>
         /// <param name="fullSequence"></param>
-        public PsmFromTsv(PsmFromTsv psm, string fullSequence)
+        public PsmFromTsv(PsmFromTsv psm, string fullSequence, string baseSequence = "")
         {
             FullSequence = fullSequence;
             Ms2ScanNumber = psm.Ms2ScanNumber;
@@ -217,7 +217,7 @@ namespace EngineLayer
             PEP_QValue = psm.PEP_QValue;
             TotalIonCurrent = psm.TotalIonCurrent;
             DeltaScore = psm.DeltaScore;
-            BaseSeq = psm.BaseSeq;
+            BaseSeq = baseSequence == "" ? psm.BaseSeq : baseSequence;
             EssentialSeq = psm.EssentialSeq;
             AmbiguityLevel = psm.AmbiguityLevel;
             MissedCleavage = psm.MissedCleavage;

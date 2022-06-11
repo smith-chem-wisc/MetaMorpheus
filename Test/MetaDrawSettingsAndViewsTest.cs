@@ -243,6 +243,49 @@ namespace Test
             PtmLegendItemView ptmLegendItemView = new(mod.IdWithMotif);
             Assert.That(ptmLegendItemView.ModName == mod.IdWithMotif);
             Assert.That(ptmLegendItemView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.IdWithMotif]).Color);
+
+            // test that residue per segment incrementation works and cannot be less than 1
+            int residuesPerSegment = PtmLegendView.ResiduesPerSegment;
+            PtmLegendView.IncreaseResiduesPerSegment();
+            Assert.That(residuesPerSegment + 1 == PtmLegendView.ResiduesPerSegment);
+            PtmLegendView.DecreaseResiduesPerSegment();
+            Assert.That(residuesPerSegment == PtmLegendView.ResiduesPerSegment);
+            PtmLegendView.ResiduesPerSegment = 1;
+            try
+            {
+                PtmLegendView.DecreaseResiduesPerSegment();
+                Assert.That(false);
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                Assert.That(e.Message == ("ResiduesPerSegment cannot be less than one"));
+            }
+            catch (Exception e)
+            {
+                Assert.That(false);
+            }
+
+            // test that segments per row incrementation works and cannot be less than 1
+            int segmentsPerRow = PtmLegendView.SegmentsPerRow;
+            PtmLegendView.IncreaseSegmentsPerRow();
+            Assert.That(segmentsPerRow + 1 == PtmLegendView.SegmentsPerRow);
+            PtmLegendView.DecreaseSegmentsPerRow();
+            Assert.That(segmentsPerRow == PtmLegendView.SegmentsPerRow);
+            PtmLegendView.SegmentsPerRow = 1;
+            try
+            {
+                PtmLegendView.DecreaseSegmentsPerRow();
+                Assert.That(false);
+            }
+            catch (IndexOutOfRangeException e)
+            {
+                Assert.That(e.Message == ("SegmentsPerRow cannot be less than one"));
+            }
+            catch (Exception e)
+            {
+                Assert.That(false);
+            }
+
         }
 
         [Test]

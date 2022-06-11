@@ -17,6 +17,7 @@ namespace GuiFunctions
     {
 
         #region Customizable Settings
+
         // graphic settings
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
@@ -38,10 +39,11 @@ namespace GuiFunctions
         public static double QValueFilter { get; set; } = 0.01;
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
-        public static string ExportType { get; set; } = "Pdf"; // TODO: Change to svg when fully implemented
+        public static string ExportType { get; set; } = "Pdf"; 
 
         #endregion
 
+        // used for constructing data structures and mathcing them with the saved settings
         #region Data Lists
         public static List<OxyColor> AllColors { get; set; } = new List<OxyColor>()
         {   OxyColors.Undefined, OxyColors.Automatic, OxyColors.AliceBlue, OxyColors.AntiqueWhite, OxyColors.Aqua, OxyColors.Aquamarine,
@@ -68,7 +70,6 @@ namespace GuiFunctions
         {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
         "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Spectral Angle: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
-
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
 
         #endregion
@@ -85,6 +86,8 @@ namespace GuiFunctions
         public static int NumberOfAAOnScreen { get; set; }
         public static int FirstAAonScreenIndex { get; set; }
         public static bool DrawMatchedIons { get; set; } = true;
+        public static int SequenceAnnotationSegmentPerRow { get; set; } = 3;
+        public static int SequenceAnnotaitonResiduesPerSegment { get; set; } = 10;
 
         static MetaDrawSettings()
         {
@@ -214,7 +217,7 @@ namespace GuiFunctions
         }
 
         /// <summary>
-        /// Used to reset the settings to their default value
+        /// Used to reset the settings to their default value, particullary needed for unit testing
         /// </summary>
         public static void ResetSettings()
         {
@@ -234,6 +237,9 @@ namespace GuiFunctions
             LocalizationLevelEnd = LocalizationLevel.Level3;
             DrawMatchedIons  = true;
             AnnotatedFontSize = 12;
+            SequenceAnnotaitonResiduesPerSegment = 10;
+            SequenceAnnotationSegmentPerRow = 3;
+            ExportType = "Pdf";
         }
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)

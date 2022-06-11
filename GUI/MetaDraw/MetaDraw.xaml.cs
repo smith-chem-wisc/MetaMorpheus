@@ -71,7 +71,7 @@ namespace MetaMorpheusGUI
             plotTypes = new ObservableCollection<string>();
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
-            
+
             PtmLegend = new ObservableCollection<PtmLegendView>();
             PtmLegendControl2.ItemsSource = PtmLegend;
             SequenceCoveragePtmLegendControl.ItemsSource = PtmLegend;
@@ -206,6 +206,7 @@ namespace MetaMorpheusGUI
                     GrayBox.Opacity = 0;
                 }
 
+                // add ptm legend if desired
                 PtmLegend.Clear();
                 if (MetaDrawSettings.ShowLegend)
                 {
@@ -213,6 +214,10 @@ namespace MetaMorpheusGUI
                     List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
                     PtmLegend.Add(new PtmLegendView(mods));                    
                 }
+
+                // define initial limits for sequence annotation
+                double maxDisplayedPerRow = (int)Math.Round((SequenceAnnotationArea.ActualWidth - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0) + 7;
+                MetaDrawSettings.SequenceAnnotationSegmentPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
             }
 
             // draw the annotated spectrum
@@ -761,6 +766,66 @@ namespace MetaMorpheusGUI
             SettingsView view = new SettingsView();
             await view.Initialization;
             SettingsView = view;
+        }
+
+        /// <summary>
+        /// Fires the command in the PtmLegend to decrease the residues per segment by one
+        /// </summary>
+        /// <param name="sender">Button Object</param>
+        /// <param name="e"></param>
+        private void residuesPerSegmentcmdDown_Click(object sender, RoutedEventArgs e)
+        {
+            if (PtmLegend.First().ResiduesPerSegment == 1)
+            {
+                MessageBox.Show("Value must be greater than 0");
+                return;
+            }
+
+            PtmLegend.First().DecreaseResiduesPerSegment();
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
+        }
+
+        /// <summary>
+        /// Fires the command in the PtmLegend to increase the residues per segment of the annotated sequence by one
+        /// </summary>
+        /// <param name="sender">Button Object</param>
+        /// <param name="e"></param>
+        private void residuesPerSegmentcmdUp_Click(object sender, RoutedEventArgs e)
+        {
+            PtmLegend.First().IncreaseResiduesPerSegment();
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
+        }
+
+        /// <summary>
+        /// Fires the command in the PtmLegend to decrease the segments per row of the annotated sequence by one
+        /// </summary>
+        /// <param name="sender">Button Object</param>
+        /// <param name="e"></param>
+        private void segmentsPerRowcmdDown_Click(object sender, RoutedEventArgs e)
+        {
+            if (PtmLegend.First().SegmentsPerRow == 1)
+            {
+                MessageBox.Show("Value must be greater than 0");
+                return;
+            }
+
+            PtmLegend.First().DecreaseSegmentsPerRow();
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
+        }
+
+        /// <summary>
+        /// Fires the command in the PtmLegend to increase the segments per row of the annotated sequence by one
+        /// </summary>
+        /// <param name="sender">Button Object</param>
+        /// <param name="e"></param>
+        private void segmentsPerRowcmdUp_Click(object sender, RoutedEventArgs e)
+        {
+            PtmLegend.First().IncreaseSegmentsPerRow();
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+            MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
     }
 }

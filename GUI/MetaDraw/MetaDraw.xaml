@@ -1,4 +1,4 @@
-<Window x:Class="MetaMorpheusGUI.MetaDraw"
+﻿<Window x:Class="MetaMorpheusGUI.MetaDraw"
         x:Name="MetaDrawWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -372,31 +372,60 @@
                                         <!-- Sequence Annotation Expander -->
                                         <Expander Grid.Row="3" Header="Sequence Annotation" VerticalAlignment="Bottom" HorizontalAlignment="Left" 
                                                   x:Name="SequenceAnnotationView" >
-                                            <StackPanel>
+                                            <StackPanel >
                                                 <Canvas x:Name="sequenceAnnotationCanvas"  VerticalAlignment="Top" Margin="100 0 100 0"  />
                                                 <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}"  Margin="0 20 0 0" >
                                                     <ItemsControl.ItemTemplate>
                                                         <DataTemplate>
-                                                            <StackPanel Visibility="{Binding Visibility}">
-                                                                <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="20" FontWeight="DemiBold" />
-                                                                <ItemsControl ItemsSource="{Binding LegendItems}" >
-                                                                    <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate>
-                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                                <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                                                                    FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
-                                                                                <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                                    Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                                            </StackPanel>
-                                                                        </DataTemplate>
-                                                                    </ItemsControl.ItemTemplate>
-                                                                </ItemsControl>
-                                                            </StackPanel>
+                                                            <Grid>
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="Auto" />
+                                                                </Grid.ColumnDefinitions>
+
+                                                                <!-- sequence annotaiton and legend -->
+                                                                <StackPanel Visibility="{Binding Visibility}" Grid.Column="0" Grid.ColumnSpan="2">
+                                                                    <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="20" FontWeight="DemiBold" />
+                                                                    <ItemsControl ItemsSource="{Binding LegendItems}"  >
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                                    <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                                                        FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
+                                                                                    <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                        Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
+                                                                                </StackPanel>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </StackPanel>
+
+                                                                <!-- adjusting the annotation -->
+                                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                                                                    <!-- residues per segment -->
+                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+                                                                        <TextBlock Text="Residues per Segment" Margin="0 2 2 0" />
+                                                                        <Grid  Height="23" Margin="0" VerticalAlignment="Top" HorizontalAlignment="Right">
+                                                                            <TextBlock Name="residuesPerSegmentTextBox"  Text="{Binding ResiduesPerSegment}" Margin="3,2,20,3" Width="15" TextAlignment="Center" />
+                                                                            <Button x:Name="residuesPerSegmentcmdUp" FontSize="10" Padding="0,-4,0,0" Content="▲" Width="10" Click="residuesPerSegmentcmdUp_Click"  Margin="15 2 1 13" />
+                                                                            <Button x:Name="residuesPerSegmentcmdDown" FontSize="10" Padding="0,-4,0,0" Content="▼" Width="10" Click="residuesPerSegmentcmdDown_Click"  Margin="15 12 1 3" />
+                                                                        </Grid>
+                                                                    </StackPanel>
+                                                                    <!-- segments per row-->
+                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+                                                                        <TextBlock Text="Segments per Row" Margin="0 2 2 0" />
+                                                                        <Grid  Height="23" Margin="0" VerticalAlignment="Top">
+                                                                            <TextBlock Name="segmentsPerRowTextBox"  Text="{Binding SegmentsPerRow}" Margin="3,2,20,3"  Width="15" TextAlignment="Center" />
+                                                                            <Button x:Name="segmentsPerRowcmdUp" FontSize="10" Padding="0,-4,0,0" Content="▲" Width="10" Click="segmentsPerRowcmdUp_Click"  Margin="15 2 1 13" />
+                                                                            <Button x:Name="segmentsPerRowcmdDown" FontSize="10" Padding="0,-4,0,0" Content="▼" Width="10" Click="segmentsPerRowcmdDown_Click"  Margin="15 12 1 3" />
+                                                                        </Grid>
+                                                                    </StackPanel>
+                                                                </StackPanel>
+                                                            </Grid>
                                                         </DataTemplate>
                                                     </ItemsControl.ItemTemplate>
                                                 </ItemsControl>
                                             </StackPanel>
-
                                         </Expander>
                                     </Grid>
                                 </TabItem>

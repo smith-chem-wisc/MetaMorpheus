@@ -13,6 +13,11 @@ using System.Windows.Input;
 
 namespace GuiFunctions
 {
+    /// <summary>
+    /// Model for the metadraw settings window
+    /// In a perfect world, nothing would be in the MetaDrawSettings.xaml.cs file and all would be located here
+    /// This would allow for more extensive testing of the GUI Elements
+    /// </summary>
     public class SettingsView : BaseView, IAsyncInitialization
     {
         #region Private Properties
@@ -59,28 +64,35 @@ namespace GuiFunctions
         }
 
         public ObservableCollection<string> PossibleColors { get; set; }
-
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
-
-        public bool CanOpen
-        {
-            get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); }
-        }
-
+        public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
-
         public string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
 
         #endregion
 
         #region Constructor
 
+        /// <summary>
+        /// Constructs the instance asynchronously
+        /// </summary>
+        /// <param name="loadAsync"></param>
         public SettingsView(bool loadAsync = true)
         {
             if (loadAsync)
                 Initialization = InitializeAsync();
             else
-                Initialize();
+            {
+                if (HasDefaultSaved)
+                    LoadSettings();
+
+                PossibleColors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
+                AddSpaces(PossibleColors);
+
+                LoadPTMs();
+                LoadIonTypes();
+                LoadSequenceCoverage();
+            }
         }
 
         private async Task InitializeAsync()
@@ -95,19 +107,6 @@ namespace GuiFunctions
             LoadIonTypes();
             LoadSequenceCoverage();
             await Task.Delay(100);
-        }
-
-        private void Initialize()
-        {
-            if (HasDefaultSaved)
-                LoadSettings();
-
-            PossibleColors = new ObservableCollection<string>(MetaDrawSettings.PossibleColors.Values.ToList());
-            AddSpaces(PossibleColors);
-
-            LoadPTMs();
-            LoadIonTypes();
-            LoadSequenceCoverage();
         }
 
         #endregion
