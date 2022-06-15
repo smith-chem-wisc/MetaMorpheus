@@ -281,6 +281,7 @@ namespace MetaMorpheusGUI
             DeltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -499,6 +500,7 @@ namespace MetaMorpheusGUI
 
             bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
+            bool AddTruncations = AddTruncationsCheckBox.IsChecked.Value;
 
             int? numPeaksToKeep = null;
             if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
@@ -547,6 +549,7 @@ namespace MetaMorpheusGUI
                 separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
+                addTruncations: AddTruncations,
                 numberOfPeaksToKeepPerWindow: numPeaksToKeep,
                 minimumAllowedIntensityRatioToBasePeak: minimumAllowedIntensityRatioToBasePeak,
                 windowWidthThomsons: windowWidthThompsons,
@@ -1265,6 +1268,19 @@ namespace MetaMorpheusGUI
         {
             PepQValueTextBox.Clear();
             QValueTextBox.Text = "0.01";
+        }
+
+        /// <summary>
+        /// Retained/Lost Methionine is best handled through truncation search when truncation search is selected.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AddTruncationsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AddTruncationsCheckBox.IsChecked.Value)
+            {
+                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)InitiatorMethionineBehavior.Retain;
+            }
         }
     }
 
