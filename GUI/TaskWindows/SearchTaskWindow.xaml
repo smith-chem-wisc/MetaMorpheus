@@ -440,8 +440,6 @@
                     <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
 
                         <!--<Expander x:Name="OutputExpander">-->
-                        <StackPanel Orientation="Vertical" Margin="5">
-                            <CheckBox x:Name="CkbMzId" Content="Write .mzID" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}" ToolTipService.ShowOnDisabled="True">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 
@@ -466,7 +464,7 @@
                                 <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                                 <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
-                               <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update SpectralLibrary" />
+                                <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update SpectralLibrary" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                                 
                             </StackPanel>
