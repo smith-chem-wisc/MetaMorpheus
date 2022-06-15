@@ -92,12 +92,12 @@ namespace GuiFunctions
 
             var tempStatSequenceBitmap = new System.Drawing.Bitmap(tempStationarySequencePngPath);
             System.Drawing.Bitmap stationaryBitmap = new(tempStatSequenceBitmap, new System.Drawing.Size((int)stationarySequence.Width, (int)stationarySequence.Height));
-            Point stationaryPoint = new Point(stationarySequence.Margin.Left + 50, stationarySequence.Margin.Top);
+            Point stationaryPoint = new Point(stationarySequence.Margin.Left, stationarySequence.Margin.Top);
 
             // combine the bitmaps
             List<System.Drawing.Bitmap> bitmaps = new() { modelBitmap, stationaryBitmap };
             List<Point> points = new() { modelPoint, stationaryPoint };
-            System.Drawing.Bitmap combinedBitmaps = CombineBitmap(bitmaps, points);
+            System.Drawing.Bitmap combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points);
             tempStatSequenceBitmap.Dispose();
 
             switch (MetaDrawSettings.ExportType)
@@ -505,58 +505,6 @@ namespace GuiFunctions
             if (highestAnnotatedMz > double.MinValue && lowestAnnotatedMz < double.MaxValue)
             {
                 this.Model.Axes[0].Zoom(lowestAnnotatedMz - 100, highestAnnotatedMz + 100);
-            }
-        }
-
-        private static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points)
-        {
-            System.Drawing.Bitmap finalImage = null;
-
-            try
-            {
-                int width = 0;
-                int height = 0;
-
-                foreach (var image in images)
-                {
-                    //update the size of the final bitmap
-                    width = image.Width > width ? image.Width : width;
-                    height = image.Height > height ? image.Height : height;
-                }
-
-                //create a bitmap to hold the combined image
-                finalImage = new System.Drawing.Bitmap(width, height);
-
-                //get a graphics object from the image so we can draw on it
-                using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
-                {
-                    //set background color
-                    g.Clear(System.Drawing.Color.Transparent);
-
-                    //go through each image and draw it on the final image
-                    for (int i = 0; i < images.Count; i++)
-                    {
-                        g.DrawImage(images[i],
-                          new System.Drawing.Rectangle((int)points[i].X, (int)points[i].Y, images[i].Width, images[i].Height));
-                    }
-                }
-
-                return finalImage;
-            }
-            catch (Exception ex)
-            {
-                if (finalImage != null)
-                    finalImage.Dispose();
-
-                throw ex;
-            }
-            finally
-            {
-                //clean up memory
-                foreach (System.Drawing.Bitmap image in images)
-                {
-                    image.Dispose();
-                }
             }
         }
 

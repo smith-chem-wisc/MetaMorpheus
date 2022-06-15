@@ -14,10 +14,19 @@ namespace GuiFunctions
     /// </summary>
     public class PtmLegendView : BaseView
     {
+        private Visibility _visibility;
         public string Header { get; set; } = "Legend";
         public int HeaderSize { get; set; } = 12;
         public ObservableCollection<PtmLegendItemView> LegendItems { get; }
-        public Visibility Visibility { get; set; }
+        public Visibility Visibility
+        {
+            get { return _visibility; }
+            set
+            {
+                _visibility = value;
+                OnPropertyChanged(nameof(Visibility));
+            }
+        }
 
         /// <summary>
         /// Segments per row in the sequence annotation 

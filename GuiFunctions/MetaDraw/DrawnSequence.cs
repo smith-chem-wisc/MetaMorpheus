@@ -259,13 +259,14 @@ namespace GuiFunctions
         /// <param name="sequence"></param>
         public static void DrawSequenceAnnotation(PsmFromTsv psm, DrawnSequence sequence)
         {
-            ClearCanvas(sequence.SequenceDrawingCanvas);
+            ClearCanvas(sequence.SequenceDrawingCanvas); 
             int segmentsPerRow = MetaDrawSettings.SequenceAnnotationSegmentPerRow;
             int residuesPerSegment = MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment;
             Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
             int numberOfRows = (int)Math.Ceiling(((double)psm.BaseSeq.Length / residuesPerSegment) / segmentsPerRow);
             int remaining = psm.BaseSeq.Length;
 
+            sequence.SequenceDrawingCanvas.Height = 42 * numberOfRows + 10;
             // create an individual psm for each chunk to be drawn
             List<PsmFromTsv> segments = new();
             List<List<MatchedFragmentIon>> matchedIonSegments = new();

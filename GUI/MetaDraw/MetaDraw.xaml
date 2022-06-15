@@ -226,39 +226,7 @@
                                             </Grid.ColumnDefinitions>
 
                                             <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}" 
-                                                          Grid.Row="1" Grid.Column="1">
-
-                                                <ItemsControl.Resources>
-                                                    <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ItemsControl">
-                                                        <ContentPresenter Content="{TemplateBinding ItemsControl.ItemsSource}" />
-                                                    </ControlTemplate>
-                                                </ItemsControl.Resources>
-
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Border BorderBrush="Black" BorderThickness="1">
-                                                            <StackPanel>
-                                                                <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
-                                                                <ItemsControl ItemsSource="{Binding LegendItems}" >
-                                                                    <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate>
-                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                                <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                                                                    FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
-                                                                                <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                                    Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                                            </StackPanel>
-                                                                        </DataTemplate>
-                                                                    </ItemsControl.ItemTemplate>
-                                                                </ItemsControl>
-                                                            </StackPanel>
-                                                        </Border>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-
-                                            <ItemsControl x:Name="PtmLegendControl2" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}" 
-                                                          Grid.Row="1" Grid.Column="1">
+                                                          Grid.Row="1" Grid.Column="1" Height="60" Background="White" >
                                                 <ItemsControl.Resources>
                                                     <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
                                                         <Grid>
@@ -266,7 +234,6 @@
                                                         </Grid>
                                                     </ControlTemplate>
                                                 </ItemsControl.Resources>
-
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
                                                         <ContentControl Name="PtmLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
@@ -337,6 +304,7 @@
 
                                     </ItemsControl>
                                 </TabItem>
+                                
                                 <!--Sequence Coverage Annotation-->
                                 <TabItem Header="Sequence Coverage" x:Name="SequenceCoverageAnnotationView">
                                     <Grid Grid.Row="1" Name="SequenceAnnotationGrid" SizeChanged="AnnotationSizeChanged" Style="{StaticResource InternalGridStyle}">
@@ -349,6 +317,8 @@
 
                                         <!--Header label-->
                                         <Label Content="Sequence Coverage Map" Grid.Row="0" />
+                                        
+                                        <!-- sequence coverage display -->
                                         <ScrollViewer Grid.Row="1" Name="sequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Center" 
                                             CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto">
                                             <Grid Name="mapGrid" Background="White">
@@ -365,28 +335,34 @@
                                                 </ScrollViewer>
                                             </Grid>
                                         </ScrollViewer>
-
-                                        <!--Moveable splitter-->
-                                        <GridSplitter Grid.Row="2" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="Silver" Width="5"/>
+                                        
+                                        <!-- export sequence coverage button -->
+                                        <Button x:Name="SequenceCoverageExportButton"  Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                                                Content="Export" Margin="0 0 5 0" Click="SequenceCoverageExportButton_Click"/>
 
                                         <!-- Sequence Annotation Expander -->
                                         <Expander Grid.Row="3" Header="Sequence Annotation" VerticalAlignment="Bottom" HorizontalAlignment="Left" 
                                                   x:Name="SequenceAnnotationView" >
+                                            
+                                            <!-- sequence annotaiton and legend -->
                                             <StackPanel >
-                                                <Canvas x:Name="sequenceAnnotationCanvas"  VerticalAlignment="Top" Margin="100 0 100 0"  />
-                                                <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}"  Margin="0 20 0 0" >
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <Grid>
-                                                                <Grid.ColumnDefinitions>
-                                                                    <ColumnDefinition Width="*" />
-                                                                    <ColumnDefinition Width="Auto" />
-                                                                </Grid.ColumnDefinitions>
+                                                
+                                                <!-- sequence annotaiton canvas -->
+                                                <Canvas x:Name="sequenceAnnotationCanvas"  VerticalAlignment="Top" Margin="100 0 100 0" Background="White" />
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
 
-                                                                <!-- sequence annotaiton and legend -->
-                                                                <StackPanel Visibility="{Binding Visibility}" Grid.Column="0" Grid.ColumnSpan="2">
+                                                    <!-- ptm legend -->
+                                                    <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendView}"  Margin="0 30 0 0"
+                                                                   Height="60" Background="White" >
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <StackPanel x:Name="PtmLegendStackPanel" Visibility="{Binding Visibility}" Grid.Column="0" Grid.ColumnSpan="2">
                                                                     <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="20" FontWeight="DemiBold" />
-                                                                    <ItemsControl ItemsSource="{Binding LegendItems}"  >
+                                                                    <ItemsControl ItemsSource="{Binding LegendItems}" x:Name="PtmLegendItemsControl" >
                                                                         <ItemsControl.ItemTemplate>
                                                                             <DataTemplate>
                                                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -399,32 +375,36 @@
                                                                         </ItemsControl.ItemTemplate>
                                                                     </ItemsControl>
                                                                 </StackPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
 
-                                                                <!-- adjusting the annotation -->
-                                                                <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                                                                    <!-- residues per segment -->
-                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
-                                                                        <TextBlock Text="Residues per Segment" Margin="0 2 2 0" />
-                                                                        <Grid  Height="23" Margin="0" VerticalAlignment="Top" HorizontalAlignment="Right">
-                                                                            <TextBlock Name="residuesPerSegmentTextBox"  Text="{Binding ResiduesPerSegment}" Margin="3,2,20,3" Width="15" TextAlignment="Center" />
-                                                                            <Button x:Name="residuesPerSegmentcmdUp" FontSize="10" Padding="0,-4,0,0" Content="▲" Width="10" Click="residuesPerSegmentcmdUp_Click"  Margin="15 2 1 13" />
-                                                                            <Button x:Name="residuesPerSegmentcmdDown" FontSize="10" Padding="0,-4,0,0" Content="▼" Width="10" Click="residuesPerSegmentcmdDown_Click"  Margin="15 12 1 3" />
-                                                                        </Grid>
-                                                                    </StackPanel>
-                                                                    <!-- segments per row-->
-                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
-                                                                        <TextBlock Text="Segments per Row" Margin="0 2 2 0" />
-                                                                        <Grid  Height="23" Margin="0" VerticalAlignment="Top">
-                                                                            <TextBlock Name="segmentsPerRowTextBox"  Text="{Binding SegmentsPerRow}" Margin="3,2,20,3"  Width="15" TextAlignment="Center" />
-                                                                            <Button x:Name="segmentsPerRowcmdUp" FontSize="10" Padding="0,-4,0,0" Content="▲" Width="10" Click="segmentsPerRowcmdUp_Click"  Margin="15 2 1 13" />
-                                                                            <Button x:Name="segmentsPerRowcmdDown" FontSize="10" Padding="0,-4,0,0" Content="▼" Width="10" Click="segmentsPerRowcmdDown_Click"  Margin="15 12 1 3" />
-                                                                        </Grid>
-                                                                    </StackPanel>
-                                                                </StackPanel>
+                                                    <!-- adjusting the annotation -->
+                                                    <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+                                                        <!-- residues per segment -->
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+                                                            <TextBlock Text="Residues per Segment" Margin="0 2 2 0" />
+                                                            <Grid  Height="23" Margin="0" VerticalAlignment="Top" HorizontalAlignment="Right">
+                                                                <TextBlock Name="residuesPerSegmentTextBox"  Text="{Binding ResiduesPerSegment}" Margin="3,2,20,3" Width="15" TextAlignment="Center" />
+                                                                <Button x:Name="residuesPerSegmentcmdUp" FontSize="10" Padding="0,-4,0,0" Content="▲" Width="10" Click="residuesPerSegmentcmdUp_Click"  Margin="15 2 1 13" />
+                                                                <Button x:Name="residuesPerSegmentcmdDown" FontSize="10" Padding="0,-4,0,0" Content="▼" Width="10" Click="residuesPerSegmentcmdDown_Click"  Margin="15 12 1 3" />
                                                             </Grid>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
+                                                        </StackPanel>
+                                                        <!-- segments per row-->
+                                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+                                                            <TextBlock Text="Segments per Row" Margin="0 2 2 0" />
+                                                            <Grid  Height="23" Margin="0" VerticalAlignment="Top">
+                                                                <TextBlock Name="segmentsPerRowTextBox"  Text="{Binding SegmentsPerRow}" Margin="3,2,20,3"  Width="15" TextAlignment="Center" />
+                                                                <Button x:Name="segmentsPerRowcmdUp" FontSize="10" Padding="0,-4,0,0" Content="▲" Width="10" Click="segmentsPerRowcmdUp_Click"  Margin="15 2 1 13" />
+                                                                <Button x:Name="segmentsPerRowcmdDown" FontSize="10" Padding="0,-4,0,0" Content="▼" Width="10" Click="segmentsPerRowcmdDown_Click"  Margin="15 12 1 3" />
+                                                            </Grid>
+                                                        </StackPanel>
+
+                                                        <!-- sequence annotaiton export button -->
+                                                        <Button x:Name="SequenceAnnotationExportButton"  Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                                                                        Content="Export" Margin="0 0 5 0" Click="SequenceAnnotationExportButton_Click"/>
+                                                    </StackPanel>
+                                                </Grid>
                                             </StackPanel>
                                         </Expander>
                                     </Grid>
