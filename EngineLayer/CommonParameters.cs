@@ -21,8 +21,8 @@ namespace EngineLayer
             bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
             bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, bool normalizePeaksAccrossAllWindows = false, bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, bool useDeltaScore = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
-            int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0,
-            bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1)
+            int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0, double pepQValueOutputFilter = 1.0,
+            bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1, bool addTruncations = false)
         {
             TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
@@ -59,11 +59,13 @@ namespace EngineLayer
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
 
             QValueOutputFilter = qValueOutputFilter;
+            PepQValueOutputFilter = pepQValueOutputFilter;
 
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
 
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
+            AddTruncations = addTruncations;
         }
 
         // Notes:
@@ -99,10 +101,13 @@ namespace EngineLayer
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
         public double QValueOutputFilter { get; private set; }
+        public double PepQValueOutputFilter { get; private set; }
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
+
+        public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
 
@@ -180,7 +185,11 @@ namespace EngineLayer
                                 ListOfModsVariable,
                                 ListOfModsFixed,
                                 QValueOutputFilter,
-                                AssumeOrphanPeaksAreZ1Fragments);
+                                PepQValueOutputFilter,
+                                AssumeOrphanPeaksAreZ1Fragments,
+                                MaxHeterozygousVariants,
+                                MinVariantDepth,
+                                AddTruncations);
         }
 
         public void SetCustomProductTypes()
