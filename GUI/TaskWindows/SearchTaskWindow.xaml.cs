@@ -146,6 +146,10 @@ namespace MetaMorpheusGUI
             }
         }
 
+        /// <summary>
+        /// Initializes the fields in the search task window upon opening to the settings of the param Task
+        /// </summary>
+        /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
             ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
@@ -277,6 +281,7 @@ namespace MetaMorpheusGUI
             DeltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -292,12 +297,16 @@ namespace MetaMorpheusGUI
             if (task.CommonParameters.QValueOutputFilter < 1)
             {
                 QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
-                QValueCheckBox.IsChecked = true;
+                QValueRadioButton.IsChecked = true;
+            }
+            else if (task.CommonParameters.PepQValueOutputFilter < 1)
+            {
+                PepQValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
+                PepQValueRadioButton.IsChecked = true;
             }
             else
             {
-                QValueTextBox.Text = "0.01";
-                QValueCheckBox.IsChecked = false;
+                PepQValueTextBox.Text = "0.01";
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -399,7 +408,8 @@ namespace MetaMorpheusGUI
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
                 PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
-                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text))
+                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, 
+                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text))
             {
                 return;
             }
@@ -490,6 +500,7 @@ namespace MetaMorpheusGUI
 
             bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
+            bool AddTruncations = AddTruncationsCheckBox.IsChecked.Value;
 
             int? numPeaksToKeep = null;
             if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
@@ -538,13 +549,15 @@ namespace MetaMorpheusGUI
                 separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
+                addTruncations: AddTruncations,
                 numberOfPeaksToKeepPerWindow: numPeaksToKeep,
                 minimumAllowedIntensityRatioToBasePeak: minimumAllowedIntensityRatioToBasePeak,
                 windowWidthThomsons: windowWidthThompsons,
                 numberOfWindows: numberOfWindows,//maybe change this some day
                 normalizePeaksAccrossAllWindows: normalizePeaksAccrossAllWindows,//maybe change this some day
                 addCompIons: AddCompIonCheckBox.IsChecked.Value,
-                qValueOutputFilter: QValueCheckBox.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                qValueOutputFilter: QValueRadioButton.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                pepQValueOutputFilter: PepQValueRadioButton.IsChecked.Value ? double.Parse(PepQValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
                 maxHeterozygousVariants: MaxHeterozygousVariants);
@@ -1233,6 +1246,41 @@ namespace MetaMorpheusGUI
         {
             SaveButton_Click(sender, e);
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+        }
+
+        /// <summary>
+        /// Event Handler for when the pepQvalue radio button is checked. Sets value to default then uncecks and clears qValue
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void PepQValueRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            QValueTextBox.Clear();
+            PepQValueTextBox.Text = "0.01";
+        }
+
+        /// <summary>
+        /// Event Handler for when the qvalue radio button is checked. Sets value to default then unchecks and clears pepQvalue.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void QValueRadioButton_Checked(object sender, RoutedEventArgs e)
+        {
+            PepQValueTextBox.Clear();
+            QValueTextBox.Text = "0.01";
+        }
+
+        /// <summary>
+        /// Retained/Lost Methionine is best handled through truncation search when truncation search is selected.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AddTruncationsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AddTruncationsCheckBox.IsChecked.Value)
+            {
+                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)InitiatorMethionineBehavior.Retain;
+            }
         }
     }
 

@@ -35,6 +35,7 @@ CustomIons = []
 AssumeOrphanPeaksAreZ1Fragments = true
 MaxHeterozygousVariants = 4
 MinVariantDepth = 1
+AddTruncations = false
 DissociationType = "EThcD"
 SeparationType = "HPLC"
 MS2ChildScanDissociationType = "Unknown"

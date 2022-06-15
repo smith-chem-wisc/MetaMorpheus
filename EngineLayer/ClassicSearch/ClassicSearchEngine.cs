@@ -142,10 +142,9 @@ namespace EngineLayer.ClassicSearch
 
                                 AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
 
-
                                 if (SpectralLibrary != null)
                                 {
-                                    DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType,dissociationType, myLocks);
+                                    DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
                                 }
                             }
                         }
@@ -171,7 +170,7 @@ namespace EngineLayer.ClassicSearch
             return new MetaMorpheusEngineResults(this);
         }
 
-        private void DecoyScoreForSpectralLibrarySearch(ScanWithIndexAndNotchInfo scan,PeptideWithSetModifications reversedOnTheFlyDecoy, Dictionary<DissociationType, List<Product>> decoyFragmentsForEachDissociationType, DissociationType dissociationType,object[] myLocks)
+        private void DecoyScoreForSpectralLibrarySearch(ScanWithIndexAndNotchInfo scan, PeptideWithSetModifications reversedOnTheFlyDecoy, Dictionary<DissociationType, List<Product>> decoyFragmentsForEachDissociationType, DissociationType dissociationType, object[] myLocks)
         {
             // match decoy ions for decoy-on-the-fly
             var decoyTheoreticalFragments = decoyFragmentsForEachDissociationType[dissociationType];
@@ -189,7 +188,6 @@ namespace EngineLayer.ClassicSearch
 
             AddPeptideCandidateToPsm(scan, myLocks, decoyScore, reversedOnTheFlyDecoy, decoyMatchedIons);
         }
-
 
         private void AddPeptideCandidateToPsm(ScanWithIndexAndNotchInfo scan, object[] myLocks, double thisScore, PeptideWithSetModifications peptide, List<MatchedFragmentIon> matchedIons)
         {
