@@ -33,7 +33,7 @@ namespace EngineLayer
             int oneBasedScanNumber = spectralLibraryMatch.ScanNumber;
             string spectraFile = spectralLibraryMatch.FullFilePath;
 
-            PeptideSpectralMatch originalPsm = originalSearchPsms.Where(p => p.FullFilePath.Equals(spectraFile)).Where(p => p.ScanNumber == oneBasedScanNumber).FirstOrDefault();
+            PeptideSpectralMatch originalPsm = originalSearchPsms.Where(p => p.FullFilePath.Equals(spectraFile)).Where(p => p.ScanNumber == oneBasedScanNumber).OrderByDescending(p => p.FdrInfo.QValue).FirstOrDefault();
             if (originalPsm != null)
             {
                 originalMatchFound = true;

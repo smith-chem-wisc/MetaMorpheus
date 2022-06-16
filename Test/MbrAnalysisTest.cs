@@ -47,6 +47,7 @@ namespace Test
                 PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                if (readPsm.Ms2ScanNumber == 206 && readPsm.BaseSeq.Equals("HADIVTTTTHK")) psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0.0046, 0); // Necessary for to be implemented "original pep" test
                 psms.Add(psm);
                 proteinList.Add(protein);
             }
@@ -123,6 +124,8 @@ namespace Test
             Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 8);
             Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
+
+            //TODO: Add test for recovering fdrInfo from original. Currently, PsmTsvReader doesn't support the new columns, so it's hard to test
         }
         [Test]
         public static void MiniClassicSearchEngineTest()
