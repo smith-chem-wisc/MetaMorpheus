@@ -29,6 +29,7 @@ namespace EngineLayer
 
         public void FindOriginalPsm(List<PeptideSpectralMatch> originalSearchPsms)
         {
+            if (spectralLibraryMatch == null) return;
             int oneBasedScanNumber = spectralLibraryMatch.ScanNumber;
             string spectraFile = spectralLibraryMatch.FullFilePath;
 
@@ -98,8 +99,8 @@ namespace EngineLayer
                 cumulativeTarget = originalFdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
                 cumulativeDecoy = originalFdrInfo.CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
                 cumulativeTargetNotch = originalFdrInfo.CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture);
-                qValue = originalFdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture);
                 cumulativeDecoyNotch = originalFdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture);
+                qValue = originalFdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture);
                 qValueNotch = originalFdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
                 PEP = originalFdrInfo.PEP.ToString();
                 PEP_Qvalue = originalFdrInfo.PEP_QValue.ToString();
