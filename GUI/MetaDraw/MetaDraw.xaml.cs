@@ -167,13 +167,14 @@ namespace MetaMorpheusGUI
             {
                 return;
             }
+            var strings = sender.ToString();
 
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
             plotView.Visibility = Visibility.Visible;
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             SetSequenceDrawingPositionSettings(true);
-            // change the view upon selection of an ambiguous psm
-            if (psm.FullSequence.Contains('|') && AmbiguousSequenceOptionBox.Items.Count == 0)
+            // Selection of ambiguous psm => clean up the canvases and show the option box
+            if (psm.FullSequence.Contains('|') && sender.ToString() != "System.Object")
             {
                 // clear all drawings of the previous non-ambiguous psm
                 MetaDrawSettings.DrawMatchedIons = false;
@@ -183,11 +184,13 @@ namespace MetaMorpheusGUI
                 DrawnSequence.ClearCanvas(sequenceText);
                 DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
                 plotView.Visibility = Visibility.Hidden;
-                PtmLegend.First().Visibility = Visibility.Hidden;
                 GrayBox.Opacity = 0;
                 AmbiguousWarningTextBlocks.Visibility = Visibility.Visible;
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
                 wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
+
+                if (PtmLegend.Count > 0)
+                    PtmLegend.First().Visibility = Visibility.Hidden;
 
                 // create a psm object for each ambiguous option and add it to the dropdown box
                 var fullSeqs = psm.FullSequence.Split('|');
@@ -197,6 +200,11 @@ namespace MetaMorpheusGUI
                     AmbiguousSequenceOptionBox.Items.Add(oneAmbiguousPsm);
                 }
                 return;
+            }
+            // Psm selected from ambiguous dropdown => adjust the psm to be drawn
+            else if (psm.FullSequence.Contains('|') && sender.ToString() == "System.Object")
+            {
+                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
             }
             // Selection of non-ambiguous psm => clear items in the drop down
             else if (!psm.FullSequence.Contains('|'))
@@ -213,11 +221,6 @@ namespace MetaMorpheusGUI
                 {
                     GrayBox.Opacity = 0;
                 }
-            }
-            // Psm selected from ambiguous dropdown => adjust the psm to be drawn
-            else if (psm.FullSequence.Contains('|') && AmbiguousSequenceOptionBox.Items.Count > 0)
-            {
-                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
             }
 
             // display the ion and elements correctly
@@ -785,7 +788,8 @@ namespace MetaMorpheusGUI
                 }
             }
             SetSequenceDrawingPositionSettings(true);
-            dataGridScanNums_SelectedCellsChanged(new Object(), null);
+            object obj = new object();
+            dataGridScanNums_SelectedCellsChanged(obj, null);
             MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
         }
 

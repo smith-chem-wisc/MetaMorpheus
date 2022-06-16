@@ -69,7 +69,8 @@ namespace GuiFunctions
             // draw initial amino acid number
             if (stationary && MetaDrawSettings.DrawNumbersUnderStationary)
             {
-                var startAA = (MetaDrawSettings.FirstAAonScreenIndex + 1).ToString().ToCharArray().Reverse().ToArray();
+                int psmStartResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""));
+                var startAA = (MetaDrawSettings.FirstAAonScreenIndex + 1 + psmStartResidue).ToString().ToCharArray().Reverse().ToArray();
                 double x = 22;
 
                 Polyline line = new Polyline();
@@ -79,7 +80,9 @@ namespace GuiFunctions
                 SequenceDrawingCanvas.Children.Add(line);
                 for (int i = 0; i < startAA.Length; i++)
                 {
-                    x = MetaDrawSettings.FirstAAonScreenIndex < 10 ? (i + 1) * -spacing + 22 : i  * -spacing + 14;
+                    x = startAA.Length < 2 ? (i + 1) * -spacing + 22 : i  * -spacing + 14;
+                    if (startAA.Length > 2)
+                        x += 14;
                     DrawText(SequenceDrawingCanvas, new Point(x, yLoc + 35), startAA[i].ToString(), Brushes.Black);
                 }
             }
@@ -104,7 +107,8 @@ namespace GuiFunctions
             // draw final amino acid number
             if (stationary && MetaDrawSettings.DrawNumbersUnderStationary)
             {
-                var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen).ToString();
+                int psmEndResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[1].Replace("]", ""));
+                var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmEndResidue).ToString();
                 canvasWidth += spacing;
                 double x = canvasWidth;
 
@@ -116,6 +120,8 @@ namespace GuiFunctions
                 for (int i = 0; i < endAA.Length; i++)
                 {
                     x = spacing * (i) + canvasWidth - 22;
+                    if (endAA.Length > 2)
+                        x -= 14;
                     DrawText(SequenceDrawingCanvas, new Point(x, yLoc + 35), endAA[i].ToString(), Brushes.Black);
                 }
             }
