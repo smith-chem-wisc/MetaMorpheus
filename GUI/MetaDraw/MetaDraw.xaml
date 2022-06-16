@@ -9,16 +9,15 @@
         mc:Ignorable="d"
         Title="MetaDraw" 
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
+    <!-- To make changes here more amendable in the future, an MVC architecture approach should be taken. In this approach, many of the variables and data 
+         are store in C# classes that are bound to the xaml files. The xaml files reference their bound data instead of it being assinged in the code 
+         behind (xaml.cs) of the view. Informationation can be found here, https://www.tutorialspoint.com/mvc_framework/mvc_framework_introduction.htm, 
+         where the view is what is displayed, the model or viewmodel holds the data to be displayed, and the controller instantiates and controls each of 
+         the other components  -->
     <Grid>
         <TabControl>
             <TabItem Header="PSM Annotation" Background="DarkGray">
                 <DockPanel>
-                    <!--Settings menu-->
-                    <Menu x:Name="menu" DockPanel.Dock="Top">
-                        <MenuItem Header="Settings">
-                            <MenuItem Header="Edit Settings" Click="settings_Click"></MenuItem>
-                        </MenuItem>
-                    </Menu>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="2*"/>
@@ -31,6 +30,7 @@
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="25"/>
                                 <RowDefinition Height="2*"/>
                                 <RowDefinition Height="25"/>
@@ -41,7 +41,7 @@
 
                             <!--Select spectra file-->
                             <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="Spectra files: " Width="75" />
+                                <Label Content="Spectra files: " Width="95" />
                                 <Button Name="resetSpectraFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
@@ -49,17 +49,28 @@
                                 </Label>
                             </DockPanel>
 
-                            <!--Select MetaMorpheus output file-->
+                            <!--Select MetaMorpheus output file (psmfromtsv) -->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
-                                <Label Content="PSM files: " Width="75" />
+                                <Label Content="PSM files: " Width="95" />
                                 <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="psmFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
                                 </Label>
                             </DockPanel>
-
-                            <Border Grid.Row="2" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
+                            
+                            <!-- Select spectral library file -->
+                            <DockPanel Grid.Row="2" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
+                                <Label Content="Spectral Library:" Width="95" ToolTip="Optional"/>
+                                <Button Name="resetSpecLibraryButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click" />
+                                <Button Name="selectSpecLibraryButton" Content="Select" DockPanel.Dock="Right" Width="40" Click="selectSpecLibraryButton_Click" 
+                                        ToolTip="Optional"/>
+                                <Label BorderThickness="1">
+                                    <TextBlock Name="specLibraryLabel" Text="None Selected" TextTrimming="CharacterEllipsis" ToolTip="Optional"/>
+                                </Label>
+                            </DockPanel>
+                            
+                            <Border Grid.Row="3" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
                                 <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
                                     <Button Name="loadFiles" Content="Load Files" Width="80" Click="loadFilesButton_Click" />
                                     <TextBox Width="100" TextChanged="TextBox_TextChanged" DockPanel.Dock="Right"></TextBox>
@@ -68,7 +79,7 @@
                             </Border>
 
                             <!--List of PSMs-->
-                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="3">
+                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="4">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="1*"/>
@@ -84,7 +95,7 @@
                                     </DataGrid>
                                 </Grid>
                             </GroupBox>
-                            <Button Content="Export to PDF" Grid.Row="4" Width="100" Click="PDFButton_Click" />
+                            <Button Content="Export to PDF" Grid.Row="5" Width="100" Click="PDFButton_Click" />
                         </Grid>
 
                         <!--Moveable splitter-->
@@ -107,10 +118,71 @@
                         <!--PSM annotated peaks-->
                         <Grid Grid.Column="2">
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="*" />
+                                <RowDefinition Height="57" />
+                                <RowDefinition Height="8*" />
                                 <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            <TabControl Grid.Row="0">
+                            
+                            <!-- Region above the Spectrum -->
+                            <Grid Grid.Row="0" Name="UpperSequenceAnnotaiton">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1"/>
+                                    <ColumnDefinition Width="63"/>
+                                    <ColumnDefinition Width="*" Name="SequenceAnnotationArea"/>
+                                    <ColumnDefinition Width="165"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
+                                <!--Settings menu-->
+                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" BorderThickness="0">
+                                    <StackPanel Name="SettingsButton" Orientation="Horizontal">
+                                        <Image Source="Icons\icons8-settings-256.bmp" Margin="0,3,0,0" ></Image>
+                                        <ToolTipService.ToolTip>
+                                            <ToolTip Content="Settings" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                        </ToolTipService.ToolTip>
+                                    </StackPanel>
+                                </Button>
+
+                                <!-- Scrolling Sequence and Ambiguous Textbox-->
+                                <Grid Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" >
+                                    <!-- Scrolling Sequence -->
+                                    <ScrollViewer Name="wholeSequenceCoverageHorizontalScroll" 
+                                              HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                                              CanContentScroll="True" VerticalScrollBarVisibility="Disabled" 
+                                              HorizontalScrollBarVisibility="Auto" Margin="0,0"
+                                              ScrollChanged="wholeSequenceCoverageHorizontalScroll_Scroll">
+                                        <Canvas x:Name="scrollableSequenceCanvas" Grid.Row="0" Background="White" Margin="-8,-4,0,0" ></Canvas>
+                                    </ScrollViewer>
+
+                                    <!-- Ambiguous Sequence TextBox -->
+                                    <Grid Name="AmbiguousWarningTextBlocks" Visibility="Collapsed">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="7" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Name="AmbiguousTextBlock" Text="PSM is ambiguous, please select a sequence"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="1"
+                                                   FontWeight="DemiBold"  />
+                                        <TextBlock Name="MatchedIonTextBlock" Text="Matched ions will only be annotated for the first sequence"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" Grid.Row="2" 
+                                                   FontWeight="DemiBold" />
+                                    </Grid>
+                                </Grid>
+
+                                <!-- Box to cover scrolling sequence that is not shown -->
+                                <Grid Name="GrayBox" Grid.Column="3" Background="LightGray" Opacity="0" Margin="0,0,0,16"></Grid>
+                                
+                                <!-- Ambiguous sequence selector -->
+                                <ComboBox Name="AmbiguousSequenceOptionBox" Grid.Column="3" Visibility="Hidden"
+                                          HorizontalContentAlignment="Right" VerticalContentAlignment="Center"
+                                          SelectionChanged="AmbiguousSequenceOptionBox_SelectionChanged" 
+                                          Margin="0, 0, 0, 16" >
+                                </ComboBox>
+
+                            </Grid>
+
+                            <TabControl Grid.Row="1">
                                 <!--MS2 Scan Annotations-->
                                 <TabItem Header="Parent Scan View" Name="ParentScanView">
                                     <Grid Name="PsmAnnotationGrid">
@@ -121,18 +193,19 @@
                                         <!--Spectrum annotation-->
                                         <Grid Grid.Row="0">
                                             <Grid.RowDefinitions>
-                                                <RowDefinition Height = "*" />
+                                                <RowDefinition Height = "0.75*" />
                                             </Grid.RowDefinitions>
-                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0"/>
+                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0"/>
                                         </Grid>
 
-                                        <!--Canvas for drawing base sequence annotation-->
-                                        <Grid Grid.Row="0">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height = "auto" />
-                                            </Grid.RowDefinitions>
-
-                                            <Canvas Grid.Row="0" Margin="55 0 0 0" x:Name="canvas" Height="60" Width="600" HorizontalAlignment="Left" VerticalAlignment="Stretch" />
+                                        <!--Canvas for drawing stationary sequence annotation-->
+                                        <Grid Grid.Row="0" Height="60" VerticalAlignment="Top" Margin="0 0 0 0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="53" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="200" />
+                                            </Grid.ColumnDefinitions>
+                                                <Canvas Grid.Column="1" Margin="0 0 0 0" x:Name="stationarySequenceCanvas" VerticalAlignment="Stretch"/>
                                         </Grid>
                                     </Grid>
                                 </TabItem>
@@ -210,7 +283,7 @@
                             </TabControl>
 
                             <!--Detailed PSM properties-->
-                            <StackPanel Grid.Row="1">
+                            <StackPanel Grid.Row="2">
                                 <Expander x:Name="NotificationExpander" FlowDirection="RightToLeft" >
                                     <Expander.Header>
                                         <StackPanel>

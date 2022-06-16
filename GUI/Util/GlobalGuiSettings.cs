@@ -276,6 +276,16 @@ namespace MetaMorpheusGUI
             return true;
         }
 
+        public static bool CheckPeakFindingTolerance(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double peakFindingTolerance) || peakFindingTolerance <= 0)
+            {
+                MessageBox.Show("The peak finding tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
+                return false;
+            }
+            return true;
+        }
+      
         public static bool CheckHistogramBinWidth(string text)
         {
             if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double binWidth) || binWidth < 0 || binWidth > 1)
@@ -293,7 +303,12 @@ namespace MetaMorpheusGUI
             {
                 return true;
             }
-            if (pepqValue.Equals("") && !qValue.Equals(""))
+            if (qValue.Equals("") && pepqValue.Equals("") || !qValue.Equals("") && !pepqValue.Equals(""))
+            {
+                MessageBox.Show("Must specify a value for qValue or pep qValue, but not both");
+                return false;
+            }
+            else if (pepqValue.Equals("") && !qValue.Equals(""))
             {
                 if (!double.TryParse(qValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValueOut) || qValueOut < 0 || qValueOut > 1)
                 {
