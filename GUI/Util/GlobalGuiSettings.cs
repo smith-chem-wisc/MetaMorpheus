@@ -32,7 +32,7 @@ namespace MetaMorpheusGUI
             string maxModsPerPeptide,
             string maxFragmentMass,
             string qValueFilter,
-            string pepqValueFilter = "1"
+            string pepqValueFilter
             )
         {
             maxMissedCleavages = MaxValueConversion(maxMissedCleavages);
@@ -288,12 +288,12 @@ namespace MetaMorpheusGUI
 
         public static bool CheckQValueFilters(string qValue, string pepqValue)
         {
-            if (qValue.Equals("") && pepqValue.Equals("") || !qValue.Equals("") && !pepqValue.Equals(""))
+            // for non-search tasks that do not use this for output filtering
+            if (qValue == null && pepqValue == null)
             {
-                MessageBox.Show("Must specify a value for qValue or pep qValue, but not both");
-                return false;
+                return true;
             }
-            else if (pepqValue.Equals("") && !qValue.Equals(""))
+            if (pepqValue.Equals("") && !qValue.Equals(""))
             {
                 if (!double.TryParse(qValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValueOut) || qValueOut < 0 || qValueOut > 1)
                 {
