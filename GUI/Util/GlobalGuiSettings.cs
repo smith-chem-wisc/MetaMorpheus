@@ -275,16 +275,6 @@ namespace MetaMorpheusGUI
             }
             return true;
         }
-
-        public static bool CheckPeakFindingTolerance(string text)
-        {
-            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double peakFindingTolerance) || peakFindingTolerance <= 0)
-            {
-                MessageBox.Show("The peak finding tolerance is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number.");
-                return false;
-            }
-            return true;
-        }
       
         public static bool CheckHistogramBinWidth(string text)
         {
