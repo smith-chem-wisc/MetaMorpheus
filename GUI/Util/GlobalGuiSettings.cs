@@ -293,11 +293,6 @@ namespace MetaMorpheusGUI
             {
                 return true;
             }
-            if (qValue.Equals("") && pepqValue.Equals("") || !qValue.Equals("") && !pepqValue.Equals(""))
-            {
-                MessageBox.Show("Must specify a value for qValue or pep qValue, but not both");
-                return false;
-            }
             else if (pepqValue.Equals("") && !qValue.Equals(""))
             {
                 if (!double.TryParse(qValue, NumberStyles.Any, CultureInfo.InvariantCulture, out double qValueOut) || qValueOut < 0 || qValueOut > 1)
