@@ -12,12 +12,12 @@ namespace GuiFunctions
     /// <summary>
     /// View Model class for the ptm color legend
     /// </summary>
-    public class PtmLegendView : BaseView
+    public class PtmLegendViewModel : BaseViewModel
     {
         private Visibility _visibility;
         public string Header { get; set; } = "Legend";
         public int HeaderSize { get; set; } = 12;
-        public ObservableCollection<PtmLegendItemView> LegendItems { get; }
+        public ObservableCollection<PtmLegendItemViewModel> LegendItems { get; }
         public Visibility Visibility
         {
             get { return _visibility; }
@@ -58,12 +58,12 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public PtmLegendView(List<Modification> mods)
+        public PtmLegendViewModel(List<Modification> mods)
         {
-            LegendItems = new ObservableCollection<PtmLegendItemView>();
+            LegendItems = new ObservableCollection<PtmLegendItemViewModel>();
             foreach (var mod in mods.Distinct())
             {
-                var modItem = new PtmLegendItemView(mod.IdWithMotif);
+                var modItem = new PtmLegendItemViewModel(mod.IdWithMotif);
                 LegendItems.Add(modItem);
             }
 

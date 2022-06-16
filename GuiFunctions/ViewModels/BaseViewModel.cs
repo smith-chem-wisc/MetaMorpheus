@@ -13,7 +13,7 @@ namespace GuiFunctions
     /// <summary>
     /// A base view model that fires Property Changed events as needed
     /// </summary>
-    public class BaseView : INotifyPropertyChanged
+    public class BaseViewModel : INotifyPropertyChanged
     {
 
         /// <summary>

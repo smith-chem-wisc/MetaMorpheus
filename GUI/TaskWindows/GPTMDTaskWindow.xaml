@@ -325,15 +325,15 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel>
                                     <Label Content="Fixed" />
-                                    <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeView}" Height="400">
+                                    <TreeView x:Name="fixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
                                         <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
                                                     <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeView}">
+                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                     <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
@@ -349,15 +349,15 @@
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
                                     <Label Content="Variable" />
-                                    <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeView}" Height="400">
+                                    <TreeView x:Name="variableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
                                         <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
                                                     <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeView}">
+                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                     <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
@@ -469,15 +469,15 @@
                                 </TextBox>
                             </StackPanel>
                             <StackPanel Grid.Column="0" Grid.Row="2">
-                                <TreeView x:Name="gptmdModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeView}" Height="400">
+                                <TreeView x:Name="gptmdModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
                                     <TreeView.Resources>
-                                        <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                        <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
                                             <StackPanel Orientation="Horizontal" Background="{Binding Background}">
                                                 <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
                                                 <TextBlock Text="{Binding DisplayName}" />
                                             </StackPanel>
                                         </HierarchicalDataTemplate>
-                                        <DataTemplate DataType="{x:Type guiFunctions:ModForTreeView}">
+                                        <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
                                             <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                 <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
                                                 <TextBlock Text="{Binding DisplayName}" />

@@ -5,7 +5,7 @@ using System.Windows.Media;
 
 namespace GuiFunctions
 {
-    public class ModTypeForTreeView : BaseView
+    public class ModTypeForTreeViewModel : BaseViewModel
     {
         #region Private Properties
 
@@ -17,7 +17,7 @@ namespace GuiFunctions
         
         public bool Expanded { get; set; }
         public string DisplayName { get; }
-        public ObservableCollection<ModForTreeView> Children { get; }
+        public ObservableCollection<ModForTreeViewModel> Children { get; }
         public Brush Background { get; }
         public MyEnumerator GetEnumerator()
         {
@@ -43,9 +43,9 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public ModTypeForTreeView(string displayName, bool bad)
+        public ModTypeForTreeViewModel(string displayName, bool bad)
         {
-            Children = new ObservableCollection<ModForTreeView>();
+            Children = new ObservableCollection<ModForTreeViewModel>();
             Expanded = false;
             DisplayName = displayName;
             if (bad)
@@ -76,8 +76,8 @@ namespace GuiFunctions
         public class MyEnumerator
         {
             int nIndex;
-            ModTypeForTreeView collection;
-            public MyEnumerator(ModTypeForTreeView coll)
+            ModTypeForTreeViewModel collection;
+            public MyEnumerator(ModTypeForTreeViewModel coll)
             {
                 collection = coll;
                 nIndex = -1;
@@ -89,7 +89,7 @@ namespace GuiFunctions
                 return (nIndex < collection.Children.Count);
             }
 
-            public ModForTreeView Current => collection.Children[nIndex];
+            public ModForTreeViewModel Current => collection.Children[nIndex];
         }
 
     }

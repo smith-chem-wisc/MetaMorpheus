@@ -7,7 +7,7 @@ using System.Windows.Media;
 
 namespace GuiFunctions
 {
-    public class ModForTreeView : BaseView
+    public class ModForTreeViewModel : BaseViewModel
     {
         #region Private Properties
 
@@ -18,7 +18,7 @@ namespace GuiFunctions
         #endregion
 
         #region Public Properties
-        public ModTypeForTreeView Parent { get; }
+        public ModTypeForTreeViewModel Parent { get; }
         public string ToolTipStuff { get; }
 
         public bool Use
@@ -62,7 +62,7 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public ModForTreeView(string toolTip, bool use, string modName, bool bad, ModTypeForTreeView parent)
+        public ModForTreeViewModel(string toolTip, bool use, string modName, bool bad, ModTypeForTreeViewModel parent)
         {
             ToolTipStuff = toolTip;
             Parent = parent;

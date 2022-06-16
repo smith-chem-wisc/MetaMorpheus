@@ -31,12 +31,12 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
-        private ObservableCollection<PtmLegendView> PtmLegend;
-        private ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
+        private ObservableCollection<PtmLegendViewModel> PtmLegend;
+        private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
-        private SettingsView SettingsView;
+        private SettingsViewModel SettingsView;
 
         public MetaDraw()
         {
@@ -72,7 +72,7 @@ namespace MetaMorpheusGUI
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
 
-            PtmLegend = new ObservableCollection<PtmLegendView>();
+            PtmLegend = new ObservableCollection<PtmLegendViewModel>();
             PtmLegendControl.ItemsSource = PtmLegend;
             SequenceCoveragePtmLegendControl.ItemsSource = PtmLegend;
             ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
@@ -229,7 +229,7 @@ namespace MetaMorpheusGUI
             {
                 PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
                 List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
-                PtmLegend.Add(new PtmLegendView(mods));                    
+                PtmLegend.Add(new PtmLegendViewModel(mods));                    
             }
 
             // define initial limits for sequence annotation
@@ -529,9 +529,9 @@ namespace MetaMorpheusGUI
 
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
-            string fullSequence = ((PsmFromTsv)dataGridScanNums.SelectedItem).FullSequence;
+            PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             int scanNumber = ((PsmFromTsv)dataGridScanNums.SelectedItem).Ms2ScanNumber;
-            MetaDrawLogic.ExportSequenceCoverage(sequenceText, map, directoryPath, fullSequence, scanNumber);
+            MetaDrawLogic.ExportSequenceCoverage(sequenceText, map, directoryPath, psm);
             
             if (Directory.Exists(directoryPath))
             {
@@ -821,7 +821,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private async void InitializeColorSettingsView()
         {
-            SettingsView view = new SettingsView();
+            SettingsViewModel view = new SettingsViewModel();
             await view.Initialization;
             SettingsView = view;
         }

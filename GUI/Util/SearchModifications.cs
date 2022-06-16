@@ -29,7 +29,7 @@ namespace MetaMorpheusGUI
         }
 
         // filters and expands tree according to user mod search
-        public static void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeView> collection)
+        public static void FilterTree(TextBox textbox, TreeView tree, ObservableCollection<ModTypeForTreeViewModel> collection)
         {
             string key = textbox.Text.ToLower();
             if (string.IsNullOrEmpty(key))
@@ -40,17 +40,17 @@ namespace MetaMorpheusGUI
 
             var modTypesWithMatchingMods = collection.Where(p => p.Children.Any(c => c.ModName.ToLower().Contains(key))); // parent of child mods that match key
 
-            var modsThatMatchSearchString = new ObservableCollection<ModTypeForTreeView>(); // new collection containing expanded mod types that match key 
+            var modsThatMatchSearchString = new ObservableCollection<ModTypeForTreeViewModel>(); // new collection containing expanded mod types that match key 
 
-            foreach (ModTypeForTreeView modType in modTypesWithMatchingMods)
+            foreach (ModTypeForTreeViewModel modType in modTypesWithMatchingMods)
             {
-                var textFilteredModType = new ModTypeForTreeView(modType.DisplayName, false);
+                var textFilteredModType = new ModTypeForTreeViewModel(modType.DisplayName, false);
                 modsThatMatchSearchString.Add(textFilteredModType);
                 textFilteredModType.Expanded = true;
                 textFilteredModType.Use = modType.Use;
 
                 var matchingChildren = modType.Children.Where(p => p.ModName.ToLower().Contains(key));
-                foreach (ModForTreeView mod in matchingChildren)
+                foreach (ModForTreeViewModel mod in matchingChildren)
                 {
                     textFilteredModType.Children.Add(mod);
                 }

@@ -21,13 +21,13 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDrawSettingsWindow : Window
     {
-        private readonly ObservableCollection<ModTypeForTreeView> Modifications = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<IonTypeForTreeView> IonGroups = new ObservableCollection<IonTypeForTreeView>();
-        private readonly ObservableCollection<CoverageTypeForTreeView> CoverageColors = new ObservableCollection<CoverageTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
+        private readonly ObservableCollection<IonTypeForTreeViewModel> IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
+        private readonly ObservableCollection<CoverageTypeForTreeViewModel> CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
 
-        private SettingsView SettingsView;
+        private SettingsViewModel SettingsView;
 
-        public MetaDrawSettingsWindow(SettingsView view)
+        public MetaDrawSettingsWindow(SettingsViewModel view)
         {
             InitializeComponent();
             SettingsView = view;
@@ -168,7 +168,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void ComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
-            ((IonForTreeView)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+            ((IonForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
 
         /// <summary>
@@ -178,7 +178,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void ComboBox_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
-            ((ModForTreeView)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+            ((ModForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
 
         /// <summary>
@@ -188,7 +188,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void ComboBox_SelectionChanged_2(object sender, SelectionChangedEventArgs e)
         {
-            ((CoverageTypeForTreeView)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+            ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
     }
 }

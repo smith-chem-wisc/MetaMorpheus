@@ -11,7 +11,7 @@ namespace GuiFunctions
     /// <summary>
     /// View Model class for each mod in the ptm legend
     /// </summary>
-    public class PtmLegendItemView : BaseView
+    public class PtmLegendItemViewModel : BaseViewModel
     {
         #region Private Properties
 
@@ -36,7 +36,7 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public PtmLegendItemView(string modName)
+        public PtmLegendItemViewModel(string modName)
         {
             ModName = modName;
             OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];

@@ -5,8 +5,6 @@ using IO.ThermoRawFileReader;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
-using mzPlot;
-using OxyPlot;
 using OxyPlot.Wpf;
 using Proteomics.Fragmentation;
 using System;
@@ -15,8 +13,6 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
@@ -516,7 +512,7 @@ namespace GuiFunctions
         /// <param name="directory">where the files will be outputted</param>
         /// <param name="fullSequence">fullsequence of the psm map being outputted</param>
         /// <param name="scanNumber">MS2 scan number of the psm map being outputted</param>
-        public void ExportSequenceCoverage(Canvas textCanvas, Canvas mapCanvas, string directory, string fullSequence, int scanNumber)
+        public void ExportSequenceCoverage(Canvas textCanvas, Canvas mapCanvas, string directory, PsmFromTsv psm)
         {
             // initialize values
             if (!Directory.Exists(directory))
@@ -524,12 +520,12 @@ namespace GuiFunctions
                 Directory.CreateDirectory(directory);
             }
 
-            string sequence = illegalInFileName.Replace(fullSequence, string.Empty);
+            string sequence = illegalInFileName.Replace(psm.FullSequence, string.Empty);
             if (sequence.Length > 30)
             {
                 sequence = sequence.Substring(0, 30);
             }
-            string path = System.IO.Path.Combine(directory, scanNumber + "_" + sequence + "_SequenceCoverage." + MetaDrawSettings.ExportType);
+            string path = System.IO.Path.Combine(directory, psm.Ms2ScanNumber + "_" + sequence + "_SequenceCoverage." + MetaDrawSettings.ExportType);
 
             // convert to format for export
             System.Drawing.Bitmap textBitmap = ConvertCanvasToBitmap(textCanvas, directory);

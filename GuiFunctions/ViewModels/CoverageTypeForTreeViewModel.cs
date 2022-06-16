@@ -10,7 +10,7 @@ using System.Windows.Media;
 
 namespace GuiFunctions
 {
-    public class CoverageTypeForTreeView : BaseView
+    public class CoverageTypeForTreeViewModel : BaseViewModel
     {
         #region Private Properties
 
@@ -47,7 +47,7 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public CoverageTypeForTreeView(string name)
+        public CoverageTypeForTreeViewModel(string name)
         {
             Name = name;
             OxyColor color = MetaDrawSettings.CoverageTypeToColor[name];

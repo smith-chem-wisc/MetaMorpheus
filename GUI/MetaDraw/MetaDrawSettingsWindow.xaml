@@ -123,7 +123,7 @@
                             <Expander x:Name="IonColorSelection" Header="Ion Color Selection"
                                       DockPanel.Dock="Top" Margin="10 5 5 5 " >
                                 <StackPanel >
-                                    <ItemsControl x:Name="IonColorExpander"  ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:IonTypeForTreeView}">
+                                    <ItemsControl x:Name="IonColorExpander"  ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:IonTypeForTreeViewModel}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Expander Header="{Binding GroupName}" Margin="10 2 0 0 ">
@@ -155,7 +155,7 @@
                             <Expander Name="PTMColorSelection" Header="PTM Color Selection"
                                   DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
                                 <StackPanel>
-                                    <ItemsControl x:Name="PTMColorExpander" ItemBindingGroup="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeView}">
+                                    <ItemsControl x:Name="PTMColorExpander" ItemBindingGroup="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Expander Header="{Binding DisplayName}" Margin="10 2 0 0">
@@ -188,7 +188,7 @@
                             <Expander  Header="Sequence Coverage Color Selection" 
                                       DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
                                 <StackPanel>
-                                    <ItemsControl x:Name="SequenceCoverageColorExpander" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:CoverageTypeForTreeView}">
+                                    <ItemsControl x:Name="SequenceCoverageColorExpander" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:CoverageTypeForTreeViewModel}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel Orientation="Horizontal"  >

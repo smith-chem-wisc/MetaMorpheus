@@ -1160,44 +1160,64 @@ namespace Test
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
 
+            // ensure each file type can be outputted by each method
             var psmToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First();
             MetaDrawSettings.NumberOfAAOnScreen = psmToExport.BaseSeq.Length;
-            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport.FullSequence, psmToExport.Ms2ScanNumber);
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.pdf")));
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.pdf")));
 
             MetaDrawSettings.ExportType = "Png";
-            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport.FullSequence, psmToExport.Ms2ScanNumber);
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.png")));
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.png")));
 
             MetaDrawSettings.ExportType = "Jpeg";
-            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport.FullSequence, psmToExport.Ms2ScanNumber);
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.jpeg")));
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.jpeg")));
 
             MetaDrawSettings.ExportType = "Tiff";
-            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport.FullSequence, psmToExport.Ms2ScanNumber);
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.tiff")));
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.tiff")));
 
             MetaDrawSettings.ExportType = "Wmf";
-            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport.FullSequence, psmToExport.Ms2ScanNumber);
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.wmf")));
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.wmf")));
 
             MetaDrawSettings.ExportType = "Bmp";
-            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport.FullSequence, psmToExport.Ms2ScanNumber);
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceCoverage.bmp")));
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR_SequenceAnnotation.bmp")));
 
             Directory.Delete(outputFolder, true);
-        }        
+
+            // test that these methods create a directory if it is not already instantiated
+            Assert.That(!Directory.Exists(outputFolder));
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psmToExport);
+            Assert.That(Directory.Exists(outputFolder));
+            Directory.Delete(outputFolder, true);
+
+            Assert.That(!Directory.Exists(outputFolder));
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
+            Assert.That(Directory.Exists(outputFolder));
+
+            psm = metadrawLogic.FilteredListOfPsms[17];
+            metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psm);
+            metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psm, outputFolder, 200);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"2_RGNVC[Common FixedCarbamidomet_SequenceAnnotation.bmp")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"2_RGNVC[Common FixedCarbamidomet_SequenceCoverage.bmp")));
+
+            Directory.Delete(outputFolder, true);
+
+        }
     }
 }

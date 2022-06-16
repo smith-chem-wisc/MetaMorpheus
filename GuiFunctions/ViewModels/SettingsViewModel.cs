@@ -18,13 +18,13 @@ namespace GuiFunctions
     /// In a perfect world, nothing would be in the MetaDrawSettings.xaml.cs file and all would be located here
     /// This would allow for more extensive testing of the GUI Elements
     /// </summary>
-    public class SettingsView : BaseView, IAsyncInitialization
+    public class SettingsViewModel : BaseViewModel, IAsyncInitialization
     {
         #region Private Properties
 
-        private ObservableCollection<ModTypeForTreeView> _Modifications = new ObservableCollection<ModTypeForTreeView>();
-        private ObservableCollection<IonTypeForTreeView> _IonGroups = new ObservableCollection<IonTypeForTreeView>();
-        private ObservableCollection<CoverageTypeForTreeView> _CoverageColors = new ObservableCollection<CoverageTypeForTreeView>();
+        private ObservableCollection<ModTypeForTreeViewModel> _Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
+        private ObservableCollection<IonTypeForTreeViewModel> _IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
+        private ObservableCollection<CoverageTypeForTreeViewModel> _CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
         private bool _LoadedIons { get { return (_IonGroups.Count > 0); } }
         private bool _LoadedPTMs { get { return (_Modifications.Count > 0); } }
         private bool _LoadedSequenceCoverage { get { return (_CoverageColors.Count > 0); } }
@@ -33,7 +33,7 @@ namespace GuiFunctions
 
         #region Public Properties
 
-        public ObservableCollection<ModTypeForTreeView> Modifications
+        public ObservableCollection<ModTypeForTreeViewModel> Modifications
         {
             get { return _Modifications; }
             set
@@ -43,7 +43,7 @@ namespace GuiFunctions
             } 
         }
 
-        public ObservableCollection<IonTypeForTreeView> IonGroups
+        public ObservableCollection<IonTypeForTreeViewModel> IonGroups
         {
             get { return _IonGroups; }
             set
@@ -53,7 +53,7 @@ namespace GuiFunctions
             }
         }
 
-        public ObservableCollection<CoverageTypeForTreeView> CoverageColors
+        public ObservableCollection<CoverageTypeForTreeViewModel> CoverageColors
         {
             get { return _CoverageColors; }
             set
@@ -67,7 +67,7 @@ namespace GuiFunctions
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
-        public string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
+        public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
 
         #endregion
 
@@ -77,7 +77,7 @@ namespace GuiFunctions
         /// Constructs the instance asynchronously
         /// </summary>
         /// <param name="loadAsync"></param>
-        public SettingsView(bool loadAsync = true)
+        public SettingsViewModel(bool loadAsync = true)
         {
             if (loadAsync)
                 Initialization = InitializeAsync();
@@ -115,6 +115,7 @@ namespace GuiFunctions
 
         /// <summary>
         /// Method to be executed when the Save Command is fired
+        /// Takes the dynamic data of the settings m
         /// </summary>
         public void Save()
         {
@@ -158,6 +159,7 @@ namespace GuiFunctions
         /// </summary>
         public void SaveAsDefault()
         {
+            Save();
             MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
             XmlReaderWriter.WriteToXmlFile<MetaDrawSettingsSnapshot>(SettingsPath, settings);
         }
@@ -179,9 +181,9 @@ namespace GuiFunctions
             var common = ions.Where(p => p.ToString().Equals("a") || p.ToString().Equals("b") || p.ToString().Equals("c")
                                           || p.ToString().Equals("x") || p.ToString().Equals("y") || p.ToString().Equals("zDot"));
             var lessCommon = ions.Where(p => !common.Any(m => m == p));
-            _IonGroups.Add(new IonTypeForTreeView("Common Ions", common, false));
-            _IonGroups.Add(new IonTypeForTreeView("Less Common Ions", lessCommon, false));
-            _IonGroups.Add(new IonTypeForTreeView("Cross Linked Beta Peptide", ions, true));
+            _IonGroups.Add(new IonTypeForTreeViewModel("Common Ions", common, false));
+            _IonGroups.Add(new IonTypeForTreeViewModel("Less Common Ions", lessCommon, false));
+            _IonGroups.Add(new IonTypeForTreeViewModel("Cross Linked Beta Peptide", ions, true));
         }
 
         public void LoadPTMs()
@@ -189,20 +191,20 @@ namespace GuiFunctions
             var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType);
             foreach (var group in modGroups)
             {
-                var theModType = new ModTypeForTreeView(group.Key, false);
+                var theModType = new ModTypeForTreeViewModel(group.Key, false);
                 _Modifications.Add(theModType);
                 foreach (var mod in group)
                 {
-                    theModType.Children.Add(new ModForTreeView(mod.ToString(), false, mod.IdWithMotif, false, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel(mod.ToString(), false, mod.IdWithMotif, false, theModType));
                 }
             }
         }
 
         public void LoadSequenceCoverage()
         {
-            _CoverageColors.Add(new CoverageTypeForTreeView("N-Terminal Color"));
-            _CoverageColors.Add(new CoverageTypeForTreeView("C-Terminal Color"));
-            _CoverageColors.Add(new CoverageTypeForTreeView("Internal Color"));
+            _CoverageColors.Add(new CoverageTypeForTreeViewModel("N-Terminal Color"));
+            _CoverageColors.Add(new CoverageTypeForTreeViewModel("C-Terminal Color"));
+            _CoverageColors.Add(new CoverageTypeForTreeViewModel("Internal Color"));
         }
 
         #endregion

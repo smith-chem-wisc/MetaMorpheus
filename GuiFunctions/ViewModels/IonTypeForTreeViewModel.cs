@@ -10,12 +10,12 @@ using System.Threading.Tasks;
 
 namespace GuiFunctions
 {
-    public class IonTypeForTreeView : BaseView
+    public class IonTypeForTreeViewModel : BaseViewModel
     {
         #region Public Properties
 
         public string GroupName { get; set; }
-        public ObservableCollection<IonForTreeView> Ions { get; }
+        public ObservableCollection<IonForTreeViewModel> Ions { get; }
         public MyEnumerator GetEnumerator()
         {
             return new MyEnumerator(this);
@@ -25,14 +25,14 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public IonTypeForTreeView(string groupName, IEnumerable<ProductType> ions, bool beta)
+        public IonTypeForTreeViewModel(string groupName, IEnumerable<ProductType> ions, bool beta)
         {
             GroupName = groupName;
-            Ions = new ObservableCollection<IonForTreeView>();
+            Ions = new ObservableCollection<IonForTreeViewModel>();
 
             foreach (var ion in ions)
             {
-                Ions.Add(new IonForTreeView(ion, beta));
+                Ions.Add(new IonForTreeViewModel(ion, beta));
             }
         }
 
@@ -43,8 +43,8 @@ namespace GuiFunctions
     public class MyEnumerator
     {
         int nIndex;
-        IonTypeForTreeView collection;
-        public MyEnumerator(IonTypeForTreeView coll)
+        IonTypeForTreeViewModel collection;
+        public MyEnumerator(IonTypeForTreeViewModel coll)
         {
             collection = coll;
             nIndex = -1;
@@ -56,6 +56,6 @@ namespace GuiFunctions
             return (nIndex < collection.Ions.Count);
         }
 
-        public IonForTreeView Current => collection.Ions[nIndex];
+        public IonForTreeViewModel Current => collection.Ions[nIndex];
     }
 }

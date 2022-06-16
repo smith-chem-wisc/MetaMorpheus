@@ -83,23 +83,32 @@ namespace Test
         [Test]
         public static void TestSaveAndLoadDefaultSettings()
         {
-            SettingsView view = new SettingsView(false);
+            SettingsViewModel model = new SettingsViewModel(false);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
             Directory.CreateDirectory(outputFolder);
 
-            view.SettingsPath = Path.Combine(outputFolder, @"MetaDrawSettingsDefault.xml");
-            Assert.That(view.HasDefaultSaved == false);
+            SettingsViewModel.SettingsPath = Path.Combine(outputFolder, @"MetaDrawSettingsDefault.xml");
+            Assert.That(model.HasDefaultSaved == false);
             try
             {
-                view.LoadSettings();
+                model.LoadSettings();
                 Assert.Fail();
             }
             catch (Exception e) { }
 
-            view.SaveAsDefault();
-            Assert.That(view.HasDefaultSaved == true);
-            view.LoadSettings();
+            Assert.That(model.Modifications.First().Children.First().SelectedColor == "Green");
+            model.Modifications.First().Children.First().SelectionChanged("Blue");
+            Assert.That(model.Modifications.First().Children.First().SelectedColor == "Blue");
+            model.SaveAsDefault();
+            Assert.That(model.HasDefaultSaved == true);
+            model.LoadSettings();
+
+            SettingsViewModel model2 = new();
+            Assert.That(model2.Modifications.First().Children.First().SelectedColor == "Blue");
+
+            SettingsViewModel model3 = new(false);
+            Assert.That(model3.Modifications.First().Children.First().SelectedColor == "Blue");
 
             Directory.Delete(outputFolder, true);
         }
@@ -107,7 +116,7 @@ namespace Test
         [Test]
         public static void TestSettingsViewLoading()
         {
-            SettingsView BlankSettingsView = new SettingsView(false);
+            SettingsViewModel BlankSettingsView = new SettingsViewModel(false);
             BlankSettingsView.Modifications = new();
             BlankSettingsView.IonGroups = new();
             BlankSettingsView.CoverageColors = new();
@@ -131,7 +140,7 @@ namespace Test
         [Test]
         public static void TestSettingsViewSaveAndChildSelectionChanged()
         {
-            SettingsView view = new SettingsView(false);
+            SettingsViewModel view = new SettingsViewModel(false);
             Assert.That(!view.IonGroups.First().Ions.First().HasChanged);
             view.IonGroups.First().Ions.First().SelectionChanged("Blue");
             Assert.That(view.IonGroups.First().Ions.First().HasChanged);
@@ -159,7 +168,7 @@ namespace Test
         [Test]
         public static void TestCoverageTypeForTreeView()
         {
-            CoverageTypeForTreeView coverageTypeForTreeView = new("N-Terminal Color");
+            CoverageTypeForTreeViewModel coverageTypeForTreeView = new("N-Terminal Color");
             Assert.That(coverageTypeForTreeView.Name == "N-Terminal Color");
             var color = MetaDrawSettings.CoverageTypeToColor["N-Terminal Color"];
             Assert.That(coverageTypeForTreeView.SelectedColor == color.GetColorName());
@@ -171,7 +180,7 @@ namespace Test
         {
             var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType);
             var key = modGroups.First().Key;
-            ModTypeForTreeView modTypeForTreeView = new(key, false);
+            ModTypeForTreeViewModel modTypeForTreeView = new(key, false);
             Assert.That(!modTypeForTreeView.Expanded);
             Assert.That(modTypeForTreeView.DisplayName == key);
             Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color == new SolidColorBrush(Colors.Transparent).Color);
@@ -186,8 +195,8 @@ namespace Test
         {
             var modGroup = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).First();
             var mod = modGroup.First();
-            ModTypeForTreeView modTypeForTreeView = new(modGroup.Key, false);
-            ModForTreeView modForTreeView = new(mod.ToString(), false, mod.IdWithMotif, false, modTypeForTreeView);
+            ModTypeForTreeViewModel modTypeForTreeView = new(modGroup.Key, false);
+            ModForTreeViewModel modForTreeView = new(mod.ToString(), false, mod.IdWithMotif, false, modTypeForTreeView);
             Assert.That(modForTreeView.ModName == mod.IdWithMotif);
             Assert.That(modForTreeView.DisplayName == mod.IdWithMotif);
             Assert.That(!modForTreeView.Use);
@@ -201,7 +210,7 @@ namespace Test
         public static void TestIonTypeForTreeView()
         {
             var ions = (ProductType[])Enum.GetValues(typeof(ProductType));
-            IonTypeForTreeView ionForTreeViews = new("Common Ions", ions, false);
+            IonTypeForTreeViewModel ionForTreeViews = new("Common Ions", ions, false);
             Assert.That(ionForTreeViews.GroupName == "Common Ions");
             Assert.That(ionForTreeViews.Ions.Count == ions.Length);
             Assert.That(!ionForTreeViews.Ions.Any(p => p.IsBeta));
@@ -213,7 +222,7 @@ namespace Test
         public static void TestIonForTreeView()
         {
             var ion = ((ProductType[])Enum.GetValues(typeof(ProductType))).First();
-            IonForTreeView ionForTreeView = new(ion, false);
+            IonForTreeViewModel ionForTreeView = new(ion, false);
             Assert.That(!ionForTreeView.IsBeta);
             Assert.That(ionForTreeView.IonType == ion);
             var color = MetaDrawSettings.ProductTypeToColor[ion];
@@ -232,7 +241,7 @@ namespace Test
         {
             var modGroup = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).First();
             var twoMods = modGroup.Take(2).ToList();
-            PtmLegendView PtmLegendView = new PtmLegendView(twoMods);
+            PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(twoMods);
             Assert.That(PtmLegendView.Header == "Legend");
             Assert.That(PtmLegendView.HeaderSize == 12);
             Assert.That(PtmLegendView.LegendItems.Count == 2);
@@ -240,7 +249,7 @@ namespace Test
             Assert.That(PtmLegendView.LegendItems.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif]).Color);
             Assert.That(PtmLegendView.LegendItems.First().ModName == twoMods.First().IdWithMotif);
             var mod = twoMods.First();
-            PtmLegendItemView ptmLegendItemView = new(mod.IdWithMotif);
+            PtmLegendItemViewModel ptmLegendItemView = new(mod.IdWithMotif);
             Assert.That(ptmLegendItemView.ModName == mod.IdWithMotif);
             Assert.That(ptmLegendItemView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.IdWithMotif]).Color);
 

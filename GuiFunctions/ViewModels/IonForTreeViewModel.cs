@@ -16,7 +16,7 @@ using System.Windows.Shapes;
 
 namespace GuiFunctions
 {
-    public class IonForTreeView : BaseView
+    public class IonForTreeViewModel : BaseViewModel
     {
         #region Private Properties
 
@@ -56,7 +56,7 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public IonForTreeView(ProductType type, bool beta)
+        public IonForTreeViewModel(ProductType type, bool beta)
         {
             IonType = type;
             IonName = IonType.ToString() + " - Ion";
