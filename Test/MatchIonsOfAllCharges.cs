@@ -358,10 +358,11 @@ namespace Test
             //we'll make a copy so that when we search this copy, we get enough psms to compute pep q-value. It gets deleted below.
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput\rawCopy.mzML");
             File.Copy(raw, rawCopy);
-
+            
             EverythingRunnerEngine MassSpectraFile = new(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw, rawCopy }, new List<DbForTask> { db }, thisTaskOutputFolder);
 
             MassSpectraFile.Run();
+            File.Delete(rawCopy);
             string test = Path.Combine(thisTaskOutputFolder, @"SpectraFileOutput\spectralLibrary.msp");
 
             string testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGenaration");
@@ -371,15 +372,12 @@ namespace Test
 
             SearchTask searchTask = new();
 
-            _ = searchTask.RunTask(outputDir,
-                new List<DbForTask>
-                {
-                    new DbForTask(test, false),
-                    db
-                },
-                new List<string> { raw },
-                "");
-            string[] results = File.ReadAllLines(Path.Combine(outputDir, @"AllPSMs.psmtsv"));
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { db,new DbForTask(test, false) }, outputDir);
+            engine.Run();
+
+            string[] results = File.ReadAllLines(Path.Combine(outputDir, @"ClassicSearch\AllPSMs.psmtsv"));
             string[] split = results[0].Split('\t');
             int ind = Array.IndexOf(split, "Normalized Spectral Angle");
             int indOfTarget = Array.IndexOf(split, "Decoy/Contaminant/Target");
@@ -396,7 +394,7 @@ namespace Test
                 }
             }
             Assert.That(spectralAngleList.Average() > 0.9);
-            Directory.Delete(thisTaskOutputFolder, true);
+            Directory.Delete(outputDir, true);
         }
 
         [Test]
@@ -405,36 +403,40 @@ namespace Test
         {
             var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
             var outputDir = Path.Combine(testDir, @"SpectralLibraryUpdateTest");
-            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibraryForTestingLibraryUpdate.msp");
-            string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\uniprot-yeast-filtered-reviewed_yes.fasta.gz");
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SmallCalibratible_Yeast.mzML");
+            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibrary.msp");
+            string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             Directory.CreateDirectory(outputDir);
+            string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibraryUpdateTest\rawCopy.mzML");
+            File.Copy(raw, rawCopy);
             var searchTask = new SearchTask();
+
             searchTask.SearchParameters.UpdateSpectralLibrary = true;
-            searchTask.RunTask(outputDir,
-              new List<DbForTask>
-              {
-                    new DbForTask(lib, false),
-                    new DbForTask(db, false)
-              },
-              new List<string> { raw },
-              "");
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask(db, false) }, outputDir);
+            engine.Run();
+
+            File.Delete(rawCopy);
+
             var oldLib = new SpectralLibrary(new List<string> { lib });
             var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(outputDir, @"spectralLibrary.msp") });
 
-            Assert.That(oldLib.TryGetSpectrum("KAPAGGAADAAAK", 2, out var old_spectrum1));
-            Assert.That(updatedLib.TryGetSpectrum("KAPAGGAADAAAK", 2, out var new_spectrum1));
-            Assert.That(oldLib.TryGetSpectrum("KAPAAAPAASK", 2, out var old_spectrum2));
-            Assert.That(updatedLib.TryGetSpectrum("KAPAAAPAASK", 2, out var new_spectrum2));
-            Assert.That(oldLib.TryGetSpectrum("KQAIETANK", 2, out var old_spectrum3));
-            Assert.That(updatedLib.TryGetSpectrum("KQAIETANK", 2, out var new_spectrum3));
+            Assert.That(oldLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var old_spectrum1));
+            Assert.That(updatedLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var new_spectrum1));
+            Assert.That(oldLib.TryGetSpectrum("AIAELGIYPAVDPLDSTSR", 3, out var old_spectrum2));
+            Assert.That(updatedLib.TryGetSpectrum("AIAELGIYPAVDPLDSTSR", 3, out var new_spectrum2));
+            Assert.That(oldLib.TryGetSpectrum("TTQVTQFILDNYIER", 3, out var old_spectrum3));
+            Assert.That(updatedLib.TryGetSpectrum("TTQVTQFILDNYIER", 3, out var new_spectrum3));
 
             //test that the updated spectra are better than old spectra
             Assert.That(old_spectrum1.MatchedFragmentIons.Count < new_spectrum1.MatchedFragmentIons.Count);
             Assert.That(old_spectrum2.MatchedFragmentIons.Count < new_spectrum2.MatchedFragmentIons.Count);
             Assert.That(old_spectrum3.MatchedFragmentIons.Count < new_spectrum3.MatchedFragmentIons.Count);
+            Assert.That(oldLib.GetAllLibrarySpectra().ToList().Count < updatedLib.GetAllLibrarySpectra().ToList().Count);
 
-            //Directory.Delete(outputDir, true);
+            Directory.Delete(Path.Combine(outputDir, @"ClassicSearch"), true);
         }
 
         [Test]
