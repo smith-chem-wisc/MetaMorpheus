@@ -48,25 +48,71 @@ namespace Test
         }
 
         [Test]
-        public static void TestPsmFromTsvMutatingConstructor()
+        public static void TestPsmFromTsvDisambiguatingConstructor()
         {
+            // initialize values
             string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
             List<string> warnings = new();
             List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings);
             PsmFromTsv psm = psms.First();
 
+            // non ambiguous construction should not be successful
             string fullSeq = psm.FullSequence;
             fullSeq = fullSeq.Substring(0, fullSeq.Length - 1);
             PsmFromTsv modifiedPsm = new(psm, fullSeq);
+            Assert.That(modifiedPsm.FullSequence == fullSeq);
 
-            Assert.That(psm.FullSequence.Length - 1 == modifiedPsm.FullSequence.Length);
-            Assert.That(psm.FullSequence[0] == modifiedPsm.FullSequence[0]);
-            Assert.That(psm.Ms2ScanNumber == modifiedPsm.Ms2ScanNumber);
-            Assert.That(psm.BaseSeq.Equals(modifiedPsm.BaseSeq));
+            // disambiguation construction
+            var ambiguousPsms = psms.Where(p => p.FullSequence.Contains('|'));
+            PsmFromTsv ambiguousPsm = ambiguousPsms.First();
+            var fullSeqStrings = ambiguousPsm.FullSequence.Split('|');
 
-            for (int i = 0; i < psm.MatchedIons.Count; i++)
+            PsmFromTsv modifiedAmbiguousPsm = new(ambiguousPsm, fullSeqStrings[0]);
+            List<string[]> test = new();
+            foreach (var ambPsm in ambiguousPsms)
             {
-                Assert.That(psm.MatchedIons[i] == modifiedPsm.MatchedIons[i]);
+                PsmFromTsv disambiguatedPSM = new(ambPsm, ambPsm.FullSequence.Split("|")[0]);
+                Assert.That(disambiguatedPSM.StartAndEndResiduesInProtein == ambPsm.StartAndEndResiduesInProtein.Split("|")[0]);
+                Assert.That(disambiguatedPSM.BaseSeq == ambPsm.BaseSeq.Split("|")[0]);
+                Assert.That(disambiguatedPSM.EssentialSeq == ambPsm.EssentialSeq.Split("|")[0]);
+                Assert.That(disambiguatedPSM.ProteinAccession == ambPsm.ProteinAccession.Split("|")[0]);
+                Assert.That(disambiguatedPSM.PeptideMonoMass == ambPsm.PeptideMonoMass.Split("|")[0]);
+                Assert.That(disambiguatedPSM.MassDiffDa == ambPsm.MassDiffDa.Split("|")[0]);
+                Assert.That(disambiguatedPSM.MassDiffPpm == ambPsm.MassDiffPpm.Split("|")[0]);
+                Assert.That(disambiguatedPSM.ProteinName == ambPsm.ProteinName.Split("|")[0]);
+                Assert.That(disambiguatedPSM.GeneName == ambPsm.GeneName.Split("|")[0]);
+
+                for (int i = 0; i < ambPsm.MatchedIons.Count; i++)
+                {
+                    Assert.That(disambiguatedPSM.MatchedIons[i] == ambPsm.MatchedIons[i]);
+                }
+
+                if (ambPsm.StartAndEndResiduesInProtein.Split("|").Count() > 1)
+                {
+                    for (int i = 1; i < ambPsm.StartAndEndResiduesInProtein.Split("|").Count(); i++)
+                    {
+                        disambiguatedPSM = new(ambPsm, ambPsm.FullSequence.Split("|")[i], i);
+                        Assert.That(disambiguatedPSM.StartAndEndResiduesInProtein == ambPsm.StartAndEndResiduesInProtein.Split("|")[i]);
+                        Assert.That(disambiguatedPSM.BaseSeq == ambPsm.BaseSeq.Split("|")[i]);
+                        Assert.That(disambiguatedPSM.EssentialSeq == ambPsm.EssentialSeq.Split("|")[i]);
+                        Assert.That(disambiguatedPSM.ProteinAccession == ambPsm.ProteinAccession.Split("|")[i]);
+                        Assert.That(disambiguatedPSM.ProteinName == ambPsm.ProteinName.Split("|")[i]);
+                        Assert.That(disambiguatedPSM.GeneName == ambPsm.GeneName.Split("|")[i]);
+
+                        if (ambPsm.PeptideMonoMass.Split("|").Count() == 1)
+                        {
+                            Assert.That(disambiguatedPSM.PeptideMonoMass == ambPsm.PeptideMonoMass.Split("|")[0]);
+                            Assert.That(disambiguatedPSM.MassDiffDa == ambPsm.MassDiffDa.Split("|")[0]);
+                            Assert.That(disambiguatedPSM.MassDiffPpm == ambPsm.MassDiffPpm.Split("|")[0]);
+                        }
+                        else
+                        {
+                            Assert.That(disambiguatedPSM.PeptideMonoMass == ambPsm.PeptideMonoMass.Split("|")[i]);
+                            Assert.That(disambiguatedPSM.MassDiffDa == ambPsm.MassDiffDa.Split("|")[i]);
+                            Assert.That(disambiguatedPSM.MassDiffPpm == ambPsm.MassDiffPpm.Split("|")[i]);
+                        }
+                    }
+                }
             }
         }
 

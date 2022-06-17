@@ -188,6 +188,7 @@ namespace MetaMorpheusGUI
                 AmbiguousWarningTextBlocks.Visibility = Visibility.Visible;
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
                 wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
+                AmbiguousSequenceOptionBox.Items.Clear();
 
                 if (PtmLegend.Count > 0)
                     PtmLegend.First().Visibility = Visibility.Hidden;
@@ -789,7 +790,8 @@ namespace MetaMorpheusGUI
             }
             SetSequenceDrawingPositionSettings(true);
             object obj = new object();
-            dataGridScanNums_SelectedCellsChanged(obj, null);
+            if (AmbiguousSequenceOptionBox.Items.Count > 0)
+                dataGridScanNums_SelectedCellsChanged(obj, null);
             MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
         }
 

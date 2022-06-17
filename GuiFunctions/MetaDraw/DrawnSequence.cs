@@ -316,7 +316,7 @@ namespace GuiFunctions
                         }
                     }
                 }
-                PsmFromTsv tempPsm = new(psm, fullSequence, baseSequence);
+                PsmFromTsv tempPsm = new(psm, fullSequence, baseSequence: baseSequence);
                 segments.Add(tempPsm);
                 matchedIonSegments.Add(ions);
             }
