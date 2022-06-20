@@ -950,7 +950,7 @@ namespace TaskLayer
         private void WriteMbrPsmResults(ConcurrentBag<MbrSpectralMatch> bestMbrMatches)
         {
             string mbrOutputPath = Path.Combine(Parameters.OutputFolder, @"MbrAnalysis.psmtsv");
-            using (StreamWriter output = new StreamWriter(mbrOutputPath))
+            using (var output = new StreamWriter(mbrOutputPath))
             {
                 output.WriteLine(MbrSpectralMatch.TabSeparatedHeader);
                 IEnumerable<MbrSpectralMatch> orderedMatches = bestMbrMatches.Where(p => p.spectralLibraryMatch != null).OrderByDescending(p => p.spectralLibraryMatch.Score);

@@ -19,8 +19,7 @@ namespace Test
         [Test]
         public static void MbrPostSearchAnalysisTest()
         {
-            // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects.
-            // It also deals with one specific Carbamidomethylation, defined in advance
+            // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MSMSids.psmtsv");
             List<PsmFromTsv> tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
@@ -280,6 +279,17 @@ namespace Test
 
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("IAGQVAAANK", 2, out var spectrum));
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("HEVSASTQSTPASSR", 3, out spectrum));
+
+        }
+
+        [Test]
+        public static void MbrHeaderTest()
+        {
+            string psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader();
+            string[] psmHeaderSplit = psmHeader.Split('\t');
+            string[] newHeaderSplit = new string[psmHeaderSplit.Length];
+            for (int i = 0; i < psmHeaderSplit.Length; i++) newHeaderSplit[i] = "Original " + psmHeaderSplit[i];
+            string newHeader = string.Join('\t', newHeaderSplit);
 
         }
     }

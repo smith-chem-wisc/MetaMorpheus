@@ -18,7 +18,7 @@ namespace EngineLayer
 
         public bool originalMatchFound { get; private set; }
 
-        public FdrInfo originalFdrInfo { get; private set; }
+        public PeptideSpectralMatch originalSpectralMatch { get; private set; }
 
         public MbrSpectralMatch(PeptideSpectralMatch spectralLibraryMatch, ChromatographicPeak acceptorPeak)
         {
@@ -32,12 +32,17 @@ namespace EngineLayer
             if (spectralLibraryMatch == null) return;
             int oneBasedScanNumber = spectralLibraryMatch.ScanNumber;
             string spectraFile = spectralLibraryMatch.FullFilePath;
+            string baseSequence = spectralLibraryMatch.BaseSequence;
 
-            PeptideSpectralMatch originalPsm = originalSearchPsms.Where(p => p.FullFilePath.Equals(spectraFile)).Where(p => p.ScanNumber == oneBasedScanNumber).OrderByDescending(p => p.FdrInfo.QValue).FirstOrDefault();
+            PeptideSpectralMatch originalPsm = originalSearchPsms
+                .Where(p => p.FullFilePath.Equals(spectraFile))
+                .Where(p => p.ScanNumber == oneBasedScanNumber)
+                .Where(p => p.BaseSequence == baseSequence)
+                .OrderByDescending(p => p.FdrInfo.QValue).FirstOrDefault();
             if (originalPsm != null)
             {
                 originalMatchFound = true;
-                originalFdrInfo = originalPsm.FdrInfo;
+                originalSpectralMatch = originalPsm;
             }
         }
 
@@ -59,60 +64,26 @@ namespace EngineLayer
         {
             get
             {
-                List<string> originalFdrHeader = new();
-                originalFdrHeader.Add("Original Cumulative Target");
-                originalFdrHeader.Add("Original Cumulative Decoy");
-                originalFdrHeader.Add("Original Cumulative Target Notch");
-                originalFdrHeader.Add("Original Cumulative Decoy Notch");
-                originalFdrHeader.Add("Original QValue");
-                originalFdrHeader.Add("Original QValue Notch");
-                originalFdrHeader.Add("Original PEP");
-                originalFdrHeader.Add("Original PEP_QValue");
-                return string.Join('\t', originalFdrHeader);
+                string psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader();
+                string[] psmHeaderSplit = psmHeader.Split('\t');
+                string[] newHeaderSplit = new string[psmHeaderSplit.Length];
+                for (int i = 0; i < psmHeaderSplit.Length; i++) newHeaderSplit[i] = "Original " + psmHeaderSplit[i];
+                string newHeader = string.Join('\t', newHeaderSplit); List<string> originalFdrHeader = new();
+                return newHeader;
            }
         }
 
         public override string ToString()
         {
+            string nullPsm = new string('\t', 55);
+            string originalPsmString = originalSpectralMatch == null ? nullPsm : originalSpectralMatch.ToString();
             var sb = new StringBuilder();
             sb.Append(spectralLibraryMatch.ToString());
             sb.Append('\t');
-            sb.Append(OriginalFdrWriter());
+            sb.Append(originalPsmString);
             sb.Append('\t');
             sb.Append(acceptorPeak.ToString());
             return sb.ToString();
         }
-
-        private string OriginalFdrWriter()
-        {
-            string cumulativeTarget = " ";
-            string cumulativeDecoy = " ";
-            string cumulativeTargetNotch = " ";
-            string cumulativeDecoyNotch = " ";
-            string qValue = " ";
-            string qValueNotch = " ";
-            string PEP = " ";
-            string PEP_Qvalue = " ";
-
-            if (originalMatchFound && originalFdrInfo != null)
-            {
-                cumulativeTarget = originalFdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoy = originalFdrInfo.CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
-                cumulativeTargetNotch = originalFdrInfo.CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoyNotch = originalFdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture);
-                qValue = originalFdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture);
-                qValueNotch = originalFdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
-                PEP = originalFdrInfo.PEP.ToString();
-                PEP_Qvalue = originalFdrInfo.PEP_QValue.ToString();
-            }
-
-            return string.Join('\t', new List<string> { cumulativeTarget, cumulativeDecoy,
-                                                        cumulativeTargetNotch, cumulativeDecoyNotch,
-                                                        qValue, qValueNotch, PEP, PEP_Qvalue});
-
-        }
-
-
-
     }
 }
