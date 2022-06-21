@@ -299,14 +299,19 @@ namespace MetaMorpheusGUI
                 QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
                 QValueRadioButton.IsChecked = true;
             }
-            else if (task.CommonParameters.PepQValueOutputFilter < 1)
+            else
+            {
+                QValueTextBox.Text = "0.01";
+            }
+
+            if (task.CommonParameters.PepQValueOutputFilter < 1)
             {
                 PepQValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
                 PepQValueRadioButton.IsChecked = true;
             }
             else
             {
-                PepQValueTextBox.Text = "0.01";
+                PepQValueTextBox.Text = "0.01";  
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
