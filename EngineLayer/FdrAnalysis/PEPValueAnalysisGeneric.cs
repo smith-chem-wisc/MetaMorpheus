@@ -771,12 +771,12 @@ namespace EngineLayer
                 int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
                 psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
-                spectralAngle = (float)0.99; // (float)psm.SpectralAngle;TODO: Changethisback!
+                spectralAngle = (float)psm.SpectralAngle;
 
-                /*if (PsmHasSpectralAngle(psm))
+                if (PsmHasSpectralAngle(psm))
                 {
                     hasSpectralAngle = 1;
-                }*/
+                }
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
