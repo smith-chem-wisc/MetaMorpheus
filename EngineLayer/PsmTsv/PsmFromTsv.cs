@@ -51,6 +51,9 @@ namespace EngineLayer
         public string IdentifiedSequenceVariations { get; }
         public string SpliceSites { get; }
         public string PeptideDescription { get; }
+        
+        // First amino acid in protein is amino acid number 1, which differs from internal code numbering with N-terminus as 1
+        // This numbering is for the peptide location within the protein
         public string StartAndEndResiduesInProtein { get; }
         public string PreviousAminoAcid { get; }
         public string NextAminoAcid { get; }
