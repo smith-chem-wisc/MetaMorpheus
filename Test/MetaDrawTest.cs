@@ -220,9 +220,10 @@ namespace Test
                 List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                        p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
                 int psmStartResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""));
-                var startAA = (MetaDrawSettings.FirstAAonScreenIndex + 1 + psmStartResidue).ToString().ToCharArray().Reverse().ToArray();
-                int psmEndResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[1].Replace("]", ""));
-                var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmEndResidue).ToString();
+                var startAA = (MetaDrawSettings.FirstAAonScreenIndex + psmStartResidue).ToString();
+                var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmStartResidue - 1).ToString();
+
+
                 var expected = modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + startAA.Length + endAA.Length + 2;
                 Assert.AreEqual(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, expected);
             }

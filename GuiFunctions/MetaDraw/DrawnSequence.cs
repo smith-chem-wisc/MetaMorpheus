@@ -70,7 +70,7 @@ namespace GuiFunctions
             if (stationary && MetaDrawSettings.DrawNumbersUnderStationary)
             {
                 int psmStartResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""));
-                var startAA = (MetaDrawSettings.FirstAAonScreenIndex + 1 + psmStartResidue).ToString().ToCharArray().Reverse().ToArray();
+                var startAA = (MetaDrawSettings.FirstAAonScreenIndex + psmStartResidue).ToString().ToCharArray().Reverse().ToArray();
                 double x = 22;
 
                 Polyline line = new Polyline();
@@ -107,8 +107,8 @@ namespace GuiFunctions
             // draw final amino acid number
             if (stationary && MetaDrawSettings.DrawNumbersUnderStationary)
             {
-                int psmEndResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[1].Replace("]", ""));
-                var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmEndResidue).ToString();
+                int psmStartResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""));
+                var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmStartResidue - 1).ToString();
                 canvasWidth += spacing;
                 double x = canvasWidth;
 
