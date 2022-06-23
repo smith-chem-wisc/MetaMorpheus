@@ -783,10 +783,6 @@ namespace TaskLayer
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
 
-            //ConcurrentDictionary is threadsafe dictionary, initialized to be larger than necessary 
-            ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks =
-                new ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch>(maxThreadsPerFile, allPeptides.Count);
-
             ConcurrentBag<MbrSpectralMatch> bestMbrMatches =
                 new ConcurrentBag<MbrSpectralMatch>();
 
@@ -834,12 +830,10 @@ namespace TaskLayer
 
                         if (peptideSpectralMatches.Any())
                         {
-                            bestPsmsForPeaks.TryAdd(mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches));
                             bestMbrMatches.Add(new MbrSpectralMatch(BestPsmForMbrPeak(peptideSpectralMatches), mbrPeak));
                         }
                         else
                         {
-                            bestPsmsForPeaks.TryAdd(mbrPeak, null);
                             bestMbrMatches.Add(new MbrSpectralMatch(null, mbrPeak));
                         }
 
