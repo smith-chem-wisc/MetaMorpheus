@@ -16,6 +16,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using GuiFunctions;
 
 namespace MetaMorpheusGUI
 {
@@ -26,8 +27,8 @@ namespace MetaMorpheusGUI
     {
         private readonly DataContextForSearchTaskWindow DataContextForSearchTaskWindow;
         private readonly ObservableCollection<SearchModeForDataGrid> SearchModesForThisTask = new ObservableCollection<SearchModeForDataGrid>();
-        private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
+        private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private readonly ObservableCollection<ModTypeForGrid> ModSelectionGridItems = new ObservableCollection<ModTypeForGrid>();
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
@@ -120,22 +121,22 @@ namespace MetaMorpheusGUI
 
             foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
-                var theModType = new ModTypeForTreeView(hm.Key, false);
+                var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             FixedModsTreeView.DataContext = FixedModTypeForTreeViewObservableCollection;
 
             foreach (var hm in GlobalVariables.AllModsKnown.Where(b => b.ValidModification == true).GroupBy(b => b.ModificationType))
             {
-                var theModType = new ModTypeForTreeView(hm.Key, false);
+                var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
             VariableModsTreeView.DataContext = VariableModTypeForTreeViewObservableCollection;
@@ -281,6 +282,7 @@ namespace MetaMorpheusGUI
             DeltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
+            AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -298,14 +300,19 @@ namespace MetaMorpheusGUI
                 QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
                 QValueRadioButton.IsChecked = true;
             }
-            else if (task.CommonParameters.PepQValueOutputFilter < 1)
+            else
+            {
+                QValueTextBox.Text = "0.01";
+            }
+
+            if (task.CommonParameters.PepQValueOutputFilter < 1)
             {
                 PepQValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
                 PepQValueRadioButton.IsChecked = true;
             }
             else
             {
-                PepQValueTextBox.Text = "0.01";
+                PepQValueTextBox.Text = "0.01";  
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -329,14 +336,14 @@ namespace MetaMorpheusGUI
                     }
                     else
                     {
-                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                        theModType.Children.Add(new ModForTreeViewModel("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                     }
                 }
                 else
                 {
-                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    theModType = new ModTypeForTreeViewModel(mod.Item1, true);
                     FixedModTypeForTreeViewObservableCollection.Add(theModType);
-                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
             foreach (var mod in task.CommonParameters.ListOfModsVariable)
@@ -351,14 +358,14 @@ namespace MetaMorpheusGUI
                     }
                     else
                     {
-                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                        theModType.Children.Add(new ModForTreeViewModel("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                     }
                 }
                 else
                 {
-                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    theModType = new ModTypeForTreeViewModel(mod.Item1, true);
                     VariableModTypeForTreeViewObservableCollection.Add(theModType);
-                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
 
@@ -499,6 +506,7 @@ namespace MetaMorpheusGUI
 
             bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
             bool TrimMsMsPeaks = TrimMsMs.IsChecked.Value;
+            bool AddTruncations = AddTruncationsCheckBox.IsChecked.Value;
 
             int? numPeaksToKeep = null;
             if (int.TryParse(NumberOfPeaksToKeepPerWindowTextBox.Text, out int numberOfPeaksToKeeep))
@@ -547,6 +555,7 @@ namespace MetaMorpheusGUI
                 separationType: separationType,
                 trimMs1Peaks: TrimMs1Peaks,
                 trimMsMsPeaks: TrimMsMsPeaks,
+                addTruncations: AddTruncations,
                 numberOfPeaksToKeepPerWindow: numPeaksToKeep,
                 minimumAllowedIntensityRatioToBasePeak: minimumAllowedIntensityRatioToBasePeak,
                 windowWidthThomsons: windowWidthThompsons,
@@ -1265,6 +1274,19 @@ namespace MetaMorpheusGUI
         {
             PepQValueTextBox.Clear();
             QValueTextBox.Text = "0.01";
+        }
+
+        /// <summary>
+        /// Retained/Lost Methionine is best handled through truncation search when truncation search is selected.
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void AddTruncationsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            if (AddTruncationsCheckBox.IsChecked.Value)
+            {
+                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)InitiatorMethionineBehavior.Retain;
+            }
         }
     }
 

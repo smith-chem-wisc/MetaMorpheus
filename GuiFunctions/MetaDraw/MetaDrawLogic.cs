@@ -1,11 +1,10 @@
 ﻿using EngineLayer;
-using GuiFunctions.MetaDraw;
 using IO.Mgf;
 using IO.MzML;
 using IO.ThermoRawFileReader;
+using iText.IO.Image;
+using iText.Kernel.Pdf;
 using MassSpectrometry;
-using mzPlot;
-using OxyPlot;
 using OxyPlot.Wpf;
 using Proteomics.Fragmentation;
 using System;
@@ -14,13 +13,12 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace GuiFunctions
@@ -34,6 +32,7 @@ namespace GuiFunctions
         public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
+        public DrawnSequence SequenceAnnotation { get; set; }
         public PeptideSpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
@@ -215,7 +214,7 @@ namespace GuiFunctions
         /// <param name="stationaryCanvas"></param>
         /// <param name="scrollableCanvas"></param>
         /// <param name="psm"></param>
-        public void DisplaySequences(Canvas stationaryCanvas, Canvas scrollableCanvas, PsmFromTsv psm)
+        public void DisplaySequences(Canvas stationaryCanvas, Canvas scrollableCanvas, Canvas sequenceAnnotationCanvas, PsmFromTsv psm)
         {
             if (!psm.FullSequence.Contains('|'))
             {
@@ -223,14 +222,23 @@ namespace GuiFunctions
                 {
                     ScrollableSequence = new(scrollableCanvas, psm, false);
                 }
-                if (psm.BetaPeptideBaseSequence == null) // if not crosslinked
+
+                if (stationaryCanvas != null && MetaDrawSettings.DrawStationarySequence)
                 {
-                    StationarySequence = new(stationaryCanvas, psm, true);
+                    if (psm.BetaPeptideBaseSequence == null) // if not crosslinked
+                    {
+                        StationarySequence = new(stationaryCanvas, psm, true);
+                    }
+                    else
+                    {
+                        StationarySequence = new(stationaryCanvas, psm, false);
+                        StationarySequence.DrawCrossLinkSequence();
+                    }
                 }
-                else
+
+                if (sequenceAnnotationCanvas != null)
                 {
-                    StationarySequence = new(stationaryCanvas, psm, false);
-                    StationarySequence.DrawCrossLinkSequence();
+                   SequenceAnnotation = new(sequenceAnnotationCanvas, psm, false, true);
                 }
             }   
         }
@@ -253,9 +261,9 @@ namespace GuiFunctions
             double[] internalIntensityArray = new double[peptideLength - 1];
 
             //colors for annotation
-            Color nColor = Colors.Blue;
-            Color cColor = Colors.Red;
-            Color internalColor = Colors.Purple;
+            Color nColor = DrawnSequence.ParseColorFromOxyColor(MetaDrawSettings.CoverageTypeToColor["N-Terminal Color"]);
+            Color cColor = DrawnSequence.ParseColorFromOxyColor(MetaDrawSettings.CoverageTypeToColor["C-Terminal Color"]);
+            Color internalColor = DrawnSequence.ParseColorFromOxyColor(MetaDrawSettings.CoverageTypeToColor["Internal Color"]);
 
             //draw sequence text
             for (int r = 0; r < psm.BaseSeq.Length; r++)
@@ -445,7 +453,7 @@ namespace GuiFunctions
             Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
-        public void ExportToPdf(PlotView plotView, Canvas stationarySequence, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
+        public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
         {
             errors = new List<string>();
 
@@ -456,9 +464,14 @@ namespace GuiFunctions
             
             foreach (var psm in spectrumMatches)
             {
-                MetaDrawSettings.FirstAAonScreenIndex = 0;
-                MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
-                DisplaySequences(stationarySequence, null, psm);
+                // get the scan
+                if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+                {
+                    errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
+                    return;
+                }
+
+                DisplaySequences(stationaryCanvas, null, null, psm);
                 DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
 
                 if (displayErrors != null)
@@ -475,20 +488,164 @@ namespace GuiFunctions
 
                 foreach (var plot in CurrentlyDisplayedPlots)
                 {
-                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + ".pdf");
+                    string filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "." + MetaDrawSettings.ExportType);
 
                     int i = 2;
                     while (File.Exists(filePath))
                     {
-                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + ".pdf"); 
+                        filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType);
                         i++;
                     }
-
-                    plot.ExportToPdf(filePath, StationarySequence.SequenceDrawingCanvas, plotView.ActualWidth, plotView.ActualHeight);
+                    plot.ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas, plotView.ActualWidth, plotView.ActualHeight);
                 }
             }
 
+            DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
             DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors);
+        }
+
+        /// <summary>
+        /// Exports the sequence coverage view to an image file
+        /// </summary>
+        /// <param name="textCanvas">representes the text and intensity bars</param>
+        /// <param name="mapCanvas">represents the sequence coverage map</param>
+        /// <param name="directory">where the files will be outputted</param>
+        /// <param name="fullSequence">fullsequence of the psm map being outputted</param>
+        /// <param name="scanNumber">MS2 scan number of the psm map being outputted</param>
+        public void ExportSequenceCoverage(Canvas textCanvas, Canvas mapCanvas, string directory, PsmFromTsv psm)
+        {
+            // initialize values
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            string sequence = illegalInFileName.Replace(psm.FullSequence, string.Empty);
+            if (sequence.Length > 30)
+            {
+                sequence = sequence.Substring(0, 30);
+            }
+            string path = System.IO.Path.Combine(directory, psm.Ms2ScanNumber + "_" + sequence + "_SequenceCoverage." + MetaDrawSettings.ExportType);
+
+            // convert to format for export
+            System.Drawing.Bitmap textBitmap = ConvertCanvasToBitmap(textCanvas, directory);
+            Point textPoint = new(0, 0);
+            System.Drawing.Bitmap mapBitmap = ConvertCanvasToBitmap(mapCanvas, directory);
+            Point mapPoint = new(0, textCanvas.ActualHeight - 25);
+
+            List<System.Drawing.Bitmap> toCombine = new List<System.Drawing.Bitmap>() { textBitmap, mapBitmap };
+            List<Point> points = new List<Point>() { textPoint, mapPoint };
+            System.Drawing.Bitmap combinedBitmap = CombineBitmap(toCombine, points, false);
+
+            ExportBitmap(combinedBitmap, path);
+        }
+
+        /// <summary>
+        /// Exports the sequence annotation view to an image file
+        /// </summary>
+        /// <param name="sequenceAnnotaitonCanvas">canvas of the sequence annotaiton</param>
+        /// <param name="ptmLegend">current depiction of the ptm legend</param>
+        /// <param name="psm">the psm being annotated</param>
+        /// <param name="directory">where the files will be outputte</param>
+        /// <param name="width">width of the annotation area</param>
+        public void ExportAnnotatedSequence(Canvas sequenceAnnotaitonCanvas, System.Windows.UIElement ptmLegend, PsmFromTsv psm, string directory, int width)
+        {
+            // initialize values
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            string sequence = illegalInFileName.Replace(psm.FullSequence, string.Empty);
+            if (sequence.Length > 30)
+            {
+                sequence = sequence.Substring(0, 30);
+            }
+            string path = System.IO.Path.Combine(directory, psm.Ms2ScanNumber + "_" + sequence + "_SequenceAnnotation." + MetaDrawSettings.ExportType);
+            int rows = (int)Math.Ceiling((double)psm.BaseSeq.Length / (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment * MetaDrawSettings.SequenceAnnotationSegmentPerRow)); ;
+
+            // convert to format for export
+            sequenceAnnotaitonCanvas.Width = width;
+            System.Drawing.Bitmap annotationBitmap = ConvertCanvasToBitmap(sequenceAnnotaitonCanvas, directory);
+            Point annotationPoint = new(-100, 0);
+            
+            System.Drawing.Bitmap ptmLegendBitmap = ConvertUIElementToBitmap(ptmLegend, directory);
+            Point ptmLegendPoint = new((annotationBitmap.Width / 2) - (ptmLegend.RenderSize.Width / 2) - 50, sequenceAnnotaitonCanvas.Height);
+
+            List<System.Drawing.Bitmap> toCombine = new List<System.Drawing.Bitmap>() { annotationBitmap, ptmLegendBitmap };
+            List<Point> points = new List<Point>() { annotationPoint, ptmLegendPoint };
+            System.Drawing.Bitmap combinedBitmap = CombineBitmap(toCombine, points, false);
+            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, combinedBitmap.Width - 150, combinedBitmap.Height), combinedBitmap.PixelFormat);
+            ExportBitmap(finalBitmap, path);
+            combinedBitmap.Dispose();
+            finalBitmap.Dispose();
+        }
+
+        /// <summary>
+        /// Used to combine two bitmap objects
+        /// </summary>
+        /// <param name="images">list of objects to combine</param>
+        /// <param name="points">the position to begin drawing each</param>
+        /// <param name="overlap">true of they should overlap, false if they should stack ontop of one another vertically</param>
+        /// <returns></returns>
+        public static System.Drawing.Bitmap CombineBitmap(List<System.Drawing.Bitmap> images, List<Point> points, bool overlap = true)
+        {
+            System.Drawing.Bitmap finalImage = null;
+
+            try
+            {
+                int width = 0;
+                int height = 0;
+
+                foreach (var image in images)
+                {
+                    //update the size of the final bitmap
+                    if (overlap)
+                    {
+                        width = image.Width > width ? image.Width : width;
+                        height = image.Height > height ? image.Height : height;
+                    }
+                    else
+                    {
+                        width = Math.Max(image.Width, width);
+                        height += image.Height;
+                    }
+                }
+
+                //create a bitmap to hold the combined image
+                finalImage = new System.Drawing.Bitmap(width, height);
+
+                //get a graphics object from the image so we can draw on it
+                using (System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(finalImage))
+                {
+                    //set background color
+                    g.Clear(System.Drawing.Color.White);
+
+                    //go through each image and draw it on the final image
+                    for (int i = 0; i < images.Count; i++)
+                    {
+                        g.DrawImage(images[i],
+                          new System.Drawing.Rectangle((int)points[i].X, (int)points[i].Y, images[i].Width, images[i].Height));
+                    }
+                }
+
+                return finalImage;
+            }
+            catch (Exception ex)
+            {
+                if (finalImage != null)
+                    finalImage.Dispose();
+
+                throw ex;
+            }
+            finally
+            {
+                //clean up memory
+                foreach (System.Drawing.Bitmap image in images)
+                {
+                    image.Dispose();
+                }
+            }
         }
 
         public void FilterPsms()
@@ -566,6 +723,137 @@ namespace GuiFunctions
         }
 
         #region Private Helpers
+
+        /// <summary>
+        /// Converts a canvas to a bitmap object
+        /// </summary>
+        /// <param name="canvas">canvas to be converted</param>
+        /// <param name="directory">directory for the temporary file to be stored</param>
+        /// <returns></returns>
+        private static System.Drawing.Bitmap ConvertCanvasToBitmap(Canvas canvas, string directory)
+        {
+            double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
+            string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
+            int height = (int)canvas.Height == -2147483648 ? (int)canvas.ActualHeight : (int)canvas.Height;
+            int width = (int)canvas.Width == -2147483648 ? (int)canvas.ActualWidth : (int)canvas.Width;
+            Size canvasSize = new Size(width, height);
+            canvas.Measure(canvasSize);
+            canvas.Arrange(new Rect(canvasSize));
+            RenderTargetBitmap renderCanvasBitmap = new((int)(dpiScale * width), (int)(dpiScale * height),
+                MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+            renderCanvasBitmap.Render(canvas);
+
+            BmpBitmapEncoder encoder = new BmpBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(renderCanvasBitmap));
+            using (FileStream file = File.Create(tempBitmapPath))
+            {
+                encoder.Save(file);
+            }
+
+            System.Drawing.Bitmap unformattedBitmap = new(tempBitmapPath);
+            System.Drawing.Bitmap bitmap = new(unformattedBitmap, new System.Drawing.Size(width, height));
+            unformattedBitmap.Dispose();
+            File.Delete(tempBitmapPath);
+            return bitmap;
+        }
+
+        /// <summary>
+        /// converts a given UI element to a bitmap representation
+        /// </summary>
+        /// <param name="visual">element to be converted</param>
+        /// <param name="directory">directory for temporary file storage</param>
+        /// <returns></returns>
+        private static System.Drawing.Bitmap ConvertUIElementToBitmap(System.Windows.UIElement visual, string directory)
+        {
+            // initialize values
+            double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
+            string tempBitmapPath = System.IO.Path.Combine(directory, "temp.bmp");
+
+            if (visual == null)
+            {
+                return null;
+            }
+
+            int width = (int)visual.RenderSize.Width == 0 ? 200 : (int)visual.RenderSize.Width;
+            int height = (int)visual.RenderSize.Height == 0 ? 100 : (int)visual.RenderSize.Height;
+            Size size = new Size(width, height);
+            Rect bounds = new(size);
+            visual.Measure(size);
+            visual.Arrange(bounds);
+            visual.UpdateLayout();
+
+            RenderTargetBitmap renderTargetBitmap = new RenderTargetBitmap((int)(width * dpiScale), (int)(height * dpiScale),
+                MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+            VisualBrush visualBrush = new(visual);
+
+            // draw UIElement on a bitmap
+            DrawingVisual drawingVisual = new();
+            DrawingContext drawingContext = drawingVisual.RenderOpen();
+            using (drawingContext)
+            {
+                drawingContext.DrawRectangle(visualBrush, null, new Rect(new Point(0, 0), new Point(width, height)));
+            }
+            renderTargetBitmap.Render(drawingVisual);
+
+            // export and reload bitmap in correct formatting
+            BitmapEncoder encoder = new BmpBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(renderTargetBitmap));
+            using (FileStream file = File.Create(tempBitmapPath))
+            {
+                encoder.Save(file);
+            }
+
+            System.Drawing.Bitmap unformattedBitmap = new System.Drawing.Bitmap(tempBitmapPath);
+            System.Drawing.Bitmap bitmap = new(unformattedBitmap, new System.Drawing.Size(width, height));
+            unformattedBitmap.Dispose();
+            File.Delete(tempBitmapPath);
+            return bitmap;
+            bitmap.Dispose();
+        }
+
+        /// <summary>
+        /// Exports a bitmap as the specified file type
+        /// </summary>
+        /// <param name="bitmap">image to be exported</param>
+        /// <param name="path">where it should be exported to</param>
+        private void ExportBitmap(System.Drawing.Bitmap bitmap, string path)
+        {
+            switch (MetaDrawSettings.ExportType)
+            {
+                case "Pdf":
+                    bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                    ImageData imageData = ImageDataFactory.Create(path);
+                    File.Delete(path);
+                    iText.Layout.Element.Image pdfImage = new(imageData);
+
+                    PdfDocument pdfDocument = new(new PdfWriter(path));
+                    iText.Layout.Document document = new(pdfDocument);
+                    document.Add(pdfImage);
+                    pdfDocument.Close();
+                    document.Close();
+                    break;
+
+                case "Png":
+                    bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                    break;
+
+                case "Jpeg":
+                    bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    break;
+
+                case "Tiff":
+                    bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Tiff);
+                    break;
+
+                case "Wmf":
+                    bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Wmf);
+                    break;
+
+                case "Bmp":
+                    bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Bmp);
+                    break;
+            }
+        }
 
         private void LoadPsms(out List<string> errors, bool haveLoadedSpectra)
         {

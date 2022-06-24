@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-using GuiFunctions.MetaDraw;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
@@ -57,58 +56,92 @@ namespace GuiFunctions
             RefreshChart();
         }
 
-        public void ExportToPdf(string path, Canvas stationarySequence, double width = 700, double height = 370)
+        public void ExportPlot(string path, Canvas stationarySequence, double width = 700, double height = 370)
         {
-            // exports spectrum annotation w/o base seq annotation
-            string tempPdfPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp.pdf");
-            string tempPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
-            base.ExportToPdf(tempPdfPath, width, height); // Change path back to temp pdf path
+            width = width > 0 ? width : 700;
+            height = height > 0 ? height : 300;
+            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType.ToLower());
+            string tempStationarySequencePngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
 
             // scales for desired DPI
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
-            // save base seq as PNG
-            stationarySequence.Measure(new Size((int)stationarySequence.Width + 30, (int)stationarySequence.Height));
-            
-            stationarySequence.Arrange(new Rect(new Size((int)stationarySequence.Width + 30, (int)stationarySequence.Height)));
+            // render stationary sequence as bitmap
+            stationarySequence.Height += 30;
+            stationarySequence.Width += 30;
+            Size stationarySequenceSize = new Size((int)stationarySequence.Width, (int)stationarySequence.Height);
+            stationarySequence.Measure(stationarySequenceSize);
+            stationarySequence.Arrange(new Rect(stationarySequenceSize));
 
-            RenderTargetBitmap renderBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequence.Width + 30), (int)(dpiScale * stationarySequence.Height),
-                MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+            RenderTargetBitmap renderStationaryBitmap = new RenderTargetBitmap((int)(dpiScale * stationarySequence.Width), (int)(dpiScale * stationarySequence.Height),
+                                                  MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+            renderStationaryBitmap.Render(stationarySequence);
 
-            renderBitmap.Render(stationarySequence);
-
+            // save stationary sequence as png
             PngBitmapEncoder encoder = new PngBitmapEncoder();
-
-            encoder.Frames.Add(BitmapFrame.Create(renderBitmap));
-
-
-            using (FileStream file = File.Create(tempPngPath))
+            encoder.Frames.Add(BitmapFrame.Create(renderStationaryBitmap));
+            using (FileStream file = File.Create(tempStationarySequencePngPath))
             {
                 encoder.Save(file);
             }
 
-            // adds base seq annotation to pdf
-            PdfDocument pdfDoc = new PdfDocument(new PdfReader(tempPdfPath), new PdfWriter(path));
+            // export model as png and load both stationary and model as bitmap
+            base.ExportToPng(tempModelPath, (int)width, (int)height);
+            System.Drawing.Bitmap modelBitmap = new(tempModelPath);
+            Point modelPoint = new Point(0, 0);
 
-            iText.Layout.Document document = new iText.Layout.Document(pdfDoc);
+            var tempStatSequenceBitmap = new System.Drawing.Bitmap(tempStationarySequencePngPath);
+            System.Drawing.Bitmap stationaryBitmap = new(tempStatSequenceBitmap, new System.Drawing.Size((int)stationarySequence.Width, (int)stationarySequence.Height));
+            Point stationaryPoint = new Point(stationarySequence.Margin.Left, stationarySequence.Margin.Top);
 
-            ImageData imgData = ImageDataFactory.Create(tempPngPath);
+            // combine the bitmaps
+            List<System.Drawing.Bitmap> bitmaps = new() { modelBitmap, stationaryBitmap };
+            List<Point> points = new() { modelPoint, stationaryPoint };
+            System.Drawing.Bitmap combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points);
+            tempStatSequenceBitmap.Dispose();
 
-            iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
-            img.SetMarginLeft((float)(-1.0 * stationarySequence.Margin.Left) + 10);
-            img.SetMarginTop(-30);
-            img.ScaleToFit((float)stationarySequence.Width, (float)stationarySequence.Height);
+            switch (MetaDrawSettings.ExportType)
+            {
+                case "Pdf":
+                    base.ExportToPdf(tempModelPath, width, height);
+                    PdfDocument pdfDoc = new(new PdfReader(tempModelPath), new PdfWriter(path));
+                    iText.Layout.Document document = new(pdfDoc);
 
+                    // prepare stationary sequence sequence image for addition to pdf
+                    ImageData imgData = ImageDataFactory.Create(tempStationarySequencePngPath);
+                    iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
+                    img.SetMarginLeft((float)(-1.0 * stationarySequence.Margin.Left) + 10);
+                    img.SetMarginTop(-30);
+                    img.ScaleToFit((float)stationarySequence.Width, (float)stationarySequence.Height);
 
-            document.Add(img);
+                    document.Add(img);
+                    pdfDoc.Close();
+                    document.Close();
+                    break;
 
+                case "Png":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Png);
+                    break;
 
-            document.Close();
-            pdfDoc.Close();
+                case "Jpeg":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Jpeg);
+                    break;
 
-            // delete temp files
-            File.Delete(tempPdfPath);
-            File.Delete(tempPngPath);
+                case "Tiff":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Tiff);
+                    break;
+
+                case "Wmf":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Wmf);
+                    break;
+
+                case "Bmp":
+                    combinedBitmaps.Save(path, System.Drawing.Imaging.ImageFormat.Bmp);
+                    break;
+            }
+
+            File.Delete(tempModelPath);
+            File.Delete(tempStationarySequencePngPath);
         }
 
         protected void DrawSpectrum()
@@ -286,6 +319,7 @@ namespace GuiFunctions
             peakAnnotation.TextPosition = new DataPoint(mz, intensity);
             peakAnnotation.TextVerticalAlignment = intensity < 0 ? OxyPlot.VerticalAlignment.Top : OxyPlot.VerticalAlignment.Bottom;
             peakAnnotation.TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center;
+            
 
             if (!MetaDrawSettings.DisplayIonAnnotations)
             {
@@ -319,16 +353,36 @@ namespace GuiFunctions
             if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
             {
                 text.Append("Protein Accession: ");
-                text.Append(SpectrumMatch.ProteinAccession);
+                if (SpectrumMatch.ProteinAccession.Length > 10)
+                {
+                    text.Append("\r\n   " + SpectrumMatch.ProteinAccession);
+                }
+                else
+                    text.Append(SpectrumMatch.ProteinAccession);
                 text.Append("\r\n");
             }
             if (SpectrumMatch.ProteinName != null && MetaDrawSettings.SpectrumDescription["Protein: "])
             {
-
                 text.Append("Protein: ");
-                text.Append(SpectrumMatch.ProteinName.Length > 20 ? SpectrumMatch.ProteinName.Substring(0, 18) + "..." : SpectrumMatch.ProteinName);
+                if (SpectrumMatch.ProteinName.Length > 20)
+                {
+                    text.Append(SpectrumMatch.ProteinName.Substring(0, 20));
+                    int length = SpectrumMatch.ProteinName.Length;
+                    int remaining = length - 20;
+                    for (int i = 21; i < SpectrumMatch.ProteinName.Length; i += 26)
+                    {
+                        if (remaining <= 26)
+                            text.Append("\r\n   " + SpectrumMatch.ProteinName.Substring(i, remaining - 1));
+                        else
+                        {
+                            text.Append("\r\n   " + SpectrumMatch.ProteinName.Substring(i, 26));
+                            remaining -= 26;
+                        }
+                    }
+                }
+                else
+                    text.Append(SpectrumMatch.ProteinName);
                 text.Append("\r\n");
-
             }
             if (MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "])
             {
@@ -346,6 +400,15 @@ namespace GuiFunctions
             {
                 text.Append("ProForma Level: ");
                 text.Append(SpectrumMatch.AmbiguityLevel);
+                text.Append("\r\n");
+            }
+            if (MetaDrawSettings.SpectrumDescription["Spectral Angle: "])
+            {
+                text.Append("Spectral Angle: ");
+                if (SpectrumMatch.SpectralAngle != null)
+                    text.Append(SpectrumMatch.SpectralAngle.ToString());
+                else
+                    text.Append("N/A");
                 text.Append("\r\n");
             }
             if (MetaDrawSettings.SpectrumDescription["Score: "])
@@ -387,6 +450,7 @@ namespace GuiFunctions
 
             this.Model.Annotations.Add(annotation);
         }
+
 
         protected void DrawPeak(double mz, double intensity, double strokeWidth, OxyColor color, TextAnnotation annotation)
         {

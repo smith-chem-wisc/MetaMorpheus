@@ -107,16 +107,16 @@ namespace Test
             };
 
 
-            List<PeptideWithSetModifications> lightPeptide = new() { new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>()) };
-            List<List<double>> massDifferences = new() { new List<double> { (heavyLysine.MonoisotopicMass + heavyArginine.MonoisotopicMass) - (lightLysine.MonoisotopicMass + lightArginine.MonoisotopicMass) } };
+            List<PeptideWithSetModifications> lightPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("SEQENEWITHAKANDANR", new Dictionary<string, Modification>()) };
+            List<List<double>> massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass + heavyArginine.MonoisotopicMass) - (lightLysine.MonoisotopicMass + lightArginine.MonoisotopicMass) } };
 
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak: true);
             string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
-            Protein theProtein = new("MPRTEINRSEQENEWITHAKANDANRANDSMSTFF", "accession1");
-            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+            Protein theProtein = new Protein("MPRTEINRSEQENEWITHAKANDANRANDSMSTFF", "accession1");
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             _ = Directory.CreateDirectory(outputFolder);
@@ -162,7 +162,7 @@ namespace Test
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             Directory.CreateDirectory(outputFolder);
-            _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
 
             //Clear the old files
             Directory.Delete(outputFolder, true);
@@ -174,7 +174,7 @@ namespace Test
         public static void TestSilacQuantification()
         {
             //make heavy residue and add to search task
-            Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
+            Residue heavyLysine = new("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue lightLysine = Residue.GetResidue('K');
 
             SearchTask task = new()
@@ -247,10 +247,10 @@ namespace Test
 
             //make an ambiguous database
             Protein theProtein2 = new Protein("PEPTLDEKPEPTIDEK", "accession2");
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
 
-            Directory.CreateDirectory(outputFolder);
-            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            _ = Directory.CreateDirectory(outputFolder);
+            _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
             Assert.IsTrue(output[1].Contains("silac\t")); //test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
@@ -266,10 +266,10 @@ namespace Test
 
             //make an ambiguous database
             theProtein2 = new Protein("PEPTIDEK", "accession2");
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
+            _ = ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2 }, xmlName);
 
-            Directory.CreateDirectory(outputFolder);
-            theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+            _ = Directory.CreateDirectory(outputFolder);
+            _ = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
             Assert.IsTrue(output[1].Contains("accession1|accession2")

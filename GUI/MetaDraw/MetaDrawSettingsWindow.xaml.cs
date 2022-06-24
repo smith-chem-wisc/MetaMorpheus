@@ -2,10 +2,17 @@
 using EngineLayer.GlycoSearch;
 using GuiFunctions;
 using Nett;
+using OxyPlot;
+using Proteomics.Fragmentation;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace MetaMorpheusGUI
 {
@@ -14,10 +21,17 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDrawSettingsWindow : Window
     {
-        
-        public MetaDrawSettingsWindow()
+        private readonly ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
+        private readonly ObservableCollection<IonTypeForTreeViewModel> IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
+        private readonly ObservableCollection<CoverageTypeForTreeViewModel> CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
+
+        private SettingsViewModel SettingsView;
+
+        public MetaDrawSettingsWindow(SettingsViewModel view)
         {
             InitializeComponent();
+            SettingsView = view;
+            DataContext = SettingsView;
             PopulateChoices();
         }
 
@@ -45,13 +59,22 @@ namespace MetaMorpheusGUI
             QValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Q-Value: "];
             SequenceLengthCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Sequence Length: "];
             ProFormaLevelCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["ProForma Level: "];
+            SpectralAngleCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Spectral Angle: "];
             PEPCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP: "];
             PEPQValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP Q-Value: "];
+            StationarySequenceCheckBox.IsChecked = MetaDrawSettings.DrawStationarySequence;
+            SequencenNumbersCheckBox.IsChecked = MetaDrawSettings.DrawNumbersUnderStationary;
+            ShowLegendCheckBox.IsChecked = MetaDrawSettings.ShowLegend;
             qValueBox.Text = MetaDrawSettings.QValueFilter.ToString();
             TextSizeBox.Text = MetaDrawSettings.AnnotatedFontSize.ToString();
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
 
+            ExportFileFormatComboBox.ItemsSource = MetaDrawSettings.ExportTypes;
+            ExportFileFormatComboBox.SelectedItem = MetaDrawSettings.ExportType;
+            IonColorExpander.ItemsSource = SettingsView.IonGroups;
+            PTMColorExpander.ItemsSource = SettingsView.Modifications;
+            SequenceCoverageColorExpander.ItemsSource = SettingsView.CoverageColors;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -77,10 +100,16 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.SpectrumDescription["Q-Value: "] = QValueCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Sequence Length: "] = SequenceLengthCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["ProForma Level: "] = ProFormaLevelCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Spectral Angle: "] = SpectralAngleCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["PEP: "] = PEPCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["PEP Q-Value: "] = PEPQValueCheckBox.IsChecked.Value;
+            MetaDrawSettings.DrawStationarySequence = StationarySequenceCheckBox.IsChecked.Value;
+            MetaDrawSettings.DrawNumbersUnderStationary = SequencenNumbersCheckBox.IsChecked.Value;
+            MetaDrawSettings.ShowLegend = ShowLegendCheckBox.IsChecked.Value;
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
+            MetaDrawSettings.ExportType = ExportFileFormatComboBox.SelectedItem.ToString();
+            SettingsView.Save();
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {
@@ -127,9 +156,39 @@ namespace MetaMorpheusGUI
 
         private void setDefaultbutton_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
             Save_Click(sender, e);
-            Toml.WriteFile(settings, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.toml"));
+            SettingsView.SaveAsDefault();
+            
+        }
+
+        /// <summary>
+        /// Event handler for the ion type color selection. Runs the SelectionChanged command in its respective view model
+        /// </summary>
+        /// <param name="sender">ComboBox which was changed</param>
+        /// <param name="e"></param>
+        private void ComboBox_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            ((IonForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+        }
+
+        /// <summary>
+        /// Event handler for the ptm type color selection. Runs the SelectionChanged command in its respective view model
+        /// </summary>
+        /// <param name="sender">ComboBox which was changed</param>
+        /// <param name="e"></param>
+        private void ComboBox_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
+        {
+            ((ModForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+        }
+
+        /// <summary>
+        /// Event handler for the sequence coverage type color selection. Runs the SelectionChanged command in its respective view model
+        /// </summary>
+        /// <param name="sender">ComboBox which was changed</param>
+        /// <param name="e"></param>
+        private void ComboBox_SelectionChanged_2(object sender, SelectionChangedEventArgs e)
+        {
+            ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
     }
 }
