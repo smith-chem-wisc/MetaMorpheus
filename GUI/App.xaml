@@ -16,6 +16,8 @@
         <SolidColorBrush x:Key="TextColor1" Color="#2f3640" />
         <SolidColorBrush x:Key="TextColor2" Color="#f5f6fa" />
         <SolidColorBrush x:Key="TextColorDelete" Color="#c23616" />
+        <Color x:Key="ForegroundDark">#bdbdbd</Color>
+        <SolidColorBrush x:Key="ForegroundDarkBrush" Color="{StaticResource ForegroundDark}" />
 
         <!--Default button style for all of MetaMorpheus-->
         <!--<Style TargetType="Button">

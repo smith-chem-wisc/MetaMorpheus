@@ -51,6 +51,9 @@ namespace EngineLayer
         public string IdentifiedSequenceVariations { get; }
         public string SpliceSites { get; }
         public string PeptideDescription { get; }
+        
+        // First amino acid in protein is amino acid number 1, which differs from internal code numbering with N-terminus as 1
+        // This numbering is for the peptide location within the protein
         public string StartAndEndResiduesInProtein { get; }
         public string PreviousAminoAcid { get; }
         public string NextAminoAcid { get; }
@@ -196,20 +199,57 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Constructor used to disambiguate PsmFromTsv and setting to a single full sequence
+        /// Constructor used to disambiguate PsmFromTsv to a single psm object
         /// </summary>
-        /// <param name="psm"></param>
-        /// <param name="fullSequence"></param>
-        public PsmFromTsv(PsmFromTsv psm, string fullSequence)
+        /// <param name="psm">psm to disambiguate</param>
+        /// <param name="fullSequence">sequence of ambiguous psm to use</param>
+        public PsmFromTsv(PsmFromTsv psm, string fullSequence, int index = 0, string baseSequence = "")
         {
-            FullSequence = fullSequence;
+            // psm is not ambiguous
+            if (!psm.FullSequence.Contains("|"))
+            {
+                FullSequence = fullSequence;
+                EssentialSeq = psm.EssentialSeq;
+                BaseSeq = baseSequence == "" ? psm.BaseSeq : baseSequence;
+                StartAndEndResiduesInProtein = psm.StartAndEndResiduesInProtein;
+                ProteinAccession = psm.ProteinAccession;
+                ProteinName = psm.ProteinName;
+                GeneName = psm.GeneName;
+                PeptideMonoMass = psm.PeptideMonoMass;
+                MassDiffDa = psm.MassDiffDa;
+                MassDiffPpm = psm.MassDiffPpm;
+            }
+            // potentially ambiguous fields
+            else
+            {
+                FullSequence = fullSequence;
+                EssentialSeq = psm.EssentialSeq.Split("|")[index];
+                BaseSeq = baseSequence == "" ? psm.BaseSeq.Split("|")[index] : baseSequence;
+                StartAndEndResiduesInProtein = psm.StartAndEndResiduesInProtein.Split("|")[index];
+                ProteinAccession = psm.ProteinAccession.Split("|")[index];
+                ProteinName = psm.ProteinName.Split("|")[index];
+                GeneName = psm.GeneName.Split("|")[index];
+
+                if (psm.PeptideMonoMass.Split("|").Count() == 1)
+                {
+                    PeptideMonoMass = psm.PeptideMonoMass.Split("|")[0];
+                    MassDiffDa = psm.MassDiffDa.Split("|")[0];
+                    MassDiffPpm = psm.MassDiffPpm.Split("|")[0];
+                }
+                else
+                {
+                    PeptideMonoMass = psm.PeptideMonoMass.Split("|")[index];
+                    MassDiffDa = psm.MassDiffDa.Split("|")[index];
+                    MassDiffPpm = psm.MassDiffPpm.Split("|")[index];
+                }
+            }
+                       
+            // non ambiguous fields
             Ms2ScanNumber = psm.Ms2ScanNumber;
             FileNameWithoutExtension = psm.FileNameWithoutExtension;
             PrecursorScanNum = psm.PrecursorScanNum;
             PrecursorCharge = psm.PrecursorCharge;
-            PrecursorMz = psm.PrecursorMz;
             Score = psm.Score;
-            ProteinAccession = psm.ProteinAccession;
             MatchedIons = psm.MatchedIons.ToList();
             ChildScanMatchedIons = psm.ChildScanMatchedIons;
             QValue = psm.QValue;
@@ -217,20 +257,12 @@ namespace EngineLayer
             PEP_QValue = psm.PEP_QValue;
             TotalIonCurrent = psm.TotalIonCurrent;
             DeltaScore = psm.DeltaScore;
-            BaseSeq = psm.BaseSeq;
-            EssentialSeq = psm.EssentialSeq;
             AmbiguityLevel = psm.AmbiguityLevel;
             MissedCleavage = psm.MissedCleavage;
-            PeptideMonoMass = psm.PeptideMonoMass;
-            MassDiffDa = psm.MassDiffDa;
-            MassDiffPpm = psm.MassDiffPpm;
-            ProteinName = psm.ProteinName;
-            GeneName = psm.GeneName;
             OrganismName = psm.OrganismName;
             IntersectingSequenceVariations = psm.IntersectingSequenceVariations;
             SpliceSites = psm.SpliceSites;
             PeptideDescription = psm.PeptideDescription;
-            StartAndEndResiduesInProtein = psm.StartAndEndResiduesInProtein;
             PreviousAminoAcid = psm.PreviousAminoAcid;
             NextAminoAcid = psm.NextAminoAcid;
             DecoyContamTarget = psm.DecoyContamTarget;
