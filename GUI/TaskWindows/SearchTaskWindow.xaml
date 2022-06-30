@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
         Title="Search Task" Width="750" Height="725" WindowStartupLocation="CenterScreen">
@@ -241,15 +242,15 @@
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Margin="5 0 5 0">
                                     <Label Content="Fixed:" />
-                                    <TreeView x:Name="FixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}" Height="85">
+                                    <TreeView x:Name="FixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="85">
                                         <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
                                                     <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                     <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
@@ -275,15 +276,15 @@
                                             </TextBlock>
                                         </Label.ToolTip>
                                     </Label>
-                                    <TreeView x:Name="VariableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type local:ModTypeForTreeView}" Height="85">
+                                    <TreeView x:Name="VariableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="85">
                                         <TreeView.Resources>
-                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForTreeView}" ItemsSource="{Binding Children}">
+                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}">
                                                     <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
                                                 </StackPanel>
                                             </HierarchicalDataTemplate>
-                                            <DataTemplate DataType="{x:Type local:ModForTreeView}">
+                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
                                                     <CheckBox IsChecked="{Binding Use}" />
                                                     <TextBlock Text="{Binding DisplayName}" />
