@@ -67,7 +67,7 @@ namespace MetaMorpheusGUI
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = GlobalGuiSettings.CheckIsNumber(e.Text);
+            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -415,7 +415,7 @@ namespace MetaMorpheusGUI
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
                 PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
                 MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, 
-                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text, MinInternalFragmentLengthTextBox.Text))
+                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text, InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
             {
                 return;
             }
@@ -1296,10 +1296,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void InternalIonsCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            if (InternalIonsCheckBox.IsChecked.Value)
-                MinInternalFragmentLengthTextBox.Text = "4";
-            else
-                MinInternalFragmentLengthTextBox.Text = "0";
+            MinInternalFragmentLengthTextBox.Text = "4";
         }
     }
 

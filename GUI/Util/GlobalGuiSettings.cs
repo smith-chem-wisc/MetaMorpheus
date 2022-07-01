@@ -73,7 +73,7 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Checks to see if the given text contains non-numerical characters (letters, etc.)
         /// </summary>
-        public static bool CheckIsNumber(string text)
+        public static bool CheckIsPositiveInteger(string text)
         {
             Regex regex = new Regex("[^0-9]+");
             return regex.IsMatch(text);
@@ -327,10 +327,9 @@ namespace MetaMorpheusGUI
             {
                 return true;
             }
-            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minInternalFragmentIonLength) 
-                || (minInternalFragmentIonLength < 4 && minInternalFragmentIonLength > 0))
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minInternalFragmentIonLength) || (minInternalFragmentIonLength <= 0))
             {
-                MessageBox.Show("Minimum internal fragment ion length must be 4 or greater");
+                MessageBox.Show("Minimum internal fragment ion length must be greater than 0");
                 return false;
             }
             return true;
