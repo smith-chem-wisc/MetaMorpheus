@@ -862,7 +862,8 @@
                                                 </CheckBox>
                                             </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="5,0,0,5">
-                                                <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="False">
+                                                <CheckBox x:Name="InternalIonsCheckBox" Content="Internal Ions" Margin="5,0,0,5" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" 
+                                                          ToolTipService.InitialShowDelay="500" IsChecked="False" Checked="InternalIonsCheckBox_Checked" Unchecked="InternalIonsCheckBox_Checked">
                                                     <CheckBox.ToolTip>
                                                         <TextBlock>
                                                 Search for theoretical internal fragment ions AFTER scoring. These ions are useful for localizing PTMs, but are not used during scoring.
