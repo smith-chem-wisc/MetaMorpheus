@@ -436,7 +436,7 @@ namespace Test
             Assert.That(old_spectrum3.MatchedFragmentIons.Count < new_spectrum3.MatchedFragmentIons.Count);
             Assert.That(oldLib.GetAllLibrarySpectra().ToList().Count < updatedLib.GetAllLibrarySpectra().ToList().Count);
 
-            Directory.Delete(Path.Combine(outputDir, @"ClassicSearch"), true);
+            //Directory.Delete(Path.Combine(outputDir, @"ClassicSearch"), true);
         }
 
         [Test]
