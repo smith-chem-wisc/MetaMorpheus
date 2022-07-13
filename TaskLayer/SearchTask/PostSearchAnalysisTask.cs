@@ -608,7 +608,7 @@ namespace TaskLayer
         private void SpectralLibraryGeneration()
         {
             List<PeptideSpectralMatch> filteredPsmList = new();
-            if(Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
+            if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
             {
                 filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.5).ToList();
                 filteredPsmList.RemoveAll(b => b.IsDecoy);
@@ -640,6 +640,24 @@ namespace TaskLayer
                 spectraLibrary.Add(standardSpectrum);
             }
             WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
+
+
+            Dictionary<string, List<LibrarySpectrum>> fileSpecificLibraries = new();
+            foreach (string filePath in Parameters.CurrentRawFileList) fileSpecificLibraries.Add(filePath, new List<LibrarySpectrum>());
+            foreach (var psm in PsmsGroupByPeptideAndCharge)
+            {
+                foreach (string filePath in Parameters.CurrentRawFileList)
+                {
+                    var bestMatchInFile = psm.Value.Where(p => p.FullFilePath == filePath).FirstOrDefault();
+                    if (bestMatchInFile != null)
+                    {
+                        var fileSpecificSpectrum = new LibrarySpectrum(bestMatchInFile.FullSequence, bestMatchInFile.ScanPrecursorMonoisotopicPeakMz, bestMatchInFile.ScanPrecursorCharge, bestMatchInFile.MatchedFragmentIons, bestMatchInFile.ScanRetentionTime);
+                        fileSpecificLibraries[filePath].Add(fileSpecificSpectrum);
+                    }
+
+                }
+
+            }
         }
 
         private void WriteProteinResults()
