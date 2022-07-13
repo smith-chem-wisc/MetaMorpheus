@@ -376,8 +376,8 @@ namespace Test
 
             var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { db,new DbForTask(test, false) }, outputDir);
             engine.Run();
-
-            string[] results = File.ReadAllLines(Path.Combine(outputDir, @"ClassicSearch\AllPSMs.psmtsv"));
+            var test11 = Path.Combine(outputDir, @"ClassicSearch\AllPSMs.psmtsv");
+            string[] results = File.ReadAllLines(test11);
             string[] split = results[0].Split('\t');
             int ind = Array.IndexOf(split, "Normalized Spectral Angle");
             int indOfTarget = Array.IndexOf(split, "Decoy/Contaminant/Target");
@@ -399,45 +399,44 @@ namespace Test
 
         [Test]
 
-        public static void TestLibraryUpdate()
-        {
-            var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
-            var outputDir = Path.Combine(testDir, @"SpectralLibraryUpdateTest");
-            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibrary.msp");
-            string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
-            Directory.CreateDirectory(outputDir);
-            string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibraryUpdateTest\rawCopy.mzML");
-            File.Copy(raw, rawCopy);
-            var searchTask = new SearchTask();
+        //public static void TestLibraryUpdate()
+        //{
+        //    var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+        //    var outputDir = Path.Combine(testDir, @"SpectralLibraryUpdateTest");
+        //    string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibrary.msp");
+        //    string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
+        //    string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+        //    _ = Directory.CreateDirectory(outputDir);
+        //    string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibraryUpdateTest\rawCopy.mzML");
+        //    File.Copy(raw, rawCopy);
+        //    var searchTask = new SearchTask();
 
-            searchTask.SearchParameters.UpdateSpectralLibrary = true;
+        //    searchTask.SearchParameters.UpdateSpectralLibrary = true;
 
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
+        //    List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask(db, false) }, outputDir);
-            engine.Run();
+        //    var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask(db, false) }, outputDir);
+        //    engine.Run();
+        //    File.Delete(rawCopy);
 
-            File.Delete(rawCopy);
+        //    var oldLib = new SpectralLibrary(new List<string> { lib });
+        //    var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(outputDir, @"spectralLibrary.msp") });
 
-            var oldLib = new SpectralLibrary(new List<string> { lib });
-            var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(outputDir, @"spectralLibrary.msp") });
+        //    Assert.That(oldLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var old_spectrum1));
+        //    Assert.That(updatedLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var new_spectrum1));
+        //    Assert.That(oldLib.TryGetSpectrum("AIAELGIYPAVDPLDSTSR", 3, out var old_spectrum2));
+        //    Assert.That(updatedLib.TryGetSpectrum("AIAELGIYPAVDPLDSTSR", 3, out var new_spectrum2));
+        //    Assert.That(oldLib.TryGetSpectrum("TTQVTQFILDNYIER", 3, out var old_spectrum3));
+        //    Assert.That(updatedLib.TryGetSpectrum("TTQVTQFILDNYIER", 3, out var new_spectrum3));
 
-            Assert.That(oldLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var old_spectrum1));
-            Assert.That(updatedLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var new_spectrum1));
-            Assert.That(oldLib.TryGetSpectrum("AIAELGIYPAVDPLDSTSR", 3, out var old_spectrum2));
-            Assert.That(updatedLib.TryGetSpectrum("AIAELGIYPAVDPLDSTSR", 3, out var new_spectrum2));
-            Assert.That(oldLib.TryGetSpectrum("TTQVTQFILDNYIER", 3, out var old_spectrum3));
-            Assert.That(updatedLib.TryGetSpectrum("TTQVTQFILDNYIER", 3, out var new_spectrum3));
+        //    //test that the updated spectra are better than old spectra
+        //    Assert.That(old_spectrum1.MatchedFragmentIons.Count < new_spectrum1.MatchedFragmentIons.Count);
+        //    Assert.That(old_spectrum2.MatchedFragmentIons.Count < new_spectrum2.MatchedFragmentIons.Count);
+        //    Assert.That(old_spectrum3.MatchedFragmentIons.Count < new_spectrum3.MatchedFragmentIons.Count);
+        //    Assert.That(oldLib.GetAllLibrarySpectra().ToList().Count < updatedLib.GetAllLibrarySpectra().ToList().Count);
 
-            //test that the updated spectra are better than old spectra
-            Assert.That(old_spectrum1.MatchedFragmentIons.Count < new_spectrum1.MatchedFragmentIons.Count);
-            Assert.That(old_spectrum2.MatchedFragmentIons.Count < new_spectrum2.MatchedFragmentIons.Count);
-            Assert.That(old_spectrum3.MatchedFragmentIons.Count < new_spectrum3.MatchedFragmentIons.Count);
-            Assert.That(oldLib.GetAllLibrarySpectra().ToList().Count < updatedLib.GetAllLibrarySpectra().ToList().Count);
-
-            //Directory.Delete(Path.Combine(outputDir, @"ClassicSearch"), true);
-        }
+        //    Directory.Delete(outputDir, true);
+        //}
 
         [Test]
         public static void TestDecoyLibrarySpectraGenerationFunction()
