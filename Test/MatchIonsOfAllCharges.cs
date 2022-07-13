@@ -397,7 +397,7 @@ namespace Test
             Directory.Delete(outputDir, true);
         }
 
-        [Test]
+        //[Test]
 
         //public static void TestLibraryUpdate()
         //{
