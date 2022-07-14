@@ -665,6 +665,21 @@ namespace TaskLayer
             }
         }
 
+        protected static void WriteIndividualSpectralLibraries(Dictionary<string, List<LibrarySpectrum> > spectrumLibraryDict, string outputFolder)
+        {
+            foreach (var entry in spectrumLibraryDict)
+            {
+                string spectrumFilePath = outputFolder + "\\" + Path.GetFileNameWithoutExtension(entry.Key) + "_spectralLibrary.msp";
+                using (StreamWriter output = new StreamWriter(spectrumFilePath))
+                {
+                    foreach (var x in entry.Value)
+                    {
+                        output.WriteLine(x.ToString());
+                    }
+                }
+            }
+        }
+
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);
