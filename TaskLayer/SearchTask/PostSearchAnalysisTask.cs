@@ -6,6 +6,7 @@ using EngineLayer.Localization;
 using EngineLayer.ModificationAnalysis;
 using FlashLFQ;
 using MassSpectrometry;
+using MassSpectrometry.MzSpectra;
 using MathNet.Numerics.Distributions;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -1006,10 +1007,17 @@ namespace TaskLayer
             return null;
         }
 
-        private List<PeptideSpectralMatch> GetAllPeptides()
+        private List<PeptideSpectralMatch> GetAllPeptides(bool peptidesByFile = false)
         {
-            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
-
+            List<PeptideSpectralMatch> peptides = new();
+            if (!peptidesByFile)
+            {
+                peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            } else
+            {
+                peptides = Parameters.AllPsms.GroupBy(b => new { b.FullSequence, b.FullFilePath }).Select(b => b.FirstOrDefault()).ToList();
+            }
+            
             new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
 
             if (!Parameters.SearchParameters.WriteDecoys)
@@ -1024,6 +1032,40 @@ namespace TaskLayer
             return peptides;
         }
 
+        private void CalculateTruePostiveDistribution()
+        {
+            List<PeptideSpectralMatch> peptidesByFile = GetAllPeptides(peptidesByFile: true);
+            var groupedPeptides = peptidesByFile.GroupBy(p => p.FullFilePath);
+            SpectralLibrary spectralLibraryExclusive = null;
+            foreach (var peptideGroup in groupedPeptides)
+            {
+                // Construct a spectral library by joining the libraries of every other file that was searched.
+                List<string> comparatorLibraryPaths = new();
+                foreach (string filePath in Parameters.CurrentRawFileList)
+                {
+                    if (filePath.Equals(peptideGroup.Key)) continue;
+                    comparatorLibraryPaths.Add(Parameters.IndividualResultsOutputFolder + "\\" +
+                        Path.GetFileNameWithoutExtension(filePath) + "_spectralLibrary.msp");
+                }
+                spectralLibraryExclusive = new SpectralLibrary(comparatorLibraryPaths);
+
+                foreach(var peptide in peptideGroup)
+                {
+
+                    spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum);
+
+                    SpectralSimilarity s = new SpectralSimilarity(
+                        scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
+                        SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum,
+                        commonParameters.ProductMassTolerance.Value, false);
+
+
+                }
+
+                
+            }
+
+        }
         private void WritePrunedDatabase()
         {
             if (Parameters.SearchParameters.WritePrunedDatabase)
