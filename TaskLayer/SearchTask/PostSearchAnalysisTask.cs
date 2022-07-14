@@ -654,10 +654,9 @@ namespace TaskLayer
                         var fileSpecificSpectrum = new LibrarySpectrum(bestMatchInFile.FullSequence, bestMatchInFile.ScanPrecursorMonoisotopicPeakMz, bestMatchInFile.ScanPrecursorCharge, bestMatchInFile.MatchedFragmentIons, bestMatchInFile.ScanRetentionTime);
                         fileSpecificLibraries[filePath].Add(fileSpecificSpectrum);
                     }
-
                 }
-
             }
+            WriteIndividualSpectralLibraries(fileSpecificLibraries, Parameters.IndividualResultsOutputFolder);
         }
 
         private void WriteProteinResults()
