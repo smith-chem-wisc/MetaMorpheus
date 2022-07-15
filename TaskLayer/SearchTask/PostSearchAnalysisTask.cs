@@ -1036,10 +1036,22 @@ namespace TaskLayer
         {
             List<PeptideSpectralMatch> peptidesByFile = GetAllPeptides(peptidesByFile: true);
             var groupedPeptides = peptidesByFile.GroupBy(p => p.FullFilePath);
-            SpectralLibrary spectralLibraryExclusive = null;
+            Dictionary<string, SpectralLibrary> spectralLibraries = new();
+            foreach (string filePath in Parameters.CurrentRawFileList)
+            {
+                string individualLibraryPath = Parameters.IndividualResultsOutputFolder + "\\" +
+                    Path.GetFileNameWithoutExtension(filePath) + "_spectralLibrary.msp";
+                spectralLibraries.Add(filePath, new SpectralLibrary(new List<string> { individualLibraryPath }) );
+            }
+            foreach (KeyValuePair<string, SpectralLibrary> lib in spectralLibraries)
+            {
+
+            }
+
             foreach (var peptideGroup in groupedPeptides)
             {
-                // Construct a spectral library by joining the libraries of every other file that was searched.
+                foreach (var lib in spectralLibraries)
+                
                 List<string> comparatorLibraryPaths = new();
                 foreach (string filePath in Parameters.CurrentRawFileList)
                 {
@@ -1047,7 +1059,7 @@ namespace TaskLayer
                     comparatorLibraryPaths.Add(Parameters.IndividualResultsOutputFolder + "\\" +
                         Path.GetFileNameWithoutExtension(filePath) + "_spectralLibrary.msp");
                 }
-                spectralLibraryExclusive = new SpectralLibrary(comparatorLibraryPaths);
+                spectralLibraries = new SpectralLibrary(comparatorLibraryPaths);
 
                 foreach(var peptide in peptideGroup)
                 {
