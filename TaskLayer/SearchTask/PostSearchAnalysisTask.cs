@@ -1045,24 +1045,23 @@ namespace TaskLayer
                     Path.GetFileNameWithoutExtension(filePath) + "_spectralLibrary.msp";
                 spectralLibraries.Add(filePath, new SpectralLibrary(new List<string> { individualLibraryPath }) );
             }
+            Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByIndex = arrayOfMs2ScansSortedByRT.OrderBy(b => b.OneBasedScanNumber).ToArray();
+            int[] arrayOfMs2Indices = arrayOfMs2ScansSortedByIndex.Select(b => b.OneBasedScanNumber).ToArray();
             foreach (KeyValuePair<string, SpectralLibrary> lib in spectralLibraries)
             {
                 foreach (PeptideSpectralMatch peptide in peptidesByFile)
                 {
-                    Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psm.ScanIndex];
-                    lib.Value.TryGetSpectrum(psm.FullSequence, psm.ScanPrecursorCharge, out LibrarySpectrum spectrum);
+                    int scanIndex = Array.BinarySearch(arrayOfMs2Indices, peptide.ScanIndex);
+                    Ms2ScanWithSpecificMass scan = scanIndex >= 0 ? arrayOfMs2ScansSortedByIndex[peptide.ScanIndex] : null;
+                    if (scan == null) continue;
+                    lib.Value.TryGetSpectrum(peptide.FullSequence, peptide.ScanPrecursorCharge, out LibrarySpectrum librarySpectrum);
                     SpectralSimilarity s = new SpectralSimilarity(
-                    scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
-                    SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum,
-                    commonParameters.ProductMassTolerance.Value, false);
+                        scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
+                        SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum,
+                        CommonParameters.ProductMassTolerance.Value, false);
                 }
-                    foreach (PeptideSpectralMatch psm in peptideGroup)
-                    {
-                        Parameters.
-                        
-                    }
 
-                }
+                
             }
         }
         private void WritePrunedDatabase()
