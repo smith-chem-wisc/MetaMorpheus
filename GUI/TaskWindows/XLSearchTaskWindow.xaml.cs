@@ -169,7 +169,7 @@ namespace MetaMorpheusGUI
             maxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
             ckbPepXML.IsChecked = task.XlSearchParameters.WritePepXml;
-            //ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
+            ckbPercolator.IsChecked = task.XlSearchParameters.WriteOutputForPercolator;
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
@@ -304,6 +304,7 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.XlSearchParameters.WritePepXml = ckbPepXML.IsChecked.Value;
+            TheTask.XlSearchParameters.WriteOutputForPercolator = ckbPercolator.IsChecked.Value;
 
             var listOfModsVariable = new List<(string, string)>();
             foreach (var heh in VariableModTypeForTreeViewObservableCollection)

@@ -15,7 +15,7 @@ namespace TaskLayer
             XlQuench_H2O = true;
             XlQuench_NH2 = false;
             XlQuench_Tris = false;
-            WritePepXml = true;
+            WritePepXml = false;
             WriteOutputForPercolator = false;
         }
         
