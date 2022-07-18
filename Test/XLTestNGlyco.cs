@@ -110,7 +110,7 @@ namespace Test
             Assert.AreEqual(filter, true);
 
             //Test new score functions.
-            var pg3score = GlycoPeptides.CalculatePeptideScore(matchedFragmentIons, fragmentIons, commonParameters);
+            var pg3score = GlycoPeptides.Calc_pGlycoScore(matchedFragmentIons, fragmentIons, commonParameters);
 
             //Use Graph Localization method
             int[] n_modPos = GlycoPeptides.GetPossibleModSites(peptide, new string[] { "Nxt", "Nxs" }).OrderBy(p => p).ToArray();

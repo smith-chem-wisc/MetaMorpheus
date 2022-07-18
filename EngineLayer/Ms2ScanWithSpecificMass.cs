@@ -41,8 +41,11 @@ namespace EngineLayer
         public string FullFilePath { get; }
         public IsotopicEnvelope[] ExperimentalFragments { get; private set; }
         public List<Ms2ScanWithSpecificMass> ChildScans { get; set; } // MS2/MS3 scans that are children of this MS2 scan
+
         private double[] DeconvolutedMonoisotopicMasses;
         public string NativeId { get; } 
+
+        public Dictionary<int, sbyte[]> kojakSparseArray { get; set; }
 
         public int OneBasedScanNumber => TheScan.OneBasedScanNumber;
 

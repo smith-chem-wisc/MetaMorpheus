@@ -25,13 +25,11 @@ namespace TaskLayer
 
         public PostSearchAnalysisParameters Parameters { get; set; }
 
-        private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
-
         public MyTaskResults Run(List<GlycoSpectralMatch> allPsms, GlycoSearchParameters glycoSearchParameters, MyTaskResults MyTaskResults)
         {
             List<GlycoSpectralMatch> allgsms = new List<GlycoSpectralMatch>();
 
-            var allPsmsSingle = allPsms.Where(p =>  p.LocalizationGraphs == null).OrderByDescending(p => p.Score).ToList();
+            var allPsmsSingle = allPsms.Where(p =>  p.LocalizationGraphs == null).OrderByDescending(p => p.XcorrScore).ToList();
             SingleFDRAnalysis(allPsmsSingle, CommonParameters, new List<string> { Parameters.SearchTaskId });
             //var allSinglePsmsFdr = allPsmsSingle.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
             var allSinglePsmsFdr = allPsmsSingle.Where(p => p.FdrInfo.QValue <= 0.05).ToList();
@@ -43,7 +41,7 @@ namespace TaskLayer
 
             if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch || glycoSearchParameters.GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
             {
-                var allPsmsOGly = allPsms.Where(p => p.GlycanType == GlycoType.OGlycoPep).OrderByDescending(p => p.Score).ToList();
+                var allPsmsOGly = allPsms.Where(p => p.GlycanType == GlycoType.OGlycoPep).OrderByDescending(p => p.XcorrScore).ToList();
                 SingleFDRAnalysis(allPsmsOGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
                 //var allOgsmsFdr = allPsmsOGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
                 var allOgsmsFdr = allPsmsOGly.Where(p => p.FdrInfo.QValue <= 0.1).ToList();
@@ -73,7 +71,7 @@ namespace TaskLayer
             if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch || glycoSearchParameters.GlycoSearchType == GlycoSearchType.N_O_GlycanSearch)
             {
                 //TO THINK: a mixed glycopeptide has more properties similar to a NGlycopeptide.
-                var allPsmsNGly = allPsms.Where(p => p.GlycanType == GlycoType.NGlycoPep || p.GlycanType == GlycoType.MixedGlycoPep).OrderByDescending(p => p.Score).ToList();
+                var allPsmsNGly = allPsms.Where(p => p.GlycanType == GlycoType.NGlycoPep || p.GlycanType == GlycoType.MixedGlycoPep).OrderByDescending(p => p.XcorrScore).ToList();
                 SingleFDRAnalysis(allPsmsNGly, CommonParameters, new List<string> { Parameters.SearchTaskId });
                 //var allNgsmsFdr = allPsmsNGly.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.01).ToList();
                 var allNgsmsFdr = allPsmsNGly.Where(p => p.FdrInfo.QValue <= 0.1).ToList();

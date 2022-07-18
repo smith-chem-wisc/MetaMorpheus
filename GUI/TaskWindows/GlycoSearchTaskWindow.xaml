@@ -145,6 +145,10 @@
                                         <CheckBox x:Name="CkbSearchNGlycopeptideOnly" Content=" Only keep peptide with N motif 'Nxt/s'"  VerticalAlignment="Center"/>
                                         <CheckBox x:Name="CkbSearchOGlycopeptideOnly" Content=" Only keep peptide with O motif T/S" VerticalAlignment="Center"/>
                                     </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Grid.Row="3" Grid.Column="1" Margin="5">
+                                        <Label Content="Glycopep Score Type"/>
+                                        <ComboBox x:Name="CmbScoreType"/>
+                                    </StackPanel>
                                 </Grid>
                             </GroupBox>
                             <GroupBox Header="Advanced Parameters">

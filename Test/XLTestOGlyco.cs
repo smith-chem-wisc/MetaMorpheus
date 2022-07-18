@@ -309,11 +309,13 @@ namespace Test
         }
 
 
+        /// <summary>
+        /// This test proves that the LocalizeMod method is the same as LocalizeOGlycan. 
+        /// 
+        /// </summary>
         [Test]
         public static void OGlycoTest_LocalizeMod()
         {
-            //This test proves that the LocalizeMod method is the same as LocalizeOGlycan. 
-
             //Get glycanBox
             var glycanBox = OGlycanBoxes[19];
 
@@ -367,12 +369,13 @@ namespace Test
 
         }
 
-
+        /// <summary>
+        /// The test is for testing and developing XCorr Score (Kojak based).
+        /// Scores obtained from kojak and GlycoXCorr is compared.
+        /// </summary>
         [Test]
         public static void OGlycotest_xcorr_score()
         {
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
-
             Protein protein = new Protein("DKAETLKK", "P00950");
             var peptides = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>());
 
@@ -391,9 +394,9 @@ namespace Test
             foreach (var scan in scans)
             {
                 //var xcorr = GlycoPeptides.CalcXcorr(scan112, products, 0.01);
-                var kojakSparseArray = GlycoPeptides.kojakXCorr(scan, 0.01, 1);
-                var dXcorr0 = GlycoPeptides.KojakScoring(scan, products0, 0.01, 1, kojakSparseArray);
-                var dXcorr1 = GlycoPeptides.KojakScoring(scan, products1, 0.01, 1, kojakSparseArray);
+                var kojakSparseArray = GlycoXCorr.kojakXCorr(scan, 0.01, 1);
+                var dXcorr0 = GlycoXCorr.KojakScoring(scan, products0, 0.01, 1, kojakSparseArray);
+                var dXcorr1 = GlycoXCorr.KojakScoring(scan, products1, 0.01, 1, kojakSparseArray);
                 scores.Add((dXcorr0, dXcorr1));
             }
 

@@ -23,17 +23,17 @@ namespace TaskLayer
             //Default parameter setting which is different from SearchTask, can be overwriten
             var digestPara = new DigestionParams(
                 minPeptideLength: 5,
-                maxPeptideLength: 60
-
-            );
+                maxPeptideLength: 60,
+                keepOGlycopeptide : true
+            ) ;
 
             CommonParameters = new CommonParameters(
                 precursorMassTolerance: new PpmTolerance(10),
                 ms2childScanDissociationType: DissociationType.EThcD,
-                scoreCutoff: 2,
+                scoreCutoff: 3,
                 trimMsMsPeaks: true, 
-                numberOfPeaksToKeepPerWindow: 500,
-                minimumAllowedIntensityRatioToBasePeak: 0.001,
+                numberOfPeaksToKeepPerWindow: 300,
+                minimumAllowedIntensityRatioToBasePeak: 0.005,
                 digestionParams: digestPara            
                 
             );
@@ -124,7 +124,9 @@ namespace TaskLayer
                 var count = 0;
                 while (count < _arrayOfMs2ScansSortedByMass.Length)
                 {
-                    var dataPartition = 30000;
+                    //Each cycle, only run dataPartition = 30000 Ms2Scan instead of run all scans from the file.
+                    //The purpose is to manage RAM usage for large .raw files.
+                    var dataPartition = 30000; 
                     if (_arrayOfMs2ScansSortedByMass.Length - count < dataPartition)
                     {
                         dataPartition = _arrayOfMs2ScansSortedByMass.Length - count;
@@ -197,7 +199,7 @@ namespace TaskLayer
                         var glycoSearch1stRound = new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex,
                             secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
                             _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile,
-                            _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MixedGlycoAllowed,
+                            _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoScoreType, _glycoSearchParameters.MixedGlycoAllowed,
                             _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed,
                             _glycoSearchParameters.MaximumNGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, thisId,
                             candidates, precursorss);
@@ -228,7 +230,7 @@ namespace TaskLayer
                         var glycoSearch2ndRound = new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, null,
                             null, currentPartition, combinedParams, this.FileSpecificParameters,
                             _glycoSearchParameters.OGlycanDatabasefile, _glycoSearchParameters.NGlycanDatabasefile,
-                            _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.MixedGlycoAllowed,
+                            _glycoSearchParameters.GlycoSearchType, _glycoSearchParameters.GlycoScoreType, _glycoSearchParameters.MixedGlycoAllowed,
                             _glycoSearchParameters.GlycoSearchTopNum, _glycoSearchParameters.MaximumOGlycanAllowed,
                             _glycoSearchParameters.MaximumNGlycanAllowed, _glycoSearchParameters.OxoniumIonFilt, _glycoSearchParameters.IndexingChildScan, thisId,
                             candidates, precursorss);

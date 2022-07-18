@@ -28,4 +28,11 @@ namespace EngineLayer.GlycoSearch
         N_O_GlycanSearch
 
     }
+
+    public enum GlycoScoreType
+    {
+        MMScore,
+        pGlycoScore,
+        XcorrScore
+    }
 }

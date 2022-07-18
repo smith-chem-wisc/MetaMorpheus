@@ -33,6 +33,10 @@ namespace EngineLayer.GlycoSearch
         public double PeptideScore { get; set; } //Scores from only mathced peptide fragments.
         public double GlycanScore { get; set; } //Scores from only matched Y ions. 
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
+
+        public double PScore { get; set; } 
+        public double XcorrScore { get; set; }
+
         public static GlycanBox GetFirstGraphGlycanBox(GlycoSpectralMatch gsm)
         {
 
@@ -132,6 +136,7 @@ namespace EngineLayer.GlycoSearch
             //sb.Append("Predicted Hydrophobicity" + '\t');
             sb.Append("Score" + '\t');
             sb.Append("MScore" + '\t');
+            sb.Append("XcorrScore" + '\t');
             sb.Append("Rank" + '\t');
 
             sb.Append("Matched Ion Series" + '\t');
@@ -219,6 +224,7 @@ namespace EngineLayer.GlycoSearch
             //sb.Append(PredictedRT); sb.Append("\t");
             sb.Append(Score + "\t");
             sb.Append(MScore + "\t");
+            sb.Append(XcorrScore + "\t");
             sb.Append(Rank + "\t");
 
             if (ChildMatchedFragmentIons == null)

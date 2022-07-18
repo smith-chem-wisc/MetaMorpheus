@@ -1,5 +1,5 @@
 ﻿using EngineLayer;
-using EngineLayer.CrosslinkSearch;
+using EngineLayer.GlycoSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics.ProteolyticDigestion;
@@ -78,6 +78,8 @@ namespace MetaMorpheusGUI
             CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanLocations.Select(p=> Path.GetFileName(p));
             CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanLocations.Select(p => Path.GetFileName(p));
 
+            CmbScoreType.ItemsSource = Enum.GetValues(typeof(GlycoScoreType));
+
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
             {
                 proteaseComboBox.Items.Add(protease);
@@ -132,6 +134,7 @@ namespace MetaMorpheusGUI
             txtTopNum.Text = task._glycoSearchParameters.GlycoSearchTopNum.ToString(CultureInfo.InvariantCulture);
             CmbOGlycanDatabase.SelectedItem = task._glycoSearchParameters.OGlycanDatabasefile;
             CmbNGlycanDatabase.SelectedItem = task._glycoSearchParameters.NGlycanDatabasefile;
+            CmbScoreType.SelectedItem = task._glycoSearchParameters.GlycoScoreType;
 
             cbbPrecusorMsTl.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             PrecusorMsTlTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
@@ -278,7 +281,7 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.Indexing_by_ion = CkbIndex_by_ion.IsChecked.Value;
             TheTask._glycoSearchParameters.IndexingChildScan = CkbIndexingChildScan.IsChecked.Value;
             TheTask._glycoSearchParameters.IndexingChildScanDiffIndex = CkbIndexChildScanWithDiffIndex.IsChecked.Value;
-
+            TheTask._glycoSearchParameters.GlycoScoreType = (GlycoScoreType)CmbScoreType.SelectedItem;
 
 
 
