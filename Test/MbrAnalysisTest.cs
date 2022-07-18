@@ -13,18 +13,24 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public static class
+    public class
     MbrAnalysisTest
     {
-        [Test]
-        public static void MbrPostSearchAnalysisTest()
+        private static MyTaskResults searchTaskResults;
+        private static List<PsmFromTsv> tsvPsms;
+        private static  List<PeptideSpectralMatch> psms;
+        private static List<Protein> proteinList;
+        private static MyFileManager myFileManager;
+
+    [OneTimeSetUp]
+        public void MbrSetup()
         {
-            // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
+             // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MSMSids.psmtsv");
-            List<PsmFromTsv> tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
-            List<Protein> proteinList = new List<Protein>();
-            MyFileManager myFileManager = new MyFileManager(true);
+            tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
+            psms = new List<PeptideSpectralMatch>();
+            proteinList = new List<Protein>();
+            myFileManager = new MyFileManager(true);
 
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
@@ -73,7 +79,21 @@ namespace Test
                 CommonParameters = new CommonParameters()
             };
 
-            var testTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
+            searchTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
+        }
+
+        [Test]
+        public static void MbrPostSearchAnalysisTest()
+        {
+
+            List<string> rawSlices = new List<string> {
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\K13_02ng_1min_frac1.mzML"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\K13_20ng_1min_frac1.mzML") };
+            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput"));
+            Dictionary<string, int[]> numSpectraPerFile = new Dictionary<string, int[]> { { "K13_02ng_1min_frac1", new int[] { 8, 8 } }, { "K13_20ng_1min_frac1", new int[] { 8, 8 } } };
+            List<DbForTask> databaseList = new List<DbForTask>() {new DbForTask(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\HumanFastaSlice.fasta"), false) };
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {
@@ -86,7 +106,7 @@ namespace Test
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
                     ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
-                    SearchTaskResults = testTaskResults,
+                    SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
                     SearchParameters = new SearchParameters()
@@ -110,6 +130,7 @@ namespace Test
 
             postSearchTask.Run();
 
+            List<string> warnings;
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\MbrAnalysis.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\ExpectedMBRHits.psmtsv");
             List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
@@ -126,6 +147,7 @@ namespace Test
 
             //TODO: Add test for recovering fdrInfo from original. Currently, PsmTsvReader doesn't support the new columns, so it's hard to test
         }
+
         [Test]
         public static void MiniClassicSearchEngineTest()
         {
