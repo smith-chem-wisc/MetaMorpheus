@@ -22,6 +22,7 @@ using UsefulProteomicsDatabases;
 using System.Collections.Concurrent;
 using Microsoft.ML;
 using Microsoft.ML.Data;
+using EngineLayer.MbrAnalysis;
 
 namespace TaskLayer
 {
@@ -797,6 +798,7 @@ namespace TaskLayer
             }
             List<SpectraFileInfo> spectraFiles = Parameters.FlashLfqResults.Peaks.Select(p => p.Key).ToList();
             List<PeptideSpectralMatch> allPeptides = GetAllPeptides();
+            SpectralScoreDistribution spectralScoreDistribution = new SpectralScoreDistribution(Parameters.OutputFolder);
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -858,7 +860,7 @@ namespace TaskLayer
                     }
                 });
 
-                CalculateTruePostiveDistribution(spectraFile.FullFilePathWithExtension, arrayOfMs2ScansSortedByRT);
+                CalculateTruePostiveDistribution(spectraFile.FullFilePathWithExtension, arrayOfMs2ScansSortedByRT, spectralScoreDistribution);
             }
             List<PeptideSpectralMatch> allPsms = Parameters.AllPsms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).
                 ThenBy(p => p.FullFilePath).ThenBy(x => x.ScanNumber).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
@@ -867,6 +869,7 @@ namespace TaskLayer
             AssignEstimatedPsmPepQValue(bestMbrMatches, allPsms);
             foreach (MbrSpectralMatch match in bestMbrMatches) match.FindOriginalPsm(allPsms);
             WriteMbrPsmResults(bestMbrMatches);
+            spectralScoreDistribution.WriteResults();
         }
 
         private static void AssignEstimatedPsmQvalue(ConcurrentBag<MbrSpectralMatch> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
@@ -973,19 +976,6 @@ namespace TaskLayer
                     output.WriteLine(match.ToString());
                 }
             }
-
-            /*string unmatchedPeaksPath = Path.Combine(Parameters.OutputFolder, @"UnmatchedPeaks.tsv");
-            using (StreamWriter output = new StreamWriter(unmatchedPeaksPath))
-            {
-                output.WriteLine(ChromatographicPeak.TabSeparatedHeader);
-                foreach (var peak in bestPsmsForPeaks)
-                {
-                    if (peak.Value == null)
-                    {
-                        output.WriteLine(peak.Key.ToString());
-                    }
-                }
-            }*/
         }
 
         private PeptideSpectralMatch BestPsmForMbrPeak(PeptideSpectralMatch[] peptideSpectralMatches)
@@ -1034,35 +1024,54 @@ namespace TaskLayer
             return peptides;
         }
 
-        private void CalculateTruePostiveDistribution(string filePath, Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT)
+        /// <summary>
+        ///  
+        /// </summary>
+        /// <param name="filePath"> File path for a specific MsDataFile, the confident PSMs in the file will be matched against
+        /// the spectral libraries for all other files</param> 
+        /// <param name="arrayOfMs2ScansSortedByRT"> The MS2 scans for a given file </param> 
+        private void CalculateTruePostiveDistribution(string filePath, Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT, SpectralScoreDistribution spectralScoreDistribution)
         {
-            List<PeptideSpectralMatch> peptidesByFile = GetAllPeptides(peptidesByFile: true).Where(p => p.FullFilePath == filePath).ToList();
+            List<PeptideSpectralMatch> peptidesByFile = GetAllPeptides(peptidesByFile: true).
+                Where(p => p.FullFilePath == filePath).ToList();
+            // Load in the spectral libraries for every file in the search EXCEPT for the filePath file.
             Dictionary<string, SpectralLibrary> spectralLibraries = new();
             foreach (string allOtherFiles in Parameters.CurrentRawFileList)
             {
-                if (allOtherFiles == filePath) continue;
+                if (allOtherFiles.Equals(filePath)) continue;
                 string individualLibraryPath = Parameters.IndividualResultsOutputFolder + "\\" +
-                    Path.GetFileNameWithoutExtension(filePath) + "_spectralLibrary.msp";
+                    Path.GetFileNameWithoutExtension(allOtherFiles) + "_spectralLibrary.msp";
                 spectralLibraries.Add(filePath, new SpectralLibrary(new List<string> { individualLibraryPath }) );
             }
-            Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByIndex = arrayOfMs2ScansSortedByRT.OrderBy(b => b.OneBasedScanNumber).ToArray();
+
+            Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByIndex = arrayOfMs2ScansSortedByRT.
+                OrderBy(b => b.OneBasedScanNumber).ToArray();
             int[] arrayOfMs2Indices = arrayOfMs2ScansSortedByIndex.Select(b => b.OneBasedScanNumber).ToArray();
             foreach (KeyValuePair<string, SpectralLibrary> lib in spectralLibraries)
             {
                 foreach (PeptideSpectralMatch peptide in peptidesByFile)
                 {
                     int scanIndex = Array.BinarySearch(arrayOfMs2Indices, peptide.ScanIndex);
-                    Ms2ScanWithSpecificMass scan = scanIndex >= 0 ? arrayOfMs2ScansSortedByIndex[peptide.ScanIndex] : null;
+                    Ms2ScanWithSpecificMass scan = scanIndex >= 0 ? arrayOfMs2ScansSortedByIndex[scanIndex] : null;
                     if (scan == null) continue;
-                    lib.Value.TryGetSpectrum(peptide.FullSequence, peptide.ScanPrecursorCharge, out LibrarySpectrum librarySpectrum);
-                    SpectralSimilarity s = new SpectralSimilarity(
-                        scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
-                        SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum,
-                        CommonParameters.ProductMassTolerance.Value, false);
-                }
+                    if(lib.Value.TryGetSpectrum(peptide.FullSequence, peptide.ScanPrecursorCharge, out LibrarySpectrum librarySpectrum))
+                    {
+                        SpectralSimilarity s = new SpectralSimilarity(
+                                                scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
+                                                SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum,
+                                                CommonParameters.ProductMassTolerance.Value, false);
+                        spectralScoreDistribution.AddComparison(Path.GetFileNameWithoutExtension(filePath),
+                            Path.GetFileNameWithoutExtension(lib.Key), peptide.FullSequence, s);
 
-                
+                    }
+                    
+                }  
             }
+        }
+
+        private void TemporaryPosDistWriter()
+        {
+
         }
         private void WritePrunedDatabase()
         {
