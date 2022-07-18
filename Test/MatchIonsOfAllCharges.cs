@@ -401,22 +401,32 @@ namespace Test
 
         public static void TestLibraryUpdate()
         {
-            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary");
             _ = Directory.CreateDirectory(thisTaskOutputFolder);
-            var searchTask = new SearchTask();
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
 
-            searchTask.SearchParameters.UpdateSpectralLibrary = true;
+            //var searchTask = new SearchTask();
+
+            task.SearchParameters.UpdateSpectralLibrary = true;
+
             string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibrary.msp");
+
+
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibraryUpdateTest\rawCopy.mzML");
             File.Copy(raw, rawCopy);
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask(db, false) }, thisTaskOutputFolder);
-            engine.Run();
+            EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw, rawCopy }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db,false) }, thisTaskOutputFolder);
+
+            UpdateLibrary.Run();
+
+            //List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
+
+            //var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask(db, false) }, thisTaskOutputFolder)
+            //engine.Run();
             File.Delete(rawCopy);
-            var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, @"SpectraFileOutput\spectralLibrary.msp") });
+            var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, @"UpdateSpectraFileOutput\spectralLibrary.msp") });
             var oldLib = new SpectralLibrary(new List<string> { lib });
 
 
