@@ -8,7 +8,7 @@ using Proteomics.ProteolyticDigestion;
 using FlashLFQ;
 using EngineLayer.FdrAnalysis;
 
-namespace EngineLayer
+namespace EngineLayer.MbrAnalysis
 {
     public class MbrSpectralMatch
     {
@@ -24,7 +24,7 @@ namespace EngineLayer
         {
             this.spectralLibraryMatch = spectralLibraryMatch;
             this.acceptorPeak = acceptorPeak;
-            this.originalMatchFound = false;
+            originalMatchFound = false;
         }
 
         public void FindOriginalPsm(List<PeptideSpectralMatch> originalSearchPsms)
@@ -70,7 +70,7 @@ namespace EngineLayer
                 for (int i = 0; i < psmHeaderSplit.Length; i++) newHeaderSplit[i] = "Original " + psmHeaderSplit[i];
                 string newHeader = string.Join('\t', newHeaderSplit); List<string> originalFdrHeader = new();
                 return newHeader;
-           }
+            }
         }
 
         public override string ToString()
