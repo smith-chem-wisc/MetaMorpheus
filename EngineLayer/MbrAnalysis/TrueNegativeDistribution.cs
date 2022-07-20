@@ -8,18 +8,16 @@ namespace EngineLayer.MbrAnalysis
 {
     public class TrueNegativeDistribution : SpectralScoreDistribution
     {
-        public List<SpectralComparison> SpectralComparisonList { get; private set; }
-        public string OutputFolder { get; set; }
-        public string DistributionType { get; private set; }
+        private int ModDictChar = 0; //Making this a byte and later converting to char could enable 100+ ptms in the dict
 
         Dictionary<string, char> ModDict = new();
 
         public TrueNegativeDistribution(string outputFolder) : base(outputFolder)
         {
-            DistributionType = "TrueNegative";
+            SetDistributionType("TrueNegative");
         }
 
-        public static double GetPercentHomology(string acceptorSequence, string donorSequence)
+        public double GetPercentHomology(string acceptorSequence, string donorSequence)
         {
             char[] acceptorArray = ConvertSequence(acceptorSequence);
             char[] donorArray = ConvertSequence(donorSequence);
@@ -33,8 +31,7 @@ namespace EngineLayer.MbrAnalysis
             return (double)rawScore / (double)acceptorArray.Length;
         }
 
-        //This actually shouldn't be static, because the ModDict should be instance specific. Have to change
-        public static char[] ConvertSequence(string peptideSequence)
+        public char[] ConvertSequence(string peptideSequence)
         {
             char[] peptideArray = peptideSequence.ToCharArray();
             List<char> peptideSansMods = new();
@@ -58,20 +55,17 @@ namespace EngineLayer.MbrAnalysis
                 return new char[] { }; // uneven number of brackets indicates unknown formatting was encountered
             }
 
-            int modDictCharValue = 0;
-            Dictionary<string, char> modDict = new();
-            //fix this loop condition
             for (int i = 0; i < bracketPositions.Count ; i = i + 2)
             {
                 string mod = peptideSequence.Substring(bracketPositions[i], bracketPositions[i+1] - bracketPositions[i] + 1);
-                if (!modDict.ContainsKey(mod))
+                if (!ModDict.ContainsKey(mod))
                 {
-                    modDict.Add(mod, modDictCharValue.ToString().ToCharArray()[0]);
-                    modDictCharValue++;
+                    ModDict.Add(mod, ModDictChar.ToString().ToCharArray()[0]);
+                    ModDictChar++;
                 }
                 int y = peptideSansMods.IndexOf('X');
-                peptideSansMods[y - 1] = modDict[mod];
-                //Remove opening and closing brackets (Where opening bracket was replaced with 'X'
+                peptideSansMods[y - 1] = ModDict[mod];
+                //Remove opening and closing brackets (Where opening bracket was replaced with 'X')
                 peptideSansMods.RemoveAt(y);
                 peptideSansMods.RemoveAt(peptideSansMods.IndexOf(']')); 
             }

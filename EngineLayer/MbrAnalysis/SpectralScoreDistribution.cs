@@ -21,6 +21,11 @@ namespace EngineLayer.MbrAnalysis
             SpectralComparisonList = new();
         }
 
+        protected void SetDistributionType(string type)
+        {
+            DistributionType = type;
+        }
+
         public void AddComparison(string spectraSource, string librarySpectraSource, string fullSequence, SpectralSimilarity similarity)
         {
             SpectralComparisonList.Add(new SpectralComparison(spectraSource, librarySpectraSource, fullSequence, similarity));
@@ -32,13 +37,12 @@ namespace EngineLayer.MbrAnalysis
             string outputFile = Path.Combine(OutputFolder, fileName);
             using (var output = new StreamWriter(outputFile))
             {
-                output.WriteLine(SpectralScoreDistribution.ScoreDistributionHeader);
+                output.WriteLine(ScoreDistributionHeader);
                 foreach (SpectralComparison sc in SpectralComparisonList)
                 {
                     output.WriteLine(sc.ToString());
                 }
             }
-
         }
 
         public static string ScoreDistributionHeader 
@@ -52,7 +56,8 @@ namespace EngineLayer.MbrAnalysis
                 sb.Append('\t');
                 sb.Append("Full Sequence");
                 sb.Append('\t');
-                // Cosine Angle and Spectral Contrast are hard coded and they shouldn't be. This should be extensible any similarity measurement
+                // Cosine Angle and Spectral Contrast are hard coded and they shouldn't be.
+                // This should be extensible any similarity measurement
                 sb.Append("Cosine Angle");
                 sb.Append('\t');
                 sb.Append("Spectral Contrast");

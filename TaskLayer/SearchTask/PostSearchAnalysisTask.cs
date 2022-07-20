@@ -1070,10 +1070,8 @@ namespace TaskLayer
             }
         }
 
-        private void TemporaryPosDistWriter()
-        {
+        private void 
 
-        }
         private void WritePrunedDatabase()
         {
             if (Parameters.SearchParameters.WritePrunedDatabase)
