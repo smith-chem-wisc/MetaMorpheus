@@ -71,5 +71,28 @@ namespace EngineLayer.MbrAnalysis
             }
             return peptideSansMods.ToArray();
         }
+
+        public static string ScoreDistributionHeader
+        {
+            get
+            {
+                StringBuilder sb = new();
+                sb.Append("Spectra File");
+                sb.Append('\t');
+                sb.Append("Library Spectra File");
+                sb.Append('\t');
+                sb.Append("Full Sequence");
+                sb.Append('\t');
+                sb.Append("Donor Sequence");
+                sb.Append('\t');
+                // Cosine Angle and Spectral Contrast are hard coded and they shouldn't be.
+                // This should be extensible any similarity measurement
+                sb.Append("Cosine Angle");
+                sb.Append('\t');
+                sb.Append("Spectral Contrast");
+                return sb.ToString();
+            }
+
+        }
     }
 }

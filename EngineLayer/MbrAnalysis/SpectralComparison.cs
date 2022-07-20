@@ -11,17 +11,22 @@ namespace EngineLayer.MbrAnalysis
     {
         public string SpectraSource;
         public string LibrarySpectraSource;
-        public string FullSequence;
+        public string AcceptorSequence;
+        public string DonorSequence;
+        public double? Homology;
         public Dictionary<string, double?> ScoreDictionary;
         public SpectralSimilarity Similarity;
 
-        public SpectralComparison(string spectraSource, string librarySpectraSource, string fullSequence, SpectralSimilarity similarity)
+        public SpectralComparison(string spectraSource, string librarySpectraSource, string fullSequence, 
+            SpectralSimilarity similarity, string donorSequence = null, double? homology = null)
         {
             SpectraSource = spectraSource;
             LibrarySpectraSource = librarySpectraSource;
-            FullSequence = fullSequence;
+            AcceptorSequence = fullSequence;
+            DonorSequence = donorSequence;
             ScoreDictionary = MakeScoreDictionary(similarity);
             Similarity = similarity;
+            Homology = homology;
         }
 
         private Dictionary<string, double?> MakeScoreDictionary(SpectralSimilarity similarity)
@@ -39,17 +44,27 @@ namespace EngineLayer.MbrAnalysis
             sb.Append('\t');
             sb.Append(LibrarySpectraSource);
             sb.Append('\t');
-            sb.Append(FullSequence);
+            sb.Append(AcceptorSequence);
             sb.Append('\t');
+            if(DonorSequence != null)
+            {
+                sb.Append(DonorSequence);
+                sb.Append('\t');
+            }
+            if (Homology != null)
+            {
+                sb.Append(((double)Homology).ToString("F4"));
+                sb.Append('\t');
+            }
             foreach (KeyValuePair<string, double?> pair in ScoreDictionary)
             {
                 // Currently, column names are hard coded in SpectralScoreDistribution
-                //sb.Append(pair.Key);
-                //sb.Append('\t');
                 string score = (pair.Value == null) ? "-1" : ((double)pair.Value).ToString("F4");
                 sb.Append(score);
                 sb.Append('\t');
             }
+
+
             foreach(var x in Similarity.theoreticalXArray)
             {
                 sb.Append(x.ToString() + ", ");
@@ -71,7 +86,6 @@ namespace EngineLayer.MbrAnalysis
                         
                 }
             }
-           // }
 
             return sb.ToString().Trim();
         }
