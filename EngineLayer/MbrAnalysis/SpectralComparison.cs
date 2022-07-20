@@ -50,8 +50,6 @@ namespace EngineLayer.MbrAnalysis
                 sb.Append(score);
                 sb.Append('\t');
             }
-            //if (ScoreDictionary["Cosine"] != null && ScoreDictionary["Cosine"] == 0)
-            //{
             foreach(var x in Similarity.theoreticalXArray)
             {
                 sb.Append(x.ToString() + ", ");

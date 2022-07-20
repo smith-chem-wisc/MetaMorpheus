@@ -8,12 +8,13 @@ using System.IO;
 
 namespace EngineLayer.MbrAnalysis
 {
-    public class SpectralScoreDistribution
+    public abstract class SpectralScoreDistribution
     {
         public List<SpectralComparison> SpectralComparisonList { get; private set; }
         public string OutputFolder { get; set; }
+        public string DistributionType { get; private set; }
 
-        public SpectralScoreDistribution(string outputFolder)
+        protected SpectralScoreDistribution(string outputFolder)
         {
             OutputFolder = outputFolder; 
             System.IO.Directory.CreateDirectory(outputFolder);
@@ -27,8 +28,8 @@ namespace EngineLayer.MbrAnalysis
 
         public void WriteResults()
         {
-            // This probably shouldn't be hardcoded either
-            string outputFile = Path.Combine(OutputFolder, @"SpectralScore.tsv");
+            string fileName = DistributionType + "Distribution.tsv";
+            string outputFile = Path.Combine(OutputFolder, fileName);
             using (var output = new StreamWriter(outputFile))
             {
                 output.WriteLine(SpectralScoreDistribution.ScoreDistributionHeader);
@@ -51,10 +52,10 @@ namespace EngineLayer.MbrAnalysis
                 sb.Append('\t');
                 sb.Append("Full Sequence");
                 sb.Append('\t');
-                // Cosine Angle and Spectral Entropy are hard coded and they shouldn't be. This should be extensible any similarity measurement
+                // Cosine Angle and Spectral Contrast are hard coded and they shouldn't be. This should be extensible any similarity measurement
                 sb.Append("Cosine Angle");
                 sb.Append('\t');
-                sb.Append("Spectral Entropy");
+                sb.Append("Spectral Contrast");
                 return sb.ToString();
             }
 
