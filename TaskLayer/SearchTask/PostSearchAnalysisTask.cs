@@ -1006,10 +1006,10 @@ namespace TaskLayer
             List<PeptideSpectralMatch> peptides = new();
             if (!peptidesByFile)
             {
-                peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+                peptides = Parameters.AllPsms.Where(b => b.FullSequence != null).GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
             } else
             {
-                peptides = Parameters.AllPsms.GroupBy(b => new { b.FullSequence, b.FullFilePath }).Select(b => b.FirstOrDefault()).ToList();
+                peptides = Parameters.AllPsms.Where(b => b.FullSequence != null).GroupBy(b => new { b.FullSequence, b.FullFilePath }).Select(b => b.FirstOrDefault()).ToList();
             }
             
             new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
@@ -1064,8 +1064,10 @@ namespace TaskLayer
             {
                 foreach (PeptideSpectralMatch peptide in peptidesSpecificToFile)
                 {
-                    int scanIndex = Array.BinarySearch(arrayOfMs2Indices, peptide.ScanIndex);
-                    Ms2ScanWithSpecificMass scan = scanIndex >= 0 ? arrayOfMs2ScansSortedByIndex[scanIndex] : null;
+                    //int scanIndex = Array.BinarySearch(arrayOfMs2Indices, peptide.ScanIndex);
+                    //Ms2ScanWithSpecificMass scan = scanIndex >= 0 ? arrayOfMs2ScansSortedByIndex[scanIndex] : null;
+                    Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                        peptide.MsDataScan, peptide.ScanPrecursorMonoisotopicPeakMz, peptide.ScanPrecursorCharge, peptide.FullFilePath, CommonParameters);
                     if (scan == null) continue;
                     if(lib.Value.TryGetSpectrum(peptide.FullSequence, peptide.ScanPrecursorCharge, out LibrarySpectrum librarySpectrum))
                     {
@@ -1086,14 +1088,16 @@ namespace TaskLayer
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByIndex, int[] arrayOfMs2Indices, TrueNegativeDistribution trueNegativeDistribution,
             Dictionary<string, SpectralLibrary> spectralLibraries)
         {
-            var fullSequences = GetAllPeptides(peptidesByFile: true).
-                Where(p => !p.FullFilePath.Equals(filePath)).
-                GroupBy(p => p.FullSequence).
-                Select(g => g.First().FullSequence);
-
+            Dictionary<int, List<string>> peptidesByLength = GetAllPeptides(peptidesByFile: true).
+                Where(p => !p.FullFilePath.Equals(filePath) && p.PeptideLength != null).
+                GroupBy(p => p.PeptideLength).
+                ToDictionary(g => (int)g.Key, g => g.Select(g => g.FullSequence).ToList());
+                
             Dictionary<string, (string, double)> spectrumHomologueDict = new();
-            Dictionary<int, List<string>> peptidesByLength = fullSequences.GroupBy(s => s.Length).
-                ToDictionary(group => group.Key, group => group.ToList());
+            if (!peptidesByLength.Any())
+            {
+                return;
+            }
 
             foreach (PeptideSpectralMatch psm in peptidesSpecificToFile)
             {
@@ -1101,9 +1105,10 @@ namespace TaskLayer
                 foreach (string donorSequence in peptidesByLength[(int)psm.PeptideLength])
                 {
                     double homology = trueNegativeDistribution.GetPercentHomology(psm.FullSequence, donorSequence);
-                    if (homology > 0.1 & homology < 0.5)
+                    if (homology > 0.1 & homology < 0.95)
                     {
                         spectrumHomologueDict.Add(psm.FullSequence, (donorSequence, homology));
+                        peptidesByLength[(int)psm.PeptideLength].Remove(donorSequence);
                         break;
                     }
                 }
@@ -1113,10 +1118,12 @@ namespace TaskLayer
             {
                 foreach (PeptideSpectralMatch peptide in peptidesSpecificToFile)
                 {
-                    int scanIndex = Array.BinarySearch(arrayOfMs2Indices, peptide.ScanIndex);
-                    Ms2ScanWithSpecificMass scan = scanIndex >= 0 ? arrayOfMs2ScansSortedByIndex[scanIndex] : null;
-                    if (scan == null) continue;
-                    if (spectrumHomologueDict.ContainsKey(peptide.FullSequence) && lib.Value.TryGetSpectrum(spectrumHomologueDict[peptide.FullSequence].Item1, peptide.ScanPrecursorCharge, out LibrarySpectrum librarySpectrum))
+                    //int scanIndex = Array.BinarySearch(arrayOfMs2Indices, peptide.ScanIndex);
+                    //Ms2ScanWithSpecificMass scan = scanIndex >= 0 ? arrayOfMs2ScansSortedByIndex[scanIndex] : null;
+                    Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(
+                        peptide.MsDataScan, peptide.ScanPrecursorMonoisotopicPeakMz, peptide.ScanPrecursorCharge, peptide.FullFilePath, CommonParameters);
+                    if (scan == null | peptide.FullSequence == null) continue; //I'm not sure why the petide full sequence is null, but it is
+                    if (spectrumHomologueDict.ContainsKey(peptide.FullSequence) && spectrumHomologueDict[peptide.FullSequence].Item1 != null && lib.Value.TryGetSpectrum(spectrumHomologueDict[peptide.FullSequence].Item1, peptide.ScanPrecursorCharge, out LibrarySpectrum librarySpectrum))
                     {
                         SpectralSimilarity s = new SpectralSimilarity(
                                                 scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
@@ -1125,6 +1132,7 @@ namespace TaskLayer
                         trueNegativeDistribution.AddComparison(Path.GetFileNameWithoutExtension(filePath),
                             Path.GetFileNameWithoutExtension(lib.Key), peptide.FullSequence, s,
                             spectrumHomologueDict[peptide.FullSequence].Item1, spectrumHomologueDict[peptide.FullSequence].Item2);
+                        // break;
 
                     }
 
