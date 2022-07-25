@@ -478,6 +478,17 @@ namespace TaskLayer
                 }
             }
 
+            using (var output = new StreamWriter(Path.Combine(Parameters.OutputFolder, @"IDsForFlashLFQ.tsv")))
+            {
+                output.WriteLine("File" + '\t' + "Sequence");
+                foreach (var id in flashLFQIdentifications)
+                {
+                    output.WriteLine(id.FileInfo.FilenameWithoutExtension + '\t' + id.ModifiedSequence);
+                }
+            }
+            // Temporary, REMOVE
+
+
             // run FlashLFQ
             var FlashLfqEngine = new FlashLfqEngine(
                 allIdentifications: flashLFQIdentifications,
