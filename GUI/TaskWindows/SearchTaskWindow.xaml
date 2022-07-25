@@ -437,10 +437,9 @@
                         </StackPanel>
                     </GroupBox>
 
-                   <!-- Output Options -->
+                    <!-- Output Options -->
                     <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
 
-                        <!--<Expander x:Name="OutputExpander">-->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 

@@ -340,7 +340,7 @@ namespace Test
                 }
             }
         }
-        //
+      
         [Test]
         public static void TestLibraryGeneration()
         {
@@ -405,8 +405,6 @@ namespace Test
             _ = Directory.CreateDirectory(thisTaskOutputFolder);
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
 
-            //var searchTask = new SearchTask();
-
             task.SearchParameters.UpdateSpectralLibrary = true;
 
             string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
@@ -421,31 +419,9 @@ namespace Test
 
             UpdateLibrary.Run();
 
-            //List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
-
-            //var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask(db, false) }, thisTaskOutputFolder)
-            //engine.Run();
             File.Delete(rawCopy);
             var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, @"UpdateSpectraFileOutput\spectralLibrary.msp") });
             var oldLib = new SpectralLibrary(new List<string> { lib });
-
-
-
-            //var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(outputDir, @"spectralLibrary.msp") });
-
-
-
-            //    var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
-            //    var outputDir = Path.Combine(testDir, @"SpectralLibraryUpdateTest");
-            //    _ = Directory.CreateDirectory(outputDir);
-
-
-
-
-
-
-            //    var oldLib = new SpectralLibrary(new List<string> { lib });
-            //    var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(outputDir, @"spectralLibrary.msp") });
 
             Assert.That(oldLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var old_spectrum1));
             Assert.That(updatedLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var new_spectrum1));
@@ -459,8 +435,6 @@ namespace Test
             Assert.That(old_spectrum2.MatchedFragmentIons.Count < new_spectrum2.MatchedFragmentIons.Count);
             Assert.That(old_spectrum3.MatchedFragmentIons.Count < new_spectrum3.MatchedFragmentIons.Count);
             Assert.That(oldLib.GetAllLibrarySpectra().ToList().Count < updatedLib.GetAllLibrarySpectra().ToList().Count);
-
-            //Directory.Delete(thisTaskOutputFolder, true);
         }
 
         [Test]

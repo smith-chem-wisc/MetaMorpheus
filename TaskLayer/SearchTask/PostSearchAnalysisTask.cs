@@ -646,13 +646,14 @@ namespace TaskLayer
             {
                 List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
                 (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
+
                 if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
                 {
                     PsmsGroupByPeptideAndCharge.Add(peptideWithChargeState, psmsWithSamePeptideAndSameCharge);
                 }
             }
             var spectraLibrary = new List<LibrarySpectrum>();
-            foreach(var psm in PsmsGroupByPeptideAndCharge)
+            foreach (var psm in PsmsGroupByPeptideAndCharge)
             {
                 var standardSpectrum = new LibrarySpectrum(psm.Value[0].FullSequence, psm.Value[0].ScanPrecursorMonoisotopicPeakMz, psm.Value[0].ScanPrecursorCharge, psm.Value[0].MatchedFragmentIons, psm.Value[0].ScanRetentionTime);
                 spectraLibrary.Add(standardSpectrum);
