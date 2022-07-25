@@ -86,7 +86,7 @@ namespace Test
             SettingsViewModel model = new SettingsViewModel(false);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
-            Directory.CreateDirectory(outputFolder);
+            Assert.That(!Directory.Exists(outputFolder));
 
             SettingsViewModel.SettingsPath = Path.Combine(outputFolder, @"MetaDrawSettingsDefault.xml");
             Assert.That(model.HasDefaultSaved == false);
