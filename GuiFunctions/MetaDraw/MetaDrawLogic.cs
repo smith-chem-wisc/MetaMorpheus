@@ -808,7 +808,6 @@ namespace GuiFunctions
             unformattedBitmap.Dispose();
             File.Delete(tempBitmapPath);
             return bitmap;
-            bitmap.Dispose();
         }
 
         /// <summary>
