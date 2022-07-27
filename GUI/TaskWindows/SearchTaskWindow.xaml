@@ -434,6 +434,18 @@
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+                            <StackPanel Orientation="Horizontal">
+                                <TextBox x:Name="IsotopeCorrelationTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20" IsEnabled="{Binding IsChecked, ElementName=CheckBoxMatchBetweenRuns}"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                    <ToolTipService.ToolTip>
+                                        <TextBlock>
+                                            Minimum correlation betwen actual and theoretical isotpe distribution
+                                            <LineBreak/>
+                                            Default value is 0.7, but single cell quantification may require lowering this value
+                                        </TextBlock>
+                                    </ToolTipService.ToolTip>
+                                </TextBox>
+                                <Label x:Name="isotopeCorrelationTextBox" Content=" isotopic envelope correlation threshold" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}" />
+                            </StackPanel>
                         </StackPanel>
                     </GroupBox>
 

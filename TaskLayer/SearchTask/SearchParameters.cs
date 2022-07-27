@@ -16,6 +16,7 @@ namespace TaskLayer
             ModPeptidesAreDifferent = false;
             DoQuantification = true;
             QuantifyPpmTol = 5;
+            IsotopeCorrThreshold = 0.7;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
@@ -63,6 +64,7 @@ namespace TaskLayer
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
+        public double IsotopeCorrThreshold { get; set; }
         public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
@@ -93,5 +95,6 @@ namespace TaskLayer
         public SilacLabel EndTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
         public bool IncludeModMotifInMzid { get; set; }
+
     }
 }

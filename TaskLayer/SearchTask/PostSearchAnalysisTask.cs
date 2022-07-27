@@ -458,6 +458,7 @@ namespace TaskLayer
             }
 
             // run FlashLFQ
+            // Need to add in parameter Parameters.SearchParameters.IsotopeCorrThreshold once MzLib is updated to take this as an arguments
             var FlashLfqEngine = new FlashLfqEngine(
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,

@@ -22,6 +22,7 @@ namespace MetaMorpheusGUI
             string maxThreads,
             string minScore,
             string peakFindingTolerance,
+            string isotopeCorrThreshold,
             string histogramBinWidth,
             string deconMaxAssumedCharge,
             string numberOfPeaksToKeepPerWindow,
@@ -48,6 +49,7 @@ namespace MetaMorpheusGUI
                 (CheckMaxThreads(maxThreads)),
                 (CheckMinScoreAllowed(minScore)),
                 (CheckPeakFindingTolerance(peakFindingTolerance)),
+                (CheckIsotopeCorrThreshold(isotopeCorrThreshold)),
                 (CheckHistogramBinWidth(histogramBinWidth)),
                 (CheckDeconvolutionMaxAssumedChargeState(deconMaxAssumedCharge)),
                 (CheckTopNPeaks(numberOfPeaksToKeepPerWindow)),
@@ -275,7 +277,17 @@ namespace MetaMorpheusGUI
             }
             return true;
         }
-      
+
+        public static bool CheckIsotopeCorrThreshold(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double isotopeCorrThreshold) || isotopeCorrThreshold < 0 || isotopeCorrThreshold > 1)
+            {
+                MessageBox.Show("The isotope correlation threshold is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a value between 0 and 1");
+                return false;
+            }
+            return true;
+        }
+
         public static bool CheckHistogramBinWidth(string text)
         {
             if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double binWidth) || binWidth < 0 || binWidth > 1)
