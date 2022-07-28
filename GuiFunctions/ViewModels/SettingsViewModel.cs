@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nett;
 using System.Windows.Input;
 
 namespace GuiFunctions
@@ -161,6 +162,12 @@ namespace GuiFunctions
         {
             Save();
             MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
+            string directoryPath = Path.GetDirectoryName(SettingsPath);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
             XmlReaderWriter.WriteToXmlFile<MetaDrawSettingsSnapshot>(SettingsPath, settings);
         }
 

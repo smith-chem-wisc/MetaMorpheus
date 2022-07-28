@@ -131,20 +131,61 @@ namespace GuiFunctions
                 BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
                 BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
 
-                // default color of each ptm
-                ModificationTypeToColor = GlobalVariables.AllModsKnown.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
-                ModificationTypeToColor["Acetylation on K"] = OxyColors.Aqua;
-                ModificationTypeToColor["Acetylation on X"] = OxyColors.Aqua;
-                ModificationTypeToColor["Acetylation on S"] = OxyColors.Purple;
-                ModificationTypeToColor["Acetylation on T"] = OxyColors.Purple;
-                ModificationTypeToColor["Acetylation on Y"] = OxyColors.Purple;
-                ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
-                ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
-                ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
+                #region Setting Color Defaults
 
-                CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
-                CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
-                CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
+                    ModificationTypeToColor = GlobalVariables.AllModsKnown.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
+
+                    // setting whole groups
+                    var commonBiological = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Biological").Select(p => p.IdWithMotif);
+                    foreach (var mod in commonBiological)
+                    {
+                        ModificationTypeToColor[mod] = OxyColors.Plum;
+                    }
+
+                    var lessCommon = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Less Common").Select(p => p.IdWithMotif);
+                    foreach (var mod in lessCommon)
+                    {
+                        ModificationTypeToColor[mod] = OxyColors.PowderBlue;
+                    }
+
+                    var commonArtificat = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Artifact").Select(p => p.IdWithMotif);
+                    foreach (var mod in commonArtificat)
+                    {
+                        ModificationTypeToColor[mod] = OxyColors.Teal;
+                    }
+
+                    var metal = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Metal").Select(p => p.IdWithMotif);
+                    foreach (var mod in metal)
+                    {
+                        ModificationTypeToColor[mod] = OxyColors.Maroon;
+                    }
+
+                    var glyco = GlobalVariables.AllModsKnown.Where(p => p.ModificationType.Contains("glycosylation")).Select(p => p.IdWithMotif);
+                    foreach (var mod in glyco)
+                    {
+                        ModificationTypeToColor[mod] = OxyColors.Maroon;
+                    }
+
+                // setting individual specific
+                foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Phosphorylation")))
+                    {
+                        ModificationTypeToColor[mod.Key] = OxyColors.Red;
+                    }
+
+                    foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Acetylation")))
+                    {
+                        ModificationTypeToColor[mod.Key] = OxyColors.Purple; ;
+                    }
+
+                    ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
+                    ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
+                    ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
+
+                    CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
+                    CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
+                    CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
+
+                #endregion
 
                 // lines to be written on the spectrum
                 SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);

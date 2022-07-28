@@ -75,6 +75,7 @@ namespace GuiFunctions
                 SelectedColor = AddSpaces(color.GetColorName());
                 ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
             }
+            
 
             if (toolTip.ToLower().Contains("terminal"))
             {
