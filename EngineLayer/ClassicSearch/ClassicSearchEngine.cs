@@ -23,7 +23,6 @@ namespace EngineLayer.ClassicSearch
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
         private readonly bool WriteSpectralLibrary;
-        // I suspect there is a better way to implement this, but I'll be forced to leave it for now
         private readonly bool DecoyOnTheFly;
 
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
@@ -52,6 +51,7 @@ namespace EngineLayer.ClassicSearch
             // we will generate reverse peptide decoys w/ in the code just below this (and calculate spectral angles for them later).
             // we have to generate the reverse peptides instead of the usual reverse proteins because we generate decoy spectral
             // library spectra from their corresponding paired target peptides
+            // for DecoyOnTheFly, we also remove decoys from the spectral library
             Proteins = spectralLibrary == null || DecoyOnTheFly == true ? proteinList : proteinList.Where(p => !p.IsDecoy).ToList();
         }
 
@@ -107,6 +107,9 @@ namespace EngineLayer.ClassicSearch
                             // Do rev check similarity, do scrambled, check sim, do mirrored
                             if (SpectralLibrary != null || DecoyOnTheFly == true)
                             {
+                                // The change in this region is non-conservative.
+                                // This changes how decoys are generated when using a spectral library
+                                // in addition to adding functionality for DecoyOnTheFly                                
                                 int[] newAAlocations = new int[peptide.BaseSequence.Length];
                                 generatedOnTheFlyDecoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
                                 // If reverse is insufficient, generates decoy through scrambling
@@ -115,6 +118,11 @@ namespace EngineLayer.ClassicSearch
                                 // For now it is simple percent homology
                                 if (SequenceSimilarity(peptide, generatedOnTheFlyDecoy) > 0.3)
                                 {
+                                    // One problem here is that the SequenceSimilarity score computed above
+                                    // is not necessarily the same that GetScrambledDecoyFromTarget uses.
+                                    // It is as of now, however this aspect of GetScrambledDecoyFromTarget
+                                    // would need to be modified in mzLib if we wanted to experiment with 
+                                    // different sequence similarity scores.
                                     generatedOnTheFlyDecoy = peptide.GetScrambledDecoyFromTarget(newAAlocations);
                                 }
                                 
@@ -188,7 +196,30 @@ namespace EngineLayer.ClassicSearch
 
         private double SequenceSimilarity(PeptideWithSetModifications peptide, PeptideWithSetModifications generatedOnTheFlyDecoy)
         {
-            throw new NotImplementedException();
+            double rawScore = 0;
+            for (int i = 0; i < peptide.BaseSequence.Length; i++)
+            {
+                if (peptide.BaseSequence[i] == generatedOnTheFlyDecoy[i])
+                {
+                    Modification targetMod;
+                    if (peptide.AllModsOneIsNterminus.TryGetValue(i + 2, out targetMod))
+                    {
+                        Modification decoyMod;
+                        if (generatedOnTheFlyDecoy.AllModsOneIsNterminus.TryGetValue(i + 2, out decoyMod))
+                        {
+                            if (decoyMod == targetMod)
+                            {
+                                rawScore += 1;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        rawScore += 1;
+                    }
+                }
+            }
+            return rawScore / peptide.BaseSequence.Length;
         }
 
         private void DecoyScoreForSpectralLibrarySearch(ScanWithIndexAndNotchInfo scan, PeptideWithSetModifications reversedOnTheFlyDecoy, Dictionary<DissociationType, List<Product>> decoyFragmentsForEachDissociationType, DissociationType dissociationType, object[] myLocks)
@@ -276,6 +307,19 @@ namespace EngineLayer.ClassicSearch
             // index of the first element that is larger than value
             return index;
         }
+        /// <summary>
+        /// Method to handle spectral comparison for Decoy on the fly
+        /// Calculates theoretical fragments for the decoy an matches them to a given scan
+        /// Also performes score comparison between the decoy and target to select which one to add into PSMs
+        /// </summary>
+        /// <param name="decoyFragmentsForEachDissociationType">Dictionary containing product ion lists for each dissociation type for the decoy</param>
+        /// <param name="dissociationType">DissociationType being used</param>
+        /// <param name="generatedOnTheFlyDecoy">Decoy PeptideWithSetModifications generated if DOTF is being used</param>
+        /// <param name="scan"></param>
+        /// <param name="targetScore"></param>
+        /// <param name="myLocks"></param>
+        /// <param name="peptide">Scan to match to</param>
+        /// <param name="targetMatchedIons">List<MatchedFragmentIon> containing ions matched to the target peptide</param>
         private void DecoyOnTheFlyComparison(Dictionary<DissociationType, List<Product>> decoyFragmentsForEachDissociationType, DissociationType dissociationType, 
             PeptideWithSetModifications generatedOnTheFlyDecoy, ScanWithIndexAndNotchInfo scan, double targetScore, object[] myLocks, PeptideWithSetModifications peptide, 
             List<MatchedFragmentIon> targetMatchedIons)
