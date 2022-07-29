@@ -467,26 +467,38 @@ namespace TaskLayer
 
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
-            foreach (var spectraFile in psmsGroupedByFile)
+            using (var output = new StreamWriter(Path.Combine(Parameters.OutputFolder, @"IDsForFlashLFQ.tsv"))) //remove
             {
-                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
-
-                foreach (var psm in spectraFile)
+                output.WriteLine("File" + '\t' + "Base Sequence" + '\t' + "Full Sequence" + '\t' + "Monoisotopic Mass"
+                    + '\t' + "Retention Time" + "Precursor Charge" + "Accession"); //remove
+                foreach (var spectraFile in psmsGroupedByFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
-                }
+                    var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
+
+                    // Temporary, REMOVE
+
+                        foreach (var psm in spectraFile) 
+                        {
+                            flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+                                psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+
+                            string proteinAccession = psm.ProteinAccession != null ? psm.ProteinAccession : Resolve(psm.BestMatchingPeptides.Select(p => p.Peptide).ToList().Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString; //remove
+
+                            //remove
+                            output.WriteLine(
+                                rawfileinfo.FilenameWithoutExtension + '\t' +
+                                psm.BaseSequence + '\t' +
+                                psm.FullSequence + '\t' +
+                                psm.PeptideMonisotopicMass.Value + '\t' +
+                                psm.ScanRetentionTime + '\t' +
+                                psm.ScanPrecursorCharge + '\t' +
+                                proteinAccession
+                                );
+                        }
+                 }
             }
 
-            using (var output = new StreamWriter(Path.Combine(Parameters.OutputFolder, @"IDsForFlashLFQ.tsv")))
-            {
-                output.WriteLine("File" + '\t' + "Sequence");
-                foreach (var id in flashLFQIdentifications)
-                {
-                    output.WriteLine(id.FileInfo.FilenameWithoutExtension + '\t' + id.ModifiedSequence);
-                }
-            }
-            // Temporary, REMOVE
+           
 
 
             // run FlashLFQ
@@ -530,6 +542,29 @@ namespace TaskLayer
             {
                 SilacConversions.SilacConversionsPostQuantification(allSilacLabels, startLabel, endLabel, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
                     Parameters.FlashLfqResults, Parameters.AllPsms, Parameters.SearchParameters.ModsToWriteSelection, quantifyUnlabeledPeptides);
+            }
+        }
+
+        //Temp, just for testing what is passed to FlashLFQ. Delete when troubleshooting is done
+        internal static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, string ambiguousIfNull)
+        {
+            var list = enumerable.ToList();
+            string first = list.FirstOrDefault(b => b != null);
+            // Only first if list is either all null or all equal to the first
+            if (list.All(b => b == null) || list.All(b => first.Equals(b)))
+            {
+                return (first, first);
+            }
+            // use only distinct names if all of the base sequences are the same
+            else if (ambiguousIfNull != null)
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Distinct()));
+                return (returnString, null);
+            }
+            else
+            {
+                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
+                return (returnString, null);
             }
         }
 
