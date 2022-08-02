@@ -1151,7 +1151,7 @@ namespace TaskLayer
                 foreach (string donorSequence in peptidesByLength[(int)psm.PeptideLength])
                 {
                     double homology = trueNegativeDistribution.GetPercentHomology(psm.FullSequence, donorSequence);
-                    if (homology > 0.1 & homology < 0.95)
+                    if (homology > 0.01 & homology < 0.3 && psm.FullSequence.Substring(0, 1).Equals(donorSequence.Substring(0,1)))
                     {
                         spectrumHomologueDict.Add(psm.FullSequence, (donorSequence, homology));
                         peptidesByLength[(int)psm.PeptideLength].Remove(donorSequence);

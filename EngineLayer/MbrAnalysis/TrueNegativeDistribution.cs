@@ -32,6 +32,20 @@ namespace EngineLayer.MbrAnalysis
             char[] acceptorArray = ConvertSequence(acceptorSequence);
             char[] donorArray = ConvertSequence(donorSequence);
             if (acceptorArray.Length != donorArray.Length || acceptorArray.Length < 1) return -1;
+            // if first three residues are the same, autoreject
+            bool autoReject = true;
+            for (int i = 0; i <=3; i++)
+            {
+                if (acceptorArray[i] != donorArray[i]) autoReject = false;
+            }
+            if (autoReject) return 1;
+            autoReject = true;
+            // if last three residues are the same, autoreject
+            for (int i = acceptorArray.Length; i >= acceptorArray.Length - 3; i--)
+            {
+                if (acceptorArray[i] != donorArray[i]) autoReject = false;
+            }
+            if (autoReject) return 1;
 
             int rawScore = 0;
             int maxScore = 0;
@@ -76,6 +90,10 @@ namespace EngineLayer.MbrAnalysis
                         }
                     }
                     if (match) rawScore++;
+                    if (match && donorResidueCount.Count )
+                    {
+
+                    }
                 }
 
                 //y ion check
