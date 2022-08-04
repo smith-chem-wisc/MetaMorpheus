@@ -719,6 +719,10 @@
 
                         <Button Grid.Row="6" Grid.Column="1" Content="Open mods/data folder" 
                                 HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenDataDir_Click" />
+
+                        <Button Grid.Row="7" Grid.Column="1" Content="Reset to factory defaults" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ResetDefaults_Click"
+                                ToolTip="Reset saved tasks and MetaDraw Settings to default values"/>
                     </Grid>
                 </Grid>
             </TabItem>
