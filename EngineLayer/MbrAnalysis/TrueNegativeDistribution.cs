@@ -41,7 +41,7 @@ namespace EngineLayer.MbrAnalysis
             if (autoReject) return 1;
             autoReject = true;
             // if last three residues are the same, autoreject
-            for (int i = acceptorArray.Length; i >= acceptorArray.Length - 3; i--)
+            for (int i = (acceptorArray.Length-1); i >= acceptorArray.Length - 3; i--)
             {
                 if (acceptorArray[i] != donorArray[i]) autoReject = false;
             }
@@ -60,14 +60,16 @@ namespace EngineLayer.MbrAnalysis
                     if (!acceptorResidueCount.ContainsKey(acceptorArray[j])) 
                     {
                         acceptorResidueCount.Add(acceptorArray[j], 1);
-                    } else
+                    } 
+                    else
                     {
                         acceptorResidueCount[acceptorArray[j]]++;
                     }
                     if (!donorResidueCount.ContainsKey(donorArray[j]))
                     {
                         donorResidueCount.Add(donorArray[j], 1);
-                    } else
+                    } 
+                    else
                     {
                         donorResidueCount[donorArray[j]]++;
                     }
@@ -90,10 +92,6 @@ namespace EngineLayer.MbrAnalysis
                         }
                     }
                     if (match) rawScore++;
-                    if (match && donorResidueCount.Count )
-                    {
-
-                    }
                 }
 
                 //y ion check
