@@ -190,6 +190,7 @@ namespace GuiFunctions
 
                 // lines to be written on the spectrum
                 SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
+                SpectrumDescription["Spectral Angle: "] = false;
             }
             
             // offset for annotation on base sequence

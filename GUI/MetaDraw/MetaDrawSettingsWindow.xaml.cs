@@ -190,6 +190,11 @@ namespace MetaMorpheusGUI
             ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
 
+        /// <summary>
+        /// Event handler for when the button to restore default settings is clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void RestoreDefaultButton_Click(object sender, RoutedEventArgs e)
         {
             if (MessageBox.Show("Reset to default values?", "", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
@@ -203,7 +208,6 @@ namespace MetaMorpheusGUI
                 PopulateChoices();
                 DialogResult = true;
             }
-            
         }
     }
 }

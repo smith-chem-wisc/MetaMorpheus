@@ -426,13 +426,13 @@ namespace GuiFunctions
             if (MetaDrawSettings.SpectrumDescription["PEP: "])
             {
                 text.Append("PEP: ");
-                text.Append(SpectrumMatch.PEP);
+                text.Append(SpectrumMatch.PEP.ToString("F3"));
                 text.Append("\r\n");
             }
             if (MetaDrawSettings.SpectrumDescription["PEP Q-Value: "])
             {
                 text.Append("PEP Q-Value: ");
-                text.Append(SpectrumMatch.PEP_QValue);
+                text.Append(SpectrumMatch.PEP_QValue.ToString("F3"));
                 text.Append("\r\n");
             }
 
