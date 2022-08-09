@@ -113,19 +113,26 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, arrayMS2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary, decoyOnTheFly: true).Run();
             Assert.AreEqual(6, allPsmsArray.Length);
-            // Check that the target that produces a mirrored decoy got matched
+            // Check that the target that produces a mirrored decoy got matched and that it is a target
             Assert.AreEqual(6, allPsmsArray[0].ScanNumber);
-            // Check that the mirrored decoy got matched
+            Assert.IsFalse(allPsmsArray[0].IsDecoy);
+            // Check that the mirrored decoy got matched and that it is a decoy
             Assert.AreEqual(12, allPsmsArray[1].ScanNumber);
-            // Check that the target that produces a reversed decoy got matched
+            Assert.IsTrue(allPsmsArray[1].IsDecoy);
+            // Check that the target that produces a reversed decoy got matched and that it is a target
             Assert.AreEqual(2, allPsmsArray[2].ScanNumber);
-            // Check that the reversed decoy got matched
+            Assert.IsFalse(allPsmsArray[2].IsDecoy);
+            // Check that the reversed decoy got matched and that it is a decoy
             Assert.AreEqual(8, allPsmsArray[3].ScanNumber);
-            // Check that the target that produces a reversed decoy got matched
+            Assert.IsTrue(allPsmsArray[3].IsDecoy);
+            // Check that the target that produces a reversed decoy got matched and that it is a target
             Assert.AreEqual(4, allPsmsArray[4].ScanNumber);
-            // Check that the scrambled decoy got matched
+            Assert.IsFalse(allPsmsArray[4].IsDecoy);
+            // Check that the scrambled decoy got matched and that it is a decoy
             Assert.AreEqual(10, allPsmsArray[5].ScanNumber);
-            //Assert.AreEqual(reverseToDecoyPeptide.PairedTargetDecoyHash, allPsmsArray[3].BestMatchingPeptides[0].Item2);
+            Assert.IsTrue(allPsmsArray[5].IsDecoy);
+            // Check hash code pairing
+            Assert.AreEqual(reverseToDecoyPeptide.PairedTargetDecoyHash, (allPsmsArray[3].FullSequence.GetHashCode() + allPsmsArray[3].DigestionParams.Protease.GetHashCode()));
         }
         [Test]
         public static void TestSearchEngineResultsPsmFromTsv()
