@@ -131,10 +131,10 @@
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
                                                                 <StackPanel Orientation="Horizontal"  >
-                                                                    <TextBlock Text="{Binding IonName, FallbackValue='y - ion'}" Margin="5 0 5 0" Width="80" TextAlignment="Center"/>
+                                                                    <TextBlock Text="{Binding IonName, FallbackValue='y - ion'}" Margin="5 0 5 0" Width="120" TextAlignment="Center"/>
                                                                     <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
                                                                             Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
-                                                                    <ComboBox Width="80" HorizontalAlignment="Right" Margin="5 0 5 0" HorizontalContentAlignment="Center"
+                                                                    <ComboBox Width="100" HorizontalAlignment="Right" Margin="5 0 5 0" HorizontalContentAlignment="Center"
                                                                               SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged"
                                                                               ItemsSource="{Binding Path=DataContext.PossibleColors, 
                                                                                             RelativeSource={RelativeSource Mode=FindAncestor, 

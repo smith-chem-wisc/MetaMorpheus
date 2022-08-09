@@ -255,7 +255,7 @@ namespace GuiFunctions
             }
             else if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null) //if internal fragment
             {
-                ionColor = OxyColors.Purple;
+                ionColor = MetaDrawSettings.InternalIonColor;
             }
             else if (isBetaPeptide)
             {

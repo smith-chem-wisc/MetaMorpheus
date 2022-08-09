@@ -158,7 +158,6 @@ namespace MetaMorpheusGUI
         {
             Save_Click(sender, e);
             SettingsView.SaveAsDefault();
-            
         }
 
         /// <summary>

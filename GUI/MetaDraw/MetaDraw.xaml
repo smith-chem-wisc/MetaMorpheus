@@ -226,7 +226,7 @@
                                             </Grid.ColumnDefinitions>
 
                                             <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendViewModel}" 
-                                                          Grid.Row="1" Grid.Column="1" Height="60" >
+                                                          Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Margin="0 0 0 120" >
                                                 <ItemsControl.Resources>
                                                     <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
                                                         <Grid>

@@ -77,6 +77,7 @@ namespace GuiFunctions
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
         public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
+        public static OxyColor InternalIonColor { get; set; } = OxyColors.Purple;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
         public static double CanvasPdfExportDpi { get; set; } = 300;
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
@@ -134,7 +135,7 @@ namespace GuiFunctions
                 #region Setting Color Defaults
 
                     ModificationTypeToColor = GlobalVariables.AllModsKnown.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
-
+                    
                     // setting whole groups
                     var commonBiological = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Biological").Select(p => p.IdWithMotif);
                     foreach (var mod in commonBiological)
@@ -228,6 +229,8 @@ namespace GuiFunctions
                 ModificationTypeToColorValues = ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 CoverageTypeToColorValues = CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
+                UnannotatedPeakColor = UnannotatedPeakColor,
+                InternalIonColor = InternalIonColor ,
             };
         }
 
@@ -255,6 +258,8 @@ namespace GuiFunctions
             ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.CoverageTypeToColorValues[Array.IndexOf(CoverageTypes, p)]));
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
+            UnannotatedPeakColor = settings.UnannotatedPeakColor;
+            InternalIonColor = settings.InternalIonColor;
         }
 
         /// <summary>
@@ -281,6 +286,8 @@ namespace GuiFunctions
             SequenceAnnotaitonResiduesPerSegment = 10;
             SequenceAnnotationSegmentPerRow = 3;
             ExportType = "Pdf";
+            UnannotatedPeakColor = OxyColors.LightGray;
+            InternalIonColor = OxyColors.Purple;
         }
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
