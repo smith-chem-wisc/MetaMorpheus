@@ -189,5 +189,21 @@ namespace MetaMorpheusGUI
         {
             ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
         }
+
+        private void RestoreDefaultButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("Reset to default values?", "", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                if (File.Exists(SettingsViewModel.SettingsPath))
+                    File.Delete(SettingsViewModel.SettingsPath);
+                MetaDrawSettings.ResetSettings();
+                SettingsViewModel settingsViewModel = new SettingsViewModel();
+                SettingsView = settingsViewModel;
+                DataContext = SettingsView;
+                PopulateChoices();
+                DialogResult = true;
+            }
+            
+        }
     }
 }
