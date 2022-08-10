@@ -66,6 +66,8 @@ namespace MetaMorpheusGUI
             SequencenNumbersCheckBox.IsChecked = MetaDrawSettings.DrawNumbersUnderStationary;
             ShowLegendCheckBox.IsChecked = MetaDrawSettings.ShowLegend;
             qValueBox.Text = MetaDrawSettings.QValueFilter.ToString();
+            AmbiguityFilteringComboBox.DataContext = MetaDrawSettings.AmbiguityTypes;
+            AmbiguityFilteringComboBox.SelectedItem = MetaDrawSettings.AmbiguityFilter;
             TextSizeBox.Text = MetaDrawSettings.AnnotatedFontSize.ToString();
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
@@ -109,6 +111,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
             MetaDrawSettings.ExportType = ExportFileFormatComboBox.SelectedItem.ToString();
+            MetaDrawSettings.AmbiguityFilter = AmbiguityFilteringComboBox.SelectedItem.ToString();
             SettingsView.Save();
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))

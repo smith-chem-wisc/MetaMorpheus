@@ -165,6 +165,7 @@ namespace MetaMorpheusGUI
         {
             if (dataGridScanNums.SelectedItem == null || sender == null)
             {
+                ClearPresentationArea();
                 return;
             }
             var strings = sender.ToString();
@@ -373,20 +374,7 @@ namespace MetaMorpheusGUI
             // if a psm is selected
             if (MetaDrawLogic.ScrollableSequence != null)
             {
-                DrawnSequence.ClearCanvas(scrollableSequenceCanvas);
-                DrawnSequence.ClearCanvas(stationarySequenceCanvas);
-                DrawnSequence.ClearCanvas(map);
-                DrawnSequence.ClearCanvas(sequenceText);
-                DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
-                plotView.Visibility = Visibility.Hidden;
-                GrayBox.Opacity = 1;
-                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
-                AmbiguousSequenceOptionBox.Items.Clear();
-
-                if (PtmLegend.Count > 0)
-                    PtmLegend.First().Visibility = Visibility.Hidden;
-
-                plotView.Visibility = Visibility.Hidden;
+                ClearPresentationArea();
                 MetaDrawLogic.FilteredListOfPsms.Clear();
             }
         }
@@ -902,6 +890,27 @@ namespace MetaMorpheusGUI
             PtmLegend.First().IncreaseSegmentsPerRow();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
+        }
+
+        /// <summary>
+        /// Clears and resets the presentation area
+        /// </summary>
+        public void ClearPresentationArea()
+        {
+            DrawnSequence.ClearCanvas(scrollableSequenceCanvas);
+            DrawnSequence.ClearCanvas(stationarySequenceCanvas);
+            DrawnSequence.ClearCanvas(map);
+            DrawnSequence.ClearCanvas(sequenceText);
+            DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
+            plotView.Visibility = Visibility.Hidden;
+            GrayBox.Opacity = 1;
+            wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
+            AmbiguousSequenceOptionBox.Items.Clear();
+
+            if (PtmLegend.Count > 0)
+                PtmLegend.First().Visibility = Visibility.Hidden;
+
+            plotView.Visibility = Visibility.Hidden;
         }
     }
 }

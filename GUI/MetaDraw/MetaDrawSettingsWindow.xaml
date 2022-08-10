@@ -38,13 +38,21 @@
                     <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
 
                     <StackPanel Orientation="Horizontal" Margin="5">
-                        <Label Content="Filter to q-value:" Width="120"/>
-                        <TextBox Name ="qValueBox" Width="60" Height="24" Grid.Column="1"/>
+                        <Label Content="Filter to q-value:" Width="140"/>
+                        <TextBox Name ="qValueBox" Width="80" Height="24" Grid.Column="1"
+                                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Margin="5">
-                        <Label Content="Text size:" Width="120"/>
-                        <TextBox Name ="TextSizeBox" Width="60" Height="24" />
+                        <Label Content="Filter to ambiguity level: " Width="140" />
+                        <ComboBox x:Name="AmbiguityFilteringComboBox" Width="80" ItemsSource="{Binding}"
+                                  VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Margin="5">
+                        <Label Content="Text size:" Width="140"/>
+                        <TextBox Name ="TextSizeBox" Width="80" Height="24" 
+                                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                     </StackPanel>
 
                     <!-- glycan localization level -->

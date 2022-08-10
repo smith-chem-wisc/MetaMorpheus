@@ -37,6 +37,7 @@ namespace GuiFunctions
         public static bool ShowDecoys { get; set; } = false;
         public static bool ShowContaminants { get; set; } = true;
         public static double QValueFilter { get; set; } = 0.01;
+        public static string AmbiguityFilter { get; set; } = "No Filter";
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
         public static string ExportType { get; set; } = "Pdf"; 
@@ -71,6 +72,7 @@ namespace GuiFunctions
         "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Spectral Angle: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
+        public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
 
         #endregion
 
@@ -102,6 +104,15 @@ namespace GuiFunctions
                  && (psm.DecoyContamTarget == "T" || (psm.DecoyContamTarget == "D" && ShowDecoys) || (psm.DecoyContamTarget == "C" && ShowContaminants))
                  && (psm.GlycanLocalizationLevel == null || psm.GlycanLocalizationLevel >= LocalizationLevelStart && psm.GlycanLocalizationLevel <= LocalizationLevelEnd))
             {
+                // Ambiguity filtering conditionals, should only be hit if Ambiguity Filtering is selected
+                if (AmbiguityFilter == "No Filter" || psm.AmbiguityLevel == AmbiguityFilter)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
                 return true;
             }
 
