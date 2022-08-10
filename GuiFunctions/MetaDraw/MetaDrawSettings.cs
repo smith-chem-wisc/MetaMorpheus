@@ -230,6 +230,7 @@ namespace GuiFunctions
                 ShowDecoys = ShowDecoys,
                 ShowContaminants = ShowContaminants,
                 QValueFilter = QValueFilter,
+                AmbiguityFilter = AmbiguityFilter,
                 DrawStationarySequence = DrawStationarySequence,
                 DrawNumbersUnderStationary = DrawNumbersUnderStationary,
                 ShowLegend = ShowLegend,
@@ -242,7 +243,7 @@ namespace GuiFunctions
                 CoverageTypeToColorValues = CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
                 UnannotatedPeakColor = UnannotatedPeakColor,
-                InternalIonColor = InternalIonColor ,
+                InternalIonColor = InternalIonColor,
             };
         }
 
@@ -258,6 +259,7 @@ namespace GuiFunctions
             ShowDecoys = settings.ShowDecoys;
             ShowContaminants = settings.ShowContaminants;
             QValueFilter = settings.QValueFilter;
+            AmbiguityFilter = settings.AmbiguityFilter;
             DrawStationarySequence = settings.DrawStationarySequence;
             DrawNumbersUnderStationary = settings.DrawNumbersUnderStationary;
             ShowLegend = settings.ShowLegend;
@@ -291,6 +293,7 @@ namespace GuiFunctions
             ShowDecoys = false;
             ShowContaminants = true;
             QValueFilter = 0.01;
+            AmbiguityFilter = "No Filter";
             LocalizationLevelStart = LocalizationLevel.Level1;
             LocalizationLevelEnd = LocalizationLevel.Level3;
             DrawMatchedIons  = true;

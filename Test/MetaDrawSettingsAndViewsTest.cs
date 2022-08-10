@@ -212,7 +212,7 @@ namespace Test
             var ions = (ProductType[])Enum.GetValues(typeof(ProductType));
             IonTypeForTreeViewModel ionForTreeViews = new("Common Ions", ions, false);
             Assert.That(ionForTreeViews.GroupName == "Common Ions");
-            Assert.That(ionForTreeViews.Ions.Count == ions.Length);
+            Assert.That(ionForTreeViews.Ions.Count == ions.Length + 2); // magic number +2 is for the internal ion color and background peak color
             Assert.That(!ionForTreeViews.Ions.Any(p => p.IsBeta));
             ionForTreeViews = new("Common Ions", ions, true);
             Assert.That(ionForTreeViews.Ions.Any(p => p.IsBeta));

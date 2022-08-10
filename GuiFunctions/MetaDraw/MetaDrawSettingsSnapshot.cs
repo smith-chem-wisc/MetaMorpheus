@@ -34,6 +34,7 @@ namespace GuiFunctions
         public bool ShowDecoys { get; set; } = false;
         public bool ShowContaminants { get; set; } = true;
         public double QValueFilter { get; set; } = 0.01;
+        public string AmbiguityFilter { get; set; } = "No Filter";
         public LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
         public string ExportType { get; set; }
