@@ -64,7 +64,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchDOTF()
         {
-            Protease cust_protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", "I", 1, "") });
+            Protease cust_protease = new Protease("TestDOTF Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", "I", 1, "") });
             ProteaseDictionary.Dictionary.Add(cust_protease.Name, cust_protease);
             CommonParameters CommonParameters = new CommonParameters
                 (digestionParams: new DigestionParams(
@@ -86,11 +86,11 @@ namespace Test
                 new Protein(mirrorToDecoySequence, "MIRRORTODEC")
             };
             var reverseToDecoyPeptide = new PeptideWithSetModifications(new Protein(reverseToDecoySequence, "REVTODEC"), 
-                new DigestionParams(protease: "Customized Protease"), 1, 10, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
+                new DigestionParams(protease: cust_protease.Name), 1, 10, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
             var scrambleToDecoyPeptide = new PeptideWithSetModifications(new Protein(scrambleToDecoySequence, "SCRAMBLETODEC"),
-                new DigestionParams(protease: "Customized Protease"), 1, 15, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
+                new DigestionParams(protease: cust_protease.Name), 1, 15, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
             var mirrorToDecoyPeptide = new PeptideWithSetModifications(new Protein(mirrorToDecoySequence, "MIRRORTODEC"),
-                new DigestionParams(protease: "Customized Protease"), 1, 7, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
+                new DigestionParams(protease: cust_protease.Name), 1, 7, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
             int[] reverseDecoyAAOrder = new int[reverseToDecoySequence.Length];
             int[] scrambleDecoyAAOrder = new int[scrambleToDecoySequence.Length];
             int[] mirrorDecoyAAOrder = new int[mirrorToDecoySequence.Length];
