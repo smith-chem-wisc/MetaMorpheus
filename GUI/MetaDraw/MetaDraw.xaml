@@ -91,7 +91,9 @@
                                               CanUserDeleteRows="false" CanUserAddRows="false">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70"></DataGridTextColumn>
-                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="150"></DataGridTextColumn>
+                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="160"></DataGridTextColumn>
+                                            <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="100" />
+                                            <DataGridTextColumn Header="Organism Name" Binding="{Binding OrganismName}" Width="100" />
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </Grid>

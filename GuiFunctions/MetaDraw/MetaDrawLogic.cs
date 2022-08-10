@@ -672,7 +672,8 @@ namespace GuiFunctions
                 PeptideSpectralMatchesView.Filter = obj =>
                 {
                     PsmFromTsv psm = obj as PsmFromTsv;
-                    return ((psm.Ms2ScanNumber.ToString()).StartsWith(searchString) || psm.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+                    return ((psm.Ms2ScanNumber.ToString()).StartsWith(searchString) || psm.FullSequence.ToUpper().Contains(searchString.ToUpper()) 
+                    || psm.ProteinName.Contains(searchString) || psm.OrganismName.Contains(searchString));
                 };
             }
         }
