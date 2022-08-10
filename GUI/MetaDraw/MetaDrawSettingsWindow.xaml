@@ -216,10 +216,10 @@
         <!-- save and close buttons -->
         <Grid Grid.Row="1">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom" HorizontalAlignment="Center" >
-                <Button x:Name="Cancel" Content="Cancel" Click="Cancel_Click" FontSize="15" Width="120" Margin="0,5" />
-                <Button x:Name="Save" Content="Save" Click="Save_Click" FontSize="15" Width="120" Margin="0,5" />
+                <Button x:Name="Cancel" Content="Cancel" Click="Cancel_Click" FontSize="15" Width="120" Margin="5" />
+                <Button x:Name="Save" Content="Save" Click="Save_Click" FontSize="15" Width="120" Margin="5" />
                 <Button x:Name="setDefaultbutton" Content ="Save As Default" Click="setDefaultbutton_Click" 
-                        FontSize="15" Width="120" Margin="0,5" >
+                        FontSize="15" Width="120" Margin="5" >
                     <ToolTipService.ToolTip>
                         <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" 
                                  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />

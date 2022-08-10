@@ -1205,6 +1205,16 @@ namespace MetaMorpheusGUI
             metaDrawGui.Show();
         }
 
+        private void MenuItem_ResetDefaults_Click(object sender, RoutedEventArgs e)
+        {
+            string defaultPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters");
+            if (MessageBox.Show("Reset to default values?", "", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                if (Directory.Exists(defaultPath))
+                    Directory.Delete(defaultPath, true);
+            }
+        }
+
         private void AddCustomMod_Click(object sender, RoutedEventArgs e)
         {
             var dialog = new CustomModWindow();
@@ -1940,5 +1950,7 @@ namespace MetaMorpheusGUI
         {
             OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
         }
+
+       
     }
 }
