@@ -373,8 +373,19 @@ namespace MetaMorpheusGUI
             // if a psm is selected
             if (MetaDrawLogic.ScrollableSequence != null)
             {
-                DrawnSequence.ClearCanvas(MetaDrawLogic.ScrollableSequence.SequenceDrawingCanvas);
-                DrawnSequence.ClearCanvas(MetaDrawLogic.StationarySequence.SequenceDrawingCanvas);
+                DrawnSequence.ClearCanvas(scrollableSequenceCanvas);
+                DrawnSequence.ClearCanvas(stationarySequenceCanvas);
+                DrawnSequence.ClearCanvas(map);
+                DrawnSequence.ClearCanvas(sequenceText);
+                DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
+                plotView.Visibility = Visibility.Hidden;
+                GrayBox.Opacity = 1;
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
+                AmbiguousSequenceOptionBox.Items.Clear();
+
+                if (PtmLegend.Count > 0)
+                    PtmLegend.First().Visibility = Visibility.Hidden;
+
                 plotView.Visibility = Visibility.Hidden;
                 MetaDrawLogic.FilteredListOfPsms.Clear();
             }
@@ -604,7 +615,7 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// I believe this one is never used
+        /// Export for Data Visualization tab
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>

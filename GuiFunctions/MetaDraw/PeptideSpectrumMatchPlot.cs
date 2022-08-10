@@ -451,7 +451,6 @@ namespace GuiFunctions
             this.Model.Annotations.Add(annotation);
         }
 
-
         protected void DrawPeak(double mz, double intensity, double strokeWidth, OxyColor color, TextAnnotation annotation)
         {
             // peak line

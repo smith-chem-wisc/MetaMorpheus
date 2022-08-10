@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using OxyPlot;
+using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -173,7 +174,7 @@ namespace GuiFunctions
                     }
                 }
             }
-            AnnotateModifications(psm, SequenceDrawingCanvas, fullSequence, yLoc);
+            AnnotateModifications(psm, SequenceDrawingCanvas, fullSequence, yLoc, chunkPositionInRow: chunkPositionInRow, annotationRow: annotationRow, annotation: Annotation);
         }
 
         /// <summary>
@@ -185,7 +186,7 @@ namespace GuiFunctions
         /// <param name="yLoc"></param>
         /// <param name="spacer"></param>
         /// <param name="xShift"></param>
-        public static void AnnotateModifications(PsmFromTsv spectrumMatch, Canvas sequenceDrawingCanvas, string fullSequence, int yLoc, double? spacer = null, int xShift = 12)
+        public static void AnnotateModifications(PsmFromTsv spectrumMatch, Canvas sequenceDrawingCanvas, string fullSequence, int yLoc, double? spacer = null, int xShift = 12, int chunkPositionInRow = 0, int annotationRow = 0, bool annotation = false)
         {
             var peptide = new PeptideWithSetModifications(fullSequence, GlobalVariables.AllModsKnownDictionary);
 
@@ -200,6 +201,12 @@ namespace GuiFunctions
             foreach (var mod in peptide.AllModsOneIsNterminus)
             {
                 double xLocation = (mod.Key - 1) * (spacer ?? MetaDrawSettings.AnnotatedSequenceTextSpacing) - xShift;
+                // adjust for spacing in sequence annotation
+                if (annotation)
+                {
+                    int residue = mod.Key - 1 + chunkPositionInRow + (chunkPositionInRow * MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment);
+                    xLocation =  residue * MetaDrawSettings.AnnotatedSequenceTextSpacing - 12;
+                }
                 double yLocation = yLoc + 2;
 
                 if (mod.Value.ModificationType == "O-Glycosylation")
@@ -220,7 +227,6 @@ namespace GuiFunctions
             }
         }
 
-
         /// <summary>
         /// Redraws the Stationary Sequence on the spectrum in reference to the position of the scrollable sequence
         /// </summary>
@@ -230,27 +236,18 @@ namespace GuiFunctions
         /// <param name="canvas"></param>
         public static void DrawStationarySequence(PsmFromTsv psm, DrawnSequence stationarySequence, int yLoc)
         {
-            ClearCanvas(stationarySequence.SequenceDrawingCanvas); 
+            ClearCanvas(stationarySequence.SequenceDrawingCanvas);
+            var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
             string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
             string fullSequence = baseSequence;
 
             // Trim full sequences selectively based upon what is show in scrollable sequence
-            Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
-            foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
+            var modDictionary = peptide.AllModsOneIsNterminus.Where(p => p.Key - 1 >= MetaDrawSettings.FirstAAonScreenIndex 
+            && p.Key - 1 < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).OrderByDescending(p => p.Key);
+            foreach (var mod in modDictionary)
             {
                 // if modification is within the visible region
-                if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
-                {
-                    // account for multiple modifications on the same amino acid
-                    for (int i = mod.Value.Count - 1; i > -1; i--)
-                    {
-                        fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value[i] + "]");
-                        if (i >= 1)
-                        {
-                            fullSequence = fullSequence.Insert(mod.Key, "|");
-                        }
-                    }
-                }
+                fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
             }
 
             List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
@@ -268,7 +265,8 @@ namespace GuiFunctions
             ClearCanvas(sequence.SequenceDrawingCanvas); 
             int segmentsPerRow = MetaDrawSettings.SequenceAnnotationSegmentPerRow;
             int residuesPerSegment = MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment;
-            Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
+            var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+            var modDictionary = peptide.AllModsOneIsNterminus.OrderByDescending(p => p.Key);
             int numberOfRows = (int)Math.Ceiling(((double)psm.BaseSeq.Length / residuesPerSegment) / segmentsPerRow);
             int remaining = psm.BaseSeq.Length;
 
@@ -300,20 +298,12 @@ namespace GuiFunctions
 
                 // add the mods onto the trimmed full sequence
                 string fullSequence = baseSequence;
-                foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
+                foreach (var mod in modDictionary)
                 {
-                    // account for multiple modifications on the same amino acid
-                    for (int k = mod.Value.Count - 1; k > -1; k--)
+                    // if modification is within the visible region
+                    if (mod.Key - 1 > i && mod.Key - 1 <= i + residuesPerSegment)
                     {
-                        // if modification is within the visible region
-                        if (mod.Key >= i && mod.Key <= i + residuesPerSegment)
-                        {
-                            fullSequence = fullSequence.Insert(mod.Key - i, "[" + mod.Value[k] + "]");
-                            if (k >= 1)
-                            {
-                                fullSequence = fullSequence.Insert(mod.Key - i, "|");
-                            }
-                        }
+                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                     }
                 }
                 PsmFromTsv tempPsm = new(psm, fullSequence, baseSequence: baseSequence);
@@ -336,7 +326,6 @@ namespace GuiFunctions
             }
         }
 
-
         public void DrawCrossLinkSequence()
         {
             this.AnnotateBaseSequence(SpectrumMatch.BetaPeptideBaseSequence, SpectrumMatch.BetaPeptideFullSequence, 100, SpectrumMatch.BetaPeptideMatchedIons, SpectrumMatch);
@@ -349,7 +338,6 @@ namespace GuiFunctions
                 new Point(betaSite * MetaDrawSettings.AnnotatedSequenceTextSpacing, 90),
                 Colors.Black);
         }
-
 
         /// <summary>
         /// This method exists because of the mirror plotting of spectral libraries. Library spectral ions are displayed
