@@ -353,7 +353,17 @@ namespace EngineLayer
         {
             return new PeptideSpectralMatch(this, bestMatchingPeptides);
         }
-
+        public int GetFullSequenceHashCode()
+        {
+            if (DigestionParams == null)
+            {
+                return FullSequence.GetHashCode();
+            }
+            else
+            {
+                return FullSequence.GetHashCode() + DigestionParams.Protease.GetHashCode();
+            }
+        }
         private PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
         {
             _BestMatchingPeptides = bestMatchingPeptides;

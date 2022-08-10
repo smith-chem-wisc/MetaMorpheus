@@ -132,7 +132,7 @@ namespace Test
             Assert.AreEqual(10, allPsmsArray[5].ScanNumber);
             Assert.IsTrue(allPsmsArray[5].IsDecoy);
             // Check hash code pairing
-            Assert.AreEqual(reverseToDecoyPeptide.PairedTargetDecoyHash, (allPsmsArray[3].FullSequence.GetHashCode() + allPsmsArray[3].DigestionParams.Protease.GetHashCode()));
+            Assert.AreEqual(reverseToDecoyPeptide.PairedTargetDecoyHash, allPsmsArray[3].GetFullSequenceHashCode());
         }
         [Test]
         public static void TestSearchEngineResultsPsmFromTsv()

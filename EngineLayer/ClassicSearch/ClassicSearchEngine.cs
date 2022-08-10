@@ -105,7 +105,7 @@ namespace EngineLayer.ClassicSearch
                         {
                             PeptideWithSetModifications generatedOnTheFlyDecoy = null;
                             // Do rev check similarity, do scrambled, check sim, do mirrored
-                            if (SpectralLibrary != null || DecoyOnTheFly == true)
+                            if (DecoyOnTheFly == true)
                             {
                                 // The change in this region is non-conservative.
                                 // This changes how decoys are generated when using a spectral library
@@ -126,6 +126,11 @@ namespace EngineLayer.ClassicSearch
                                     generatedOnTheFlyDecoy = peptide.GetScrambledDecoyFromTarget(newAAlocations);
                                 }
                                 
+                            }
+                            else if (SpectralLibrary != null)
+                            {
+                                int[] newAAlocations = new int[peptide.BaseSequence.Length];
+                                generatedOnTheFlyDecoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
                             }
 
                             // clear fragments from the last peptide
