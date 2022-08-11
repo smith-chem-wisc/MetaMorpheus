@@ -62,7 +62,7 @@ namespace GuiFunctions
             RefreshChart();
         }
 
-        public void ExportPlot(string path, Canvas stationarySequence, ItemsControl ptmLegend = null, double width = 700, double height = 370)
+        public void ExportPlot(string path, Canvas stationarySequence, Canvas ptmLegend = null, Vector ptmLegendLocationVector = new(), double width = 700, double height = 370)
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
@@ -110,21 +110,10 @@ namespace GuiFunctions
             Point ptmLegendPoint;
             if (ptmLegend != null && MetaDrawSettings.ShowLegend)
             {
-                // converting ItemsControl to a Canvas
-                ItemsControl ptmLegendCopy = new();
-                ptmLegendCopy.ItemsSource = ptmLegend.ItemsSource;
-                ptmLegendCopy.ItemTemplate = ptmLegend.ItemTemplate;
-                Canvas tempPtmLegendCanvas = new();
-                tempPtmLegendCanvas.Children.Add(ptmLegendCopy);
-                Size ptmLegendSize = new Size((int)ptmLegend.ActualWidth, (int)ptmLegend.ActualHeight);
-                tempPtmLegendCanvas.Measure(ptmLegendSize);
-                tempPtmLegendCanvas.Arrange(new Rect(ptmLegendSize));
-                tempPtmLegendCanvas.UpdateLayout();
-
                 // Saving Canvas as a usable Png
                 RenderTargetBitmap ptmLegendRenderBitmap = new((int)(dpiScale * ptmLegend.ActualWidth), (int)(dpiScale * ptmLegend.ActualHeight),
                          MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
-                ptmLegendRenderBitmap.Render(tempPtmLegendCanvas);
+                ptmLegendRenderBitmap.Render(ptmLegend);
                 PngBitmapEncoder legendEncoder = new PngBitmapEncoder();
                 legendEncoder.Frames.Add(BitmapFrame.Create(ptmLegendRenderBitmap));
                 using (FileStream file = File.Create(tempPtmLegendPngPath))
@@ -136,7 +125,6 @@ namespace GuiFunctions
                 System.Drawing.Bitmap tempPtmLegendBitmap = new(tempPtmLegendPngPath);
                 ptmLegendBitmap = new System.Drawing.Bitmap(tempPtmLegendBitmap, new System.Drawing.Size((int)ptmLegend.ActualWidth, (int)ptmLegend.ActualHeight));
                 bitmaps.Add(ptmLegendBitmap);
-                Vector ptmLegendLocationVector = (Vector)ptmLegend.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ptmLegend);
                 ptmLegendPoint = new Point(ptmLegendLocationVector.X, ptmLegendLocationVector.Y);
                 points.Add(ptmLegendPoint);
                 tempPtmLegendBitmap.Dispose();

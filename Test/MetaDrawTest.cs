@@ -11,7 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using TaskLayer;
 
@@ -695,6 +697,17 @@ namespace Test
             metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+            Directory.Delete(outputFolder, true);
+
+            Canvas ptmLegend = new();
+            Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();   
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
             Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
 

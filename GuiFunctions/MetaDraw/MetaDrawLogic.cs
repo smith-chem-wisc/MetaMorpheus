@@ -453,7 +453,9 @@ namespace GuiFunctions
             Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
-        public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors, ItemsControl ptmLegend = null)
+        public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<PsmFromTsv> spectrumMatches,
+            ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
+            Canvas ptmLegend = null, Vector ptmLegendLocationVector = new())
         {
             errors = new List<string>();
 
@@ -496,7 +498,7 @@ namespace GuiFunctions
                         filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType);
                         i++;
                     }
-                    plot.ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas, ptmLegend, plotView.ActualWidth, plotView.ActualHeight);
+                    plot.ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas, ptmLegend, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                 }
             }
 

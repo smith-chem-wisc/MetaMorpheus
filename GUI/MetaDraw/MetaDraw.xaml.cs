@@ -13,6 +13,7 @@ using System.Data;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -490,6 +491,11 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.FilterPsmsByString(txt);
         }
 
+        /// <summary>
+        /// Exports images of the parent and child scan
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
             if (dataGridScanNums.SelectedCells.Count == 0)
@@ -510,7 +516,23 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
-            MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors, PtmLegendControl);
+            Canvas ptmLegendCanvas = null;
+            Vector ptmLegendLocationVector = new();
+            if (MetaDrawSettings.ShowLegend)
+            {
+                ItemsControl ptmLegendCopy = new();
+                ptmLegendCopy.ItemsSource = PtmLegendControl.ItemsSource;
+                ptmLegendCopy.ItemTemplate = PtmLegendControl.ItemTemplate;
+                ptmLegendCanvas = new();
+                ptmLegendCanvas.Children.Add(ptmLegendCopy);
+                Size ptmLegendSize = new Size((int)PtmLegendControl.ActualWidth, (int)PtmLegendControl.ActualHeight);
+                ptmLegendCanvas.Measure(ptmLegendSize);
+                ptmLegendCanvas.Arrange(new Rect(ptmLegendSize));
+                ptmLegendCanvas.UpdateLayout();
+                ptmLegendLocationVector = (Vector)PtmLegendControl.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(PtmLegendControl);
+            }
+
+            MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors, ptmLegendCanvas, ptmLegendLocationVector);
             if (errors.Any())
             {
                 MessageBox.Show(errors.First());
