@@ -18,6 +18,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace MetaMorpheusGUI
 {
@@ -386,7 +388,6 @@ namespace MetaMorpheusGUI
 
         private void settings_Click(object sender, RoutedEventArgs e)
         {
-            
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem;
             var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
@@ -509,8 +510,7 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
-
-            MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors);
+            MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors, PtmLegendControl);
             if (errors.Any())
             {
                 MessageBox.Show(errors.First());
@@ -519,7 +519,6 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
             }
-
         }
 
         private void SequenceCoverageExportButton_Click(object sender, RoutedEventArgs e)
@@ -533,7 +532,6 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
-            int scanNumber = ((PsmFromTsv)dataGridScanNums.SelectedItem).Ms2ScanNumber;
             MetaDrawLogic.ExportSequenceCoverage(sequenceText, map, directoryPath, psm);
             
             if (Directory.Exists(directoryPath))
@@ -724,12 +722,6 @@ namespace MetaMorpheusGUI
                     plot.Model.DefaultXAxis.FontSize = plot.Model.DefaultFontSize;
                 }
             }
-        }
-
-        private void AnnotationSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            mapViewer.Height = .8 * SequenceAnnotationGrid.ActualHeight;
-            mapViewer.Width = .99 * SequenceAnnotationGrid.ActualWidth;
         }
 
         /// <summary>

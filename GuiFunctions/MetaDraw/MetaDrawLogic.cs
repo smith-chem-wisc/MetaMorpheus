@@ -453,7 +453,7 @@ namespace GuiFunctions
             Canvas.SetZIndex(line, 1); //on top of any other things in canvas
         }
 
-        public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors)
+        public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<PsmFromTsv> spectrumMatches, ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors, ItemsControl ptmLegend = null)
         {
             errors = new List<string>();
 
@@ -496,7 +496,7 @@ namespace GuiFunctions
                         filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType);
                         i++;
                     }
-                    plot.ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas, plotView.ActualWidth, plotView.ActualHeight);
+                    plot.ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas, ptmLegend, plotView.ActualWidth, plotView.ActualHeight);
                 }
             }
 
@@ -531,7 +531,7 @@ namespace GuiFunctions
             System.Drawing.Bitmap textBitmap = ConvertCanvasToBitmap(textCanvas, directory);
             Point textPoint = new(0, 0);
             System.Drawing.Bitmap mapBitmap = ConvertCanvasToBitmap(mapCanvas, directory);
-            Point mapPoint = new(0, textCanvas.ActualHeight - 25);
+            Point mapPoint = new(0, textCanvas.ActualHeight );
 
             List<System.Drawing.Bitmap> toCombine = new List<System.Drawing.Bitmap>() { textBitmap, mapBitmap };
             List<Point> points = new List<Point>() { textPoint, mapPoint };
@@ -582,7 +582,7 @@ namespace GuiFunctions
         }
 
         /// <summary>
-        /// Used to combine two bitmap objects
+        /// Used to combine multiple bitmap objects
         /// </summary>
         /// <param name="images">list of objects to combine</param>
         /// <param name="points">the position to begin drawing each</param>
@@ -821,9 +821,10 @@ namespace GuiFunctions
             switch (MetaDrawSettings.ExportType)
             {
                 case "Pdf":
-                    bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Png);
-                    ImageData imageData = ImageDataFactory.Create(path);
-                    File.Delete(path);
+                    string tempImagePath = path.Replace(".Pdf", ".png");
+                    bitmap.Save(tempImagePath, System.Drawing.Imaging.ImageFormat.Png);
+                    ImageData imageData = ImageDataFactory.Create(tempImagePath);
+                    File.Delete(tempImagePath);
                     iText.Layout.Element.Image pdfImage = new(imageData);
 
                     PdfDocument pdfDocument = new(new PdfWriter(path));

@@ -300,11 +300,17 @@ namespace GuiFunctions
                 string fullSequence = baseSequence;
                 foreach (var mod in modDictionary)
                 {
-                    // if modification is within the visible region
-                    if (mod.Key - 1 > i && mod.Key - 1 <= i + residuesPerSegment)
+                    // if first chunk in the row
+                    if (i % segmentsPerRow == 0 && mod.Key - 1 >= i && mod.Key - 1 <= i + residuesPerSegment)
                     {
                         fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                     }
+                    else if (mod.Key - 1 > i && mod.Key - 1 <= i + residuesPerSegment)
+                    {
+                        fullSequence = fullSequence.Insert(mod.Key - i - 1, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
+                    }
+
+                    
                 }
                 PsmFromTsv tempPsm = new(psm, fullSequence, baseSequence: baseSequence);
                 segments.Add(tempPsm);

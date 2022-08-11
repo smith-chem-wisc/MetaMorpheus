@@ -2,6 +2,7 @@
 using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
+using iText.Layout;
 using MassSpectrometry;
 using mzPlot;
 using OxyPlot;
@@ -14,11 +15,16 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using iText.Kernel.Geom;
+using Point = System.Windows.Point;
+using Vector = System.Windows.Vector;
+using Canvas = System.Windows.Controls.Canvas;
 
 namespace GuiFunctions
 {
@@ -56,17 +62,20 @@ namespace GuiFunctions
             RefreshChart();
         }
 
-        public void ExportPlot(string path, Canvas stationarySequence, double width = 700, double height = 370)
+        public void ExportPlot(string path, Canvas stationarySequence, ItemsControl ptmLegend = null, double width = 700, double height = 370)
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
-            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType.ToLower());
+            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
             string tempStationarySequencePngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "annotation.png");
+            string tempPtmLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
+            List<System.Drawing.Bitmap> bitmaps = new();
+            List<Point> points = new();
 
             // scales for desired DPI
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
-            // render stationary sequence as bitmap
+            // render stationary sequence as bitmap and export as png
             stationarySequence.Height += 30;
             stationarySequence.Width += 30;
             Size stationarySequenceSize = new Size((int)stationarySequence.Width, (int)stationarySequence.Height);
@@ -77,7 +86,6 @@ namespace GuiFunctions
                                                   MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
             renderStationaryBitmap.Render(stationarySequence);
 
-            // save stationary sequence as png
             PngBitmapEncoder encoder = new PngBitmapEncoder();
             encoder.Frames.Add(BitmapFrame.Create(renderStationaryBitmap));
             using (FileStream file = File.Create(tempStationarySequencePngPath))
@@ -87,36 +95,76 @@ namespace GuiFunctions
 
             // export model as png and load both stationary and model as bitmap
             base.ExportToPng(tempModelPath, (int)width, (int)height);
-            System.Drawing.Bitmap modelBitmap = new(tempModelPath);
-            Point modelPoint = new Point(0, 0);
+            bitmaps.Add(new System.Drawing.Bitmap(tempModelPath));
+            points.Add(new Point(0, 0));
 
             var tempStatSequenceBitmap = new System.Drawing.Bitmap(tempStationarySequencePngPath);
-            System.Drawing.Bitmap stationaryBitmap = new(tempStatSequenceBitmap, new System.Drawing.Size((int)stationarySequence.Width, (int)stationarySequence.Height));
-            Point stationaryPoint = new Point(stationarySequence.Margin.Left, stationarySequence.Margin.Top);
+            System.Drawing.Bitmap stationarySequenceBitmap = new System.Drawing.Bitmap(tempStatSequenceBitmap, new System.Drawing.Size((int)stationarySequence.Width, (int)stationarySequence.Height));
+            bitmaps.Add(stationarySequenceBitmap);
+            var stationarySequenceLocationVector = (Vector)stationarySequence.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(stationarySequence);
+            Point stationarySequencePoint = new Point(stationarySequenceLocationVector.X, stationarySequenceLocationVector.Y);
+            points.Add(stationarySequencePoint);
+
+            // render ptm legend as bitmap and export as png if used
+            System.Drawing.Bitmap ptmLegendBitmap = null;
+            Point ptmLegendPoint;
+            if (ptmLegend != null && MetaDrawSettings.ShowLegend)
+            {
+                // converting ItemsControl to a Canvas
+                ItemsControl ptmLegendCopy = new();
+                ptmLegendCopy.ItemsSource = ptmLegend.ItemsSource;
+                ptmLegendCopy.ItemTemplate = ptmLegend.ItemTemplate;
+                Canvas tempPtmLegendCanvas = new();
+                tempPtmLegendCanvas.Children.Add(ptmLegendCopy);
+                Size ptmLegendSize = new Size((int)ptmLegend.ActualWidth, (int)ptmLegend.ActualHeight);
+                tempPtmLegendCanvas.Measure(ptmLegendSize);
+                tempPtmLegendCanvas.Arrange(new Rect(ptmLegendSize));
+                tempPtmLegendCanvas.UpdateLayout();
+
+                // Saving Canvas as a usable Png
+                RenderTargetBitmap ptmLegendRenderBitmap = new((int)(dpiScale * ptmLegend.ActualWidth), (int)(dpiScale * ptmLegend.ActualHeight),
+                         MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+                ptmLegendRenderBitmap.Render(tempPtmLegendCanvas);
+                PngBitmapEncoder legendEncoder = new PngBitmapEncoder();
+                legendEncoder.Frames.Add(BitmapFrame.Create(ptmLegendRenderBitmap));
+                using (FileStream file = File.Create(tempPtmLegendPngPath))
+                {
+                    legendEncoder.Save(file);
+                }
+
+                // converting png to the final bitmap format
+                System.Drawing.Bitmap tempPtmLegendBitmap = new(tempPtmLegendPngPath);
+                ptmLegendBitmap = new System.Drawing.Bitmap(tempPtmLegendBitmap, new System.Drawing.Size((int)ptmLegend.ActualWidth, (int)ptmLegend.ActualHeight));
+                bitmaps.Add(ptmLegendBitmap);
+                Vector ptmLegendLocationVector = (Vector)ptmLegend.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ptmLegend);
+                ptmLegendPoint = new Point(ptmLegendLocationVector.X, ptmLegendLocationVector.Y);
+                points.Add(ptmLegendPoint);
+                tempPtmLegendBitmap.Dispose();
+            }
 
             // combine the bitmaps
-            List<System.Drawing.Bitmap> bitmaps = new() { modelBitmap, stationaryBitmap };
-            List<Point> points = new() { modelPoint, stationaryPoint };
             System.Drawing.Bitmap combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points);
             tempStatSequenceBitmap.Dispose();
 
             switch (MetaDrawSettings.ExportType)
             {
                 case "Pdf":
-                    base.ExportToPdf(tempModelPath, width, height);
-                    PdfDocument pdfDoc = new(new PdfReader(tempModelPath), new PdfWriter(path));
-                    iText.Layout.Document document = new(pdfDoc);
+                    string tempCombinedPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "tempCombined.png");
+                    combinedBitmaps.Save(tempCombinedPath, System.Drawing.Imaging.ImageFormat.Png);
 
-                    // prepare stationary sequence sequence image for addition to pdf
-                    ImageData imgData = ImageDataFactory.Create(tempStationarySequencePngPath);
-                    iText.Layout.Element.Image img = new iText.Layout.Element.Image(imgData);
-                    img.SetMarginLeft((float)(-1.0 * stationarySequence.Margin.Left) + 10);
-                    img.SetMarginTop(-30);
-                    img.ScaleToFit((float)stationarySequence.Width, (float)stationarySequence.Height);
+                    PdfDocument pdfDoc = new(new PdfWriter(path));
+                    iText.Layout.Document document = new(pdfDoc, new iText.Kernel.Geom.PageSize((float)width - 30, (float)height - 30));
 
-                    document.Add(img);
+                    ImageData sequenceAndLegendImageData = ImageDataFactory.Create(tempCombinedPath);
+                    iText.Layout.Element.Image sequenceAndPtmLegendImage = new(sequenceAndLegendImageData);
+                    sequenceAndPtmLegendImage.SetMarginLeft(-30);
+                    sequenceAndPtmLegendImage.SetMarginTop(-30);
+                    sequenceAndPtmLegendImage.ScaleToFit((float)width, (float)height);
+                    document.Add(sequenceAndPtmLegendImage);
+
                     pdfDoc.Close();
                     document.Close();
+                    File.Delete(tempCombinedPath);
                     break;
 
                 case "Png":
@@ -142,6 +190,7 @@ namespace GuiFunctions
 
             File.Delete(tempModelPath);
             File.Delete(tempStationarySequencePngPath);
+            File.Delete(tempPtmLegendPngPath);
         }
 
         protected void DrawSpectrum()

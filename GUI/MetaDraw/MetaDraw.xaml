@@ -189,7 +189,7 @@
 
                             <TabControl Grid.Row="1" x:Name="MetaDrawTabControl">
                                 <!--MS2 Scan Annotations-->
-                                <TabItem Header="Parent Scan View" Name="ParentScanView">
+                                <TabItem Header="Child Scan View" Name="ParentScanView">
                                     <Grid Name="PsmAnnotationGrid">
                                         <Grid.RowDefinitions>
                                             <RowDefinition/>
@@ -309,7 +309,7 @@
                                 
                                 <!--Sequence Coverage Annotation-->
                                 <TabItem Header="Sequence Coverage" x:Name="SequenceCoverageAnnotationView">
-                                    <Grid Grid.Row="1" Name="SequenceAnnotationGrid" SizeChanged="AnnotationSizeChanged" Style="{StaticResource InternalGridStyle}">
+                                    <Grid Grid.Row="1" Name="SequenceAnnotationGrid"  Style="{StaticResource InternalGridStyle}">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height = "35"></RowDefinition>
                                             <RowDefinition Height = "*"></RowDefinition>
@@ -321,7 +321,7 @@
                                         <Label Content="Sequence Coverage Map" Grid.Row="0" />
                                         
                                         <!-- sequence coverage display -->
-                                        <ScrollViewer Grid.Row="1" Name="sequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                        <ScrollViewer Grid.Row="1" Name="sequenceCoverageHorizontalScroll" HorizontalAlignment="Stretch" VerticalAlignment="Center" 
                                             CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto">
                                             <Grid Name="mapGrid" Background="White">
                                                 <Grid.RowDefinitions>
@@ -331,9 +331,9 @@
                                                 <!-- coverage text-->
                                                 <Canvas x:Name="sequenceText" Grid.Row="0" Background="White"></Canvas>
                                                 <!-- coverage map-->
-                                                <ScrollViewer Grid.Row="1" Name="mapViewer" HorizontalAlignment="Center" VerticalAlignment="Center" Width="Auto" 
+                                                <ScrollViewer Grid.Row="1" Name="mapViewer" HorizontalAlignment="Stretch" VerticalAlignment="Center" Width="Auto" 
                                                     CanContentScroll="True" VerticalScrollBarVisibility="Auto">
-                                                    <Canvas x:Name="map" Background="White"></Canvas>
+                                                    <Canvas x:Name="map" Background="White" HorizontalAlignment="Stretch"></Canvas>
                                                 </ScrollViewer>
                                             </Grid>
                                         </ScrollViewer>

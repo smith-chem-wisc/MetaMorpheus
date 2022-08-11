@@ -113,7 +113,6 @@ namespace GuiFunctions
                 {
                     return false;
                 }
-                return true;
             }
 
             return false;
