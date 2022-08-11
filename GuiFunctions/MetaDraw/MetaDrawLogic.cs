@@ -575,7 +575,7 @@ namespace GuiFunctions
             List<System.Drawing.Bitmap> toCombine = new List<System.Drawing.Bitmap>() { annotationBitmap, ptmLegendBitmap };
             List<Point> points = new List<Point>() { annotationPoint, ptmLegendPoint };
             System.Drawing.Bitmap combinedBitmap = CombineBitmap(toCombine, points, false);
-            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, combinedBitmap.Width - 150, combinedBitmap.Height), combinedBitmap.PixelFormat);
+            System.Drawing.Bitmap finalBitmap = combinedBitmap.Clone(new System.Drawing.Rectangle(0, 0, combinedBitmap.Width - 140, combinedBitmap.Height), combinedBitmap.PixelFormat);
             ExportBitmap(finalBitmap, path);
             combinedBitmap.Dispose();
             finalBitmap.Dispose();
@@ -852,6 +852,22 @@ namespace GuiFunctions
 
                 case "Bmp":
                     bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Bmp);
+                    break;
+
+                case "Svg":
+                    tempImagePath = path.Replace(".Pdf", ".png");
+                    bitmap.Save(tempImagePath, System.Drawing.Imaging.ImageFormat.Png);
+                    imageData = ImageDataFactory.Create(tempImagePath);
+                    File.Delete(tempImagePath);
+                    pdfImage = new(imageData);
+
+                    pdfDocument = new(new PdfWriter(path));
+                    document = new(pdfDocument);
+                    document.Add(pdfImage);
+                     
+                    pdfDocument.Close();
+                    document.Close();
+
                     break;
             }
         }
