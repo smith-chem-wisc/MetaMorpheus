@@ -853,22 +853,6 @@ namespace GuiFunctions
                 case "Bmp":
                     bitmap.Save(path, System.Drawing.Imaging.ImageFormat.Bmp);
                     break;
-
-                case "Svg":
-                    tempImagePath = path.Replace(".Pdf", ".png");
-                    bitmap.Save(tempImagePath, System.Drawing.Imaging.ImageFormat.Png);
-                    imageData = ImageDataFactory.Create(tempImagePath);
-                    File.Delete(tempImagePath);
-                    pdfImage = new(imageData);
-
-                    pdfDocument = new(new PdfWriter(path));
-                    document = new(pdfDocument);
-                    document.Add(pdfImage);
-                     
-                    pdfDocument.Close();
-                    document.Close();
-
-                    break;
             }
         }
 

@@ -698,6 +698,14 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
             Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
 
+            // test that a directory is created if it does not exist
+            Directory.Delete(outputFolder, true);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+
+
+
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
