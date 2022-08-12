@@ -14,11 +14,15 @@ namespace EngineLayer
 {
     public class IsotopeAnalysis
     {
-        public Dictionary<string, MsDataScan[]> _ms1Scans { get; private set; }
+        public Dictionary<string, MsDataScan[]> _MS1Scans { get; private set; }
 
         public List<PeptideSpectralMatch> AllPsms { get; set; }
 
         public Dictionary<string, List<(double, double)>> _modifiedSequenceToIsotopicDistribution {get; set; }
+
+        public static int MinimumNumberIsotopesRequired = 2;
+
+        MassDiffAcceptor MassDiffAcceptor; 
 
         private void CalculateTheoreticalIsotopeDistributions()
         {
@@ -46,13 +50,14 @@ namespace EngineLayer
                     continue;
                 }
 
+                if (psm.PeptideMonisotopicMass == null) continue; //This isn't the best way of handling a null value TODO: Fix this
+
                 ChemicalFormula formula = psm.ModsChemicalFormula;
 
                 var isotopicMassesAndNormalizedAbundances = new List<(double massShift, double abundance)>();
 
                 if (formula == null)
                 {
-                    if (psm.PeptideMonisotopicMass == null) continue;
                     double massDiff = (double)psm.PeptideMonisotopicMass;
 
                     if (!String.IsNullOrEmpty(psm.BaseSequence))
@@ -93,7 +98,7 @@ namespace EngineLayer
 
                 for (int i = 0; i < masses.Length; i++)
                 {
-                    masses[i] += (id.MonoisotopicMass - formula.MonoisotopicMass);
+                    masses[i] += ((double)psm.PeptideMonisotopicMass - formula.MonoisotopicMass);
                 }
 
                 double highestAbundance = abundances.Max();
@@ -102,34 +107,31 @@ namespace EngineLayer
                 for (int i = 0; i < masses.Length; i++)
                 {
                     // expected isotopic mass shifts for this peptide
-                    masses[i] -= id.MonoisotopicMass;
+                    masses[i] -= (double)psm.PeptideMonisotopicMass;
 
                     // normalized abundance of each isotope
                     abundances[i] /= highestAbundance;
 
                     // look for these isotopes
-                    if (isotopicMassesAndNormalizedAbundances.Count < NumIsotopesRequired || abundances[i] > 0.1)
+                    if (isotopicMassesAndNormalizedAbundances.Count < MinimumNumberIsotopesRequired || abundances[i] > 0.1)
                     {
                         isotopicMassesAndNormalizedAbundances.Add((masses[i], abundances[i]));
                     }
                 }
 
-                _modifiedSequenceToIsotopicDistribution.Add(id.ModifiedSequence, isotopicMassesAndNormalizedAbundances);
+                _modifiedSequenceToIsotopicDistribution.Add(psm.FullSequence, isotopicMassesAndNormalizedAbundances);
             }
 
-            var minChargeState = _allIdentifications.Min(p => p.PrecursorChargeState);
-            var maxChargeState = _allIdentifications.Max(p => p.PrecursorChargeState);
-            _chargeStates = Enumerable.Range(minChargeState, (maxChargeState - minChargeState) + 1);
-
-            var peptideModifiedSequences = _allIdentifications.GroupBy(p => p.ModifiedSequence);
-            foreach (var identifications in peptideModifiedSequences)
+            var peptideModifiedSequences = AllPsms.GroupBy(p => p.FullSequence);
+            foreach (var fullSequenceGroup in peptideModifiedSequences)
             {
                 // isotope where normalized abundance is 1
-                double mostAbundantIsotopeShift = _modifiedSequenceToIsotopicDistribution[identifications.First().ModifiedSequence].First(p => p.Item2 == 1.0).Item1;
+                double mostAbundantIsotopeShift = _modifiedSequenceToIsotopicDistribution[fullSequenceGroup.First().FullSequence].
+                    First(p => p.Item2 == 1.0).Item1;
 
-                foreach (Identification identification in identifications)
+                foreach (PeptideSpectralMatch psm in fullSequenceGroup)
                 {
-                    identification.PeakfindingMass = identification.MonoisotopicMass + mostAbundantIsotopeShift;
+                    psm.PeakFindingMass = (double)psm.PeptideMonisotopicMass + mostAbundantIsotopeShift;
                 }
             }
         }
@@ -137,17 +139,19 @@ namespace EngineLayer
         public void ScoreEnvelopes()
         {
             var psmsByFile = AllPsms.OrderBy(p => p.ScanNumber).GroupBy(p => p.FullFilePath);
+
             foreach (var psmGroup in psmsByFile)
             {
                 IEnumerable<int> precursorScanIndices = psmGroup.Where(p => p.PrecursorScanNumber != null).
                     Select(p => (int)p.PrecursorScanNumber).Distinct();
                 Queue<int> precursorScanQueue = new Queue<int>(precursorScanIndices);
                 Queue<MsDataScan> ms1Scans = null;
-                for (int i = 0; i < _ms1Scans[psmGroup.Key].Length; i++ )
+
+                for (int i = 0; i < _MS1Scans[psmGroup.Key].Length; i++ )
                 {
-                    if (_ms1Scans[psmGroup.Key][i] != null && _ms1Scans[psmGroup.Key][i].OneBasedScanNumber == precursorScanQueue.Peek())
+                    if (_MS1Scans[psmGroup.Key][i] != null && _MS1Scans[psmGroup.Key][i].OneBasedScanNumber == precursorScanQueue.Peek())
                     {
-                        ms1Scans.Enqueue(_ms1Scans[psmGroup.Key][i]);
+                        ms1Scans.Enqueue(_MS1Scans[psmGroup.Key][i]);
                         precursorScanQueue.Dequeue();
                     }
                 }
@@ -158,6 +162,23 @@ namespace EngineLayer
                 }
                 
             }
+        }
+
+        public void FindEnvelope(PeptideSpectralMatch psm, MsDataScan scan)
+        {
+            DoubleRange monoMass = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass((double)psm.PeptideMonisotopicMass).
+                Select(i => i.AllowedInterval).First();
+            DoubleRange mostAbundantMass = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(psm.PeakFindingMass).
+                Select(i => i.AllowedInterval).First();
+            MzSpectrum spectrum = scan.MassSpectrum;
+            for (int i = 0; i < 200; i++)
+            {
+                if (monoMass.Contains(spectrum.XArray[i])) 
+                {
+
+                }
+            }
+            bool y = x.Contains(2.0);
         }
 
         public bool ReadMS1Scans(string filePath, bool silent)
@@ -268,7 +289,7 @@ namespace EngineLayer
                 }
             }
 
-            _ms1Scans.Add(filePath, msDataScans);
+            _MS1Scans.Add(filePath, msDataScans);
             return true;
         }
     }
