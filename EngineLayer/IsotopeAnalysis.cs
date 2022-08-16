@@ -24,7 +24,7 @@ namespace EngineLayer
         
         public IsotopeAnalysis(List<string> fullFilePaths, List<PeptideSpectralMatch> allPsms, MassDiffAcceptor massDiffAcceptor)
         {
-            this.AllPsms = allPsms;
+            this.AllPsms = allPsms.Where(p => p != null).ToList();
             CalculateTheoreticalIsotopeDistributions();
             foreach (string fullPathToFile in fullFilePaths)
             {
@@ -55,7 +55,7 @@ namespace EngineLayer
             // calculate monoisotopic masses and isotopic envelope for the base sequences
             foreach (PeptideSpectralMatch psm in AllPsms)
             {
-                if (_modifiedSequenceToIsotopicDistribution.ContainsKey(psm.FullSequence))
+                if (psm.FullSequence == null || _modifiedSequenceToIsotopicDistribution.ContainsKey(psm.FullSequence))
                 {
                     continue;
                 }

@@ -11,6 +11,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using TaskLayer;
+using EngineLayer.ClassicSearch;
 
 namespace Test
 {
@@ -30,6 +31,37 @@ namespace Test
             string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPeptideFDR");
             DbForTask db = new DbForTask(myDatabase, true);
             Directory.CreateDirectory(folderPath);
+
+            SearchTask searchTask = new SearchTask();
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(searchTask.CommonParameters.PrecursorMassTolerance, MassDiffAcceptorType.Exact, searchTask.SearchParameters.CustomMdac);
+
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters commonParameters = new CommonParameters(maxThreadsToUsePerFile: 1, scoreCutoff: 1);
+            MsDataFile myMsDataFile = myFileManager.LoadFile(myFile, commonParameters);
+            MsDataFile myMsDataFile2 = myFileManager.LoadFile(myFile2, commonParameters);
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var proteinList = new List<Protein> { new Protein("VIHDNFGIVEGLMTTVHAITATQK", "P16858") };
+
+            string targetSpectralLibrary = Path.Combine(folderPath, @"P16858_target.msp");
+            string decoySpectralLibrary = Path.Combine(folderPath, @"P16858_decoy.msp");
+
+            List<string> specLibs = new List<string> { targetSpectralLibrary, decoySpectralLibrary };
+
+            //SpectralLibrary sl = new(specLibs);
+
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            bool writeSpectralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, commonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
+
+            IsotopeAnalysis testIsotopeAnalysis = new(new List<string> { myFile, myFile2 }, allPsmsArray.ToList(), massDiffAcceptor);
+
 
             // search something with multiple hits of the same peptide to see if peptide FDR is calculated at the end
             new SearchTask().RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile, myFile2 }, "normal");
@@ -63,6 +95,34 @@ namespace Test
             // intermediate q-values no longer always follow this formula, so I'm not testing them here
             Assert.AreEqual(cumDecoys / (double)cumTargets, finalQValue, 0.0001);
             Directory.Delete(folderPath, true);
+
+
+
+            //var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");
+            //string myFile = Path.Combine(testDir, @"slicedMouse.raw");
+            //MyFileManager myFileManager = new MyFileManager(true);
+            //CommonParameters commonParameters = new CommonParameters(maxThreadsToUsePerFile: 1, scoreCutoff: 1);
+            //MsDataFile myMsDataFile = myFileManager.LoadFile(myFile, commonParameters);
+
+            //var variableModifications = new List<Modification>();
+            //var fixedModifications = new List<Modification>();
+            //var proteinList = new List<Protein> { new Protein("VIHDNFGIVEGLMTTVHAITATQK", "P16858") };
+
+            //string targetSpectralLibrary = Path.Combine(testDir, @"P16858_target.msp");
+            //string decoySpectralLibrary = Path.Combine(testDir, @"P16858_decoy.msp");
+
+            //List<string> specLibs = new List<string> { targetSpectralLibrary, decoySpectralLibrary };
+
+            //SpectralLibrary sl = new(specLibs);
+
+            //var searchModes = new SinglePpmAroundZeroSearchMode(5);
+
+            //Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            //PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            //bool writeSpectralLibrary = false;
+            //new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+            //    proteinList, searchModes, commonParameters, null, sl, new List<string>(), writeSpectralLibrary).Run();
         }
     }
 }
