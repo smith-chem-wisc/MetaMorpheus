@@ -30,7 +30,7 @@ namespace EngineLayer
             {
                 if (ReadMS1Scans(fullPathToFile, true))
                 {
-                    FindAndScoreEnvelopes();
+                    FindAndScoreEnvelopes(fullPathToFile);
                 }
             }
         }
