@@ -81,6 +81,7 @@ namespace EngineLayer
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
         public IsotopicEnvelope MS1Envelope { get; set; }
+        public double IsotopeCorrelation { get; private set; }
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
@@ -345,6 +346,16 @@ namespace EngineLayer
                 }
                 ResolveAllAmbiguities();
             }
+        }
+
+        /// <summary>
+        /// This method is used with IsotopeAnalysis to set the pearson correlation between theoretical and actual isotope abundances
+        /// Negative abundances indicate that the isotope pattern was shifted to the right or left of the expected value
+        /// </summary>
+        /// <param name="correlation"> Pearson correlation between theoretical and experimental isotope abundances </param>
+        public void AddIsotopeCorrelation(double correlation)
+        {
+            this.IsotopeCorrelation = correlation;
         }
 
         /// <summary>
