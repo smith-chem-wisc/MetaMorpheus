@@ -136,7 +136,7 @@ namespace EngineLayer
             }
         }
 
-        public void ScoreEnvelopes()
+        public void FindAndScoreEnvelopes()
         {
             var psmsByFile = AllPsms.OrderBy(p => p.ScanNumber).GroupBy(p => p.FullFilePath);
 
@@ -158,27 +158,249 @@ namespace EngineLayer
 
                 foreach (PeptideSpectralMatch psm in psmGroup)
                 {
-                    
+                    IsotopicEnvelope envelope = FindEnvelope(psm, ms1Scans.Dequeue());
+                    psm.MS1Envelope = envelope;
                 }
                 
             }
         }
 
-        public void FindEnvelope(PeptideSpectralMatch psm, MsDataScan scan)
+        public void ScoreEnvelope(IsotopicEnvelope envelope, PeptideSpectralMatch psm)
+        {
+            //PpmTolerance isotopeTolerance = new PpmTolerance(IsotopePpmTolerance);
+            var isotopeMassShifts = _modifiedSequenceToIsotopicDistribution[psm.FullSequence];
+
+            double[] experimentalIsotopeIntensities = new double[isotopeMassShifts.Count];
+            double[] theoreticalIsotopeMassShifts = isotopeMassShifts.Select(p => p.Item1).ToArray();
+            double[] theoreticalIsotopeAbundances = isotopeMassShifts.Select(p => p.Item2).ToArray();
+
+            List<int> directions = new List<int> { -1, 1 };
+
+            var massShiftToIsotopePeaks = new Dictionary<int, List<(double expIntensity, double theorIntensity, double theorMass)>>
+            {
+                { -1, new List<(double, double, double)>() },
+                { 0, new List<(double, double, double)>() },
+                { 1, new List<(double, double, double)>() },
+            };
+
+            foreach (var shift in massShiftToIsotopePeaks)
+            {
+                // look for each isotope peak in the data
+                foreach (int direction in directions)
+                {
+                    int start = (direction == -1) ? peakfindingMassIndex - 1 : peakfindingMassIndex;
+
+                    for (int i = start; i < theoreticalIsotopeAbundances.Length && i >= 0; i += direction)
+                    {
+                        double isotopeMass = identification.MonoisotopicMass + observedMassError + theoreticalIsotopeMassShifts[i] + shift.Key * Constants.C13MinusC12;
+                        double theoreticalIsotopeIntensity = theoreticalIsotopeAbundances[i] * peak.Intensity;
+
+                        IndexedMassSpectralPeak isotopePeak = _peakIndexingEngine.GetIndexedPeak(isotopeMass,
+                            peak.ZeroBasedMs1ScanIndex, isotopeTolerance, chargeState);
+
+                        if (isotopePeak == null
+                            || isotopePeak.Intensity < theoreticalIsotopeIntensity / 4.0 || isotopePeak.Intensity > theoreticalIsotopeIntensity * 4.0)
+                        {
+                            break;
+                        }
+
+                        shift.Value.Add((isotopePeak.Intensity, theoreticalIsotopeIntensity, isotopeMass));
+                        if (shift.Key == 0)
+                        {
+                            experimentalIsotopeIntensities[i] = isotopePeak.Intensity;
+                        }
+                    }
+                }
+            }
+        }
+
+        public List<IsotopicEnvelope> GetIsotopicEnvelopes(List<IndexedMassSpectralPeak> xic, Identification identification, int chargeState)
+        {
+            var isotopicEnvelopes = new List<IsotopicEnvelope>();
+            var isotopeMassShifts = _modifiedSequenceToIsotopicDistribution[identification.ModifiedSequence];
+
+            if (isotopeMassShifts.Count < NumIsotopesRequired)
+            {
+                return isotopicEnvelopes;
+            }
+
+            PpmTolerance isotopeTolerance = new PpmTolerance(IsotopePpmTolerance);
+
+            double[] experimentalIsotopeIntensities = new double[isotopeMassShifts.Count];
+            double[] theoreticalIsotopeMassShifts = isotopeMassShifts.Select(p => p.Item1).ToArray();
+            double[] theoreticalIsotopeAbundances = isotopeMassShifts.Select(p => p.Item2).ToArray();
+            int peakfindingMassIndex = (int)Math.Round(identification.PeakfindingMass - identification.MonoisotopicMass, 0);
+
+            List<int> directions = new List<int> { -1, 1 };
+
+            var massShiftToIsotopePeaks = new Dictionary<int, List<(double expIntensity, double theorIntensity, double theorMass)>>
+            {
+                { -1, new List<(double, double, double)>() },
+                { 0, new List<(double, double, double)>() },
+                { 1, new List<(double, double, double)>() },
+            };
+
+            foreach (IndexedMassSpectralPeak peak in xic)
+            {
+                Array.Clear(experimentalIsotopeIntensities, 0, experimentalIsotopeIntensities.Length);
+                foreach (var kvp in massShiftToIsotopePeaks)
+                {
+                    kvp.Value.Clear();
+                }
+
+                // isotope masses are calculated relative to the observed peak
+                double observedMass = peak.Mz.ToMass(chargeState);
+                double observedMassError = observedMass - identification.PeakfindingMass;
+
+                foreach (var shift in massShiftToIsotopePeaks)
+                {
+                    // look for each isotope peak in the data
+                    foreach (int direction in directions)
+                    {
+                        int start = direction == -1 ? peakfindingMassIndex - 1 : peakfindingMassIndex;
+
+                        for (int i = start; i < theoreticalIsotopeAbundances.Length && i >= 0; i += direction)
+                        {
+                            double isotopeMass = identification.MonoisotopicMass + observedMassError + theoreticalIsotopeMassShifts[i] + shift.Key * Constants.C13MinusC12;
+                            double theoreticalIsotopeIntensity = theoreticalIsotopeAbundances[i] * peak.Intensity;
+
+                            IndexedMassSpectralPeak isotopePeak = _peakIndexingEngine.GetIndexedPeak(isotopeMass,
+                                peak.ZeroBasedMs1ScanIndex, isotopeTolerance, chargeState);
+
+                            if (isotopePeak == null
+                                || isotopePeak.Intensity < theoreticalIsotopeIntensity / 4.0 || isotopePeak.Intensity > theoreticalIsotopeIntensity * 4.0)
+                            {
+                                break;
+                            }
+
+                            shift.Value.Add((isotopePeak.Intensity, theoreticalIsotopeIntensity, isotopeMass));
+                            if (shift.Key == 0)
+                            {
+                                experimentalIsotopeIntensities[i] = isotopePeak.Intensity;
+                            }
+                        }
+                    }
+                }
+
+                // check number of isotope peaks observed
+                if (massShiftToIsotopePeaks[0].Count < NumIsotopesRequired)
+                {
+                    continue;
+                }
+
+                double corr = Correlation.Pearson(massShiftToIsotopePeaks[0].Select(p => p.expIntensity), massShiftToIsotopePeaks[0].Select(p => p.theorIntensity));
+
+                // check correlation of experimental isotope intensities to the theoretical abundances
+                foreach (var shift in massShiftToIsotopePeaks)
+                {
+                    if (!shift.Value.Any())
+                    {
+                        continue;
+                    }
+
+                    double unexpectedMass = shift.Value.Min(p => p.theorMass) - Constants.C13MinusC12;
+
+                    IndexedMassSpectralPeak unexpectedPeak = _peakIndexingEngine.GetIndexedPeak(unexpectedMass,
+                                peak.ZeroBasedMs1ScanIndex, isotopeTolerance, chargeState);
+
+                    if (unexpectedPeak == null)
+                    {
+                        shift.Value.Add((0, 0, unexpectedMass));
+                    }
+                    else
+                    {
+                        shift.Value.Add((unexpectedPeak.Intensity, 0, unexpectedMass));
+                    }
+                }
+
+                double corrWithPadding = Correlation.Pearson(massShiftToIsotopePeaks[0].Select(p => p.expIntensity), massShiftToIsotopePeaks[0].Select(p => p.theorIntensity));
+                double corrShiftedLeft = Correlation.Pearson(massShiftToIsotopePeaks[-1].Select(p => p.expIntensity), massShiftToIsotopePeaks[-1].Select(p => p.theorIntensity));
+                double corrShiftedRight = Correlation.Pearson(massShiftToIsotopePeaks[1].Select(p => p.expIntensity), massShiftToIsotopePeaks[1].Select(p => p.theorIntensity));
+
+                if (double.IsNaN(corrShiftedLeft))
+                {
+                    corrShiftedLeft = -1;
+                }
+                if (double.IsNaN(corrShiftedRight))
+                {
+                    corrShiftedRight = -1;
+                }
+
+                if (corr > 0.7 && (corrShiftedLeft - corrWithPadding < 0.1 && corrShiftedRight - corrWithPadding < 0.1))
+                {
+                    // impute unobserved isotope peak intensities
+                    for (int i = 0; i < experimentalIsotopeIntensities.Length; i++)
+                    {
+                        if (experimentalIsotopeIntensities[i] == 0)
+                        {
+                            experimentalIsotopeIntensities[i] = theoreticalIsotopeAbundances[i] * experimentalIsotopeIntensities[peakfindingMassIndex];
+                        }
+                    }
+
+                    isotopicEnvelopes.Add(new IsotopicEnvelope(peak, chargeState, experimentalIsotopeIntensities.Sum()));
+                }
+            }
+
+            return isotopicEnvelopes;
+        }
+
+        public IsotopicEnvelope FindEnvelope(PeptideSpectralMatch psm, MsDataScan scan)
         {
             DoubleRange monoMass = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass((double)psm.PeptideMonisotopicMass).
                 Select(i => i.AllowedInterval).First();
             DoubleRange mostAbundantMass = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(psm.PeakFindingMass).
                 Select(i => i.AllowedInterval).First();
+            double experimentalMonoMass = 0;
+            double experimentalMostAbundantMass = 0;
             MzSpectrum spectrum = scan.MassSpectrum;
-            for (int i = 0; i < 200; i++)
+            Range? spectrumRange = null;
+            int envelopeSize = _modifiedSequenceToIsotopicDistribution[psm.FullSequence].Count;
+            for (int i = 0; i < spectrum.XArray.Length; i++)
             {
-                if (monoMass.Contains(spectrum.XArray[i])) 
+                if (monoMass.Contains(spectrum.XArray[i]))
                 {
-
+                    // For the envelope, we want to look at the peak immediately before the monoisotopic mass,
+                    // so as to avoid situations where the "monoisotopic peak" is actually an isotope peak for something else 
+                    int rangeStart = i > 0 ? i - 1 : i;
+                    // Look at peak after the end of the envelope as well
+                    spectrumRange = rangeStart + 1 + envelopeSize < spectrum.XArray.Length ? 
+                        new Range(rangeStart, rangeStart + envelopeSize + 1) :
+                        new Range(rangeStart, spectrum.XArray.Length);
+                    experimentalMonoMass = spectrum.XArray[i];
+                }
+                if (mostAbundantMass.Contains(spectrum.XArray[i]))
+                {
+                    experimentalMostAbundantMass = spectrum.XArray[i];
+                    if (spectrumRange == null)
+                    {
+                        int massShiftMonoToAbundant = (int)Math.Round(mostAbundantMass.Mean - monoMass.Mean, 0);
+                        // want to see what's before the most abundant, in case mono was slightly outside of tolerance or w/e
+                        int rangeStart = i > (massShiftMonoToAbundant + 1) ? i - massShiftMonoToAbundant - 1 : 0;
+                        spectrumRange = rangeStart + 1 + envelopeSize < spectrum.XArray.Length ?
+                            new Range(rangeStart, rangeStart + envelopeSize + 1) :
+                            new Range(rangeStart, spectrum.XArray.Length);
+                    }
+                    break;
                 }
             }
-            bool y = x.Contains(2.0);
+
+            if (spectrumRange == null) return null;
+            IsotopicEnvelope envelope = new(
+                MakeTupleList(spectrum.XArray.Take((Range)spectrumRange).ToArray(), spectrum.YArray.Take((Range)spectrumRange).ToArray()),
+                experimentalMonoMass, psm.ScanPrecursorCharge, 0, 0, 0);
+            if (Math.Abs(envelope.MostAbundantObservedIsotopicMass - experimentalMostAbundantMass) > 0.01) throw new Exception("idk"); //Should change this at some point, but I'm interested to see if it breaks in testing
+            return envelope;
+        }
+
+        public List< (double, double) > MakeTupleList(double[] mzArray, double[] intensityArray)
+        {
+            if (mzArray.Length != intensityArray.Length) return null;
+            List<(double, double)> tupleList = new();
+            for (int i = 0; i < mzArray.Length; i++)
+            {
+                tupleList.Add((mzArray[i], intensityArray[i]));
+            }
+            return tupleList;
         }
 
         public bool ReadMS1Scans(string filePath, bool silent)

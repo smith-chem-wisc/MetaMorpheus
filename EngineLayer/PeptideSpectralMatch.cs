@@ -80,6 +80,7 @@ namespace EngineLayer
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
+        public IsotopicEnvelope MS1Envelope { get; set; }
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
