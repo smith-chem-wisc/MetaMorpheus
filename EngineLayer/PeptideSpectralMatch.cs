@@ -21,7 +21,6 @@ namespace EngineLayer
             FullFilePath = scan.FullFilePath;
             ScanNumber = scan.OneBasedScanNumber;
             PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
-            PrecursorEnvelope = scan.PrecursorEnvelope;
             ScanRetentionTime = scan.RetentionTime;
             ScanExperimentalPeaks = scan.NumPeaks;
             TotalIonCurrent = scan.TotalIonCurrent;
@@ -81,9 +80,6 @@ namespace EngineLayer
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
-        public IsotopicEnvelope PrecursorEnvelope { get; set; }
-        public Dictionary<PeptideWithSetModifications, double> IsotopeCorrelation { get; private set; }
-
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
 
