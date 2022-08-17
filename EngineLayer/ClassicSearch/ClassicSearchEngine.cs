@@ -52,7 +52,7 @@ namespace EngineLayer.ClassicSearch
             // we have to generate the reverse peptides instead of the usual reverse proteins because we generate decoy spectral
             // library spectra from their corresponding paired target peptides
             // for DecoyOnTheFly, we also remove decoys from the spectral library
-            Proteins = spectralLibrary == null || DecoyOnTheFly == true ? proteinList : proteinList.Where(p => !p.IsDecoy).ToList();
+            Proteins = spectralLibrary == null && DecoyOnTheFly == false ? proteinList : proteinList.Where(p => !p.IsDecoy).ToList();
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -125,7 +125,7 @@ namespace EngineLayer.ClassicSearch
                                     // different sequence similarity scores.
                                     generatedOnTheFlyDecoy = peptide.GetScrambledDecoyFromTarget(newAAlocations);
                                 }
-                                
+
                             }
                             else if (SpectralLibrary != null)
                             {
