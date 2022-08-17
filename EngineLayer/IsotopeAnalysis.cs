@@ -24,6 +24,8 @@ namespace EngineLayer
         
         public IsotopeAnalysis(List<string> fullFilePaths, List<PeptideSpectralMatch> allPsms, MassDiffAcceptor massDiffAcceptor)
         {
+            this._MS1Scans = new();
+            this.MassDiffAcceptor = massDiffAcceptor;
             this.AllPsms = allPsms.Where(p => p != null).ToList();
             CalculateTheoreticalIsotopeDistributions();
             foreach (string fullPathToFile in fullFilePaths)
@@ -62,13 +64,13 @@ namespace EngineLayer
 
                 if (psm.PeptideMonisotopicMass == null) continue; //This isn't the best way of handling a null value TODO: Fix this
 
-                ChemicalFormula formula = psm.ModsChemicalFormula;
+                ChemicalFormula formula = null;
 
                 var isotopicMassesAndNormalizedAbundances = new List<(double massShift, double abundance)>();
 
                 if (formula == null)
                 {
-                    double massDiff = (double)psm.PeptideMonisotopicMass;
+                    double massDiff = (double)psm.ScanPrecursorMass;
 
                     if (!String.IsNullOrEmpty(psm.BaseSequence))
                     {
@@ -132,28 +134,29 @@ namespace EngineLayer
                 _modifiedSequenceToIsotopicDistribution.Add(psm.FullSequence, isotopicMassesAndNormalizedAbundances);
             }
 
-            var peptideModifiedSequences = AllPsms.GroupBy(p => p.FullSequence);
-            foreach (var fullSequenceGroup in peptideModifiedSequences)
-            {
-                // isotope where normalized abundance is 1
-                double mostAbundantIsotopeShift = _modifiedSequenceToIsotopicDistribution[fullSequenceGroup.First().FullSequence].
-                    First(p => p.Item2 == 1.0).Item1;
+            //var peptideModifiedSequences = AllPsms.GroupBy(p => p.FullSequence);
+            //foreach (var fullSequenceGroup in peptideModifiedSequences)
+            //{
+            //    // isotope where normalized abundance is 1
+            //    double mostAbundantIsotopeShift = _modifiedSequenceToIsotopicDistribution[fullSequenceGroup.First().FullSequence].
+            //        First(p => p.Item2 == 1.0).Item1;
 
-                foreach (PeptideSpectralMatch psm in fullSequenceGroup)
-                {
-                    psm.PeakFindingMass = (double)psm.PeptideMonisotopicMass + mostAbundantIsotopeShift;
-                }
-            }
+            //    foreach (PeptideSpectralMatch psm in fullSequenceGroup)
+            //    {
+            //        psm.PeakFindingMass = (double)psm.PeptideMonisotopicMass + mostAbundantIsotopeShift;
+            //    }
+            //}
         }
 
         public void FindAndScoreEnvelopes(string fullFilePath)
         {
-            var psmsByFile = AllPsms.Where(p => p.FullFilePath.Equals(fullFilePath)).OrderBy(p => p.ScanNumber);
+            var psmsByFile = AllPsms.Where(p => Path.GetFileNameWithoutExtension(p.FullFilePath).Equals(Path.GetFileNameWithoutExtension(fullFilePath))).
+                OrderBy(p => p.ScanNumber);
 
             IEnumerable<int> precursorScanIndices = psmsByFile.Where(p => p.PrecursorScanNumber != null).
                 Select(p => (int)p.PrecursorScanNumber).Distinct();
             Queue<int> precursorScanQueue = new Queue<int>(precursorScanIndices);
-            Queue<MsDataScan> ms1Scans = null;
+            Queue<MsDataScan> ms1Scans = new();
 
             for (int i = 0; i < _MS1Scans[fullFilePath].Length; i++ )
             {
@@ -166,7 +169,18 @@ namespace EngineLayer
 
             foreach (PeptideSpectralMatch psm in psmsByFile)
             {
-                IsotopicEnvelope envelope = FindEnvelope(psm, ms1Scans.Dequeue());
+                if (psm.FullSequence == null) continue; // Can't/Won't score ambiguous peptides
+                bool scanMatch = false;
+                while(!scanMatch)
+                {
+                    if (!ms1Scans.TryPeek(out MsDataScan scan)) return;
+                    int scanNumber = scan.OneBasedScanNumber;
+                    int? psmScanNumber = psm.PrecursorScanNumber;
+                    if (psmScanNumber != scanNumber) ms1Scans.Dequeue();
+                    else scanMatch = true;
+                }
+                
+                IsotopicEnvelope envelope = FindEnvelope(psm, ms1Scans.Peek());
                 ScoreEnvelope(envelope, psm);
                 psm.MS1Envelope = envelope;
             }
@@ -201,13 +215,13 @@ namespace EngineLayer
                         envelope.Peaks.OrderByDescending(p => p.intensity).First().intensity;
 
 
-                    if (envelope.Peaks[i].intensity < theoreticalIsotopeIntensity / 4.0 ||
-                        envelope.Peaks[i].intensity > theoreticalIsotopeIntensity * 4.0)
-                    {
-                        break;
-                    }
+                    //if (envelope.Peaks[i + 1 + shift.Key].intensity < theoreticalIsotopeIntensity / 4.0 ||
+                    //    envelope.Peaks[i + 1 + shift.Key].intensity > theoreticalIsotopeIntensity * 4.0)
+                    //{
+                    //    break;
+                    //}
 
-                    shift.Value.Add((envelope.Peaks[i + shift.Key].intensity, theoreticalIsotopeIntensity, isotopeMass));
+                    shift.Value.Add((envelope.Peaks[i + 1 + shift.Key].intensity, theoreticalIsotopeIntensity, isotopeMass));
                     if (shift.Key == 0)
                     {
                         experimentalIsotopeIntensities[i] = envelope.Peaks[i].intensity;
@@ -237,7 +251,7 @@ namespace EngineLayer
             for (int i = 0; i < envelopeSize; i++)
             {
                 DoubleRange interval = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(
-                        (double)psm.PeptideMonisotopicMass + i - 1 * Constants.C13MinusC12).First().AllowedInterval; 
+                        (double)psm.PeptideMonisotopicMass + (i - 1) * Constants.C13MinusC12).First().AllowedInterval; 
                 ranges[i] = interval;
                 mzValues[i] = interval.Mean;
             }
@@ -246,16 +260,16 @@ namespace EngineLayer
 
             for (int i = 0; i < spectrum.XArray.Length; i++)
             {
-                if (spectrum.XArray[i] * precursorCharge >= ranges[0].Minimum) 
+                if ((spectrum.XArray[i] - Constants.ProtonMass) * precursorCharge >= ranges[0].Minimum) 
                 {
                     for (int j = 0; j < envelopeSize; j++)
                     {
-                        while (spectrum.XArray[i] * precursorCharge <= ranges[j].Maximum)
+                        while ((spectrum.XArray[i] - Constants.ProtonMass) * precursorCharge <= ranges[j].Maximum)
                         {
-                            if (ranges[j].Contains(spectrum.XArray[i] * precursorCharge) )
+                            if (ranges[j].Contains((spectrum.XArray[i] - Constants.ProtonMass) * precursorCharge) )
                             {
+                                mzValues[j] = (spectrum.XArray[i] - Constants.ProtonMass) * precursorCharge;
                                 intensityValues[j] = spectrum.YArray[i];
-                                mzValues[j] = spectrum.XArray[i];
                             }
                             i++;
                         }

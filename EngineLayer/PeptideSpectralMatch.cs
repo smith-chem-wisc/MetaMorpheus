@@ -21,6 +21,7 @@ namespace EngineLayer
             FullFilePath = scan.FullFilePath;
             ScanNumber = scan.OneBasedScanNumber;
             PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
+            PrecursorEnvelope = scan.PrecursorEnvelope;
             ScanRetentionTime = scan.RetentionTime;
             ScanExperimentalPeaks = scan.NumPeaks;
             TotalIonCurrent = scan.TotalIonCurrent;
@@ -80,8 +81,8 @@ namespace EngineLayer
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
-        public IsotopicEnvelope MS1Envelope { get; set; }
-        public double IsotopeCorrelation { get; private set; }
+        public IsotopicEnvelope PrecursorEnvelope { get; set; }
+        public Dictionary<PeptideWithSetModifications, double> IsotopeCorrelation { get; private set; }
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
@@ -353,10 +354,24 @@ namespace EngineLayer
         /// Negative abundances indicate that the isotope pattern was shifted to the right or left of the expected value
         /// </summary>
         /// <param name="correlation"> Pearson correlation between theoretical and experimental isotope abundances </param>
-        public void AddIsotopeCorrelation(double correlation)
-        {
-            this.IsotopeCorrelation = correlation;
-        }
+        //public void CalculateIsotopeCorrelation(PeptideWithSetModifications pwsm)
+        //{
+        //    this.IsotopeCorrelation = correlation;
+        //}
+
+        //public void GetIsotopeDistribution(PeptideWithSetModifications pwsm) 
+        //{
+        //    // AVERAGINE
+        //    const double averageC = 4.9384;
+        //    const double averageH = 7.7583;
+        //    const double averageO = 1.4773;
+        //    const double averageN = 1.3577;
+        //    const double averageS = 0.0417;
+
+        //    const double fineRes = 0.125;
+        //    const double minRes = 1e-8; 
+
+        //}
 
         /// <summary>
         /// This method is used by SILAC quantification to add heavy/light psms
