@@ -27,6 +27,7 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
+            ScanPrecursorEnvelope = scan.PrecursorEnvelope;
             DigestionParams = commonParameters.DigestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
@@ -57,6 +58,7 @@ namespace EngineLayer
         public Dictionary<string, int> ModsIdentified { get; private set; } // these should never be null under normal circumstances
         public List<double> LocalizedScores { get; internal set; }
         public int ScanNumber { get; }
+        public IsotopicEnvelope  ScanPrecursorEnvelope {get; }
         public int? PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
         public int ScanExperimentalPeaks { get; }

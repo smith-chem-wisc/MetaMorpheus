@@ -46,6 +46,15 @@ namespace Test
             Tolerance tolerance = new PpmTolerance(10.0); // I'm not sure if we actually need a wider tolerance, but
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(tolerance, MassDiffAcceptorType.Exact, searchTask.SearchParameters.CustomMdac);
 
+            List<PeptideWithSetModifications> peptideWithSetModificationList = allPsmsArray.Where(p => p != null).SelectMany(p => p.BestMatchingPeptides).Select(p => p.Peptide).ToList();
+            foreach (var pwsm in peptideWithSetModificationList)
+            {
+                if (pwsm.FullChemicalFormula.AtomCount == 0)
+                {
+                    int placeholder2 = 3;
+                }
+            }
+
             IsotopeAnalysis testIsotopeAnalysis = new(new List<string> { origDataFile }, allPsmsArray.ToList(), massDiffAcceptor);
             int placeholder = 0;
 

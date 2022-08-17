@@ -182,7 +182,7 @@ namespace EngineLayer
                 
                 IsotopicEnvelope envelope = FindEnvelope(psm, ms1Scans.Peek());
                 ScoreEnvelope(envelope, psm);
-                psm.MS1Envelope = envelope;
+                //psm.MS1Envelope = envelope;
             }
         }
 
@@ -233,9 +233,9 @@ namespace EngineLayer
             double corrShiftedLeft = Correlation.Pearson(massShiftToIsotopePeaks[-1].Select(p => p.expIntensity), massShiftToIsotopePeaks[-1].Select(p => p.theorIntensity));
             double corrShiftedRight = Correlation.Pearson(massShiftToIsotopePeaks[1].Select(p => p.expIntensity), massShiftToIsotopePeaks[1].Select(p => p.theorIntensity));
 
-            if (corrShiftedLeft - corr > 0.1) psm.AddIsotopeCorrelation(-1 * corrShiftedLeft);
-            else if (corrShiftedRight - corr > 0.1) psm.AddIsotopeCorrelation(-1 * corrShiftedRight);
-            else psm.AddIsotopeCorrelation(corr);
+            //if (corrShiftedLeft - corr > 0.1) psm.AddIsotopeCorrelation(-1 * corrShiftedLeft);
+            //else if (corrShiftedRight - corr > 0.1) psm.AddIsotopeCorrelation(-1 * corrShiftedRight);
+            //else psm.AddIsotopeCorrelation(corr);
         }
 
         public IsotopicEnvelope FindEnvelope(PeptideSpectralMatch psm, MsDataScan scan)

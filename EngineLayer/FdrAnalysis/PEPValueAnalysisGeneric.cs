@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MassSpectrometry.MzSpectra;
 
 namespace EngineLayer
 {
@@ -24,6 +25,8 @@ namespace EngineLayer
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+        public static double fineRes = 0.125;
+        public static double minRes = 1e-8;
 
         public static string ComputePEPValuesForAllPSMsGeneric(List<PeptideSpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
         {
@@ -743,6 +746,7 @@ namespace EngineLayer
             float isIntra = 0;
             float spectralAngle = 0;
             float hasSpectralAngle = 0;
+            float isotopeKullbackLeibler = 0;
 
             if (searchType != "crosslink")
             {
@@ -772,10 +776,24 @@ namespace EngineLayer
                 psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
                 spectralAngle = (float)psm.SpectralAngle;
-
                 if (PsmHasSpectralAngle(psm))
                 {
                     hasSpectralAngle = 1;
+                }
+
+                //Isotopic Envelope Similarity
+                ChemicalFormula peptideFormula = selectedPeptide.FullChemicalFormula;
+                if (peptideFormula.AtomCount == 0) peptideFormula = null; //set some field to 0
+                IsotopicDistribution peptideDistribution = (peptideFormula == null) ? null : IsotopicDistribution.GetDistribution(peptideFormula, fineRes, minRes);
+                if (peptideDistribution != null)
+                {
+                    var experimentalPeaks = psm.ScanPrecursorEnvelope.Peaks;
+                    SpectralSimilarity isotopeSimilarity = new(
+                        experimentalPeaks.Select(p => p.mz).ToArray(), experimentalPeaks.Select(p => p.intensity).ToArray(),
+                        peptideDistribution.Masses.ToArray(), peptideDistribution.Intensities.ToArray(),
+                        SpectralSimilarity.SpectrumNormalizationScheme.unnormalized, toleranceInPpm: 10.0,
+                        allPeaks: true, filterOutBelowThisMz: 200);
+                    isotopeKullbackLeibler = (float?)isotopeSimilarity.KullbackLeiblerDivergence_P_Q() ?? 0;
                 }
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
