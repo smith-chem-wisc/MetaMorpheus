@@ -181,21 +181,10 @@ namespace MetaMorpheusGUI
             if (psm.FullSequence.Contains('|') && sender.ToString() != "System.Object")
             {
                 // clear all drawings of the previous non-ambiguous psm
-                MetaDrawSettings.DrawMatchedIons = false;
-                DrawnSequence.ClearCanvas(scrollableSequenceCanvas);
-                DrawnSequence.ClearCanvas(stationarySequenceCanvas);
-                DrawnSequence.ClearCanvas(map);
-                DrawnSequence.ClearCanvas(sequenceText);
-                DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
-                plotView.Visibility = Visibility.Hidden;
-                GrayBox.Opacity = 0;
+                ClearPresentationArea();
+
                 AmbiguousWarningTextBlocks.Visibility = Visibility.Visible;
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
-                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
-                AmbiguousSequenceOptionBox.Items.Clear();
-
-                if (PtmLegend.Count > 0)
-                    PtmLegend.First().Visibility = Visibility.Hidden;
 
                 // create a psm object for each ambiguous option and add it to the dropdown box
                 var fullSeqs = psm.FullSequence.Split('|');
@@ -769,8 +758,11 @@ namespace MetaMorpheusGUI
                 }
             }
             SetSequenceDrawingPositionSettings();
-            if (MetaDrawLogic.StationarySequence != null)
+            if (MetaDrawLogic.StationarySequence != null && !psm.FullSequence.Contains('|'))
+            {
                 DrawnSequence.DrawStationarySequence(psm, MetaDrawLogic.StationarySequence, 10);
+            }
+                
         }
 
         /// <summary>
