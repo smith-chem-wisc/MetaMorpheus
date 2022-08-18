@@ -349,30 +349,6 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// This method is used with IsotopeAnalysis to set the pearson correlation between theoretical and actual isotope abundances
-        /// Negative abundances indicate that the isotope pattern was shifted to the right or left of the expected value
-        /// </summary>
-        /// <param name="correlation"> Pearson correlation between theoretical and experimental isotope abundances </param>
-        //public void CalculateIsotopeCorrelation(PeptideWithSetModifications pwsm)
-        //{
-        //    this.IsotopeCorrelation = correlation;
-        //}
-
-        //public void GetIsotopeDistribution(PeptideWithSetModifications pwsm) 
-        //{
-        //    // AVERAGINE
-        //    const double averageC = 4.9384;
-        //    const double averageH = 7.7583;
-        //    const double averageO = 1.4773;
-        //    const double averageN = 1.3577;
-        //    const double averageS = 0.0417;
-
-        //    const double fineRes = 0.125;
-        //    const double minRes = 1e-8; 
-
-        //}
-
-        /// <summary>
         /// This method is used by SILAC quantification to add heavy/light psms
         /// Don't have access to the scans at that point, so a new contructor is needed
         /// </summary>

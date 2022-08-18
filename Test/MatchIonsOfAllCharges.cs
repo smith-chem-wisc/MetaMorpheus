@@ -357,6 +357,7 @@ namespace Test
 
             //we'll make a copy so that when we search this copy, we get enough psms to compute pep q-value. It gets deleted below.
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput\rawCopy.mzML");
+            if (File.Exists(rawCopy)) File.Delete(rawCopy);
             File.Copy(raw, rawCopy);
 
             EverythingRunnerEngine MassSpectraFile = new(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw, rawCopy }, new List<DbForTask> { db }, thisTaskOutputFolder);

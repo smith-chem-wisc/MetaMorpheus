@@ -782,20 +782,7 @@ namespace EngineLayer
                 }
 
                 //Isotopic Envelope Similarity
-                ChemicalFormula peptideFormula = selectedPeptide.FullChemicalFormula;
-                if (peptideFormula.AtomCount == 0) peptideFormula = null; //set some field to 0
-                IsotopicDistribution peptideDistribution = (peptideFormula == null) ? null : IsotopicDistribution.GetDistribution(peptideFormula, fineRes, minRes);
-                if (peptideDistribution != null)
-                {
-                    var experimentalPeaks = psm.ScanPrecursorEnvelope.Peaks.OrderBy(p => p.mz);
-                    SpectralSimilarity isotopeSimilarity = new(
-                        experimentalPeaks.Select(p => p.mz.ToMass(psm.ScanPrecursorCharge)).ToArray(), experimentalPeaks.Select(p => p.intensity).ToArray(),
-                        peptideDistribution.Masses.ToArray(), peptideDistribution.Intensities.ToArray(),
-                        SpectralSimilarity.SpectrumNormalizationScheme.unnormalized, toleranceInPpm: 10.0,
-                        allPeaks: true, filterOutBelowThisMz: 200);
-                    isotopeKullbackLeibler = (float?)isotopeSimilarity.KullbackLeiblerDivergence_P_Q() ?? 0;
-                    psm.isotopeKullbackLeibler = isotopeKullbackLeibler;
-                }
+                isotopeKullbackLeibler = GetIsotopeCorrelation(selectedPeptide, psm);
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
@@ -999,6 +986,89 @@ namespace EngineLayer
             }
 
             return massErrors.Average();
+        }
+
+        public static float GetIsotopeCorrelation(PeptideWithSetModifications selectedPeptide, PeptideSpectralMatch psm)
+        {
+            float isotopeKullbackLeibler = 0;
+            ChemicalFormula peptideFormula = null;
+            try
+            {
+                peptideFormula = selectedPeptide.FullChemicalFormula;
+            }
+            //XL data throws a nullRefernceException when you try to access the FullChemicalFormual
+            catch (NullReferenceException e)
+            {
+
+            } 
+            catch (Exception e)
+            {
+                return float.NaN;
+            }
+            if (peptideFormula == null || peptideFormula.AtomCount > 0)
+            {
+                // calculate averagine (used for isotopic distributions for unknown modifications)
+                double averageC = 4.9384;
+                double averageH = 7.7583;
+                double averageO = 1.4773;
+                double averageN = 1.3577;
+                double averageS = 0.0417;
+
+                double averagineMass =
+                    PeriodicTable.GetElement("C").AverageMass * averageC +
+                    PeriodicTable.GetElement("H").AverageMass * averageH +
+                    PeriodicTable.GetElement("O").AverageMass * averageO +
+                    PeriodicTable.GetElement("N").AverageMass * averageN +
+                    PeriodicTable.GetElement("S").AverageMass * averageS;
+
+                if (!String.IsNullOrEmpty(selectedPeptide.BaseSequence))
+                {
+                    Proteomics.AminoAcidPolymer.Peptide baseSequence = new Proteomics.AminoAcidPolymer.Peptide(selectedPeptide.BaseSequence);
+                    peptideFormula = baseSequence.GetChemicalFormula();
+                    // add averagine for any unknown mass difference (i.e., a modification)
+                    double massDiff = selectedPeptide.MonoisotopicMass - baseSequence.MonoisotopicMass;
+
+                    // Magic numbers are bad practice, but I pulled this directly from flashLfq
+                    if (Math.Abs(massDiff) >= 20)
+                    {
+                        double averagines = massDiff / averagineMass;
+
+                        peptideFormula.Add("C", (int)Math.Round(averagines * averageC, 0));
+                        peptideFormula.Add("H", (int)Math.Round(averagines * averageH, 0));
+                        peptideFormula.Add("O", (int)Math.Round(averagines * averageO, 0));
+                        peptideFormula.Add("N", (int)Math.Round(averagines * averageN, 0));
+                        peptideFormula.Add("S", (int)Math.Round(averagines * averageS, 0));
+                    }
+                }
+                else
+                {
+                    double averagines = selectedPeptide.MonoisotopicMass / averagineMass;
+                    string averagineFormulaString =
+                        "C" + (int)Math.Round(averagines * averageC, 0) +
+                        "H" + (int)Math.Round(averagines * averageH, 0) +
+                        "O" + (int)Math.Round(averagines * averageO, 0) +
+                        "N" + (int)Math.Round(averagines * averageN, 0) +
+                        "S" + (int)Math.Round(averagines * averageS, 0);
+                    peptideFormula = ChemicalFormula.ParseFormula(averagineFormulaString);
+                }
+            }
+            IsotopicDistribution peptideDistribution =  IsotopicDistribution.GetDistribution(peptideFormula, fineRes, minRes);
+            if (peptideDistribution != null && psm.ScanPrecursorEnvelope != null)
+            {
+                var experimentalPeaks = psm.ScanPrecursorEnvelope.Peaks.OrderBy(p => p.mz);
+                SpectralSimilarity isotopeSimilarity = new(
+                    experimentalPeaks.Select(p => p.mz.ToMass(psm.ScanPrecursorCharge)).ToArray(), experimentalPeaks.Select(p => p.intensity).ToArray(),
+                    peptideDistribution.Masses.ToArray(), peptideDistribution.Intensities.ToArray(),
+                    SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum, toleranceInPpm: 10.0,
+                    allPeaks: true, filterOutBelowThisMz: 200);
+                isotopeKullbackLeibler = (float?)isotopeSimilarity.KullbackLeiblerDivergence_P_Q() ?? float.NaN;
+                psm.isotopeKullbackLeibler = isotopeKullbackLeibler;
+                return isotopeKullbackLeibler;
+            } else
+            {
+                return float.NaN;
+            }
+            
         }
     }
 }
