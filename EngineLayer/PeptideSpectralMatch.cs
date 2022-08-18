@@ -49,7 +49,6 @@ namespace EngineLayer
         public int? OneBasedStartResidueInProtein { get; private set; }
         public int? OneBasedEndResidueInProtein { get; private set; }
         public double? PeptideMonisotopicMass { get; private set; }
-        public double PeakFindingMass { get; set; }
         public int? ProteinLength { get; private set; }
         public string ProteinAccession { get; private set; }
         public string Organism { get; private set; }

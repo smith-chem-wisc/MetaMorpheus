@@ -997,14 +997,7 @@ namespace EngineLayer
                 peptideFormula = selectedPeptide.FullChemicalFormula;
             }
             //XL data throws a nullRefernceException when you try to access the FullChemicalFormual
-            catch (NullReferenceException e)
-            {
-
-            } 
-            catch (Exception e)
-            {
-                return float.NaN;
-            }
+            catch (NullReferenceException e){} 
             if (peptideFormula == null || peptideFormula.AtomCount > 0)
             {
                 // calculate averagine (used for isotopic distributions for unknown modifications)
@@ -1040,27 +1033,21 @@ namespace EngineLayer
                         peptideFormula.Add("S", (int)Math.Round(averagines * averageS, 0));
                     }
                 }
-                else
-                {
-                    double averagines = selectedPeptide.MonoisotopicMass / averagineMass;
-                    string averagineFormulaString =
-                        "C" + (int)Math.Round(averagines * averageC, 0) +
-                        "H" + (int)Math.Round(averagines * averageH, 0) +
-                        "O" + (int)Math.Round(averagines * averageO, 0) +
-                        "N" + (int)Math.Round(averagines * averageN, 0) +
-                        "S" + (int)Math.Round(averagines * averageS, 0);
-                    peptideFormula = ChemicalFormula.ParseFormula(averagineFormulaString);
-                }
             }
+
             IsotopicDistribution peptideDistribution =  IsotopicDistribution.GetDistribution(peptideFormula, fineRes, minRes);
             if (peptideDistribution != null && psm.ScanPrecursorEnvelope != null)
             {
                 var experimentalPeaks = psm.ScanPrecursorEnvelope.Peaks.OrderBy(p => p.mz);
                 SpectralSimilarity isotopeSimilarity = new(
-                    experimentalPeaks.Select(p => p.mz.ToMass(psm.ScanPrecursorCharge)).ToArray(), experimentalPeaks.Select(p => p.intensity).ToArray(),
-                    peptideDistribution.Masses.ToArray(), peptideDistribution.Intensities.ToArray(),
-                    SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum, toleranceInPpm: 10.0,
-                    allPeaks: true, filterOutBelowThisMz: 200);
+                    experimentalPeaks.Select(p => p.mz.ToMass(psm.ScanPrecursorCharge)).ToArray(),
+                    experimentalPeaks.Select(p => p.intensity).ToArray(),
+                    peptideDistribution.Masses.ToArray(),
+                    peptideDistribution.Intensities.ToArray(),
+                    SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum,
+                    toleranceInPpm: 10.0,
+                    allPeaks: true,
+                    filterOutBelowThisMz: 200);
                 isotopeKullbackLeibler = (float?)isotopeSimilarity.KullbackLeiblerDivergence_P_Q() ?? float.NaN;
                 psm.isotopeKullbackLeibler = isotopeKullbackLeibler;
                 return isotopeKullbackLeibler;
