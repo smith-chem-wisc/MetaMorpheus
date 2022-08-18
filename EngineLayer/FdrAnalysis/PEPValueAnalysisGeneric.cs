@@ -787,13 +787,14 @@ namespace EngineLayer
                 IsotopicDistribution peptideDistribution = (peptideFormula == null) ? null : IsotopicDistribution.GetDistribution(peptideFormula, fineRes, minRes);
                 if (peptideDistribution != null)
                 {
-                    var experimentalPeaks = psm.ScanPrecursorEnvelope.Peaks;
+                    var experimentalPeaks = psm.ScanPrecursorEnvelope.Peaks.OrderBy(p => p.mz);
                     SpectralSimilarity isotopeSimilarity = new(
-                        experimentalPeaks.Select(p => p.mz).ToArray(), experimentalPeaks.Select(p => p.intensity).ToArray(),
+                        experimentalPeaks.Select(p => p.mz.ToMass(psm.ScanPrecursorCharge)).ToArray(), experimentalPeaks.Select(p => p.intensity).ToArray(),
                         peptideDistribution.Masses.ToArray(), peptideDistribution.Intensities.ToArray(),
                         SpectralSimilarity.SpectrumNormalizationScheme.unnormalized, toleranceInPpm: 10.0,
                         allPeaks: true, filterOutBelowThisMz: 200);
                     isotopeKullbackLeibler = (float?)isotopeSimilarity.KullbackLeiblerDivergence_P_Q() ?? 0;
+                    psm.isotopeKullbackLeibler = isotopeKullbackLeibler;
                 }
 
                 if (psm.DigestionParams.Protease.Name != "top-down")

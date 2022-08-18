@@ -44,7 +44,7 @@ namespace EngineLayer.FdrAnalysis
             { "IsIntra", -1 },
             { "SpectralAngle", 1 },
             { "HasSpectralAngle", 1 },
-            { "IsotopeKullbackLeibler", 1 }
+            { "IsotopeKullbackLeibler", -1 }
             }.ToImmutableDictionary();
 
         public string ToString(string searchType)

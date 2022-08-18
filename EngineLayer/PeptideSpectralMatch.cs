@@ -59,6 +59,7 @@ namespace EngineLayer
         public List<double> LocalizedScores { get; internal set; }
         public int ScanNumber { get; }
         public IsotopicEnvelope  ScanPrecursorEnvelope {get; }
+        public float isotopeKullbackLeibler { get; set; }
         public int? PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
         public int ScanExperimentalPeaks { get; }

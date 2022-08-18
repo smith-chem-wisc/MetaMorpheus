@@ -339,6 +339,8 @@ namespace Test
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
+            Assert.That(maxScorePsm.isotopeKullbackLeibler, Is.EqualTo(0.0225).Within(0.001));
+
 
             List<PeptideSpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
             List<PeptideSpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
