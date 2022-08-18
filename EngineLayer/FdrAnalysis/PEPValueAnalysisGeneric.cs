@@ -1035,9 +1035,9 @@ namespace EngineLayer
                 }
             }
 
-            IsotopicDistribution peptideDistribution =  IsotopicDistribution.GetDistribution(peptideFormula, fineRes, minRes);
-            if (peptideDistribution != null && psm.ScanPrecursorEnvelope != null)
+            if (peptideFormula != null && psm.ScanPrecursorEnvelope != null)
             {
+                IsotopicDistribution peptideDistribution = IsotopicDistribution.GetDistribution(peptideFormula, fineRes, minRes);
                 var experimentalPeaks = psm.ScanPrecursorEnvelope.Peaks.OrderBy(p => p.mz);
                 SpectralSimilarity isotopeSimilarity = new(
                     experimentalPeaks.Select(p => p.mz.ToMass(psm.ScanPrecursorCharge)).ToArray(),
