@@ -22,6 +22,7 @@ namespace Test
     internal static class AddCompIonsTest
     {
         [Test]
+        // ZD: This test appears to be failing due to an issue with ambiguous peptides possibly steming from how DOTFComparison handles this at line 348
         public static void TestAddCompIonsClassic()
         {
             var myMsDataFile = new TestDataFile();

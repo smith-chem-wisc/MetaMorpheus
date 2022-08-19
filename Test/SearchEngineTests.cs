@@ -26,6 +26,7 @@ namespace Test
     public static class SearchEngineTests
     {
         [Test]
+        // ZD: This test appears to be failing due to an issue with ambiguous peptides possibly steming from how DOTFComparison handles this at line 348
         public static void TestClassicSearchEngine()
         {
             Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
@@ -197,6 +198,8 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test appears to be failing due to a reduced number of PSMs matched
+        // ZD: Could not be a problem but it is a bit concerning that it matches substantially fewer PSMs
         public static void TestClassicSearchXcorrWithToml()
         {
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
@@ -383,6 +386,7 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test appears to be failing due to an issue with ambiguous peptides possibly steming from how DOTFComparison handles this at line 348
         public static void TestClassicSearchEngineWithWeirdPeptide()
         {
             CommonParameters CommonParameters = new CommonParameters(
@@ -630,6 +634,8 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test appears to be failing due to a reduced number of PSMs matched
+        // ZD: Could not be a problem but it is a bit concerning that it matches substantially fewer PSMs
         public static void TestClassicSearchEngineLowResSimple()
         {
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests\sliced_b6.mzML");

@@ -438,6 +438,7 @@ namespace Test
         }
 
         [Test]
+        // ZD: Extra files present likely due to an issue with tests failing
         public static void TestFileOutput()
         {
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestFileOutput");
@@ -556,6 +557,7 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test is failing due to a difference between how decoys are generated for madern and classic search due to DOTF
         public static void TestModernAndClassicSearch()
         {
             SearchTask classicSearch = new SearchTask();

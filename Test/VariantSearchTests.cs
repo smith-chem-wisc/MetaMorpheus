@@ -43,6 +43,7 @@ namespace Test
         [TestCase(8, 1, true, "P6PP[type:mod on P]P", DecoyType.Reverse)]
         [TestCase(9, 0, true, "PTIDEPEPTIDE4PPP")] // intersecting sequence between variant and detected peptide is smaller than the original sequence, so clearly identied
         [TestCase(9, 0, true, "EDITPEPEDITP2PPP", DecoyType.Reverse)] // MPEPPP becomes MPPPEP with the variant beginning at position 2
+        // ZD: This unit test appears to be failing for every reversed decoy case, likely due to the fact that DOTF is changing decoy generation.
         public static void SearchTests(int proteinIdx, int peptideIdx, bool containsVariant, string variantPsmShort, DecoyType decoyType = DecoyType.None)
         {
             Stopwatch stopwatch = new Stopwatch();

@@ -28,7 +28,7 @@ namespace EngineLayer.ClassicSearch
         public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
-            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool decoyOnTheFly = false)
+            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool decoyOnTheFly = true)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
