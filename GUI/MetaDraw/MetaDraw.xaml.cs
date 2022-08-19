@@ -806,6 +806,8 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void SetSequenceDrawingPositionSettings(bool reset = false)
         {
+            if (dataGridScanNums.SelectedItem == null)
+                return;
             double width = SequenceAnnotationArea.ActualWidth;
             double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
             if (reset)
