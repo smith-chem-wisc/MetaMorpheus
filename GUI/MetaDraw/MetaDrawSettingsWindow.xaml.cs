@@ -49,7 +49,9 @@ namespace MetaMorpheusGUI
             BoldTextCheckBox.IsChecked = MetaDrawSettings.AnnotationBold;
             DecoysCheckBox.IsChecked = MetaDrawSettings.ShowDecoys;
             ContaminantsCheckBox.IsChecked = MetaDrawSettings.ShowContaminants;
+            ShowInternalIonAnnotationsCheckBox.IsChecked = MetaDrawSettings.DisplayInternalIonAnnotations;
             PrecursorChargeCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Charge: "];
+            ShowInternalIonsCheckBox.IsChecked = MetaDrawSettings.InternalIonColor != OxyColors.Transparent;
             PrecursorMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Mass: "];
             TheoreticalMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Theoretical Mass: "];
             ScoreCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Score: "];
@@ -92,6 +94,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.AnnotationBold = BoldTextCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowDecoys = BoldTextCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowContaminants = BoldTextCheckBox.IsChecked.Value;
+            MetaDrawSettings.DisplayInternalIonAnnotations = ShowInternalIonAnnotationsCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Charge: "] = PrecursorChargeCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Mass: "] = PrecursorMassCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Theoretical Mass: "] = TheoreticalMassCheckBox.IsChecked.Value;
@@ -112,6 +115,8 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
             MetaDrawSettings.ExportType = ExportFileFormatComboBox.SelectedItem.ToString();
             MetaDrawSettings.AmbiguityFilter = AmbiguityFilteringComboBox.SelectedItem.ToString();
+            if (!ShowInternalIonsCheckBox.IsChecked.Value)
+                MetaDrawSettings.InternalIonColor = OxyColors.Transparent;
             SettingsView.Save();
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))

@@ -24,6 +24,7 @@ namespace GuiFunctions
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = false;
         public static bool AnnotationBold { get; set; } = false;
+        public static bool DisplayInternalIonAnnotations { get; set; }= true;
         public static Dictionary<OxyColor, string> PossibleColors { get; set; }
         public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
         public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
@@ -177,8 +178,8 @@ namespace GuiFunctions
                         ModificationTypeToColor[mod] = OxyColors.Maroon;
                     }
 
-                // setting individual specific
-                foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Phosphorylation")))
+                    // setting individual specific
+                    foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Phosphorylation")))
                     {
                         ModificationTypeToColor[mod.Key] = OxyColors.Red;
                     }
@@ -195,6 +196,9 @@ namespace GuiFunctions
                     CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
                     CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
                     CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
+
+                    UnannotatedPeakColor = OxyColors.LightGray;
+                    InternalIonColor = OxyColors.Purple;
 
                 #endregion
 
@@ -228,6 +232,7 @@ namespace GuiFunctions
                 AnnotationBold = AnnotationBold,
                 ShowDecoys = ShowDecoys,
                 ShowContaminants = ShowContaminants,
+                DisplayInternalIonAnnotations = DisplayInternalIonAnnotations,
                 QValueFilter = QValueFilter,
                 AmbiguityFilter = AmbiguityFilter,
                 DrawStationarySequence = DrawStationarySequence,
@@ -257,6 +262,7 @@ namespace GuiFunctions
             AnnotationBold = settings.AnnotationBold;
             ShowDecoys = settings.ShowDecoys;
             ShowContaminants = settings.ShowContaminants;
+            DisplayInternalIonAnnotations = settings.DisplayInternalIonAnnotations;
             QValueFilter = settings.QValueFilter;
             AmbiguityFilter = settings.AmbiguityFilter;
             DrawStationarySequence = settings.DrawStationarySequence;

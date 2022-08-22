@@ -19,6 +19,7 @@ namespace GuiFunctions
         public bool AnnotateMzValues { get; set; } = false;
         public bool AnnotateCharges { get; set; } = false;
         public bool AnnotationBold { get; set; } = false;
+        public bool DisplayInternalIonAnnotations { get; set; } = true;
         public bool DrawStationarySequence { get; set; } = true;
         public bool DrawNumbersUnderStationary { get; set; } = true;
         public bool ShowLegend { get; set; } = true;

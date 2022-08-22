@@ -328,37 +328,42 @@ namespace GuiFunctions
                     prefix = "A-";
                 }
             }
-
-            string peakAnnotationText = prefix + matchedIon.NeutralTheoreticalProduct.Annotation;
-
-            if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
-            {
-                peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
-            }
-
-            if (MetaDrawSettings.AnnotateCharges)
-            {
-                peakAnnotationText += "+" + matchedIon.Charge;
-            }
-
-            if (MetaDrawSettings.AnnotateMzValues)
-            {
-                peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
-            }
-
             var peakAnnotation = new TextAnnotation();
-            peakAnnotation.Font = "Arial";
-            peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
-            peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? OxyPlot.FontWeights.Bold : 2.0;
-            peakAnnotation.TextColor = ionColor;
-            peakAnnotation.StrokeThickness = 0;
-            peakAnnotation.Text = peakAnnotationText;
-            peakAnnotation.TextPosition = new DataPoint(mz, intensity);
-            peakAnnotation.TextVerticalAlignment = intensity < 0 ? OxyPlot.VerticalAlignment.Top : OxyPlot.VerticalAlignment.Bottom;
-            peakAnnotation.TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center;
-            
+            if (MetaDrawSettings.DisplayIonAnnotations)
+            {
+                string peakAnnotationText = prefix + matchedIon.NeutralTheoreticalProduct.Annotation;
 
-            if (!MetaDrawSettings.DisplayIonAnnotations)
+                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
+                }
+
+                if (MetaDrawSettings.AnnotateCharges)
+                {
+                    peakAnnotationText += "+" + matchedIon.Charge;
+                }
+
+                if (MetaDrawSettings.AnnotateMzValues)
+                {
+                    peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
+                }
+
+
+                peakAnnotation.Font = "Arial";
+                peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;
+                peakAnnotation.FontWeight = MetaDrawSettings.AnnotationBold ? OxyPlot.FontWeights.Bold : 2.0;
+                peakAnnotation.TextColor = ionColor;
+                peakAnnotation.StrokeThickness = 0;
+                peakAnnotation.Text = peakAnnotationText;
+                peakAnnotation.TextPosition = new DataPoint(mz, intensity);
+                peakAnnotation.TextVerticalAlignment = intensity < 0 ? OxyPlot.VerticalAlignment.Top : OxyPlot.VerticalAlignment.Bottom;
+                peakAnnotation.TextHorizontalAlignment = OxyPlot.HorizontalAlignment.Center;
+            }
+            else
+            {
+                peakAnnotation.Text = string.Empty;
+            }
+            if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null && !MetaDrawSettings.DisplayInternalIonAnnotations) //if internal fragment
             {
                 peakAnnotation.Text = string.Empty;
             }
