@@ -159,10 +159,26 @@ namespace Test
             Assert.That(view.CoverageColors.First().SelectedColor == "Blue");
             Assert.That(view.CoverageColors.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
+            var internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion");
+            Assert.That(!internalIonIonTypeForTreeView.HasChanged);
+            internalIonIonTypeForTreeView.SelectionChanged("Blue");
+            Assert.That(internalIonIonTypeForTreeView.HasChanged);
+            Assert.That(internalIonIonTypeForTreeView.SelectedColor == "Blue");
+            Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+
+            internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak");
+            Assert.That(!internalIonIonTypeForTreeView.HasChanged);
+            internalIonIonTypeForTreeView.SelectionChanged("Blue");
+            Assert.That(internalIonIonTypeForTreeView.HasChanged);
+            Assert.That(internalIonIonTypeForTreeView.SelectedColor == "Blue");
+            Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+
             view.Save();
             Assert.That(MetaDrawSettings.ProductTypeToColor[view.IonGroups.First().Ions.First().IonType] == OxyColors.Blue);
             Assert.That(MetaDrawSettings.ModificationTypeToColor[view.Modifications.First().Children.First().ModName] == OxyColors.Blue);
             Assert.That(MetaDrawSettings.CoverageTypeToColor[view.CoverageColors.First().Name] == OxyColors.Blue);
+            Assert.That(MetaDrawSettings.InternalIonColor == OxyColors.Blue);
+            Assert.That(MetaDrawSettings.UnannotatedPeakColor == OxyColors.Blue);
         }
 
         [Test]
