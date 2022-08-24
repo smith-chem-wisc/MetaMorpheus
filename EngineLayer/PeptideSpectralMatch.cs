@@ -59,6 +59,7 @@ namespace EngineLayer
         public int ScanNumber { get; }
         public IsotopicEnvelope  ScanPrecursorEnvelope {get; }
         public float isotopeKullbackLeibler { get; set; }
+        // Kullback leibler measures divergence between theoretical and experimental isotopic envelopes. Lower values are better.
         public int? PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
         public int ScanExperimentalPeaks { get; }
