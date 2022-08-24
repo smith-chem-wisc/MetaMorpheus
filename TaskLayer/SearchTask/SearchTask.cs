@@ -340,6 +340,8 @@ namespace TaskLayer
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
 
+                MatchWaterAndAmmoniaLoss(fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
+
                 //look for internal fragments
                 if (SearchParameters.MinAllowedInternalFragmentLength != 0)
                 {
@@ -478,6 +480,73 @@ namespace TaskLayer
             return massDiffAcceptor;
         }
 
+        public static void MatchWaterAndAmmoniaLoss(PeptideSpectralMatch[] fileSpecificPsms, Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass, CommonParameters combinedParams)
+        {
+            //for each PSM with an ID
+            for (int index = 0; index < fileSpecificPsms.Length; index++)
+            {
+                PeptideSpectralMatch psm = fileSpecificPsms[index];
+                if (psm != null && psm.BestMatchingPeptides.Count() > 0)
+                {
+                    //Get the scan
+                    Ms2ScanWithSpecificMass scanForThisPsm = arrayOfMs2ScansSortedByMass[index];
+                    DissociationType dissociationType = combinedParams.DissociationType == DissociationType.Autodetect ?
+                    scanForThisPsm.TheScan.DissociationType.Value : combinedParams.DissociationType;
+
+                    //Get the theoretical peptides
+                    List<PeptideWithSetModifications> ambiguousPeptides = new();
+                    List<int> notches = new();
+                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                    {
+                        ambiguousPeptides.Add(Peptide);
+                        notches.Add(Notch);
+                    }
+
+                    //get matched ions for each peptide
+                    List<List<MatchedFragmentIon>> matchedIonsForAllAmbiguousPeptides = new();
+                    List<Product> waterAndAmmoniaLossFragments = new();
+                    foreach (PeptideWithSetModifications peptide in ambiguousPeptides)
+                    {
+                        waterAndAmmoniaLossFragments.Clear();
+
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.bStar);
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.yStar);
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.bDegree);
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.yDegree);
+
+                        peptide.Fragment(DissociationType.Custom, FragmentationTerminus.Both, waterAndAmmoniaLossFragments);
+                        //TODO: currently, internal and terminal ions can match to the same observed peaks (much like how b- and y-ions can match to the same peaks). Investigate if we should change that...                        
+                        matchedIonsForAllAmbiguousPeptides.Add(MetaMorpheusEngine.MatchFragmentIons(scanForThisPsm, waterAndAmmoniaLossFragments, combinedParams));
+                    }
+
+                    //Find the max number of matched ions
+                    int maxNumMatchedIons = matchedIonsForAllAmbiguousPeptides.Max(x => x.Count);
+
+                    //remove peptides if they have fewer than max-1 matched ions, thus requiring at least two internal ions to disambiguate an ID
+                    //if not removed, then add the matched internal ions
+                    HashSet<PeptideWithSetModifications> PeptidesToMatchinAmmoniaAndWaterLossFragments = new HashSet<PeptideWithSetModifications>();
+                    for (int peptideIndex = 0; peptideIndex < ambiguousPeptides.Count; peptideIndex++)
+                    {
+                        //if we should remove the theoretical, remove it
+                        if (matchedIonsForAllAmbiguousPeptides[peptideIndex].Count + 1 < maxNumMatchedIons)
+                        {
+                            psm.RemoveThisAmbiguousPeptide(notches[peptideIndex], ambiguousPeptides[peptideIndex]);
+                        }
+                        // otherwise add the matched internal ions to the total ions
+                        else
+                        {
+                            PeptideWithSetModifications currentPwsm = ambiguousPeptides[peptideIndex];
+                            //check that we haven't already added the matched ions for this peptide
+                            if (!PeptidesToMatchinAmmoniaAndWaterLossFragments.Contains(currentPwsm))
+                            {
+                                PeptidesToMatchinAmmoniaAndWaterLossFragments.Add(currentPwsm); //record that we've seen this peptide
+                                psm.PeptidesToMatchingFragments[currentPwsm].AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
+                            }
+                        }
+                    }
+                }
+            }
+        }
         public static void MatchInternalFragmentIons(PeptideSpectralMatch[] fileSpecificPsms, Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass, CommonParameters combinedParams, int minInternalFragmentLength)
         {
             //for each PSM with an ID
