@@ -333,7 +333,7 @@ namespace GuiFunctions
             {
                 string peakAnnotationText = prefix + matchedIon.NeutralTheoreticalProduct.Annotation;
 
-                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 && !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
                 {
                     peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
                 }
@@ -411,7 +411,7 @@ namespace GuiFunctions
                     text.Append(SpectrumMatch.ProteinName.Substring(0, 20));
                     int length = SpectrumMatch.ProteinName.Length;
                     int remaining = length - 20;
-                    for (int i = 21; i < SpectrumMatch.ProteinName.Length; i += 26)
+                    for (int i = 20; i < SpectrumMatch.ProteinName.Length; i += 26)
                     {
                         if (remaining <= 26)
                             text.Append("\r\n   " + SpectrumMatch.ProteinName.Substring(i, remaining - 1));

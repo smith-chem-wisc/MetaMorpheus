@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 
 namespace Test
@@ -257,7 +258,8 @@ namespace Test
         {
             var modGroup = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).First();
             var twoMods = modGroup.Take(2).ToList();
-            PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(twoMods);
+            PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(twoMods, 100);
+            PtmLegendView.Visibility = Visibility.Collapsed;
             Assert.That(PtmLegendView.Header == "Legend");
             Assert.That(PtmLegendView.HeaderSize == 12);
             Assert.That(PtmLegendView.LegendItems.Count == 2);

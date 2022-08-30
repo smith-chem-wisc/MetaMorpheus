@@ -346,6 +346,18 @@ namespace Test
             var plotAxes = plotView.Model.Axes;
             Assert.That(plotAxes.Count == 2);
 
+            // test with different drawing settings
+            MetaDrawSettings.AnnotateCharges = true;
+            MetaDrawSettings.AnnotateMzValues = true;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            MetaDrawSettings.DisplayIonAnnotations = false;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
             // test that scrollable sequence annotation was drawn
             int numAnnotatedResidues = psm.BaseSeq.Length;
             int numAnnotatedIons = psm.MatchedIons.Count;

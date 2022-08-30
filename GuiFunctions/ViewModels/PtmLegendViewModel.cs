@@ -75,7 +75,7 @@ namespace GuiFunctions
                 LegendItems.Add(modItem);
             }
 
-            topOffset = offset;
+            TopOffset = offset;
             Visibility = mods.Count > 0 ? Visibility.Visible : Visibility.Hidden;
         }
         
