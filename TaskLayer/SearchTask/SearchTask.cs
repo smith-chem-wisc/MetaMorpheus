@@ -514,7 +514,7 @@ namespace TaskLayer
                         DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.bDegree);
                         DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.yDegree);
 
-                        peptide.Fragment(DissociationType.Custom, FragmentationTerminus.Both, waterAndAmmoniaLossFragments);
+                        peptide.Fragment(DissociationType.Custom, combinedParams.DigestionParams.FragmentationTerminus, waterAndAmmoniaLossFragments);
                         //TODO: currently, internal and terminal ions can match to the same observed peaks (much like how b- and y-ions can match to the same peaks). Investigate if we should change that...                        
                         matchedIonsForAllAmbiguousPeptides.Add(MetaMorpheusEngine.MatchFragmentIons(scanForThisPsm, waterAndAmmoniaLossFragments, combinedParams));
                     }
