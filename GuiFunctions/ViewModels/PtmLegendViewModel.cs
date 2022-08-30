@@ -14,18 +14,26 @@ namespace GuiFunctions
     /// </summary>
     public class PtmLegendViewModel : BaseViewModel
     {
-        private Visibility _visibility;
+        private Visibility visibility;
+        private double topOffset;
         public string Header { get; set; } = "Legend";
         public int HeaderSize { get; set; } = 12;
-        public ObservableCollection<PtmLegendItemViewModel> LegendItems { get; }
+        public ObservableCollection<PtmLegendItemViewModel> LegendItems { get; set; }
+
         public Visibility Visibility
         {
-            get { return _visibility; }
+            get { return visibility; }
             set
             {
-                _visibility = value;
+                visibility = value;
                 OnPropertyChanged(nameof(Visibility));
             }
+        }
+
+        public double TopOffset
+        {
+            get => topOffset;
+            set { topOffset = value; OnPropertyChanged(nameof(TopOffset)); }
         }
 
         /// <summary>
@@ -58,7 +66,7 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public PtmLegendViewModel(List<Modification> mods)
+        public PtmLegendViewModel(List<Modification> mods, double offset = 0)
         {
             LegendItems = new ObservableCollection<PtmLegendItemViewModel>();
             foreach (var mod in mods.Distinct())
@@ -67,9 +75,10 @@ namespace GuiFunctions
                 LegendItems.Add(modItem);
             }
 
+            topOffset = offset;
             Visibility = mods.Count > 0 ? Visibility.Visible : Visibility.Hidden;
         }
-
+        
         #endregion
 
         #region Commands

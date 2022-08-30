@@ -222,10 +222,9 @@
                                         </Grid>
 
                                         <!-- ptm legend -->
-                                        <Grid Grid.Row="0">
+                                        <Grid Grid.Row="0" x:Name="PtmLegendGrid"  >
                                             <Grid.RowDefinitions>
-                                                <RowDefinition Height="*" />
-                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <Grid.ColumnDefinitions>
@@ -233,9 +232,9 @@
                                                 <ColumnDefinition Width="165" />
                                                 <ColumnDefinition Width="8" />
                                             </Grid.ColumnDefinitions>
-
-                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendViewModel}" 
-                                                          Grid.Row="1" Grid.Column="1" VerticalAlignment="Bottom" Margin="0 0 0 120" >
+                                            
+                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding }" 
+                                                          Grid.Column="1"  VerticalAlignment="Top" >
                                                 <ItemsControl.Resources>
                                                     <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
                                                         <Grid>
@@ -245,24 +244,29 @@
                                                 </ItemsControl.Resources>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <ContentControl Name="PtmLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
-                                                                BorderBrush="Black" BorderThickness="1">
-                                                            <StackPanel Visibility="{Binding Visibility}">
-                                                                <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
-                                                                <ItemsControl ItemsSource="{Binding LegendItems}" >
-                                                                    <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate>
-                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                                <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                        <StackPanel>
+                                                            <!-- sets vertical offset for ptm legend -->
+                                                            <Separator Background="Transparent" Height="{Binding TopOffset}" />
+
+                                                            <ContentControl Name="PtmLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
+                                                                            BorderBrush="Black" BorderThickness="1">
+                                                                <StackPanel Visibility="{Binding Visibility}" >
+                                                                    <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
+                                                                    <ItemsControl ItemsSource="{Binding LegendItems}" >
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                                    <TextBlock Text="{Binding ModName}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
                                                                                             FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
-                                                                                <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                    <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
                                                                                             Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                                            </StackPanel>
-                                                                        </DataTemplate>
-                                                                    </ItemsControl.ItemTemplate>
-                                                                </ItemsControl>
-                                                            </StackPanel>
-                                                        </ContentControl>
+                                                                                </StackPanel>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </StackPanel>
+                                                            </ContentControl>
+                                                        </StackPanel>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>

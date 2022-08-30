@@ -34,7 +34,7 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
-        private ObservableCollection<PtmLegendViewModel> PtmLegend;
+        public ObservableCollection<PtmLegendViewModel> PtmLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
@@ -220,14 +220,6 @@ namespace MetaMorpheusGUI
             // display the ion and elements correctly
             MetaDrawSettings.DrawMatchedIons = true;
 
-            // add ptm legend if desired
-            PtmLegend.Clear();
-            if (MetaDrawSettings.ShowLegend)
-            {
-                PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
-                List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
-                PtmLegend.Add(new PtmLegendViewModel(mods));                    
-            }
 
             // define initial limits for sequence annotation
             double maxDisplayedPerRow = (int)Math.Round((SequenceAnnotationArea.ActualWidth - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0) + 7;
@@ -236,6 +228,20 @@ namespace MetaMorpheusGUI
             // draw the annotated spectrum
             MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
             MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
+
+            // add ptm legend if desired
+            PtmLegend.Clear();
+            if (MetaDrawSettings.ShowLegend)
+            {
+                PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+                List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
+                int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
+                double verticalOffset = descriptionLineCount * 14;
+                
+                
+                
+                PtmLegend.Add(new PtmLegendViewModel(mods, verticalOffset));
+            }
 
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
