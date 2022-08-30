@@ -88,12 +88,19 @@
 
                                     <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}"
                                               ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" 
-                                              CanUserDeleteRows="false" CanUserAddRows="false">
+                                              CanUserDeleteRows="false" CanUserAddRows="false" >
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70"></DataGridTextColumn>
-                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="160"></DataGridTextColumn>
-                                            <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="100" />
+                                            <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70" 
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="160" />
+                                            <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="100" 
+                                                                />
                                             <DataGridTextColumn Header="Organism Name" Binding="{Binding OrganismName}" Width="100" />
+                                            <DataGridTextColumn Header="Q-Value" Binding="{Binding QValue}" Width="60"
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                                            <DataGridTextColumn Header="PEP Value" Binding="{Binding PEP}" Width="70" />
+                                            <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Score}" 
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </Grid>
