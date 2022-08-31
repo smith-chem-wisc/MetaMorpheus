@@ -11,7 +11,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
+using System.Windows;
 using System.Windows.Controls;
 using TaskLayer;
 
@@ -185,7 +187,7 @@ namespace Test
             int numAnnotatedResidues = psm.BaseSeq.Length;
             int numAnnotatedIons = psm.MatchedIons.Count;
             int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
-
+            var peptide = new PeptideWithSetModifications(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
 
             // Iterates through the psm, simulating scrolling, until the sequence is scrolled as far as allowed
             for (; MetaDrawSettings.FirstAAonScreenIndex < psm.BaseSeq.Length - MetaDrawSettings.NumberOfAAOnScreen; MetaDrawSettings.FirstAAonScreenIndex++)
@@ -200,23 +202,14 @@ namespace Test
                 // Checks to see if the stationary sequence updated with the new positioning
                 string modifiedBaseSeq = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
                 string fullSequence = modifiedBaseSeq;
-                Dictionary<int, List<string>> modDictionary = PsmFromTsv.ParseModifications(psm.FullSequence);
-                foreach (var mod in modDictionary.OrderByDescending(p => p.Key))
+                var modDictionary = peptide.AllModsOneIsNterminus.Where(p => p.Key - 1 >= MetaDrawSettings.FirstAAonScreenIndex
+                    && p.Key - 1 < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).OrderByDescending(p => p.Key);
+                foreach (var mod in modDictionary)
                 {
                     // if modification is within the visible region
-                    if (mod.Key >= MetaDrawSettings.FirstAAonScreenIndex && mod.Key < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen))
-                    {
-                        // account for multiple modifications on the same amino acid
-                        for (int i = mod.Value.Count - 1; i > -1; i--)
-                        {
-                            fullSequence = fullSequence.Insert(mod.Key - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value[i] + "]");
-                            if (i >= 1)
-                            {
-                                fullSequence = fullSequence.Insert(mod.Key, "|");
-                            }
-                        }
-                    }
+                    fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
                 }
+
                 List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                        p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
                 int psmStartResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""));
@@ -266,6 +259,13 @@ namespace Test
             Assert.That(metadrawLogic.FilteredListOfPsms.Any(p => p.DecoyContamTarget == "D"));
             Assert.That(metadrawLogic.FilteredListOfPsms.Any(p => p.QValue > 0.01));
 
+            MetaDrawSettings.AmbiguityFilter = "2A";
+            metadrawLogic.FilterPsms();
+            Assert.That(metadrawLogic.FilteredListOfPsms.All(p => p.AmbiguityLevel == "2A"));
+
+            MetaDrawSettings.AmbiguityFilter = "No Filter";
+            metadrawLogic.FilterPsms();
+
             // test text search filter (filter by full sequence)
             string filterString = @"QIVHDSGR";
             metadrawLogic.FilterPsmsByString(filterString);
@@ -291,6 +291,33 @@ namespace Test
                 c++;
             }
             Assert.That(c > 0);
+
+            // test text search filter (filter by organism name)
+            filterString = "Sacc";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.OrganismName.Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
+            // test text search filter (filter by protein name)
+            filterString = "tRNA";
+            metadrawLogic.FilterPsmsByString(filterString);
+
+            c = 0;
+            foreach (var filteredPsm in metadrawLogic.PeptideSpectralMatchesView)
+            {
+                var psmObj = (PsmFromTsv)filteredPsm;
+                Assert.That(psmObj.ProteinName.Contains(filterString));
+                c++;
+            }
+            Assert.That(c > 0);
+
 
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView();
@@ -318,6 +345,18 @@ namespace Test
 
             var plotAxes = plotView.Model.Axes;
             Assert.That(plotAxes.Count == 2);
+
+            // test with different drawing settings
+            MetaDrawSettings.AnnotateCharges = true;
+            MetaDrawSettings.AnnotateMzValues = true;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            MetaDrawSettings.DisplayIonAnnotations = false;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
 
             // test that scrollable sequence annotation was drawn
             int numAnnotatedResidues = psm.BaseSeq.Length;
@@ -672,6 +711,25 @@ namespace Test
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
             Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+            Directory.Delete(outputFolder, true);
+
+            Canvas ptmLegend = new();
+            Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();   
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+
+            // test that a directory is created if it does not exist
+            Directory.Delete(outputFolder, true);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"27_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"30_STTAVQTPTSGEPLVST[O-Glycosylat.pdf"))); // child scan
+
+
 
             // clean up resources
             metadrawLogic.CleanUpResources();
