@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -19,6 +20,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
@@ -35,6 +37,7 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
         public ObservableCollection<PtmLegendViewModel> PtmLegend;
+        public ObservableCollection<PtmLegendViewModel> ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
@@ -79,6 +82,9 @@ namespace MetaMorpheusGUI
             PtmLegendControl.ItemsSource = PtmLegend;
             SequenceCoveragePtmLegendControl.ItemsSource = PtmLegend;
             ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
+
+            ChimeraLegend = new();
+            ChimeraLegendControl.ItemsSource = ChimeraLegend;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -171,11 +177,31 @@ namespace MetaMorpheusGUI
                 ClearPresentationArea();
                 return;
             }
+
             var strings = sender.ToString();
 
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
             plotView.Visibility = Visibility.Visible;
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+
+            // Chimera plotter
+            if (((Grid)MetaDrawTabControl.SelectedContent).Name == "chimeraPlotGrid")
+            {
+                List<PsmFromTsv> chimericPsms = MetaDrawLogic.FilteredListOfPsms
+                    .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber).ToList();
+                MetaDrawLogic.DisplayChimeraSpectra(chimeraPlot, chimericPsms, out List<string> error);
+                if (error != null && error.Count > 0)
+                    Debugger.Break();
+
+                ChimeraLegend.Clear();
+                foreach (var legend in MetaDrawLogic.ChimeraPlotter.Legends)
+                {
+                    ChimeraLegend.Add(legend);
+                }
+
+                return;
+            }
+
             SetSequenceDrawingPositionSettings(true);
             // Selection of ambiguous psm => clean up the canvases and show the option box
             if (psm.FullSequence.Contains('|') && sender.ToString() != "System.Object")
@@ -926,6 +952,11 @@ namespace MetaMorpheusGUI
                 PtmLegend.First().Visibility = Visibility.Hidden;
 
             plotView.Visibility = Visibility.Hidden;
+        }
+
+        private void ParentScanView_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            MetaDrawLogic.FilterPsmsToChimerasOnly();
         }
     }
 }

@@ -196,7 +196,8 @@
 
                             <TabControl Grid.Row="1" x:Name="MetaDrawTabControl">
                                 <!--MS2 Scan Annotations-->
-                                <TabItem Header="Child Scan View" Name="ParentScanView">
+                                <TabItem Header="Child Scan View" Name="ParentScanView" >
+
                                     <Grid Name="PsmAnnotationGrid">
                                         <Grid.RowDefinitions>
                                             <RowDefinition/>
@@ -232,7 +233,7 @@
                                                 <ColumnDefinition Width="165" />
                                                 <ColumnDefinition Width="8" />
                                             </Grid.ColumnDefinitions>
-                                            
+
                                             <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding }" 
                                                           Grid.Column="1"  VerticalAlignment="Top" >
                                                 <ItemsControl.Resources>
@@ -275,6 +276,100 @@
                                     </Grid>
                                 </TabItem>
 
+                                <!-- ChimeraPlot -->
+                                <TabItem x:Name="ChimeraScanPlot" >
+                                    <TabItem.Header>
+                                        <Label Content="Chimera Plotter" MouseLeftButtonDown="ParentScanView_OnMouseLeftButtonDown" ></Label>
+                                    </TabItem.Header>
+                                    <Grid Name="chimeraPlotGrid">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition/>
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <!-- spectrum annotation -->
+                                        <Grid Grid.Row="0" Grid.ColumnSpan="2">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition />
+                                            </Grid.RowDefinitions>
+                                            <oxy:PlotView x:Name="chimeraPlot" Model="{Binding MetaDrawLogic.ChimeraPlotter.Model}" FontSize="16" FontStretch="Expanded"
+                                                          Margin="0 0 0 0"  />
+                                        </Grid>
+
+                                        <!-- Chimera Legend -->
+                                        <Grid Grid.Row="1" x:Name="ChimeraLegendGrid"  Grid.ColumnSpan="2">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="*"/>
+                                            </Grid.RowDefinitions>
+
+                                            <StackPanel>
+                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                    <Ellipse Width="12" Height="12" Stroke="Black" StrokeThickness="1"
+                                                             Fill="Black" Margin="10 0 0 0" />
+                                                    <TextBlock Text="Ions Shared Between Proteins" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                               FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+                                                </StackPanel>
+                                                <ItemsControl x:Name="ChimeraLegendControl" ItemsSource="{Binding }" 
+                                                              VerticalAlignment="Center"  Margin="0,0,0,0" >
+                                                    <ItemsControl.Resources>
+                                                        <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
+                                                            <Grid>
+                                                                <ContentPresenter Content="{TemplateBinding ContentControl.Content}" />
+                                                            </Grid>
+                                                        </ControlTemplate>
+                                                    </ItemsControl.Resources>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <ContentControl Name="ChimeraLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
+                                                                        BorderBrush="Black" BorderThickness="1" >
+                                                                <Border BorderThickness="2" BorderBrush="DarkGray" Margin="2" CornerRadius="5" 
+                                                                        >
+                                                                    <StackPanel>
+                                                                        <!-- base seq -->
+                                                                        <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold"
+                                                                           TextWrapping="Wrap" DockPanel.Dock="Top" Width="800" Margin="0 0 0 5"/>
+
+                                                                        <!-- combined colors -->
+                                                                        <StackPanel HorizontalAlignment="Center" DataContext="{Binding SharedIons}" Orientation="Horizontal" Margin="0 0 0 5"
+                                                                            Visibility="{Binding ElementName=ChimeraLegendContentControl, Path=DataContext.SharedIonStackPanelVisibility}" >
+
+                                                                            <Ellipse Width="12" Height="12" Stroke="{Binding BColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                             Fill="{Binding BColorBrush}" Margin="10 0 0 0" />
+                                                                            <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                                               FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+
+                                                                        </StackPanel>
+
+                                                                        <!-- individual proteoforms -->
+                                                                        <ItemsControl ItemsSource="{Binding ChimeraLegendItems}" >
+                                                                            <ItemsControl.ItemTemplate>
+                                                                                <DataTemplate>
+                                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 5 0 5">
+                                                                                        <Ellipse Width="12" Height="12" Stroke="{Binding BColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                Fill="{Binding BColorBrush}" Margin="10 0 0 0" />
+                                                                                        <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                                                            FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+
+                                                                                    </StackPanel>
+                                                                                </DataTemplate>
+                                                                            </ItemsControl.ItemTemplate>
+                                                                        </ItemsControl>
+                                                                    </StackPanel>
+                                                                </Border>
+                                                            </ContentControl>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Grid>
+
+                                </TabItem>
                                 <!--Parent/Child Scan Annotations-->
                                 <TabItem Header="Parent/Child Scan View" Name="ParentChildScanView">
                                     <ItemsControl Name="ParentChildScanViewPlots" ItemsSource="{Binding Plots}">
@@ -317,7 +412,7 @@
 
                                     </ItemsControl>
                                 </TabItem>
-                                
+
                                 <!--Sequence Coverage Annotation-->
                                 <TabItem Header="Sequence Coverage" x:Name="SequenceCoverageAnnotationView">
                                     <Grid Grid.Row="1" Name="SequenceAnnotationGrid"  Style="{StaticResource InternalGridStyle}">
@@ -330,7 +425,7 @@
 
                                         <!--Header label-->
                                         <Label Content="Sequence Coverage Map" Grid.Row="0" />
-                                        
+
                                         <!-- sequence coverage display -->
                                         <ScrollViewer Grid.Row="1" Name="sequenceCoverageHorizontalScroll" HorizontalAlignment="Stretch" VerticalAlignment="Center" 
                                             CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto">
@@ -348,7 +443,7 @@
                                                 </ScrollViewer>
                                             </Grid>
                                         </ScrollViewer>
-                                        
+
                                         <!-- export sequence coverage button -->
                                         <Button x:Name="SequenceCoverageExportButton"  Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
                                                 Content="Export" Margin="0 0 5 0" Click="SequenceCoverageExportButton_Click"/>
@@ -356,10 +451,10 @@
                                         <!-- Sequence Annotation Expander -->
                                         <Expander Grid.Row="3" Header="Sequence Annotation" VerticalAlignment="Bottom" HorizontalAlignment="Left" 
                                                   x:Name="SequenceAnnotationView" >
-                                            
+
                                             <!-- sequence annotaiton and legend -->
                                             <StackPanel >
-                                                
+
                                                 <!-- sequence annotaiton canvas -->
                                                 <Canvas x:Name="sequenceAnnotationCanvas"  VerticalAlignment="Top" Margin="100 0 100 0" Background="White" />
                                                 <Grid>

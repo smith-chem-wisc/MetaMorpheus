@@ -33,6 +33,7 @@ namespace GuiFunctions
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
         public DrawnSequence SequenceAnnotation { get; set; }
+        public ChimeraPlotter ChimeraPlotter { get; set; }
         public PeptideSpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
@@ -88,6 +89,24 @@ namespace GuiFunctions
             errors.AddRange(errors3);
 
             return errors;
+        }
+
+        public void DisplayChimeraSpectra(PlotView plotView, List<PsmFromTsv> psms, out List<string> errors)
+        {
+            errors = null;
+            // get the scan
+            if (!MsDataFiles.TryGetValue(psms.First().FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+            {
+                errors = new List<string>();
+                errors.Add("The spectra file could not be found for this PSM: " + psms.First().FileNameWithoutExtension);
+                return;
+            }
+            MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psms.First().Ms2ScanNumber);
+            
+            ChimeraPlotter = new ChimeraPlotter(plotView, scan, psms);
+            ChimeraPlotter.RefreshChart();
+            ChimeraPlotter.ExportToPng(@"C:\Users\Nic\Downloads\chimeraImage.png");
+            CurrentlyDisplayedPlots.Add(ChimeraPlotter);
         }
 
         public void DisplaySpectrumMatch(PlotView plotView, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
@@ -678,6 +697,22 @@ namespace GuiFunctions
                     || psm.ProteinName.Contains(searchString) || psm.OrganismName.Contains(searchString));
                 };
             }
+        }
+
+        public void FilterPsmsToChimerasOnly()
+        {
+            lock (ThreadLocker)
+            {
+                FilteredListOfPsms.Clear();
+
+                var filteredPsms = AllPsms.Where(p => MetaDrawSettings.FilterAcceptsPsm(p));
+                foreach (var psm in filteredPsms)
+                {
+                    if (filteredPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber) > 1)
+                        FilteredListOfPsms.Add(psm);
+                }
+            }
+
         }
 
         public void CleanUpResources()

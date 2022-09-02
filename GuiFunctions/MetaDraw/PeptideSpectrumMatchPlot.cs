@@ -41,22 +41,26 @@ namespace GuiFunctions
         {
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
-            SpectrumMatch = psm;
             Scan = scan;
-
             DrawSpectrum();
-            AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
 
-            if (annotateProperties)
+
+            if (psm != null)
             {
-                AnnotateProperties();
-            }
+                SpectrumMatch = psm;
+                AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
 
-            ZoomAxes(matchedFragmentIons);
+                if (annotateProperties)
+                {
+                    AnnotateProperties();
+                }
 
-            if (librarySpectrum != null)
-            {
-                AnnotateLibraryIons(isBetaPeptide: false, librarySpectrum.MatchedFragmentIons);
+                ZoomAxes(matchedFragmentIons);
+
+                if (librarySpectrum != null)
+                {
+                    AnnotateLibraryIons(isBetaPeptide: false, librarySpectrum.MatchedFragmentIons);
+                }
             }
 
             RefreshChart();

@@ -6,11 +6,13 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace GuiFunctions
@@ -45,6 +47,56 @@ namespace GuiFunctions
             else
             {
                 AnnotateBaseSequence(psm.BaseSeq, psm.FullSequence, 10, psm.MatchedIons, SpectrumMatch);
+            }
+        }
+
+        /// <summary>
+        /// Creates an image of all OxyColors --> Not used after
+        /// </summary>
+        public DrawnSequence()
+        {
+            Canvas colorCanvas = new Canvas() { Height = 1410, Width = 1200 };
+            int xPosition = 10;
+            int yPosition = 10;
+            int yIncriment = 30;
+            int xIncriment = 350;
+            if (colorCanvas != null)
+            {
+                List<Dictionary<OxyColor, string>> colorDivisions = new();
+                colorDivisions.Add(MetaDrawSettings.PossibleColors.Take(new Range(0, 46)).ToDictionary(p => p.Key, p => p.Value));
+                colorDivisions.Add(MetaDrawSettings.PossibleColors.Take(new Range(47, 93)).ToDictionary(p => p.Key, p => p.Value));
+                colorDivisions.Add(MetaDrawSettings.PossibleColors.Take(new Range(94, 140)).ToDictionary(p => p.Key, p => p.Value));
+                foreach (var column in colorDivisions)
+                {
+                    foreach (var color in column)
+                    {
+                        Point loc = new Point(xPosition, yPosition);
+                        DrawCircle(colorCanvas, loc, ParseColorBrushFromOxyColor(color.Key));
+                        loc.X += 30;
+                        DrawText(colorCanvas, loc, color.Value, ParseColorBrushFromOxyColor(color.Key));
+                        yPosition += yIncriment;
+                    }
+                    
+                    xPosition += xIncriment;
+                    yPosition = 10;
+                }
+
+                double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
+                Size size = new Size((int)colorCanvas.Width, (int)colorCanvas.Height);
+                colorCanvas.Measure(size);
+                colorCanvas.Arrange(new Rect(size));
+                RenderTargetBitmap rtb = new((int)(dpiScale * colorCanvas.Width), (int)(dpiScale * colorCanvas.Height),
+                    MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+                
+                rtb.Render(colorCanvas);
+                PngBitmapEncoder encoder = new();
+                encoder.Frames.Add(BitmapFrame.Create(rtb));
+
+
+                using (FileStream file = File.Create(@"C:\Users\Nic\Downloads\Oxycolors.png"))
+                {
+                    encoder.Save(file);
+                }
             }
         }
 
@@ -432,9 +484,9 @@ namespace GuiFunctions
             tb.FontSize = 25;
             tb.FontWeight = System.Windows.FontWeights.Bold;
             tb.FontFamily = new FontFamily("Arial");
-            tb.TextAlignment = TextAlignment.Center;
+            tb.TextAlignment = TextAlignment.Left;
             tb.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
-            tb.Width = 24; // W (tryptophan) seems to be widest letter, make sure it fits if you're editing this
+            tb.Width = 24 * txt.Length; // W (tryptophan) seems to be widest letter, make sure it fits if you're editing this
 
             Canvas.SetTop(tb, loc.Y);
             Canvas.SetLeft(tb, loc.X);
