@@ -880,6 +880,15 @@
                                                     </TextBox.ToolTip>
                                                 </TextBox>
                                             </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="5,0,0,1">
+                                                <CheckBox x:Name="AnnotateWaterAndAmmoniaLossCheckBox" Content="Water and Ammonia Loss Fragment Ions" Margin="5,0,0,1" DockPanel.Dock="Top" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" IsChecked="False">
+                                                    <CheckBox.ToolTip>
+                                                        <TextBlock>
+                                                Annotates but does NOT score water and ammonia loss fragment ions. These will be stored in library spectra and also used for spectral angle calculations..
+                                                        </TextBlock>
+                                                    </CheckBox.ToolTip>
+                                                </CheckBox>
+                                            </StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="5">
                                                 <Label x:Name="maxFragmentSize" Content="Max Fragment Mass (Da):" Width="146" />
                                                 <TextBox x:Name="MaxFragmentMassTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
