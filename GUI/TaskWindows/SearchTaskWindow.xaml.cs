@@ -265,6 +265,7 @@ namespace MetaMorpheusGUI
             CTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.C;
             InternalIonsCheckBox.IsChecked = task.SearchParameters.MinAllowedInternalFragmentLength != 0;
             MinInternalFragmentLengthTextBox.Text = task.SearchParameters.MinAllowedInternalFragmentLength.ToString();
+            AnnotateWaterAndAmmoniaLossCheckBox.IsChecked = task.SearchParameters.AnnotateWaterAndAmmoniaLossFragmentIons;
             ProductMassToleranceTextBox.Text = task.CommonParameters.ProductMassTolerance.Value.ToString(CultureInfo.InvariantCulture);
             ProductMassToleranceComboBox.SelectedIndex = task.CommonParameters.ProductMassTolerance is AbsoluteTolerance ? 0 : 1;
             PrecursorMassToleranceTextBox.Text = task.CommonParameters.PrecursorMassTolerance.Value.ToString(CultureInfo.InvariantCulture);

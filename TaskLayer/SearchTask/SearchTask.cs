@@ -340,8 +340,13 @@ namespace TaskLayer
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
 
-                MatchWaterAndAmmoniaLoss(fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
-
+                //Add annotations for water and ammonia loss fragment ions. These ions are not included in the MetaMorpheus score. But
+                //they are added to library spectra and used in the calculation of spectrum similarity.
+                if (SearchParameters.AnnotateWaterAndAmmoniaLossFragmentIons)
+                {
+                    MatchWaterAndAmmoniaLoss(fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
+                }
+                
                 //look for internal fragments
                 if (SearchParameters.MinAllowedInternalFragmentLength != 0)
                 {

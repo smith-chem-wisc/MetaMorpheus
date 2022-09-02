@@ -78,6 +78,7 @@ namespace TaskLayer
         public string CustomMdac { get; set; }
         public double MaxFragmentSize { get; set; }
         public int MinAllowedInternalFragmentLength { get; set; } //0 means "no internal fragments"
+        public bool AnnotateWaterAndAmmoniaLossFragmentIons { get; set; }
         public double HistogramBinTolInDaltons { get; set; }
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
