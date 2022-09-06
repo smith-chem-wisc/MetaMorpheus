@@ -708,7 +708,7 @@ namespace GuiFunctions
                 var filteredPsms = AllPsms.Where(p => MetaDrawSettings.FilterAcceptsPsm(p));
                 foreach (var psm in filteredPsms)
                 {
-                    if (filteredPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber) > 1)
+                    if (filteredPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
                         FilteredListOfPsms.Add(psm);
                 }
             }

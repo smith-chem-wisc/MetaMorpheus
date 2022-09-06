@@ -258,22 +258,22 @@ namespace GuiFunctions
 
             // first color is that of shared peak for the protein, rest are for unique peaks to the proteoforms
             proteinBColors.Add((OxyColors.DarkBlue, OxyColors.DarkBlue, OxyColors.LightBlue));
-            proteinBColors.Add((OxyColors.PaleTurquoise, OxyColors.DarkTurquoise, OxyColors.PaleTurquoise));
+            proteinBColors.Add((OxyColors.LightCyan, OxyColors.DarkCyan, OxyColors.LightCyan));
             proteinBColors.Add((OxyColors.LightSkyBlue, OxyColors.DeepSkyBlue, OxyColors.LightSkyBlue));
             proteinBColors.Add((OxyColors.LightSteelBlue, OxyColors.RoyalBlue, OxyColors.LightSteelBlue));
-            proteinBColors.Add((OxyColors.LightCyan, OxyColors.DarkCyan, OxyColors.LightCyan));
+            proteinBColors.Add((OxyColors.PaleTurquoise, OxyColors.DarkTurquoise, OxyColors.PaleTurquoise));
 
             proteinCColors.Add((OxyColors.DarkGreen, OxyColors.DarkGreen, OxyColors.LightGreen));
             proteinCColors.Add((OxyColors.LightSeaGreen, OxyColors.DarkSeaGreen, OxyColors.LightSeaGreen));
+            proteinCColors.Add((OxyColors.LimeGreen, OxyColors.Chartreuse, OxyColors.LimeGreen));
             proteinCColors.Add((OxyColors.Aquamarine, OxyColors.MediumAquamarine, OxyColors.Aquamarine));
             proteinCColors.Add((OxyColors.YellowGreen, OxyColors.LawnGreen, OxyColors.YellowGreen));
-            proteinCColors.Add((OxyColors.LimeGreen, OxyColors.Chartreuse, OxyColors.LimeGreen));
 
             proteinDColors.Add((OxyColors.Indigo, OxyColors.Indigo, OxyColors.Violet));
+            proteinDColors.Add((OxyColors.Red, OxyColors.DeepPink, OxyColors.LightPink));
+            proteinDColors.Add((OxyColors.Blue, OxyColors.Fuchsia, OxyColors.PaleVioletRed));
             proteinDColors.Add((OxyColors.MediumOrchid, OxyColors.DarkOrchid, OxyColors.MediumOrchid));
-            proteinDColors.Add((OxyColors.LightPink, OxyColors.DeepPink, OxyColors.LightPink));
             proteinDColors.Add((OxyColors.MediumPurple, OxyColors.DarkMagenta, OxyColors.MediumPurple));
-            proteinDColors.Add((OxyColors.PaleVioletRed, OxyColors.Fuchsia, OxyColors.PaleVioletRed));
 
             proteinAColors.Add((OxyColors.SaddleBrown, OxyColors.SaddleBrown, OxyColors.BurlyWood));
             proteinAColors.Add((OxyColors.LightCoral, OxyColors.DarkRed, OxyColors.LightCoral));
@@ -282,9 +282,9 @@ namespace GuiFunctions
             proteinAColors.Add((OxyColors.PaleVioletRed, OxyColors.Fuchsia, OxyColors.PaleVioletRed));
 
             ColorsByProteinDict = new Dictionary<int, List<(OxyColor, OxyColor, OxyColor)>>();
-            ColorsByProteinDict.Add(0, proteinBColors);
+            ColorsByProteinDict.Add(0, proteinDColors);
             ColorsByProteinDict.Add(1, proteinCColors);
-            ColorsByProteinDict.Add(2, proteinDColors);
+            ColorsByProteinDict.Add(2, proteinBColors);
             ColorsByProteinDict.Add(3, proteinAColors);
         }
 

@@ -188,7 +188,7 @@ namespace MetaMorpheusGUI
             if (((Grid)MetaDrawTabControl.SelectedContent).Name == "chimeraPlotGrid")
             {
                 List<PsmFromTsv> chimericPsms = MetaDrawLogic.FilteredListOfPsms
-                    .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber).ToList();
+                    .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
                 MetaDrawLogic.DisplayChimeraSpectra(chimeraPlot, chimericPsms, out List<string> error);
                 if (error != null && error.Count > 0)
                     Debugger.Break();
