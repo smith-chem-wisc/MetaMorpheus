@@ -28,8 +28,8 @@ namespace GuiFunctions
         public List<string> BetaProductTypeToColorValues { get; set; }
         public List<string> ModificationTypeToColorValues { get; set; }
         public List<string> CoverageTypeToColorValues { get; set; }
-        public OxyColor UnannotatedPeakColor { get; set; }
-        public OxyColor InternalIonColor { get; set; }
+        public string UnannotatedPeakColor { get; set; }
+        public string InternalIonColor { get; set; }
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
