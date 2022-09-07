@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 
 namespace Test
@@ -86,7 +87,7 @@ namespace Test
             SettingsViewModel model = new SettingsViewModel(false);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
-            Directory.CreateDirectory(outputFolder);
+            Assert.That(!Directory.Exists(outputFolder));
 
             SettingsViewModel.SettingsPath = Path.Combine(outputFolder, @"MetaDrawSettingsDefault.xml");
             Assert.That(model.HasDefaultSaved == false);
@@ -159,10 +160,26 @@ namespace Test
             Assert.That(view.CoverageColors.First().SelectedColor == "Blue");
             Assert.That(view.CoverageColors.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
+            var internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion");
+            Assert.That(!internalIonIonTypeForTreeView.HasChanged);
+            internalIonIonTypeForTreeView.SelectionChanged("Blue");
+            Assert.That(internalIonIonTypeForTreeView.HasChanged);
+            Assert.That(internalIonIonTypeForTreeView.SelectedColor == "Blue");
+            Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+
+            internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak");
+            Assert.That(!internalIonIonTypeForTreeView.HasChanged);
+            internalIonIonTypeForTreeView.SelectionChanged("Blue");
+            Assert.That(internalIonIonTypeForTreeView.HasChanged);
+            Assert.That(internalIonIonTypeForTreeView.SelectedColor == "Blue");
+            Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+
             view.Save();
             Assert.That(MetaDrawSettings.ProductTypeToColor[view.IonGroups.First().Ions.First().IonType] == OxyColors.Blue);
             Assert.That(MetaDrawSettings.ModificationTypeToColor[view.Modifications.First().Children.First().ModName] == OxyColors.Blue);
             Assert.That(MetaDrawSettings.CoverageTypeToColor[view.CoverageColors.First().Name] == OxyColors.Blue);
+            Assert.That(MetaDrawSettings.InternalIonColor == OxyColors.Blue);
+            Assert.That(MetaDrawSettings.UnannotatedPeakColor == OxyColors.Blue);
         }
 
         [Test]
@@ -212,7 +229,7 @@ namespace Test
             var ions = (ProductType[])Enum.GetValues(typeof(ProductType));
             IonTypeForTreeViewModel ionForTreeViews = new("Common Ions", ions, false);
             Assert.That(ionForTreeViews.GroupName == "Common Ions");
-            Assert.That(ionForTreeViews.Ions.Count == ions.Length);
+            Assert.That(ionForTreeViews.Ions.Count == ions.Length + 2); // magic number +2 is for the internal ion color and background peak color
             Assert.That(!ionForTreeViews.Ions.Any(p => p.IsBeta));
             ionForTreeViews = new("Common Ions", ions, true);
             Assert.That(ionForTreeViews.Ions.Any(p => p.IsBeta));
@@ -241,7 +258,8 @@ namespace Test
         {
             var modGroup = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).First();
             var twoMods = modGroup.Take(2).ToList();
-            PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(twoMods);
+            PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(twoMods, 100);
+            PtmLegendView.Visibility = Visibility.Collapsed;
             Assert.That(PtmLegendView.Header == "Legend");
             Assert.That(PtmLegendView.HeaderSize == 12);
             Assert.That(PtmLegendView.LegendItems.Count == 2);
