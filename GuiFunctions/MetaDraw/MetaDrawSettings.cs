@@ -24,6 +24,7 @@ namespace GuiFunctions
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = false;
         public static bool AnnotationBold { get; set; } = false;
+        public static bool DisplayInternalIonAnnotations { get; set; }= true;
         public static Dictionary<OxyColor, string> PossibleColors { get; set; }
         public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
         public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
@@ -37,6 +38,7 @@ namespace GuiFunctions
         public static bool ShowDecoys { get; set; } = false;
         public static bool ShowContaminants { get; set; } = true;
         public static double QValueFilter { get; set; } = 0.01;
+        public static string AmbiguityFilter { get; set; } = "No Filter";
         public static LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public static LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
         public static string ExportType { get; set; } = "Pdf"; 
@@ -71,12 +73,14 @@ namespace GuiFunctions
         "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Spectral Angle: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
+        public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
 
         #endregion
 
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
         public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
+        public static OxyColor InternalIonColor { get; set; } = OxyColors.Purple;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
         public static double CanvasPdfExportDpi { get; set; } = 300;
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
@@ -101,7 +105,15 @@ namespace GuiFunctions
                  && (psm.DecoyContamTarget == "T" || (psm.DecoyContamTarget == "D" && ShowDecoys) || (psm.DecoyContamTarget == "C" && ShowContaminants))
                  && (psm.GlycanLocalizationLevel == null || psm.GlycanLocalizationLevel >= LocalizationLevelStart && psm.GlycanLocalizationLevel <= LocalizationLevelEnd))
             {
-                return true;
+                // Ambiguity filtering conditionals, should only be hit if Ambiguity Filtering is selected
+                if (AmbiguityFilter == "No Filter" || psm.AmbiguityLevel == AmbiguityFilter)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
             }
 
             return false;
@@ -134,7 +146,7 @@ namespace GuiFunctions
                 #region Setting Color Defaults
 
                     ModificationTypeToColor = GlobalVariables.AllModsKnown.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
-
+                    
                     // setting whole groups
                     var commonBiological = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Biological").Select(p => p.IdWithMotif);
                     foreach (var mod in commonBiological)
@@ -166,8 +178,8 @@ namespace GuiFunctions
                         ModificationTypeToColor[mod] = OxyColors.Maroon;
                     }
 
-                // setting individual specific
-                foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Phosphorylation")))
+                    // setting individual specific
+                    foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Phosphorylation")))
                     {
                         ModificationTypeToColor[mod.Key] = OxyColors.Red;
                     }
@@ -185,10 +197,14 @@ namespace GuiFunctions
                     CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
                     CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
 
+                    UnannotatedPeakColor = OxyColors.LightGray;
+                    InternalIonColor = OxyColors.Purple;
+
                 #endregion
 
                 // lines to be written on the spectrum
                 SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
+                SpectrumDescription["Spectral Angle: "] = false;
             }
             
             // offset for annotation on base sequence
@@ -216,7 +232,9 @@ namespace GuiFunctions
                 AnnotationBold = AnnotationBold,
                 ShowDecoys = ShowDecoys,
                 ShowContaminants = ShowContaminants,
+                DisplayInternalIonAnnotations = DisplayInternalIonAnnotations,
                 QValueFilter = QValueFilter,
+                AmbiguityFilter = AmbiguityFilter,
                 DrawStationarySequence = DrawStationarySequence,
                 DrawNumbersUnderStationary = DrawNumbersUnderStationary,
                 ShowLegend = ShowLegend,
@@ -228,6 +246,8 @@ namespace GuiFunctions
                 ModificationTypeToColorValues = ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 CoverageTypeToColorValues = CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
+                UnannotatedPeakColor = UnannotatedPeakColor,
+                InternalIonColor = InternalIonColor,
             };
         }
 
@@ -242,7 +262,9 @@ namespace GuiFunctions
             AnnotationBold = settings.AnnotationBold;
             ShowDecoys = settings.ShowDecoys;
             ShowContaminants = settings.ShowContaminants;
+            DisplayInternalIonAnnotations = settings.DisplayInternalIonAnnotations;
             QValueFilter = settings.QValueFilter;
+            AmbiguityFilter = settings.AmbiguityFilter;
             DrawStationarySequence = settings.DrawStationarySequence;
             DrawNumbersUnderStationary = settings.DrawNumbersUnderStationary;
             ShowLegend = settings.ShowLegend;
@@ -255,6 +277,8 @@ namespace GuiFunctions
             ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.CoverageTypeToColorValues[Array.IndexOf(CoverageTypes, p)]));
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
+            UnannotatedPeakColor = settings.UnannotatedPeakColor;
+            InternalIonColor = settings.InternalIonColor;
         }
 
         /// <summary>
@@ -274,6 +298,7 @@ namespace GuiFunctions
             ShowDecoys = false;
             ShowContaminants = true;
             QValueFilter = 0.01;
+            AmbiguityFilter = "No Filter";
             LocalizationLevelStart = LocalizationLevel.Level1;
             LocalizationLevelEnd = LocalizationLevel.Level3;
             DrawMatchedIons  = true;
@@ -281,6 +306,8 @@ namespace GuiFunctions
             SequenceAnnotaitonResiduesPerSegment = 10;
             SequenceAnnotationSegmentPerRow = 3;
             ExportType = "Pdf";
+            UnannotatedPeakColor = OxyColors.LightGray;
+            InternalIonColor = OxyColors.Purple;
         }
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
