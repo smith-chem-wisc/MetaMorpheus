@@ -34,6 +34,12 @@ namespace GuiFunctions
             {
                 Ions.Add(new IonForTreeViewModel(ion, beta));
             }
+
+            if (groupName.Equals("Common Ions"))
+            {
+                Ions.Add(new IonForTreeViewModel("Unannotated Peak", beta));
+                Ions.Add(new IonForTreeViewModel("Internal Ion", beta));
+            }
         }
 
         #endregion

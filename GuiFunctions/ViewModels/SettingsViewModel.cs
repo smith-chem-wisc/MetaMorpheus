@@ -127,7 +127,11 @@ namespace GuiFunctions
                 {
                     if (ion.HasChanged)
                     {
-                        if (ion.IsBeta)
+                        if (ion.IonName.Equals("Unannotated Peak"))
+                            MetaDrawSettings.UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
+                        else if (ion.IonName.Equals("Internal Ion"))
+                            MetaDrawSettings.InternalIonColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
+                        else if (ion.IsBeta)
                             MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                         else
                             MetaDrawSettings.ProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
