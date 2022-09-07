@@ -64,6 +64,8 @@ namespace TaskLayer
             ProteinAnalysis();
             QuantificationAnalysis();
 
+            int testVar = 0;
+
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
 
             HistogramAnalysis();
@@ -1502,6 +1504,8 @@ namespace TaskLayer
 
                 FinishedWritingFile(filePath, nestedIds);
             }
+            
+            IEnumerable<PeptideSpectralMatch> psmList = Parameters.AllPsms.Where(p => p.FdrInfo.QValue < 0.01);
         }
 
         private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
