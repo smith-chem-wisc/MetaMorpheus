@@ -53,7 +53,7 @@ namespace TaskLayer
                         .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
                         .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
 
-        protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
+        protected readonly StringBuilder ProseCreatedWhileRunning = new();
 
         protected string OutputFolder { get; private set; }
 
