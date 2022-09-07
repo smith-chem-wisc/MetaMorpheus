@@ -7,7 +7,6 @@ using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics;
-using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -514,10 +513,10 @@ namespace TaskLayer
                     {
                         waterAndAmmoniaLossFragments.Clear();
 
-                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.bStar);
-                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.yStar);
-                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.bDegree);
-                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.yDegree);
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.b_NH3);
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.y_NH3);
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.b_H2O);
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.y_H2O);
 
                         peptide.Fragment(DissociationType.Custom, combinedParams.DigestionParams.FragmentationTerminus, waterAndAmmoniaLossFragments);
                         //TODO: currently, internal and terminal ions can match to the same observed peaks (much like how b- and y-ions can match to the same peaks). Investigate if we should change that...                        
