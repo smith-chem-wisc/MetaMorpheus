@@ -34,6 +34,7 @@
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
     <PackageReference Include="mzLib" Version="1.0.533" />
     <PackageReference Include="Nett" Version="0.13.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
   </ItemGroup>
 
   <ItemGroup>
