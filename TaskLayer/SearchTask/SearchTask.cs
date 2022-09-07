@@ -513,10 +513,7 @@ namespace TaskLayer
                     {
                         waterAndAmmoniaLossFragments.Clear();
 
-                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.b_NH3);
-                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.y_NH3);
-                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.b_H2O);
-                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].Add(ProductType.y_H2O);
+                        DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].AddRange(DissociationTypeCollection.GetWaterAndAmmoniaLossProductTypesFromDissociation(combinedParams.DissociationType, combinedParams.DigestionParams.FragmentationTerminus));
 
                         peptide.Fragment(DissociationType.Custom, combinedParams.DigestionParams.FragmentationTerminus, waterAndAmmoniaLossFragments);
                         //TODO: currently, internal and terminal ions can match to the same observed peaks (much like how b- and y-ions can match to the same peaks). Investigate if we should change that...                        
@@ -565,8 +562,8 @@ namespace TaskLayer
                     scanForThisPsm.TheScan.DissociationType.Value : combinedParams.DissociationType;
 
                     //Get the theoretical peptides
-                    List<PeptideWithSetModifications> ambiguousPeptides = new List<PeptideWithSetModifications>();
-                    List<int> notches = new List<int>();
+                    List<PeptideWithSetModifications> ambiguousPeptides = new();
+                    List<int> notches = new();
                     foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
                     {
                         ambiguousPeptides.Add(Peptide);
@@ -574,8 +571,8 @@ namespace TaskLayer
                     }
 
                     //get matched ions for each peptide
-                    List<List<MatchedFragmentIon>> matchedIonsForAllAmbiguousPeptides = new List<List<MatchedFragmentIon>>();
-                    List<Product> internalFragments = new List<Product>();
+                    List<List<MatchedFragmentIon>> matchedIonsForAllAmbiguousPeptides = new();
+                    List<Product> internalFragments = new();
                     foreach (PeptideWithSetModifications peptide in ambiguousPeptides)
                     {
                         internalFragments.Clear();
@@ -589,7 +586,7 @@ namespace TaskLayer
 
                     //remove peptides if they have fewer than max-1 matched ions, thus requiring at least two internal ions to disambiguate an ID
                     //if not removed, then add the matched internal ions
-                    HashSet<PeptideWithSetModifications> PeptidesToMatchingInternalFragments = new HashSet<PeptideWithSetModifications>();
+                    HashSet<PeptideWithSetModifications> PeptidesToMatchingInternalFragments = new();
                     for (int peptideIndex = 0; peptideIndex < ambiguousPeptides.Count; peptideIndex++)
                     {
                         //if we should remove the theoretical, remove it
