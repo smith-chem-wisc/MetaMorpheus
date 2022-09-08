@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Globalization;
-using Proteomics;
-using Proteomics.ProteolyticDigestion;
+using EngineLayer;
 using FlashLFQ;
-using EngineLayer.FdrAnalysis;
 
-namespace EngineLayer.MbrAnalysis
+namespace TaskLayer.MbrAnalysis
 {
     public class MbrSpectralMatch
     {
