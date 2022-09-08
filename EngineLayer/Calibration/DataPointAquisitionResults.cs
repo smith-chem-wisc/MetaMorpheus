@@ -45,10 +45,10 @@ namespace EngineLayer.Calibration
             PsmProductMedianPpmError = Statistics.Median(productErrors);
         }
 
-        public Tuple<double, double> Ms1InfoTh { get; }
-        public Tuple<double, double> Ms2InfoTh { get; }
-        public Tuple<double, double> Ms1InfoPpm { get; }
-        public Tuple<double, double> Ms2InfoPpm { get; }
+        public (double, double) Ms1InfoTh { get; }
+        public (double, double) Ms2InfoTh { get; }
+        public (double, double) Ms1InfoPpm { get; }
+        public (double, double) Ms2InfoPpm { get; }
 
         public int NumMs1MassChargeCombinationsConsidered { get; }
         public int NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks { get; }
