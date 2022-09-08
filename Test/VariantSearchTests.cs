@@ -213,7 +213,7 @@ namespace Test
             extraFiles = files2.Except(expectedFiles).ToList();
 
             // test that output is what's expected
-            Assert.That(missingFiles.Count() == 0 && extraFiles.Count() == 0);
+             Assert.That(missingFiles.Count() == 0 && extraFiles.Count() == 0);
 
             string[] checkResults = File.ReadAllLines(Path.Combine(thisTaskOutputFolder, "VariantOutput_frameshift", "VariantAnalysisResultSummary.txt"));
 

@@ -467,13 +467,24 @@ namespace TaskLayer
 
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
+            foreach (var spectraFile in psmsGroupedByFile)
+            {
+                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
+
+                foreach (var psm in spectraFile)
+                {
+                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                }
+            }
+
 
             // run FlashLFQ
             var FlashLfqEngine = new FlashLfqEngine(
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
-                matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
+                //matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
@@ -510,29 +521,6 @@ namespace TaskLayer
             {
                 SilacConversions.SilacConversionsPostQuantification(allSilacLabels, startLabel, endLabel, spectraFileInfo, ProteinGroups, Parameters.ListOfDigestionParams,
                     Parameters.FlashLfqResults, Parameters.AllPsms, Parameters.SearchParameters.ModsToWriteSelection, quantifyUnlabeledPeptides);
-            }
-        }
-
-        //Temp, just for testing what is passed to FlashLFQ. Delete when troubleshooting is done
-        internal static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, string ambiguousIfNull)
-        {
-            var list = enumerable.ToList();
-            string first = list.FirstOrDefault(b => b != null);
-            // Only first if list is either all null or all equal to the first
-            if (list.All(b => b == null) || list.All(b => first.Equals(b)))
-            {
-                return (first, first);
-            }
-            // use only distinct names if all of the base sequences are the same
-            else if (ambiguousIfNull != null)
-            {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Distinct()));
-                return (returnString, null);
-            }
-            else
-            {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list));
-                return (returnString, null);
             }
         }
 
