@@ -1,12 +1,10 @@
 ﻿using EngineLayer;
-using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
 using EngineLayer.ModificationAnalysis;
 using FlashLFQ;
 using MassSpectrometry;
-using MassSpectrometry.MzSpectra;
 using MathNet.Numerics.Distributions;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -17,11 +15,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
-using System.Collections.Concurrent;
-using Microsoft.ML;
-using Microsoft.ML.Data;
 using TaskLayer.MbrAnalysis;
 
 namespace TaskLayer
@@ -644,23 +638,6 @@ namespace TaskLayer
                 spectraLibrary.Add(standardSpectrum);
             }
             WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
-
-
-            Dictionary<string, List<LibrarySpectrum>> fileSpecificLibraries = new();
-            foreach (string filePath in Parameters.CurrentRawFileList) fileSpecificLibraries.Add(filePath, new List<LibrarySpectrum>());
-            foreach (var psm in PsmsGroupByPeptideAndCharge)
-            {
-                foreach (string filePath in Parameters.CurrentRawFileList)
-                {
-                    var bestMatchInFile = psm.Value.Where(p => p.FullFilePath == filePath).FirstOrDefault();
-                    if (bestMatchInFile != null)
-                    {
-                        var fileSpecificSpectrum = new LibrarySpectrum(bestMatchInFile.FullSequence, bestMatchInFile.ScanPrecursorMonoisotopicPeakMz, bestMatchInFile.ScanPrecursorCharge, bestMatchInFile.MatchedFragmentIons, bestMatchInFile.ScanRetentionTime);
-                        fileSpecificLibraries[filePath].Add(fileSpecificSpectrum);
-                    }
-                }
-            }
-            WriteIndividualSpectralLibraries(fileSpecificLibraries, Parameters.IndividualResultsOutputFolder);
         }
 
         private void WriteProteinResults()

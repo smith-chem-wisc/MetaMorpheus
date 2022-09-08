@@ -1,28 +1,17 @@
 ﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
-using EngineLayer.HistogramAnalysis;
-using EngineLayer.Localization;
-using EngineLayer.ModificationAnalysis;
 using FlashLFQ;
 using MassSpectrometry;
-using MassSpectrometry.MzSpectra;
-using MathNet.Numerics.Distributions;
-using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using UsefulProteomicsDatabases;
 using System.Collections.Concurrent;
 using Microsoft.ML;
 using Microsoft.ML.Data;
-using TaskLayer.MbrAnalysis;
 
 namespace TaskLayer.MbrAnalysis
 {
@@ -226,7 +215,7 @@ namespace TaskLayer.MbrAnalysis
 
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(allPsms, fileSpecificParameters, false);
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(allPsms, fileSpecificParameters, true);
-            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = PEP_Analysis_Cross_Validation.ComputeMobilityValues(allPsms, fileSpecificParameters);
+            PEP_Analysis_Cross_Validation.ComputeMobilityValues(allPsms, fileSpecificParameters);
 
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = PEP_Analysis_Cross_Validation.GetFileSpecificMedianFragmentMassError(allPsms);
 
@@ -245,8 +234,7 @@ namespace TaskLayer.MbrAnalysis
 
             trainedModels[0] = pipeline.Fit(dataView);
 
-            int ambiguousPeptidesResolved = PEP_Analysis_Cross_Validation.Compute_PSM_PEP(psms, psmGroupIndices[0], mlContext, trainedModels[0], searchType, fileSpecificParameters, sequenceToPsmCount, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
-
+            PEP_Analysis_Cross_Validation.Compute_PSM_PEP(psms, psmGroupIndices[0], mlContext, trainedModels[0], searchType, fileSpecificParameters, sequenceToPsmCount, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
         }
 
         private static void AssignEstimatedPsmPepQValue(ConcurrentBag<MbrSpectralMatch> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
