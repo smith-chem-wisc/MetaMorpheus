@@ -107,7 +107,8 @@ namespace TaskLayer.MbrAnalysis
             }
             List<PeptideSpectralMatch> allPsms = parameters.AllPsms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).
                 ThenBy(p => p.FullFilePath).ThenBy(x => x.ScanNumber).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
-            
+
+            Directory.CreateDirectory(Path.Join(parameters.OutputFolder, mbrAnalysisFolder));
             AssignEstimatedPsmQvalue(bestMbrMatches, allPsms);
             FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
             AssignEstimatedPsmPepQValue(bestMbrMatches, allPsms);
@@ -240,7 +241,7 @@ namespace TaskLayer.MbrAnalysis
 
             IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[0]);
 
-            string outputFolder = Path.Join(parameters.OutputFolder, mbrAnalysisFolder);
+            string outputFolder = parameters.OutputFolder;
 
             trainedModels[0] = pipeline.Fit(dataView);
 

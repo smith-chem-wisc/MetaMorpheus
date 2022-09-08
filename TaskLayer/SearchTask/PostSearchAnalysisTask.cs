@@ -467,39 +467,6 @@ namespace TaskLayer
 
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
-            using (var output = new StreamWriter(Path.Combine(Parameters.OutputFolder, @"IDsForFlashLFQ.tsv"))) //remove
-            {
-                output.WriteLine("File" + '\t' + "Base Sequence" + '\t' + "Full Sequence" + '\t' + "Monoisotopic Mass"
-                    + '\t' + "Retention Time" + "Precursor Charge" + "Accession"); //remove
-                foreach (var spectraFile in psmsGroupedByFile)
-                {
-                    var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
-
-                    // Temporary, REMOVE
-
-                        foreach (var psm in spectraFile) 
-                        {
-                            flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                                psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
-
-                            string proteinAccession = psm.ProteinAccession != null ? psm.ProteinAccession : Resolve(psm.BestMatchingPeptides.Select(p => p.Peptide).ToList().Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString; //remove
-
-                            //remove
-                            output.WriteLine(
-                                rawfileinfo.FilenameWithoutExtension + '\t' +
-                                psm.BaseSequence + '\t' +
-                                psm.FullSequence + '\t' +
-                                psm.PeptideMonisotopicMass.Value + '\t' +
-                                psm.ScanRetentionTime + '\t' +
-                                psm.ScanPrecursorCharge + '\t' +
-                                proteinAccession
-                                );
-                        }
-                }
-            }
-
-           
-
 
             // run FlashLFQ
             var FlashLfqEngine = new FlashLfqEngine(
