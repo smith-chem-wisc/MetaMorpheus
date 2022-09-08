@@ -67,6 +67,9 @@ namespace TaskLayer
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
 
             HistogramAnalysis();
+
+            FragmentCoverageAnalysis();
+
             WritePsmResults();
             WriteProteinResults();
             WriteQuantificationResults();
@@ -1388,6 +1391,16 @@ namespace TaskLayer
             }
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
+
+        private void FragmentCoverageAnalysis()
+        {
+            var filteredPsmList = Parameters.AllPsms
+                .Where(p => p.FdrInfo.PEP_QValue <= 0.01 &&
+                            p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
+            filteredPsmList.RemoveAll(b => b.IsDecoy);
+            filteredPsmList.RemoveAll(b => b.IsContaminant);
+        }
+
 
         private static void WriteTree(BinTreeStructure myTreeStructure, string writtenFile)
         {
