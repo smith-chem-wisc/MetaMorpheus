@@ -490,7 +490,7 @@ namespace TaskLayer
             for (int index = 0; index < fileSpecificPsms.Length; index++)
             {
                 PeptideSpectralMatch psm = fileSpecificPsms[index];
-                if (psm != null && psm.BestMatchingPeptides.Count() > 0)
+                if (psm != null && psm.BestMatchingPeptides.Any())
                 {
                     //Get the scan
                     Ms2ScanWithSpecificMass scanForThisPsm = arrayOfMs2ScansSortedByMass[index];
@@ -508,11 +508,10 @@ namespace TaskLayer
 
                     //get matched ions for each peptide
                     List<List<MatchedFragmentIon>> matchedIonsForAllAmbiguousPeptides = new();
-                    List<Product> waterAndAmmoniaLossFragments = new();
+                    
                     foreach (PeptideWithSetModifications peptide in ambiguousPeptides)
                     {
-                        waterAndAmmoniaLossFragments.Clear();
-
+                        List<Product> waterAndAmmoniaLossFragments = new();
                         DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom].AddRange(DissociationTypeCollection.GetWaterAndAmmoniaLossProductTypesFromDissociation(combinedParams.DissociationType, combinedParams.DigestionParams.FragmentationTerminus));
 
                         peptide.Fragment(DissociationType.Custom, combinedParams.DigestionParams.FragmentationTerminus, waterAndAmmoniaLossFragments);
