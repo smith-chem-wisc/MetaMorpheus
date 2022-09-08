@@ -31,6 +31,14 @@ namespace TaskLayer.MbrAnalysis
     {
         public const string mbrAnalysisFolder = "MbrAnalysis";
 
+        /// <summary>
+        /// Performs secondary analysis of MBR results by searching acceptor files for candidate spectra,
+        /// and comparing those spectra to a spectral library. Results (PEP model and .psmtsv) are written to
+        /// unique MbrAnalysis folder.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="commonParameters"></param>
+        /// <param name="fileSpecificParameters"></param>
         public static void RunMbrAnalysis(
             PostSearchAnalysisParameters parameters,
             CommonParameters commonParameters,
