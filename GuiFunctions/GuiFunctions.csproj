@@ -18,6 +18,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Easy.Common" Version="4.3.0" />
     <PackageReference Include="itext7" Version="7.1.13" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="mzLib" Version="1.0.534" />
