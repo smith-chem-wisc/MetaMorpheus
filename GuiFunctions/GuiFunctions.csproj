@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <PackageReference Include="itext7" Version="7.1.13" />
-    <PackageReference Include="mzLib" Version="1.0.533" />
+    <PackageReference Include="mzLib" Version="1.0.534" />
     <PackageReference Include="OxyPlot.Wpf" Version="2.0.0" />
     <PackageReference Include="Svg" Version="3.4.3" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
