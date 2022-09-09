@@ -239,7 +239,12 @@ namespace TaskLayer.MbrAnalysis
 
         private static void AssignEstimatedPsmPepQValue(ConcurrentBag<MbrSpectralMatch> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
         {
-            List<double> pepValues = bestMbrMatches.Select(p => p.spectralLibraryMatch).Where(p => p != null).OrderBy(p => p.FdrInfo.PEP).Select(p => p.FdrInfo.PEP).ToList();
+            List<double> pepValues = bestMbrMatches. 
+                Select(p => p.spectralLibraryMatch).
+                Where(p => p != null).
+                OrderBy(p => p.FdrInfo.PEP).
+                Select(p => p.FdrInfo.PEP).
+                ToList();
             foreach (MbrSpectralMatch match in bestMbrMatches)
             {
                 if (match.spectralLibraryMatch != null)

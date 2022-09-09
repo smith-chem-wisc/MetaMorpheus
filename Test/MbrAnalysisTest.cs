@@ -6,8 +6,10 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.DirectoryServices;
 using System.IO;
 using System.Linq;
+using Easy.Common.Extensions;
 using TaskLayer;
 
 namespace Test
@@ -245,6 +247,52 @@ namespace Test
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("IAGQVAAANK", 2, out var spectrum));
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("HEVSASTQSTPASSR", 3, out spectrum));
 
+        }
+
+        [Test]
+        public static void SpectralWriterSub100Test()
+        {
+
+            // new task with less than 100 psms.
+            PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
+            {
+                Parameters = new PostSearchAnalysisParameters()
+                {
+                    ProteinList = proteinList,
+                    AllPsms = psms.GetRange(0, 50),
+                    CurrentRawFileList = rawSlices,
+                    DatabaseFilenameList = databaseList,
+                    OutputFolder = outputFolder,
+                    NumMs2SpectraPerFile = numSpectraPerFile,
+                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    SearchTaskResults = searchTaskResults,
+                    MyFileManager = myFileManager,
+                    IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
+                    SearchParameters = new SearchParameters()
+                    {
+                        DoQuantification = true,
+                        WriteSpectralLibrary = true,
+                        MatchBetweenRuns = true,
+                        DoMbrAnalysis = true,
+                        WriteMzId = false,
+                        WriteDecoys = false,
+                        WriteContaminants = false,
+                        QuantifyPpmTol = 25
+                    }
+                },
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
+                    (rawSlices[0], new CommonParameters()),
+                    (rawSlices[1], new CommonParameters())
+                }
+            };
+
+            postSearchTask.Run();
+
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\spectralLibrary.msp");
+            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out var spectrum));
         }
 
         [Test]
