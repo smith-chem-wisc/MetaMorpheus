@@ -142,6 +142,7 @@ namespace Test
                 Console.WriteLine(string.Join(", ", CoveredUniqueAminoAcidNumberInProt));
             }
             return CoveredAminoAcids;
+
         }
 
         [Test]
