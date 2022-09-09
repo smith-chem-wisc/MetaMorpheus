@@ -245,17 +245,6 @@ namespace Test
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("IAGQVAAANK", 2, out var spectrum));
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("HEVSASTQSTPASSR", 3, out spectrum));
 
-            //Test Individual Library Results
-
-            path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\Individual File Results\" +
-                    Path.GetFileNameWithoutExtension(rawSlices[0]) + "_spectralLibrary.msp");
-            testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
-            librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
-
-            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("IAGQVAAANK", 2, out spectrum));
-            // 02ng file doesn't contain this peptide. Shouldn't be found in individual results
-            Assert.That(!testLibraryWithoutDecoy.TryGetSpectrum("HEVSASTQSTPASSR", 3, out spectrum)); 
-
         }
 
         [Test]
