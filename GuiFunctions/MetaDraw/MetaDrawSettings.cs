@@ -246,8 +246,8 @@ namespace GuiFunctions
                 ModificationTypeToColorValues = ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 CoverageTypeToColorValues = CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
-                UnannotatedPeakColor = UnannotatedPeakColor,
-                InternalIonColor = InternalIonColor,
+                UnannotatedPeakColor = UnannotatedPeakColor.GetColorName(),
+                InternalIonColor = InternalIonColor.GetColorName()
             };
         }
 
@@ -277,8 +277,8 @@ namespace GuiFunctions
             ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
             CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.CoverageTypeToColorValues[Array.IndexOf(CoverageTypes, p)]));
             SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
-            UnannotatedPeakColor = settings.UnannotatedPeakColor;
-            InternalIonColor = settings.InternalIonColor;
+            UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
+            InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
         }
 
         /// <summary>
