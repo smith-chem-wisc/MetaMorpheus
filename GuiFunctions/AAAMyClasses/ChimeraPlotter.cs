@@ -65,7 +65,7 @@ namespace GuiFunctions
                 {
                     proteinMatchedIons.AddRange(proteoform.MatchedIons);
                     allMatchedIons.AddRange(proteoform.MatchedIons);
-                    PeptideWithSetModifications pepWithSetMods = new(proteoform.FullSequence, GlobalVariables.AllModsKnownDictionary);
+                    PeptideWithSetModifications pepWithSetMods = new(proteoform.FullSequence.Split('|')[0], GlobalVariables.AllModsKnownDictionary);
                     var legendItem = new ChimeraLegendItemViewModel(String.Join(", ",
                             pepWithSetMods.AllModsOneIsNterminus.Select(p => p.Key + " - " + p.Value.IdWithMotif)
                                 .ToArray()), ChimeraPlotterColors.ColorsByProteinDict[i][proteoformIndex]);
