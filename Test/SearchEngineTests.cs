@@ -61,7 +61,79 @@ namespace Test
 
             Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
         }
+        [Test]
+        public static void TestClassicSearchDOTF()
+        {
+            Protease cust_protease = new Protease("TestDOTF Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", "I", 1, "") });
+            ProteaseDictionary.Dictionary.Add(cust_protease.Name, cust_protease);
+            CommonParameters CommonParameters = new CommonParameters
+                (digestionParams: new DigestionParams(
+                    protease: cust_protease.Name,
+                    minPeptideLength: 6, maxMissedCleavages:3),
+                scoreCutoff: 1);
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            Dictionary<int, Modification> emptyModDictionary = new Dictionary<int, Modification>();
 
+            string reverseToDecoySequence = "AVDFTGWQLK";
+            string scrambleToDecoySequence = "ILEAFGWTWGFAELI";
+            string mirrorToDecoySequence = "NKKNNNK";
+            var proteinList = new List<Protein>
+            {
+                new Protein(reverseToDecoySequence, "REVTODEC"),
+                new Protein(scrambleToDecoySequence, "SCRAMBLETODEC"),
+                new Protein(mirrorToDecoySequence, "MIRRORTODEC")
+            };
+            var reverseToDecoyPeptide = new PeptideWithSetModifications(new Protein(reverseToDecoySequence, "REVTODEC"), 
+                new DigestionParams(protease: cust_protease.Name), 1, 10, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
+            var scrambleToDecoyPeptide = new PeptideWithSetModifications(new Protein(scrambleToDecoySequence, "SCRAMBLETODEC"),
+                new DigestionParams(protease: cust_protease.Name), 1, 15, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
+            var mirrorToDecoyPeptide = new PeptideWithSetModifications(new Protein(mirrorToDecoySequence, "MIRRORTODEC"),
+                new DigestionParams(protease: cust_protease.Name), 1, 7, CleavageSpecificity.Full, null, 0, emptyModDictionary, 0, null);
+            int[] reverseDecoyAAOrder = new int[reverseToDecoySequence.Length];
+            int[] scrambleDecoyAAOrder = new int[scrambleToDecoySequence.Length];
+            int[] mirrorDecoyAAOrder = new int[mirrorToDecoySequence.Length];
+            var reversedDecoyPeptide = reverseToDecoyPeptide.GetReverseDecoyFromTarget(reverseDecoyAAOrder);
+            var scrambleDecoyPeptide = scrambleToDecoyPeptide.GetScrambledDecoyFromTarget(scrambleDecoyAAOrder);
+            var mirrorDecoyPeptide = mirrorToDecoyPeptide.GetScrambledDecoyFromTarget(mirrorDecoyAAOrder);
+            List<PeptideWithSetModifications> peptideList = new List<PeptideWithSetModifications>
+            {
+                reverseToDecoyPeptide,
+                scrambleToDecoyPeptide,
+                mirrorToDecoyPeptide,
+                reversedDecoyPeptide,
+                scrambleDecoyPeptide,
+                mirrorDecoyPeptide
+            };
+            var testMSDataFile = new TestDataFile(peptideList);
+            var arrayMS2Scans = MetaMorpheusTask.GetMs2Scans(testMSDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayMS2Scans.Length];
+            bool writeSpectralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, arrayMS2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary, decoyOnTheFly: true).Run();
+            Assert.AreEqual(6, allPsmsArray.Length);
+            // Check that the target that produces a mirrored decoy got matched and that it is a target
+            Assert.AreEqual(6, allPsmsArray[0].ScanNumber);
+            Assert.IsFalse(allPsmsArray[0].IsDecoy);
+            // Check that the mirrored decoy got matched and that it is a decoy
+            Assert.AreEqual(12, allPsmsArray[1].ScanNumber);
+            Assert.IsTrue(allPsmsArray[1].IsDecoy);
+            // Check that the target that produces a reversed decoy got matched and that it is a target
+            Assert.AreEqual(2, allPsmsArray[2].ScanNumber);
+            Assert.IsFalse(allPsmsArray[2].IsDecoy);
+            // Check that the reversed decoy got matched and that it is a decoy
+            Assert.AreEqual(8, allPsmsArray[3].ScanNumber);
+            Assert.IsTrue(allPsmsArray[3].IsDecoy);
+            // Check that the target that produces a reversed decoy got matched and that it is a target
+            Assert.AreEqual(4, allPsmsArray[4].ScanNumber);
+            Assert.IsFalse(allPsmsArray[4].IsDecoy);
+            // Check that the scrambled decoy got matched and that it is a decoy
+            Assert.AreEqual(10, allPsmsArray[5].ScanNumber);
+            Assert.IsTrue(allPsmsArray[5].IsDecoy);
+            // Check hash code pairing
+            Assert.AreEqual(reverseToDecoyPeptide.PairedTargetDecoyHash, (allPsmsArray[3].FullSequence.GetHashCode() + allPsmsArray[3].DigestionParams.Protease.GetHashCode()));
+        }
         [Test]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
