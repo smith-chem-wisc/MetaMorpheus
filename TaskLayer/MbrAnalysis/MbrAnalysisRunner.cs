@@ -47,53 +47,80 @@ namespace TaskLayer.MbrAnalysis
 
             ConcurrentBag<MbrSpectralMatch> bestMbrMatches = new();
 
-            foreach (SpectraFileInfo spectraFile in spectraFiles)
+            var watch = new System.Diagnostics.Stopwatch();
+
+            watch.Start();
+
+            for (int j = 0; j < 10; j++)
             {
-                List<ChromatographicPeak> fileSpecificMbrPeaks = parameters.FlashLfqResults.Peaks[spectraFile].Where(p => p.IsMbrPeak).ToList();
-                if (fileSpecificMbrPeaks == null || (!fileSpecificMbrPeaks.Any())) break;
-
-                MyFileManager myFileManager = new(true);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, commonParameters);
-                MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(commonParameters.PrecursorMassTolerance,
-                    parameters.SearchParameters.MassDiffAcceptorType, parameters.SearchParameters.CustomMdac);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = MetaMorpheusTask.GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, commonParameters)
-                    .OrderBy(b => b.RetentionTime).ToArray();
-                double[] arrayOfRTs = arrayOfMs2ScansSortedByRT.Select(p => p.TheScan.RetentionTime).ToArray();
-                string spectralLibraryPath = Path.Combine(parameters.OutputFolder, @"spectralLibrary.msp");
-                SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
-
-                Parallel.ForEach(threads, (i) =>
+                foreach (SpectraFileInfo spectraFile in spectraFiles)
                 {
-                    // Stop loop if canceled
-                    if (GlobalVariables.StopLoops) { return; }
-                    for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
+                    List<ChromatographicPeak> fileSpecificMbrPeaks =
+                        parameters.FlashLfqResults.Peaks[spectraFile].Where(p => p.IsMbrPeak).ToList();
+                    if (fileSpecificMbrPeaks == null || (!fileSpecificMbrPeaks.Any())) break;
+
+                    for (int k = 0; k < 10; k++)
                     {
-                        ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
-                        PeptideSpectralMatch bestDonorPsm = allPeptides.
-                            Where(p => p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
-                        if (bestDonorPsm == null) break;
-                        PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
-
-                        Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass =
-                            GetScansInWindow(mbrPeak, arrayOfRTs, arrayOfMs2ScansSortedByRT);
-                        PeptideSpectralMatch[] peptideSpectralMatches = new PeptideSpectralMatch[arrayOfMs2ScansSortedByRT.Count()];
-
-                        MiniClassicSearchEngine mcse = new(bestDonorPwsm, peptideSpectralMatches, arrayOfMs2ScansSortedByMass,
-                            parameters.VariableModifications, parameters.FixedModifications, massDiffAcceptor,
-                            commonParameters, fileSpecificParameters, library, new List<string> { parameters.SearchTaskId });
-                        mcse.Run();
-
-                        if (peptideSpectralMatches.Any())
-                        {
-                            bestMbrMatches.Add(new MbrSpectralMatch(BestPsmForMbrPeak(peptideSpectralMatches), mbrPeak));
-                        }
-                        else
-                        {
-                            bestMbrMatches.Add(new MbrSpectralMatch(null, mbrPeak));
-                        }
+                        fileSpecificMbrPeaks.AddRange(fileSpecificMbrPeaks);
                     }
-                });
+
+
+                    MyFileManager myFileManager = new(true);
+                    MsDataFile myMsDataFile =
+                        myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, commonParameters);
+                    MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(
+                        commonParameters.PrecursorMassTolerance,
+                        parameters.SearchParameters.MassDiffAcceptorType, parameters.SearchParameters.CustomMdac);
+                    Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = MetaMorpheusTask
+                        .GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, commonParameters)
+                        .OrderBy(b => b.RetentionTime).ToArray();
+                    double[] arrayOfRTs = arrayOfMs2ScansSortedByRT.Select(p => p.TheScan.RetentionTime).ToArray();
+                    string spectralLibraryPath = Path.Combine(parameters.OutputFolder, @"spectralLibrary.msp");
+                    SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
+
+                    Parallel.ForEach(threads, (i) =>
+                    {
+                        // Stop loop if canceled
+                        if (GlobalVariables.StopLoops) { return; }
+
+                        for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
+                        {
+                            ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
+                            PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p =>
+                                p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
+                            if (bestDonorPsm == null) break;
+                            PeptideWithSetModifications bestDonorPwsm =
+                                bestDonorPsm.BestMatchingPeptides.First().Peptide;
+
+                            Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass =
+                                GetScansInWindow(mbrPeak, arrayOfRTs, arrayOfMs2ScansSortedByRT);
+                            PeptideSpectralMatch[] peptideSpectralMatches =
+                                new PeptideSpectralMatch[arrayOfMs2ScansSortedByRT.Count()];
+
+                            MiniClassicSearchEngine mcse = new(bestDonorPwsm, peptideSpectralMatches,
+                                arrayOfMs2ScansSortedByMass,
+                                parameters.VariableModifications, parameters.FixedModifications, massDiffAcceptor,
+                                commonParameters, fileSpecificParameters, library,
+                                new List<string> { parameters.SearchTaskId });
+                            mcse.Run();
+
+                            if (peptideSpectralMatches.Any())
+                            {
+                                bestMbrMatches.Add(new MbrSpectralMatch(BestPsmForMbrPeak(peptideSpectralMatches),
+                                    mbrPeak));
+                            }
+                            else
+                            {
+                                bestMbrMatches.Add(new MbrSpectralMatch(null, mbrPeak));
+                            }
+                        }
+                    });
+                }
             }
+
+            watch.Stop();
+            int placeholer = 0;
+
             List<PeptideSpectralMatch> allPsms = parameters.AllPsms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).
                 ThenBy(p => p.FullFilePath).ThenBy(x => x.ScanNumber).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
 

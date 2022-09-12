@@ -75,7 +75,6 @@ namespace EngineLayer.ClassicSearch
             }
 
             // score each scan that has an acceptable precursor mass
-            // TODO: Parallelize this section of the code
             IEnumerable<ScanWithIndexAndNotchInfo> acceptableScans = GetAcceptableScans(PeptideWithSetMods.MonoisotopicMass, SearchMode); // GetAcceptableScans is asynchronous, in case you care
             foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
             {
@@ -133,45 +132,47 @@ namespace EngineLayer.ClassicSearch
 
                 int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
-                Parallel.ForEach(threads, (i) =>
+                //Parallel.ForEach(threads, (i) =>
+                //{
+                //    // Stop loop if canceled
+                //    if (GlobalVariables.StopLoops) { return; }
+                //    for (; i < psms.Length; i += maxThreadsPerFile)
+                //    {
+                for (int i = 0; i < psms.Length; i++)
                 {
-                    // Stop loop if canceled
-                    if (GlobalVariables.StopLoops) { return; }
-                    for (; i < psms.Length; i += maxThreadsPerFile)
+
+                    lock (myLocks[i])
                     {
-                        lock (myLocks[i])
+                        if (psms[i] != null)
                         {
-                            if (psms[i] != null)
+                            Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
+                            List<(int, PeptideWithSetModifications)> pwsms = new();
+                            List<double> pwsmSpectralAngles = new();
+                            foreach (var (Notch, Peptide) in psms[i].BestMatchingPeptides)
                             {
-                                Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
-                                List<(int, PeptideWithSetModifications)> pwsms = new();
-                                List<double> pwsmSpectralAngles = new();
-                                foreach (var (Notch, Peptide) in psms[i].BestMatchingPeptides)
+                                //if peptide is target, directly look for the target's spectrum in the spectral library
+                                if (!Peptide.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                 {
-                                    //if peptide is target, directly look for the target's spectrum in the spectral library
-                                    if (!Peptide.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                                    SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
+                                        SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
+                                    if (s.SpectralContrastAngle().HasValue)
                                     {
-                                        SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
-                                            SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
-                                        if (s.SpectralContrastAngle().HasValue)
-                                        {
-                                            pwsms.Add((Notch, Peptide));
-                                            pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
-                                        }
+                                        pwsms.Add((Notch, Peptide));
+                                        pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
                                     }
                                 }
-                                if (pwsmSpectralAngles.Count > 0 && !pwsmSpectralAngles.Max().Equals(null))
-                                {
-                                    psms[i].SpectralAngle = pwsmSpectralAngles.Max();
-                                }
-                                else
-                                {
-                                    psms[i].SpectralAngle = -1;
-                                }
+                            }
+                            if (pwsmSpectralAngles.Count > 0 && !pwsmSpectralAngles.Max().Equals(null))
+                            {
+                                psms[i].SpectralAngle = pwsmSpectralAngles.Max();
+                            }
+                            else
+                            {
+                                psms[i].SpectralAngle = -1;
                             }
                         }
                     }
-                });
+                }
             }
         }
 
