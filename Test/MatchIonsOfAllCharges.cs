@@ -405,6 +405,7 @@ namespace Test
             _ = Directory.CreateDirectory(thisTaskOutputFolder);
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
 
+            //update library
             task.SearchParameters.UpdateSpectralLibrary = true;
 
             string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
@@ -423,6 +424,7 @@ namespace Test
             var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, @"UpdateSpectraFileOutput\spectralLibrary.msp") });
             var oldLib = new SpectralLibrary(new List<string> { lib });
 
+            //get the spectra from original library and the update library
             Assert.That(oldLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var old_spectrum1));
             Assert.That(updatedLib.TryGetSpectrum("IEFEGQPVDFVDPNKQNLIAEVSTK", 4, out var new_spectrum1));
             Assert.That(oldLib.TryGetSpectrum("AIAELGIYPAVDPLDSTSR", 3, out var old_spectrum2));
@@ -430,7 +432,7 @@ namespace Test
             Assert.That(oldLib.TryGetSpectrum("TTQVTQFILDNYIER", 3, out var old_spectrum3));
             Assert.That(updatedLib.TryGetSpectrum("TTQVTQFILDNYIER", 3, out var new_spectrum3));
 
-            //test that the updated spectra are better than old spectra
+            //test if the updated spectra are better than old spectra
             Assert.That(old_spectrum1.MatchedFragmentIons.Count < new_spectrum1.MatchedFragmentIons.Count);
             Assert.That(old_spectrum2.MatchedFragmentIons.Count < new_spectrum2.MatchedFragmentIons.Count);
             Assert.That(old_spectrum3.MatchedFragmentIons.Count < new_spectrum3.MatchedFragmentIons.Count);

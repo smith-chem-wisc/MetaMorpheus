@@ -134,9 +134,4 @@
     </None>
   </ItemGroup>
 
-  <ItemGroup>
-    <Page Update="TaskWindows\SearchTaskWindow.xaml">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Page>
-  </ItemGroup>
 </Project>

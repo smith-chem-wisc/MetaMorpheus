@@ -597,6 +597,7 @@ namespace TaskLayer
                .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
             FilteredPsmList.RemoveAll(b => b.IsDecoy);
             FilteredPsmList.RemoveAll(b => b.IsContaminant);
+
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
             Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
             foreach (var x in FilteredPsmList)
@@ -609,28 +610,40 @@ namespace TaskLayer
                     PsmsGroupByPeptideAndCharge.Add(peptideWithChargeState, psmsWithSamePeptideAndSameCharge);
                 }
             }
+
+            //load the original library
             var originalSpectralLibrary = Parameters.spectralLibrary;
-            var allToUpdateLibrarySpectra = originalSpectralLibrary.GetAllLibrarySpectra().ToList();
+            //var allToUpdateLibrarySpectra = originalSpectralLibrary.GetAllLibrarySpectra().ToList();
+            var allToUpdateLibrarySpectra = originalSpectralLibrary.LibrarySpectrumBuffer;
+
             foreach (var psm in PsmsGroupByPeptideAndCharge)
             {
-                if (originalSpectralLibrary.TryGetSpectrum(psm.Key.Item1, psm.Key.Item2, out var librarySpectrum))
+                // if we have the corresponding spectrum in the original library, we compare the new spectrum with the library spectrum , and keep the one with higher core
+                string key = psm.Key.Item1 + "/" + psm.Key.Item2;
+                //if (originalSpectralLibrary.TryGetSpectrum(psm.Key.Item1, psm.Key.Item2, out var librarySpectrum))
+                if (allToUpdateLibrarySpectra.TryGetValue(key, out var librarySpectrum))
                 {
+                    // if the new spectrum has higher score, we will replace the original library spectrum with the new one
                     if (Math.Truncate(psm.Value[0].Score) > librarySpectrum.MatchedFragmentIons.Count)
-                    {
-                        var tempList = allToUpdateLibrarySpectra.Where(p => p.Sequence != psm.Key.Item1 || p.ChargeState != psm.Key.Item2).ToList();
-                        //allToUpdateLibrarySpectra.Remove(librarySpectrum);
+                    {;
+                        allToUpdateLibrarySpectra.Remove(key);
                         var betterLibrarySpectrum = new LibrarySpectrum(psm.Value[0].FullSequence, psm.Value[0].ScanPrecursorMonoisotopicPeakMz, psm.Value[0].ScanPrecursorCharge, psm.Value[0].MatchedFragmentIons, psm.Value[0].ScanRetentionTime);
-                        tempList.Add(betterLibrarySpectrum);
-                        allToUpdateLibrarySpectra = tempList;
+                        allToUpdateLibrarySpectra.Add(key, betterLibrarySpectrum);
+                        //var tempList = allToUpdateLibrarySpectra.Where(p => p.Sequence != psm.Key.Item1 || p.ChargeState != psm.Key.Item2).ToList();
+                        //allToUpdateLibrarySpectra.Remove(librarySpectrum);
+                        //var betterLibrarySpectrum = new LibrarySpectrum(psm.Value[0].FullSequence, psm.Value[0].ScanPrecursorMonoisotopicPeakMz, psm.Value[0].ScanPrecursorCharge, psm.Value[0].MatchedFragmentIons, psm.Value[0].ScanRetentionTime);
+                        //tempList.Add(betterLibrarySpectrum);
+                        //allToUpdateLibrarySpectra = tempList;
                     }
                 }
+                // if we don't have the corresponding spetrum in the original library, we directly store it as a new entry in the library
                 else
                 {
                     var newSpectrum = new LibrarySpectrum(psm.Value[0].FullSequence, psm.Value[0].ScanPrecursorMonoisotopicPeakMz, psm.Value[0].ScanPrecursorCharge, psm.Value[0].MatchedFragmentIons, psm.Value[0].ScanRetentionTime);
-                    allToUpdateLibrarySpectra.Add(newSpectrum);
+                    allToUpdateLibrarySpectra.Add(key, newSpectrum);
                 }
             }
-            WriteSpectralLibrary(allToUpdateLibrarySpectra, Parameters.OutputFolder);
+            WriteSpectralLibrary(allToUpdateLibrarySpectra.Values.ToList(), Parameters.OutputFolder);
         }
 
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
