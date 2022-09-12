@@ -15,6 +15,7 @@ using System.Linq;
 using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using PsmFromTsv = EngineLayer.PsmFromTsv;
 
 namespace Test
 {
@@ -454,6 +455,110 @@ namespace Test
 
             longestSeries = PeptideSpectralMatch.GetLongestIonSeriesBidirectional(PeptidesToMatchingFragments, pwsm);
             Assert.AreEqual(1, longestSeries);
+        }
+
+        [Test]
+        public static void TestPSMFragmentCoverage()
+        {
+            Protein p1 = new Protein("PEPTIDE", null);
+            CommonParameters commonParameters = new CommonParameters();
+            PeptideWithSetModifications pep1 = p1.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+
+            Protein p2 = new Protein("PEPTIDEPEPTIDE", null);
+            PeptideWithSetModifications pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+
+            Protein p3 = new Protein("PEPTIDEPEPTIDKEPE", null);
+            PeptideWithSetModifications pep3 = p3.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+
+            Protein p4 = new Protein("PEPTIDEPEPTIDEPEPTIDEPEPTIDEKPEPTIDEPEPTIDEKPEPTIDE", null);
+            PeptideWithSetModifications pep4 = p4.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList()[1];
+
+            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3, pep4});
+
+            Product productb1 = new Product(ProductType.b, 0, 0, 1, 1, 0);
+            Product productb2 = new Product(ProductType.b, 0, 0, 2, 2, 0);
+            Product productb3 = new Product(ProductType.b, 0, 0, 3, 3, 0);
+            Product productb4 = new Product(ProductType.b, 0, 0, 4, 4, 0);
+            Product productb5 = new Product(ProductType.b, 0, 0, 5, 5, 0);
+            Product productb6 = new Product(ProductType.b, 0, 0, 6, 6, 0);
+
+
+            Product producty1 = new Product(ProductType.y, 0, 0, 1, 0, 0);
+            Product producty2 = new Product(ProductType.y, 0, 0, 2, 0, 0);
+            Product producty3 = new Product(ProductType.y, 0, 0, 3, 0, 0);
+            Product producty4 = new Product(ProductType.y, 0, 0, 4, 0, 0);
+            Product producty5 = new Product(ProductType.y, 0, 0, 5, 0, 0);
+            Product producty6 = new Product(ProductType.y, 0, 0, 6, 0, 0);
+            Product producty7 = new Product(ProductType.y, 0, 0, 7, 0, 0);
+
+
+            MatchedFragmentIon mfib1 = new MatchedFragmentIon(ref productb1, 0, 0, 1);
+            MatchedFragmentIon mfib2 = new MatchedFragmentIon(ref productb2, 0, 0, 2);
+            MatchedFragmentIon mfib3 = new MatchedFragmentIon(ref productb3, 0, 0, 3);
+            MatchedFragmentIon mfib4 = new MatchedFragmentIon(ref productb4, 0, 0, 1);
+            MatchedFragmentIon mfib5 = new MatchedFragmentIon(ref productb5, 0, 0, 1);
+            MatchedFragmentIon mfib6 = new MatchedFragmentIon(ref productb6, 0, 0, 1);
+
+            MatchedFragmentIon mfiy1 = new MatchedFragmentIon(ref producty1, 0, 0, 2);
+            MatchedFragmentIon mfiy2 = new MatchedFragmentIon(ref producty2, 0, 0, 2);
+            MatchedFragmentIon mfiy3 = new MatchedFragmentIon(ref producty3, 0, 0, 1);
+            MatchedFragmentIon mfiy4 = new MatchedFragmentIon(ref producty4, 0, 0, 1);
+            MatchedFragmentIon mfiy5 = new MatchedFragmentIon(ref producty5, 0, 0, 1);
+            MatchedFragmentIon mfiy6 = new MatchedFragmentIon(ref producty6, 0, 0, 1);
+            MatchedFragmentIon mfiy7 = new MatchedFragmentIon(ref producty7, 0, 0, 1);
+
+            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6 };
+            List<MatchedFragmentIon> mfis2 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6, mfiy7 };
+            List<MatchedFragmentIon> mfis3 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib3, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6 };
+            List<MatchedFragmentIon> mfis4 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6, mfiy7 };
+
+            MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, 0, 1, null, new CommonParameters());
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 0, 0, scan1, commonParameters, mfis1);
+
+            MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
+            Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, 0, 1, null, new CommonParameters());
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan2, commonParameters, mfis2);
+
+            MsDataScan mzLibScan3 = t.GetOneBasedScan(6);
+            Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, 0, 1, null, new CommonParameters());
+            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 0, 0, scan3, commonParameters, mfis3);
+
+            MsDataScan mzLibScan4 = t.GetOneBasedScan(8);
+            Ms2ScanWithSpecificMass scan4 = new Ms2ScanWithSpecificMass(mzLibScan4, 0, 1, null, new CommonParameters());
+            PeptideSpectralMatch psm4 = new PeptideSpectralMatch(pep4, 0, 0, 0, scan4, commonParameters, mfis4);
+
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
+            psm1.ResolveAllAmbiguities();
+
+            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0); // psm above fdr cutoff
+            psm2.ResolveAllAmbiguities();
+
+            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // ambiguous peptide
+
+            psm4.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm for internal peptide
+            psm4.ResolveAllAmbiguities();
+
+            var allPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3, psm4};
+
+            foreach (var psm in allPsms)
+            {
+                psm.AddFragmentCoveragePSMs();
+            }
+
+            //First and last AA covered
+            Assert.IsTrue(allPsms[0].FragmentCoveragePositionInPSM.Contains(1));
+            Assert.IsTrue(allPsms[0].FragmentCoveragePositionInProtein.Contains(7));
+            //AA 7 covered by combination of b and y ion. Also ensure that missed ions are not covered
+            Assert.IsTrue(allPsms[1].FragmentCoveragePositionInPSM.Contains(7));
+            Assert.IsFalse(allPsms[1].FragmentCoveragePositionInPSM.Contains(1));
+            Assert.IsFalse(allPsms[1].FragmentCoveragePositionInPSM.Contains(3));
+            //Ambiguous psm does not assign values
+            Assert.IsNull(allPsms[2].FragmentCoveragePositionInProtein);
+            Assert.IsNull(allPsms[2].FragmentCoveragePositionInPSM);
+            //Internal peptide coverage numbers match up with AA position in protein
+            Assert.IsTrue(allPsms[3].FragmentCoveragePositionInProtein.Contains(31));
+            Assert.IsTrue(allPsms[3].FragmentCoveragePositionInProtein.Contains(34));
         }
     }
 }

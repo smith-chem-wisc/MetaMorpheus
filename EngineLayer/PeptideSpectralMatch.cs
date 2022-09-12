@@ -1,4 +1,5 @@
-﻿using Chemistry;
+﻿using System;
+using Chemistry;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using Proteomics;
@@ -79,6 +80,10 @@ namespace EngineLayer
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
+
+        public List<int> FragmentCoveragePositionInPSM { get; private set; }
+
+        public List<int> FragmentCoveragePositionInProtein { get; private set; }
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
@@ -392,6 +397,123 @@ namespace EngineLayer
             DigestionParams = psm.DigestionParams;
             PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
             SpectralAngle = psm.SpectralAngle;
+        }
+
+        /// <summary>
+        /// Determine the Fragment Coverage the PSM
+        /// Assigns fragment coverage indices for the PSM and the protein based on Matched Ion Fragments
+        /// </summary>
+        public void AddFragmentCoveragePSMs()
+        {
+            if (this.PeptideLength == null)
+            {
+                return;
+            }
+
+            if (this.BaseSequence == null)
+            {
+                return;
+            }
+
+            if (this.MatchedFragmentIons == null)
+            {
+                return;
+            }
+            var peptideLength = this.PeptideLength.Value;
+            var peptideLengthMinus1 = peptideLength - 1;
+            List<int> bIonPositions = new();
+            List<int> yIonPositions = new();
+
+            // only look at b and y ions at this point
+            var ionsbAndy = this.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == Proteomics.Fragmentation.ProductType.b ||p.NeutralTheoreticalProduct.ProductType == Proteomics.Fragmentation.ProductType.y).ToList();
+            foreach (var ion in ionsbAndy)
+            {
+                switch (ion.NeutralTheoreticalProduct.ProductType)
+                {
+                    // put each ion position into a list, either b or y
+                    case Proteomics.Fragmentation.ProductType.b:
+                        bIonPositions.Add(ion.NeutralTheoreticalProduct.FragmentNumber);
+                        break;
+                    case Proteomics.Fragmentation.ProductType.y:
+                        yIonPositions.Add(ion.NeutralTheoreticalProduct.FragmentNumber);
+                        break;
+                }
+            }
+
+            //Ensure the ion lists only contain one instance of each observed position, and that they are in sequential order
+            var bIonPositionsUnique = bIonPositions.Distinct().ToList();
+            var yIonPositionsUnique = yIonPositions.Distinct().ToList(); 
+            bIonPositionsUnique.Sort(); 
+            yIonPositionsUnique.Sort();
+            
+            // Create a list of amino acid positions that are covered
+            List<int> covered = new();
+
+            // Look at b ions
+            for (int i = 0; i < bIonPositionsUnique.Count; i++)
+            {
+                // if sequential b ions are present, that amino acid is covered. Don't check the last b ion
+                if (i + 1 < bIonPositionsUnique.Count)
+                {
+                    if (bIonPositionsUnique[i+1] - bIonPositionsUnique[i] == 1)
+                    { 
+                        covered.Add(bIonPositionsUnique[i+1]);
+                    }
+                }
+
+                // Determine the y value that corresponds to the next sequential b value, and check whether that is present
+                var yValNecessary = peptideLengthMinus1 - bIonPositionsUnique[i];
+                if (yIonPositionsUnique.Contains(yValNecessary))
+                {
+                    covered.Add(bIonPositionsUnique[i] + 1);
+                }
+            }
+
+            // If the final b ion is present, the last amino acid is covered
+            if (bIonPositionsUnique.Count > 0)
+            {
+                if (bIonPositionsUnique[^1] == peptideLengthMinus1)
+                {
+                    covered.Add(peptideLength);
+                }
+            }
+            
+
+            // look at y ions
+            for (int i = 0; i < yIonPositionsUnique.Count; i++)
+            {
+                // if sequential y ions are present, that amino acid is covered. Don't check the last y ion
+                if (i + 1 >= yIonPositionsUnique.Count) continue;
+                if (yIonPositionsUnique[i + 1] - yIonPositionsUnique[i] == 1)
+                {
+                    covered.Add(peptideLength - yIonPositionsUnique[i]);
+                }
+            }
+
+            // If the final y ion is present, the first amino acid is covered
+            if (yIonPositionsUnique.Count > 0)
+            {
+                if (yIonPositionsUnique[^1] == peptideLengthMinus1)
+                {
+                    covered.Add(1);
+                }
+            }
+         
+            // Store a list of unique covered positions, and sort them
+            var coveredUnique = covered.Distinct().ToList();
+            coveredUnique.Sort();
+
+            this.FragmentCoveragePositionInPSM = coveredUnique;
+
+            if (this.OneBasedStartResidueInProtein == null) return;
+            //Save the positions within the protein that are covered in a list, assign to each PSM
+            List<int> coveredUniqueAminoAcidNumberInProtein = new();
+            foreach (var position in coveredUnique)
+            {
+                coveredUniqueAminoAcidNumberInProtein.Add(position + this.OneBasedStartResidueInProtein.Value - 1);
+            }
+
+            this.FragmentCoveragePositionInProtein = coveredUniqueAminoAcidNumberInProtein;
         }
     }
 }

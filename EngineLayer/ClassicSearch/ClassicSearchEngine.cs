@@ -165,6 +165,7 @@ namespace EngineLayer.ClassicSearch
             foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
                 psm.ResolveAllAmbiguities();
+                psm.AddFragmentCoveragePSMs();
             }
 
             return new MetaMorpheusEngineResults(this);
