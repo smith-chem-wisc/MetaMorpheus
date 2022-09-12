@@ -189,14 +189,17 @@ namespace Test
             {
                 PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
 
-                List<(string FileName, CommonParameters Parameters)> fileSpecificParameters = new() { (myFile, commonParameters) };
-                PeptideSpectralMatch[] peptideSpectralMatches = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+                MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
+                    listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),
+                    searchModes,
+                    commonParameters,
+                    sl);
 
-                //new MiniClassicSearchEngine(pwsm, peptideSpectralMatches, listOfSortedms2Scans, variableModifications, fixedModifications, searchModes,
-                //    commonParameters, fileSpecificParameters, sl, new List<string>()).Run();
+                PeptideSpectralMatch[] peptideSpectralMatches =
+                    mcse.SearchAroundPeak(pwsm, allPsmsArray[5].ScanRetentionTime).ToArray();
 
-                //Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[5].BaseSequence);
-                //Assert.That(peptideSpectralMatches[5].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
+                Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);
+                Assert.That(peptideSpectralMatches[0].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
             }
         }
 
