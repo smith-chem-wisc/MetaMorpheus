@@ -49,7 +49,9 @@ namespace MetaMorpheusGUI
             BoldTextCheckBox.IsChecked = MetaDrawSettings.AnnotationBold;
             DecoysCheckBox.IsChecked = MetaDrawSettings.ShowDecoys;
             ContaminantsCheckBox.IsChecked = MetaDrawSettings.ShowContaminants;
+            ShowInternalIonAnnotationsCheckBox.IsChecked = MetaDrawSettings.DisplayInternalIonAnnotations;
             PrecursorChargeCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Charge: "];
+            ShowInternalIonsCheckBox.IsChecked = MetaDrawSettings.InternalIonColor != OxyColors.Transparent;
             PrecursorMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Mass: "];
             TheoreticalMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Theoretical Mass: "];
             ScoreCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Score: "];
@@ -66,6 +68,8 @@ namespace MetaMorpheusGUI
             SequencenNumbersCheckBox.IsChecked = MetaDrawSettings.DrawNumbersUnderStationary;
             ShowLegendCheckBox.IsChecked = MetaDrawSettings.ShowLegend;
             qValueBox.Text = MetaDrawSettings.QValueFilter.ToString();
+            AmbiguityFilteringComboBox.DataContext = MetaDrawSettings.AmbiguityTypes;
+            AmbiguityFilteringComboBox.SelectedItem = MetaDrawSettings.AmbiguityFilter;
             TextSizeBox.Text = MetaDrawSettings.AnnotatedFontSize.ToString();
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
@@ -90,6 +94,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.AnnotationBold = BoldTextCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowDecoys = BoldTextCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowContaminants = BoldTextCheckBox.IsChecked.Value;
+            MetaDrawSettings.DisplayInternalIonAnnotations = ShowInternalIonAnnotationsCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Charge: "] = PrecursorChargeCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Mass: "] = PrecursorMassCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Theoretical Mass: "] = TheoreticalMassCheckBox.IsChecked.Value;
@@ -109,6 +114,9 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.LocalizationLevelStart = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelStart.SelectedItem.ToString());
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
             MetaDrawSettings.ExportType = ExportFileFormatComboBox.SelectedItem.ToString();
+            MetaDrawSettings.AmbiguityFilter = AmbiguityFilteringComboBox.SelectedItem.ToString();
+            if (!ShowInternalIonsCheckBox.IsChecked.Value)
+                MetaDrawSettings.InternalIonColor = OxyColors.Transparent;
             SettingsView.Save();
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
@@ -158,7 +166,6 @@ namespace MetaMorpheusGUI
         {
             Save_Click(sender, e);
             SettingsView.SaveAsDefault();
-            
         }
 
         /// <summary>
@@ -189,6 +196,26 @@ namespace MetaMorpheusGUI
         private void ComboBox_SelectionChanged_2(object sender, SelectionChangedEventArgs e)
         {
             ((CoverageTypeForTreeViewModel)((ComboBox)sender).DataContext).SelectionChanged((string)((ComboBox)sender).SelectedItem);
+        }
+
+        /// <summary>
+        /// Event handler for when the button to restore default settings is clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void RestoreDefaultButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (MessageBox.Show("Reset to default values?", "", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+            {
+                if (File.Exists(SettingsViewModel.SettingsPath))
+                    File.Delete(SettingsViewModel.SettingsPath);
+                MetaDrawSettings.ResetSettings();
+                SettingsViewModel settingsViewModel = new SettingsViewModel();
+                SettingsView = settingsViewModel;
+                DataContext = SettingsView;
+                PopulateChoices();
+                DialogResult = true;
+            }
         }
     }
 }
