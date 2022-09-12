@@ -11,52 +11,41 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.ClassicSearch
 {
-    public class MiniClassicSearchEngine : MetaMorpheusEngine
+    public class MiniClassicSearchEngine
     {
         private readonly SpectralLibrary SpectralLibrary;
         private readonly MassDiffAcceptor SearchMode;
-        private readonly List<Modification> FixedModifications;
-        private readonly List<Modification> VariableModifications;
-        private readonly PeptideWithSetModifications PeptideWithSetMods;
-        private readonly PeptideSpectralMatch[] PeptideSpectralMatches;
-        private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
-        private readonly double[] MyScanPrecursorMasses;
+        private readonly Ms2ScanWithSpecificMass[] MS2ByRetentionTime;
+        private readonly double[] ArrayOfRTs;
+        private CommonParameters myCommonParameters;
 
-        public MiniClassicSearchEngine(PeptideWithSetModifications pwsm, PeptideSpectralMatch[] peptideSpectralMatches, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
-            List<Modification> variableModifications, List<Modification> fixedModifications,
-            MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
-            SpectralLibrary spectralLibrary, List<string> nestedIds)
-            : base(commonParameters, fileSpecificParameters, nestedIds)
+        public MiniClassicSearchEngine(
+            Ms2ScanWithSpecificMass[] arrayOfRTSortedMS2Scans,
+            MassDiffAcceptor searchMode,
+            CommonParameters commonParameters,
+            SpectralLibrary spectralLibrary)
         {
-            PeptideWithSetMods = pwsm;
-            ArrayOfSortedMS2Scans = arrayOfSortedMS2Scans;
-            PeptideSpectralMatches = peptideSpectralMatches;
-            MyScanPrecursorMasses = arrayOfSortedMS2Scans.Select(b => b.PrecursorMass).ToArray();
-            VariableModifications = variableModifications;
-            FixedModifications = fixedModifications;
+            MS2ByRetentionTime = arrayOfRTSortedMS2Scans;
+            ArrayOfRTs = MS2ByRetentionTime.Select(p => p.RetentionTime).ToArray();
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;
+            myCommonParameters = commonParameters;
         }
 
-        protected override MetaMorpheusEngineResults RunSpecific()
+        /// <summary>
+        /// Searches all Ms2 scans in a 2 minute window around a peak apex for possible PSMs.
+        /// Psms are scored against a peptideWithSetModifications that acted as a donor in MBR.
+        /// Calculates traditional and spectral contrast angle scores
+        /// </summary>
+        /// <param name="donorPwsm"> Ms2 scans in window are searched for matches to this donor peptide</param>
+        /// <param name="peakApexRT"> The center of the 2 minute window where the search occurs</param>
+        /// <returns></returns>
+        public IEnumerable<PeptideSpectralMatch> SearchAroundPeak(PeptideWithSetModifications donorPwsm, double peakApexRT)
         {
-
-            // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
-            var myLocks = new object[ArrayOfSortedMS2Scans.Length]; // There aren't multiple PSMs, just the one we're looking at. 
-            for (int i = 0; i < myLocks.Length; i++)
-            {
-                myLocks[i] = new object();
-            }
-
-            int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
-            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
-
-            Status("Performing mini classic search...");
-
             var targetFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
 
             // check if we're supposed to autodetect dissociation type from the scan header or not
-            if (CommonParameters.DissociationType == DissociationType.Autodetect)
+            if (myCommonParameters.DissociationType == DissociationType.Autodetect)
             {
                 foreach (var item in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
                 {
@@ -65,7 +54,7 @@ namespace EngineLayer.ClassicSearch
             }
             else
             {
-                targetFragmentsForEachDissociationType.Add(CommonParameters.DissociationType, new List<Product>());
+                targetFragmentsForEachDissociationType.Add(myCommonParameters.DissociationType, new List<Product>());
             }
 
             // clear fragments from the last peptide
@@ -75,11 +64,17 @@ namespace EngineLayer.ClassicSearch
             }
 
             // score each scan that has an acceptable precursor mass
-            IEnumerable<ScanWithIndexAndNotchInfo> acceptableScans = GetAcceptableScans(PeptideWithSetMods.MonoisotopicMass, SearchMode); // GetAcceptableScans is asynchronous, in case you care
+            IEnumerable<ScanWithIndexAndNotchInfo> acceptableScans = GetAcceptableScans(donorPwsm.MonoisotopicMass, peakApexRT, SearchMode); // GetAcceptableScans is asynchronous, in case you care
+            if (!acceptableScans.Any())
+            {
+                return null;
+            }
+
+            List<PeptideSpectralMatch> acceptablePsms = new();
             foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
             {
-                var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                    scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
+                var dissociationType = myCommonParameters.DissociationType == DissociationType.Autodetect ?
+                    scan.TheScan.TheScan.DissociationType.Value : myCommonParameters.DissociationType;
 
                 if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var peptideTheorProducts))
                 {
@@ -90,32 +85,28 @@ namespace EngineLayer.ClassicSearch
                 // check if we've already generated theoretical fragments for this peptide+dissociation type
                 if (peptideTheorProducts.Count == 0)
                 {
-                    PeptideWithSetMods.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                    donorPwsm.Fragment(dissociationType, myCommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
                 }
 
                 // match theoretical target ions to spectrum
-                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters);
+                List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan, peptideTheorProducts, myCommonParameters);
 
                 // calculate the peptide's score
-                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
+                double thisScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
 
-                AddPeptideCandidateToPsm(scan, myLocks, thisScore, PeptideWithSetMods, matchedIons);
+                // Add psm to list
+                acceptablePsms.Add(new PeptideSpectralMatch(donorPwsm, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, myCommonParameters, matchedIons, 0));
             }
 
-
-            //foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
-            IEnumerable<PeptideSpectralMatch> matchedSpectra = PeptideSpectralMatches.Where(p => p != null);
-            int numMatches = matchedSpectra.Count();
-            int matchScanNumber = 0;
+            IEnumerable<PeptideSpectralMatch> matchedSpectra = acceptablePsms.Where(p => p != null);
             foreach (PeptideSpectralMatch psm in matchedSpectra)
             {
                 psm.ResolveAllAmbiguities();
-                matchScanNumber = psm.ScanNumber;
             }
 
-            CalculateSpectralAngles(SpectralLibrary, PeptideSpectralMatches, ArrayOfSortedMS2Scans, CommonParameters);
+            CalculateSpectralAngles(SpectralLibrary, acceptablePsms.ToArray(), GetScansInWindow(peakApexRT), myCommonParameters);
 
-            return new MetaMorpheusEngineResults(this);
+            return matchedSpectra;
         }
 
         public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, PeptideSpectralMatch[] psms,
@@ -176,58 +167,57 @@ namespace EngineLayer.ClassicSearch
             }
         }
 
-        private void AddPeptideCandidateToPsm(ScanWithIndexAndNotchInfo scan, object[] myLocks, double thisScore, PeptideWithSetModifications peptide, List<MatchedFragmentIon> matchedIons)
+        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, double apexRT, MassDiffAcceptor searchMode)
         {
-            // this is thread-safe because even if the score improves from another thread writing to this PSM,
-            // the lock combined with AddOrReplace method will ensure thread safety
-
-            // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
-            lock (myLocks[scan.ScanIndex])
-            {
-                bool scoreImprovement = PeptideSpectralMatches[scan.ScanIndex] == null || (thisScore - PeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
-
-                if (scoreImprovement)
-                {
-                    if (PeptideSpectralMatches[scan.ScanIndex] == null)
-                    {
-                        PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0);
-                    }
-                    else
-                    {
-                        PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
-                    }
-                }
-            }
-        }
-
-        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)
-        {
+            Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans = GetScansInWindow(apexRT);
+            double[] myScanPrecursorMasses = arrayOfSortedMs2Scans.Select(p => p.PrecursorMass).ToArray();
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass).ToList())
             {
                 DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
-                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);
-                if (scanIndex < ArrayOfSortedMS2Scans.Length)
+                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum, myScanPrecursorMasses);
+                if (scanIndex < arrayOfSortedMs2Scans.Length)
                 {
-                    var scanMass = MyScanPrecursorMasses[scanIndex];
+                    var scanMass = myScanPrecursorMasses[scanIndex];
                     while (scanMass <= allowedInterval.Maximum)
                     {
-                        var scan = ArrayOfSortedMS2Scans[scanIndex];
+                        var scan = arrayOfSortedMs2Scans[scanIndex];
                         yield return new ScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
                         scanIndex++;
-                        if (scanIndex == ArrayOfSortedMS2Scans.Length)
+                        if (scanIndex == arrayOfSortedMs2Scans.Length)
                         {
                             break;
                         }
 
-                        scanMass = MyScanPrecursorMasses[scanIndex];
+                        scanMass = myScanPrecursorMasses[scanIndex];
                     }
                 }
             }
         }
 
-        private int GetFirstScanWithMassOverOrEqual(double minimum)
+        /// <summary>
+        /// Finds MS2 scans falling within the relevant time window
+        /// </summary>
+        /// <param name="mbrPeak"> Acceptor peak </param>
+        /// <param name="arrayOfRTs"> </param>
+        /// <param name="arrayOfMs2ScansSortedByRT"> </param>
+        /// <returns> An array of MS2 scans falling within a 2 minute retention time window of the Acceptor peak apex.
+        ///           This array is sorted by precursor mass. </returns>
+        private Ms2ScanWithSpecificMass[] GetScansInWindow(double apexRT)
         {
-            int index = Array.BinarySearch(MyScanPrecursorMasses, minimum);
+            double peakHalfWidth = 1.0; //Placeholder value to determine retention time window
+            int startIndex = Array.BinarySearch(ArrayOfRTs, apexRT - peakHalfWidth);
+            if (startIndex < 0)
+                startIndex = ~startIndex;
+            int endIndex = Array.BinarySearch(ArrayOfRTs, apexRT + peakHalfWidth);
+            if (endIndex < 0)
+                endIndex = ~endIndex;
+
+            return MS2ByRetentionTime[startIndex..endIndex].OrderBy(b => b.PrecursorMass).ToArray();
+        }
+
+        private int GetFirstScanWithMassOverOrEqual(double minimum, double[] precursorMasses)
+        {
+            int index = Array.BinarySearch(precursorMasses, minimum);
             if (index < 0)
             {
                 index = ~index;
