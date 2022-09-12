@@ -158,29 +158,6 @@ namespace TaskLayer.MbrAnalysis
             }
             return null;
         }
-
-        /// <summary>
-        /// Finds MS2 scans falling within the relevant time window
-        /// </summary>
-        /// <param name="mbrPeak"> Acceptor peak </param>
-        /// <param name="arrayOfRTs"> </param>
-        /// <param name="arrayOfMs2ScansSortedByRT"> </param>
-        /// <returns> An array of MS2 scans falling within a 2 minute retention time window of the Acceptor peak apex.
-        ///           This array is sorted by precursor mass. </returns>
-        private static Ms2ScanWithSpecificMass[] GetScansInWindow(ChromatographicPeak mbrPeak, double[] arrayOfRTs, Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT)
-        {
-            double apexRT = mbrPeak.Apex.IndexedPeak.RetentionTime;
-            double peakHalfWidth = 1.0; //Placeholder value to determine retention time window
-            int startIndex = Array.BinarySearch(arrayOfRTs, apexRT - peakHalfWidth);
-            if (startIndex < 0)
-                startIndex = ~startIndex;
-            int endIndex = Array.BinarySearch(arrayOfRTs, apexRT + peakHalfWidth);
-            if (endIndex < 0)
-                endIndex = ~endIndex;
-
-            return arrayOfMs2ScansSortedByRT[startIndex..endIndex].OrderBy(b => b.PrecursorMass).ToArray();
-        }
-
         private static void AssignEstimatedPsmQvalue(ConcurrentBag<MbrSpectralMatch> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
         {
             double[] allScores = allPsms.Select(s => s.Score).OrderByDescending(s => s).ToArray();
