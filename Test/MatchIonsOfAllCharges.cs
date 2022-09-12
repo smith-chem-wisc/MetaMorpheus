@@ -21,6 +21,7 @@ namespace Test
     public class SearchEngineForWritingSpectralLibraryTest
     {
         [Test]
+        // ZD: This test appears to be failing due to an issue with ambiguous peptides possibly steming from how DOTFComparison handles this at line 348
         public static void TestMatchIonsOfAllChargesBottomUp()
         {
             CommonParameters CommonParameters = new CommonParameters();
@@ -238,6 +239,8 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test is failing due to a difference in the matched PSMs
+        // ZD: this is likely not that big of a problem
         public static void TestReverseDecoyGenerationDuringSearch()
         {
             CommonParameters CommonParameters = new CommonParameters();
@@ -342,6 +345,7 @@ namespace Test
         }
 
         [Test]
+        // Likely failing due to a redundant file.
         public static void TestLibraryGeneration()
         {
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");

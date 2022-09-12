@@ -30,6 +30,7 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test appears to be failing due to a reduced number of PSMs matched
         public static void TestMetaDrawReadPsmFile()
         {
             SearchTask searchTask = new SearchTask();
@@ -66,6 +67,7 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test appears to be failing due to a reduced number of PSMs matched
         public static void TestMetaDrawReadSAwhenReadingPsmFile()
         {
             SearchTask searchTask = new SearchTask();
@@ -223,6 +225,7 @@ namespace Test
         }
 
         [Test]
+        // ZD: metadrawLogic.FilteredListofPsms contains no decoys at line 269
         public static void MetaDraw_SearchTaskTest()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");

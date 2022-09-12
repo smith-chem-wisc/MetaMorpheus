@@ -21,6 +21,7 @@ namespace Test
     public static class MyPeptideTest
     {
         [Test]
+        // ZD: This test appears to be failing due to an issue with ambiguous peptides possibly steming from how DOTFComparison handles this at line 348
         public static void TestIdenticalPeaks()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
@@ -57,6 +58,7 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test appears to be failing due to an issue with ambiguous peptides possibly steming from how DOTFComparison handles this at line 348
         public static void TestLastPeaks()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
@@ -94,6 +96,7 @@ namespace Test
         }
 
         [Test]
+        // ZD: This test appears to be failing due to an issue with ambiguous peptides possibly steming from how DOTFComparison handles this at line 348
         public static void TestVeryCloseExperimentalsClassic()
         {
             IDictionary<int, List<Modification>> mods = new Dictionary<int, List<Modification>>();
