@@ -1,0 +1,161 @@
+﻿<Window x:Class="GUI.CustomProteaseWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GUI"
+        mc:Ignorable="d"
+        Title="Add Custom Protease" Height="327" Width="375">
+    <Grid>
+        <StackPanel Orientation="Vertical" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="5">
+            <!--Modification name-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Name" Width="180" ></Label>
+                <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                <TextBox x:Name="proteaseNameTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Protease name (required), example: 'trypsin'"/>
+                    </ToolTipService.ToolTip>
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                            <Style.Resources>
+                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                    <VisualBrush.Visual>
+                                        <Label Content="ex: 'trypsin'" Foreground="Gray" />
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Style.Resources>
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="Text" Value="{x:Null}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="Background" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>
+            <!--Where Protease Cleaves-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Sequences Inducing Cleavage" Width="180"></Label>
+                <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                <TextBox Name="sequencesInducingCleavageTextBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Use single letter code and separate with ','"/>
+                    </ToolTipService.ToolTip>
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                            <Style.Resources>
+                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                    <VisualBrush.Visual>
+                                        <Label Content="ex: 'K,R'" Foreground="Gray" />
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Style.Resources>
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="Text" Value="{x:Null}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="Background" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>
+            <!--What Stops it from Cleaving there-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Sequences Preventing Cleavage" Width="180"></Label>
+                <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                <TextBox Name="sequencesPreventingCleavageBox" Width="155" Height="20">
+                    <ToolTipService.ToolTip>
+                        <ToolTip Content="Use single amino acid code and separate with ','"/>
+                    </ToolTipService.ToolTip>
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                            <Style.Resources>
+                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                    <VisualBrush.Visual>
+                                        <Label Content="ex: 'P'" Foreground="Gray" />
+                                    </VisualBrush.Visual>
+                                </VisualBrush>
+                            </Style.Resources>
+                            <Style.Triggers>
+                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="Text" Value="{x:Null}">
+                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="Background" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>            
+            <!--Location Restriction-->
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Cleavage Terminus" Width="180"></Label>
+                <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                <ListBox Name="cleavageTerminusListBox" Width="155" Height="46">                    
+                </ListBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Cleavage Specificity" Width="180"></Label>
+                <Label Content="*" Foreground="Red" FontWeight="Bold" />
+                <ListBox Name="cleavageSpecificityListBox" Width="155" Height="46">                    
+                </ListBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="PSI-MS Accession Number" Width="195"></Label>
+                <TextBox Name="psiAccessionNumber" Width="155" Height="20">                   
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">                            
+                            <Style.Triggers>                                
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="Background" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="PSI-MS Name" Width="195"></Label>
+                <TextBox Name="psiName" Width="155" Height="20">
+                    <TextBox.Style>
+                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                            <Style.Triggers>
+                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                    <Setter Property="Background" Value="White" />
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBox.Style>
+                </TextBox>
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <Label Content="Protease Cleavage Modification" Width="190"></Label>
+                <Button Name="addProteaseMod" Content="Add Modification" FontSize="13" Margin="5" Width="155" Click="OpenProteaseModification_Click"/>
+            
+            </StackPanel>
+        </StackPanel>
+        
+        <!--Save and cancel buttons-->
+        <StackPanel Orientation="Horizontal" Height="35" VerticalAlignment="Bottom" HorizontalAlignment="Center"  >
+            <Button Name="saveButton" Content="Save Protease" FontSize="13" Margin="5" Width="100" Click="SaveCustomProtease_Click"/>
+            <Button Name="clearButton" Content="Clear" FontSize="13" Margin="5" Width="100" Click="ClearCustomProtease_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
