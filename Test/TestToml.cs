@@ -100,12 +100,14 @@ namespace Test
             var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
             Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "Asp-N");
+            Assert.AreEqual(tomlSettingsList["DissociationType"].Value.Get<string>(), "ETD");
             Assert.IsFalse(tomlSettingsList.ContainsKey("maxMissedCleavages"));
             Assert.IsFalse(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
 
             FileSpecificParameters f = new FileSpecificParameters(fileSpecificToml);
 
             Assert.AreEqual("Asp-N", f.Protease.Name);
+            Assert.AreEqual("ETD", f.DissociationType);
             Assert.IsNull(f.MaxMissedCleavages);
 
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
