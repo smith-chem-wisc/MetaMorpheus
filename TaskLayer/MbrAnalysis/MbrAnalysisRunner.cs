@@ -134,7 +134,8 @@ namespace TaskLayer.MbrAnalysis
             {
                 peptides.RemoveAll(b => b.IsContaminant);
             }
-            peptides.RemoveAll(p => p.FdrInfo.QValue > commonParameters.QValueOutputFilter);
+            double qValueCutoff = 0.01;
+            peptides.RemoveAll(p => p.FdrInfo.QValue > qValueCutoff);
             return peptides;
         }
 
@@ -235,22 +236,21 @@ namespace TaskLayer.MbrAnalysis
                 ToList();
             foreach (MbrSpectralMatch match in bestMbrMatches)
             {
-                if (match.spectralLibraryMatch != null)
+                if (match.spectralLibraryMatch == null) continue;
+
+                int myIndex = 0;
+                while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= match.spectralLibraryMatch.FdrInfo.PEP)
                 {
-                    int myIndex = 0;
-                    while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= match.spectralLibraryMatch.FdrInfo.PEP)
-                    {
-                        myIndex++;
-                    }
-                    if (myIndex == pepValues.Count - 1)
-                    {
-                        match.spectralLibraryMatch.FdrInfo.PEP_QValue = pepValues.Last();
-                    }
-                    else
-                    {
-                        double estimatedQ = (pepValues[myIndex - 1] + pepValues[myIndex]) / 2;
-                        match.spectralLibraryMatch.FdrInfo.PEP_QValue = estimatedQ;
-                    }
+                    myIndex++;
+                }
+                if (myIndex == pepValues.Count - 1)
+                {
+                    match.spectralLibraryMatch.FdrInfo.PEP_QValue = pepValues.Last();
+                }
+                else
+                {
+                    double estimatedQ = (pepValues[myIndex - 1] + pepValues[myIndex]) / 2;
+                    match.spectralLibraryMatch.FdrInfo.PEP_QValue = estimatedQ;
                 }
             }
         }

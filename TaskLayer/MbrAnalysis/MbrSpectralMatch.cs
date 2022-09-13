@@ -30,11 +30,13 @@ namespace TaskLayer.MbrAnalysis
             string spectraFile = spectralLibraryMatch.FullFilePath;
             string fullSequence = spectralLibraryMatch.FullSequence;
 
-            PeptideSpectralMatch originalPsm = originalSearchPsms
-                .Where(p => p.FullFilePath.Equals(spectraFile))
-                .Where(p => p.ScanNumber == oneBasedScanNumber)
-                .Where(p => p.FullSequence == fullSequence)
-                .FirstOrDefault();
+            PeptideSpectralMatch originalPsm = 
+                originalSearchPsms.Where(
+                    p => p.FullFilePath.Equals(spectraFile) &&
+                    p.ScanNumber == oneBasedScanNumber &&
+                    (p.FullSequence == fullSequence || p.FullSequence.Split('|').Any(m => m == fullSequence))
+                    ).FirstOrDefault();
+
             if (originalPsm != null)
             {
                 originalMatchFound = true;
