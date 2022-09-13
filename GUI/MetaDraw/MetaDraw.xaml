@@ -88,10 +88,19 @@
 
                                     <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}"
                                               ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" 
-                                              CanUserDeleteRows="false" CanUserAddRows="false">
+                                              CanUserDeleteRows="false" CanUserAddRows="false" >
                                         <DataGrid.Columns>
-                                            <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70"></DataGridTextColumn>
-                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="150"></DataGridTextColumn>
+                                            <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70" 
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                                            <DataGridTextColumn Header="Full Sequence" Binding="{Binding FullSequence}" Width="160" />
+                                            <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="100" 
+                                                                />
+                                            <DataGridTextColumn Header="Organism Name" Binding="{Binding OrganismName}" Width="100" />
+                                            <DataGridTextColumn Header="Q-Value" Binding="{Binding QValue}" Width="60"
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                                            <DataGridTextColumn Header="PEP Value" Binding="{Binding PEP}" Width="70" />
+                                            <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Score}" 
+                                                                ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
                                         </DataGrid.Columns>
                                     </DataGrid>
                                 </Grid>
@@ -187,7 +196,7 @@
 
                             <TabControl Grid.Row="1" x:Name="MetaDrawTabControl">
                                 <!--MS2 Scan Annotations-->
-                                <TabItem Header="Parent Scan View" Name="ParentScanView">
+                                <TabItem Header="Child Scan View" Name="ParentScanView">
                                     <Grid Name="PsmAnnotationGrid">
                                         <Grid.RowDefinitions>
                                             <RowDefinition/>
@@ -213,10 +222,9 @@
                                         </Grid>
 
                                         <!-- ptm legend -->
-                                        <Grid Grid.Row="0">
+                                        <Grid Grid.Row="0" x:Name="PtmLegendGrid"  >
                                             <Grid.RowDefinitions>
-                                                <RowDefinition Height="*" />
-                                                <RowDefinition Height="*" />
+                                                <RowDefinition Height="*"/>
                                             </Grid.RowDefinitions>
 
                                             <Grid.ColumnDefinitions>
@@ -224,9 +232,9 @@
                                                 <ColumnDefinition Width="165" />
                                                 <ColumnDefinition Width="8" />
                                             </Grid.ColumnDefinitions>
-
-                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendViewModel}" 
-                                                          Grid.Row="1" Grid.Column="1" Height="60" >
+                                            
+                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding }" 
+                                                          Grid.Column="1"  VerticalAlignment="Top" >
                                                 <ItemsControl.Resources>
                                                     <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
                                                         <Grid>
@@ -236,24 +244,29 @@
                                                 </ItemsControl.Resources>
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <ContentControl Name="PtmLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
-                                                                BorderBrush="Black" BorderThickness="1">
-                                                            <StackPanel Visibility="{Binding Visibility}">
-                                                                <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
-                                                                <ItemsControl ItemsSource="{Binding LegendItems}" >
-                                                                    <ItemsControl.ItemTemplate>
-                                                                        <DataTemplate>
-                                                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                                <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                        <StackPanel>
+                                                            <!-- sets vertical offset for ptm legend -->
+                                                            <Separator Background="Transparent" Height="{Binding TopOffset}" />
+
+                                                            <ContentControl Name="PtmLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
+                                                                            BorderBrush="Black" BorderThickness="1">
+                                                                <StackPanel Visibility="{Binding Visibility}" >
+                                                                    <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
+                                                                    <ItemsControl ItemsSource="{Binding LegendItems}" >
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                                                    <TextBlock Text="{Binding ModName}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
                                                                                             FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
-                                                                                <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                    <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
                                                                                             Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                                            </StackPanel>
-                                                                        </DataTemplate>
-                                                                    </ItemsControl.ItemTemplate>
-                                                                </ItemsControl>
-                                                            </StackPanel>
-                                                        </ContentControl>
+                                                                                </StackPanel>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </StackPanel>
+                                                            </ContentControl>
+                                                        </StackPanel>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
@@ -307,7 +320,7 @@
                                 
                                 <!--Sequence Coverage Annotation-->
                                 <TabItem Header="Sequence Coverage" x:Name="SequenceCoverageAnnotationView">
-                                    <Grid Grid.Row="1" Name="SequenceAnnotationGrid" SizeChanged="AnnotationSizeChanged" Style="{StaticResource InternalGridStyle}">
+                                    <Grid Grid.Row="1" Name="SequenceAnnotationGrid"  Style="{StaticResource InternalGridStyle}">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height = "35"></RowDefinition>
                                             <RowDefinition Height = "*"></RowDefinition>
@@ -319,7 +332,7 @@
                                         <Label Content="Sequence Coverage Map" Grid.Row="0" />
                                         
                                         <!-- sequence coverage display -->
-                                        <ScrollViewer Grid.Row="1" Name="sequenceCoverageHorizontalScroll" HorizontalAlignment="Center" VerticalAlignment="Center" 
+                                        <ScrollViewer Grid.Row="1" Name="sequenceCoverageHorizontalScroll" HorizontalAlignment="Stretch" VerticalAlignment="Center" 
                                             CanContentScroll="True" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Auto" Width="Auto">
                                             <Grid Name="mapGrid" Background="White">
                                                 <Grid.RowDefinitions>
@@ -329,9 +342,9 @@
                                                 <!-- coverage text-->
                                                 <Canvas x:Name="sequenceText" Grid.Row="0" Background="White"></Canvas>
                                                 <!-- coverage map-->
-                                                <ScrollViewer Grid.Row="1" Name="mapViewer" HorizontalAlignment="Center" VerticalAlignment="Center" Width="Auto" 
+                                                <ScrollViewer Grid.Row="1" Name="mapViewer" HorizontalAlignment="Stretch" VerticalAlignment="Center" Width="Auto" 
                                                     CanContentScroll="True" VerticalScrollBarVisibility="Auto">
-                                                    <Canvas x:Name="map" Background="White"></Canvas>
+                                                    <Canvas x:Name="map" Background="White" HorizontalAlignment="Stretch"></Canvas>
                                                 </ScrollViewer>
                                             </Grid>
                                         </ScrollViewer>

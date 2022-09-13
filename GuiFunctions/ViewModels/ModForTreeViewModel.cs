@@ -69,9 +69,13 @@ namespace GuiFunctions
             Use = use;
             ModName = modName;
             DisplayName = modName;
-            OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];
-            SelectedColor = AddSpaces(color.GetColorName());
-            ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
+            if (MetaDrawSettings.ModificationTypeToColor != null)
+            {
+                OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];
+                SelectedColor = AddSpaces(color.GetColorName());
+                ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
+            }
+            
 
             if (toolTip.ToLower().Contains("terminal"))
             {

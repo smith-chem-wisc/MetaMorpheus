@@ -19,6 +19,7 @@ namespace GuiFunctions
         public bool AnnotateMzValues { get; set; } = false;
         public bool AnnotateCharges { get; set; } = false;
         public bool AnnotationBold { get; set; } = false;
+        public bool DisplayInternalIonAnnotations { get; set; } = true;
         public bool DrawStationarySequence { get; set; } = true;
         public bool DrawNumbersUnderStationary { get; set; } = true;
         public bool ShowLegend { get; set; } = true;
@@ -27,11 +28,14 @@ namespace GuiFunctions
         public List<string> BetaProductTypeToColorValues { get; set; }
         public List<string> ModificationTypeToColorValues { get; set; }
         public List<string> CoverageTypeToColorValues { get; set; }
+        public string UnannotatedPeakColor { get; set; }
+        public string InternalIonColor { get; set; }
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
         public bool ShowContaminants { get; set; } = true;
         public double QValueFilter { get; set; } = 0.01;
+        public string AmbiguityFilter { get; set; } = "No Filter";
         public LocalizationLevel LocalizationLevelStart { get; set; } = LocalizationLevel.Level1;
         public LocalizationLevel LocalizationLevelEnd { get; set; } = LocalizationLevel.Level3;
         public string ExportType { get; set; }

@@ -13,11 +13,14 @@ using System.Data;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 
 namespace MetaMorpheusGUI
 {
@@ -31,7 +34,7 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
-        private ObservableCollection<PtmLegendViewModel> PtmLegend;
+        public ObservableCollection<PtmLegendViewModel> PtmLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
@@ -165,6 +168,7 @@ namespace MetaMorpheusGUI
         {
             if (dataGridScanNums.SelectedItem == null || sender == null)
             {
+                ClearPresentationArea();
                 return;
             }
             var strings = sender.ToString();
@@ -177,21 +181,10 @@ namespace MetaMorpheusGUI
             if (psm.FullSequence.Contains('|') && sender.ToString() != "System.Object")
             {
                 // clear all drawings of the previous non-ambiguous psm
-                MetaDrawSettings.DrawMatchedIons = false;
-                DrawnSequence.ClearCanvas(scrollableSequenceCanvas);
-                DrawnSequence.ClearCanvas(stationarySequenceCanvas);
-                DrawnSequence.ClearCanvas(map);
-                DrawnSequence.ClearCanvas(sequenceText);
-                DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
-                plotView.Visibility = Visibility.Hidden;
-                GrayBox.Opacity = 0;
+                ClearPresentationArea();
+
                 AmbiguousWarningTextBlocks.Visibility = Visibility.Visible;
                 AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
-                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
-                AmbiguousSequenceOptionBox.Items.Clear();
-
-                if (PtmLegend.Count > 0)
-                    PtmLegend.First().Visibility = Visibility.Hidden;
 
                 // create a psm object for each ambiguous option and add it to the dropdown box
                 var fullSeqs = psm.FullSequence.Split('|');
@@ -227,14 +220,6 @@ namespace MetaMorpheusGUI
             // display the ion and elements correctly
             MetaDrawSettings.DrawMatchedIons = true;
 
-            // add ptm legend if desired
-            PtmLegend.Clear();
-            if (MetaDrawSettings.ShowLegend)
-            {
-                PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
-                List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
-                PtmLegend.Add(new PtmLegendViewModel(mods));                    
-            }
 
             // define initial limits for sequence annotation
             double maxDisplayedPerRow = (int)Math.Round((SequenceAnnotationArea.ActualWidth - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0) + 7;
@@ -243,6 +228,21 @@ namespace MetaMorpheusGUI
             // draw the annotated spectrum
             MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
             MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
+
+            // add ptm legend if desired
+            PtmLegend.Clear();
+            if (MetaDrawSettings.ShowLegend)
+            {
+                PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+                List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
+                int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
+                descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
+                if (psm.ProteinAccession.Length > 10)
+                    descriptionLineCount++;
+                double verticalOffset = descriptionLineCount * 14;
+                
+                PtmLegend.Add(new PtmLegendViewModel(mods, verticalOffset));
+            }
 
             //draw the sequence coverage if not crosslinked
             if (psm.ChildScanMatchedIons == null)
@@ -373,9 +373,7 @@ namespace MetaMorpheusGUI
             // if a psm is selected
             if (MetaDrawLogic.ScrollableSequence != null)
             {
-                DrawnSequence.ClearCanvas(MetaDrawLogic.ScrollableSequence.SequenceDrawingCanvas);
-                DrawnSequence.ClearCanvas(MetaDrawLogic.StationarySequence.SequenceDrawingCanvas);
-                plotView.Visibility = Visibility.Hidden;
+                ClearPresentationArea();
                 MetaDrawLogic.FilteredListOfPsms.Clear();
             }
         }
@@ -387,7 +385,6 @@ namespace MetaMorpheusGUI
 
         private void settings_Click(object sender, RoutedEventArgs e)
         {
-            
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem;
             var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
@@ -490,6 +487,11 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.FilterPsmsByString(txt);
         }
 
+        /// <summary>
+        /// Exports images of the parent and child scan
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void PDFButton_Click(object sender, RoutedEventArgs e)
         {
             if (dataGridScanNums.SelectedCells.Count == 0)
@@ -510,8 +512,23 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
 
+            Canvas ptmLegendCanvas = null;
+            Vector ptmLegendLocationVector = new();
+            if (MetaDrawSettings.ShowLegend)
+            {
+                ItemsControl ptmLegendCopy = new();
+                ptmLegendCopy.ItemsSource = PtmLegendControl.ItemsSource;
+                ptmLegendCopy.ItemTemplate = PtmLegendControl.ItemTemplate;
+                ptmLegendCanvas = new();
+                ptmLegendCanvas.Children.Add(ptmLegendCopy);
+                Size ptmLegendSize = new Size((int)PtmLegendControl.ActualWidth, (int)PtmLegendControl.ActualHeight);
+                ptmLegendCanvas.Measure(ptmLegendSize);
+                ptmLegendCanvas.Arrange(new Rect(ptmLegendSize));
+                ptmLegendCanvas.UpdateLayout();
+                ptmLegendLocationVector = (Vector)PtmLegendControl.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(PtmLegendControl);
+            }
 
-            MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors);
+            MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors, ptmLegendCanvas, ptmLegendLocationVector);
             if (errors.Any())
             {
                 MessageBox.Show(errors.First());
@@ -520,7 +537,6 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
             }
-
         }
 
         private void SequenceCoverageExportButton_Click(object sender, RoutedEventArgs e)
@@ -534,7 +550,6 @@ namespace MetaMorpheusGUI
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
                     DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
-            int scanNumber = ((PsmFromTsv)dataGridScanNums.SelectedItem).Ms2ScanNumber;
             MetaDrawLogic.ExportSequenceCoverage(sequenceText, map, directoryPath, psm);
             
             if (Directory.Exists(directoryPath))
@@ -604,7 +619,7 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// I believe this one is never used
+        /// Export for Data Visualization tab
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
@@ -631,7 +646,8 @@ namespace MetaMorpheusGUI
             }
 
             var plotName = selectedItem as string;
-            var fileDirectory = Directory.GetParent(MetaDrawLogic.PsmResultFilePaths.First()).ToString();
+            var fileDirectory = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()), "MetaDrawExport",
+                    DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
             var fileName = String.Concat(plotName, ".pdf");
 
             // update font sizes to exported PDF's size
@@ -726,12 +742,6 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void AnnotationSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            mapViewer.Height = .8 * SequenceAnnotationGrid.ActualHeight;
-            mapViewer.Width = .99 * SequenceAnnotationGrid.ActualWidth;
-        }
-
         /// <summary>
         /// Redraws the Stationary Sequence whenever the scrolling sequence is scrolled
         /// </summary>
@@ -755,8 +765,11 @@ namespace MetaMorpheusGUI
                 }
             }
             SetSequenceDrawingPositionSettings();
-            if (MetaDrawLogic.StationarySequence != null)
+            if (MetaDrawLogic.StationarySequence != null && !psm.FullSequence.Contains('|'))
+            {
                 DrawnSequence.DrawStationarySequence(psm, MetaDrawLogic.StationarySequence, 10);
+            }
+                
         }
 
         /// <summary>
@@ -800,6 +813,8 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void SetSequenceDrawingPositionSettings(bool reset = false)
         {
+            if (dataGridScanNums.SelectedItem == null)
+                return;
             double width = SequenceAnnotationArea.ActualWidth;
             double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
             if (reset)
@@ -890,6 +905,27 @@ namespace MetaMorpheusGUI
             PtmLegend.First().IncreaseSegmentsPerRow();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
+        }
+
+        /// <summary>
+        /// Clears and resets the presentation area
+        /// </summary>
+        public void ClearPresentationArea()
+        {
+            DrawnSequence.ClearCanvas(scrollableSequenceCanvas);
+            DrawnSequence.ClearCanvas(stationarySequenceCanvas);
+            DrawnSequence.ClearCanvas(map);
+            DrawnSequence.ClearCanvas(sequenceText);
+            DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
+            plotView.Visibility = Visibility.Hidden;
+            GrayBox.Opacity = 1;
+            wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
+            AmbiguousSequenceOptionBox.Items.Clear();
+
+            if (PtmLegend.Count > 0)
+                PtmLegend.First().Visibility = Visibility.Hidden;
+
+            plotView.Visibility = Visibility.Hidden;
         }
     }
 }

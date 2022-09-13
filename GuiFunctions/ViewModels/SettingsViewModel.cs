@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nett;
 using System.Windows.Input;
 
 namespace GuiFunctions
@@ -126,7 +127,11 @@ namespace GuiFunctions
                 {
                     if (ion.HasChanged)
                     {
-                        if (ion.IsBeta)
+                        if (ion.IonName.Equals("Unannotated Peak"))
+                            MetaDrawSettings.UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
+                        else if (ion.IonName.Equals("Internal Ion"))
+                            MetaDrawSettings.InternalIonColor = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
+                        else if (ion.IsBeta)
                             MetaDrawSettings.BetaProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
                         else
                             MetaDrawSettings.ProductTypeToColor[ion.IonType] = DrawnSequence.ParseOxyColorFromName(ion.SelectedColor.Replace(" ", ""));
@@ -161,6 +166,12 @@ namespace GuiFunctions
         {
             Save();
             MetaDrawSettingsSnapshot settings = MetaDrawSettings.MakeSnapShot();
+            string directoryPath = Path.GetDirectoryName(SettingsPath);
+            if (!Directory.Exists(directoryPath))
+            {
+                Directory.CreateDirectory(directoryPath);
+            }
+
             XmlReaderWriter.WriteToXmlFile<MetaDrawSettingsSnapshot>(SettingsPath, settings);
         }
 
