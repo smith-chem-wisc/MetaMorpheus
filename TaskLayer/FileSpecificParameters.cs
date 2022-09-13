@@ -35,7 +35,7 @@ namespace TaskLayer
 
 
                     case nameof(DissociationType):
-                        DissociationType = keyValuePair.Value.Get<MassSpectrometry.DissociationType>(); break;
+                        DissociationType = keyValuePair.Value.Get<DissociationType>(); break;
 
 
                     default:
