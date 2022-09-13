@@ -760,8 +760,8 @@ namespace Test
             Assert.AreEqual(0, unnasignedCrossType);
             Assert.AreEqual(76, inter);
             Assert.AreEqual(101, intra);
-            Assert.AreEqual(240, single);
-            Assert.AreEqual(9, loop);
+            Assert.AreEqual(241, single);
+            Assert.AreEqual(10, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(67, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
@@ -1346,7 +1346,15 @@ namespace Test
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 25);
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 25
+                && psmFromTsv.BetaPeptideProteinAccession.Equals("BSA|BSA2")
+                && psmFromTsv.BetaPeptideProteinLinkSite == 211
+                && psmFromTsv.BetaPeptideTheoreticalMass.Equals("989.550558768"));
+
+            Assert.That(psmFromTsv.CrossType.Equals("Cross")
+                && psmFromTsv.LinkResidues.Equals("K")
+                && psmFromTsv.ProteinLinkSite == 455
+                && psmFromTsv.ParentIons.Equals("2;2"));
 
             Assert.That(csm.ProteinAccession == null && csm.BetaPeptide.ProteinAccession == null);
             Assert.That(psmFromTsv.ProteinAccession == "BSA|BSA2");

@@ -742,6 +742,7 @@ namespace EngineLayer
             float isInter = 0;
             float isIntra = 0;
             float spectralAngle = 0;
+            float hasSpectralAngle = 0;
 
             if (searchType != "crosslink")
             {
@@ -771,6 +772,11 @@ namespace EngineLayer
                 psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
                 spectralAngle = (float)psm.SpectralAngle;
+
+                if (PsmHasSpectralAngle(psm))
+                {
+                    hasSpectralAngle = 1;
+                }
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
@@ -877,7 +883,8 @@ namespace EngineLayer
 
                 Label = label,
 
-                SpectralAngle = spectralAngle
+                SpectralAngle = spectralAngle,
+                HasSpectralAngle = hasSpectralAngle
             };
 
             return psm.PsmData_forPEPandPercolator;
@@ -900,7 +907,12 @@ namespace EngineLayer
             return identifiedVariant;
         }
 
-        public static bool ContainsModificationsThatShiftMobility(IEnumerable<Modification> modifications)
+        private static bool PsmHasSpectralAngle(PeptideSpectralMatch psm)
+        {
+            return psm.SpectralAngle >= 0;
+        }
+
+            public static bool ContainsModificationsThatShiftMobility(IEnumerable<Modification> modifications)
         {
             List<string> shiftingModifications = new List<string> { "Acetylation", "Ammonia loss", "Carbamyl", "Deamidation", "Formylation",
                 "N2-acetylarginine", "N6-acetyllysine", "N-acetylalanine", "N-acetylaspartate", "N-acetylcysteine", "N-acetylglutamate", "N-acetylglycine",
