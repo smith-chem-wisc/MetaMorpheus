@@ -145,6 +145,7 @@ namespace EngineLayer
                 PeptidesToMatchingFragments.Remove(pwsm);
             }
             this.ResolveAllAmbiguities();
+            this.AddFragmentCoveragePSMs();
         }
 
         public override string ToString()
@@ -230,6 +231,7 @@ namespace EngineLayer
                 if (removedPeptides)
                 {
                     ResolveAllAmbiguities();
+                    AddFragmentCoveragePSMs();
                 }
             }
 
@@ -332,6 +334,7 @@ namespace EngineLayer
             }
 
             ResolveAllAmbiguities();
+            AddFragmentCoveragePSMs();
         }
 
         /// <summary>
@@ -347,6 +350,7 @@ namespace EngineLayer
                     PeptidesToMatchingFragments.Add(peptideWithNotch.Item2, mfi);
                 }
                 ResolveAllAmbiguities();
+                AddFragmentCoveragePSMs();
             }
         }
 
@@ -424,7 +428,7 @@ namespace EngineLayer
             List<int> bIonPositions = new();
             List<int> yIonPositions = new();
 
-            // only look at b and y ions at this point
+            // only look at b and y ions
             var ionsbAndy = this.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == Proteomics.Fragmentation.ProductType.b ||p.NeutralTheoreticalProduct.ProductType == Proteomics.Fragmentation.ProductType.y).ToList();
             foreach (var ion in ionsbAndy)
             {

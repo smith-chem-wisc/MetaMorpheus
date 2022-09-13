@@ -1,4 +1,5 @@
-﻿using FlashLFQ;
+﻿using System;
+using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
@@ -22,6 +23,7 @@ namespace EngineLayer
             SequenceCoverageFraction = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
+            FragmentSequenceCoverageDisplayList = new List<string>();
             ProteinGroupScore = 0;
             BestPeptideScore = 0;
             QValue = 0;
@@ -68,6 +70,8 @@ namespace EngineLayer
         public List<string> SequenceCoverageDisplayList { get; private set; }
 
         public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
+
+        public List<string> FragmentSequenceCoverageDisplayList { get; private set; }
 
         public double QValue { get; set; }
 
@@ -140,6 +144,7 @@ namespace EngineLayer
             sb.Append("Sequence Coverage Fraction" + '\t');
             sb.Append("Sequence Coverage" + '\t');
             sb.Append("Sequence Coverage with Mods" + '\t');
+            sb.Append("Fragment Sequence Coverage" + '\t');
             sb.Append("Modification Info List" + "\t");
             if (FilesForQuantification != null)
             {
@@ -269,6 +274,10 @@ namespace EngineLayer
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoverageDisplayListWithMods)));
             sb.Append("\t");
 
+            // fragment sequence coverage
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", FragmentSequenceCoverageDisplayList)));
+            sb.Append("\t");
+
             //Detailed mods information list
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ModsInfo)));
             sb.Append("\t");
@@ -349,11 +358,13 @@ namespace EngineLayer
         {
             var proteinsWithUnambigSeqPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
             var proteinsWithPsmsWithLocalizedMods = new Dictionary<Protein, List<PeptideWithSetModifications>>();
+            var proteinsWithUnambigSeqPsmsPSM = new Dictionary<Protein, HashSet<PeptideSpectralMatch>>();
 
             foreach (var protein in Proteins)
             {
                 proteinsWithUnambigSeqPsms.Add(protein, new List<PeptideWithSetModifications>());
                 proteinsWithPsmsWithLocalizedMods.Add(protein, new List<PeptideWithSetModifications>());
+                proteinsWithUnambigSeqPsmsPSM.Add(protein, new HashSet<PeptideSpectralMatch>());
             }
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
@@ -368,6 +379,7 @@ namespace EngineLayer
                         if (Proteins.Contains(peptide.Protein))
                         {
                             proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
+                            proteinsWithUnambigSeqPsmsPSM[peptide.Protein].Add(psm);
 
                             // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
                             if (psm.FullSequence != null)
@@ -377,6 +389,34 @@ namespace EngineLayer
                         }
                     }
                 }
+            }
+
+            foreach (var protein in ListOfProteinsOrderedByAccession)
+            {
+                HashSet<int> fragmentCoveredResidues = new HashSet<int>();
+
+                foreach (var psm in proteinsWithUnambigSeqPsmsPSM[protein])
+                {
+                    if (psm.FragmentCoveragePositionInProtein != null)
+                    {
+                        foreach (int i in psm.FragmentCoveragePositionInProtein)
+                        {
+                            fragmentCoveredResidues.Add(i);
+                        }
+                    }
+                }
+
+                // create upper/lowercase string
+                string fragmentSequenceCoverageDisplay = protein.BaseSequence.ToLower();
+                var fragmentCoverageArray = fragmentSequenceCoverageDisplay.ToCharArray();
+                foreach (var residue in fragmentCoveredResidues)
+                {
+                    fragmentCoverageArray[residue - 1] = char.ToUpper(fragmentCoverageArray[residue - 1]);
+                }
+
+                fragmentSequenceCoverageDisplay = new string(fragmentCoverageArray);
+
+                FragmentSequenceCoverageDisplayList.Add(fragmentSequenceCoverageDisplay);
             }
 
             foreach (var protein in ListOfProteinsOrderedByAccession)

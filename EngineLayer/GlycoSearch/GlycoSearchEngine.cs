@@ -232,6 +232,7 @@ namespace EngineLayer.GlycoSearch
                 if (gsmsCount <= 10)
                 {
                     gsm.ResolveAllAmbiguities();
+                    gsm.AddFragmentCoveragePSMs();
 
                     if (gsmsCount == 1)
                     {
