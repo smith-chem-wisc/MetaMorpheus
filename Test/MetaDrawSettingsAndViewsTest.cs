@@ -101,15 +101,23 @@ namespace Test
             Assert.That(model.Modifications.First().Children.First().SelectedColor == "Green");
             model.Modifications.First().Children.First().SelectionChanged("Blue");
             Assert.That(model.Modifications.First().Children.First().SelectedColor == "Blue");
+            model.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak").SelectionChanged("Gray");
+            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak").SelectedColor == "Gray");
+            model.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion").SelectionChanged("Green");
+            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion").SelectedColor == "Green");
             model.SaveAsDefault();
             Assert.That(model.HasDefaultSaved == true);
             model.LoadSettings();
 
             SettingsViewModel model2 = new();
             Assert.That(model2.Modifications.First().Children.First().SelectedColor == "Blue");
+            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak").SelectedColor == "Gray");
+            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion").SelectedColor == "Green");
 
             SettingsViewModel model3 = new(false);
             Assert.That(model3.Modifications.First().Children.First().SelectedColor == "Blue");
+            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak").SelectedColor == "Gray");
+            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion").SelectedColor == "Green");
 
             Directory.Delete(outputFolder, true);
         }
