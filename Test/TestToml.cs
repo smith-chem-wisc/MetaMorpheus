@@ -107,12 +107,13 @@ namespace Test
             FileSpecificParameters f = new FileSpecificParameters(fileSpecificToml);
 
             Assert.AreEqual("Asp-N", f.Protease.Name);
-            Assert.AreEqual("ETD", f.DissociationType);
+            Assert.AreEqual(DissociationType.ETD, f.DissociationType);
             Assert.IsNull(f.MaxMissedCleavages);
 
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
             Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
+            Assert.AreEqual(DissociationType.ETD, c.DissociationType);
             Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
         }
 
