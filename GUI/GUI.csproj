@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net5.0-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
 	  <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
@@ -44,6 +44,7 @@
     <None Remove="Icons\wiki_20.bmp" />
     <None Remove="Icons\youtube-256.bmp" />
     <None Remove="Icons\youtube_20.bmp" />
+    <None Remove="MetaDraw\Icons\icons8-settings-256.bmp" />
   </ItemGroup>
 
   <ItemGroup>
@@ -55,9 +56,9 @@
     <PackageReference Include="Microsoft.ML.DataView" Version="1.3.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="1.3.1" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.518" />
+    <PackageReference Include="mzLib" Version="1.0.528" />
     <PackageReference Include="Nett" Version="0.13.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="OxyPlot.Core" Version="2.0.0" />
     <PackageReference Include="OxyPlot.Wpf" Version="2.0.0" />
     <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.9" />
@@ -66,8 +67,8 @@
     <PackageReference Include="System.Buffers" Version="4.5.1" />
     <PackageReference Include="System.CodeDom" Version="5.0.0" />
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
-    <PackageReference Include="System.Drawing.Common" Version="5.0.0" />
-    <PackageReference Include="System.Memory" Version="4.5.3" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.2" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
     <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
@@ -119,10 +120,16 @@
     <Resource Include="Icons\youtube_20.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
+    <Content Include="MetaDraw\Icons\icons8-settings-256.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>
     <None Update="app.manifest">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="MetaDraw\Icons\icons8-settings-48.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

@@ -1346,7 +1346,15 @@ namespace Test
 
             Assert.That(psmFromTsv.BetaPeptideChildScanMatchedIons.Count == 1
                 && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Key == 3
-                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 25);
+                && psmFromTsv.BetaPeptideChildScanMatchedIons.First().Value.Count == 25
+                && psmFromTsv.BetaPeptideProteinAccession.Equals("BSA|BSA2")
+                && psmFromTsv.BetaPeptideProteinLinkSite == 211
+                && psmFromTsv.BetaPeptideTheoreticalMass.Equals("989.550558768"));
+
+            Assert.That(psmFromTsv.CrossType.Equals("Cross")
+                && psmFromTsv.LinkResidues.Equals("K")
+                && psmFromTsv.ProteinLinkSite == 455
+                && psmFromTsv.ParentIons.Equals("2;2"));
 
             Assert.That(csm.ProteinAccession == null && csm.BetaPeptide.ProteinAccession == null);
             Assert.That(psmFromTsv.ProteinAccession == "BSA|BSA2");
