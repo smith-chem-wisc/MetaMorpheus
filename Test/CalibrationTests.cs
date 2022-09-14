@@ -1,13 +1,18 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.Calibration;
 using FlashLFQ;
 using MassSpectrometry;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using TaskLayer;
+using ThermoFisher.CommonCore.Data;
+using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 
 namespace Test
 {
@@ -137,6 +142,21 @@ namespace Test
 
             // clean up
             Directory.Delete(unitTestFolder, true);
+        }
+
+        [Test]
+        [TestCase("ExpDesFileNotFound","small.mzML", "Experimental design file not found!")]
+        [TestCase("WrongNumberOfCells", "small.mzML", "Error: The experimental design was not formatted correctly. Expected 5 cells, but found 4 on line 2")]
+        [TestCase("BioRepNotInteger", "small.mzML", "Error: The experimental design was not formatted correctly. The biorep on line 2 is not an integer")]
+        [TestCase("FractionNotInteger", "small.mzML", "Error: The experimental design was not formatted correctly. The fraction on line 2 is not an integer")]
+        [TestCase("TechRepNotInt", "small.mzML", "Error: The experimental design was not formatted correctly. The techrep on line 2 is not an integer")]
+        [TestCase("mzMLmissing", "small.mzML", "Error: The experimental design did not contain the file(s): C:\\Users\\mrsho\\Documents\\GitClones\\MetaMorpheus\\Test\\bin\\Debug\\net6.0-windows\\TestData\\TestExperimentalDesign\\mzMLmissing\\ExperimentalDesign.tsv\\small.mzML")]
+        public static void TestExperimentalDesignErrors(string experimentalFolder, string rawFile, string expectedError)
+        {
+            string experimentalDesignPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData", @"TestExperimentalDesign", experimentalFolder, "ExperimentalDesign.tsv");
+            List<string> rawFilePaths = new() { Path.Combine(experimentalDesignPath, rawFile) };
+            _ = ExperimentalDesign.ReadExperimentalDesign(experimentalDesignPath, rawFilePaths, out var errors);
+            Assert.AreEqual(expectedError, errors[0].ToString());
         }
     }
 }
