@@ -253,11 +253,11 @@
                                                                             BorderBrush="Black" BorderThickness="1">
                                                                 <StackPanel Visibility="{Binding Visibility}" >
                                                                     <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
-                                                                    <ItemsControl ItemsSource="{Binding LegendItems}" >
+                                                                    <ItemsControl ItemsSource="{Binding LegendItemViewModels}" >
                                                                         <ItemsControl.ItemTemplate>
                                                                             <DataTemplate>
                                                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                                    <TextBlock Text="{Binding ModName}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                                                    <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
                                                                                             FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
                                                                                     <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
                                                                                             Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
@@ -338,7 +338,7 @@
                                                                         <StackPanel HorizontalAlignment="Center" DataContext="{Binding SharedIons}" Orientation="Horizontal" Margin="0 0 0 5"
                                                                             Visibility="{Binding ElementName=ChimeraLegendContentControl, Path=DataContext.SharedIonStackPanelVisibility}" >
 
-                                                                            <Ellipse Width="12" Height="12" Stroke="{Binding BColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                            <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
                                                                              Fill="{Binding BColorBrush}" Margin="10 0 0 0" />
                                                                             <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
                                                                                FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
@@ -346,14 +346,14 @@
                                                                         </StackPanel>
 
                                                                         <!-- individual proteoforms -->
-                                                                        <ItemsControl ItemsSource="{Binding ChimeraLegendItems}" >
+                                                                        <ItemsControl ItemsSource="{Binding LegendItemViewModels}" >
                                                                             <ItemsControl.ItemTemplate>
                                                                                 <DataTemplate>
                                                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 5 0 5">
-                                                                                        <Ellipse Width="12" Height="12" Stroke="{Binding BColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                                Fill="{Binding BColorBrush}" Margin="10 0 0 0" />
+                                                                                        <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                                                                 Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
                                                                                         <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                                                                            FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+                                                                                                   FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
 
                                                                                     </StackPanel>
                                                                                 </DataTemplate>

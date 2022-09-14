@@ -38,8 +38,8 @@ namespace GuiFunctions
 {
     public class ChimeraSpectrumMatchPlot : SpectrumMatchPlot
     {
-        protected static OxyColor MultipleProteinSharedColor;
-        protected static Dictionary<int, List<OxyColor>> ColorByProteinDictionary;
+        public static OxyColor MultipleProteinSharedColor;
+        public static Dictionary<int, List<OxyColor>> ColorByProteinDictionary;
         public List<PsmFromTsv> SpectrumMatches { get; protected set; }
         public Dictionary<string, List<PsmFromTsv>> PsmsByProteinDictionary { get; protected set; }
 
@@ -54,6 +54,9 @@ namespace GuiFunctions
             RefreshChart();
         }
 
+        /// <summary>
+        /// Annotates the matched ions based upon the protein of origin, and the unique protoeform ID's
+        /// </summary>
         protected new void AnnotateMatchedIons()
         {
 
@@ -94,7 +97,6 @@ namespace GuiFunctions
                         allDrawnIons.Add((proteinGroup[j].BaseSeq, matchedIon));
                     }
                 }
-
                 proteinIndex++;
             }
 
@@ -133,6 +135,10 @@ namespace GuiFunctions
             //    }
             //}
         }
+
+        /// <summary>
+        /// Initializes the colors to be used by the Chimera Plotter
+        /// </summary>
         static ChimeraSpectrumMatchPlot()
         {
             MultipleProteinSharedColor = OxyColors.Black;

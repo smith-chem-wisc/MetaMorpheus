@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
         public ObservableCollection<PtmLegendViewModel> PtmLegend;
-        public ObservableCollection<PtmLegendViewModel> ChimeraLegend;
+        public ObservableCollection<ChimeraLegendViewModel> ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
@@ -194,8 +194,7 @@ namespace MetaMorpheusGUI
                     Debugger.Break();
 
                 ChimeraLegend.Clear();
-                
-
+                // TODO: Create Legend
                 return;
             }
 

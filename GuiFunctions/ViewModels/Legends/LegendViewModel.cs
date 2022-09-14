@@ -10,7 +10,7 @@ namespace GuiFunctions
 {
     public class LegendViewModel : BaseViewModel
     {
-        private Visibility sharedIonStackPanelVisibility;
+        
         private Visibility visibility;
         private double topOffset;
         private ObservableCollection<LegendItemViewModel> legendItemViewModels = new();
@@ -28,11 +28,6 @@ namespace GuiFunctions
             }
         }
 
-        public Visibility SharedIonStackPanelVisibility
-        {
-            get => sharedIonStackPanelVisibility;
-            set { sharedIonStackPanelVisibility = value; OnPropertyChanged(nameof(SharedIonStackPanelVisibility)); }
-        }
 
         public double TopOffset
         {
