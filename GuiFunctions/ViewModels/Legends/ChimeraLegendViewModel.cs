@@ -52,7 +52,8 @@ namespace GuiFunctions
                 }
                 for (int i = 0; i < protein.Count(); i++)
                 {
-                    PeptideWithSetModifications peptideWithSetMods = new(protein.ToList()[i]) 
+                    PeptideWithSetModifications peptideWithSetMods =
+                        new(protein.ToList()[i].FullSequence, GlobalVariables.AllModsKnownDictionary); 
                     var modsString = String.Join(", ", protein.ToList()[i].Select)
                     ChimeraLegendItems[protein.Key].Add(new(protein, ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1]));
                 }
