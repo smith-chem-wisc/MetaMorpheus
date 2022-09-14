@@ -150,13 +150,13 @@ namespace Test
         [TestCase("BioRepNotInteger", "small.mzML", "Error: The experimental design was not formatted correctly. The biorep on line 2 is not an integer")]
         [TestCase("FractionNotInteger", "small.mzML", "Error: The experimental design was not formatted correctly. The fraction on line 2 is not an integer")]
         [TestCase("TechRepNotInt", "small.mzML", "Error: The experimental design was not formatted correctly. The techrep on line 2 is not an integer")]
-        [TestCase("mzMLmissing", "small.mzML", "Error: The experimental design did not contain the file(s): C:\\Users\\mrsho\\Documents\\GitClones\\MetaMorpheus\\Test\\bin\\Debug\\net6.0-windows\\TestData\\TestExperimentalDesign\\mzMLmissing\\ExperimentalDesign.tsv\\small.mzML")]
+        [TestCase("mzMLmissing", "small.mzML", "Error: The experimental design did not contain the file(s):")] //tough to check b/c local path not translated to appveyor
         public static void TestExperimentalDesignErrors(string experimentalFolder, string rawFile, string expectedError)
         {
             string experimentalDesignPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData", @"TestExperimentalDesign", experimentalFolder, "ExperimentalDesign.tsv");
             List<string> rawFilePaths = new() { Path.Combine(experimentalDesignPath, rawFile) };
             _ = ExperimentalDesign.ReadExperimentalDesign(experimentalDesignPath, rawFilePaths, out var errors);
-            Assert.AreEqual(expectedError, errors[0].ToString());
+            Assert.IsTrue(errors[0].ToString().Contains(expectedError));
         }
     }
 }
