@@ -11,34 +11,14 @@ namespace GuiFunctions
     /// <summary>
     /// View Model class for each mod in the ptm legend
     /// </summary>
-    public class PtmLegendItemViewModel : BaseViewModel
+    public class PtmLegendItemViewModel : LegendItemViewModel
     {
-        #region Private Properties
-
-        private SolidColorBrush _colorBrush;
-
-        #endregion
-
-        #region Public Properties
-
-        public string ModName { get; }
-        public SolidColorBrush ColorBrush
-        {
-            get { return _colorBrush; }
-            set
-            {
-                _colorBrush = value;
-                OnPropertyChanged(nameof(ColorBrush));
-            }
-        }
-
-        #endregion
 
         #region Constructor
 
         public PtmLegendItemViewModel(string modName)
         {
-            ModName = modName;
+            Name = modName;
             OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];
             ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
         }

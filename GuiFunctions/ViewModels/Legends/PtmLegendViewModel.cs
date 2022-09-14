@@ -1,4 +1,5 @@
-﻿using Proteomics;
+﻿using GuiFunctions.ViewModels.Legends;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,38 +13,8 @@ namespace GuiFunctions
     /// <summary>
     /// View Model class for the ptm color legend
     /// </summary>
-    public class PtmLegendViewModel : BaseViewModel
+    public class PtmLegendViewModel : LegendViewModel
     {
-        private Visibility sharedIonStackPanelVisibility;
-        private Visibility visibility;
-        private double topOffset;
-        public string Header { get; set; } = "Legend";
-        public int HeaderSize { get; set; } = 12;
-        public ObservableCollection<PtmLegendItemViewModel> LegendItems { get; set; }
-        public ObservableCollection<ChimeraLegendItemViewModel> ChimeraLegendItems { get; set; }
-        public ChimeraLegendItemViewModel SharedIons { get; set; }
-
-        public Visibility Visibility
-        {
-            get { return visibility; }
-            set
-            {
-                visibility = value;
-                OnPropertyChanged(nameof(Visibility));
-            }
-        }
-
-        public Visibility SharedIonStackPanelVisibility
-        {
-            get => sharedIonStackPanelVisibility;
-            set { sharedIonStackPanelVisibility = value; OnPropertyChanged(nameof(SharedIonStackPanelVisibility)); }
-        }
-
-        public double TopOffset
-        {
-            get => topOffset;
-            set { topOffset = value; OnPropertyChanged(nameof(TopOffset)); }
-        }
 
         /// <summary>
         /// Segments per row in the sequence annotation 
@@ -51,7 +22,7 @@ namespace GuiFunctions
         public int SegmentsPerRow
         {
             get { return MetaDrawSettings.SequenceAnnotationSegmentPerRow; }
-            set 
+            set
             {
                 if (value <= 0) throw new IndexOutOfRangeException("SegmentsPerRow cannot be less than one");
                 MetaDrawSettings.SequenceAnnotationSegmentPerRow = value;
@@ -75,47 +46,19 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public PtmLegendViewModel(List<Modification> mods, double offset = 0)
+        public PtmLegendViewModel(List<Modification> mods, double offset = 0) : base()
         {
-            LegendItems = new ObservableCollection<PtmLegendItemViewModel>();
+
             foreach (var mod in mods.Distinct())
             {
                 var modItem = new PtmLegendItemViewModel(mod.IdWithMotif);
-                LegendItems.Add(modItem);
+                LegendItemViewModels.Add(modItem);
             }
 
             TopOffset = offset;
             Visibility = mods.Count > 0 ? Visibility.Visible : Visibility.Hidden;
         }
 
-        public PtmLegendViewModel(List<ChimeraLegendItemViewModel> legendItems, string ascession, double offset = 0)
-        {
-            Header = ascession;
-            var sharedIons = legendItems.First(p => p.Name == "Shared Ions");
-            if (legendItems.Count > 2)
-            {
-                SharedIons = sharedIons;
-                SharedIonStackPanelVisibility = Visibility.Visible;
-            }
-            else
-            {
-                SharedIonStackPanelVisibility = Visibility.Collapsed;
-            }
-            legendItems.Remove(sharedIons);
-            ChimeraLegendItems = new ObservableCollection<ChimeraLegendItemViewModel>(legendItems);
-            TopOffset = offset;
-            Visibility = Visibility.Visible;
-        }
-
-        public static PtmLegendViewModel Instance => new PtmLegendViewModel();
-
-        public PtmLegendViewModel()
-        {
-            ChimeraLegendItems = new ObservableCollection<ChimeraLegendItemViewModel>();
-            TopOffset = 0;
-            Visibility = Visibility.Visible;
-        }
-        
         #endregion
 
         #region Commands
@@ -127,7 +70,7 @@ namespace GuiFunctions
         {
             ResiduesPerSegment += 1;
             double maxDisplayedPerRow = MetaDrawSettings.NumberOfAAOnScreen + 7;
-            int segmentsPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
+            int segmentsPerRow = (int)Math.Floor(maxDisplayedPerRow / (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
             SegmentsPerRow = segmentsPerRow > 0 ? segmentsPerRow : 1;
         }
 
@@ -138,7 +81,7 @@ namespace GuiFunctions
         {
             ResiduesPerSegment -= 1;
             double maxDisplayedPerRow = MetaDrawSettings.NumberOfAAOnScreen + 6;
-            int segmentsPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
+            int segmentsPerRow = (int)Math.Floor(maxDisplayedPerRow / (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
             SegmentsPerRow = segmentsPerRow > 0 ? segmentsPerRow : 1;
         }
 

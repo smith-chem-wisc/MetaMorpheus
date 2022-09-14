@@ -23,4 +23,8 @@
     <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="AAAMyClasses\" />
+  </ItemGroup>
+
 </Project>
