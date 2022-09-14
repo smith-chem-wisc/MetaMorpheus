@@ -417,6 +417,11 @@ namespace EngineLayer
                     //if an internal fragment
                     if (ionTypeAndNumber.Contains("["))
                     {
+                        if (!intensity.Equals(1.0))
+                        {
+                            intensity = double.Parse(peakIntensities[index].Split(new char[] { '+', ':', ']' })[3],
+                                CultureInfo.InvariantCulture);
+                        }
                         string[] internalSplit = split[0].Split('[');
                         string[] productSplit = internalSplit[0].Split("I");
                         string[] positionSplit = internalSplit[1].Replace("]", "").Split('-');
