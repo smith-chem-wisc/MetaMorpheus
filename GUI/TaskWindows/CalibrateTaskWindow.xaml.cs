@@ -193,7 +193,7 @@ namespace MetaMorpheusGUI
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
                  fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
-                 null, null))
+                 null, null, null))
             {
                 return;
             }
@@ -301,7 +301,7 @@ namespace MetaMorpheusGUI
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)
