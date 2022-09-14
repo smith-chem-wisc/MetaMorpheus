@@ -207,6 +207,12 @@ namespace Test
             Assert.IsTrue(psms.Count == 1);
             //check that it's been disambiguated
             Assert.IsFalse(psms[0].FullSequence.Contains("|"));
+            Assert.AreEqual(psms[0].MatchedIons.First().Intensity, 161210);
+            Assert.AreEqual(psms[0].MatchedIons.First().Mz, 585.25292);
+            Assert.AreEqual(psms[0].MatchedIons.First().Charge, 1);
+            Assert.AreEqual(psms[0].MatchedIons[4].Intensity, 131546);
+            Assert.AreEqual(psms[0].MatchedIons[4].Mz, 782.84816);
+            Assert.AreEqual(psms[0].MatchedIons[4].Charge, 2);
             int numTotalFragments = psms[0].MatchedIons.Count;
 
             //test again but no variable acetyl on K. Make sure that internal fragments are still searched even without ambiguity
