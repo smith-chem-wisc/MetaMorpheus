@@ -339,6 +339,8 @@ namespace Test
             Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
+            Assert.That(maxScorePsm.isotopeKullbackLeibler, Is.EqualTo(0.0225).Within(0.001));
+
 
             List<PeptideSpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
             List<PeptideSpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
@@ -756,7 +758,7 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" };
+            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle", "IsotopeKullbackLeibler" };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "top-down";
@@ -802,10 +804,11 @@ namespace Test
                 IsIntra = 21,
                 Label = false,
                 SpectralAngle = 22,
-                HasSpectralAngle = 23
+                HasSpectralAngle = 23,
+                IsotopeKullbackLeibler = 24
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t18\t19\t22\t23";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t18\t19\t22\t23\t24";
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t9\t10\t11\t22\t23";

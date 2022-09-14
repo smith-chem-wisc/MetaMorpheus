@@ -27,6 +27,7 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
+            ScanPrecursorEnvelope = scan.PrecursorEnvelope;
             DigestionParams = commonParameters.DigestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
@@ -56,6 +57,9 @@ namespace EngineLayer
         public Dictionary<string, int> ModsIdentified { get; private set; } // these should never be null under normal circumstances
         public List<double> LocalizedScores { get; internal set; }
         public int ScanNumber { get; }
+        public IsotopicEnvelope  ScanPrecursorEnvelope {get; }
+        public float isotopeKullbackLeibler { get; set; }
+        // Kullback leibler measures divergence between theoretical and experimental isotopic envelopes. Ranges from 0 to positive Infinity. Lower values are better.
         public int? PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
         public int ScanExperimentalPeaks { get; }
@@ -79,7 +83,6 @@ namespace EngineLayer
         public double RunnerUpScore { get; set; }
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
-
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
 
