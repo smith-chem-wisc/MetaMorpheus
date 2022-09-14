@@ -71,7 +71,7 @@ namespace Test
 
             Assert.That(gptmdResults.SequenceEqual(gptmdResultsToml));
 
-            XLSearchTask xLSearchTask = new XLSearchTask();
+            XLSearchTask xLSearchTask = new();
             Toml.WriteFile(xLSearchTask, "XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
             var xLSearchTaskLoaded = Toml.ReadFile<XLSearchTask>("XLSearchTask.toml", MetaMorpheusTask.tomlConfig);
 
@@ -104,7 +104,7 @@ namespace Test
             Assert.IsFalse(tomlSettingsList.ContainsKey("maxMissedCleavages"));
             Assert.IsFalse(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
 
-            FileSpecificParameters f = new FileSpecificParameters(fileSpecificToml);
+            FileSpecificParameters f = new(fileSpecificToml);
 
             Assert.AreEqual("Asp-N", f.Protease.Name);
             Assert.AreEqual(DissociationType.ETD, f.DissociationType);
@@ -124,8 +124,8 @@ namespace Test
             //create a toml with a protease that doesn't exist in the protease.tsv dictionary
             string proteaseNotInDictionary = "aaa"; //arbitrary. If somebody adds a protease with this name, use a different name
             string proteaseInDictionary = "trypsin"; //just make sure we are doing this right
-            Assert.IsFalse(ProteaseDictionary.Dictionary.Keys.Contains(proteaseNotInDictionary));
-            Assert.IsTrue(ProteaseDictionary.Dictionary.Keys.Contains(proteaseInDictionary));
+            Assert.IsTrue(!ProteaseDictionary.Dictionary.ContainsKey(proteaseNotInDictionary));
+            Assert.IsTrue(ProteaseDictionary.Dictionary.ContainsKey(proteaseInDictionary));
 
             //write the toml
             //let's use the datafile ok.mgf (arbitrary)
@@ -152,7 +152,7 @@ namespace Test
 
             var fileSpecificToml = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
-            FileSpecificParameters fsp = new FileSpecificParameters(fileSpecificToml);
+            FileSpecificParameters fsp = new(fileSpecificToml);
             Assert.AreEqual(DissociationType.CID, fsp.DissociationType);
             Assert.AreEqual(0, fsp.MaxMissedCleavages);
             Assert.AreEqual(0, fsp.MaxModsForPeptide);
