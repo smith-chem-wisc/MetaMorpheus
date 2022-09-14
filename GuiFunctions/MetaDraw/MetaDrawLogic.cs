@@ -33,14 +33,14 @@ namespace GuiFunctions
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
         public DrawnSequence SequenceAnnotation { get; set; }
-        public ChimeraPlotter ChimeraPlotter { get; set; }
-        public PeptideSpectrumMatchPlot SpectrumAnnotation { get; set; }
+        public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
+        public SpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
 
         private List<PsmFromTsv> AllPsms; // all loaded PSMs
         private Dictionary<string, DynamicDataConnection> MsDataFiles; // key is file name without extension
-        private List<PeptideSpectrumMatchPlot> CurrentlyDisplayedPlots;
+        private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private SpectralLibrary SpectralLibrary;
 
@@ -55,7 +55,7 @@ namespace GuiFunctions
             MsDataFiles = new Dictionary<string, DynamicDataConnection>();
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
-            CurrentlyDisplayedPlots = new List<PeptideSpectrumMatchPlot>();
+            CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
         }
 
         public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
@@ -103,10 +103,9 @@ namespace GuiFunctions
             }
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psms.First().Ms2ScanNumber);
             
-            ChimeraPlotter = new ChimeraPlotter(plotView, scan, psms);
-            ChimeraPlotter.RefreshChart();
-            ChimeraPlotter.ExportToPng(@"C:\Users\Nic\Downloads\chimeraImage.png");
-            CurrentlyDisplayedPlots.Add(ChimeraPlotter);
+            ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, scan, psms);
+            ChimeraSpectrumMatchPlot.RefreshChart();
+            ChimeraSpectrumMatchPlot.ExportToPng(@"C:\Users\Nic\Downloads\chimeraImage.png");
         }
 
         public void DisplaySpectrumMatch(PlotView plotView, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)

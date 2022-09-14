@@ -194,10 +194,7 @@ namespace MetaMorpheusGUI
                     Debugger.Break();
 
                 ChimeraLegend.Clear();
-                foreach (var legend in MetaDrawLogic.ChimeraPlotter.Legends)
-                {
-                    ChimeraLegend.Add(legend);
-                }
+                
 
                 return;
             }
