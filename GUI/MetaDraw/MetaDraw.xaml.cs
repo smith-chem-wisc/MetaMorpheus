@@ -194,7 +194,7 @@ namespace MetaMorpheusGUI
                     Debugger.Break();
 
                 ChimeraLegend.Clear();
-                // TODO: Create Legend
+                ChimeraLegend.Add(new(chimericPsms));
                 return;
             }
 
