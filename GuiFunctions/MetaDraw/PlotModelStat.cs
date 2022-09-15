@@ -12,7 +12,7 @@ using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     public class PlotModelStat : INotifyPropertyChanged, IPlotModel
     {

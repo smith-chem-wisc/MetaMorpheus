@@ -9,6 +9,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -1281,6 +1282,40 @@ namespace Test
 
             Directory.Delete(outputFolder, true);
 
+        }
+
+
+        [Test]
+        public static void TestMetaDrawHistogramPlots()
+        {
+            SearchTask searchTask = new SearchTask();
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawReadPsmFile");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
+
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            ObservableCollection<PsmFromTsv> psms = new(parsedPsms);
+
+            var psmDict = parsedPsms.GroupBy(p => p.FileNameWithoutExtension)
+                .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
+            
+
+            PlotModelStat plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);
+
+
+            Assert.AreEqual(2, plot.Model.Axes.Count);
+            Assert.AreEqual("Count", plot.Model.Axes[1].Title);
+            Assert.AreEqual(0, plot.Model.Axes[1].AbsoluteMinimum);
+            Assert.AreEqual(60, plot.Model.Axes[0].IntervalLength);
+
+            Directory.Delete(folderPath, true);
         }
     }
 }
