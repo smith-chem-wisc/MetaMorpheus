@@ -4,23 +4,62 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:MetaMorpheusGUI"
+             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             d:DesignHeight="450" d:DesignWidth="800"
+             >
 
-    <Grid x:Name="ChimeraLegendGrid" d:DataContext="">
+    <Grid x:Name="ChimeraLegendGrid" 
+          d:DataContext="{d:DesignInstance {x:Static guiFunctions:ChimeraLegendModel.Instance}, IsDesignTimeCreatable=True}"
+          DataContext="{Binding}" Visibility="{Binding Visibility}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <StackPanel>
+            <!-- ions shared between proteins --> 
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                 <Ellipse Width="12" Height="12" Stroke="Black" StrokeThickness="1"
-                                                             Fill="Black" Margin="10 0 0 0" />
-                <TextBlock Text="Ions Shared Between Proteins" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                             Fill="Black" Margin="10 5 0 5" />
+                <TextBlock Text="Ions Shared Between Proteins" Margin="5 5 5 5" Width="Auto" TextAlignment="Left"
                                                                FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
             </StackPanel>
+
+            <!-- Each protein in the chimera set -->
+            <ItemsControl x:Name="ProteinItemsControl" ItemsSource="{Binding ChimeraLegendItems}" VerticalAlignment="Center">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <!-- protein base seq text box -->
+                                <TextBlock Text="{Binding Key, Mode=OneWay}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                         FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+
+                                <!-- each item in the ChimeraLegendItems values -->
+                                <ItemsControl ItemsSource="{Binding Value}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 5 0 5">
+                                                <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
+                                                         Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
+                                                <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                           FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
+
+                                            </StackPanel>
+                                    </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                        </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+
+
+
+                <!-- XXX -->
+
             <!-- Observable collection of Chimera Legend controls in metadraw.xaml.cs -->
-            <ItemsControl x:Name="ChimeraLegendControlItemsControl" ItemsSource="{Binding }" 
+            <!--<ItemsControl x:Name="ChimeraLegendControlItemsControl" ItemsSource="{Binding }" 
                                                               VerticalAlignment="Center"  Margin="0,0,0,0" >
                 <ItemsControl.Resources>
                     <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
@@ -36,11 +75,11 @@
                             <Border BorderThickness="2" BorderBrush="DarkGray" Margin="2" CornerRadius="5" 
                                                                         >
                                 <StackPanel>
-                                    <!-- base seq -->
+                                    --><!-- base seq --><!--
                                     <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold"
                                                                            TextWrapping="Wrap" DockPanel.Dock="Top" Width="800" Margin="0 0 0 5"/>
 
-                                    <!-- combined colors -->
+                                    --><!-- combined colors --><!--
                                     <StackPanel HorizontalAlignment="Center" DataContext="{Binding SharedIons}" Orientation="Horizontal" Margin="0 0 0 5"
                                                                             Visibility="{Binding ElementName=ChimeraLegendContentControl, Path=DataContext.SharedIonStackPanelVisibility}" >
 
@@ -51,7 +90,7 @@
 
                                     </StackPanel>
 
-                                    <!-- each protein in the ChimeraLegendItems -->
+                                    --><!-- each protein in the ChimeraLegendItems --><!--
                                     <ItemsControl ItemsSource="{Binding ChimeraLegendItems}" >
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
@@ -70,7 +109,7 @@
                         </ContentControl>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
-            </ItemsControl>
+            </ItemsControl>-->
         </StackPanel>
     </Grid>
 </UserControl>

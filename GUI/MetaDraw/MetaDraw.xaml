@@ -234,44 +234,13 @@
                                                 <ColumnDefinition Width="8" />
                                             </Grid.ColumnDefinitions>
 
-                                            <ItemsControl x:Name="PtmLegendControl" ItemsSource="{Binding }" 
-                                                          Grid.Column="1"  VerticalAlignment="Top" >
-                                                <ItemsControl.Resources>
-                                                    <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
-                                                        <Grid>
-                                                            <ContentPresenter Content="{TemplateBinding ContentControl.Content}" />
-                                                        </Grid>
-                                                    </ControlTemplate>
-                                                </ItemsControl.Resources>
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <StackPanel>
-                                                            <!-- sets vertical offset for ptm legend -->
-                                                            <Separator Background="Transparent" Height="{Binding TopOffset}" />
-
-                                                            <ContentControl Name="PtmLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
-                                                                            BorderBrush="Black" BorderThickness="1">
-                                                                <StackPanel Visibility="{Binding Visibility}" >
-                                                                    <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
-                                                                    <ItemsControl ItemsSource="{Binding LegendItemViewModels}" >
-                                                                        <ItemsControl.ItemTemplate>
-                                                                            <DataTemplate>
-                                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                                    <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                                                                            FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
-                                                                                    <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                                            Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                                                </StackPanel>
-                                                                            </DataTemplate>
-                                                                        </ItemsControl.ItemTemplate>
-                                                                    </ItemsControl>
-                                                                </StackPanel>
-                                                            </ContentControl>
-                                                        </StackPanel>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-
+                                            <StackPanel Grid.Column="1"  VerticalAlignment="Top">
+                                                <!-- sets vertical offset for ptm legend -->
+                                                <Separator Background="Transparent" Height="{Binding Path=DataContext.TopOffset, ElementName=ChildScanPtmLegendControl}" />
+                                                <!-- actual ptm legend -->
+                                                <local:PtmLegendControl x:Name="ChildScanPtmLegendControl"   DataContext="{Binding}" />
+                                            </StackPanel>
+                                            
                                         </Grid>
                                     </Grid>
                                 </TabItem>
@@ -297,77 +266,12 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition />
                                             </Grid.RowDefinitions>
-                                            <oxy:PlotView x:Name="chimeraPlot" Model="{Binding MetaDrawLogic.ChimeraPlotter.Model}" FontSize="16" FontStretch="Expanded"
+                                            <oxy:PlotView x:Name="chimeraPlot" FontSize="16" FontStretch="Expanded"
                                                           Margin="0 0 0 0"  />
                                         </Grid>
 
                                         <!-- Chimera Legend -->
-                                        <Grid Grid.Row="1" x:Name="ChimeraLegendGrid"  Grid.ColumnSpan="2">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="*"/>
-                                            </Grid.RowDefinitions>
-
-                                            <StackPanel>
-                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                    <Ellipse Width="12" Height="12" Stroke="Black" StrokeThickness="1"
-                                                             Fill="Black" Margin="10 0 0 0" />
-                                                    <TextBlock Text="Ions Shared Between Proteins" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                                               FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
-                                                </StackPanel>
-                                                <!-- Observable collection of Chimera Legend controls in metadraw.xaml.cs -->
-                                                <ItemsControl x:Name="ChimeraLegendControl" ItemsSource="{Binding }" 
-                                                              VerticalAlignment="Center"  Margin="0,0,0,0" >
-                                                    <ItemsControl.Resources>
-                                                        <ControlTemplate x:Key="PtmLegendItemTemplate" TargetType="ContentControl">
-                                                            <Grid>
-                                                                <ContentPresenter Content="{TemplateBinding ContentControl.Content}" />
-                                                            </Grid>
-                                                        </ControlTemplate>
-                                                    </ItemsControl.Resources>
-                                                    <ItemsControl.ItemTemplate>
-                                                        <DataTemplate>
-                                                            <ContentControl Name="ChimeraLegendContentControl" Template="{StaticResource PtmLegendItemTemplate}"
-                                                                        BorderBrush="Black" BorderThickness="1" >
-                                                                <Border BorderThickness="2" BorderBrush="DarkGray" Margin="2" CornerRadius="5" 
-                                                                        >
-                                                                    <StackPanel>
-                                                                        <!-- base seq -->
-                                                                        <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold"
-                                                                           TextWrapping="Wrap" DockPanel.Dock="Top" Width="800" Margin="0 0 0 5"/>
-
-                                                                        <!-- combined colors -->
-                                                                        <StackPanel HorizontalAlignment="Center" DataContext="{Binding SharedIons}" Orientation="Horizontal" Margin="0 0 0 5"
-                                                                            Visibility="{Binding ElementName=ChimeraLegendContentControl, Path=DataContext.SharedIonStackPanelVisibility}" >
-
-                                                                            <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                             Fill="{Binding BColorBrush}" Margin="10 0 0 0" />
-                                                                            <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                                                               FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
-
-                                                                        </StackPanel>
-
-                                                                        <!-- each protein in the ChimeraLegendItems -->
-                                                                        <ItemsControl ItemsSource="{Binding ChimeraLegendItems}" >
-                                                                            <ItemsControl.ItemTemplate>
-                                                                                <DataTemplate>
-                                                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 5 0 5">
-                                                                                        <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                                                 Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                                                        <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                                                                                   FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
-
-                                                                                    </StackPanel>
-                                                                                </DataTemplate>
-                                                                            </ItemsControl.ItemTemplate>
-                                                                        </ItemsControl>
-                                                                    </StackPanel>
-                                                                </Border>
-                                                            </ContentControl>
-                                                        </DataTemplate>
-                                                    </ItemsControl.ItemTemplate>
-                                                </ItemsControl>
-                                            </StackPanel>
-                                        </Grid>
+                                        <local:ChimeraLegendControl Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="ChimeraLegendControl" DataContext="{Binding}"/>
                                     </Grid>
 
                                 </TabItem>
@@ -457,7 +361,7 @@
                                             <StackPanel >
 
                                                 <!-- sequence annotaiton canvas -->
-                                                <Canvas x:Name="sequenceAnnotationCanvas"  VerticalAlignment="Top" Margin="100 0 100 0" Background="White" />
+                                                <Canvas x:Name="sequenceAnnotationCanvas"  VerticalAlignment="Top" Margin="100 0 100 0"  />
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
                                                         <ColumnDefinition Width="*" />
@@ -465,7 +369,7 @@
                                                     </Grid.ColumnDefinitions>
 
                                                     <!-- ptm legend -->
-                                                    <ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendViewModel}"  Margin="0 30 0 0"
+                                                    <!--<ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendViewModel}"  Margin="0 30 0 0"
                                                                    Height="60" Background="White" >
                                                         <ItemsControl.ItemTemplate>
                                                             <DataTemplate>
@@ -486,7 +390,11 @@
                                                                 </StackPanel>
                                                             </DataTemplate>
                                                         </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>
+                                                    </ItemsControl>-->
+
+                                                    <local:PtmLegendControl x:Name="SequenceCoveragePtmLegendControl" DataContext="{Binding}"   
+                                                                            Margin="0 0 0 0" Height="60" HorizontalAlignment="Center" 
+                                                                            Grid.Column="0" Grid.ColumnSpan="2"/>
 
                                                     <!-- adjusting the annotation -->
                                                     <StackPanel Grid.Column="1" HorizontalAlignment="Right" VerticalAlignment="Bottom">

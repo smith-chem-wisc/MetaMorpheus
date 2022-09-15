@@ -36,8 +36,8 @@ namespace MetaMorpheusGUI
         private readonly DataTable propertyView;
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
-        public ObservableCollection<PtmLegendViewModel> PtmLegend;
-        public ObservableCollection<ChimeraLegendViewModel> ChimeraLegend;
+        public PtmLegendViewModel PtmLegend;
+        public ChimeraLegendViewModel ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
@@ -78,13 +78,7 @@ namespace MetaMorpheusGUI
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
 
-            PtmLegend = new ObservableCollection<PtmLegendViewModel>();
-            PtmLegendControl.ItemsSource = PtmLegend;
-            SequenceCoveragePtmLegendControl.ItemsSource = PtmLegend;
             ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
-
-            ChimeraLegend = new();
-            ChimeraLegendControl.ItemsSource = ChimeraLegend;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -193,8 +187,9 @@ namespace MetaMorpheusGUI
                 if (error != null && error.Count > 0)
                     Debugger.Break();
 
-                ChimeraLegend.Clear();
-                ChimeraLegend.Add(new(chimericPsms));
+
+                ChimeraLegend = new(chimericPsms);
+                ChimeraLegendControl.DataContext = ChimeraLegend;
                 return;
             }
 
@@ -252,7 +247,6 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.DisplaySpectrumMatch(plotView, psm, itemsControlSampleViewModel, out var errors);
 
             // add ptm legend if desired
-            PtmLegend.Clear();
             if (MetaDrawSettings.ShowLegend)
             {
                 PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
@@ -263,7 +257,9 @@ namespace MetaMorpheusGUI
                     descriptionLineCount++;
                 double verticalOffset = descriptionLineCount * 14;
                 
-                PtmLegend.Add(new PtmLegendViewModel(mods, verticalOffset));
+                PtmLegend = new PtmLegendViewModel(mods, verticalOffset);
+                ChildScanPtmLegendControl.DataContext = PtmLegend;
+                SequenceCoveragePtmLegendControl.DataContext = PtmLegend;
             }
 
             //draw the sequence coverage if not crosslinked
@@ -538,16 +534,15 @@ namespace MetaMorpheusGUI
             Vector ptmLegendLocationVector = new();
             if (MetaDrawSettings.ShowLegend)
             {
-                ItemsControl ptmLegendCopy = new();
-                ptmLegendCopy.ItemsSource = PtmLegendControl.ItemsSource;
-                ptmLegendCopy.ItemTemplate = PtmLegendControl.ItemTemplate;
+                PtmLegendControl ptmLegendCopy = new();
+                ptmLegendCopy.DataContext = ChildScanPtmLegendControl.DataContext;
                 ptmLegendCanvas = new();
                 ptmLegendCanvas.Children.Add(ptmLegendCopy);
-                Size ptmLegendSize = new Size((int)PtmLegendControl.ActualWidth, (int)PtmLegendControl.ActualHeight);
+                Size ptmLegendSize = new Size((int)ChildScanPtmLegendControl.ActualWidth, (int)ChildScanPtmLegendControl.ActualHeight);
                 ptmLegendCanvas.Measure(ptmLegendSize);
                 ptmLegendCanvas.Arrange(new Rect(ptmLegendSize));
                 ptmLegendCanvas.UpdateLayout();
-                ptmLegendLocationVector = (Vector)PtmLegendControl.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(PtmLegendControl);
+                ptmLegendLocationVector = (Vector)ChildScanPtmLegendControl.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ChildScanPtmLegendControl);
             }
 
             MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel, directoryPath, out var errors, ptmLegendCanvas, ptmLegendLocationVector);
@@ -876,13 +871,13 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void residuesPerSegmentcmdDown_Click(object sender, RoutedEventArgs e)
         {
-            if (PtmLegend.First().ResiduesPerSegment == 1)
+            if (PtmLegend.ResiduesPerSegment == 1)
             {
                 MessageBox.Show("Value must be greater than 0");
                 return;
             }
 
-            PtmLegend.First().DecreaseResiduesPerSegment();
+            PtmLegend.DecreaseResiduesPerSegment();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
@@ -894,7 +889,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void residuesPerSegmentcmdUp_Click(object sender, RoutedEventArgs e)
         {
-            PtmLegend.First().IncreaseResiduesPerSegment();
+            PtmLegend.IncreaseResiduesPerSegment();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
@@ -906,13 +901,13 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void segmentsPerRowcmdDown_Click(object sender, RoutedEventArgs e)
         {
-            if (PtmLegend.First().SegmentsPerRow == 1)
+            if (PtmLegend.SegmentsPerRow == 1)
             {
                 MessageBox.Show("Value must be greater than 0");
                 return;
             }
 
-            PtmLegend.First().DecreaseSegmentsPerRow();
+            PtmLegend.DecreaseSegmentsPerRow();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
@@ -924,7 +919,7 @@ namespace MetaMorpheusGUI
         /// <param name="e"></param>
         private void segmentsPerRowcmdUp_Click(object sender, RoutedEventArgs e)
         {
-            PtmLegend.First().IncreaseSegmentsPerRow();
+            PtmLegend.IncreaseSegmentsPerRow();
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
             MetaDrawLogic.DisplaySequences(null, null, sequenceAnnotationCanvas, psm);
         }
@@ -943,11 +938,11 @@ namespace MetaMorpheusGUI
             GrayBox.Opacity = 1;
             wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
             AmbiguousSequenceOptionBox.Items.Clear();
-
-            if (PtmLegend.Count > 0)
-                PtmLegend.First().Visibility = Visibility.Hidden;
-
+            PtmLegend.Visibility = Visibility.Hidden;
             plotView.Visibility = Visibility.Hidden;
+
+            if (ChimeraLegend != null)
+                ChimeraLegend.Visibility = Visibility.Hidden;
         }
 
         private void ParentScanView_OnMouseLeftButtonDown(object sender, MouseButtonEventArgs e)

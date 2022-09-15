@@ -263,13 +263,13 @@ namespace Test
             PtmLegendView.Visibility = Visibility.Collapsed;
             Assert.That(PtmLegendView.Header == "Legend");
             Assert.That(PtmLegendView.HeaderSize == 12);
-            Assert.That(PtmLegendView.LegendItems.Count == 2);
-            Assert.That(PtmLegendView.LegendItems.First().ModName == twoMods.First().IdWithMotif);
-            Assert.That(PtmLegendView.LegendItems.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif]).Color);
-            Assert.That(PtmLegendView.LegendItems.First().ModName == twoMods.First().IdWithMotif);
+            Assert.That(PtmLegendView.LegendItemViewModels.Count == 2);
+            Assert.That(PtmLegendView.LegendItemViewModels.First().Name == twoMods.First().IdWithMotif);
+            Assert.That(PtmLegendView.LegendItemViewModels.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif]).Color);
+            Assert.That(PtmLegendView.LegendItemViewModels.First().Name == twoMods.First().IdWithMotif);
             var mod = twoMods.First();
             PtmLegendItemViewModel ptmLegendItemView = new(mod.IdWithMotif);
-            Assert.That(ptmLegendItemView.ModName == mod.IdWithMotif);
+            Assert.That(ptmLegendItemView.Name == mod.IdWithMotif);
             Assert.That(ptmLegendItemView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.IdWithMotif]).Color);
 
             // test that residue per segment incrementation works and cannot be less than 1
@@ -313,8 +313,26 @@ namespace Test
             {
                 Assert.That(false);
             }
+        }
+
+        [Test]
+        public static void TestChimeraLegendViews()
+        {
+            string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings);
+            Assert.That(warnings.Count, Is.EqualTo(0));
+            List<PsmFromTsv> filteredChimeras = psms.Where(p => p.QValue <= 0.01 && p.PEP <= 0.5 && p.PrecursorScanNum == 1557).ToList();
+            Assert.That(filteredChimeras.Count, Is.EqualTo(3));
+
+            ChimeraLegendViewModel chimeraLegend = new ChimeraLegendViewModel(filteredChimeras);
+            Assert.That(chimeraLegend.ChimeraLegendItems.Count == 2);
+            Assert.That(chimeraLegend.Visibility == Visibility.Visible);
+            Assert.That(chimeraLegend.ChimeraLegendItems.Values.First().Count == 3);
+            Assert.That(chimeraLegend.ChimeraLegendItems.Values.ToList()[1].Count == 1);
 
         }
+
 
         [Test]
         public static void TestDrawnSequenceColorConversions()

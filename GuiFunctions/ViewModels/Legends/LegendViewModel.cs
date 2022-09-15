@@ -28,7 +28,6 @@ namespace GuiFunctions
             }
         }
 
-
         public double TopOffset
         {
             get => topOffset;

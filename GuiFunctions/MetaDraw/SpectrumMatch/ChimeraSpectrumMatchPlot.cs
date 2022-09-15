@@ -81,41 +81,6 @@ namespace GuiFunctions
                 }
                 proteinIndex++;
             }
-
-            //// each protein
-            //for (int i = 0; i < PsmsByProteinDictionary.Count; i++)
-            //{
-            //    var matchedIonsLists = PsmsByProteinDictionary[i].Select(p => p.MatchedIons).ToList();
-            //    List<MatchedFragmentIon> proteinMatchedIons = new();
-            //    List<MatchedFragmentIon> proteinDrawnIons = new();
-
-            //    // each proteoform
-            //    int proteoformIndex = 1;
-            //    foreach (var proteoform in proteinGroups[i])
-            //    {
-            //        proteinMatchedIons.AddRange(proteoform.MatchedIons);
-            //        allMatchedIons.AddRange(proteoform.MatchedIons);
-            //        PeptideWithSetModifications pepWithSetMods = new(proteoform.FullSequence.Split('|')[0], GlobalVariables.AllModsKnownDictionary);
-
-            //        // each matched ion
-            //        foreach (var matchedIon in proteoform.MatchedIons)
-            //        {
-            //            // if drawn by the same protein alread
-            //            if (proteinDrawnIons.Any(p => p.Annotation == matchedIon.Annotation && p.Mz == matchedIon.Mz))
-            //                AnnotatePeak(matchedIon, false, false, SingleProteinColors.ColorsByProteinDict[i][0].Item1);
-            //            // if drawn by a different protein
-            //            else if (allDrawnIons.Any(p => p.Item1 != proteoform.BaseSeq && p.Item2.Annotation == matchedIon.Annotation && p.Item2.Mz == matchedIon.Mz))
-
-            //                AnnotatePeak(matchedIon, false, false, OxyColors.Black);
-            //            // if unique peak
-            //            else
-            //                AnnotatePeak(matchedIon, false, false, SingleProteinColors.ColorsByProteinDict[i][proteoformIndex].Item1);
-            //            proteinDrawnIons.Add(matchedIon);
-            //            allDrawnIons.Add((proteoform.BaseSeq, matchedIon));
-            //        }
-            //        proteoformIndex++;
-            //    }
-            //}
         }
 
         /// <summary>
@@ -127,18 +92,18 @@ namespace GuiFunctions
             ColorByProteinDictionary = new();
             ColorByProteinDictionary.Add(0, new List<OxyColor>()
             {
-                OxyColors.Red, OxyColors.DarkRed, OxyColors.LightCoral, OxyColors.PaleVioletRed,
-                OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
-            });
-            ColorByProteinDictionary.Add(1, new List<OxyColor>()
-            {
                 OxyColors.Blue, OxyColors.Navy, OxyColors.SkyBlue, OxyColors.CornflowerBlue,
                 OxyColors.DarkBlue, OxyColors.CadetBlue, OxyColors.SteelBlue, OxyColors.DodgerBlue
             });
-            ColorByProteinDictionary.Add(2, new List<OxyColor>()
+            ColorByProteinDictionary.Add(1, new List<OxyColor>()
             {
                 OxyColors.Purple, OxyColors.Indigo, OxyColors.MediumPurple, OxyColors.Violet,
                 OxyColors.Plum, OxyColors.Orchid, OxyColors.BlueViolet, OxyColors.Magenta
+            });
+            ColorByProteinDictionary.Add(2, new List<OxyColor>()
+            {
+                OxyColors.Red, OxyColors.DarkRed, OxyColors.LightCoral, OxyColors.PaleVioletRed,
+                OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
             });
             ColorByProteinDictionary.Add(3, new List<OxyColor>()
             {
