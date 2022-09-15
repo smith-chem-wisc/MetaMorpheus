@@ -314,6 +314,7 @@
                                                     <TextBlock Text="Ions Shared Between Proteins" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
                                                                FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
                                                 </StackPanel>
+                                                <!-- Observable collection of Chimera Legend controls in metadraw.xaml.cs -->
                                                 <ItemsControl x:Name="ChimeraLegendControl" ItemsSource="{Binding }" 
                                                               VerticalAlignment="Center"  Margin="0,0,0,0" >
                                                     <ItemsControl.Resources>
@@ -345,8 +346,8 @@
 
                                                                         </StackPanel>
 
-                                                                        <!-- individual proteoforms -->
-                                                                        <ItemsControl ItemsSource="{Binding LegendItemViewModels}" >
+                                                                        <!-- each protein in the ChimeraLegendItems -->
+                                                                        <ItemsControl ItemsSource="{Binding ChimeraLegendItems}" >
                                                                             <ItemsControl.ItemTemplate>
                                                                                 <DataTemplate>
                                                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 5 0 5">

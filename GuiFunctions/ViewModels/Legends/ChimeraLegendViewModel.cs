@@ -16,12 +16,17 @@ namespace GuiFunctions
         #region Private Properties
 
         private Visibility sharedIonStackPanelVisibility;
+        private Dictionary<string, List<ChimeraLegendItemViewModel>> chimeraLegendItems;
 
         #endregion
 
         #region Public Properties
 
-        public Dictionary<string, List<ChimeraLegendItemViewModel>> ChimeraLegendItems { get; set; }
+        public Dictionary<string, List<ChimeraLegendItemViewModel>> ChimeraLegendItems
+        {
+            get => chimeraLegendItems;
+            set { chimeraLegendItems = value; OnPropertyChanged(nameof(ChimeraLegendItems)); }
+        }
 
         public Visibility SharedIonStackPanelVisibility
         {
@@ -53,12 +58,29 @@ namespace GuiFunctions
                 for (int i = 0; i < protein.Count(); i++)
                 {
                     PeptideWithSetModifications peptideWithSetMods =
-                        new(protein.ToList()[i].FullSequence, GlobalVariables.AllModsKnownDictionary); 
-                    var modsString = String.Join(", ", protein.ToList()[i].Select)
-                    ChimeraLegendItems[protein.Key].Add(new(protein, ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1]));
+                        new(protein.ToList()[i].FullSequence, GlobalVariables.AllModsKnownDictionary);
+                    var modsString = String.Join(", ",
+                        peptideWithSetMods.AllModsOneIsNterminus.Select(p => p.Key + " - " + p.Value.IdWithMotif));
+                    ChimeraLegendItems[protein.Key].Add(new(modsString, ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1]));
                 }
 
             }
         }
     }
+
+    public class ChimeraLegendModel : ChimeraLegendViewModel
+    {
+        public static List<PsmFromTsv> chimericPsms { get; set; }
+        public ChimeraLegendModel Instance => new ChimeraLegendModel();
+        //public ChimeraLegendModel()
+        //{
+
+        //}
+
+        static ChimeraLegendModel()
+        {
+
+        }
+    }
+
 }
