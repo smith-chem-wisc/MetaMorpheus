@@ -16,6 +16,7 @@ using System.Reflection;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using Easy.Common.Extensions;
 using TaskLayer;
 
 namespace Test
@@ -1307,13 +1308,21 @@ namespace Test
                 .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
             
 
-            PlotModelStat plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);
+            var plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);
 
-
+            // Ensure axes are labelled correctly, and intervals are correct
             Assert.AreEqual(2, plot.Model.Axes.Count);
             Assert.AreEqual("Count", plot.Model.Axes[1].Title);
             Assert.AreEqual(0, plot.Model.Axes[1].AbsoluteMinimum);
             Assert.AreEqual(60, plot.Model.Axes[0].IntervalLength);
+
+            PlotModelStat plot2 = new PlotModelStat("Histogram of Precursor Charges", psms, psmDict);
+            var series = plot2.Model.Series.ToList()[0];
+            var items = (List<OxyPlot.Series.ColumnItem>)series.GetType().GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series);
+            // Ensure there are the correct number of values in each bin
+
+            Assert.AreEqual(items[0].Value, 9);
+            Assert.AreEqual(items[1].Value, 1);
 
             Directory.Delete(folderPath, true);
         }
