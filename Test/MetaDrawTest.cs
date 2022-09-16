@@ -1364,25 +1364,15 @@ namespace Test
             Assert.AreEqual(points7[1].Y, -1.48);
             Assert.AreEqual(points7[1].Tag, "LSRIDTPK");
 
-            var plot8 = new PlotModelStat("Fragment PPM Error vs. RT",
+            var plot8 = new PlotModelStat("Predicted RT vs. Observed RT",
                 psms, psmDict);
             var series8 = plot8.Model.Series.ToList()[0];
             var points8 = (List<OxyPlot.Series.ScatterPoint>)series8.GetType()
                 .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series8);
-            Assert.AreEqual(points8.Count, 101);
-            Assert.AreEqual(points8[1].X, 0);
-            Assert.AreEqual(points8[1].Y, 42.04222);
-            Assert.AreEqual(points8[1].Tag, "M[Common Variable:Oxidation on M]KETAESYLGAK");
-
-            var plot9 = new PlotModelStat("Predicted RT vs. Observed RT",
-                psms, psmDict);
-            var series9 = plot9.Model.Series.ToList()[0];
-            var points9 = (List<OxyPlot.Series.ScatterPoint>)series9.GetType()
-                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
-            Assert.AreEqual(points9.Count, 10);
-            Assert.AreEqual(points9[7].X, 42.06171);
-            Assert.AreEqual(points9[7].Y, 19.00616880619646);
-            Assert.AreEqual(points9[7].Tag, "AFISYHDEAQK");
+            Assert.AreEqual(points8.Count, 10);
+            Assert.AreEqual(points8[7].X, 42.06171);
+            Assert.AreEqual(points8[7].Y, 19.00616880619646);
+            Assert.AreEqual(points8[7].Tag, "AFISYHDEAQK");
 
 
             Directory.Delete(folderPath, true);

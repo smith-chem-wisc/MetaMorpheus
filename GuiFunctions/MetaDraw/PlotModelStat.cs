@@ -93,9 +93,9 @@ namespace GuiFunctions
                 case "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)":
                     histogramPlot(1);
                     break;
-                case "Histogram of Fragment PPM Errors":
-                    histogramPlot(2);
-                    break;
+                //case "Histogram of Fragment PPM Errors": //TODO: implement fragment PPM error reading in MetaDraw
+                //    histogramPlot(2);
+                //    break;
                 case "Histogram of Precursor Charges":
                     histogramPlot(3);
                     break;
@@ -111,9 +111,9 @@ namespace GuiFunctions
                 case "Precursor PPM Error vs. RT":
                     linePlot(1);
                     break;
-                case "Fragment PPM Error vs. RT":
-                    linePlot(2);
-                    break;
+                //case "Fragment PPM Error vs. RT": //TODO: implement fragment PPM error reading in MetaDraw
+                //    linePlot(2);
+                //    break;
                 case "Histogram of PTM Spectral Counts":
                     histogramPlot(5);
                     break;
@@ -146,14 +146,16 @@ namespace GuiFunctions
                         dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
                     break;
-                case 2: // Histogram of Fragment PPM Errors TODO not shown as an option in gui
-                    xAxisTitle = "Fragment error (ppm)";
-                    binSize = 0.1;
-                    foreach (string key in psmsBySourceFile.Keys)
-                    {
-                        numbersBySourceFile.Add(key, psmsBySourceFile[key].SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm)));
-                    }
-                    break;
+                //case 2: // Histogram of Fragment PPM Errors TODO not shown as an option in gui
+                //    xAxisTitle = "Fragment error (ppm)";
+                //    binSize = 0.1;
+                //    foreach (string key in psmsBySourceFile.Keys)
+                //    {
+                //        numbersBySourceFile.Add(key, psmsBySourceFile[key].SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm)));
+                //        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                //        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
+                //    }
+                //    break;
                 case 3: // Histogram of Precursor Charges
                     xAxisTitle = "Precursor charge";
                     binSize = 1;
@@ -337,17 +339,17 @@ namespace GuiFunctions
                         }
                     }
                     break;
-                case 2: // Fragment PPM Error vs. RT
-                    yAxisTitle = "Retention time";
-                    xAxisTitle = "Fragment error (ppm)";
-                    foreach (var psm in allPsms)
-                    {
-                        foreach (var ion in psm.MatchedIons)
-                        {
-                            xy.Add(new Tuple<double, double, string>((double)psm.RetentionTime, ion.MassErrorPpm, psm.FullSequence));
-                        }
-                    }
-                    break;
+                //case 2: // Fragment PPM Error vs. RT //TODO: implement fragment PPM error reading in MetaDraw
+                //    yAxisTitle = "Retention time";
+                //    xAxisTitle = "Fragment error (ppm)";
+                //    foreach (var psm in allPsms)
+                //    {
+                //        foreach (var ion in psm.MatchedIons)
+                //        {
+                //            xy.Add(new Tuple<double, double, string>((double)psm.RetentionTime, ion.MassErrorPpm, psm.FullSequence));
+                //        }
+                //    }
+                //    break;
                 case 3: // Predicted RT vs. Observed RT
                     yAxisTitle = "Predicted Hydrophobicity";
                     xAxisTitle = "Observed retention time";
