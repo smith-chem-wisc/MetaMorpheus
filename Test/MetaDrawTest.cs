@@ -18,6 +18,7 @@ using System.Windows;
 using System.Windows.Controls;
 using Easy.Common.Extensions;
 using TaskLayer;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace Test
 {
@@ -1307,22 +1308,82 @@ namespace Test
             var psmDict = parsedPsms.GroupBy(p => p.FileNameWithoutExtension)
                 .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
             
+            // check aspects of each histogram type:
 
             var plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);
-
             // Ensure axes are labelled correctly, and intervals are correct
             Assert.AreEqual(2, plot.Model.Axes.Count);
             Assert.AreEqual("Count", plot.Model.Axes[1].Title);
             Assert.AreEqual(0, plot.Model.Axes[1].AbsoluteMinimum);
             Assert.AreEqual(60, plot.Model.Axes[0].IntervalLength);
 
-            PlotModelStat plot2 = new PlotModelStat("Histogram of Precursor Charges", psms, psmDict);
-            var series = plot2.Model.Series.ToList()[0];
-            var items = (List<OxyPlot.Series.ColumnItem>)series.GetType().GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series);
-            // Ensure there are the correct number of values in each bin
+            var plot2 = new PlotModelStat("Histogram of Precursor Charges", psms, psmDict);
+            var series2 = plot2.Model.Series.ToList()[0];
+            var items2 = (List<OxyPlot.Series.ColumnItem>)series2.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series2);
+            Assert.AreEqual(items2[0].Value, 9);
+            Assert.AreEqual(items2[1].Value, 1);
 
-            Assert.AreEqual(items[0].Value, 9);
-            Assert.AreEqual(items[1].Value, 1);
+            var plot3 = new PlotModelStat("Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
+                psms, psmDict);
+            var series3 = plot3.Model.Series.ToList()[0];
+            var items3 = (List<OxyPlot.Series.ColumnItem>)series3.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series3);
+            Assert.AreEqual(items3[7].Value, 2);
+
+            var plot4 = new PlotModelStat("Histogram of Fragment Charges",
+                psms, psmDict);
+            var series4 = plot4.Model.Series.ToList()[0];
+            var items4 = (List<OxyPlot.Series.ColumnItem>)series4.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series4);
+            Assert.AreEqual(items4[0].Value, 101);
+
+            var plot5 = new PlotModelStat("Histogram of Precursor M/z",
+                psms, psmDict);
+            var series5 = plot5.Model.Series.ToList()[0];
+            var items5 = (List<OxyPlot.Series.ColumnItem>)series5.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series5);
+            Assert.AreEqual(items5.Count, 5);
+            Assert.AreEqual(items5[0].Value, 5);
+
+            var plot6 = new PlotModelStat("Histogram of PTM Spectral Counts",
+                psms, psmDict);
+            var series6 = plot6.Model.Series.ToList()[0];
+            var items6 = (List<OxyPlot.Series.ColumnItem>)series6.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series6);
+            Assert.AreEqual(items6.Count, 1);
+            Assert.AreEqual(items6[0].Value, 2);
+
+            var plot7 = new PlotModelStat("Precursor PPM Error vs. RT",
+                psms, psmDict);
+            var series7 = plot7.Model.Series.ToList()[0];
+            var points7 = (List<OxyPlot.Series.ScatterPoint>)series7.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series7);
+            Assert.AreEqual(points7.Count, 9);
+            Assert.AreEqual(points7[1].X, 42.07841);
+            Assert.AreEqual(points7[1].Y, -1.48);
+            Assert.AreEqual(points7[1].Tag, "LSRIDTPK");
+
+            var plot8 = new PlotModelStat("Fragment PPM Error vs. RT",
+                psms, psmDict);
+            var series8 = plot8.Model.Series.ToList()[0];
+            var points8 = (List<OxyPlot.Series.ScatterPoint>)series8.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series8);
+            Assert.AreEqual(points8.Count, 101);
+            Assert.AreEqual(points8[1].X, 0);
+            Assert.AreEqual(points8[1].Y, 42.04222);
+            Assert.AreEqual(points8[1].Tag, "M[Common Variable:Oxidation on M]KETAESYLGAK");
+
+            var plot9 = new PlotModelStat("Predicted RT vs. Observed RT",
+                psms, psmDict);
+            var series9 = plot9.Model.Series.ToList()[0];
+            var points9 = (List<OxyPlot.Series.ScatterPoint>)series9.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
+            Assert.AreEqual(points9.Count, 10);
+            Assert.AreEqual(points9[7].X, 42.06171);
+            Assert.AreEqual(points9[7].Y, 19.00616880619646);
+            Assert.AreEqual(points9[7].Tag, "AFISYHDEAQK");
+
 
             Directory.Delete(folderPath, true);
         }
