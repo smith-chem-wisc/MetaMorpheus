@@ -10,7 +10,6 @@
              >
 
     <Grid x:Name="ChimeraLegendGrid" 
-          d:DataContext="{d:DesignInstance {x:Static guiFunctions:ChimeraLegendModel.Instance}, IsDesignTimeCreatable=True}"
           DataContext="{Binding}" Visibility="{Binding Visibility}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -38,10 +37,10 @@
                                 <ItemsControl ItemsSource="{Binding Value}">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 5 0 5">
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 2 0 2">
                                                 <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
                                                          Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
+                                                <TextBlock Text="{Binding Name}" Margin="2 0 2 0" Width="Auto" TextAlignment="Left"
                                                            FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
 
                                             </StackPanel>

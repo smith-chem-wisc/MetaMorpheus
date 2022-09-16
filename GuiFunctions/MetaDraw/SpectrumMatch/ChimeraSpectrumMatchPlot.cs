@@ -20,10 +20,16 @@ namespace GuiFunctions
 {
     public class ChimeraSpectrumMatchPlot : SpectrumMatchPlot
     {
+        private static Queue<OxyColor> overflowColors;
         public static OxyColor MultipleProteinSharedColor;
         public static Dictionary<int, List<OxyColor>> ColorByProteinDictionary;
-        public List<PsmFromTsv> SpectrumMatches { get; protected set; }
-        public Dictionary<string, List<PsmFromTsv>> PsmsByProteinDictionary { get; protected set; }
+        public static Queue<OxyColor> OverflowColors
+        {
+            get => new Queue<OxyColor>(overflowColors.ToList());
+        }
+
+        public List<PsmFromTsv> SpectrumMatches { get; private set; }
+        public Dictionary<string, List<PsmFromTsv>> PsmsByProteinDictionary { get; private set; }
 
         public ChimeraSpectrumMatchPlot(PlotView plotView, MsDataScan scan, List<PsmFromTsv> psms) : base(plotView, null, scan)
         {
@@ -41,9 +47,9 @@ namespace GuiFunctions
         /// </summary>
         protected new void AnnotateMatchedIons()
         {
-
             List<MatchedFragmentIon> allMatchedIons = new();
             List<(string, MatchedFragmentIon)> allDrawnIons = new();
+            Queue<OxyColor> overflowColors = OverflowColors;
 
             int proteinIndex = 0;
             foreach (var proteinGroup in PsmsByProteinDictionary.Values)
@@ -57,25 +63,36 @@ namespace GuiFunctions
                     allMatchedIons.AddRange(proteinGroup[j].MatchedIons);
                     PeptideWithSetModifications pepWithSetMods = new(proteinGroup[j].FullSequence.Split('|')[0], GlobalVariables.AllModsKnownDictionary);
 
+                    // more proteins than protein programmed colors
+                    if (proteinIndex >= ColorByProteinDictionary.Keys.Count)
+                    {
+                        proteinIndex = 0;
+                    }
+
                     // each matched ion
                     foreach (var matchedIon in proteinGroup[j].MatchedIons)
                     {
+                        OxyColor color = MultipleProteinSharedColor;
                         // if drawn by the same protein already
                         if (proteinDrawnIons.Any(p => p.Annotation == matchedIon.Annotation && p.Mz == matchedIon.Mz))
                         {
-                            AnnotatePeak(matchedIon, false, false, ColorByProteinDictionary[proteinIndex][0]);
-                        }
-                        // if drawn by a different protein
-                        else if (allDrawnIons.Any(p => p.Item1 != proteinGroup[j].BaseSeq && p.Item2.Annotation == matchedIon.Annotation && p.Item2.Mz == matchedIon.Mz))
-                        {
-                            AnnotatePeak(matchedIon, false, false, MultipleProteinSharedColor);
+                            color = ColorByProteinDictionary[proteinIndex][0];
                         }
                         // if unique peak
                         else
                         {
-                            AnnotatePeak(matchedIon, false, false, ColorByProteinDictionary[proteinIndex][j + 1]);
+                            // more proteoforms than programmed colors
+                            if (j + 1 >= ColorByProteinDictionary[proteinIndex].Count)
+                            {
+                                color = overflowColors.Dequeue();
+                            }
+                            else
+                            {
+                                color = ColorByProteinDictionary[proteinIndex][j + 1];
+                            }
                             proteinDrawnIons.Add(matchedIon);
                         }
+                        AnnotatePeak(matchedIon, false, false, color);
                         allDrawnIons.Add((proteinGroup[j].BaseSeq, matchedIon));
                     }
                 }
@@ -97,18 +114,18 @@ namespace GuiFunctions
             });
             ColorByProteinDictionary.Add(1, new List<OxyColor>()
             {
-                OxyColors.Purple, OxyColors.Indigo, OxyColors.MediumPurple, OxyColors.Violet,
-                OxyColors.Plum, OxyColors.Orchid, OxyColors.BlueViolet, OxyColors.Magenta
-            });
-            ColorByProteinDictionary.Add(2, new List<OxyColor>()
-            {
                 OxyColors.Red, OxyColors.DarkRed, OxyColors.LightCoral, OxyColors.PaleVioletRed,
                 OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
             });
-            ColorByProteinDictionary.Add(3, new List<OxyColor>()
+            ColorByProteinDictionary.Add(2, new List<OxyColor>()
             {
                 OxyColors.Green, OxyColors.DarkGreen, OxyColors.MediumSpringGreen, OxyColors.LightGreen,
                 OxyColors.Linen, OxyColors.SpringGreen, OxyColors.Chartreuse, OxyColors.DarkSeaGreen
+            });
+            ColorByProteinDictionary.Add(3, new List<OxyColor>()
+            {
+                OxyColors.Purple, OxyColors.Indigo, OxyColors.MediumPurple, OxyColors.Violet,
+                OxyColors.Plum, OxyColors.Orchid, OxyColors.BlueViolet, OxyColors.Magenta
             });
             ColorByProteinDictionary.Add(4, new List<OxyColor>()
             {
@@ -120,6 +137,14 @@ namespace GuiFunctions
                 OxyColors.Gold, OxyColors.DarkGoldenrod, OxyColors.Wheat, OxyColors.Goldenrod,
                 OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
             });
+
+            IEnumerable<OxyColor> overflow = new List<OxyColor>()
+            {
+                OxyColors.Cornsilk, OxyColors.BlanchedAlmond, OxyColors.Aqua, OxyColors.Aquamarine, 
+                OxyColors.HotPink, OxyColors.PaleGreen, OxyColors.Gray, OxyColors.SeaGreen,
+                OxyColors.LemonChiffon, OxyColors.RosyBrown, OxyColors.MediumSpringGreen
+            };
+            overflowColors = new Queue<OxyColor>(overflow);
         }
 
     }

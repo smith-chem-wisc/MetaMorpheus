@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using EngineLayer;
+using Proteomics.ProteolyticDigestion;
 
 namespace GuiFunctions
 {
@@ -46,17 +48,11 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public PtmLegendViewModel(List<Modification> mods, double offset = 0) : base()
+        public PtmLegendViewModel(PsmFromTsv psm, double offset = 0) : base()
         {
-
-            foreach (var mod in mods.Distinct())
-            {
-                var modItem = new PtmLegendItemViewModel(mod.IdWithMotif);
-                LegendItemViewModels.Add(modItem);
-            }
-
+            ParseModsFromPsmTsv(psm);
             TopOffset = offset;
-            Visibility = mods.Count > 0 ? Visibility.Visible : Visibility.Hidden;
+            Visibility = LegendItemViewModels.Count > 0 ? Visibility.Visible : Visibility.Hidden;
         }
 
         #endregion
@@ -102,5 +98,16 @@ namespace GuiFunctions
         }
 
         #endregion
+
+        private void ParseModsFromPsmTsv(PsmFromTsv psm)
+        {
+            PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+            List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
+            foreach (var mod in mods.Distinct())
+            {
+                var modItem = new PtmLegendItemViewModel(mod.IdWithMotif);
+                LegendItemViewModels.Add(modItem);
+            }
+        }
     }
 }

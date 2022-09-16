@@ -187,9 +187,11 @@ namespace MetaMorpheusGUI
                 if (error != null && error.Count > 0)
                     Debugger.Break();
 
-
-                ChimeraLegend = new(chimericPsms);
-                ChimeraLegendControl.DataContext = ChimeraLegend;
+                if (MetaDrawSettings.ShowLegend)
+                {
+                    ChimeraLegend = new(chimericPsms);
+                    ChimeraLegendControl.DataContext = ChimeraLegend;
+                }
                 return;
             }
 
@@ -249,15 +251,14 @@ namespace MetaMorpheusGUI
             // add ptm legend if desired
             if (MetaDrawSettings.ShowLegend)
             {
-                PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
-                List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
+                
                 int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
                 descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
                 if (psm.ProteinAccession.Length > 10)
                     descriptionLineCount++;
                 double verticalOffset = descriptionLineCount * 14;
                 
-                PtmLegend = new PtmLegendViewModel(mods, verticalOffset);
+                PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
                 ChildScanPtmLegendControl.DataContext = PtmLegend;
                 SequenceCoveragePtmLegendControl.DataContext = PtmLegend;
             }

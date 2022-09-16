@@ -37,11 +37,12 @@ namespace GuiFunctions
         public ObservableCollection<LegendItemViewModel> LegendItemViewModels
         {
             get => legendItemViewModels;
+            set => value = LegendItemViewModels;
         }
 
         public LegendViewModel()
         {
-
+            LegendItemViewModels = new();
         }
     }
 }
