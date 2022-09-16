@@ -10,6 +10,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -1373,6 +1374,36 @@ namespace Test
             Assert.AreEqual(points8[7].X, 42.06171);
             Assert.AreEqual(points8[7].Y, 19.00616880619646);
             Assert.AreEqual(points8[7].Tag, "AFISYHDEAQK");
+
+
+            //test variant plotting
+            string variantFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
+            List<string> warningsVariants = new List<string>();
+            List<PsmFromTsv> parsedPsmsWithVariants;
+            parsedPsmsWithVariants = PsmTsvReader.ReadTsv(variantFile, out warningsVariants);
+            ObservableCollection<PsmFromTsv> psmsWithVariants = new(parsedPsmsWithVariants);
+
+            var psmVariantDict = psmsWithVariants.GroupBy(p => p.FileNameWithoutExtension)
+                .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
+
+            var variantPlot1 = new PlotModelStat("Precursor PPM Error vs. RT", psmsWithVariants, psmVariantDict);
+            var variantSeries1 = variantPlot1.Model.Series.ToList()[0];
+            var variantPoints1 = (List<OxyPlot.Series.ScatterPoint>)variantSeries1.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries1);
+            Assert.AreEqual(variantPoints1.Count, 1);
+            Assert.AreEqual(variantPoints1[0].X, 97.8357);
+            Assert.AreEqual(variantPoints1[0].Y, 0.35);
+            Assert.AreEqual(variantPoints1[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
+
+            var variantPlot2 = new PlotModelStat("Predicted RT vs. Observed RT", psmsWithVariants, psmVariantDict);
+            var variantSeries2 = variantPlot2.Model.Series.ToList()[0];
+            var variantPoints2 = (List<OxyPlot.Series.ScatterPoint>)variantSeries2.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries2);
+            Assert.AreEqual(variantPoints2.Count, 1);
+            Assert.AreEqual(variantPoints2[0].X, 97.8357);
+            Assert.AreEqual(variantPoints2[0].Y, 16.363848874371111);
+            Assert.AreEqual(variantPoints2[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
+
 
 
             Directory.Delete(folderPath, true);
