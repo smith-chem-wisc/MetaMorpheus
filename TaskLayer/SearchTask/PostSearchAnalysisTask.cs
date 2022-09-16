@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -15,7 +16,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
+using System.Collections.Concurrent;
+using Microsoft.ML;
+using Microsoft.ML.Data;
 
 namespace TaskLayer
 {
@@ -74,6 +79,10 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();
+                if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
+                {
+                    PostQuantificationMbrAnalysis();
+                }      
             }
             if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
@@ -234,11 +243,21 @@ namespace TaskLayer
             }
 
             // get PSMs to pass to FlashLFQ
-            var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                p.FdrInfo.QValue <= 0.01
-                && p.FdrInfo.QValueNotch <= 0.01
-                && !p.IsDecoy
-                && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+            List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr = new();
+            if (Parameters.AllPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
+            {
+                unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
+                    p.FdrInfo.PEP_QValue <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+            }
+            else
+            {
+                unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
+                    p.FdrInfo.QValue <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+            }
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -588,15 +607,25 @@ namespace TaskLayer
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
-            var FilteredPsmList = Parameters.AllPsms
-               .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
-            FilteredPsmList.RemoveAll(b => b.IsDecoy);
-            FilteredPsmList.RemoveAll(b => b.IsContaminant);
+            List<PeptideSpectralMatch> filteredPsmList = new();
+            if(Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
+            {
+                filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.5).ToList();
+                filteredPsmList.RemoveAll(b => b.IsDecoy);
+                filteredPsmList.RemoveAll(b => b.IsContaminant);
+            }
+            else
+            {
+                filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
+                filteredPsmList.RemoveAll(b => b.IsDecoy);
+                filteredPsmList.RemoveAll(b => b.IsContaminant);
+            }
+
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
             Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
-            foreach (var x in FilteredPsmList)
+            foreach (var x in filteredPsmList)
             {
-                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
+                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = filteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
                 (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
 
                 if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
@@ -740,6 +769,254 @@ namespace TaskLayer
                     }
                 }
             }
+        }
+
+        private void PostQuantificationMbrAnalysis()
+        {
+            if (!Parameters.SearchParameters.DoMbrAnalysis | !Parameters.SearchParameters.MatchBetweenRuns)
+            {
+                return;
+            }
+            List<SpectraFileInfo> spectraFiles = Parameters.FlashLfqResults.Peaks.Select(p => p.Key).ToList();
+            List<PeptideSpectralMatch> allPeptides = GetAllPeptides();
+
+            int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+
+            //ConcurrentDictionary is threadsafe dictionary, initialized to be larger than necessary 
+            ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks =
+                new ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch>(maxThreadsPerFile, allPeptides.Count);
+
+            foreach (SpectraFileInfo spectraFile in spectraFiles)
+            {
+                List<ChromatographicPeak> fileSpecificMbrPeaks = Parameters.FlashLfqResults.Peaks[spectraFile].Where(p => p.IsMbrPeak).ToList();
+                if (fileSpecificMbrPeaks == null || (!fileSpecificMbrPeaks.Any())) break;
+
+                // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
+                var myLocks = new object[fileSpecificMbrPeaks.Count];
+                for (int i = 0; i < myLocks.Length; i++)
+                {
+                    myLocks[i] = new object();
+                }
+
+                MyFileManager myFileManager = new(true);
+                MsDataFile myMsDataFile = myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, CommonParameters);
+                MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance,
+                    Parameters.SearchParameters.MassDiffAcceptorType, Parameters.SearchParameters.CustomMdac);
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, CommonParameters)
+                    .OrderBy(b => b.RetentionTime).ToArray();
+                double[] arrayOfRTs = arrayOfMs2ScansSortedByRT.Select(p => p.TheScan.RetentionTime).ToArray();
+                string spectralLibraryPath = Path.Combine(Parameters.OutputFolder, @"spectralLibrary.msp");
+                SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
+
+                Parallel.ForEach(threads, (i) =>
+                {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops) { return; }
+                    for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
+                    {
+                        ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
+                        PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p => p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
+                        if (bestDonorPsm == null) break; //Hopefully this fixes Hannah's bug
+                        PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
+                        double monoIsotopicMass = bestDonorPsm.PeptideMonisotopicMass.Value;
+
+                        // Find MS2 scans falling within the relevant time window.
+                        double apexRT = mbrPeak.Apex.IndexedPeak.RetentionTime;
+                        double peakHalfWidth = 1.0; //Placeholder value to determine retention time window
+                        int startIndex = Array.BinarySearch(arrayOfRTs, apexRT - peakHalfWidth);
+                        if (startIndex < 0)
+                            startIndex = ~startIndex;
+                        int endIndex = Array.BinarySearch(arrayOfRTs, apexRT + peakHalfWidth);
+                        if (endIndex < 0)
+                            endIndex = ~endIndex;
+                        Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = arrayOfMs2ScansSortedByRT[startIndex..endIndex].OrderBy(b => b.PrecursorMass).ToArray();
+                        PeptideSpectralMatch[] peptideSpectralMatches = new PeptideSpectralMatch[arrayOfMs2ScansSortedByRT.Count()];
+                        MiniClassicSearchEngine mcse = new(bestDonorPwsm, peptideSpectralMatches, arrayOfMs2ScansSortedByMass, Parameters.VariableModifications, Parameters.FixedModifications,
+                            massDiffAcceptor, CommonParameters, FileSpecificParameters, library, new List<string> { Parameters.SearchTaskId });
+                        mcse.Run();
+
+                        lock (myLocks[i])
+                        {
+                            if (peptideSpectralMatches.Any())
+                            {
+                                bestPsmsForPeaks.TryAdd(mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches));
+                            }
+                            else
+                            {
+                                bestPsmsForPeaks.TryAdd(mbrPeak, null);
+                            }
+                        }
+                    }
+                });
+            }
+            List<PeptideSpectralMatch> allPsms = Parameters.AllPsms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).
+                ThenBy(p => p.FullFilePath).ThenBy(x => x.ScanNumber).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
+            AssignEstimatedPsmQvalue(bestPsmsForPeaks, allPsms);
+            FDRAnalysisOfMbrPsms(bestPsmsForPeaks, allPsms);
+            AssignEstimatedPsmPepQValue(bestPsmsForPeaks, allPsms);
+            WriteMbrPsmResults(bestPsmsForPeaks);
+        }
+
+        private void AssignEstimatedPsmPepQValue(ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks, List<PeptideSpectralMatch> allPsms)
+        {
+            List<double> pepValues = bestPsmsForPeaks.Values.Where(p => p != null).OrderBy(p => p.FdrInfo.PEP).Select(p=>p.FdrInfo.PEP).ToList();
+            foreach (ChromatographicPeak peak in bestPsmsForPeaks.Keys)
+            {
+                if (bestPsmsForPeaks[peak] != null)
+                {
+                    int myIndex = 0;
+                    while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= bestPsmsForPeaks[peak].FdrInfo.PEP)
+                    {
+                        myIndex++;
+                    }
+                    if (myIndex == pepValues.Count - 1)
+                    {
+                        bestPsmsForPeaks[peak].FdrInfo.PEP_QValue = pepValues.Last();
+                    }
+                    else
+                    {
+                        double estimatedQ = (pepValues[myIndex-1] + pepValues[myIndex]) / 2;
+                        bestPsmsForPeaks[peak].FdrInfo.PEP_QValue = estimatedQ;
+                    }
+                }
+            }
+        }
+
+        private static void AssignEstimatedPsmQvalue(ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks, List<PeptideSpectralMatch> allPsms)
+        {
+            double[] allScores = allPsms.Select(s => s.Score).OrderByDescending(s=>s).ToArray();
+            double[] allQValues = allPsms.OrderByDescending(s=>s.Score).Select(q => q.FdrInfo.QValue).ToArray();
+            
+            foreach (ChromatographicPeak peak in bestPsmsForPeaks.Keys)
+            {
+                if(bestPsmsForPeaks[peak] != null)
+                {
+                    int myIndex = 0;
+                    while (myIndex < (allScores.Length-1) && allScores[myIndex] >= bestPsmsForPeaks[peak].Score)
+                    {
+                        myIndex++;
+                    }
+                    if (myIndex == allScores.Length - 1)
+                    {
+                        bestPsmsForPeaks[peak].FdrInfo.QValue = allQValues.Last();
+                    }
+                    else
+                    {
+                        double estimatedQ = (allQValues[myIndex] + allQValues[myIndex + 1]) / 2;
+                        bestPsmsForPeaks[peak].FdrInfo.QValue = estimatedQ;
+                    }
+                }
+            }
+        }
+
+        private void FDRAnalysisOfMbrPsms(ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks, List<PeptideSpectralMatch> allPsms)
+        {
+            List<PeptideSpectralMatch> psms = bestPsmsForPeaks.Values.Where(v=>v != null).ToList();
+            List<int>[] psmGroupIndices = PEP_Analysis_Cross_Validation.Get_PSM_Group_Indices(psms, 1);
+            MLContext mlContext = new MLContext();
+            IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[1];
+
+            string searchType = "standard";
+            if (psms[0].DigestionParams.Protease.Name == "top-down")
+            {
+                searchType = "top-down";
+            }
+
+            Dictionary<string, int> sequenceToPsmCount = PEP_Analysis_Cross_Validation.GetSequenceToPSMCount(allPsms);
+            int chargeStateMode = PEP_Analysis_Cross_Validation.GetChargeStateMode(allPsms);
+
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(allPsms, this.FileSpecificParameters, false);
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(allPsms, this.FileSpecificParameters, true);
+            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = PEP_Analysis_Cross_Validation.ComputeMobilityValues(allPsms, this.FileSpecificParameters);
+
+            Dictionary<string, float> fileSpecificMedianFragmentMassErrors = PEP_Analysis_Cross_Validation.GetFileSpecificMedianFragmentMassError(allPsms);
+
+            PSMDataGroups[0] = PEP_Analysis_Cross_Validation.CreatePsmData(searchType, this.FileSpecificParameters, psms, psmGroupIndices[0], sequenceToPsmCount, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
+
+            string[] trainingVariables = PsmData.trainingInfos[searchType];
+
+            TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[1];
+
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
+            var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables).Append(trainer);
+
+            IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[0]);
+
+            string outputFolder = Parameters.OutputFolder;
+
+            trainedModels[0] = pipeline.Fit(dataView);
+
+            int ambiguousPeptidesResolved = PEP_Analysis_Cross_Validation.Compute_PSM_PEP(psms, psmGroupIndices[0], mlContext, trainedModels[0], searchType, this.FileSpecificParameters, sequenceToPsmCount, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
+
+        }
+
+        private void WriteMbrPsmResults(ConcurrentDictionary<ChromatographicPeak, PeptideSpectralMatch> bestPsmsForPeaks)
+        {
+            string mbrOutputPath = Path.Combine(Parameters.OutputFolder, @"MbrAnalysis.psmtsv");
+            using (StreamWriter output = new StreamWriter(mbrOutputPath))
+            {
+                output.WriteLine(TaskLayer.MbrWriter.TabSeparatedHeader);
+                foreach (var peak in bestPsmsForPeaks.Where(p=>p.Value != null).OrderByDescending(p=>p.Value.Score))
+                {
+                    if (peak.Value != null)
+                    {
+                        output.WriteLine(peak.Value.ToString() + "\t" + peak.Key.ToString());
+                    }
+                }
+            }
+
+            string unmatchedPeaksPath = Path.Combine(Parameters.OutputFolder, @"UnmatchedPeaks.tsv");
+            using (StreamWriter output = new StreamWriter(unmatchedPeaksPath))
+            {
+                output.WriteLine(ChromatographicPeak.TabSeparatedHeader);
+                foreach (var peak in bestPsmsForPeaks)
+                {
+                    if (peak.Value == null)
+                    {
+                        output.WriteLine(peak.Key.ToString());
+                    }
+                }
+            }
+        }
+
+        private PeptideSpectralMatch BestPsmForMbrPeak(PeptideSpectralMatch[] peptideSpectralMatches)
+        {
+            List<PeptideSpectralMatch> nonNullPsms = peptideSpectralMatches.Where(p => p != null).ToList();
+
+            if (nonNullPsms.Any())
+            {
+                // Setting Qvalue, QValueNotch, PEP, and PEP_Qvalue equal to 0 is necessary for MetaDraw to read the .psmtsv
+                foreach (PeptideSpectralMatch psm in nonNullPsms)
+                {
+                    psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                }
+                if (nonNullPsms.Select(p => p.SpectralAngle).Any(g => g != double.NaN))
+                {
+                    double maxSpectralAngle = nonNullPsms.Select(p => p.SpectralAngle).Max();
+                    return nonNullPsms.Where(p => p.SpectralAngle == maxSpectralAngle).FirstOrDefault();
+                }
+                return nonNullPsms.FirstOrDefault();
+            }
+            return null;
+        }
+
+        private List<PeptideSpectralMatch> GetAllPeptides()
+        {
+            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+
+            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
+
+            if (!Parameters.SearchParameters.WriteDecoys)
+            {
+                peptides.RemoveAll(b => b.IsDecoy);
+            }
+            if (!Parameters.SearchParameters.WriteContaminants)
+            {
+                peptides.RemoveAll(b => b.IsContaminant);
+            }
+            peptides.RemoveAll(p => p.FdrInfo.QValue > CommonParameters.QValueOutputFilter);
+            return peptides;
         }
 
         private void WritePrunedDatabase()
@@ -1442,8 +1719,8 @@ namespace TaskLayer
                 }
 
                 string header = "SpecId\tLabel\tScanNr\t";
-                header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
-                header = header + "\tPeptide\tProteins";
+                header += String.Join("\t", PsmData.trainingInfos[searchType]);
+                header += "\tPeptide\tProteins";
 
                 output.WriteLine(header);
 
@@ -1465,11 +1742,9 @@ namespace TaskLayer
                     foreach (var peptide in psm.BestMatchingPeptides)
                     {
                         output.Write(idNumber.ToString());
-
                         output.Write('\t' + (peptide.Peptide.Protein.IsDecoy ? -1 : 1).ToString());
                         output.Write('\t' + psm.ScanNumber.ToString());
                         output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
-
                         output.Write('\t' + (peptide.Peptide.PreviousAminoAcid + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextAminoAcid).ToString());
                         output.Write('\t' + (peptide.Peptide.Protein.Accession).ToString());
                         output.WriteLine();
