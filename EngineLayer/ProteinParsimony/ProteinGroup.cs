@@ -584,11 +584,6 @@ namespace EngineLayer
                         string extension = Path.GetExtension(fullFilePath);
                         string fakeFilePath = filenameWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME + extension;
                         spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath).FirstOrDefault();
-                        if (spectraFileInfo == null)
-                        {
-                            fakeFilePath = filenameWithoutExtension + SilacConversions.NEW_TURNOVER_LABEL_NAME + extension;
-                            spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath).FirstOrDefault();
-                        }
                     }
                 }
                 subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
