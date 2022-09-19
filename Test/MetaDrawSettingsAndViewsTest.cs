@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using Chemistry;
 using Proteomics.ProteolyticDigestion;
 
 namespace Test

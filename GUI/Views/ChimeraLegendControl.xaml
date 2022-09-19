@@ -10,14 +10,14 @@
              >
 
     <Grid x:Name="ChimeraLegendGrid" 
-          DataContext="{Binding}" Visibility="{Binding Visibility}">
+          DataContext="{Binding}" Visibility="{Binding Visibility, FallbackValue=Hidden}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <StackPanel>
-            <!-- ions shared between proteins --> 
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+            <!-- ions shared between proteins -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Visibility="{Binding Visibility, FallbackValue=Hidden}">
                 <Ellipse Width="12" Height="12" Stroke="Black" StrokeThickness="1"
                                                              Fill="Black" Margin="10 5 0 5" />
                 <TextBlock Text="Ions Shared Between Proteins" Margin="5 5 5 5" Width="Auto" TextAlignment="Left"
@@ -34,7 +34,7 @@
                                          FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Center"/>
 
                                 <!-- each item in the ChimeraLegendItems values -->
-                                <ItemsControl ItemsSource="{Binding Value}">
+                                <ItemsControl ItemsSource="{Binding Value}" Margin="0 0 0 10">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>
                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0 2 0 2">

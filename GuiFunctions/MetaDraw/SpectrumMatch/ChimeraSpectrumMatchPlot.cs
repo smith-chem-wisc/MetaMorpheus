@@ -4,7 +4,10 @@ using MassSpectrometry;
 using OxyPlot;
 using Proteomics.Fragmentation;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using Easy.Common.Extensions;
 using OxyPlot.Wpf;
 using Proteomics.ProteolyticDigestion;
@@ -98,6 +101,52 @@ namespace GuiFunctions
                 }
                 proteinIndex++;
             }
+        }
+
+        public new void ExportPlot(string path, Canvas legend = null,  double width = 700, double height = 370)
+        {
+            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
+            string tempLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
+            List<System.Drawing.Bitmap> bitmaps = new();
+            List<Point> points = new();
+            double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
+
+            // export model as png and load as bitmap
+            ExportToPng(tempModelPath, (int)width, (int)height);
+            bitmaps.Add(new System.Drawing.Bitmap(tempModelPath));
+            points.Add(new Point(0, 0));
+
+            // render legend as bitmap and export as png if used
+            System.Drawing.Bitmap ptmLegendBitmap = null;
+            Point legendPoint;
+            if (legend != null && MetaDrawSettings.ShowLegend)
+            {
+                // Saving Canvas as a usable Png
+                RenderTargetBitmap legendRenderBitmap = new((int)(dpiScale * legend.ActualWidth), (int)(dpiScale * legend.ActualHeight),
+                         MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
+                legendRenderBitmap.Render(legend);
+                PngBitmapEncoder legendEncoder = new PngBitmapEncoder();
+                legendEncoder.Frames.Add(BitmapFrame.Create(legendRenderBitmap));
+                using (FileStream file = File.Create(tempLegendPngPath))
+                {
+                    legendEncoder.Save(file);
+                }
+
+                // converting png to the final bitmap format
+                System.Drawing.Bitmap tempLegendBitmap = new(tempLegendPngPath);
+                ptmLegendBitmap = new System.Drawing.Bitmap(tempLegendBitmap, new System.Drawing.Size((int)legend.ActualWidth, (int)legend.ActualHeight));
+                bitmaps.Add(ptmLegendBitmap);
+                legendPoint = new Point(0, height);
+                points.Add(legendPoint);
+                base.ExportPlot(path, ptmLegendBitmap, width, height);
+                tempLegendBitmap.Dispose();
+            }
+
+            // combine the bitmaps
+            System.Drawing.Bitmap combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points, false);
+            File.Delete(tempModelPath);
+            File.Delete(tempLegendPngPath);
+            base.ExportPlot(path, combinedBitmaps, width, height);
         }
 
         /// <summary>

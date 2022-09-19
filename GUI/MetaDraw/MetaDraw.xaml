@@ -194,10 +194,12 @@
                                 </ComboBox>
                             </Grid>
 
-                            <TabControl Grid.Row="1" x:Name="MetaDrawTabControl">
+                            <TabControl Grid.Row="1" x:Name="MetaDrawTabControl" SelectionChanged="MetaDrawTabControl_OnSelectionChanged">
                                 <!--MS2 Scan Annotations-->
-                                <TabItem Header="Child Scan View" Name="ParentScanView" >
-
+                                <TabItem  Name="ChildScanView"  >
+                                    <TabItem.Header>
+                                        <Label Content="Child Scan View" x:Name="ChildScanTabItem" />
+                                    </TabItem.Header>
                                     <Grid Name="PsmAnnotationGrid">
                                         <Grid.RowDefinitions>
                                             <RowDefinition/>
@@ -245,36 +247,6 @@
                                     </Grid>
                                 </TabItem>
 
-                                <!-- ChimeraPlot -->
-                                <TabItem x:Name="ChimeraScanPlot" >
-                                    <TabItem.Header>
-                                        <Label Content="Chimera Plotter" MouseLeftButtonDown="ParentScanView_OnMouseLeftButtonDown" ></Label>
-                                    </TabItem.Header>
-                                    <Grid Name="chimeraPlotGrid">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition/>
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-
-                                        <!-- spectrum annotation -->
-                                        <Grid Grid.Row="0" Grid.ColumnSpan="2">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition />
-                                            </Grid.RowDefinitions>
-                                            <oxy:PlotView x:Name="chimeraPlot" FontSize="16" FontStretch="Expanded"
-                                                          Margin="0 0 0 0"  />
-                                        </Grid>
-
-                                        <!-- Chimera Legend -->
-                                        <local:ChimeraLegendControl Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" x:Name="ChimeraLegendControl" DataContext="{Binding}"/>
-                                    </Grid>
-
-                                </TabItem>
                                 <!--Parent/Child Scan Annotations-->
                                 <TabItem Header="Parent/Child Scan View" Name="ParentChildScanView">
                                     <ItemsControl Name="ParentChildScanViewPlots" ItemsSource="{Binding Plots}">
@@ -319,7 +291,10 @@
                                 </TabItem>
 
                                 <!--Sequence Coverage Annotation-->
-                                <TabItem Header="Sequence Coverage" x:Name="SequenceCoverageAnnotationView">
+                                <TabItem x:Name="SequenceCoverageAnnotationView">
+                                    <TabItem.Header>
+                                        <Label Content="Sequence Coverage" x:Name="SequenceCoverageAnnotationTabItem" />
+                                    </TabItem.Header>
                                     <Grid Grid.Row="1" Name="SequenceAnnotationGrid"  Style="{StaticResource InternalGridStyle}">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height = "35"></RowDefinition>
@@ -329,7 +304,7 @@
                                         </Grid.RowDefinitions>
 
                                         <!--Header label-->
-                                        <Label Content="Sequence Coverage Map" Grid.Row="0" />
+                                        <Label Content="Sequence Coverage Map" Grid.Row="0" x:Name="SequenceCoverageTabItem" />
 
                                         <!-- sequence coverage display -->
                                         <ScrollViewer Grid.Row="1" Name="sequenceCoverageHorizontalScroll" HorizontalAlignment="Stretch" VerticalAlignment="Center" 
@@ -368,30 +343,7 @@
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
 
-                                                    <!-- ptm legend -->
-                                                    <!--<ItemsControl x:Name="SequenceCoveragePtmLegendControl" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:PtmLegendViewModel}"  Margin="0 30 0 0"
-                                                                   Height="60" Background="White" >
-                                                        <ItemsControl.ItemTemplate>
-                                                            <DataTemplate>
-                                                                <StackPanel x:Name="PtmLegendStackPanel" Visibility="{Binding Visibility}" Grid.Column="0" Grid.ColumnSpan="2">
-                                                                    <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="20" FontWeight="DemiBold" />
-                                                                    <ItemsControl ItemsSource="{Binding LegendItems}" x:Name="PtmLegendItemsControl" >
-                                                                        <ItemsControl.ItemTemplate>
-                                                                            <DataTemplate>
-                                                                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                                                                                    <TextBlock Text="{Binding ModName, FallbackValue='Phosphorylation on Y'}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                                                                        FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
-                                                                                    <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                                        Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
-                                                                                </StackPanel>
-                                                                            </DataTemplate>
-                                                                        </ItemsControl.ItemTemplate>
-                                                                    </ItemsControl>
-                                                                </StackPanel>
-                                                            </DataTemplate>
-                                                        </ItemsControl.ItemTemplate>
-                                                    </ItemsControl>-->
-
+                                                    <!-- Ptm Legend -->
                                                     <local:PtmLegendControl x:Name="SequenceCoveragePtmLegendControl" DataContext="{Binding}"   
                                                                             Margin="0 0 0 0" Height="60" HorizontalAlignment="Center" 
                                                                             Grid.Column="0" Grid.ColumnSpan="2"/>
@@ -426,6 +378,28 @@
                                         </Expander>
                                     </Grid>
                                 </TabItem>
+
+                                <!-- ChimeraPlot -->
+                                <TabItem x:Name="ChimeraScanPlot" >
+                                    <TabItem.Header>
+                                        <Label Content="Chimeric Scan View" x:Name="ChimeraScanPlotTabItem" />
+                                    </TabItem.Header>
+                                    <Grid Name="chimeraPlotGrid">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition />
+                                            <RowDefinition Height="Auto"/>
+                                        </Grid.RowDefinitions>
+
+                                        <!-- spectrum annotation -->
+                                        <Grid Grid.Row="0" >
+                                            <oxy:PlotView x:Name="chimeraPlot" FontSize="16" FontStretch="Expanded"
+                                                          Margin="0 0 0 0"  VerticalAlignment="Stretch"/>
+                                        </Grid>
+
+                                        <!-- Chimera Legend -->
+                                        <local:ChimeraLegendControl Grid.Row="1" x:Name="ChimeraLegendControl" DataContext="{Binding}" Height="Auto"/>
+                                    </Grid>
+                                </TabItem>
                             </TabControl>
 
                             <!--Detailed PSM properties-->
@@ -440,7 +414,6 @@
                                     <DataGrid x:Name="dataGridProperties" VerticalAlignment="Stretch" ItemsSource="{Binding}" 
                                             AutoGenerateColumns="True" IsReadOnly="True" ScrollViewer.CanContentScroll="True" Margin="0" 
                                             CanUserAddRows="False" CanUserDeleteRows="False" Height="130" FlowDirection="LeftToRight"/>
-
                                 </Expander>
                             </StackPanel>
                         </Grid>
