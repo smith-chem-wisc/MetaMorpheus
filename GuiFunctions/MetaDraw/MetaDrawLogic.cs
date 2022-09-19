@@ -530,12 +530,25 @@ namespace GuiFunctions
                         i++;
                     }
 
-                    if (plotView.Name == "plotView")
-                        ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
-                            legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
-                    else if (plotView.Name == "chimeraPlot")
-                        ((ChimeraSpectrumMatchPlot)plot).ExportPlot(filePath, legendCanvas, plotView.ActualWidth,
-                            plotView.ActualHeight);
+                    var type = plot.GetType();
+
+                    switch (type.Name)
+                    {
+                        case "PeptideSpectrumMatchPlot":
+                            ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                                legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
+                            break;
+
+                        case "ChimeraSpectrumMatchPlot":
+                            ((ChimeraSpectrumMatchPlot)plot).ExportPlot(filePath, legendCanvas, plotView.ActualWidth,
+                                plotView.ActualHeight);
+                            break;
+
+                        case "CrosslinkSpectrumMatchPlot":
+                            ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                                legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
+                            break;
+                    }
                 }
             }
 

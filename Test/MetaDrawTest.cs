@@ -320,7 +320,7 @@ namespace Test
 
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() {Name = "plotView"};
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var sequenceAnnotationCanvas = new Canvas();
@@ -503,7 +503,7 @@ namespace Test
             Assert.That(c > 0);
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var sequenceAnnotationCanvas = new Canvas();
@@ -640,7 +640,7 @@ namespace Test
             Assert.Greater(c, 0);
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView(){Name = "plotView"};
             var parentChildView = new ParentChildScanPlotsView();
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
@@ -739,6 +739,12 @@ namespace Test
 
             // delete output
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void MetaDraw_TestChimeraScanSpectrumDisplay()
+        {
+
         }
 
         [Test]
@@ -881,7 +887,7 @@ namespace Test
             Assert.That(!errors.Any());
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var canvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var stationaryCanvas = new Canvas();
@@ -1066,7 +1072,7 @@ namespace Test
             Assert.That(!errors.Any());
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var canvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var stationaryCanvas = new Canvas();
@@ -1137,7 +1143,7 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(metadrawLogic.FilteredListOfPsms.Any());
 
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var sequenceAnnotationCanvas = new Canvas();
