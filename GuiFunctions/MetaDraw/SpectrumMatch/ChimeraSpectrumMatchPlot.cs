@@ -46,7 +46,7 @@ namespace GuiFunctions
         }
 
         /// <summary>
-        /// Annotates the matched ions based upon the protein of origin, and the unique protoeform ID's
+        /// Annotates the matched ions based upon the protein of origin, and the unique proteoform ID's
         /// </summary>
         protected new void AnnotateMatchedIons()
         {
@@ -75,9 +75,15 @@ namespace GuiFunctions
                     // each matched ion
                     foreach (var matchedIon in proteinGroup[j].MatchedIons)
                     {
-                        OxyColor color = MultipleProteinSharedColor;
+                        OxyColor color;
+
+                        // if drawn already by different protein
+                        if (allDrawnIons.Any(p => p.Item2.Equals(matchedIon)))
+                        {
+                            color = MultipleProteinSharedColor;
+                        }
                         // if drawn by the same protein already
-                        if (proteinDrawnIons.Any(p => p.Annotation == matchedIon.Annotation && p.Mz == matchedIon.Mz))
+                        else if (proteinDrawnIons.Any(p => p.Equals(matchedIon)))
                         {
                             color = ColorByProteinDictionary[proteinIndex][0];
                         }
@@ -105,6 +111,8 @@ namespace GuiFunctions
 
         public new void ExportPlot(string path, Canvas legend = null,  double width = 700, double height = 370)
         {
+            width = width > 0 ? width : 700;
+            height = height > 0 ? height : 300;
             string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
             string tempLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
             List<System.Drawing.Bitmap> bitmaps = new();

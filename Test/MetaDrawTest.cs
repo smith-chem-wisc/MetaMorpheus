@@ -12,9 +12,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using Easy.Common.Extensions;
+using IO.MzML;
 using TaskLayer;
 
 namespace Test
@@ -744,7 +747,140 @@ namespace Test
         [Test]
         public static void MetaDraw_TestChimeraScanSpectrumDisplay()
         {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
+            List<MsDataScan> allScans = Mzml.LoadAllStaticData(spectraFile).GetAllScansList();
+            Directory.CreateDirectory(outputFolder);
 
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            // test filter to chimeras
+            metadrawLogic.FilterPsmsToChimerasOnly();
+            var chimerasGroups = metadrawLogic.FilteredListOfPsms
+                .GroupBy(p => p.Ms2ScanNumber);
+            Assert.That(chimerasGroups.All(p => p.Count() > 1));
+
+            // test plotting on each instance of chimeras in this dataset
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "chimeraPlot" };
+            foreach (var chimeraGroupIGrouping in chimerasGroups.AsEnumerable())
+            {
+                List<PsmFromTsv> chimeraGroup = chimeraGroupIGrouping.ToList();
+                MsDataScan chimericScan =
+                    allScans.First(p => p.OneBasedScanNumber == chimeraGroup.First().Ms2ScanNumber);
+
+                // plot the first chimera and test the results
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                Assert.That(errors == null || !errors.Any());
+
+                // test plot was drawn
+                var model = plotView.Model;
+                Assert.That(model, Is.Not.Null);
+                Assert.That(model.Equals(metadrawLogic.ChimeraSpectrumMatchPlot.Model));
+                Assert.That(plotView.Model.Axes.Count == 2);
+
+                var peakPoints = ((LineSeries)model.Series[0]).Points;
+                
+                Assert.That(Math.Round(peakPoints[0].X, 2) == Math.Round(chimericScan.MassSpectrum.XArray[0], 2)); // m/z
+                Assert.That(Math.Round(peakPoints[1].X, 2) == Math.Round(chimericScan.MassSpectrum.XArray[0], 2));
+                Assert.That((int)peakPoints[0].Y == 0); // intensity
+                Assert.That((int)peakPoints[1].Y == (int)chimericScan.MassSpectrum.YArray[0]);
+
+                // all matched ions were drawn
+                int drawnIonsNotDefaultColor = model.Series.Count(p => ((LineSeries)p).Color != MetaDrawSettings.UnannotatedPeakColor);
+                List<MatchedFragmentIon> fragments = new();
+                chimeraGroup.Select(p => p.MatchedIons).ForEach(m => fragments.AddRange(m));
+                Assert.That(drawnIonsNotDefaultColor == fragments.Count);
+
+                // shared matched ions are default color
+                int drawnIonsShared = model.Series.Count(p => ((LineSeries)p).Color == ChimeraSpectrumMatchPlot.MultipleProteinSharedColor);
+                var sharedIons = fragments.GroupBy(p => p)
+                    .Where(m => m.Count() > 1)
+                    .SelectMany(n => n).ToList();
+                if (sharedIons.Any() || drawnIonsShared >= 1)
+                {
+                    int distinctMatchedSharedIons = sharedIons.Distinct().Count();
+                    Assert.That(sharedIons.Count - distinctMatchedSharedIons == drawnIonsShared);
+                }
+
+                // unshared peaks are the correct color
+                var unsharedIons = fragments.GroupBy(p => p)
+                    .Where(m => m.Count() == 1)
+                    .SelectMany(n => n).ToList();
+                for (var i = 0; i < chimeraGroup.Count; i++)
+                {
+                    var chimera = chimeraGroup[i];
+                    var chimeraSpecificPeaks = unsharedIons.Intersect(chimera.MatchedIons).ToList();
+                    var chimeraSharedPeaks = sharedIons.Intersect(chimera.MatchedIons).ToList();
+                    int drawnIonsOfSpecificID = model.Series.Count(p => ChimeraSpectrumMatchPlot.ColorByProteinDictionary[i].Any(m => m == ((LineSeries)p).Color));
+
+                    if (i == 0)
+                        Assert.That(drawnIonsOfSpecificID - chimeraSharedPeaks.Count == chimeraSpecificPeaks.Count);
+                    else
+                        Assert.That(drawnIonsOfSpecificID == chimeraSpecificPeaks.Count);
+                }
+
+                // test with different drawing settings
+                MetaDrawSettings.AnnotateCharges = true;
+                MetaDrawSettings.AnnotateMzValues = true;
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                Assert.That(errors == null || !errors.Any());
+
+                MetaDrawSettings.DisplayIonAnnotations = false;
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                Assert.That(errors == null || !errors.Any());
+            }
+
+            // test export of singlular plot
+            List<PsmFromTsv> firstChimeraGroup = chimerasGroups.First().ToList();
+            metadrawLogic.DisplayChimeraSpectra(plotView, firstChimeraGroup, out errors);
+            Assert.That(errors == null || !errors.Any());
+            foreach (var exportType in MetaDrawSettings.ExportTypes)
+            {
+                MetaDrawSettings.ExportType = exportType;
+                metadrawLogic.ExportPlot(plotView, null, new List<PsmFromTsv>() { firstChimeraGroup.First() }, null, outputFolder, out errors);
+                Assert.That(errors == null || !errors.Any());
+                string sequence = illegalInFileName.Replace(firstChimeraGroup.First().FullSequence, string.Empty);
+                string filePathWithoutDirectory = firstChimeraGroup.First().Ms2ScanNumber + "_" 
+                    + (sequence.Length > 30 ? sequence.Substring(0, 30) : sequence)
+                    + "." + exportType;
+                Assert.That(File.Exists(Path.Combine(outputFolder, filePathWithoutDirectory)));
+            }
+
+            // test export of multiple plots
+            List<PsmFromTsv> secondChimeraGroup = chimerasGroups.ToList()[1].ToList();
+            metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
+            Assert.That(errors == null || !errors.Any());
+            foreach (var exportType in MetaDrawSettings.ExportTypes)
+            {
+                MetaDrawSettings.ExportType = exportType;
+                metadrawLogic.ExportPlot(plotView, null, secondChimeraGroup, null, outputFolder, out errors);
+                Assert.That(errors == null || !errors.Any());
+
+                foreach (var chimera in secondChimeraGroup)
+                {
+                    string sequence = illegalInFileName.Replace(chimera.FullSequence, string.Empty);
+                    string filePathWithoutDirectory = chimera.Ms2ScanNumber + "_" 
+                        + (sequence.Length > 30 ? sequence.Substring(0, 30) : sequence) 
+                        + "." + exportType;
+                    Assert.That(File.Exists(Path.Combine(outputFolder, filePathWithoutDirectory)));
+                }
+            }
+
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
