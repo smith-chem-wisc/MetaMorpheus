@@ -18,21 +18,22 @@ namespace EngineLayer.ClassicSearch
         private readonly Ms2ScanWithSpecificMass[] MS2ByRetentionTime;
         private readonly double[] ArrayOfRTs;
         private CommonParameters myCommonParameters;
-        private List<(string FileName, CommonParameters Parameters)> FileSpecificParameters;
+        private CommonParameters FileSpecificParameters;
 
         public MiniClassicSearchEngine(
             Ms2ScanWithSpecificMass[] arrayOfRTSortedMS2Scans,
             MassDiffAcceptor searchMode,
             CommonParameters commonParameters,
             SpectralLibrary spectralLibrary,
-            List<(string FileName, CommonParameters Parameters)> fileSpecificParameters)
+            CommonParameters fileSpecificParameters)
         {
             MS2ByRetentionTime = arrayOfRTSortedMS2Scans;
             ArrayOfRTs = MS2ByRetentionTime.Select(p => p.RetentionTime).ToArray();
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;
             myCommonParameters = commonParameters;
-            FileSpecificParameters = fileSpecificParameters;
+            FileSpecificParameters = fileSpecificParameters ?? commonParameters;
+            // Each instance of MCSE will be specific to one file.
         }
 
         /// <summary>
@@ -49,7 +50,7 @@ namespace EngineLayer.ClassicSearch
             
 
             // check if we're supposed to autodetect dissociation type from the scan header or not
-            if (myCommonParameters.DissociationType == DissociationType.Autodetect)
+            if (FileSpecificParameters.DissociationType == DissociationType.Autodetect)
             {
                 foreach (var item in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
                 {
@@ -58,13 +59,7 @@ namespace EngineLayer.ClassicSearch
             }
             else
             {
-                targetFragmentsForEachDissociationType.Add(myCommonParameters.DissociationType, new List<Product>());
-            }
-
-            // clear fragments from the last peptide
-            foreach (var fragmentSet in targetFragmentsForEachDissociationType)
-            {
-                fragmentSet.Value.Clear();
+                targetFragmentsForEachDissociationType.Add(FileSpecificParameters.DissociationType, new List<Product>());
             }
 
             // score each scan that has an acceptable precursor mass
@@ -77,8 +72,8 @@ namespace EngineLayer.ClassicSearch
             List<PeptideSpectralMatch> acceptablePsms = new();
             foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
             {
-                var dissociationType = myCommonParameters.DissociationType == DissociationType.Autodetect ?
-                    scan.TheScan.TheScan.DissociationType.Value : myCommonParameters.DissociationType;
+                var dissociationType = FileSpecificParameters.DissociationType == DissociationType.Autodetect ?
+                    scan.TheScan.TheScan.DissociationType.Value : FileSpecificParameters.DissociationType;
 
                 if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var peptideTheorProducts))
                 {
@@ -89,17 +84,17 @@ namespace EngineLayer.ClassicSearch
                 // check if we've already generated theoretical fragments for this peptide+dissociation type
                 if (peptideTheorProducts.Count == 0)
                 {
-                    donorPwsm.Fragment(dissociationType, myCommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                    donorPwsm.Fragment(dissociationType, FileSpecificParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
                 }
 
                 // match theoretical target ions to spectrum
-                List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan, peptideTheorProducts, myCommonParameters);
+                List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan.TheScan, peptideTheorProducts, FileSpecificParameters);
 
                 // calculate the peptide's score
                 double thisScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
 
                 // Add psm to list
-                acceptablePsms.Add(new PeptideSpectralMatch(donorPwsm, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, myCommonParameters, matchedIons, 0));
+                acceptablePsms.Add(new PeptideSpectralMatch(donorPwsm, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, FileSpecificParameters, matchedIons, 0));
             }
 
             IEnumerable<PeptideSpectralMatch> matchedSpectra = acceptablePsms.Where(p => p != null);
@@ -108,13 +103,13 @@ namespace EngineLayer.ClassicSearch
                 psm.ResolveAllAmbiguities();
             }
 
-            CalculateSpectralAngles(SpectralLibrary, acceptablePsms.ToArray(), GetScansInWindow(peakApexRT), myCommonParameters);
+            CalculateSpectralAngles(SpectralLibrary, acceptablePsms.ToArray(), GetScansInWindow(peakApexRT), myCommonParameters, FileSpecificParameters);
 
             return matchedSpectra;
         }
 
         public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, PeptideSpectralMatch[] psms,
-            Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans, CommonParameters commonParameters)
+            Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans, CommonParameters commonParameters, CommonParameters fileSpecificParameters)
         {
             if (spectralLibrary != null)
             {
@@ -127,12 +122,6 @@ namespace EngineLayer.ClassicSearch
 
                 int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
-                //Parallel.ForEach(threads, (i) =>
-                //{
-                //    // Stop loop if canceled
-                //    if (GlobalVariables.StopLoops) { return; }
-                //    for (; i < psms.Length; i += maxThreadsPerFile)
-                //    {
                 for (int i = 0; i < psms.Length; i++)
                 {
 
@@ -149,7 +138,7 @@ namespace EngineLayer.ClassicSearch
                                 if (!Peptide.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                 {
                                     SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
-                                        SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
+                                        SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, fileSpecificParameters.ProductMassTolerance.Value, false);
                                     if (s.SpectralContrastAngle().HasValue)
                                     {
                                         pwsms.Add((Notch, Peptide));

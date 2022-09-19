@@ -31,7 +31,7 @@ namespace TaskLayer.MbrAnalysis
         public static void RunMbrAnalysis(
             PostSearchAnalysisParameters parameters,
             CommonParameters commonParameters,
-            List<(string, CommonParameters)> fileSpecificParameters)
+            List<(string FileName, CommonParameters Parameters)> fileSpecificParameters)
         {
 
             if (!parameters.SearchParameters.DoMbrAnalysis | !parameters.SearchParameters.MatchBetweenRuns)
@@ -69,7 +69,10 @@ namespace TaskLayer.MbrAnalysis
                     arrayOfMs2ScansSortedByRT,
                     massDiffAcceptor,
                     commonParameters,
-                    library);
+                    library,
+                    fileSpecificParameters.
+                        Where(t => t.FileName.Equals(spectraFile.FilenameWithoutExtension)).
+                        Select(t => t.Parameters).FirstOrDefault());
 
                 Parallel.ForEach(threads, (i) =>
                 {

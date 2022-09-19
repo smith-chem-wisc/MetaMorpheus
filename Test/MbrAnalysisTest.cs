@@ -193,7 +193,8 @@ namespace Test
                     listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),
                     searchModes,
                     commonParameters,
-                    sl);
+                    sl,
+                    null);
 
                 PeptideSpectralMatch[] peptideSpectralMatches =
                     mcse.SearchAroundPeak(pwsm, allPsmsArray[5].ScanRetentionTime).ToArray();
