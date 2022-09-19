@@ -1,18 +1,15 @@
 ﻿using EngineLayer;
 using OxyPlot;
-using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
 namespace GuiFunctions
@@ -434,9 +431,9 @@ namespace GuiFunctions
             tb.FontSize = 25;
             tb.FontWeight = System.Windows.FontWeights.Bold;
             tb.FontFamily = new FontFamily("Arial");
-            tb.TextAlignment = TextAlignment.Left;
+            tb.TextAlignment = TextAlignment.Center;
             tb.HorizontalAlignment = System.Windows.HorizontalAlignment.Center;
-            tb.Width = 24 * txt.Length; // W (tryptophan) seems to be widest letter, make sure it fits if you're editing this
+            tb.Width = 24; // W (tryptophan) seems to be widest letter, make sure it fits if you're editing this
 
             Canvas.SetTop(tb, loc.Y);
             Canvas.SetLeft(tb, loc.X);

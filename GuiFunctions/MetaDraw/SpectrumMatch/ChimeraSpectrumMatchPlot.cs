@@ -77,15 +77,15 @@ namespace GuiFunctions
                     {
                         OxyColor color;
 
-                        // if drawn already by different protein
-                        if (allDrawnIons.Any(p => p.Item2.Equals(matchedIon)))
-                        {
-                            color = MultipleProteinSharedColor;
-                        }
                         // if drawn by the same protein already
-                        else if (proteinDrawnIons.Any(p => p.Equals(matchedIon)))
+                        if (proteinDrawnIons.Any(p => p.Equals(matchedIon)))
                         {
                             color = ColorByProteinDictionary[proteinIndex][0];
+                        }
+                        // if drawn already by different protein
+                        else if (allDrawnIons.Any(p => p.Item2.Equals(matchedIon)))
+                        {
+                            color = MultipleProteinSharedColor;
                         }
                         // if unique peak
                         else

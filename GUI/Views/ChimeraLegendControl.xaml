@@ -17,7 +17,7 @@
 
         <StackPanel>
             <!-- ions shared between proteins -->
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Visibility="{Binding Visibility, FallbackValue=Hidden}">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Visibility="{Binding DisplaySharedIonLabel, Converter={local:BooleanToVisibilityConverter}, FallbackValue=Hidden}">
                 <Ellipse Width="12" Height="12" Stroke="Black" StrokeThickness="1"
                                                              Fill="Black" Margin="10 5 0 5" />
                 <TextBlock Text="Ions Shared Between Proteins" Margin="5 5 5 5" Width="Auto" TextAlignment="Left"

@@ -30,6 +30,17 @@ namespace GuiFunctions
             set { chimeraLegendItems = value; OnPropertyChanged(nameof(ChimeraLegendItems)); }
         }
 
+        public bool DisplaySharedIonLabel
+        {
+            get
+            {
+                if (ChimeraLegendItems != null && chimeraLegendItems.Count > 1)
+                    return true;
+                else
+                    return false;
+            }
+        }
+
         #endregion
 
         public ChimeraLegendViewModel(List<PsmFromTsv> chimericIDs, double offset = 0) : base()

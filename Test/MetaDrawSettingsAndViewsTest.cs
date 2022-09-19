@@ -338,6 +338,7 @@ namespace Test
             // test chimera legend basic functionality
             ChimeraLegendViewModel chimeraLegend = new ChimeraLegendViewModel(filteredChimeras);
             Assert.That(chimeraLegend.ChimeraLegendItems.Count == 2);
+            Assert.That(chimeraLegend.DisplaySharedIonLabel == true);
             Assert.That(chimeraLegend.Visibility == Visibility.Visible);
             Assert.That(chimeraLegend.ChimeraLegendItems.Values.First().Count == 3);
             Assert.That(chimeraLegend.ChimeraLegendItems.Values.ToList()[1].Count == 1);
