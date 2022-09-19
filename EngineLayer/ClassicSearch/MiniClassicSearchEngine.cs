@@ -18,18 +18,21 @@ namespace EngineLayer.ClassicSearch
         private readonly Ms2ScanWithSpecificMass[] MS2ByRetentionTime;
         private readonly double[] ArrayOfRTs;
         private CommonParameters myCommonParameters;
+        private List<(string FileName, CommonParameters Parameters)> FileSpecificParameters;
 
         public MiniClassicSearchEngine(
             Ms2ScanWithSpecificMass[] arrayOfRTSortedMS2Scans,
             MassDiffAcceptor searchMode,
             CommonParameters commonParameters,
-            SpectralLibrary spectralLibrary)
+            SpectralLibrary spectralLibrary,
+            List<(string FileName, CommonParameters Parameters)> fileSpecificParameters)
         {
             MS2ByRetentionTime = arrayOfRTSortedMS2Scans;
             ArrayOfRTs = MS2ByRetentionTime.Select(p => p.RetentionTime).ToArray();
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;
             myCommonParameters = commonParameters;
+            FileSpecificParameters = fileSpecificParameters;
         }
 
         /// <summary>
@@ -43,6 +46,7 @@ namespace EngineLayer.ClassicSearch
         public IEnumerable<PeptideSpectralMatch> SearchAroundPeak(PeptideWithSetModifications donorPwsm, double peakApexRT)
         {
             var targetFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
+            
 
             // check if we're supposed to autodetect dissociation type from the scan header or not
             if (myCommonParameters.DissociationType == DissociationType.Autodetect)
