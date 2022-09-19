@@ -51,56 +51,6 @@ namespace GuiFunctions
         }
 
         /// <summary>
-        /// Creates an image of all OxyColors --> Not used after
-        /// </summary>
-        public DrawnSequence()
-        {
-            Canvas colorCanvas = new Canvas() { Height = 1410, Width = 1200 };
-            int xPosition = 10;
-            int yPosition = 10;
-            int yIncriment = 30;
-            int xIncriment = 350;
-            if (colorCanvas != null)
-            {
-                List<Dictionary<OxyColor, string>> colorDivisions = new();
-                colorDivisions.Add(MetaDrawSettings.PossibleColors.Take(new Range(0, 46)).ToDictionary(p => p.Key, p => p.Value));
-                colorDivisions.Add(MetaDrawSettings.PossibleColors.Take(new Range(47, 93)).ToDictionary(p => p.Key, p => p.Value));
-                colorDivisions.Add(MetaDrawSettings.PossibleColors.Take(new Range(94, 140)).ToDictionary(p => p.Key, p => p.Value));
-                foreach (var column in colorDivisions)
-                {
-                    foreach (var color in column)
-                    {
-                        Point loc = new Point(xPosition, yPosition);
-                        DrawCircle(colorCanvas, loc, ParseColorBrushFromOxyColor(color.Key));
-                        loc.X += 30;
-                        DrawText(colorCanvas, loc, color.Value, ParseColorBrushFromOxyColor(color.Key));
-                        yPosition += yIncriment;
-                    }
-                    
-                    xPosition += xIncriment;
-                    yPosition = 10;
-                }
-
-                double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
-                Size size = new Size((int)colorCanvas.Width, (int)colorCanvas.Height);
-                colorCanvas.Measure(size);
-                colorCanvas.Arrange(new Rect(size));
-                RenderTargetBitmap rtb = new((int)(dpiScale * colorCanvas.Width), (int)(dpiScale * colorCanvas.Height),
-                    MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
-                
-                rtb.Render(colorCanvas);
-                PngBitmapEncoder encoder = new();
-                encoder.Frames.Add(BitmapFrame.Create(rtb));
-
-
-                using (FileStream file = File.Create(@"C:\Users\Nic\Downloads\Oxycolors.png"))
-                {
-                    encoder.Save(file);
-                }
-            }
-        }
-
-        /// <summary>
         /// Draws the Letters and matched ions for each sequence
         /// </summary>
         /// <param name="baseSequence"></param>
