@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using EngineLayer;
@@ -30,16 +29,13 @@ namespace TaskLayer.MbrAnalysis
             int oneBasedScanNumber = spectralLibraryMatch.ScanNumber;
             string spectraFile = spectralLibraryMatch.FullFilePath;
             string fullSequence = spectralLibraryMatch.FullSequence;
-            PeptideSpectralMatch originalPsm = null;
 
-
-            originalPsm =
+            PeptideSpectralMatch originalPsm = 
                 originalSearchPsms.Where(
                     p => p.FullFilePath.Equals(spectraFile) &&
-                         p.ScanNumber == oneBasedScanNumber &&
-                         p.FullSequence != null &&
-                         (p.FullSequence == fullSequence || p.FullSequence.Split('|').Any(m => m == fullSequence))
-                ).FirstOrDefault();
+                    p.ScanNumber == oneBasedScanNumber &&
+                    (p.FullSequence == fullSequence || p.FullSequence.Split('|').Any(m => m == fullSequence))
+                    ).FirstOrDefault();
 
             if (originalPsm != null)
             {

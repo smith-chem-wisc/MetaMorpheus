@@ -80,11 +80,8 @@ namespace TaskLayer.MbrAnalysis
                     {
                         ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
                         PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p =>
-                            p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).FirstOrDefault();
-                        if (bestDonorPsm == null)
-                        {
-                            break;
-                        }
+                            p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).First();
+                        if (bestDonorPsm == null) break;
                         PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
 
                         IEnumerable<PeptideSpectralMatch> peptideSpectralMatches =
@@ -103,23 +100,19 @@ namespace TaskLayer.MbrAnalysis
                 });
             }
 
-            if (bestMbrMatches.Any())
-            {
-                List<PeptideSpectralMatch> allPsms = parameters.AllPsms.
-                    OrderByDescending(p => p.Score).
-                    ThenBy(p => p.FdrInfo.QValue).
-                    ThenBy(p => p.FullFilePath).
-                    ThenBy(x => x.ScanNumber).
-                    ThenBy(p => p.FullSequence).
-                    ThenBy(p => p.ProteinAccession).ToList();
-
-                AssignEstimatedPsmQvalue(bestMbrMatches, allPsms);
-                FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
-                AssignEstimatedPsmPepQValue(bestMbrMatches, allPsms);
-                foreach (MbrSpectralMatch match in bestMbrMatches) match.FindOriginalPsm(allPsms);
-            }
+            List<PeptideSpectralMatch> allPsms = parameters.AllPsms.
+                OrderByDescending(p => p.Score).
+                ThenBy(p => p.FdrInfo.QValue).
+                ThenBy(p => p.FullFilePath).
+                ThenBy(x => x.ScanNumber).
+                ThenBy(p => p.FullSequence).
+                ThenBy(p => p.ProteinAccession).ToList();
 
             Directory.CreateDirectory(Path.Join(parameters.OutputFolder, mbrAnalysisFolder));
+            AssignEstimatedPsmQvalue(bestMbrMatches, allPsms);
+            FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
+            AssignEstimatedPsmPepQValue(bestMbrMatches, allPsms);
+            foreach (MbrSpectralMatch match in bestMbrMatches) match.FindOriginalPsm(allPsms);
             WriteMbrPsmResults(bestMbrMatches, parameters);
         }
 
@@ -141,17 +134,8 @@ namespace TaskLayer.MbrAnalysis
             {
                 peptides.RemoveAll(b => b.IsContaminant);
             }
-
             double qValueCutoff = 0.01;
-            if (parameters.AllPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
-            {
-                peptides.RemoveAll(p => p.FdrInfo.PEP_QValue > qValueCutoff);
-            }
-            else
-            {
-                peptides.RemoveAll(p => p.FdrInfo.QValue > qValueCutoff);
-            }
-
+            peptides.RemoveAll(p => p.FdrInfo.QValue > qValueCutoff);
             return peptides;
         }
 
