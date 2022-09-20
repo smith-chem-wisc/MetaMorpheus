@@ -56,7 +56,7 @@ namespace MetaMorpheusGUI
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
 
         private void PopulateChoices()
@@ -240,7 +240,7 @@ namespace MetaMorpheusGUI
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(XLPrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
                 fieldNotUsed, fieldNotUsed, fieldNotUsed, TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, 
-                fieldNotUsed, fieldNotUsed, null, null))
+                fieldNotUsed, fieldNotUsed, null, null, null))
             {
                 return;
             }
