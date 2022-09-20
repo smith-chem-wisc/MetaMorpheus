@@ -299,6 +299,8 @@ namespace GuiFunctions
         /// <param name="height"></param>
         public void ExportPlot(string path, Bitmap combinedBitmaps, double width = 700, double height = 370)
         {
+            width = width > 0 ? width : 700;
+            height = height > 0 ? height : 300;
             switch (MetaDrawSettings.ExportType)
             {
                 case "Pdf":
