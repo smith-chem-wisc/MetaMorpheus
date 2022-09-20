@@ -166,22 +166,22 @@ namespace GuiFunctions
             ColorByProteinDictionary = new();
             ColorByProteinDictionary.Add(0, new List<OxyColor>()
             {
-                OxyColors.Blue, OxyColors.Navy, OxyColors.SkyBlue, OxyColors.CornflowerBlue,
+                OxyColors.Blue, OxyColors.SkyBlue, OxyColors.CornflowerBlue,
                 OxyColors.DarkBlue, OxyColors.CadetBlue, OxyColors.SteelBlue, OxyColors.DodgerBlue
             });
             ColorByProteinDictionary.Add(1, new List<OxyColor>()
             {
-                OxyColors.Red, OxyColors.DarkRed, OxyColors.LightCoral, OxyColors.PaleVioletRed,
+                OxyColors.Red, OxyColors.LightCoral, OxyColors.PaleVioletRed,
                 OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
             });
             ColorByProteinDictionary.Add(2, new List<OxyColor>()
             {
-                OxyColors.Green, OxyColors.DarkGreen, OxyColors.MediumSpringGreen, OxyColors.LightGreen,
+                OxyColors.Green, OxyColors.MediumSpringGreen, OxyColors.LightGreen,
                 OxyColors.Linen, OxyColors.SpringGreen, OxyColors.Chartreuse, OxyColors.DarkSeaGreen
             });
             ColorByProteinDictionary.Add(3, new List<OxyColor>()
             {
-                OxyColors.Purple, OxyColors.Indigo, OxyColors.MediumPurple, OxyColors.Violet,
+                OxyColors.Purple, OxyColors.MediumPurple, OxyColors.Violet,
                 OxyColors.Plum, OxyColors.Orchid, OxyColors.BlueViolet, OxyColors.Magenta
             });
             ColorByProteinDictionary.Add(4, new List<OxyColor>()
