@@ -52,7 +52,7 @@ namespace GuiFunctions
         {
             ParseModsFromPsmTsv(psm);
             TopOffset = offset;
-            Visibility = LegendItemViewModels.Count > 0 ? Visibility.Visible : Visibility.Hidden;
+            Visibility = LegendItemViewModels.Count > 0 ? true : false;
         }
 
         #endregion

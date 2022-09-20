@@ -570,6 +570,16 @@ namespace Test
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "SLGKVGTR(4)").ToList();
             metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
 
+            // write pdf with legend
+            Canvas ptmLegend = new();
+            Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport,
+                parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
+
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"2_SLGKVGTR(4).pdf"))); // parent scan
             Assert.That(File.Exists(Path.Combine(outputFolder, @"3_SLGKVGTR(4).pdf"))); // child scan
@@ -860,6 +870,22 @@ namespace Test
                 Assert.That(File.Exists(Path.Combine(outputFolder, filePathWithoutDirectory)));
             }
 
+            string export = MetaDrawSettings.ExportType;
+            Canvas ptmLegend = new();
+            Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, null, new List<PsmFromTsv>() { firstChimeraGroup.First() }, null,
+                outputFolder, out errors, ptmLegend, ptmLegendVector);
+            Assert.That(errors == null || !errors.Any());
+            string sequenceSeq = illegalInFileName.Replace(firstChimeraGroup.First().FullSequence, string.Empty);
+            string fileNameWithoutDirectory = firstChimeraGroup.First().Ms2ScanNumber + "_"
+                + (sequenceSeq.Length > 30 ? sequenceSeq.Substring(0, 30) : sequenceSeq)
+                + "." + export;
+            Assert.That(File.Exists(Path.Combine(outputFolder, fileNameWithoutDirectory)));
+
             // test export of multiple plots
             List<PsmFromTsv> secondChimeraGroup = chimerasGroups.ToList()[1].ToList();
             metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
@@ -880,6 +906,11 @@ namespace Test
                 }
             }
 
+            // test error
+            metadrawLogic.CleanUpResources();
+            metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
+            Assert.That(errors != null && errors.First().Equals("The spectra file could not be found for this PSM: SmallCalibratible_Yeast"));
+            
             Directory.Delete(outputFolder, true);
         }
 

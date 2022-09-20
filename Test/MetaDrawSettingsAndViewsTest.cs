@@ -257,7 +257,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestPtmLegendViews()
+        public static void TestPtmLegendViewModels()
         {
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
@@ -269,9 +269,10 @@ namespace Test
             var twoMods = pepWithSetMods.AllModsOneIsNterminus.Values.ToList();
             
             PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(psm, 100);
-            PtmLegendView.Visibility = Visibility.Collapsed;
+            PtmLegendView.Visibility = false;
             Assert.That(PtmLegendView.Header == "Legend");
             Assert.That(PtmLegendView.HeaderSize == 12);
+            Assert.That(PtmLegendView.TopOffset == 100);
             Assert.That(PtmLegendView.LegendItemViewModels.Count == 2);
             Assert.That(PtmLegendView.LegendItemViewModels.First().Name == twoMods.First().IdWithMotif);
             Assert.That(PtmLegendView.LegendItemViewModels.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif]).Color);
@@ -325,7 +326,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestChimeraLegendViews()
+        public static void TestChimeraLegendViewModels()
         {
             // object setup
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
@@ -338,8 +339,9 @@ namespace Test
             // test chimera legend basic functionality
             ChimeraLegendViewModel chimeraLegend = new ChimeraLegendViewModel(filteredChimeras);
             Assert.That(chimeraLegend.ChimeraLegendItems.Count == 2);
+            Assert.That(chimeraLegend.TopOffset == 0);
             Assert.That(chimeraLegend.DisplaySharedIonLabel == true);
-            Assert.That(chimeraLegend.Visibility == Visibility.Visible);
+            Assert.That(chimeraLegend.Visibility == true);
             Assert.That(chimeraLegend.ChimeraLegendItems.Values.First().Count == 3);
             Assert.That(chimeraLegend.ChimeraLegendItems.Values.ToList()[1].Count == 1);
 
@@ -377,6 +379,9 @@ namespace Test
             Assert.That(chimeraLegendItem.Name == "No Modifications");
             chimeraLegendItem = new(null, OxyColors.Chocolate);
             Assert.That(chimeraLegendItem.Name == "No Modifications");
+
+            chimeraLegend = new ChimeraLegendViewModel(new List<PsmFromTsv>() { psms.First() });
+            Assert.That(chimeraLegend.DisplaySharedIonLabel == false);
         }
 
 

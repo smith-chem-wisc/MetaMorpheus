@@ -187,6 +187,9 @@ namespace MetaMorpheusGUI
                 MetaDrawLogic.DisplayChimeraSpectra(chimeraPlot, chimericPsms, out List<string> error);
                 if (error != null && error.Count > 0)
                     Debugger.Break();
+                ClearPresentationArea();
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
+
 
                 if (MetaDrawSettings.ShowLegend)
                 {
@@ -194,6 +197,10 @@ namespace MetaMorpheusGUI
                     ChimeraLegendControl.DataContext = ChimeraLegend;
                 }
                 return;
+            }
+            else
+            {
+                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
             }
 
             SetSequenceDrawingPositionSettings(true);
@@ -242,7 +249,7 @@ namespace MetaMorpheusGUI
 
 
             // define initial limits for sequence annotation
-            double maxDisplayedPerRow = (int)Math.Round((SequenceAnnotationArea.ActualWidth - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0) + 7;
+            double maxDisplayedPerRow = (int)Math.Round((UpperSequenceAnnotaiton.ActualWidth - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0) + 7;
             MetaDrawSettings.SequenceAnnotationSegmentPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
 
             // draw the annotated spectrum
@@ -987,15 +994,15 @@ namespace MetaMorpheusGUI
             DrawnSequence.ClearCanvas(sequenceText);
             DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
             plotView.Visibility = Visibility.Hidden;
-            GrayBox.Opacity = 1;
+            GrayBox.Opacity = 0;
             wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
             AmbiguousSequenceOptionBox.Items.Clear();
             plotView.Visibility = Visibility.Hidden;
 
             if (ChimeraLegend != null)
-                ChimeraLegend.Visibility = Visibility.Hidden;
+                ChimeraLegend.Visibility = false;
             if (PtmLegend != null)
-                PtmLegend.Visibility = Visibility.Hidden;
+                PtmLegend.Visibility = false;
         }
 
         /// <summary>
@@ -1013,7 +1020,5 @@ namespace MetaMorpheusGUI
             resetSpectraFileButton.IsEnabled = value;
             ExportButton.IsEnabled = value;
         }
-
-        
     }
 }

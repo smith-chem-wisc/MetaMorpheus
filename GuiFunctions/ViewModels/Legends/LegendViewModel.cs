@@ -6,14 +6,14 @@ namespace GuiFunctions
     public class LegendViewModel : BaseViewModel
     {
         
-        private Visibility visibility;
+        private bool visibility;
         private double topOffset;
         private ObservableCollection<LegendItemViewModel> legendItemViewModels = new();
         public string Header { get; set; } = "Legend";
         public int HeaderSize { get; set; } = 12;
 
 
-        public Visibility Visibility
+        public bool Visibility
         {
             get { return visibility; }
             set
@@ -38,6 +38,7 @@ namespace GuiFunctions
         public LegendViewModel()
         {
             LegendItemViewModels = new();
+            Visibility = MetaDrawSettings.ShowLegend;
         }
     }
 }

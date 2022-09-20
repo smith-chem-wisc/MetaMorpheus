@@ -46,14 +46,6 @@ namespace GuiFunctions
         public ChimeraLegendViewModel(List<PsmFromTsv> chimericIDs, double offset = 0) : base()
         {
             TopOffset = offset;
-            if (MetaDrawSettings.ShowLegend)
-            {
-                Visibility = Visibility.Visible;
-            }
-            else
-            {
-                Visibility = Visibility.Hidden;
-            }
             ChimeraLegendItems = new();
             ParseLegendItemsFromPsms(chimericIDs);
         }

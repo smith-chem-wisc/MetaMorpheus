@@ -10,7 +10,7 @@
 
     <Grid DataContext="{Binding}" d:DataContext="{x:Type guiFunctions:PtmLegendViewModel}">
         <StackPanel>
-            <StackPanel Visibility="{Binding Visibility}" >
+            <StackPanel Visibility="{Binding Visibility, Converter={local:BooleanToVisibilityConverter}}" >
                     <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
 
                     <!-- each ptm in the viewmodel -->

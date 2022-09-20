@@ -10,7 +10,7 @@
              >
 
     <Grid x:Name="ChimeraLegendGrid" 
-          DataContext="{Binding}" Visibility="{Binding Visibility, FallbackValue=Hidden}">
+          DataContext="{Binding}" Visibility="{Binding Visibility, Converter={local:BooleanToVisibilityConverter} ,FallbackValue=Hidden}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
