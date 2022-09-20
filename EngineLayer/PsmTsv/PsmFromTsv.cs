@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using EngineLayer.GlycoSearch;
 using System.IO;
+using Easy.Common.Extensions;
 
 namespace EngineLayer
 {
@@ -127,7 +128,7 @@ namespace EngineLayer
             QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.QValue]].Trim(), CultureInfo.InvariantCulture);
             MatchedIons = (spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ?
                 ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq).First().Value : 
-                ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq);
+                ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq, spl[parsedHeader[PsmTsvHeader.MatchedIonMassDiffDa]].Trim());
             AmbiguityLevel = (parsedHeader[PsmTsvHeader.AmbiguityLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.AmbiguityLevel]].Trim();
 
             //For general psms
@@ -386,7 +387,7 @@ namespace EngineLayer
         }
 
 
-        private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string matchedIntensityString, string peptideBaseSequence)
+        private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string matchedIntensityString, string peptideBaseSequence, string matchedMassErrorDaString = null)
         {
             List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
 
@@ -394,6 +395,12 @@ namespace EngineLayer
             {
                 List<string> peakMzs = CleanMatchedIonString(matchedMzString);
                 List<string> peakIntensities = CleanMatchedIonString(matchedIntensityString);
+                List<string> peakMassErrorDa = null;
+
+                if (matchedMassErrorDaString.IsNotNullOrEmpty())
+                {
+                    peakMassErrorDa = CleanMatchedIonString(matchedMassErrorDaString);
+                }
 
                 for (int index = 0; index < peakMzs.Count; index++)
                 {
@@ -460,13 +467,24 @@ namespace EngineLayer
                             fragmentNumber;
                     }
 
+                    //get mass error in Daltons
+                    double errorDa = 0; 
+                    if (matchedMassErrorDaString.IsNotNullOrEmpty() && peakMassErrorDa[index].IsNotNullOrEmpty())
+                    {
+                        string peakError = peakMassErrorDa[index];
+                        string[] errorSplit = peakError.Split(new char[] { '+', ':', ']' });
+                        errorDa = double.Parse(errorSplit[2], CultureInfo.InvariantCulture);
+                    }
+
                     //get charge and mz
                     int z = int.Parse(split[1]);
                     double mz = double.Parse(split[2], CultureInfo.InvariantCulture);
+                    double theoreticalMass = mz.ToMass(z);
+                    double experimentalMass = theoreticalMass + errorDa;
 
                     Product p = new Product(productType,
                       terminus,
-                      mz.ToMass(z),
+                      experimentalMass,
                       fragmentNumber,
                       aminoAcidPosition,
                       neutralLoss,

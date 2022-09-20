@@ -975,7 +975,7 @@ namespace Test
                 double mz = double.Parse(split[2]);
 
                 Assert.That(mz == parsedIon.Mz);
-                Assert.That(mz.ToMass(charge) == parsedIon.NeutralTheoreticalProduct.NeutralMass);
+                Assert.That(mz.ToMass(charge) - parsedIon.MassErrorDa == parsedIon.NeutralTheoreticalProduct.NeutralMass);
                 Assert.That(charge == parsedIon.Charge);
                 Assert.That(ion == parsedIon.NeutralTheoreticalProduct.ProductType.ToString() + parsedIon.NeutralTheoreticalProduct.FragmentNumber);
             }
@@ -1308,11 +1308,13 @@ namespace Test
 
             var psmDict = parsedPsms.GroupBy(p => p.FileNameWithoutExtension)
                 .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
+
+            // check that fragment mass error was read in correctly
+            Assert.AreEqual(0.27631621395185291, psms[1].MatchedIons[1].MassErrorPpm);
             
             // check aspects of each histogram type:
-
             var plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);
-            // Ensure axes are labelled correctly, and intervals are correct
+            // Ensure axes are labeled correctly, and intervals are correct
             Assert.AreEqual(2, plot.Model.Axes.Count);
             Assert.AreEqual("Count", plot.Model.Axes[1].Title);
             Assert.AreEqual(0, plot.Model.Axes[1].AbsoluteMinimum);
@@ -1375,6 +1377,22 @@ namespace Test
             Assert.AreEqual(points8[7].Y, 19.00616880619646);
             Assert.AreEqual(points8[7].Tag, "AFISYHDEAQK");
 
+            var plot9 = new PlotModelStat("Histogram of Fragment PPM Errors",
+                psms, psmDict);
+            var series9 = plot9.Model.Series.ToList()[0];
+            var items9 = (List<OxyPlot.Series.ColumnItem>)series9.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
+            Assert.AreEqual(items9[11].Value, 18);
+
+            var plot10 = new PlotModelStat("Fragment PPM Error vs. RT",
+                psms, psmDict);
+            var series10 = plot10.Model.Series.ToList()[0];
+            var points10 = (List<OxyPlot.Series.ScatterPoint>)series10.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series10);
+            Assert.AreEqual(points10.Count, 101);
+            Assert.AreEqual(points10[4].X, 42.07841);
+            Assert.AreEqual(points10[4].Y, -8.7093352300406828);
+            Assert.AreEqual(points10[4].Tag, "NKMPALEK");
 
             //test variant plotting
             string variantFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
@@ -1403,7 +1421,6 @@ namespace Test
             Assert.AreEqual(variantPoints2[0].X, 97.8357);
             Assert.AreEqual(variantPoints2[0].Y, 16.363848874371111);
             Assert.AreEqual(variantPoints2[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
-
 
 
             Directory.Delete(folderPath, true);
