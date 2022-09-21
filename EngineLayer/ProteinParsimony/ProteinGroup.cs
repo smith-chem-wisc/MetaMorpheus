@@ -177,7 +177,7 @@ namespace EngineLayer
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
             sb.Append("Best Peptide Notch QValue" + '\t');
-            sb.Append("Best Peptide Notch PEP");
+            sb.Append("Best Peptide PEP");
             return sb.ToString();
         }
 
