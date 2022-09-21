@@ -152,7 +152,16 @@ namespace EngineLayer
 
             //Do Classic protein FDR (all targets, all decoys)
             // order protein groups by notch-QValue
-            var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            List<ProteinGroup> sortedProteinGroups = new();
+            if (FilterPsmsByPepForProteinInference)
+            {
+                sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptidePEP).ThenByDescending(p => p.BestPeptideScore).ToList();
+            }
+            else
+            {
+                sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            }
+            
             AssignQValuesToProteins(sortedProteinGroups);
 
             // Do "Picked" protein FDR
@@ -177,10 +186,8 @@ namespace EngineLayer
                 }
 
                 pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
-
-
-                //TODO this may need to change w/ pep
-                pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValueNotch);
+                pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.PEP);
+                pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValueNotch);                       
             }
 
             // pick the best notch-QValue for each paired accession
@@ -190,7 +197,16 @@ namespace EngineLayer
             {
                 if (accession.Value.Count > 1)
                 {
-                    var pgList = accession.Value.OrderBy(p => p.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+                    List<ProteinGroup> pgList = new();
+                    if (FilterPsmsByPepForProteinInference)
+                    {
+                        pgList = accession.Value.OrderBy(p => p.BestPeptidePEP).ThenByDescending(p => p.BestPeptideScore).ToList();
+                    }
+                    else
+                    {
+                        pgList = accession.Value.OrderBy(p => p.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+                    }
+                    
                     var pgToUse = pgList.First(); // pick lowest notch QValue and remove the rest
                     pgList.Remove(pgToUse);
                     rescuedProteins.AddRange(pgList); //save the remaining protein groups
@@ -198,7 +214,15 @@ namespace EngineLayer
                 }
             }
 
-            sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            if (FilterPsmsByPepForProteinInference)
+            {
+                sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptidePEP).ThenByDescending(p => p.BestPeptideScore).ToList();
+            }
+            else
+            {
+                sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+            }
+            
             AssignQValuesToProteins(sortedProteinGroups);
 
             //Rescue the removed TARGET proteins that have the classic protein fdr.

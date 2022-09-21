@@ -72,8 +72,8 @@ namespace EngineLayer
         public double QValue { get; set; }
 
         public double BestPeptideQValue { get; set; }
-
         public double BestPeptideScore { get; set; }
+        public double BestPeptidePEP { get; set; }
 
         public int CumulativeTarget { get; set; }
 
@@ -177,6 +177,7 @@ namespace EngineLayer
             sb.Append("Protein QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
             sb.Append("Best Peptide Notch QValue");
+            sb.Append("Best Peptide Notch PEP");
             return sb.ToString();
         }
 
@@ -332,6 +333,10 @@ namespace EngineLayer
 
             // best peptide q value
             sb.Append(BestPeptideQValue);
+            sb.Append("\t");
+
+            // best peptide q value
+            sb.Append(BestPeptidePEP);
             sb.Append("\t");
 
             return sb.ToString();
