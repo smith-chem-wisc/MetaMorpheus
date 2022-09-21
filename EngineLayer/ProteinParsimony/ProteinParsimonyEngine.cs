@@ -16,7 +16,6 @@ namespace EngineLayer
         /// All peptides meeting the prefiltering criteria for parsimony (e.g., peptides from non-ambiguous high-confidence PSMs)
         /// </summary>
         private readonly HashSet<PeptideWithSetModifications> _fdrFilteredPeptides;
-
         private readonly List<PeptideSpectralMatch> _fdrFilteredPsms;
         private readonly List<PeptideSpectralMatch> _allPsms;
         private const double FdrCutoffForParsimony = 0.01;

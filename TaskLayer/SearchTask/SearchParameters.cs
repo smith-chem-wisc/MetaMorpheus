@@ -11,7 +11,7 @@ namespace TaskLayer
         {
             // default search task parameters
             DisposeOfFileWhenDone = true;
-            FilterPsmsByPepForParsimony = true;
+            FilterPsmsByPepForParsimony = false;
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
