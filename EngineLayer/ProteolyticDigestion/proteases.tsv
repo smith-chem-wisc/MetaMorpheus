@@ -20,3 +20,4 @@ singleC				SingleC	MS:1001958	single cleavage
 peptidomics				none		no cleavage			
 collagenase	GPX|GPX			full					
 StcE-trypsin	"TX|T,TX|S,SX|T,SX|S,K|,R|"			full		StcE/Trpsin			
+ProAlanase	"P|,A|"			full					
