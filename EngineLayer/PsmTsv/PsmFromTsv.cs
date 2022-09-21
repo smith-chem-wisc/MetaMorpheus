@@ -125,7 +125,9 @@ namespace EngineLayer
             Score = double.Parse(spl[parsedHeader[PsmTsvHeader.Score]].Trim(), CultureInfo.InvariantCulture);
             DecoyContamTarget = spl[parsedHeader[PsmTsvHeader.DecoyContaminantTarget]].Trim();
             QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.QValue]].Trim(), CultureInfo.InvariantCulture);
-            MatchedIons = (spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ? ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq).First().Value : ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq);
+            MatchedIons = (spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ?
+                ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq).First().Value : 
+                ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq);
             AmbiguityLevel = (parsedHeader[PsmTsvHeader.AmbiguityLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.AmbiguityLevel]].Trim();
 
             //For general psms
@@ -397,6 +399,8 @@ namespace EngineLayer
                 {
                     string peak = peakMzs[index];
                     string[] split = peak.Split(new char[] { '+', ':' }); //TODO: needs update for negative charges that doesn't break internal fragment ions or neutral losses
+                    
+                    // if there is a mismatch between the number of peaks and number of intensities from the psmtsv, the intensity will be set to 1
                     double intensity = peakMzs.Count == peakIntensities.Count ? //TODO: needs update for negative charges that doesn't break internal fragment ions or neutral losses
                         double.Parse(peakIntensities[index].Split(new char[] { '+', ':', ']' })[2], CultureInfo.InvariantCulture) :
                         1.0;
@@ -415,6 +419,12 @@ namespace EngineLayer
                     //if an internal fragment
                     if (ionTypeAndNumber.Contains("["))
                     {
+                        // if there is no mismatch between intensity and peak counts from the psmtsv
+                        if (!intensity.Equals(1.0))
+                        {
+                            intensity = double.Parse(peakIntensities[index].Split(new char[] { '+', ':', ']' })[3],
+                                CultureInfo.InvariantCulture);
+                        }
                         string[] internalSplit = split[0].Split('[');
                         string[] productSplit = internalSplit[0].Split("I");
                         string[] positionSplit = internalSplit[1].Replace("]", "").Split('-');
@@ -446,7 +456,7 @@ namespace EngineLayer
 
                         //get amino acid position
                         aminoAcidPosition = terminus == FragmentationTerminus.C ?
-                            peptideBaseSequence.Length - fragmentNumber :
+                            peptideBaseSequence.Split('|')[0].Length - fragmentNumber :
                             fragmentNumber;
                     }
 
