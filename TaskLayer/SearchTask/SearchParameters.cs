@@ -11,6 +11,7 @@ namespace TaskLayer
         {
             // default search task parameters
             DisposeOfFileWhenDone = true;
+            FilterPsmsByPepForParsimony = false;
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
@@ -59,6 +60,7 @@ namespace TaskLayer
         }
 
         public bool DisposeOfFileWhenDone { get; set; }
+        public bool FilterPsmsByPepForParsimony { get; set; }
         public bool DoParsimony { get; set; }
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }

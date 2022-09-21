@@ -7,15 +7,17 @@ namespace EngineLayer
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
         private readonly IEnumerable<PeptideSpectralMatch> NewPsms;
+        private readonly bool FilterPsmsByPepForProteinInference;
         private readonly bool NoOneHitWonders;
         private readonly bool TreatModPeptidesAsDifferentPeptides;
         private readonly bool MergeIndistinguishableProteinGroups;
         private readonly List<ProteinGroup> ProteinGroups;
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool filterPsmsByPep, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             NewPsms = newPsms;
             ProteinGroups = proteinGroups;
+            FilterPsmsByPepForProteinInference = filterPsmsByPep;
             NoOneHitWonders = noOneHitWonders;
             TreatModPeptidesAsDifferentPeptides = treatModPeptidesAsDifferentPeptides;
             MergeIndistinguishableProteinGroups = mergeIndistinguishableProteinGroups;
@@ -23,7 +25,7 @@ namespace EngineLayer
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
+            ProteinScoringAndFdrResults myAnalysisResults = new(this);
 
             ScoreProteinGroups(ProteinGroups, NewPsms);
             myAnalysisResults.SortedAndScoredProteinGroups = DoProteinFdr(ProteinGroups);
@@ -42,24 +44,44 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01)
+                if (FilterPsmsByPepForProteinInference)
                 {
-                    if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
+                    if (psm.FdrInfo.PEP <= 0.5 && psm.FdrInfo.PEP_QValue <= 0.01)
                     {
-                        foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
+                        if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                         {
-                            if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
-                                peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
-                            else
-                                psmsForThisPeptide.Add(psm);
+                            foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
+                            {
+                                if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
+                                    peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
+                                else
+                                    psmsForThisPeptide.Add(psm);
+                            }
                         }
                     }
                 }
+                else
+                {
+                    if (psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01)
+                    {
+                        if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
+                        {
+                            foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
+                            {
+                                if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
+                                    peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
+                                else
+                                    psmsForThisPeptide.Add(psm);
+                            }
+                        }
+                    }
+                }
+                
             }
 
             foreach (var proteinGroup in proteinGroups)
             {
-                List<PeptideWithSetModifications> pepsToRemove = new List<PeptideWithSetModifications>();
+                List<PeptideWithSetModifications> pepsToRemove = new();
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
@@ -155,6 +177,9 @@ namespace EngineLayer
                 }
 
                 pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
+
+
+                //TODO this may need to change w/ pep
                 pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValueNotch);
             }
 
