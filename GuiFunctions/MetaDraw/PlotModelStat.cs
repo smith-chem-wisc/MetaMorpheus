@@ -11,6 +11,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace GuiFunctions
 {
@@ -26,7 +27,7 @@ namespace GuiFunctions
             "Histogram of Precursor Charges",
             "Histogram of Fragment Charges",
             "Histogram of Precursor Masses",
-            "Histogram of Precursor M/z",
+            "Histogram of Precursor M over z",
             "Precursor PPM Error vs. RT",
             //"Fragment PPM Error vs. RT",  //Math works, but takes a very long time to load.
             "Histogram of PTM Spectral Counts",
@@ -105,7 +106,7 @@ namespace GuiFunctions
                 case "Histogram of Precursor Masses":
                     histogramPlot(6);
                     break;
-                case "Histogram of Precursor M/z":
+                case "Histogram of Precursor M over z":
                     histogramPlot(7);
                     break;
                 case "Precursor PPM Error vs. RT":
@@ -198,7 +199,7 @@ namespace GuiFunctions
                         dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
                     break;
-                case 7: // Histogram of Precursor m/z
+                case 7: // Histogram of Precursor M over z
                     xAxisTitle = "Precursor mass/charge";
                     binSize = 50;
                     labelAngle = -50;
