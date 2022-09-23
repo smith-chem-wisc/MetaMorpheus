@@ -28,9 +28,9 @@ namespace Test
             Directory.CreateDirectory(subFolder);
             string outputFolder = Path.Combine(subFolder, "Results");
             Directory.CreateDirectory(outputFolder);
-            MyFileManager myFileManager = new MyFileManager(true);
+            MyFileManager myFileManager = new(true);
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams());
+            CommonParameters CommonParameters = new(digestionParams: new DigestionParams());
             MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             List<string> rawFilePathList = new();
@@ -41,19 +41,19 @@ namespace Test
                 MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, fullFilePath, false);
                 fsp.Add(("bubba_" + i + ".mzml", CommonParameters));
             }
-           
-            SearchParameters SearchParameters = new SearchParameters();
-            SearchParameters.FilterPsmsByPepForParsimony = true;
-            SearchParameters.ModPeptidesAreDifferent = unique;
 
-            SearchTask searchTaskFilterPsms = new SearchTask();
-            List<(string, MetaMorpheusTask)> tasks = new List<(string, MetaMorpheusTask)> { ("searchTaskFilterPsms", searchTaskFilterPsms) };
-            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), false);
+            SearchTask searchTaskFilterPsms = new ();
+            searchTaskFilterPsms.SearchParameters.FilterPsmsByPepForParsimony = true;
+            searchTaskFilterPsms.SearchParameters.ModPeptidesAreDifferent = unique;
+
+
+            List<(string, MetaMorpheusTask)> tasks = new() { ("searchTaskFilterPsms", searchTaskFilterPsms) };
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), false);
 
             new EverythingRunnerEngine(tasks, rawFilePathList, new List<DbForTask> { db }, outputFolder).Run();
 
             //check that the first task wrote everything fine
-            HashSet<string> expectedFiles = new HashSet<string>
+            HashSet<string> expectedFiles = new()
             {
                 "AllPeptides.psmtsv",
                 "AllPSMs.psmtsv",
@@ -68,7 +68,7 @@ namespace Test
 
             HashSet<string> writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "searchTaskFilterPsms")).Select(v => Path.GetFileName(v)));
             //check they're the same
-            Assert.IsTrue(expectedFiles.Except(writtenFiles).Count() == 0);
+            Assert.IsTrue(expectedFiles.Except(writtenFiles).Any());
 
             List<string> proteinListPlusHeader = File.ReadAllLines(Path.Combine(outputFolder, "searchTaskFilterPsms", "AllQuantifiedProteinGroups.tsv")).ToList();
             Assert.AreEqual(proteinListLineCount, proteinListPlusHeader.Count);
