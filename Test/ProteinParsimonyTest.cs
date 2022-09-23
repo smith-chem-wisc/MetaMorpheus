@@ -20,9 +20,11 @@ namespace Test
     public class ProteinParsimonyTest
     {
         [Test]
-        [TestCase(false,24)]
-        [TestCase(true, 24)]
-        public static void FilterPsmsByPepPriorToParsimonyModPeptidesAre(bool unique, int proteinListLineCount)
+        [TestCase(true, false,24)]
+        [TestCase(true, true, 23)]
+        [TestCase(false, false, 24)]
+        [TestCase(false, true, 23)]
+        public static void FilterPsmsByPepPriorToParsimonyModPeptidesAre(bool filter, bool unique, int proteinListLineCount)
         {
             string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualOutputTest");
             Directory.CreateDirectory(subFolder);
@@ -43,7 +45,7 @@ namespace Test
             }
 
             SearchTask searchTaskFilterPsms = new ();
-            searchTaskFilterPsms.SearchParameters.FilterPsmsByPepForParsimony = true;
+            searchTaskFilterPsms.SearchParameters.FilterPsmsByPepForParsimony = filter;
             searchTaskFilterPsms.SearchParameters.ModPeptidesAreDifferent = unique;
 
 
@@ -68,7 +70,7 @@ namespace Test
 
             HashSet<string> writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "searchTaskFilterPsms")).Select(v => Path.GetFileName(v)));
             //check they're the same
-            Assert.IsTrue(expectedFiles.Except(writtenFiles).Any());
+            Assert.IsTrue(!expectedFiles.Except(writtenFiles).Any());
 
             List<string> proteinListPlusHeader = File.ReadAllLines(Path.Combine(outputFolder, "searchTaskFilterPsms", "AllQuantifiedProteinGroups.tsv")).ToList();
             Assert.AreEqual(proteinListLineCount, proteinListPlusHeader.Count);
