@@ -1,18 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using EngineLayer.ClassicSearch;
-using EngineLayer.FdrAnalysis;
 using EngineLayer;
 using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
-using Proteomics;
 using TaskLayer;
-using UsefulProteomicsDatabases;
 using IO.MzML;
-using System.IO.Compression;
 using MassSpectrometry;
-using System.Drawing.Imaging;
 
 namespace Test
 {
@@ -24,7 +18,7 @@ namespace Test
         [TestCase(true, true, 23)]
         [TestCase(false, false, 24)]
         [TestCase(false, true, 23)]
-        public static void FilterPsmsByPepPriorToParsimonyModPeptidesAre(bool filter, bool unique, int proteinListLineCount)
+        public static void FilterPsmsByPepPriorToParsimonyModPeptidesAre(bool filterPeptidesByPep, bool modPeptidesAreUniqueForThisTest, int proteinListLineCount)
         {
             string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualOutputTest");
             Directory.CreateDirectory(subFolder);
@@ -36,6 +30,8 @@ namespace Test
             MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             List<string> rawFilePathList = new();
+
+            //we're making multiple files to search because one file by itself doesn not produce enough Psms to activate Pep.
             for (int i = 0; i < 4; i++)
             {
                 string fullFilePath = Path.Combine(outputFolder, "bubba_" + i + ".mzml");
@@ -45,8 +41,8 @@ namespace Test
             }
 
             SearchTask searchTaskFilterPsms = new ();
-            searchTaskFilterPsms.SearchParameters.FilterPsmsByPepForParsimony = filter;
-            searchTaskFilterPsms.SearchParameters.ModPeptidesAreDifferent = unique;
+            searchTaskFilterPsms.SearchParameters.FilterPsmsByPepForParsimony = filterPeptidesByPep;
+            searchTaskFilterPsms.SearchParameters.ModPeptidesAreDifferent = modPeptidesAreUniqueForThisTest;
 
 
             List<(string, MetaMorpheusTask)> tasks = new() { ("searchTaskFilterPsms", searchTaskFilterPsms) };
