@@ -549,7 +549,7 @@ namespace EngineLayer
             ProteinGroupName = string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Accession));
         }
 
-        public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath)
+        public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath, List<SilacLabel> silacLabels)
         {
             var allPsmsForThisFile = new HashSet<PeptideSpectralMatch>(AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
             var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
@@ -564,7 +564,28 @@ namespace EngineLayer
             SpectraFileInfo spectraFileInfo = null;
             if (FilesForQuantification != null)
             {
-                spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath).First();
+                spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath).FirstOrDefault();
+                //check that file name wasn't changed (can occur in SILAC searches)
+                if (spectraFileInfo == null)
+                {
+                    foreach (SilacLabel label in silacLabels)
+                    {
+                        string fakeFilePath = SilacConversions.GetHeavyFileInfo(new SpectraFileInfo(fullFilePath, "", 0, 0, 0), label).FullFilePathWithExtension;
+                        spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath).FirstOrDefault();
+                        if (spectraFileInfo != null)
+                        {
+                            break;
+                        }
+                    }
+                    //if still no hits, might be SILAC turnover
+                    if (spectraFileInfo == null)
+                    {
+                        string filenameWithoutExtension = Path.GetFileNameWithoutExtension(fullFilePath);
+                        string extension = Path.GetExtension(fullFilePath);
+                        string fakeFilePath = filenameWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME + extension;
+                        spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath).FirstOrDefault();
+                    }
+                }
                 subsetPg.FilesForQuantification = new List<SpectraFileInfo> { spectraFileInfo };
             }
 
