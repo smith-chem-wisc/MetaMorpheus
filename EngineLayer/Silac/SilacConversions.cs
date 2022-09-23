@@ -11,6 +11,8 @@ namespace EngineLayer
     public static class SilacConversions
     {
         private static readonly string LABEL_DELIMITER = " & ";
+        public static readonly string ORIGINAL_TURNOVER_LABEL_NAME = "_Original";
+        public static readonly string NEW_TURNOVER_LABEL_NAME = "_NewlySynthesized";
 
         public static string GetLabeledBaseSequence(string unlabeledBaseSequence, SilacLabel label)
         {
@@ -341,8 +343,8 @@ namespace EngineLayer
                         string[] pathArray = fullPathWithExtension.Split('.');
                         string extension = pathArray.Last();
                         string filePathWithoutExtension = fullPathWithExtension.Substring(0, fullPathWithExtension.Length - extension.Length - 1); //-1 removes the '.'
-                        SpectraFileInfo lightInfo = new SpectraFileInfo(filePathWithoutExtension + "_Original." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
-                        SpectraFileInfo heavyInfo = new SpectraFileInfo(filePathWithoutExtension + "_NewlySynthesized." + extension, info.Condition + "_NewlySynthesized", info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        SpectraFileInfo lightInfo = new SpectraFileInfo(filePathWithoutExtension + ORIGINAL_TURNOVER_LABEL_NAME + "." + extension, info.Condition, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
+                        SpectraFileInfo heavyInfo = new SpectraFileInfo(filePathWithoutExtension + NEW_TURNOVER_LABEL_NAME + "." + extension, info.Condition + NEW_TURNOVER_LABEL_NAME, info.BiologicalReplicate, info.TechnicalReplicate, info.Fraction);
                         originalToLabeledFileInfoDictionary[info] = new List<SpectraFileInfo> { lightInfo, heavyInfo };
                         flashLfqResults.SpectraFiles.Add(lightInfo);
                         flashLfqResults.SpectraFiles.Add(heavyInfo);
@@ -363,7 +365,7 @@ namespace EngineLayer
                                 int maxNumberHeavyAminoAcids = peptides.Count - 1;
                                 double lightIntensity = 0;
                                 double heavyIntensity = 0;
-                                int numUniquePeptidesQuantified = 0; 
+                                int numUniquePeptidesQuantified = 0;
                                 for (int numHeavyAminoAcids = 0; numHeavyAminoAcids < peptides.Count; numHeavyAminoAcids++)
                                 {
                                     double totalIntensity = peptides[numHeavyAminoAcids].GetIntensity(info);
