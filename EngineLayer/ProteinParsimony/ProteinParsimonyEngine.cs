@@ -1,5 +1,4 @@
 ﻿using EngineLayer.ProteinParsimony;
-using pepXML.Generated;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
