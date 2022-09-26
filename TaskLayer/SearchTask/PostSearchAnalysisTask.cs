@@ -57,7 +57,7 @@ namespace TaskLayer
                    .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                    .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
 
-                CalculatePsmFdr(Parameters.SearchParameters.FilterPsmsByPepForParsimony);
+                CalculatePsmFdr();
             }
 
             DoMassDifferenceLocalizationAnalysis();
@@ -94,16 +94,22 @@ namespace TaskLayer
         /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
-        private void CalculatePsmFdr(bool sortByPepAndScore = false)
+        private void CalculatePsmFdr()
         {
             // TODO: because FDR is done before parsimony, if a PSM matches to a target and a decoy protein, there may be conflicts between how it's handled in parsimony and the FDR engine here
             // for example, here it may be treated as a decoy PSM, where as in parsimony it will be determined by the parsimony algorithm which is agnostic of target/decoy assignments
             // this could cause weird PSM FDR issues
 
+            if(Parameters.AllPsms.Count() < 100)
+            {
+                Status("Insufficient number of PSMs to compute PEP. There will be no filtering of PSMs, peptides or proteins by PEP", Parameters.SearchTaskId);
+                Parameters.SearchParameters.FilterPsmsByPepForParsimony = false;
+            }
+
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
             new FdrAnalysisEngine(Parameters.AllPsms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, outputFolder: Parameters.OutputFolder).Run();
 
-            if (sortByPepAndScore)
+            if (Parameters.SearchParameters.FilterPsmsByPepForParsimony)
             {
                 // sort by PEP and PEP q-value because of group FDR stuff
                 // e.g. multiprotease FDR, non/semi-specific protease, etc
