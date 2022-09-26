@@ -150,19 +150,19 @@ namespace EngineLayer
                 }
             }
 
-            //Do Classic protein FDR (all targets, all decoys)
-            // order protein groups by notch-QValue
+            //Do FDR for all protein group targets and decoys
             List<ProteinGroup> sortedProteinGroups = new();
             if (FilterPsmsByPepForProteinInference)
             {
                 sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptidePEP).ThenByDescending(p => p.BestPeptideScore).ToList();
+                AssignPEP_QValuesToProteins(sortedProteinGroups);
             }
             else
             {
                 sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
+                AssignQValuesToProteins(sortedProteinGroups);
             }
             
-            AssignQValuesToProteins(sortedProteinGroups);
 
             // Do "Picked" protein FDR
             // adapted from "A Scalable Approach for Protein False Discovery Rate Estimation in Large Proteomic Data Sets" ~ MCP, 2015, Savitski
@@ -269,6 +269,40 @@ namespace EngineLayer
                     maxQValue = currentQValue;
                 }
                 proteinGroup.QValue = maxQValue;
+            }
+        }
+
+        private void AssignPEP_QValuesToProteins(List<ProteinGroup> sortedProteinGroups)
+        {
+            // sum targets and decoys
+            int cumulativeTarget = 0;
+            int cumulativeDecoy = 0;
+
+            foreach (var proteinGroup in sortedProteinGroups)
+            {
+                if (proteinGroup.IsDecoy)
+                {
+                    cumulativeDecoy++;
+                }
+                else
+                {
+                    cumulativeTarget++;
+                }
+                proteinGroup.CumulativeTarget = cumulativeTarget;
+                proteinGroup.CumulativeDecoy = cumulativeDecoy;
+            }
+
+            //calculate q-values, assuming that q-values can never decrease with decreasing score
+            double maxPepQvalue = double.PositiveInfinity;
+            for (int i = sortedProteinGroups.Count - 1; i >= 0; i--)
+            {
+                ProteinGroup proteinGroup = sortedProteinGroups[i];
+                double pepQvalue = 1d * proteinGroup.CumulativeDecoy / proteinGroup.CumulativeTarget;
+                if (pepQvalue < maxPepQvalue)
+                {
+                    maxPepQvalue = pepQvalue;
+                }
+                proteinGroup.PEPQvalue = maxPepQvalue;
             }
         }
     }

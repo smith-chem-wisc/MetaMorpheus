@@ -561,12 +561,26 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
-            if (Parameters.SearchParameters.DoParsimony)
+            if (Parameters.SearchParameters.FilterPsmsByPepForParsimony)
             {
-                Parameters.SearchTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
-                    + Environment.NewLine);
+                Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSMS within 1% PEP Q-value: " + Parameters.AllPsms.Count(a => a.FdrInfo.PEP_QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
+                if (Parameters.SearchParameters.DoParsimony)
+                {
+                    Parameters.SearchTaskResults.AddTaskSummaryText("All target protein groups within 1% PEP Q-value: " + ProteinGroups.Count(b => b.PEPQvalue <= 0.01 && !b.IsDecoy)
+                        + Environment.NewLine);
+                }
             }
+            else
+            {
+                Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSMS within 1% FDR: " + Parameters.AllPsms.Count(a => a.FdrInfo.QValue <= 0.01 && !a.IsDecoy) + Environment.NewLine);
+                if (Parameters.SearchParameters.DoParsimony)
+                {
+                    Parameters.SearchTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
+                        + Environment.NewLine);
+                }
+            }
+
+            
 
             PsmsGroupedByFile = FilteredPsmListForOutput.GroupBy(p => p.FullFilePath);
 
@@ -700,7 +714,15 @@ namespace TaskLayer
 
                     subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
-                    Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
+                    if (Parameters.SearchParameters.FilterPsmsByPepForParsimony)
+                    {
+                        Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % PEP Q-value in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.PEPQvalue <= 0.01 && !b.IsDecoy));
+                    }
+                    else
+                    {
+                        Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
+                    }
+                    
 
                     // write individual spectra file protein groups results to tsv
                     if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
@@ -1062,14 +1084,23 @@ namespace TaskLayer
             {
                 peptides.RemoveAll(b => b.IsContaminant);
             }
-            var filteredPeptidesForOutput = peptides.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
+
+            //Filtered for output only means for writing. Does not actually filter the list. 
+            List<PeptideSpectralMatch> filteredPeptidesForOutput = peptides.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
                 && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
 
             WritePsmsToTsv(filteredPeptidesForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
-
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% FDR: " + filteredPeptidesForOutput.Count(a => !a.IsDecoy));
+            if (Parameters.SearchParameters.FilterPsmsByPepForParsimony)
+            {
+                Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% PEP Q-value: " + peptides.Count(a => a.FdrInfo.PEP_QValue < 0.01 && !a.IsDecoy));
+            }
+            else
+            {
+                Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% FDR: " + peptides.Count(a => a.FdrInfo.QValue < 0.01 && !a.IsDecoy));
+            }
+                
 
             foreach (var file in PsmsGroupedByFile)
             {
@@ -1081,8 +1112,14 @@ namespace TaskLayer
                 var filteredPeptidesForFile = peptidesForFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
                 && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
-
-                Parameters.SearchTaskResults.AddTaskSummaryText("Target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% FDR in " + strippedFileName + ": " + filteredPeptidesForFile.Count(a => !a.IsDecoy) + Environment.NewLine);
+                if (Parameters.SearchParameters.FilterPsmsByPepForParsimony)
+                {
+                    Parameters.SearchTaskResults.AddTaskSummaryText("Target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% PEP Q-value in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.PEP_QValue < 0.01 && !a.IsDecoy) + Environment.NewLine);
+                }
+                else
+                {
+                    Parameters.SearchTaskResults.AddTaskSummaryText("Target " + GlobalVariables.AnalyteType.ToLower() + "s within 1% FDR in " + strippedFileName + ": " + peptidesForFile.Count(a => a.FdrInfo.QValue < 0.01 && !a.IsDecoy) + Environment.NewLine);
+                }
 
                 // writes all individual spectra file search results to subdirectory
                 if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
