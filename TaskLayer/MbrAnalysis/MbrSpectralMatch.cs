@@ -70,7 +70,7 @@ namespace TaskLayer.MbrAnalysis
                 string[] psmHeaderSplit = psmHeader.Split('\t');
                 string[] newHeaderSplit = new string[psmHeaderSplit.Length];
                 for (int i = 0; i < psmHeaderSplit.Length; i++) newHeaderSplit[i] = "Original " + psmHeaderSplit[i];
-                string newHeader = string.Join('\t', newHeaderSplit); List<string> originalFdrHeader = new();
+                string newHeader = string.Join('\t', newHeaderSplit); 
                 return newHeader;
             }
         }

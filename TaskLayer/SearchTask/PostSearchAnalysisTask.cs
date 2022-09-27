@@ -77,7 +77,7 @@ namespace TaskLayer
                 SpectralLibraryGeneration();
                 if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
                 {
-                    MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters);
+                    var x = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters);
                 }      
             }
             if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
