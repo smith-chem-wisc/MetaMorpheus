@@ -1,4 +1,5 @@
 ﻿using FlashLFQ;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -19,17 +20,44 @@ namespace TaskLayer.MbrAnalysis
         /// A Tab Separated Header that is similar to a ChromatographicPeak header,
         /// but with a new column appended at the zero-indexed 16th position
         /// </summary>
-        public static string TabSeparatedHeader
+        public static string PeaksTabSeparatedHeader
         {
             get
             {
                 string[] peakHeaderSplit = ChromatographicPeak.TabSeparatedHeader.Split('\t');
                 StringBuilder sb = new();
                 sb.Append(string.Join('\t', peakHeaderSplit[0..15]));
-                sb.Append("Spectral Contrast Angle\t");
+                sb.Append('\t');
+                sb.Append("Spectral Contrast Angle");
+                sb.Append('\t');
                 sb.Append(string.Join('\t', peakHeaderSplit[16..(peakHeaderSplit.Length-1)]));
                 string header = sb.ToString();
                 return header.Trim();
+            }
+        }
+
+
+        /// <summary>
+        /// A Tab Separated Header that is similar to the QuantifiedPeptides header,
+        /// but with a new column appended at the zero-indexed 16th position
+        /// </summary>
+        public string PeptidesTabSeparatedHeader
+        {
+            get
+            {
+                List<string> scoreFiles = PeptideScoreDict.TryGetValue("fileName", out var scoreFileList)
+                    ? scoreFileList
+                    : new List<string>();
+
+                StringBuilder sb = new();
+                sb.Append(FlashLFQ.Peptide.TabSeparatedHeader(FlashLfqResults.SpectraFiles).Trim());
+                foreach (string file in scoreFiles)
+                {
+                    sb.Append('\t');
+                    sb.Append("Spectral Angle " + file);
+                }
+
+                return sb.ToString();
             }
         }
 
@@ -40,6 +68,10 @@ namespace TaskLayer.MbrAnalysis
             PopulatePeptideScoreDict();
         }
 
+        /// <summary>
+        /// Creates a dictionary mapping modified peptide sequences (string) to the MBR spectral angle for peptides
+        /// in each file (list of strings, with list length == number of files)
+        /// </summary>
         private void PopulatePeptideScoreDict()
         {
             PeptideScoreDict = new();
@@ -53,21 +85,24 @@ namespace TaskLayer.MbrAnalysis
                 var peaksForFile = BestMbrMatches.Select(kvp => kvp.Key).
                     Where(p => p.SpectraFileInfo == spectraFile && p.Identifications.Any()).
                     ToDictionary(p => p.Identifications.First().ModifiedSequence, p => p);
-                //IEnumerable<string> peptidesInFile = peaksForFile.Where(p => p.Identifications.Any())
-                //    .Select(p => p.Identifications.First().ModifiedSequence);
                 IEnumerable<string> peptidesNotInFile = flashLfqPeptides.Except(peaksForFile.Keys);
 
                 foreach (var peptide in peaksForFile.Keys)
                 {
                     PeptideScoreDict.TryGetValue(peptide, out List<string> scoreList);
                     BestMbrMatches.TryGetValue(peaksForFile[peptide], out var mbrSpectralMatch);
-                    scoreList.Add(mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString());
+                    string score = mbrSpectralMatch.spectralLibraryMatch != null
+                        ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
+                        : "NA";
+                    scoreList.Add(score);
                 }
 
                 foreach (var peptide in peptidesNotInFile)
                 {
-                    PeptideScoreDict.TryGetValue(peptide, out List<string> scoreList);
-                    scoreList.Add("NA");
+                    if (PeptideScoreDict.TryGetValue(peptide, out List<string> scoreList))
+                    {
+                        scoreList.Add("NA");
+                    }
                 }
             }
         }
@@ -76,8 +111,8 @@ namespace TaskLayer.MbrAnalysis
         /// Writes the peaks quantified by FlashLFQ to a .tsv file. Adds a column giving the spectralContrastAngle for MBR peaks
         /// </summary>
         /// <param name="outputFolder"> Output folder path </param>
-        /// <param name="fileName"> Name of the output file </param>
-        private void WritePeakQuantificationResultsToTsv(string outputFolder, string fileName)
+        /// <param name="fileName"> Name of the output file (without extension) </param>
+        public void WritePeakQuantificationResultsToTsv(string outputFolder, string fileName)
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
@@ -91,21 +126,24 @@ namespace TaskLayer.MbrAnalysis
             {
                 using (StreamWriter output = new StreamWriter(fullSeqPath))
                 {
-                    output.WriteLine();
+                    output.WriteLine(PeaksTabSeparatedHeader);
 
                     foreach (var peak in orderedPeaks)
                     {
                         string spectralContrastAngle = "NA";
                         if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
                         {
-                            spectralContrastAngle = mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString();
+                            spectralContrastAngle = mbrSpectralMatch.spectralLibraryMatch != null
+                                ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
+                                : "NA";
                         }
 
                         string[] peakStringSplit = peak.ToString().Split('\t');
                         StringBuilder sb = new();
                         sb.Append(string.Join('\t', peakStringSplit[0..15]));
+                        sb.Append('\t');
                         sb.Append(spectralContrastAngle);
-                        sb.Append('t');
+                        sb.Append('\t');
                         sb.Append(string.Join('\t', peakStringSplit[16..(peakStringSplit.Length - 1)]));
                         output.WriteLine(sb.ToString().Trim());
                     }
@@ -113,17 +151,31 @@ namespace TaskLayer.MbrAnalysis
             }
         }
 
-        
 
-        private void WritePeptideQuantificationResultsToTsv(string outputFolder, string fileName)
+        /// <summary>
+        /// Writes the peptides quantified by FlashLFQ to a .tsv file. Appends extra columns giving the spectral angle
+        /// for MBR identified peptides for each file
+        /// </summary>
+        /// <param name="outputFolder"> Output folder path </param>
+        /// <param name="fileName"> Name of the output file (without extension) </param>
+        public void WritePeptideQuantificationResultsToTsv(string outputFolder, string fileName)
         {
-            var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
+            var peptidePath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            FlashLfqResults.PeptideModifiedSequences
+            using (StreamWriter output = new StreamWriter(peptidePath))
+            {
+                output.WriteLine(PeptidesTabSeparatedHeader);
 
-            flashLFQResults.WriteResults(peaksPath, null, null, null, true);
-
-            FinishedWritingFile(peaksPath, nestedIds);
+                var stringPeptidePairs = FlashLfqResults.PeptideModifiedSequences.
+                    OrderBy(p => p.Key);
+                foreach (var peptide in stringPeptidePairs)
+                {
+                    string scores = PeptideScoreDict.TryGetValue(peptide.Key, out var scoreList)
+                        ? string.Join('\t', scoreList)
+                        : new('\t', FlashLfqResults.SpectraFiles.Count);
+                    output.WriteLine(peptide.Value.ToString(FlashLfqResults.SpectraFiles) + scores.TrimEnd());
+                }
+            }
         }
     }
 }

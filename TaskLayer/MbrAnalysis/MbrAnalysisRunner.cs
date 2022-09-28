@@ -28,7 +28,7 @@ namespace TaskLayer.MbrAnalysis
         /// <param name="parameters"></param>
         /// <param name="commonParameters"></param>
         /// <param name="fileSpecificParameters"></param>
-        public static ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> RunMbrAnalysis(
+        public static MbrAnalysisResults RunMbrAnalysis(
             PostSearchAnalysisParameters parameters,
             CommonParameters commonParameters,
             List<(string FileName, CommonParameters Parameters)> fileSpecificParameters)
@@ -125,7 +125,7 @@ namespace TaskLayer.MbrAnalysis
             Directory.CreateDirectory(Path.Join(parameters.OutputFolder, mbrAnalysisFolder));
             WriteMbrPsmResults(bestMbrMatches, parameters);
 
-            return bestMbrMatches;
+            return new MbrAnalysisResults(bestMbrMatches, parameters.FlashLfqResults);
         }
 
         private static List<PeptideSpectralMatch> GetAllPeptides(
