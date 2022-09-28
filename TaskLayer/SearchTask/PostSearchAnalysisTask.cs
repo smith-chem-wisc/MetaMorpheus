@@ -636,36 +636,55 @@ namespace TaskLayer
                 string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
                 WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
 
-                //If SILAC and no light, we need to update the psms (which were found in the "light" file) and say they were found in the "heavy" file)
-                if (Parameters.SearchParameters.SilacLabels != null)
-                {
-                    //get the light filenames
-                    List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
-                    EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
-                    if (firstProteinGroup != null)
-                    {
-                        List<string> allFileNames = firstProteinGroup.FilesForQuantification.Select(x => x.FullFilePathWithExtension).ToList();
-                        string heavyFileToSet = allFileNames.Where(x => !fileNamesThatHadPsms.Contains(x)).First();
-                        List<PeptideSpectralMatch> psms = PsmsGroupedByFile.SelectMany(g => g).ToList();
-                        PsmsGroupedByFile = psms.GroupBy(x => heavyFileToSet); //set them all to the same file
-                    }
-                }
-
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
-
                 if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.SearchParameters.WriteIndividualFiles
                     || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml))
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
                 }
 
+
+                //If doing a SILAC search and no "unlabeled" labels were specified (i.e. multiple labels are used for multiplexing and no conditions are "unlabeled"),
+                //then we need to update the psms (which were found in the data file that has the "unlabeled" named) and say they were found in the "heavy" file)
+                if (Parameters.SearchParameters.SilacLabels != null) //if we have silac labels
+                {
+                    //get the original filenames
+                    List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
+                    EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault(); //grab the first protein to extract the files used for quantification
+                    if (firstProteinGroup != null) //check that we even have a protein group to write
+                    {
+                        var tempPsmsGroupedByFile = new List<IGrouping<string, PeptideSpectralMatch>>();
+                        //foreach original file
+                        foreach (string originalFile in fileNamesThatHadPsms)
+                        {
+                            //get all the "filenames" output by quantification. If no unlabeled condition was specified, the original datafile will not be present in the current grouping
+                            //Example: the datafile "test.mzml" that was searched with +4 or +10 neutron mass difference on arginine would appear as "test(R+4).mzml" and "test(R+10).mzml".
+                            //there would be no "test.mzml"
+                            List<string> labeledFiles = new List<string> { originalFile };
+                            foreach (SilacLabel label in Parameters.SearchParameters.SilacLabels)
+                            {
+                                //rediscover the previous naming conversion(s)
+                                labeledFiles.Add(SilacConversions.GetHeavyFileInfo(new SpectraFileInfo(originalFile, "", 0, 0, 0), label).FullFilePathWithExtension);
+                            }
+
+                            //rename the file group for all of the relevant psms to their original file
+                            List<PeptideSpectralMatch> psms = PsmsGroupedByFile.Where(g => labeledFiles.Contains(g.Key)).SelectMany(x => x).ToList(); //grab all the psms
+                            tempPsmsGroupedByFile.AddRange(psms.GroupBy(x => originalFile));
+                        }
+                        //overwrite the grouping for downstream processing
+                        PsmsGroupedByFile = tempPsmsGroupedByFile.ToList();
+                    }
+                }
+
+
+                //write the individual result files for each datafile
                 foreach (var fullFilePath in PsmsGroupedByFile.Select(v => v.Key))
                 {
                     string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                     List<PeptideSpectralMatch> psmsForThisFile = PsmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
-                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath)).ToList();
+                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
 
                     ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
                         Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent,
