@@ -87,7 +87,7 @@ namespace MetaMorpheusGUI
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+            e.Handled = !GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
     }
 }
