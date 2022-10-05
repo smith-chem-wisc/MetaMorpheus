@@ -148,6 +148,57 @@ namespace Test
         }
 
         [Test]
+        public static void TestMbrAnalysisResultsOutput()
+        {
+            // Test that AllQuantifiedPeaks was written correctly
+            string referenceDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TestMbrAnalysisOutput\AllQuantifiedPeaks.tsv");
+            string[] peaksResults = File.ReadAllLines(referenceDataPath).Skip(1).ToArray();
+
+            int placeholder = 0;
+
+            foreach (string row in peaksResults)
+            {
+                string[] rowSplit = row.Split('\t');
+                if (rowSplit[15].Equals("MBR") && double.TryParse(rowSplit[16], out var contrastAngle))
+                {
+                    if (rowSplit[1].Equals("EGERPAR"))
+                    {
+                        Assert.That(contrastAngle, Is.EqualTo(0.6567).Within(0.001));
+                        break;
+                    }
+                }
+            }
+
+            referenceDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TestMbrAnalysisOutput\AllQuantifiedPeptides.tsv");
+
+            string[] peptideResults = File.ReadAllLines(referenceDataPath).Skip(1).ToArray();
+
+            foreach (string row in peptideResults)
+            {
+                string[] rowSplit = row.Split('\t');
+                if (rowSplit[0].Equals("EGERPAR"))
+                {
+                    if (rowSplit[7].Equals("MBR"))
+                    {
+                        Assert.That(rowSplit[8].Equals("MSMS"));
+                        Assert.That(double.TryParse(rowSplit[9], out var contrastAngle) &&
+                                    Math.Abs(contrastAngle-0.6567) < 0.001);
+                        break;
+                    }
+                    else
+                    {
+                        Assert.That(rowSplit[7].Equals("MSMS"));
+                        Assert.That(double.TryParse(rowSplit[10], out var contrastAngle) &&
+                                    Math.Abs(contrastAngle - 0.6567) < 0.001);
+                        break;
+                    }
+                }
+            }
+        }
+
+        [Test]
         public static void MiniClassicSearchEngineTest()
         {
             var testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch");

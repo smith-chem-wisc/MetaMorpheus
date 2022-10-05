@@ -426,7 +426,7 @@
                             </StackPanel>
                             <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}">
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified&#x0a;Selecting &quot;Write Spectral Library&quot; in the Output Options below will enable additional MBR analysis" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
                             <CheckBox x:Name="CheckBoxNormalize" Content="Normalize quantification results" IsEnabled="{Binding IsChecked, ElementName=CheckBoxLFQ}">

@@ -26,11 +26,11 @@ namespace TaskLayer.MbrAnalysis
             {
                 string[] peakHeaderSplit = ChromatographicPeak.TabSeparatedHeader.Split('\t');
                 StringBuilder sb = new();
-                sb.Append(string.Join('\t', peakHeaderSplit[0..15]));
+                sb.Append(string.Join('\t', peakHeaderSplit[0..16]));
                 sb.Append('\t');
                 sb.Append("Spectral Contrast Angle");
                 sb.Append('\t');
-                sb.Append(string.Join('\t', peakHeaderSplit[16..(peakHeaderSplit.Length-1)]));
+                sb.Append(string.Join('\t', peakHeaderSplit[16..]));
                 string header = sb.ToString();
                 return header.Trim();
             }
@@ -130,21 +130,21 @@ namespace TaskLayer.MbrAnalysis
 
                     foreach (var peak in orderedPeaks)
                     {
-                        string spectralContrastAngle = "NA";
+                        string spectralContrastAngle = "";
                         if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
                         {
                             spectralContrastAngle = mbrSpectralMatch.spectralLibraryMatch != null
                                 ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
-                                : "NA";
+                                : "";
                         }
 
                         string[] peakStringSplit = peak.ToString().Split('\t');
                         StringBuilder sb = new();
-                        sb.Append(string.Join('\t', peakStringSplit[0..15]));
+                        sb.Append(string.Join('\t', peakStringSplit[0..16]));
                         sb.Append('\t');
                         sb.Append(spectralContrastAngle);
                         sb.Append('\t');
-                        sb.Append(string.Join('\t', peakStringSplit[16..(peakStringSplit.Length - 1)]));
+                        sb.Append(string.Join('\t', peakStringSplit[16..]));
                         output.WriteLine(sb.ToString().Trim());
                     }
                 }
