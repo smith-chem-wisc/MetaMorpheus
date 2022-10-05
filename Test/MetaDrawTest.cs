@@ -1341,7 +1341,7 @@ namespace Test
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series4);
             Assert.AreEqual(items4[0].Value, 101);
 
-            var plot5 = new PlotModelStat("Histogram of Precursor M over z",
+            var plot5 = new PlotModelStat("Histogram of Precursor m/z",
                 psms, psmDict);
             var series5 = plot5.Model.Series.ToList()[0];
             var items5 = (List<OxyPlot.Series.ColumnItem>)series5.GetType()
