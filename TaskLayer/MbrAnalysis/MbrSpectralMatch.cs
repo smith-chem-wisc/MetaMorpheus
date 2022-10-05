@@ -55,36 +55,18 @@ namespace TaskLayer.MbrAnalysis
                 var sb = new StringBuilder();
                 sb.Append(PeptideSpectralMatch.GetTabSeparatedHeader());
                 sb.Append('\t');
-                sb.Append(OriginalFdrHeader);
-                sb.Append('\t');
-                sb.Append(ChromatographicPeak.TabSeparatedHeader);
+                sb.Append("Initial Search Q-Value");
                 return sb.ToString();
-            }
-        }
-
-        public static string OriginalFdrHeader
-        {
-            get
-            {
-                string psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader();
-                string[] psmHeaderSplit = psmHeader.Split('\t');
-                string[] newHeaderSplit = new string[psmHeaderSplit.Length];
-                for (int i = 0; i < psmHeaderSplit.Length; i++) newHeaderSplit[i] = "Original " + psmHeaderSplit[i];
-                string newHeader = string.Join('\t', newHeaderSplit); 
-                return newHeader;
             }
         }
 
         public override string ToString()
         {
-            string nullPsm = new string('\t', 55);
-            string originalPsmString = originalSpectralMatch == null ? nullPsm : originalSpectralMatch.ToString();
+            string originalPsmString = originalSpectralMatch == null ? "NA" : originalSpectralMatch.FdrInfo.QValue.ToString();
             var sb = new StringBuilder();
             sb.Append(spectralLibraryMatch.ToString());
             sb.Append('\t');
             sb.Append(originalPsmString);
-            sb.Append('\t');
-            sb.Append(acceptorPeak.ToString());
             return sb.ToString();
         }
     }
