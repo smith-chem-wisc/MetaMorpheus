@@ -1310,7 +1310,7 @@ namespace Test
                 .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
 
             // check that fragment mass error was read in correctly
-            Assert.AreEqual(0.27631621395185291, psms[1].MatchedIons[1].MassErrorPpm);
+            Assert.AreEqual(Math.Round(-0.27631606125063707, 5), Math.Round(psms[1].MatchedIons[1].MassErrorPpm, 5));
             
             // check aspects of each histogram type:
             var plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);

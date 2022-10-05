@@ -479,19 +479,20 @@ namespace EngineLayer
                     //get charge and mz
                     int z = int.Parse(split[1]);
                     double mz = double.Parse(split[2], CultureInfo.InvariantCulture);
-                    double theoreticalMass = mz.ToMass(z);
-                    double experimentalMass = theoreticalMass + errorDa;
+                    double neutralExperimentalMass = mz.ToMass(z); //read in m/z converted to mass
+                    double neutralTheoreticalMass = neutralExperimentalMass - errorDa; //theoretical mass is measured mass - measured error
 
-                    Product p = new Product(productType,
+                    //The product created here is the theoretical product, with the mass back-calculated from the measured mass and measured error
+                    Product theoreticalProduct = new Product(productType,
                       terminus,
-                      experimentalMass,
+                      neutralTheoreticalMass,
                       fragmentNumber,
                       aminoAcidPosition,
                       neutralLoss,
                       secondaryProductType,
                       secondaryFragmentNumber);
 
-                    matchedIons.Add(new MatchedFragmentIon(ref p, mz, intensity, z));
+                    matchedIons.Add(new MatchedFragmentIon(ref theoreticalProduct, mz, intensity, z));
                 }
             }
             return matchedIons;
