@@ -11,8 +11,9 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
+using ThermoFisher.CommonCore.Data.Business;
 
-namespace MetaMorpheusGUI
+namespace GuiFunctions
 {
     public class PlotModelStat : INotifyPropertyChanged, IPlotModel
     {
@@ -22,11 +23,12 @@ namespace MetaMorpheusGUI
 
         public static List<string> PlotNames = new List<string> {
             "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
-            //"Histogram of Fragment PPM Errors", //TODO: implement fragment PPM error reading in MetaDraw
+            "Histogram of Fragment PPM Errors",
             "Histogram of Precursor Charges",
             "Histogram of Fragment Charges",
+            "Histogram of Precursor Masses",
+            "Histogram of Precursor m/z",
             "Precursor PPM Error vs. RT",
-            //"Fragment PPM Error vs. RT", //TODO: implement fragment PPM error reading in MetaDraw
             "Histogram of PTM Spectral Counts",
             "Predicted RT vs. Observed RT"
         };
@@ -86,37 +88,35 @@ namespace MetaMorpheusGUI
 
         private void createPlot(string plotType)
         {
-            if (plotType.Equals("Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)"))
+            switch (plotType)
             {
-                histogramPlot(1);
-            }
-            else if (plotType.Equals("Histogram of Fragment PPM Errors"))
-            {
-                histogramPlot(2);
-            }
-            else if (plotType.Equals("Histogram of Precursor Charges"))
-            {
-                histogramPlot(3);
-            }
-            else if (plotType.Equals("Histogram of Fragment Charges"))
-            {
-                histogramPlot(4);
-            }
-            else if (plotType.Equals("Precursor PPM Error vs. RT"))
-            {
-                linePlot(1);
-            }
-            else if (plotType.Equals("Fragment PPM Error vs. RT"))
-            {
-                linePlot(2);
-            }
-            else if (plotType.Equals("Histogram of PTM Spectral Counts"))
-            {
-                histogramPlot(5);
-            }
-            else if (plotType.Equals("Predicted RT vs. Observed RT"))
-            {
-                linePlot(3);
+                case "Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)":
+                    histogramPlot(1);
+                    break;
+                case "Histogram of Fragment PPM Errors": 
+                    histogramPlot(2);
+                    break;
+                case "Histogram of Precursor Charges":
+                    histogramPlot(3);
+                    break;
+                case "Histogram of Fragment Charges":
+                    histogramPlot(4);
+                    break;
+                case "Histogram of Precursor Masses":
+                    histogramPlot(6);
+                    break;
+                case "Histogram of Precursor m/z":
+                    histogramPlot(7);
+                    break;
+                case "Precursor PPM Error vs. RT":
+                    linePlot(1);
+                    break;
+                case "Histogram of PTM Spectral Counts":
+                    histogramPlot(5);
+                    break;
+                case "Predicted RT vs. Observed RT":
+                    linePlot(3);
+                    break;
             }
         }
 
@@ -143,12 +143,14 @@ namespace MetaMorpheusGUI
                         dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
                     break;
-                case 2: // Histogram of Fragment PPM Errors TODO not shown as an option in gui
+                case 2: // Histogram of Fragment PPM Errors 
                     xAxisTitle = "Fragment error (ppm)";
-                    binSize = 0.1;
+                    binSize = 1;
                     foreach (string key in psmsBySourceFile.Keys)
                     {
                         numbersBySourceFile.Add(key, psmsBySourceFile[key].SelectMany(p => p.MatchedIons.Select(v => v.MassErrorPpm)));
+                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
                     break;
                 case 3: // Histogram of Precursor Charges
@@ -180,6 +182,28 @@ namespace MetaMorpheusGUI
                         var mods = psmsWithMods.Select(p => new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)).Select(p => p.AllModsOneIsNterminus).SelectMany(p => p.Values);
                         var groupedMods = mods.GroupBy(p => p.IdWithMotif).ToList();
                         dictsBySourceFile.Add(key, groupedMods.ToDictionary(p => p.Key, v => v.Count()));
+                    }
+                    break;
+                case 6: // Histogram of Precursor mass
+                    xAxisTitle = "Precursor Mass (Da)";
+                    binSize = 100;
+                    labelAngle = -50;
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Select(p => (double)(p.PrecursorMass)));
+                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
+                    }
+                    break;
+                case 7: // Histogram of Precursor m/z
+                    xAxisTitle = "Precursor mass/charge";
+                    binSize = 50;
+                    labelAngle = -50;
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        numbersBySourceFile.Add(key, psmsBySourceFile[key].Select(p => (double)(p.PrecursorMz)));
+                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
                     break;
             }
@@ -309,17 +333,6 @@ namespace MetaMorpheusGUI
                         else
                         {
                             variantxy.Add(new Tuple<double, double, string>(double.Parse(psm.MassDiffPpm, CultureInfo.InvariantCulture), (double)psm.RetentionTime, psm.FullSequence));
-                        }
-                    }
-                    break;
-                case 2: // Fragment PPM Error vs. RT
-                    yAxisTitle = "Retention time";
-                    xAxisTitle = "Fragment error (ppm)";
-                    foreach (var psm in allPsms)
-                    {
-                        foreach (var ion in psm.MatchedIons)
-                        {
-                            xy.Add(new Tuple<double, double, string>((double)psm.RetentionTime, ion.MassErrorPpm, psm.FullSequence));
                         }
                     }
                     break;
