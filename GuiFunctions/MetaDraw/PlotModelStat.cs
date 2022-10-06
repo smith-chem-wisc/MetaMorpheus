@@ -29,7 +29,6 @@ namespace GuiFunctions
             "Histogram of Precursor Masses",
             "Histogram of Precursor m/z",
             "Precursor PPM Error vs. RT",
-            //"Fragment PPM Error vs. RT",  //Math works, but takes a very long time to load.
             "Histogram of PTM Spectral Counts",
             "Predicted RT vs. Observed RT"
         };
@@ -112,9 +111,6 @@ namespace GuiFunctions
                 case "Precursor PPM Error vs. RT":
                     linePlot(1);
                     break;
-                //case "Fragment PPM Error vs. RT": //Math works, but takes a very long time to load. Leaving out for now.
-                //    linePlot(2);
-                //    break;
                 case "Histogram of PTM Spectral Counts":
                     histogramPlot(5);
                     break;
@@ -199,7 +195,7 @@ namespace GuiFunctions
                         dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
                     break;
-                case 7: // Histogram of Precursor M over z
+                case 7: // Histogram of Precursor m/z
                     xAxisTitle = "Precursor mass/charge";
                     binSize = 50;
                     labelAngle = -50;
@@ -340,17 +336,6 @@ namespace GuiFunctions
                         }
                     }
                     break;
-                //case 2: // Fragment PPM Error vs. RT    //Math works, but takes a very long time to load.
-                //    yAxisTitle = "Fragment error (ppm)";
-                //    xAxisTitle = "Retention time";
-                //    foreach (var psm in allPsms)
-                //    {
-                //        foreach (var ion in psm.MatchedIons)
-                //        {
-                //            xy.Add(new Tuple<double, double, string>(ion.MassErrorPpm, (double)psm.RetentionTime, psm.FullSequence));
-                //        }
-                //    }
-                //    break;
                 case 3: // Predicted RT vs. Observed RT
                     yAxisTitle = "Predicted Hydrophobicity";
                     xAxisTitle = "Observed retention time";
