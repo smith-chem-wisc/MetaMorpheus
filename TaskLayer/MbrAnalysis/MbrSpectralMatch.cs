@@ -56,17 +56,27 @@ namespace TaskLayer.MbrAnalysis
                 sb.Append(PeptideSpectralMatch.GetTabSeparatedHeader());
                 sb.Append('\t');
                 sb.Append("Initial Search Q-Value");
+                sb.Append('\t');
+                sb.Append("Initial Search PEP");
+                sb.Append('\t');
+                sb.Append("Initial Search PEP Q-Value");
                 return sb.ToString();
             }
         }
 
         public override string ToString()
         {
-            string originalPsmString = originalSpectralMatch == null ? "NA" : originalSpectralMatch.FdrInfo.QValue.ToString();
+            string originalPsmQ = originalSpectralMatch == null ? "Spectrum Not Found" : originalSpectralMatch.FdrInfo.QValue.ToString();
+            string originalPsmPEP = originalSpectralMatch == null ? "" : originalSpectralMatch.FdrInfo.PEP.ToString();
+            string originalPsmPEPQ = originalSpectralMatch == null ? "" : originalSpectralMatch.FdrInfo.PEP_QValue.ToString();
             var sb = new StringBuilder();
             sb.Append(spectralLibraryMatch.ToString());
             sb.Append('\t');
-            sb.Append(originalPsmString);
+            sb.Append(originalPsmQ);
+            sb.Append('\t');
+            sb.Append(originalPsmPEP);
+            sb.Append('\t');
+            sb.Append(originalPsmPEPQ);
             return sb.ToString();
         }
     }
