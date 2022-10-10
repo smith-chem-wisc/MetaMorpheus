@@ -1384,6 +1384,14 @@ namespace Test
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
             Assert.AreEqual(items9[11].Value, 18);
 
+            var plot10 = new PlotModelStat("Histogram of Hydrophobicity scores",
+                psms, psmDict);
+            var series10 = plot10.Model.Series.ToList()[0];
+            var items10 = (List<OxyPlot.Series.ColumnItem>)series10.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series10);
+            Assert.AreEqual(items10.Count, 5);
+            Assert.AreEqual(items10[1].Value, 3);
+
             //test variant plotting
             string variantFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
             List<string> warningsVariants = new List<string>();
