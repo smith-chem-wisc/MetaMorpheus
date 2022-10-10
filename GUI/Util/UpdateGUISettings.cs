@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Data;
 using TaskLayer;
 
 namespace MetaMorpheusGUI
@@ -250,6 +251,41 @@ namespace MetaMorpheusGUI
             }
             //else do nothing
             return useRecommendedSettings;
+        }
+
+        public static bool UseMBRAnalysisMandatorySettings()
+        {
+            bool useMandatorySettings = false;
+            //check with the user to update params
+            if (Params.AskAboutMBRParams)
+            {
+                var results = ProteaseSpecificMsgBox.Show("Use Enhanced MBR Settings?",
+                    "The following parameters are necessary for enhanced match between runs:\n" +
+                    "\t-Check 'Match betweens runs' (Search Task Only)\n" +
+                    "\t-Check 'Write Spectral Library' (Search Task Only)\n" +
+                    "Would you like to use these settings?");
+
+                if (results.UseSettings)
+                {
+                    useMandatorySettings = true;
+                }
+                //else do nothing
+
+                //if they don't want to see this again, save the answer
+                if (!results.AskAgain)
+                {
+                    Params.AskAboutMBRParams = false;
+                    Params.UseMBRParams = results.UseSettings;
+
+                    Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
+                }
+            }
+            else if (Params.UseMBRParams) //user didn't want to check in, but wanted to update last time
+            {
+                useMandatorySettings = true;
+            }
+            //else do nothing
+            return useMandatorySettings;
         }
 
         public static List<(string, string)> TopDownModsForGPTMD = new List<(string, string)>
