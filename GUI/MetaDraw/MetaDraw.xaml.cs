@@ -702,6 +702,11 @@ namespace MetaMorpheusGUI
             plotViewStat.UpdateLayout();
             PlotViewStat_SizeChanged(plotViewStat, null);
 
+            if (!Directory.Exists(fileDirectory))
+            {
+                Directory.CreateDirectory(fileDirectory);
+            }
+
             using (Stream writePDF = File.Create(Path.Combine(fileDirectory, fileName)))
             {
                 PdfExporter.Export(plotViewStat.Model, writePDF, 1000, 700);

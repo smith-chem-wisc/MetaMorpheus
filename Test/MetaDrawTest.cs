@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
@@ -9,6 +9,8 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -19,6 +21,7 @@ using System.Windows.Controls;
 using Easy.Common.Extensions;
 using IO.MzML;
 using TaskLayer;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace Test
 {
@@ -1144,7 +1147,7 @@ namespace Test
                 double mz = double.Parse(split[2]);
 
                 Assert.That(mz == parsedIon.Mz);
-                Assert.That(mz.ToMass(charge) == parsedIon.NeutralTheoreticalProduct.NeutralMass);
+                Assert.That(mz.ToMass(charge) - parsedIon.MassErrorDa == parsedIon.NeutralTheoreticalProduct.NeutralMass);
                 Assert.That(charge == parsedIon.Charge);
                 Assert.That(ion == parsedIon.NeutralTheoreticalProduct.ProductType.ToString() + parsedIon.NeutralTheoreticalProduct.FragmentNumber);
             }
@@ -1454,6 +1457,135 @@ namespace Test
 
             Directory.Delete(outputFolder, true);
 
+        }
+
+
+        [Test]
+        public static void TestMetaDrawHistogramPlots()
+        {
+            SearchTask searchTask = new SearchTask();
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawReadPsmFile");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+            Directory.CreateDirectory(folderPath);
+
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
+            string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
+
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            ObservableCollection<PsmFromTsv> psms = new(parsedPsms);
+
+            var psmDict = parsedPsms.GroupBy(p => p.FileNameWithoutExtension)
+                .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
+
+            // check that fragment mass error was read in correctly
+            Assert.AreEqual(Math.Round(-0.27631606125063707, 5), Math.Round(psms[1].MatchedIons[1].MassErrorPpm, 5));
+            
+            // check aspects of each histogram type:
+            var plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);
+            // Ensure axes are labeled correctly, and intervals are correct
+            Assert.AreEqual(2, plot.Model.Axes.Count);
+            Assert.AreEqual("Count", plot.Model.Axes[1].Title);
+            Assert.AreEqual(0, plot.Model.Axes[1].AbsoluteMinimum);
+            Assert.AreEqual(60, plot.Model.Axes[0].IntervalLength);
+
+            var plot2 = new PlotModelStat("Histogram of Precursor Charges", psms, psmDict);
+            var series2 = plot2.Model.Series.ToList()[0];
+            var items2 = (List<OxyPlot.Series.ColumnItem>)series2.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series2);
+            Assert.AreEqual(items2[0].Value, 9);
+            Assert.AreEqual(items2[1].Value, 1);
+
+            var plot3 = new PlotModelStat("Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
+                psms, psmDict);
+            var series3 = plot3.Model.Series.ToList()[0];
+            var items3 = (List<OxyPlot.Series.ColumnItem>)series3.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series3);
+            Assert.AreEqual(items3[7].Value, 2);
+
+            var plot4 = new PlotModelStat("Histogram of Fragment Charges",
+                psms, psmDict);
+            var series4 = plot4.Model.Series.ToList()[0];
+            var items4 = (List<OxyPlot.Series.ColumnItem>)series4.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series4);
+            Assert.AreEqual(items4[0].Value, 101);
+
+            var plot5 = new PlotModelStat("Histogram of Precursor m/z",
+                psms, psmDict);
+            var series5 = plot5.Model.Series.ToList()[0];
+            var items5 = (List<OxyPlot.Series.ColumnItem>)series5.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series5);
+            Assert.AreEqual(items5.Count, 5);
+            Assert.AreEqual(items5[0].Value, 5);
+
+            var plot6 = new PlotModelStat("Histogram of PTM Spectral Counts",
+                psms, psmDict);
+            var series6 = plot6.Model.Series.ToList()[0];
+            var items6 = (List<OxyPlot.Series.ColumnItem>)series6.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series6);
+            Assert.AreEqual(items6.Count, 1);
+            Assert.AreEqual(items6[0].Value, 2);
+
+            var plot7 = new PlotModelStat("Precursor PPM Error vs. RT",
+                psms, psmDict);
+            var series7 = plot7.Model.Series.ToList()[0];
+            var points7 = (List<OxyPlot.Series.ScatterPoint>)series7.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series7);
+            Assert.AreEqual(points7.Count, 9);
+            Assert.AreEqual(points7[1].X, 42.07841);
+            Assert.AreEqual(points7[1].Y, -1.48);
+            Assert.AreEqual(points7[1].Tag, "LSRIDTPK");
+
+            var plot8 = new PlotModelStat("Predicted RT vs. Observed RT",
+                psms, psmDict);
+            var series8 = plot8.Model.Series.ToList()[0];
+            var points8 = (List<OxyPlot.Series.ScatterPoint>)series8.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series8);
+            Assert.AreEqual(points8.Count, 10);
+            Assert.AreEqual(points8[7].X, 42.06171);
+            Assert.AreEqual(points8[7].Y, 19.00616880619646);
+            Assert.AreEqual(points8[7].Tag, "AFISYHDEAQK");
+
+            var plot9 = new PlotModelStat("Histogram of Fragment PPM Errors",
+                psms, psmDict);
+            var series9 = plot9.Model.Series.ToList()[0];
+            var items9 = (List<OxyPlot.Series.ColumnItem>)series9.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
+            Assert.AreEqual(items9[11].Value, 18);
+
+            //test variant plotting
+            string variantFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
+            List<string> warningsVariants = new List<string>();
+            List<PsmFromTsv> parsedPsmsWithVariants;
+            parsedPsmsWithVariants = PsmTsvReader.ReadTsv(variantFile, out warningsVariants);
+            ObservableCollection<PsmFromTsv> psmsWithVariants = new(parsedPsmsWithVariants);
+
+            var psmVariantDict = psmsWithVariants.GroupBy(p => p.FileNameWithoutExtension)
+                .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
+
+            var variantPlot1 = new PlotModelStat("Precursor PPM Error vs. RT", psmsWithVariants, psmVariantDict);
+            var variantSeries1 = variantPlot1.Model.Series.ToList()[0];
+            var variantPoints1 = (List<OxyPlot.Series.ScatterPoint>)variantSeries1.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries1);
+            Assert.AreEqual(variantPoints1.Count, 1);
+            Assert.AreEqual(variantPoints1[0].X, 97.8357);
+            Assert.AreEqual(variantPoints1[0].Y, 0.35);
+            Assert.AreEqual(variantPoints1[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
+
+            var variantPlot2 = new PlotModelStat("Predicted RT vs. Observed RT", psmsWithVariants, psmVariantDict);
+            var variantSeries2 = variantPlot2.Model.Series.ToList()[0];
+            var variantPoints2 = (List<OxyPlot.Series.ScatterPoint>)variantSeries2.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries2);
+            Assert.AreEqual(variantPoints2.Count, 1);
+            Assert.AreEqual(variantPoints2[0].X, 97.8357);
+            Assert.AreEqual(variantPoints2[0].Y, 16.363848874371111);
+            Assert.AreEqual(variantPoints2[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
+
+
+            Directory.Delete(folderPath, true);
         }
     }
 }
