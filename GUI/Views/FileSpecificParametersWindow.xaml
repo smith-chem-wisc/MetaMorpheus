@@ -85,6 +85,16 @@
             <Label x:Name="lbMaxModNum" Margin="20,0,0,0" Width="130" Content="Max mods per peptide" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
             <TextBox x:Name="MaxModNumTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
         </StackPanel>
+        <!-- File-specific Dissociation Type -->
+        <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
+            <CheckBox x:Name="fileSpecificDissociationTypesEnabled" Margin="10,0,0,0" VerticalAlignment="Center" IsChecked="False">
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Override task default dissociation type for the dissociation type specified here" />
+                </ToolTipService.ToolTip>
+            </CheckBox>
+            <Label x:Name="fileSpecificDissociationTypeLabel" Margin="20,0,0,0"  Content="Dissociation Type" IsEnabled="{Binding IsChecked, ElementName=fileSpecificDissociationTypesEnabled}" />
+            <ComboBox x:Name="fileSpecificDissociationType" IsEnabled="{Binding IsChecked, ElementName=fileSpecificDissociationTypesEnabled}"/>
+        </StackPanel>
         <!-- File-specific Separation Type -->
         <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
             <CheckBox x:Name="fileSpecificSeparationTypesEnabled" Margin="10,0,0,0" VerticalAlignment="Center" IsChecked="False">
