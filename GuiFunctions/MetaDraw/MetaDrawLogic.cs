@@ -30,6 +30,7 @@ namespace GuiFunctions
         public ObservableCollection<string> SpectraFilePaths { get; private set; }
         public ObservableCollection<string> SpectralLibraryPaths { get; private set; }
         public ObservableCollection<PsmFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
+        public ObservableCollection<PsmFromTsv> ChimericPsms { get; private set; }
         public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
@@ -57,6 +58,7 @@ namespace GuiFunctions
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
             CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
+            ChimericPsms = new();
         }
 
         public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
@@ -748,10 +750,10 @@ namespace GuiFunctions
             {
                 FilteredListOfPsms.Clear();
 
-                var filteredPsms = AllPsms.Where(p => MetaDrawSettings.FilterAcceptsPsm(p));
-                foreach (var psm in filteredPsms)
+                var filteredChimericPsms = ChimericPsms.Where(p => MetaDrawSettings.FilterAcceptsPsm(p));
+                foreach (var psm in filteredChimericPsms)
                 {
-                    if (filteredPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
+                    if (filteredChimericPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
                         FilteredListOfPsms.Add(psm);
                 }
             }
@@ -956,7 +958,8 @@ namespace GuiFunctions
                 {
                     lock (ThreadLocker)
                     {
-                        foreach (PsmFromTsv psm in PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings))
+                        var psms = PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings);
+                        foreach (PsmFromTsv psm in psms)
                         {
                             if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)
                             {
@@ -978,6 +981,17 @@ namespace GuiFunctions
                         }
                     }
                 }
+
+                foreach (var psm in AllPsms)
+                {
+                    if (AllPsms.Count(p =>
+                            p.Ms2ScanNumber == psm.Ms2ScanNumber &&
+                            p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
+                    {
+                        ChimericPsms.Add(psm);
+                    }
+                }
+
             }
             catch (Exception e)
             {
