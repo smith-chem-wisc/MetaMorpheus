@@ -475,21 +475,28 @@ namespace Test
 
             TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3, pep4});
 
-            Product productb1 = new Product(ProductType.b, 0, 0, 1, 1, 0);
-            Product productb2 = new Product(ProductType.b, 0, 0, 2, 2, 0);
-            Product productb3 = new Product(ProductType.b, 0, 0, 3, 3, 0);
-            Product productb4 = new Product(ProductType.b, 0, 0, 4, 4, 0);
-            Product productb5 = new Product(ProductType.b, 0, 0, 5, 5, 0);
-            Product productb6 = new Product(ProductType.b, 0, 0, 6, 6, 0);
+            //psm 1 - test first and last amino acid positions
+            Product producty7 = new Product(ProductType.y, FragmentationTerminus.C, 0, 7, 1, 0);
+            Product productb6 = new Product(ProductType.b, FragmentationTerminus.N, 0, 6, 6, 0);
+            MatchedFragmentIon mfiy7 = new MatchedFragmentIon(ref producty7, 0, 0, 1);
+            MatchedFragmentIon mfib6 = new MatchedFragmentIon(ref productb6, 0, 0, 1);
 
 
-            Product producty1 = new Product(ProductType.y, 0, 0, 1, 0, 0);
-            Product producty2 = new Product(ProductType.y, 0, 0, 2, 0, 0);
-            Product producty3 = new Product(ProductType.y, 0, 0, 3, 0, 0);
-            Product producty4 = new Product(ProductType.y, 0, 0, 4, 0, 0);
-            Product producty5 = new Product(ProductType.y, 0, 0, 5, 0, 0);
-            Product producty6 = new Product(ProductType.y, 0, 0, 6, 0, 0);
-            Product producty7 = new Product(ProductType.y, 0, 0, 7, 0, 0);
+            //psm 2 - test coverage of consecutive C, consecutive N, and one of each
+            Product productb1 = new Product(ProductType.b, FragmentationTerminus.N, 0, 1, 1, 0);
+            Product productb2 = new Product(ProductType.b, FragmentationTerminus.N, 0, 2, 2, 0);
+            Product productb3 = new Product(ProductType.b, FragmentationTerminus.N, 0, 3, 3, 0);
+            Product productb4 = new Product(ProductType.b, FragmentationTerminus.N, 0, 4, 4, 0);
+            Product productb5 = new Product(ProductType.b, FragmentationTerminus.N, 0, 5, 5, 0);
+            
+
+
+            Product producty1 = new Product(ProductType.y, FragmentationTerminus.C, 0, 1, 7, 0);
+            Product producty2 = new Product(ProductType.y, FragmentationTerminus.C, 0, 2, 6, 0);
+            Product producty3 = new Product(ProductType.y, FragmentationTerminus.C, 0, 3, 5, 0);
+            Product producty4 = new Product(ProductType.y, FragmentationTerminus.C, 0, 4, 4, 0);
+            Product producty5 = new Product(ProductType.y, FragmentationTerminus.C, 0, 5, 3, 0);
+            Product producty6 = new Product(ProductType.y, FragmentationTerminus.C, 0, 6, 2, 0);
 
 
             MatchedFragmentIon mfib1 = new MatchedFragmentIon(ref productb1, 0, 0, 1);
@@ -497,7 +504,7 @@ namespace Test
             MatchedFragmentIon mfib3 = new MatchedFragmentIon(ref productb3, 0, 0, 3);
             MatchedFragmentIon mfib4 = new MatchedFragmentIon(ref productb4, 0, 0, 1);
             MatchedFragmentIon mfib5 = new MatchedFragmentIon(ref productb5, 0, 0, 1);
-            MatchedFragmentIon mfib6 = new MatchedFragmentIon(ref productb6, 0, 0, 1);
+           
 
             MatchedFragmentIon mfiy1 = new MatchedFragmentIon(ref producty1, 0, 0, 2);
             MatchedFragmentIon mfiy2 = new MatchedFragmentIon(ref producty2, 0, 0, 2);
@@ -505,9 +512,9 @@ namespace Test
             MatchedFragmentIon mfiy4 = new MatchedFragmentIon(ref producty4, 0, 0, 1);
             MatchedFragmentIon mfiy5 = new MatchedFragmentIon(ref producty5, 0, 0, 1);
             MatchedFragmentIon mfiy6 = new MatchedFragmentIon(ref producty6, 0, 0, 1);
-            MatchedFragmentIon mfiy7 = new MatchedFragmentIon(ref producty7, 0, 0, 1);
+            
 
-            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6 };
+            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfib6, mfiy7 };
             List<MatchedFragmentIon> mfis2 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6, mfiy7 };
             List<MatchedFragmentIon> mfis3 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib3, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6 };
             List<MatchedFragmentIon> mfis4 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6, mfiy7 };
@@ -543,12 +550,13 @@ namespace Test
 
             foreach (var psm in allPsms)
             {
-                psm.AddFragmentCoveragePSMs();
+                psm.GetAminoAcidCoverage();
             }
 
-            //First and last AA covered
+            //First and last AA covered, other AA not covered
             Assert.IsTrue(allPsms[0].FragmentCoveragePositionInPSM.Contains(1));
             Assert.IsTrue(allPsms[0].FragmentCoveragePositionInProtein.Contains(7));
+            Assert.IsFalse(allPsms[0].FragmentCoveragePositionInProtein.Contains(6));
             //AA 7 covered by combination of b and y ion. Also ensure that missed ions are not covered
             Assert.IsTrue(allPsms[1].FragmentCoveragePositionInPSM.Contains(7));
             Assert.IsFalse(allPsms[1].FragmentCoveragePositionInPSM.Contains(1));

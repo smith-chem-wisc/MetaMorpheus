@@ -151,7 +151,7 @@ namespace Test
             };
 
             newPsms.ForEach(p => p.ResolveAllAmbiguities());
-            newPsms.ForEach(p => p.AddFragmentCoveragePSMs());
+            newPsms.ForEach(p => p.GetAminoAcidCoverage());
 
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
