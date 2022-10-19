@@ -1,27 +1,24 @@
-﻿using OxyPlot;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Media;
+using OxyPlot;
 
 namespace GuiFunctions
 {
-    /// <summary>
-    /// View Model class for each mod in the ptm legend
-    /// </summary>
-    public class PtmLegendItemViewModel : BaseViewModel
+    public class LegendItemViewModel : BaseViewModel
     {
         #region Private Properties
 
-        private SolidColorBrush _colorBrush;
+        protected SolidColorBrush _colorBrush;
 
         #endregion
 
         #region Public Properties
 
-        public string ModName { get; }
+        public string Name { get; protected set; }
         public SolidColorBrush ColorBrush
         {
             get { return _colorBrush; }
@@ -36,11 +33,9 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public PtmLegendItemViewModel(string modName)
+        public LegendItemViewModel()
         {
-            ModName = modName;
-            OxyColor color = MetaDrawSettings.ModificationTypeToColor[modName];
-            ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
+
         }
 
         #endregion
