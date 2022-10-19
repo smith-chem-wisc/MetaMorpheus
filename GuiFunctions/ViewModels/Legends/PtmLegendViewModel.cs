@@ -1,4 +1,5 @@
-﻿using Proteomics;
+﻿using GuiFunctions.ViewModels.Legends;
+using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -6,35 +7,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using EngineLayer;
+using Proteomics.ProteolyticDigestion;
 
 namespace GuiFunctions
 {
     /// <summary>
     /// View Model class for the ptm color legend
     /// </summary>
-    public class PtmLegendViewModel : BaseViewModel
+    public class PtmLegendViewModel : LegendViewModel
     {
-        private Visibility visibility;
-        private double topOffset;
-        public string Header { get; set; } = "Legend";
-        public int HeaderSize { get; set; } = 12;
-        public ObservableCollection<PtmLegendItemViewModel> LegendItems { get; set; }
-
-        public Visibility Visibility
-        {
-            get { return visibility; }
-            set
-            {
-                visibility = value;
-                OnPropertyChanged(nameof(Visibility));
-            }
-        }
-
-        public double TopOffset
-        {
-            get => topOffset;
-            set { topOffset = value; OnPropertyChanged(nameof(TopOffset)); }
-        }
 
         /// <summary>
         /// Segments per row in the sequence annotation 
@@ -42,7 +24,7 @@ namespace GuiFunctions
         public int SegmentsPerRow
         {
             get { return MetaDrawSettings.SequenceAnnotationSegmentPerRow; }
-            set 
+            set
             {
                 if (value <= 0) throw new IndexOutOfRangeException("SegmentsPerRow cannot be less than one");
                 MetaDrawSettings.SequenceAnnotationSegmentPerRow = value;
@@ -66,19 +48,13 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public PtmLegendViewModel(List<Modification> mods, double offset = 0)
+        public PtmLegendViewModel(PsmFromTsv psm, double offset = 0) : base()
         {
-            LegendItems = new ObservableCollection<PtmLegendItemViewModel>();
-            foreach (var mod in mods.Distinct())
-            {
-                var modItem = new PtmLegendItemViewModel(mod.IdWithMotif);
-                LegendItems.Add(modItem);
-            }
-
+            ParseModsFromPsmTsv(psm);
             TopOffset = offset;
-            Visibility = mods.Count > 0 ? Visibility.Visible : Visibility.Hidden;
+            Visibility = LegendItemViewModels.Count > 0 ? true : false;
         }
-        
+
         #endregion
 
         #region Commands
@@ -90,7 +66,7 @@ namespace GuiFunctions
         {
             ResiduesPerSegment += 1;
             double maxDisplayedPerRow = MetaDrawSettings.NumberOfAAOnScreen + 7;
-            int segmentsPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
+            int segmentsPerRow = (int)Math.Floor(maxDisplayedPerRow / (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
             SegmentsPerRow = segmentsPerRow > 0 ? segmentsPerRow : 1;
         }
 
@@ -101,7 +77,7 @@ namespace GuiFunctions
         {
             ResiduesPerSegment -= 1;
             double maxDisplayedPerRow = MetaDrawSettings.NumberOfAAOnScreen + 6;
-            int segmentsPerRow = (int)Math.Floor(maxDisplayedPerRow / (double)(MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
+            int segmentsPerRow = (int)Math.Floor(maxDisplayedPerRow / (MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment + 1));
             SegmentsPerRow = segmentsPerRow > 0 ? segmentsPerRow : 1;
         }
 
@@ -122,5 +98,16 @@ namespace GuiFunctions
         }
 
         #endregion
+
+        private void ParseModsFromPsmTsv(PsmFromTsv psm)
+        {
+            PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+            List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
+            foreach (var mod in mods.Distinct())
+            {
+                var modItem = new PtmLegendItemViewModel(mod.IdWithMotif);
+                LegendItemViewModels.Add(modItem);
+            }
+        }
     }
 }
