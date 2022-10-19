@@ -354,7 +354,7 @@ namespace EngineLayer
             return new PeptideSpectralMatch(this, bestMatchingPeptides);
         }
 
-        private PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
+        protected PeptideSpectralMatch(PeptideSpectralMatch psm, List<(int Notch, PeptideWithSetModifications Peptide)> bestMatchingPeptides)
         {
             _BestMatchingPeptides = bestMatchingPeptides;
             BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.Peptide.BaseSequence)).ResolvedValue;
@@ -393,5 +393,6 @@ namespace EngineLayer
             PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
             SpectralAngle = psm.SpectralAngle;
         }
+
     }
 }
