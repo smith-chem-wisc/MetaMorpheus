@@ -28,6 +28,7 @@ namespace GuiFunctions
             "Histogram of Fragment Charges",
             "Histogram of Precursor Masses",
             "Histogram of Precursor m/z",
+            "Histogram of Hydrophobicity scores",
             "Precursor PPM Error vs. RT",
             "Histogram of PTM Spectral Counts",
             "Predicted RT vs. Observed RT"
@@ -45,9 +46,9 @@ namespace GuiFunctions
 
         private static List<OxyColor> columnColors = new List<OxyColor>
         {
-            OxyColors.Teal, OxyColors.CadetBlue, OxyColors.LightSeaGreen, OxyColors.DarkTurquoise, OxyColors.LightSkyBlue,
-            OxyColors.LightBlue, OxyColors.Aquamarine, OxyColors.PaleGreen, OxyColors.MediumAquamarine, OxyColors.DarkSeaGreen,
-            OxyColors.MediumSeaGreen, OxyColors.SeaGreen, OxyColors.DarkSlateGray, OxyColors.Gray, OxyColors.Gainsboro
+            OxyColors.Blue, OxyColors.Red, OxyColors.Green, OxyColors.DarkGoldenrod, OxyColors.DarkViolet,
+            OxyColors.DeepPink, OxyColors.SkyBlue, OxyColors.LawnGreen, OxyColors.Sienna, OxyColors.DarkBlue,
+            OxyColors.PeachPuff, OxyColors.DarkSlateGray, OxyColors.SpringGreen, OxyColors.Peru, OxyColors.OrangeRed
 
         };
 
@@ -107,6 +108,9 @@ namespace GuiFunctions
                     break;
                 case "Histogram of Precursor m/z":
                     histogramPlot(7);
+                    break;
+                case "Histogram of Hydrophobicity scores":
+                    histogramPlot(8);
                     break;
                 case "Precursor PPM Error vs. RT":
                     linePlot(1);
@@ -202,6 +206,24 @@ namespace GuiFunctions
                     foreach (string key in psmsBySourceFile.Keys)
                     {
                         numbersBySourceFile.Add(key, psmsBySourceFile[key].Select(p => (double)(p.PrecursorMz)));
+                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
+                    }
+                    break;
+                case 8: // Histogram of Hydrophobicity Scores
+                    xAxisTitle = "Hydrophobicity Score (Determined by SSRCalc)";
+                    binSize = 2;
+                    labelAngle = -50;
+                    SSRCalc3 sSRCalc3 = new SSRCalc3("A100", SSRCalc3.Column.A100);
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        var values = new List<double>();
+                        foreach (var psm in psmsBySourceFile[key])
+                        {
+                            values.Add(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split("|")[0], null)));
+                           
+                        }
+                        numbersBySourceFile.Add(key, values);
                         var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
                         dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
