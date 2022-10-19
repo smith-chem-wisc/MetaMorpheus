@@ -117,17 +117,17 @@ namespace Test
             var pwsm2 = new PeptideWithSetModifications(prot1, digestionParams, 4, 6, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
             var pwsm3 = new PeptideWithSetModifications(prot1, digestionParams, 1, 6, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
 
-            Product productb1 = new Product(ProductType.b, 0, 0, 1, 1, 0);
-            Product productb2 = new Product(ProductType.b, 0, 0, 2, 2, 0);
-            Product producty1 = new Product(ProductType.y, 0, 0, 1, 0, 0);
-            Product producty2 = new Product(ProductType.y, 0, 0, 2, 0, 0);
+            Product productb1 = new Product(ProductType.b, FragmentationTerminus.N, 0, 1, 1, 0);
+            Product productb2 = new Product(ProductType.b, FragmentationTerminus.N, 0, 2, 2, 0);
+            Product producty1 = new Product(ProductType.y, FragmentationTerminus.C, 0, 1, 3, 0);
+            Product producty2 = new Product(ProductType.y, FragmentationTerminus.C, 0, 2, 2, 0);
 
             MatchedFragmentIon mfib1 = new MatchedFragmentIon(ref productb1, 0, 0, 1);
             MatchedFragmentIon mfib2 = new MatchedFragmentIon(ref productb2, 0, 0, 2);
             MatchedFragmentIon mfiy1 = new MatchedFragmentIon(ref producty1, 0, 0, 2);
             MatchedFragmentIon mfiy2 = new MatchedFragmentIon(ref producty2, 0, 0, 2);
 
-            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfib1, mfib2};
+            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfib1 };
             List<MatchedFragmentIon> mfis2 = new List<MatchedFragmentIon> { mfib2, mfiy1, mfiy2 };
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
@@ -163,7 +163,7 @@ namespace Test
 
             var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().FragmentSequenceCoverageDisplayList.First();
             
-            Assert.IsTrue(firstSequenceCoverageDisplayList == "mMKMMK");
+            Assert.IsTrue(firstSequenceCoverageDisplayList == "MmkMMK");
         }
     }
 }

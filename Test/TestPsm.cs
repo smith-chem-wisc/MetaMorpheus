@@ -460,113 +460,70 @@ namespace Test
         [Test]
         public static void TestPSMFragmentCoverage()
         {
-            Protein p1 = new Protein("PEPTIDE", null);
             CommonParameters commonParameters = new CommonParameters();
+
+            Protein p1 = new Protein("PEPTIDEPEPTIDE", null);
             PeptideWithSetModifications pep1 = p1.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
 
-            Protein p2 = new Protein("PEPTIDEPEPTIDE", null);
-            PeptideWithSetModifications pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            Protein p2 = new Protein("GGGGGGGGGGGGGGKPEPTIDEPEPTIDE", null);
+            PeptideWithSetModifications pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList()[1];
 
-            Protein p3 = new Protein("PEPTIDEPEPTIDKEPE", null);
-            PeptideWithSetModifications pep3 = p3.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2});
 
-            Protein p4 = new Protein("PEPTIDEPEPTIDEPEPTIDEPEPTIDEKPEPTIDEPEPTIDEKPEPTIDE", null);
-            PeptideWithSetModifications pep4 = p4.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList()[1];
-
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3, pep4});
-
-            //psm 1 - test first and last amino acid positions
-            Product producty7 = new Product(ProductType.y, FragmentationTerminus.C, 0, 7, 1, 0);
-            Product productb6 = new Product(ProductType.b, FragmentationTerminus.N, 0, 6, 6, 0);
-            MatchedFragmentIon mfiy7 = new MatchedFragmentIon(ref producty7, 0, 0, 1);
-            MatchedFragmentIon mfib6 = new MatchedFragmentIon(ref productb6, 0, 0, 1);
-
-
-            //psm 2 - test coverage of consecutive C, consecutive N, and one of each
-            Product productb1 = new Product(ProductType.b, FragmentationTerminus.N, 0, 1, 1, 0);
-            Product productb2 = new Product(ProductType.b, FragmentationTerminus.N, 0, 2, 2, 0);
-            Product productb3 = new Product(ProductType.b, FragmentationTerminus.N, 0, 3, 3, 0);
-            Product productb4 = new Product(ProductType.b, FragmentationTerminus.N, 0, 4, 4, 0);
-            Product productb5 = new Product(ProductType.b, FragmentationTerminus.N, 0, 5, 5, 0);
-            
-
-
-            Product producty1 = new Product(ProductType.y, FragmentationTerminus.C, 0, 1, 7, 0);
-            Product producty2 = new Product(ProductType.y, FragmentationTerminus.C, 0, 2, 6, 0);
-            Product producty3 = new Product(ProductType.y, FragmentationTerminus.C, 0, 3, 5, 0);
-            Product producty4 = new Product(ProductType.y, FragmentationTerminus.C, 0, 4, 4, 0);
-            Product producty5 = new Product(ProductType.y, FragmentationTerminus.C, 0, 5, 3, 0);
-            Product producty6 = new Product(ProductType.y, FragmentationTerminus.C, 0, 6, 2, 0);
-
-
-            MatchedFragmentIon mfib1 = new MatchedFragmentIon(ref productb1, 0, 0, 1);
-            MatchedFragmentIon mfib2 = new MatchedFragmentIon(ref productb2, 0, 0, 2);
-            MatchedFragmentIon mfib3 = new MatchedFragmentIon(ref productb3, 0, 0, 3);
-            MatchedFragmentIon mfib4 = new MatchedFragmentIon(ref productb4, 0, 0, 1);
-            MatchedFragmentIon mfib5 = new MatchedFragmentIon(ref productb5, 0, 0, 1);
-           
-
-            MatchedFragmentIon mfiy1 = new MatchedFragmentIon(ref producty1, 0, 0, 2);
-            MatchedFragmentIon mfiy2 = new MatchedFragmentIon(ref producty2, 0, 0, 2);
-            MatchedFragmentIon mfiy3 = new MatchedFragmentIon(ref producty3, 0, 0, 1);
-            MatchedFragmentIon mfiy4 = new MatchedFragmentIon(ref producty4, 0, 0, 1);
-            MatchedFragmentIon mfiy5 = new MatchedFragmentIon(ref producty5, 0, 0, 1);
-            MatchedFragmentIon mfiy6 = new MatchedFragmentIon(ref producty6, 0, 0, 1);
-            
-
-            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfib6, mfiy7 };
-            List<MatchedFragmentIon> mfis2 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6, mfiy7 };
-            List<MatchedFragmentIon> mfis3 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib3, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6 };
-            List<MatchedFragmentIon> mfis4 = new List<MatchedFragmentIon> { mfib1, mfib2, mfib4, mfib5, mfib6, mfiy1, mfiy2, mfiy3, mfiy4, mfiy5, mfiy6, mfiy7 };
-
+            //psm 1 - test first and last amino acid positions, along with one internal Amino Acid position
+            Product productC3 = new Product(ProductType.y, FragmentationTerminus.C, 0, 3, 12, 0);
+            Product productC4 = new Product(ProductType.y, FragmentationTerminus.C, 0, 4, 11, 0);
+            Product productC7 = new Product(ProductType.y, FragmentationTerminus.C, 0, 7, 8, 0);
+            Product productC13 = new Product(ProductType.y, FragmentationTerminus.C, 0, 13, 2, 0);
+            Product productN3 = new Product(ProductType.b, FragmentationTerminus.N, 0, 3, 3, 0);
+            Product productN4 = new Product(ProductType.b, FragmentationTerminus.N, 0, 4, 4, 0);
+            Product productN6 = new Product(ProductType.b, FragmentationTerminus.N, 0, 6, 6, 0);
+            Product productN8 = new Product(ProductType.b, FragmentationTerminus.N, 0, 8, 8, 0);
+            Product productN13 = new Product(ProductType.b, FragmentationTerminus.N, 0, 13, 13, 0);
+            MatchedFragmentIon mfiC3 = new MatchedFragmentIon(ref productC3, 0, 0, 1);
+            MatchedFragmentIon mfiC4 = new MatchedFragmentIon(ref productC4, 0, 0, 1);
+            MatchedFragmentIon mfiC7 = new MatchedFragmentIon(ref productC7, 0, 0, 1);
+            MatchedFragmentIon mfiC13 = new MatchedFragmentIon(ref productC13, 0, 0, 1);
+            MatchedFragmentIon mfiN3 = new MatchedFragmentIon(ref productN3, 0, 0, 1);
+            MatchedFragmentIon mfiN4 = new MatchedFragmentIon(ref productN4, 0, 0, 1);
+            MatchedFragmentIon mfiN6 = new MatchedFragmentIon(ref productN6, 0, 0, 1);
+            MatchedFragmentIon mfiN8 = new MatchedFragmentIon(ref productN8, 0, 0, 1);
+            MatchedFragmentIon mfiN13 = new MatchedFragmentIon(ref productN13, 0, 0, 1);
+            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfiC3, mfiC4, mfiC7, mfiC13, mfiN3, mfiN4, mfiN6, mfiN8, mfiN13};
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, 0, 1, null, new CommonParameters());
             PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 0, 0, scan1, commonParameters, mfis1);
-
-            MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
-            Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, 0, 1, null, new CommonParameters());
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan2, commonParameters, mfis2);
-
-            MsDataScan mzLibScan3 = t.GetOneBasedScan(6);
-            Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, 0, 1, null, new CommonParameters());
-            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 0, 0, scan3, commonParameters, mfis3);
-
-            MsDataScan mzLibScan4 = t.GetOneBasedScan(8);
-            Ms2ScanWithSpecificMass scan4 = new Ms2ScanWithSpecificMass(mzLibScan4, 0, 1, null, new CommonParameters());
-            PeptideSpectralMatch psm4 = new PeptideSpectralMatch(pep4, 0, 0, 0, scan4, commonParameters, mfis4);
-
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm1.ResolveAllAmbiguities();
+            psm1.GetAminoAcidCoverage();
+            //First amino acid
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(1));
+            //sequential N term Frags
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(4));
+            //Last amino acid
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(14));
+            //Covered from both directions inclusive
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(8));
+            //Covered from both directions exclusive
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(7));
+            //Sequential C term Frags
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(11));
+            //Not coveredRT
+            Assert.IsFalse(psm1.FragmentCoveragePositionInPSM.Contains(5));
+            //psm position and protein position should be same
+            Assert.That(psm1.FragmentCoveragePositionInPSM.SequenceEqual(psm1.FragmentCoveragePositionInProtein));
 
-            psm2.SetFdrValues(0, 0, 0.02, 0, 0, 0, 0, 0); // psm above fdr cutoff
+
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan1, commonParameters, mfis1);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm2.ResolveAllAmbiguities();
+            psm2.GetAminoAcidCoverage();
 
-            psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // ambiguous peptide
-
-            psm4.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm for internal peptide
-            psm4.ResolveAllAmbiguities();
-
-            var allPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3, psm4};
-
-            foreach (var psm in allPsms)
-            {
-                psm.GetAminoAcidCoverage();
-            }
-
-            //First and last AA covered, other AA not covered
-            Assert.IsTrue(allPsms[0].FragmentCoveragePositionInPSM.Contains(1));
-            Assert.IsTrue(allPsms[0].FragmentCoveragePositionInProtein.Contains(7));
-            Assert.IsFalse(allPsms[0].FragmentCoveragePositionInProtein.Contains(6));
-            //AA 7 covered by combination of b and y ion. Also ensure that missed ions are not covered
-            Assert.IsTrue(allPsms[1].FragmentCoveragePositionInPSM.Contains(7));
-            Assert.IsFalse(allPsms[1].FragmentCoveragePositionInPSM.Contains(1));
-            Assert.IsFalse(allPsms[1].FragmentCoveragePositionInPSM.Contains(3));
-            //Ambiguous psm does not assign values
-            Assert.IsNull(allPsms[2].FragmentCoveragePositionInProtein);
-            Assert.IsNull(allPsms[2].FragmentCoveragePositionInPSM);
-            //Internal peptide coverage numbers match up with AA position in protein
-            Assert.IsTrue(allPsms[3].FragmentCoveragePositionInProtein.Contains(31));
-            Assert.IsTrue(allPsms[3].FragmentCoveragePositionInProtein.Contains(34));
+            //check that fragment coverage positions are the same
+            Assert.That(psm1.FragmentCoveragePositionInPSM.SequenceEqual(psm2.FragmentCoveragePositionInPSM));
+            //check that protein positions are correct
+            var proteinCoverageAAList = new List<int> { 16, 19, 22, 23, 26, 29 }; 
+            Assert.IsTrue(psm2.FragmentCoveragePositionInProtein.SequenceEqual(proteinCoverageAAList));
         }
     }
 }
