@@ -283,109 +283,107 @@ namespace EngineLayer
         /// </summary>
         public void GetAminoAcidCoverage()
         {
-            if (this.BaseSequence != null && this.MatchedFragmentIons != null && this.MatchedFragmentIons.Any() &&
-                this.PeptideLength > 0)
+            if (string.IsNullOrEmpty(this.BaseSequence) || this.MatchedFragmentIons == null ||
+                !this.MatchedFragmentIons.Any()) return;
+            //Pull C terminal and N terminal Fragments and amino acid numbers
+            var nTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
+                    p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
+
+            var cTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
+                    p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
+
+
+            //Create a hashset to store the covered amino acid positions
+            HashSet<int> fragmentCoveredAminoAcids = new();
+
+
+            //Check N term frags first
+            if (nTermFragmentAAPositions.Count > 0)
             {
-                //Pull C terminal and N terminal Fragments and amino acid numbers
-                var nTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
-                        p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
-                    .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
+                nTermFragmentAAPositions.Sort();
 
-                var cTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
-                        p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
-                    .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
-
-
-                //Create a hashset to store the covered amino acid positions
-                HashSet<int> fragmentCoveredAminoAcids = new();
-
-
-                //Check N term frags first
-                if (nTermFragmentAAPositions.Count > 0)
+                //if the final NFragment is present, last AA is covered
+                if (nTermFragmentAAPositions.Contains(this.BaseSequence.Length - 1))
                 {
-                    nTermFragmentAAPositions.Sort();
-
-                    //if the final NFragment is present, last AA is covered
-                    if (nTermFragmentAAPositions.Contains(this.BaseSequence.Length - 1))
-                    {
-                        fragmentCoveredAminoAcids.Add(this.BaseSequence.Length);
-                    }
-
-                    // if the first NFragment is present, first AA is covered
-                    if (nTermFragmentAAPositions.Contains(1))
-                    {
-                        fragmentCoveredAminoAcids.Add(1);
-                    }
-
-                    //Check all amino acids except for the last one in the list
-                    for (int i = 0; i < nTermFragmentAAPositions.Count - 1; i++)
-                    {
-                        //sequential AA, second one is covered
-                        if (nTermFragmentAAPositions[i + 1] - nTermFragmentAAPositions[i] == 1)
-                        {
-                            fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1]);
-                        }
-
-                        //check to see if the position is covered from both directions, inclusive
-                        if (cTermFragmentAAPositions.Contains(nTermFragmentAAPositions[i + 1]))
-                        {
-                            fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1]);
-                        }
-
-                        //check to see if the position is covered from both directions, exclusive
-                        if (cTermFragmentAAPositions.Contains(nTermFragmentAAPositions[i + 1] + 2))
-                        {
-                            fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1] + 1);
-                        }
-                    }
-
+                    fragmentCoveredAminoAcids.Add(this.BaseSequence.Length);
                 }
 
-                //Check C term frags
-                if (cTermFragmentAAPositions.Count > 0)
+                // if the first NFragment is present, first AA is covered
+                if (nTermFragmentAAPositions.Contains(1))
                 {
-                    cTermFragmentAAPositions.Sort();
+                    fragmentCoveredAminoAcids.Add(1);
+                }
 
-                    //if the second AA is present, the first AA is covered
-                    if (cTermFragmentAAPositions.Contains(2))
+                //Check all amino acids except for the last one in the list
+                for (int i = 0; i < nTermFragmentAAPositions.Count - 1; i++)
+                {
+                    //sequential AA, second one is covered
+                    if (nTermFragmentAAPositions[i + 1] - nTermFragmentAAPositions[i] == 1)
                     {
-                        fragmentCoveredAminoAcids.Add(1);
+                        fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1]);
                     }
 
-                    //if the last AA is present, the final AA is covered
-                    if (cTermFragmentAAPositions.Contains(this.BaseSequence.Length))
+                    //check to see if the position is covered from both directions, inclusive
+                    if (cTermFragmentAAPositions.Contains(nTermFragmentAAPositions[i + 1]))
                     {
-                        fragmentCoveredAminoAcids.Add(this.BaseSequence.Length);
+                        fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1]);
                     }
 
-                    //check all amino acids except for the last one in the list
-                    for (int i = 0; i < cTermFragmentAAPositions.Count - 1; i++)
+                    //check to see if the position is covered from both directions, exclusive
+                    if (cTermFragmentAAPositions.Contains(nTermFragmentAAPositions[i + 1] + 2))
                     {
-                        //sequential AA, the first one is covered
-                        if (cTermFragmentAAPositions[i + 1] - cTermFragmentAAPositions[i] == 1)
-                        {
-                            fragmentCoveredAminoAcids.Add(cTermFragmentAAPositions[i]);
-                        }
+                        fragmentCoveredAminoAcids.Add(nTermFragmentAAPositions[i + 1] + 1);
                     }
                 }
 
-                //store in PSM
-                var fragmentCoveredAminoAcidsList = fragmentCoveredAminoAcids.ToList();
-                fragmentCoveredAminoAcidsList.Sort();
-                this.FragmentCoveragePositionInPSM = fragmentCoveredAminoAcidsList;
-
-                if (this.OneBasedStartResidueInProtein == null) return;
-                //Save the positions within the protein that are covered in a list, assign to each PSM
-                HashSet<int> fragmentCoveredAminoAcidNumberInProtein = new();
-                foreach (var position in fragmentCoveredAminoAcidsList)
-                {
-                    fragmentCoveredAminoAcidNumberInProtein.Add(position + this.OneBasedStartResidueInProtein.Value -
-                                                                1);
-                }
-
-                //store in PSM
-                this.FragmentCoveragePositionInProtein = fragmentCoveredAminoAcidNumberInProtein.ToList();
             }
+
+            //Check C term frags
+            if (cTermFragmentAAPositions.Count > 0)
+            {
+                cTermFragmentAAPositions.Sort();
+
+                //if the second AA is present, the first AA is covered
+                if (cTermFragmentAAPositions.Contains(2))
+                {
+                    fragmentCoveredAminoAcids.Add(1);
+                }
+
+                //if the last AA is present, the final AA is covered
+                if (cTermFragmentAAPositions.Contains(this.BaseSequence.Length))
+                {
+                    fragmentCoveredAminoAcids.Add(this.BaseSequence.Length);
+                }
+
+                //check all amino acids except for the last one in the list
+                for (int i = 0; i < cTermFragmentAAPositions.Count - 1; i++)
+                {
+                    //sequential AA, the first one is covered
+                    if (cTermFragmentAAPositions[i + 1] - cTermFragmentAAPositions[i] == 1)
+                    {
+                        fragmentCoveredAminoAcids.Add(cTermFragmentAAPositions[i]);
+                    }
+                }
+            }
+
+            //store in PSM
+            var fragmentCoveredAminoAcidsList = fragmentCoveredAminoAcids.ToList();
+            fragmentCoveredAminoAcidsList.Sort();
+            this.FragmentCoveragePositionInPSM = fragmentCoveredAminoAcidsList;
+
+            if (this.OneBasedStartResidueInProtein == null) return;
+            //Save the positions within the protein that are covered in a list, assign to each PSM
+            HashSet<int> fragmentCoveredAminoAcidNumberInProtein = new();
+            foreach (var position in fragmentCoveredAminoAcidsList)
+            {
+                fragmentCoveredAminoAcidNumberInProtein.Add(position + this.OneBasedStartResidueInProtein.Value -
+                                                            1);
+            }
+
+            //store in PSM
+            this.FragmentCoveragePositionInProtein = fragmentCoveredAminoAcidNumberInProtein.ToList();
         }
 
         public static int GetCountComplementaryIons(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
