@@ -97,11 +97,9 @@ namespace EngineLayer.CrosslinkSearch
         public static void ResolveProteinPosAmbiguitiesForXl(CrosslinkSpectralMatch csm)
         {
             csm.ResolveAllAmbiguities();
-            csm.GetAminoAcidCoverage();
             if (csm.BetaPeptide != null)
             {
                 csm.BetaPeptide.ResolveAllAmbiguities();
-                csm.BetaPeptide.GetAminoAcidCoverage();
             }
 
             //Assign PsmCrossType.Cross to Intra or Inter.

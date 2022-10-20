@@ -496,6 +496,7 @@ namespace Test
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm1.ResolveAllAmbiguities();
             psm1.GetAminoAcidCoverage();
+            psm1.GetAminoAcidCoverageProtein();
             //First amino acid
             Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(1));
             //sequential N term Frags
@@ -518,6 +519,7 @@ namespace Test
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm2.ResolveAllAmbiguities();
             psm2.GetAminoAcidCoverage();
+            psm2.GetAminoAcidCoverageProtein();
 
             //check that fragment coverage positions are the same
             Assert.That(psm1.FragmentCoveragePositionInPSM.SequenceEqual(psm2.FragmentCoveragePositionInPSM));

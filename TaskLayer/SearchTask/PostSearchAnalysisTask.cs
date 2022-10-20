@@ -17,8 +17,10 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using BayesianEstimation;
+using MathNet.Numerics;
 using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
+using ThermoFisher.CommonCore.Data.Interfaces;
 
 namespace TaskLayer
 {
@@ -57,7 +59,6 @@ namespace TaskLayer
             {
                 Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
                 Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
-                Parameters.AllPsms.ForEach(psm => psm.GetAminoAcidCoverage());
                 Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
                    .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
                    .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
@@ -155,7 +156,6 @@ namespace TaskLayer
             foreach (PeptideSpectralMatch psm in Parameters.AllPsms)
             {
                 psm.ResolveAllAmbiguities();
-                psm.GetAminoAcidCoverage();
             }
 
             Status("Done constructing protein groups!", Parameters.SearchTaskId);

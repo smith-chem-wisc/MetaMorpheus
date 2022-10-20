@@ -379,6 +379,8 @@ namespace EngineLayer
                         if (Proteins.Contains(peptide.Protein))
                         {
                             proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
+                            psm.GetAminoAcidCoverage();
+                            psm.GetAminoAcidCoverageProtein();
                             proteinsWithUnambigSeqPsmsPSM[peptide.Protein].Add(psm);
 
                             // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
@@ -397,6 +399,10 @@ namespace EngineLayer
 
                 foreach (var psm in proteinsWithUnambigSeqPsmsPSM[protein])
                 {
+                    var test1 = psm.FragmentCoveragePositionInProtein;
+                    var test2 = psm.FragmentCoveragePositionInPSM;
+                    var test3 = psm.MatchedFragmentIons;
+                    var test4 = psm.OneBasedStartResidueInProtein;
                     if (psm.FragmentCoveragePositionInProtein != null)
                     {
                         foreach (int i in psm.FragmentCoveragePositionInProtein)
@@ -405,6 +411,8 @@ namespace EngineLayer
                         }
                     }
                 }
+
+                var test5 = fragmentCoveredResidues;
 
                 // create upper/lowercase string
                 string fragmentSequenceCoverageDisplay = protein.BaseSequence.ToLower();
@@ -417,6 +425,8 @@ namespace EngineLayer
                 fragmentSequenceCoverageDisplay = new string(fragmentCoverageArray);
 
                 FragmentSequenceCoverageDisplayList.Add(fragmentSequenceCoverageDisplay);
+
+                var test6 = FragmentSequenceCoverageDisplayList;
             }
 
             foreach (var protein in ListOfProteinsOrderedByAccession)

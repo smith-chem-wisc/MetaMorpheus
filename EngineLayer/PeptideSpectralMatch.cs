@@ -9,6 +9,9 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using Easy.Common.Extensions;
+using Proteomics.AminoAcidPolymer;
+using ThermoFisher.CommonCore.Data;
 
 namespace EngineLayer
 {
@@ -84,8 +87,8 @@ namespace EngineLayer
         public bool IsContaminant { get; private set; }
 
         public List<int> FragmentCoveragePositionInPSM { get; private set; }
-
         public List<int> FragmentCoveragePositionInProtein { get; private set; }
+      
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
@@ -147,7 +150,6 @@ namespace EngineLayer
                 PeptidesToMatchingFragments.Remove(pwsm);
             }
             this.ResolveAllAmbiguities();
-            this.GetAminoAcidCoverage();
         }
 
         public override string ToString()
@@ -233,7 +235,6 @@ namespace EngineLayer
                 if (removedPeptides)
                 {
                     ResolveAllAmbiguities();
-                    GetAminoAcidCoverage();
                 }
             }
 
@@ -283,7 +284,7 @@ namespace EngineLayer
         /// </summary>
         public void GetAminoAcidCoverage()
         {
-            if (string.IsNullOrEmpty(this.BaseSequence) || this.MatchedFragmentIons == null ||
+            if (string.IsNullOrEmpty(this.BaseSequence) ||
                 !this.MatchedFragmentIons.Any()) return;
             //Pull C terminal and N terminal Fragments and amino acid numbers
             var nTermFragmentAAPositions = this.MatchedFragmentIons.Where(p =>
@@ -294,13 +295,11 @@ namespace EngineLayer
                     p.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
                 .Select(j => j.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
 
-
             //Create a hashset to store the covered amino acid positions
             HashSet<int> fragmentCoveredAminoAcids = new();
 
-
             //Check N term frags first
-            if (nTermFragmentAAPositions.Count > 0)
+            if (nTermFragmentAAPositions.Any())
             {
                 nTermFragmentAAPositions.Sort();
 
@@ -341,7 +340,7 @@ namespace EngineLayer
             }
 
             //Check C term frags
-            if (cTermFragmentAAPositions.Count > 0)
+            if (cTermFragmentAAPositions.Any())
             {
                 cTermFragmentAAPositions.Sort();
 
@@ -372,14 +371,18 @@ namespace EngineLayer
             var fragmentCoveredAminoAcidsList = fragmentCoveredAminoAcids.ToList();
             fragmentCoveredAminoAcidsList.Sort();
             this.FragmentCoveragePositionInPSM = fragmentCoveredAminoAcidsList;
+        }
 
-            if (this.OneBasedStartResidueInProtein == null) return;
+        public void GetAminoAcidCoverageProtein()
+        {
+            if (this.FragmentCoveragePositionInPSM.IsNullOrEmpty() ||
+                this.OneBasedStartResidueInProtein == null) return;
             //Save the positions within the protein that are covered in a list, assign to each PSM
             HashSet<int> fragmentCoveredAminoAcidNumberInProtein = new();
-            foreach (var position in fragmentCoveredAminoAcidsList)
+            var startResidueProtein = this.OneBasedStartResidueInProtein;
+            foreach (var position in this.FragmentCoveragePositionInPSM)
             {
-                fragmentCoveredAminoAcidNumberInProtein.Add(position + this.OneBasedStartResidueInProtein.Value -
-                                                            1);
+                fragmentCoveredAminoAcidNumberInProtein.Add(position + startResidueProtein.Value - 1);
             }
 
             //store in PSM
@@ -445,7 +448,6 @@ namespace EngineLayer
             }
 
             ResolveAllAmbiguities();
-            GetAminoAcidCoverage();
         }
 
         /// <summary>
@@ -461,7 +463,6 @@ namespace EngineLayer
                     PeptidesToMatchingFragments.Add(peptideWithNotch.Item2, mfi);
                 }
                 ResolveAllAmbiguities();
-                GetAminoAcidCoverage();
             }
         }
 

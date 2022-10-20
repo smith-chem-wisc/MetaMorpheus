@@ -85,7 +85,6 @@ namespace EngineLayer.ModernSearch
             foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
                 psm.ResolveAllAmbiguities();
-                psm.GetAminoAcidCoverage();
             }
 
             return new MetaMorpheusEngineResults(this);

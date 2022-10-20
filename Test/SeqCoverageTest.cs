@@ -117,10 +117,10 @@ namespace Test
             var pwsm2 = new PeptideWithSetModifications(prot1, digestionParams, 4, 6, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
             var pwsm3 = new PeptideWithSetModifications(prot1, digestionParams, 1, 6, CleavageSpecificity.Unknown, "", 0, new Dictionary<int, Modification>(), 0);
 
-            Product productb1 = new Product(ProductType.b, FragmentationTerminus.N, 0, 1, 1, 0);
-            Product productb2 = new Product(ProductType.b, FragmentationTerminus.N, 0, 2, 2, 0);
-            Product producty1 = new Product(ProductType.y, FragmentationTerminus.C, 0, 1, 3, 0);
-            Product producty2 = new Product(ProductType.y, FragmentationTerminus.C, 0, 2, 2, 0);
+            Product productb1 = new (ProductType.b, FragmentationTerminus.N, 0, 1, 1, 0);
+            Product productb2 = new (ProductType.b, FragmentationTerminus.N, 0, 2, 2, 0);
+            Product producty1 = new (ProductType.y, FragmentationTerminus.C, 0, 1, 3, 0);
+            Product producty2 = new (ProductType.y, FragmentationTerminus.C, 0, 2, 2, 0);
 
             MatchedFragmentIon mfib1 = new MatchedFragmentIon(ref productb1, 0, 0, 1);
             MatchedFragmentIon mfib2 = new MatchedFragmentIon(ref productb2, 0, 0, 2);
@@ -152,6 +152,7 @@ namespace Test
 
             newPsms.ForEach(p => p.ResolveAllAmbiguities());
             newPsms.ForEach(p => p.GetAminoAcidCoverage());
+            newPsms.ForEach(p => p.GetAminoAcidCoverageProtein());
 
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
