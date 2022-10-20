@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using GuiFunctions;
+using GuiFunctions.ViewModels.Legends;
 using IO.MzML;
 using NUnit.Framework;
 using OxyPlot;
@@ -12,6 +13,8 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
+using Chemistry;
+using Proteomics.ProteolyticDigestion;
 
 namespace Test
 {
@@ -101,23 +104,15 @@ namespace Test
             Assert.That(model.Modifications.First().Children.First().SelectedColor == "Green");
             model.Modifications.First().Children.First().SelectionChanged("Blue");
             Assert.That(model.Modifications.First().Children.First().SelectedColor == "Blue");
-            model.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak").SelectionChanged("Gray");
-            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak").SelectedColor == "Gray");
-            model.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion").SelectionChanged("Green");
-            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion").SelectedColor == "Green");
             model.SaveAsDefault();
             Assert.That(model.HasDefaultSaved == true);
             model.LoadSettings();
 
             SettingsViewModel model2 = new();
             Assert.That(model2.Modifications.First().Children.First().SelectedColor == "Blue");
-            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak").SelectedColor == "Gray");
-            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion").SelectedColor == "Green");
 
             SettingsViewModel model3 = new(false);
             Assert.That(model3.Modifications.First().Children.First().SelectedColor == "Blue");
-            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak").SelectedColor == "Gray");
-            Assert.That(model.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion").SelectedColor == "Green");
 
             Directory.Delete(outputFolder, true);
         }
@@ -262,21 +257,29 @@ namespace Test
         }
 
         [Test]
-        public static void TestPtmLegendViews()
+        public static void TestPtmLegendViewModels()
         {
-            var modGroup = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).First();
-            var twoMods = modGroup.Take(2).ToList();
-            PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(twoMods, 100);
-            PtmLegendView.Visibility = Visibility.Collapsed;
+            string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
+            PsmFromTsv psm = psms.First(p =>
+                new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)
+                    .AllModsOneIsNterminus.Values.Distinct().Count() == 2);
+            PeptideWithSetModifications pepWithSetMods = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
+            var twoMods = pepWithSetMods.AllModsOneIsNterminus.Values.ToList();
+            
+            PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(psm, 100);
+            PtmLegendView.Visibility = false;
             Assert.That(PtmLegendView.Header == "Legend");
             Assert.That(PtmLegendView.HeaderSize == 12);
-            Assert.That(PtmLegendView.LegendItems.Count == 2);
-            Assert.That(PtmLegendView.LegendItems.First().ModName == twoMods.First().IdWithMotif);
-            Assert.That(PtmLegendView.LegendItems.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif]).Color);
-            Assert.That(PtmLegendView.LegendItems.First().ModName == twoMods.First().IdWithMotif);
+            Assert.That(PtmLegendView.TopOffset == 100);
+            Assert.That(PtmLegendView.LegendItemViewModels.Count == 2);
+            Assert.That(PtmLegendView.LegendItemViewModels.First().Name == twoMods.First().IdWithMotif);
+            Assert.That(PtmLegendView.LegendItemViewModels.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif]).Color);
+            Assert.That(PtmLegendView.LegendItemViewModels.First().Name == twoMods.First().IdWithMotif);
             var mod = twoMods.First();
             PtmLegendItemViewModel ptmLegendItemView = new(mod.IdWithMotif);
-            Assert.That(ptmLegendItemView.ModName == mod.IdWithMotif);
+            Assert.That(ptmLegendItemView.Name == mod.IdWithMotif);
             Assert.That(ptmLegendItemView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.IdWithMotif]).Color);
 
             // test that residue per segment incrementation works and cannot be less than 1
@@ -320,8 +323,67 @@ namespace Test
             {
                 Assert.That(false);
             }
-
         }
+
+        [Test]
+        public static void TestChimeraLegendViewModels()
+        {
+            // object setup
+            string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings);
+            Assert.That(warnings.Count, Is.EqualTo(0));
+            List<PsmFromTsv> filteredChimeras = psms.Where(p => p.QValue <= 0.01 && p.PEP <= 0.5 && p.PrecursorScanNum == 1557).ToList();
+            Assert.That(filteredChimeras.Count, Is.EqualTo(3));
+
+            // test chimera legend basic functionality
+            ChimeraLegendViewModel chimeraLegend = new ChimeraLegendViewModel(filteredChimeras);
+            Assert.That(chimeraLegend.ChimeraLegendItems.Count == 2);
+            Assert.That(chimeraLegend.TopOffset == 0);
+            Assert.That(chimeraLegend.DisplaySharedIonLabel == true);
+            Assert.That(chimeraLegend.Visibility == true);
+            Assert.That(chimeraLegend.ChimeraLegendItems.Values.First().Count == 3);
+            Assert.That(chimeraLegend.ChimeraLegendItems.Values.ToList()[1].Count == 1);
+
+            // test chimera legend overflow colors
+                // more unique proteins than colored
+            List<PsmFromTsv> overflowInducingProteins = psms.DistinctBy(p => p.BaseSeq)
+                .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.Keys.Count + 1).ToList();
+            chimeraLegend = new(overflowInducingProteins);
+            Assert.AreEqual(chimeraLegend.ChimeraLegendItems.Values.DistinctBy(p =>
+                p.Select(m => m.ColorBrush.Color)).Count(), overflowInducingProteins.Count());
+            Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.First().ColorBrush.Color !=
+                        chimeraLegend.ChimeraLegendItems[overflowInducingProteins[1].BaseSeq].First().ColorBrush.Color);
+            Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.First().ColorBrush.Color ==
+                        chimeraLegend.ChimeraLegendItems.Last().Value.First().ColorBrush.Color);
+
+            // more unique proteoforms than colored
+            overflowInducingProteins = psms
+                .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.First().Value.Count)
+                .Select(p => p = new(p, overflowInducingProteins.First().FullSequence, 0,
+                    overflowInducingProteins.First().BaseSeq)).ToList();
+            Assert.That(overflowInducingProteins.All(p => p.BaseSeq == overflowInducingProteins.First().BaseSeq));
+            Assert.That(overflowInducingProteins.All(p => p.FullSequence == overflowInducingProteins.First().FullSequence));
+            chimeraLegend = new(overflowInducingProteins);
+            Assert.AreEqual(overflowInducingProteins.Count() + 1,
+                chimeraLegend.ChimeraLegendItems.First().Value.DistinctBy(p => p.ColorBrush.Color).Count());
+            Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.Count() == overflowInducingProteins.Count + 1);
+            Assert.AreEqual(chimeraLegend.ChimeraLegendItems.First().Value.Last().ColorBrush.Color, DrawnSequence
+                .ParseColorBrushFromOxyColor(ChimeraSpectrumMatchPlot.OverflowColors.Dequeue()).Color);
+
+            // test chimera legend item
+            ChimeraLegendItemViewModel chimeraLegendItem = new("tacos", OxyColors.Chocolate);
+            Assert.That(chimeraLegendItem.Name == "tacos");
+            Assert.That(chimeraLegendItem.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(OxyColors.Chocolate).Color);
+            chimeraLegendItem = new("", OxyColors.Chocolate);
+            Assert.That(chimeraLegendItem.Name == "No Modifications");
+            chimeraLegendItem = new(null, OxyColors.Chocolate);
+            Assert.That(chimeraLegendItem.Name == "No Modifications");
+
+            chimeraLegend = new ChimeraLegendViewModel(new List<PsmFromTsv>() { psms.First() });
+            Assert.That(chimeraLegend.DisplaySharedIonLabel == false);
+        }
+
 
         [Test]
         public static void TestDrawnSequenceColorConversions()

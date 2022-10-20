@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
@@ -14,10 +14,12 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using Easy.Common.Extensions;
+using IO.MzML;
 using TaskLayer;
 using ThermoFisher.CommonCore.Data.Business;
 
@@ -324,7 +326,7 @@ namespace Test
 
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() {Name = "plotView"};
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var sequenceAnnotationCanvas = new Canvas();
@@ -507,7 +509,7 @@ namespace Test
             Assert.That(c > 0);
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var sequenceAnnotationCanvas = new Canvas();
@@ -570,6 +572,16 @@ namespace Test
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "SLGKVGTR(4)").ToList();
             metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+            // write pdf with legend
+            Canvas ptmLegend = new();
+            Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport,
+                parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
 
             // test that pdf exists
             Assert.That(File.Exists(Path.Combine(outputFolder, @"2_SLGKVGTR(4).pdf"))); // parent scan
@@ -644,7 +656,7 @@ namespace Test
             Assert.Greater(c, 0);
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView(){Name = "plotView"};
             var parentChildView = new ParentChildScanPlotsView();
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
@@ -742,6 +754,166 @@ namespace Test
             Assert.That(!metadrawLogic.SpectraFilePaths.Any());
 
             // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void MetaDraw_TestChimeraScanSpectrumDisplay()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
+            List<MsDataScan> allScans = Mzml.LoadAllStaticData(spectraFile).GetAllScansList();
+            Directory.CreateDirectory(outputFolder);
+
+            // run search task
+            var searchtask = new SearchTask();
+            searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            var errors = metadrawLogic.LoadFiles(true, true);
+            Assert.That(!errors.Any());
+            Assert.That(metadrawLogic.FilteredListOfPsms.Any());
+
+            // test filter to chimeras
+            metadrawLogic.FilterPsmsToChimerasOnly();
+            var chimerasGroups = metadrawLogic.FilteredListOfPsms
+                .GroupBy(p => p.Ms2ScanNumber);
+            Assert.That(chimerasGroups.All(p => p.Count() > 1));
+
+            // test plotting on each instance of chimeras in this dataset
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "chimeraPlot" };
+            foreach (var chimeraGroupIGrouping in chimerasGroups.AsEnumerable())
+            {
+                List<PsmFromTsv> chimeraGroup = chimeraGroupIGrouping.ToList();
+                MsDataScan chimericScan =
+                    allScans.First(p => p.OneBasedScanNumber == chimeraGroup.First().Ms2ScanNumber);
+
+                // plot the first chimera and test the results
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                Assert.That(errors == null || !errors.Any());
+
+                // test plot was drawn
+                var model = plotView.Model;
+                Assert.That(model, Is.Not.Null);
+                Assert.That(model.Equals(metadrawLogic.ChimeraSpectrumMatchPlot.Model));
+                Assert.That(plotView.Model.Axes.Count == 2);
+
+                var peakPoints = ((LineSeries)model.Series[0]).Points;
+                
+                Assert.That(Math.Round(peakPoints[0].X, 2) == Math.Round(chimericScan.MassSpectrum.XArray[0], 2)); // m/z
+                Assert.That(Math.Round(peakPoints[1].X, 2) == Math.Round(chimericScan.MassSpectrum.XArray[0], 2));
+                Assert.That((int)peakPoints[0].Y == 0); // intensity
+                Assert.That((int)peakPoints[1].Y == (int)chimericScan.MassSpectrum.YArray[0]);
+
+                // all matched ions were drawn
+                int drawnIonsNotDefaultColor = model.Series.Count(p => ((LineSeries)p).Color != MetaDrawSettings.UnannotatedPeakColor);
+                List<MatchedFragmentIon> fragments = new();
+                chimeraGroup.Select(p => p.MatchedIons).ForEach(m => fragments.AddRange(m));
+                Assert.That(drawnIonsNotDefaultColor == fragments.Count);
+
+                // shared matched ions are default color
+                int drawnIonsShared = model.Series.Count(p => ((LineSeries)p).Color == ChimeraSpectrumMatchPlot.MultipleProteinSharedColor);
+                var sharedIons = fragments.GroupBy(p => p)
+                    .Where(m => m.Count() > 1)
+                    .SelectMany(n => n).ToList();
+                if (sharedIons.Any() || drawnIonsShared >= 1)
+                {
+                    int distinctMatchedSharedIons = sharedIons.Distinct().Count();
+                    Assert.That(sharedIons.Count - distinctMatchedSharedIons == drawnIonsShared);
+                }
+
+                // unshared peaks are the correct color
+                var unsharedIons = fragments.GroupBy(p => p)
+                    .Where(m => m.Count() == 1)
+                    .SelectMany(n => n).ToList();
+                for (var i = 0; i < chimeraGroup.Count; i++)
+                {
+                    var chimera = chimeraGroup[i];
+                    var chimeraSpecificPeaks = unsharedIons.Intersect(chimera.MatchedIons).ToList();
+                    var chimeraSharedPeaks = sharedIons.Intersect(chimera.MatchedIons).ToList();
+                    int drawnIonsOfSpecificID = model.Series.Count(p => ChimeraSpectrumMatchPlot.ColorByProteinDictionary[i].Any(m => m == ((LineSeries)p).Color));
+
+                    if (i == 0)
+                        Assert.That(drawnIonsOfSpecificID - chimeraSharedPeaks.Count == chimeraSpecificPeaks.Count);
+                    else
+                        Assert.That(drawnIonsOfSpecificID == chimeraSpecificPeaks.Count);
+                }
+
+                // test with different drawing settings
+                MetaDrawSettings.AnnotateCharges = true;
+                MetaDrawSettings.AnnotateMzValues = true;
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                Assert.That(errors == null || !errors.Any());
+
+                MetaDrawSettings.DisplayIonAnnotations = false;
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                Assert.That(errors == null || !errors.Any());
+            }
+
+            // test export of singlular plot
+            List<PsmFromTsv> firstChimeraGroup = chimerasGroups.First().ToList();
+            metadrawLogic.DisplayChimeraSpectra(plotView, firstChimeraGroup, out errors);
+            Assert.That(errors == null || !errors.Any());
+            foreach (var exportType in MetaDrawSettings.ExportTypes)
+            {
+                MetaDrawSettings.ExportType = exportType;
+                metadrawLogic.ExportPlot(plotView, null, new List<PsmFromTsv>() { firstChimeraGroup.First() }, null, outputFolder, out errors);
+                Assert.That(errors == null || !errors.Any());
+                string sequence = illegalInFileName.Replace(firstChimeraGroup.First().FullSequence, string.Empty);
+                string filePathWithoutDirectory = firstChimeraGroup.First().Ms2ScanNumber + "_" 
+                    + (sequence.Length > 30 ? sequence.Substring(0, 30) : sequence)
+                    + "." + exportType;
+                Assert.That(File.Exists(Path.Combine(outputFolder, filePathWithoutDirectory)));
+            }
+
+            string export = MetaDrawSettings.ExportType;
+            Canvas ptmLegend = new();
+            Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, null, new List<PsmFromTsv>() { firstChimeraGroup.First() }, null,
+                outputFolder, out errors, ptmLegend, ptmLegendVector);
+            Assert.That(errors == null || !errors.Any());
+            string sequenceSeq = illegalInFileName.Replace(firstChimeraGroup.First().FullSequence, string.Empty);
+            string fileNameWithoutDirectory = firstChimeraGroup.First().Ms2ScanNumber + "_"
+                + (sequenceSeq.Length > 30 ? sequenceSeq.Substring(0, 30) : sequenceSeq)
+                + "." + export;
+            Assert.That(File.Exists(Path.Combine(outputFolder, fileNameWithoutDirectory)));
+
+            // test export of multiple plots
+            List<PsmFromTsv> secondChimeraGroup = chimerasGroups.ToList()[1].ToList();
+            metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
+            Assert.That(errors == null || !errors.Any());
+            foreach (var exportType in MetaDrawSettings.ExportTypes)
+            {
+                MetaDrawSettings.ExportType = exportType;
+                metadrawLogic.ExportPlot(plotView, null, secondChimeraGroup, null, outputFolder, out errors);
+                Assert.That(errors == null || !errors.Any());
+
+                foreach (var chimera in secondChimeraGroup)
+                {
+                    string sequence = illegalInFileName.Replace(chimera.FullSequence, string.Empty);
+                    string filePathWithoutDirectory = chimera.Ms2ScanNumber + "_" 
+                        + (sequence.Length > 30 ? sequence.Substring(0, 30) : sequence) 
+                        + "." + exportType;
+                    Assert.That(File.Exists(Path.Combine(outputFolder, filePathWithoutDirectory)));
+                }
+            }
+
+            // test error
+            metadrawLogic.CleanUpResources();
+            metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
+            Assert.That(errors != null && errors.First().Equals("The spectra file could not be found for this PSM: SmallCalibratible_Yeast"));
+            
             Directory.Delete(outputFolder, true);
         }
 
@@ -885,7 +1057,7 @@ namespace Test
             Assert.That(!errors.Any());
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var canvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var stationaryCanvas = new Canvas();
@@ -1070,7 +1242,7 @@ namespace Test
             Assert.That(!errors.Any());
 
             // draw PSM
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var canvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var stationaryCanvas = new Canvas();
@@ -1141,7 +1313,7 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(metadrawLogic.FilteredListOfPsms.Any());
 
-            var plotView = new OxyPlot.Wpf.PlotView();
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             var stationaryCanvas = new Canvas();
             var scrollableCanvas = new Canvas();
             var sequenceAnnotationCanvas = new Canvas();
@@ -1383,6 +1555,14 @@ namespace Test
             var items9 = (List<OxyPlot.Series.ColumnItem>)series9.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
             Assert.AreEqual(items9[11].Value, 18);
+
+            var plot10 = new PlotModelStat("Histogram of Hydrophobicity scores",
+                psms, psmDict);
+            var series10 = plot10.Model.Series.ToList()[0];
+            var items10 = (List<OxyPlot.Series.ColumnItem>)series10.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series10);
+            Assert.AreEqual(items10.Count, 5);
+            Assert.AreEqual(items10[1].Value, 3);
 
             //test variant plotting
             string variantFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
