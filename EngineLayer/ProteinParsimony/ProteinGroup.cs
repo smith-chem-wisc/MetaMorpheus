@@ -1,9 +1,7 @@
-﻿using System;
-using FlashLFQ;
+﻿using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -358,13 +356,11 @@ namespace EngineLayer
         {
             var proteinsWithUnambigSeqPsms = new Dictionary<Protein, List<PeptideWithSetModifications>>();
             var proteinsWithPsmsWithLocalizedMods = new Dictionary<Protein, List<PeptideWithSetModifications>>();
-            var proteinsWithUnambigSeqPsmsPSM = new Dictionary<Protein, HashSet<PeptideSpectralMatch>>();
 
             foreach (var protein in Proteins)
             {
                 proteinsWithUnambigSeqPsms.Add(protein, new List<PeptideWithSetModifications>());
                 proteinsWithPsmsWithLocalizedMods.Add(protein, new List<PeptideWithSetModifications>());
-                proteinsWithUnambigSeqPsmsPSM.Add(protein, new HashSet<PeptideSpectralMatch>());
             }
 
             foreach (var psm in AllPsmsBelowOnePercentFDR)
@@ -372,6 +368,7 @@ namespace EngineLayer
                 // null BaseSequence means that the amino acid sequence is ambiguous; do not use these to calculate sequence coverage
                 if (psm.BaseSequence != null)
                 {
+                    psm.GetAminoAcidCoverage();
                     var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide);
                     foreach (var peptide in peptides)
                     {
@@ -379,9 +376,7 @@ namespace EngineLayer
                         if (Proteins.Contains(peptide.Protein))
                         {
                             proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
-                            psm.GetAminoAcidCoverage();
-                            psm.GetAminoAcidCoverageProtein();
-                            proteinsWithUnambigSeqPsmsPSM[peptide.Protein].Add(psm);
+                            //proteinsWithUnambigSeqPsmsCoverage[peptide.Protein].Add((peptide, psm.FragmentCoveragePositionInPeptide));
 
                             // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
                             if (psm.FullSequence != null)
@@ -393,38 +388,45 @@ namespace EngineLayer
                 }
             }
 
-            foreach (var protein in ListOfProteinsOrderedByAccession)
+            //Calculate sequence coverage at the amino acid level by looking at fragment specific coverage
+            //loop through proteins
+            foreach (Protein protein in ListOfProteinsOrderedByAccession)
             {
-                HashSet<int> fragmentCoveredResidues = new HashSet<int>();
+                //create a hash set for storing covered one-based residue numbers of protein
+                HashSet<int> coveredResiduesInProteinOneBased = new();
 
-                foreach (var psm in proteinsWithUnambigSeqPsmsPSM[protein])
+                //loop through PSMs
+                foreach (PeptideSpectralMatch psm in AllPsmsBelowOnePercentFDR.Where(psm => psm.BaseSequence != null))
                 {
-                    if (psm.FragmentCoveragePositionInProtein != null)
+                    //Calculate the covered bases within the psm. This is one based numbering for the peptide only
+                    psm.GetAminoAcidCoverage();
+                    if (psm.FragmentCoveragePositionInPeptide == null) continue;
+                    //loop through each peptide within the psm
+                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p=>p.Protein.Accession == protein.Accession);
+                    foreach (PeptideWithSetModifications pwsm in pwsms)
                     {
-                        foreach (int i in psm.FragmentCoveragePositionInProtein)
+                        //create a hashset to store the covered residues for the peptide, converted to the corresponding indices of the protein
+                        HashSet<int> coveredResiduesInPeptide = new();
+                        //add the peptide start position within the protein to each covered index of the psm
+                        foreach (var position in psm.FragmentCoveragePositionInPeptide)
                         {
-                            fragmentCoveredResidues.Add(i);
+                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidueInProtein - 1); //subtract one because these are both one based
                         }
+                        //Add the peptide specific positions, to the overall hashset for the protein
+                        coveredResiduesInProteinOneBased.UnionWith(coveredResiduesInPeptide);
                     }
                 }
 
-                var test5 = fragmentCoveredResidues;
-
                 // create upper/lowercase string
-                string fragmentSequenceCoverageDisplay = protein.BaseSequence.ToLower();
-                var fragmentCoverageArray = fragmentSequenceCoverageDisplay.ToCharArray();
-                foreach (var residue in fragmentCoveredResidues)
+                char[] fragmentCoverageArray = protein.BaseSequence.ToLower().ToCharArray();
+                foreach (var residue in coveredResiduesInProteinOneBased)
                 {
                     fragmentCoverageArray[residue - 1] = char.ToUpper(fragmentCoverageArray[residue - 1]);
                 }
-
-                fragmentSequenceCoverageDisplay = new string(fragmentCoverageArray);
-
-                FragmentSequenceCoverageDisplayList.Add(fragmentSequenceCoverageDisplay);
-
-                var test6 = FragmentSequenceCoverageDisplayList;
+                FragmentSequenceCoverageDisplayList.Add(new string(fragmentCoverageArray));
             }
 
+            //Calculates the coverage at the peptide level... if a peptide is present all of the AAs in the peptide are covered
             foreach (var protein in ListOfProteinsOrderedByAccession)
             {
                 HashSet<int> coveredOneBasedResidues = new HashSet<int>();

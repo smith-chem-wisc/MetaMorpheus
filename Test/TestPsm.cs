@@ -496,36 +496,29 @@ namespace Test
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm1.ResolveAllAmbiguities();
             psm1.GetAminoAcidCoverage();
-            psm1.GetAminoAcidCoverageProtein();
             //First amino acid
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(1));
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(1));
             //sequential N term Frags
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(4));
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(4));
             //Last amino acid
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(14));
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(14));
             //Covered from both directions inclusive
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(8));
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(8));
             //Covered from both directions exclusive
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(7));
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(7));
             //Sequential C term Frags
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPSM.Contains(11));
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(11));
             //Not coveredRT
-            Assert.IsFalse(psm1.FragmentCoveragePositionInPSM.Contains(5));
-            //psm position and protein position should be same
-            Assert.That(psm1.FragmentCoveragePositionInPSM.SequenceEqual(psm1.FragmentCoveragePositionInProtein));
+            Assert.IsFalse(psm1.FragmentCoveragePositionInPeptide.Contains(5));
 
 
             PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan1, commonParameters, mfis1);
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
             psm2.ResolveAllAmbiguities();
             psm2.GetAminoAcidCoverage();
-            psm2.GetAminoAcidCoverageProtein();
 
             //check that fragment coverage positions are the same
-            Assert.That(psm1.FragmentCoveragePositionInPSM.SequenceEqual(psm2.FragmentCoveragePositionInPSM));
-            //check that protein positions are correct
-            var proteinCoverageAAList = new List<int> { 16, 19, 22, 23, 26, 29 }; 
-            Assert.IsTrue(psm2.FragmentCoveragePositionInProtein.SequenceEqual(proteinCoverageAAList));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.SequenceEqual(psm2.FragmentCoveragePositionInPeptide));
         }
     }
 }

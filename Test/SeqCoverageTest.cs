@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using MassSpectrometry;
 using FlashLFQ;
-using static iText.IO.Image.Jpeg2000ImageData;
 using TaskLayer;
 
 namespace Test
@@ -152,7 +151,6 @@ namespace Test
 
             newPsms.ForEach(p => p.ResolveAllAmbiguities());
             newPsms.ForEach(p => p.GetAminoAcidCoverage());
-            newPsms.ForEach(p => p.GetAminoAcidCoverageProtein());
 
             ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();

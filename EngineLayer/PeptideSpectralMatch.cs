@@ -86,8 +86,8 @@ namespace EngineLayer
         public bool IsDecoy { get; private set; }
         public bool IsContaminant { get; private set; }
 
-        public List<int> FragmentCoveragePositionInPSM { get; private set; }
-        public List<int> FragmentCoveragePositionInProtein { get; private set; }
+        //One-based positions in peptide that are covered by fragments on both sides of amino acids
+        public List<int> FragmentCoveragePositionInPeptide { get; private set; }
       
 
         public DigestionParams DigestionParams { get; }
@@ -370,23 +370,7 @@ namespace EngineLayer
             //store in PSM
             var fragmentCoveredAminoAcidsList = fragmentCoveredAminoAcids.ToList();
             fragmentCoveredAminoAcidsList.Sort();
-            this.FragmentCoveragePositionInPSM = fragmentCoveredAminoAcidsList;
-        }
-
-        public void GetAminoAcidCoverageProtein()
-        {
-            if (this.FragmentCoveragePositionInPSM.IsNullOrEmpty() ||
-                this.OneBasedStartResidueInProtein == null) return;
-            //Save the positions within the protein that are covered in a list, assign to each PSM
-            HashSet<int> fragmentCoveredAminoAcidNumberInProtein = new();
-            var startResidueProtein = this.OneBasedStartResidueInProtein;
-            foreach (var position in this.FragmentCoveragePositionInPSM)
-            {
-                fragmentCoveredAminoAcidNumberInProtein.Add(position + startResidueProtein.Value - 1);
-            }
-
-            //store in PSM
-            this.FragmentCoveragePositionInProtein = fragmentCoveredAminoAcidNumberInProtein.ToList();
+            this.FragmentCoveragePositionInPeptide = fragmentCoveredAminoAcidsList;
         }
 
         public static int GetCountComplementaryIons(Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments, PeptideWithSetModifications peptide)
