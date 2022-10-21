@@ -399,10 +399,6 @@ namespace EngineLayer
 
                 foreach (var psm in proteinsWithUnambigSeqPsmsPSM[protein])
                 {
-                    var test1 = psm.FragmentCoveragePositionInProtein;
-                    var test2 = psm.FragmentCoveragePositionInPSM;
-                    var test3 = psm.MatchedFragmentIons;
-                    var test4 = psm.OneBasedStartResidueInProtein;
                     if (psm.FragmentCoveragePositionInProtein != null)
                     {
                         foreach (int i in psm.FragmentCoveragePositionInProtein)
