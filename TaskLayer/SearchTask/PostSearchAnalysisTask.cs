@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -15,8 +16,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using BayesianEstimation;
+using MathNet.Numerics;
 using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
+using ThermoFisher.CommonCore.Data.Interfaces;
 
 namespace TaskLayer
 {
@@ -69,6 +73,7 @@ namespace TaskLayer
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
 
             HistogramAnalysis();
+
             WritePsmResults();
             WriteProteinResults();
             WritePrunedDatabase();
@@ -97,6 +102,7 @@ namespace TaskLayer
             MyTaskResults = new MyTaskResults(this);
             return null;
         }
+
 
         /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
@@ -1506,6 +1512,7 @@ namespace TaskLayer
             }
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
+
 
         private static void WriteTree(BinTreeStructure myTreeStructure, string writtenFile)
         {

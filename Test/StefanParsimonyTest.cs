@@ -165,13 +165,20 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
+
+            Product productC3 = new Product(ProductType.y, FragmentationTerminus.C, 0, 3, 4, 0);
+            Product productC4 = new Product(ProductType.y, FragmentationTerminus.C, 0, 4, 3, 0);
+
+            MatchedFragmentIon mfiC3 = new MatchedFragmentIon(ref productC3, 0, 0, 1);
+            MatchedFragmentIon mfiC4 = new MatchedFragmentIon(ref productC4, 0, 0, 1);
+
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(pep1,0,1,0, scan, new CommonParameters(), new List<MatchedFragmentIon>()),
+                new PeptideSpectralMatch(pep1,0,1,0, scan, new CommonParameters(), new List<MatchedFragmentIon>() {mfiC3, mfiC4}),
             };
 
             // this PSM has a target and a decoy
-            psms[0].AddOrReplace(pep2, 1, 0, true, null,0);
+            psms[0].AddOrReplace(pep2, 1, 0, true, new List<MatchedFragmentIon>() { mfiC3, mfiC4 }, 0);
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));

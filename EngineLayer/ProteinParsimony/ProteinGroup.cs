@@ -2,7 +2,6 @@
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -22,6 +21,7 @@ namespace EngineLayer
             SequenceCoverageFraction = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
+            FragmentSequenceCoverageDisplayList = new List<string>();
             ProteinGroupScore = 0;
             BestPeptideScore = 0;
             QValue = 0;
@@ -69,6 +69,8 @@ namespace EngineLayer
         public List<string> SequenceCoverageDisplayList { get; private set; }
 
         public List<string> SequenceCoverageDisplayListWithMods { get; private set; }
+
+        public List<string> FragmentSequenceCoverageDisplayList { get; private set; }
 
         public double QValue { get; set; }
         public double PEPQvalue { get; set; }
@@ -142,6 +144,7 @@ namespace EngineLayer
             sb.Append("Sequence Coverage Fraction" + '\t');
             sb.Append("Sequence Coverage" + '\t');
             sb.Append("Sequence Coverage with Mods" + '\t');
+            sb.Append("Fragment Sequence Coverage" + '\t');
             sb.Append("Modification Info List" + "\t");
             if (FilesForQuantification != null)
             {
@@ -273,6 +276,10 @@ namespace EngineLayer
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", SequenceCoverageDisplayListWithMods)));
             sb.Append("\t");
 
+            // fragment sequence coverage
+            sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", FragmentSequenceCoverageDisplayList)));
+            sb.Append("\t");
+
             //Detailed mods information list
             sb.Append(GlobalVariables.CheckLengthOfOutput(string.Join("|", ModsInfo)));
             sb.Append("\t");
@@ -373,6 +380,7 @@ namespace EngineLayer
                 // null BaseSequence means that the amino acid sequence is ambiguous; do not use these to calculate sequence coverage
                 if (psm.BaseSequence != null)
                 {
+                    psm.GetAminoAcidCoverage();
                     var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide);
                     foreach (var peptide in peptides)
                     {
@@ -380,6 +388,7 @@ namespace EngineLayer
                         if (Proteins.Contains(peptide.Protein))
                         {
                             proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
+                            //proteinsWithUnambigSeqPsmsCoverage[peptide.Protein].Add((peptide, psm.FragmentCoveragePositionInPeptide));
 
                             // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
                             if (psm.FullSequence != null)
@@ -391,6 +400,45 @@ namespace EngineLayer
                 }
             }
 
+            //Calculate sequence coverage at the amino acid level by looking at fragment specific coverage
+            //loop through proteins
+            foreach (Protein protein in ListOfProteinsOrderedByAccession)
+            {
+                //create a hash set for storing covered one-based residue numbers of protein
+                HashSet<int> coveredResiduesInProteinOneBased = new();
+
+                //loop through PSMs
+                foreach (PeptideSpectralMatch psm in AllPsmsBelowOnePercentFDR.Where(psm => psm.BaseSequence != null))
+                {
+                    //Calculate the covered bases within the psm. This is one based numbering for the peptide only
+                    psm.GetAminoAcidCoverage();
+                    if (psm.FragmentCoveragePositionInPeptide == null) continue;
+                    //loop through each peptide within the psm
+                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p=>p.Protein.Accession == protein.Accession);
+                    foreach (PeptideWithSetModifications pwsm in pwsms)
+                    {
+                        //create a hashset to store the covered residues for the peptide, converted to the corresponding indices of the protein
+                        HashSet<int> coveredResiduesInPeptide = new();
+                        //add the peptide start position within the protein to each covered index of the psm
+                        foreach (var position in psm.FragmentCoveragePositionInPeptide)
+                        {
+                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidueInProtein - 1); //subtract one because these are both one based
+                        }
+                        //Add the peptide specific positions, to the overall hashset for the protein
+                        coveredResiduesInProteinOneBased.UnionWith(coveredResiduesInPeptide);
+                    }
+                }
+
+                // create upper/lowercase string
+                char[] fragmentCoverageArray = protein.BaseSequence.ToLower().ToCharArray();
+                foreach (var residue in coveredResiduesInProteinOneBased)
+                {
+                    fragmentCoverageArray[residue - 1] = char.ToUpper(fragmentCoverageArray[residue - 1]);
+                }
+                FragmentSequenceCoverageDisplayList.Add(new string(fragmentCoverageArray));
+            }
+
+            //Calculates the coverage at the peptide level... if a peptide is present all of the AAs in the peptide are covered
             foreach (var protein in ListOfProteinsOrderedByAccession)
             {
                 HashSet<int> coveredOneBasedResidues = new HashSet<int>();
