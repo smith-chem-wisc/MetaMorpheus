@@ -9,12 +9,51 @@ using IO.MzML;
 using MassSpectrometry;
 using Org.BouncyCastle.Asn1.X509;
 using System.Text.RegularExpressions;
+using System;
 
 namespace Test
 {
+
     [TestFixture]
     public class ProteinParsimonyTest
     {
+        private static string outputFolder;
+        private static string subFolder;
+        private static string origDataFile;
+        private static List<string> rawFilePathList;
+        private static MsDataFile myMsDatFile;
+        private static SearchTask searchTaskFilterPsms;
+
+        [OneTimeSetUp]
+        public static void GlobalSetup()
+        {
+            subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualOutputTest");
+            Directory.CreateDirectory(subFolder);
+            outputFolder = Path.Combine(subFolder, "Results");
+            Directory.CreateDirectory(outputFolder);
+            MyFileManager myFileManager = new(true);
+            origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            CommonParameters CommonParameters = new(digestionParams: new DigestionParams());
+            myMsDatFile = myFileManager.LoadFile(origDataFile, CommonParameters);
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            rawFilePathList = new();
+
+            //we're making multiple files to search because one file by itself doesn not produce enough Psms to activate Pep.
+            for (int i = 0; i < 4; i++)
+            {
+                string fullFilePath = Path.Combine(outputFolder, "bubba_" + i + ".mzml");
+                rawFilePathList.Add(fullFilePath);
+                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDatFile, fullFilePath, false);
+                fsp.Add(("bubba_" + i + ".mzml", CommonParameters));
+            }
+        }
+
+        [OneTimeTearDown]
+        public void Dispose()
+        {
+            Directory.Delete(subFolder, true);
+        }
+
         [Test]
         [TestCase(true, false,24)]
         [TestCase(true, true, 23)]
@@ -22,30 +61,9 @@ namespace Test
         [TestCase(false, true, 23)]
         public static void FilterPsmsByPepPriorToParsimonyModPeptidesAre(bool filterPeptidesByPep, bool modPeptidesAreUniqueForThisTest, int proteinListLineCount)
         {
-            string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualOutputTest");
-            Directory.CreateDirectory(subFolder);
-            string outputFolder = Path.Combine(subFolder, "Results");
-            Directory.CreateDirectory(outputFolder);
-            MyFileManager myFileManager = new(true);
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
-            CommonParameters CommonParameters = new(digestionParams: new DigestionParams());
-            MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
-            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
-            List<string> rawFilePathList = new();
-
-            //we're making multiple files to search because one file by itself doesn not produce enough Psms to activate Pep.
-            for (int i = 0; i < 4; i++)
-            {
-                string fullFilePath = Path.Combine(outputFolder, "bubba_" + i + ".mzml");
-                rawFilePathList.Add(fullFilePath);
-                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, fullFilePath, false);
-                fsp.Add(("bubba_" + i + ".mzml", CommonParameters));
-            }
-
-            SearchTask searchTaskFilterPsms = new ();
+            searchTaskFilterPsms = new();
             searchTaskFilterPsms.SearchParameters.FilterPsmsByPepForParsimony = filterPeptidesByPep;
             searchTaskFilterPsms.SearchParameters.ModPeptidesAreDifferent = modPeptidesAreUniqueForThisTest;
-
 
             List<(string, MetaMorpheusTask)> tasks = new() { ("searchTaskFilterPsms", searchTaskFilterPsms) };
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), false);
@@ -87,31 +105,21 @@ namespace Test
                 Assert.IsTrue(results.Any(l => l.Contains("All target peptides within 1% FDR:")));
                 Assert.IsTrue(results.Any(l => l.Contains("All target protein groups within 1% FDR:")));
             }
-
-            Directory.Delete(subFolder, true);
         }
 
         [Test]
         [TestCase(true, false, true, 24)]
         public static void NotEnoughPsmsToFilterByPep(bool filterPeptidesByPep, bool modPeptidesAreUniqueForThisTest, bool doParsimony, int proteinListLineCount)
         {
-            string subFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"IndividualOutputTest");
-            Directory.CreateDirectory(subFolder);
-            string outputFolder = Path.Combine(subFolder, "Results");
-            Directory.CreateDirectory(outputFolder);
-            MyFileManager myFileManager = new(true);
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             CommonParameters CommonParameters = new(digestionParams: new DigestionParams());
-            MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             List<string> rawFilePathList = new();
 
             string fullFilePath = Path.Combine(outputFolder, "bubba.mzml");
             rawFilePathList.Add(fullFilePath);
-            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, fullFilePath, false);
+            MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDatFile, fullFilePath, false);
             fsp.Add(("bubba.mzml", CommonParameters));
             
-
             SearchTask searchTaskFilterPsms = new();
             searchTaskFilterPsms.SearchParameters.FilterPsmsByPepForParsimony = filterPeptidesByPep;
             searchTaskFilterPsms.SearchParameters.ModPeptidesAreDifferent = modPeptidesAreUniqueForThisTest;
