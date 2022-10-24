@@ -152,17 +152,17 @@ namespace Test
             newPsms.ForEach(p => p.ResolveAllAmbiguities());
             newPsms.ForEach(p => p.GetAminoAcidCoverage());
 
-            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, new CommonParameters(), null, new List<string>());
+            ProteinParsimonyEngine ppe = new ProteinParsimonyEngine(newPsms, true, false, new CommonParameters(), null, new List<string>());
             ProteinParsimonyResults fjkd = (ProteinParsimonyResults)ppe.Run();
 
-            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, true, true, true, new CommonParameters(), null, new List<string>());
+            ProteinScoringAndFdrEngine psafe = new ProteinScoringAndFdrEngine(fjkd.ProteinGroups, newPsms, false, true, true, true, new CommonParameters(), null, new List<string>());
             psafe.Run();
 
             fjkd.ProteinGroups.ForEach(g => g.CalculateSequenceCoverage());
 
-            var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().FragmentSequenceCoverageDisplayList.First();
+            string firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().FragmentSequenceCoverageDisplayList.First();
             
-            Assert.IsTrue(firstSequenceCoverageDisplayList == "MmkMMK");
+            Assert.AreEqual("MmkMMK", firstSequenceCoverageDisplayList);
         }
     }
 }
