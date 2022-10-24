@@ -934,6 +934,18 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void MbrAnalysisUpdate(object sender, RoutedEventArgs e)
+        {
+            if (CheckBoxLFQwMBR.IsChecked.Value)
+            {
+                if (UpdateGUISettings.UseMBRAnalysisMandatorySettings())
+                {
+                    CheckBoxMatchBetweenRuns.IsChecked = true;
+                    WriteSpectralLibraryCheckBox.IsChecked = true;
+                }
+            }
+        }
+
         private void KeyPressed(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
