@@ -141,7 +141,6 @@ namespace Test
             var psm3 = new PeptideSpectralMatch(pwsm3, 0, 1, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
-
             List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
             {
                 psm1,
