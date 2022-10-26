@@ -1564,6 +1564,39 @@ namespace Test
             Assert.AreEqual(items10.Count, 5);
             Assert.AreEqual(items10[1].Value, 3);
 
+            var plot11 = new PlotModelStat("Histogram of Predicted Precursor Electrophoretic Mobility",
+                psms, psmDict);
+            var series11 = plot11.Model.Series.ToList()[0];
+            var items11 = (List<OxyPlot.Series.ColumnItem>)series11.GetType()
+                .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series11);
+            Assert.AreEqual(items11.Count, 5);
+            Assert.AreEqual(items11[3].Value, 4);
+
+
+            var plot12 = new PlotModelStat("Predicted Electrophoretic Mobility vs. Observed MT (CZE)",
+                psms, psmDict);
+            var series12 = plot12.Model.Series.ToList()[0];
+            var points12 = (List<OxyPlot.Series.ScatterPoint>)series12.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series12);
+            Assert.AreEqual(points12.Count, 10);
+            Assert.AreEqual(points12[6].X, 42.06171);
+            Assert.AreEqual(points12[6].Y, 17.337711707780869);
+            Assert.AreEqual(points12[6].Tag, "AFISYHDEAQK");
+
+            //Check with log y axis scale, as well as non-stacked plot. Doesn't change any actual data, just display
+            MetaDrawSettings.yAxisLogScale = true;
+            MetaDrawSettings.stackedBool = false;
+
+            var plot13 = new PlotModelStat("Predicted Electrophoretic Mobility vs. Observed MT (CZE)",
+                psms, psmDict);
+            var series13 = plot13.Model.Series.ToList()[0];
+            var points13 = (List<OxyPlot.Series.ScatterPoint>)series13.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series13);
+            Assert.AreEqual(points13.Count, 10);
+            Assert.AreEqual(points13[6].X, 42.06171);
+            Assert.AreEqual(points13[6].Y, 17.337711707780869);
+            Assert.AreEqual(points13[6].Tag, "AFISYHDEAQK");
+
             //test variant plotting
             string variantFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
             List<string> warningsVariants = new List<string>();
@@ -1591,6 +1624,15 @@ namespace Test
             Assert.AreEqual(variantPoints2[0].X, 97.8357);
             Assert.AreEqual(variantPoints2[0].Y, 16.363848874371111);
             Assert.AreEqual(variantPoints2[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
+
+            var variantPlot3 = new PlotModelStat("Predicted Electrophoretic Mobility vs. Observed MT (CZE)", psmsWithVariants, psmVariantDict);
+            var variantSeries3 = variantPlot3.Model.Series.ToList()[0];
+            var variantPoints3 = (List<OxyPlot.Series.ScatterPoint>)variantSeries3.GetType()
+                .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries3);
+            Assert.AreEqual(variantPoints3.Count, 1);
+            Assert.AreEqual(variantPoints3[0].X, 97.8357);
+            Assert.AreEqual(variantPoints3[0].Y, 14.066351193976942);
+            Assert.AreEqual(variantPoints3[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
 
 
             Directory.Delete(folderPath, true);
