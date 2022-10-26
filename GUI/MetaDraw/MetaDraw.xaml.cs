@@ -23,6 +23,8 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Easy.Common.Extensions;
+using OxyPlot.Wpf;
 
 namespace MetaMorpheusGUI
 {
@@ -1016,7 +1018,7 @@ namespace MetaMorpheusGUI
         /// <param name="value">true = enabled, false = disable</param>
         private void ToggleButtonsEnabled(bool value)
         {
-            loadFiles.IsEnabled = value;
+            loadFiles.IsEnabled = value; 
             selectSpectraFileButton.IsEnabled = value;
             selectPsmFileButton.IsEnabled = value;
             selectSpecLibraryButton.IsEnabled = value;
@@ -1024,6 +1026,34 @@ namespace MetaMorpheusGUI
             resetSpectraFileButton.IsEnabled = value;
             resetSpectraFileButton.IsEnabled = value;
             ExportButton.IsEnabled = value;
+        }
+
+        private void YAxisLogScaleCheckbox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            MetaDrawSettings.yAxisLogScale = yAxisLogScaleCheckbox.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void YAxisLogScaleCheckbox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            MetaDrawSettings.yAxisLogScale = yAxisLogScaleCheckbox.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void StackedBars_OnChecked(object sender, RoutedEventArgs e)
+        {
+            MetaDrawSettings.stackedBool = stackedBars.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void StackedBars_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            MetaDrawSettings.stackedBool = stackedBars.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
         }
     }
 }

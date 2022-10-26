@@ -439,6 +439,7 @@
                                 <RowDefinition Height="50*"/>
                                 <RowDefinition Height="40*"/>
                                 <RowDefinition Height="25"/>
+                                <RowDefinition Height="25"/>
                             </Grid.RowDefinitions>
 
                             <!--Select MetaMorpheus output file-->
@@ -472,7 +473,13 @@
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
 
-                            <DockPanel Grid.Row="4" Margin="2">
+                            <!--Whether to display y-axis on a log scale-->
+                            <DockPanel Grid.Row="4" Margin="10,10,0,0">
+                                <CheckBox Name="yAxisLogScaleCheckbox" Content="y-axis log scale" IsChecked="False" Checked="YAxisLogScaleCheckbox_OnChecked" Unchecked="YAxisLogScaleCheckbox_OnUnchecked" Margin="0,0,15,0"></CheckBox>
+                                <CheckBox Name="stackedBars" Content="Stacked Bars" IsChecked="True" Checked="StackedBars_OnChecked" Unchecked="StackedBars_OnUnchecked"></CheckBox>
+                            </DockPanel>
+
+                            <DockPanel Grid.Row="5" Margin="2">
                                 <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" />
                             </DockPanel>
                         </Grid>

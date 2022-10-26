@@ -93,6 +93,9 @@ namespace GuiFunctions
         public static int SequenceAnnotationSegmentPerRow { get; set; } = 3;
         public static int SequenceAnnotaitonResiduesPerSegment { get; set; } = 10;
 
+        public static bool yAxisLogScale { get; set; } = false;
+        public static bool stackedBool { get; set; } = true;
+
         static MetaDrawSettings()
         {
             InitializeDictionaries();
@@ -248,6 +251,8 @@ namespace GuiFunctions
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
                 UnannotatedPeakColor = UnannotatedPeakColor.GetColorName(),
                 InternalIonColor = InternalIonColor.GetColorName(),
+                yAxisLogScale = yAxisLogScale,
+                stackedBool = stackedBool,
             };
         }
 
@@ -271,6 +276,8 @@ namespace GuiFunctions
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
             ExportType = settings.ExportType;
+            yAxisLogScale = settings.yAxisLogScale;
+            stackedBool = settings.stackedBool;
 
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
@@ -308,6 +315,8 @@ namespace GuiFunctions
             ExportType = "Pdf";
             UnannotatedPeakColor = OxyColors.LightGray;
             InternalIonColor = OxyColors.Purple;
+            yAxisLogScale = false;
+            stackedBool = true;
         }
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)

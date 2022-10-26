@@ -30,6 +30,8 @@ namespace GuiFunctions
         public List<string> CoverageTypeToColorValues { get; set; }
         public string UnannotatedPeakColor { get; set; }
         public string InternalIonColor { get; set; }
+        public bool yAxisLogScale { get; set; }
+        public bool stackedBool { get; set; }
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
