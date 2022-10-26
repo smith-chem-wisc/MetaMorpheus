@@ -1504,7 +1504,7 @@ namespace Test
             var series3 = plot3.Model.Series.ToList()[0];
             var items3 = (List<OxyPlot.Series.ColumnItem>)series3.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series3);
-            Assert.AreEqual(items3[7].Value, 2);
+            Assert.AreEqual(items3[2].Value, 2);
 
             var plot4 = new PlotModelStat("Histogram of Fragment Charges",
                 psms, psmDict);
