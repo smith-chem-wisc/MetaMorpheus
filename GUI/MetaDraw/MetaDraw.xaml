@@ -37,11 +37,15 @@
                                 <RowDefinition Height="25"/>
                             </Grid.RowDefinitions>
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"></ColumnDefinition>
+                                <ColumnDefinition Width="27*"></ColumnDefinition>
+                                <ColumnDefinition Width="102*"/>
+                                <ColumnDefinition Width="15*"/>
+                                <ColumnDefinition Width="20*"/>
+                                <ColumnDefinition Width="101*"/>
                             </Grid.ColumnDefinitions>
 
                             <!--Select spectra file-->
-                            <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
+                            <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="5" Margin="0,1,0,1">
                                 <Label Content="Spectra files: " Width="95" />
                                 <Button Name="resetSpectraFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
@@ -51,7 +55,7 @@
                             </DockPanel>
 
                             <!--Select MetaMorpheus output file (psmfromtsv) -->
-                            <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
+                            <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="5" Margin="0,1,0,1">
                                 <Label Content="PSM files: " Width="95" />
                                 <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
@@ -61,7 +65,7 @@
                             </DockPanel>
 
                             <!-- Select spectral library file -->
-                            <DockPanel Grid.Row="2" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
+                            <DockPanel Grid.Row="2" LastChildFill="True" Grid.ColumnSpan="5" Margin="0,1,0,1">
                                 <Label Content="Spectral Library:" Width="95" ToolTip="Optional"/>
                                 <Button Name="resetSpecLibraryButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click" />
                                 <Button Name="selectSpecLibraryButton" Content="Select" DockPanel.Dock="Right" Width="40" Click="selectSpecLibraryButton_Click" 
@@ -71,7 +75,7 @@
                                 </Label>
                             </DockPanel>
 
-                            <Border Grid.Row="3" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
+                            <Border Grid.Row="3" Grid.ColumnSpan="5" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0,0,0,416" Padding="0 0 0 0" Grid.RowSpan="2">
                                 <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
                                     <Button Name="loadFiles" Content="Load Files" Width="80" Click="loadFilesButton_Click" />
                                     <TextBox Width="100" TextChanged="TextBox_TextChanged" DockPanel.Dock="Right"></TextBox>
@@ -80,7 +84,7 @@
                             </Border>
 
                             <!--List of PSMs-->
-                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="4">
+                            <GroupBox Header="Peptide Spectral Matches" Name="gbSpectra" Grid.Row="4" Grid.ColumnSpan="5">
                                 <Grid>
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="1*"/>
@@ -88,7 +92,7 @@
 
                                     <DataGrid x:Name="dataGridScanNums" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" ItemsSource="{Binding}"
                                               ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" SelectedCellsChanged="dataGridScanNums_SelectedCellsChanged" 
-                                              CanUserDeleteRows="false" CanUserAddRows="false" >
+                                              CanUserDeleteRows="false" CanUserAddRows="false">
                                         <DataGrid.Columns>
                                             <DataGridTextColumn Header="MS2 Scan" Binding="{Binding Ms2ScanNumber}" Width="70" 
                                                                 ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
@@ -105,7 +109,7 @@
                                     </DataGrid>
                                 </Grid>
                             </GroupBox>
-                            <Button Content="{Binding}" Grid.Row="5" Width="100" Click="PDFButton_Click" x:Name="ExportButton" />
+                            <Button Content="{Binding}" Grid.Row="4" Width="100" Click="PDFButton_Click" x:Name="ExportButton" Grid.ColumnSpan="4" Margin="55,416,83,0" Grid.RowSpan="2" Grid.Column="1" />
                         </Grid>
 
                         <!--Moveable splitter-->
@@ -242,7 +246,7 @@
                                                 <!-- actual ptm legend -->
                                                 <local:PtmLegendControl x:Name="ChildScanPtmLegendControl"   DataContext="{Binding}" />
                                             </StackPanel>
-                                            
+
                                         </Grid>
                                     </Grid>
                                 </TabItem>
@@ -437,6 +441,7 @@
                                 <RowDefinition Height="29"/>
                                 <RowDefinition Height="29"/>
                                 <RowDefinition Height="50*"/>
+                                <RowDefinition Height="40"/>
                                 <RowDefinition Height="40*"/>
                                 <RowDefinition Height="25"/>
                                 <RowDefinition Height="25"/>
@@ -468,18 +473,24 @@
                                 </DockPanel>
                             </DockPanel>
 
+                            <DockPanel Grid.Row="3">
+                                <Label Height="25" VerticalAlignment="Top" HorizontalAlignment="Right">Filter Psms by Full Sequence</Label>
+                                    <TextBox TextChanged="TextBoxBase_OnTextChanged" DockPanel.Dock="Left" Width="125" Height="30" VerticalAlignment="Top" ToolTip="Shows only PSMs where the Full sequence (including PTMs) contains the value of this text box"/>
+                            </DockPanel>
+
                             <!--List of plot options-->
-                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="3">
+                            <GroupBox Header="Plot Type" Name="plotType" Grid.Row="4">
                                 <ListView x:Name="plotsListBox" ItemsSource="{Binding}" SelectionChanged ="PlotSelected" MaxHeight="400"/>
                             </GroupBox>
 
                             <!--Whether to display y-axis on a log scale-->
-                            <DockPanel Grid.Row="4" Margin="10,10,0,0">
-                                <CheckBox Name="yAxisLogScaleCheckbox" Content="y-axis log scale" IsChecked="False" Checked="YAxisLogScaleCheckbox_OnChecked" Unchecked="YAxisLogScaleCheckbox_OnUnchecked" Margin="0,0,15,0"></CheckBox>
-                                <CheckBox Name="stackedBars" Content="Stacked Bars" IsChecked="True" Checked="StackedBars_OnChecked" Unchecked="StackedBars_OnUnchecked"></CheckBox>
+                            <DockPanel Grid.Row="5" Margin="5,5,0,0">
+                                <CheckBox Name="yAxisLogScaleCheckbox" Content="y-axis log scale" IsChecked="False" Checked="YAxisLogScaleCheckbox_OnChecked" Unchecked="YAxisLogScaleCheckbox_OnUnchecked" Margin="0,0,10,0" ToolTip="Displays histogram y-axis on a logarithmic scale when checked"></CheckBox>
+                                <CheckBox Name="stackedBars" Content="Stacked Bars" IsChecked="True" Checked="StackedBars_OnChecked" Unchecked="StackedBars_OnUnchecked" Margin="0,0,10,0" ToolTip="Stacks histogram bars for multiple files when checked"></CheckBox>
+                                <CheckBox Name ="invertFilter" Content="Invert Filter" IsChecked="False" Checked="InvertFilter_OnChecked" Unchecked="InvertFilter_OnUnchecked" ToolTip="Displays PSMs that DO NOT pass the Full Sequence filter"></CheckBox>
                             </DockPanel>
 
-                            <DockPanel Grid.Row="5" Margin="2">
+                            <DockPanel Grid.Row="6" Margin="2">
                                 <Button Content="Export to PDF" Width="100" Click="CreatePlotPdf_Click" />
                             </DockPanel>
                         </Grid>

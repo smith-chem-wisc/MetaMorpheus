@@ -46,6 +46,8 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private SettingsViewModel SettingsView;
+        private string searchString = string.Empty;
+        private bool plotInverseBool = false;
 
         public MetaDraw()
         {
@@ -740,13 +742,36 @@ namespace MetaMorpheusGUI
             Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBSF = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
             foreach (string fileName in selectSourceFileListBox.SelectedItems)
             {
-                psmsBSF.Add(fileName, MetaDrawLogic.PsmsGroupedByFile[fileName]);
+                var filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName].Where(p => p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+                if (plotInverseBool)
+                {
+                    filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName].Where(p => !p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+                }
+
+                var filteredPSMsForPLotsBSFOC = new ObservableCollection<PsmFromTsv>(filteredPSMsForPlotsBSF);
+
+                psmsBSF.Add(fileName, filteredPSMsForPLotsBSFOC);
                 foreach (PsmFromTsv psm in MetaDrawLogic.PsmsGroupedByFile[fileName])
                 {
                     psms.Add(psm);
                 }
             }
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
+
+            var filteredPSMsForPlots = psms.Where(p => p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+
+            if (!filteredPSMsForPlots.Any())
+            {
+                MessageBox.Show("No PSMs pass the filter");
+                return;
+            }
+
+            if (plotInverseBool)
+            {
+                filteredPSMsForPlots = psms.Where(p => !p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+            }
+            var filteredPSMsForPlotsOC = new ObservableCollection<PsmFromTsv>(filteredPSMsForPlots);
+
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, filteredPSMsForPlotsOC, psmsBSF));
             plotViewStat.DataContext = plot;
             PlotViewStat_SizeChanged(plotViewStat, null);
         }
@@ -1061,6 +1086,28 @@ namespace MetaMorpheusGUI
         private void StackedBars_OnUnchecked(object sender, RoutedEventArgs e)
         {
             MetaDrawSettings.stackedBool = stackedBars.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void TextBoxBase_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            string txt = (sender as TextBox).Text;
+            searchString = txt;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void InvertFilter_OnChecked(object sender, RoutedEventArgs e)
+        {
+            plotInverseBool = invertFilter.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void InvertFilter_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            plotInverseBool = invertFilter.IsChecked.Value;
             if (MetaDrawLogic != null)
                 PlotSelected(plotsListBox, null);
         }
