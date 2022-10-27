@@ -8,24 +8,30 @@ using System.Windows;
 
 namespace MetaMorpheusGUI
 {
-    public class BooleanToVisibilityConverter : BaseValueConverter<BooleanToVisibilityConverter>
+    public class CheckboxUncheckConverter : BaseValueConverter<CheckboxUncheckConverter>
     {
         public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is Boolean && (bool)value)
+            if ((bool)value)
             {
-                return Visibility.Visible;
+                return false;
             }
-            return Visibility.Collapsed;
+            else
+            {
+                return (bool)value;
+            }
         }
 
         public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value is Visibility && (Visibility)value == Visibility.Visible)
+            if (!(bool)value)
             {
-                return true;
+                return false;
             }
-            return false;
+            else
+            {
+                return (bool)parameter;
+            }
         }
     }
 }

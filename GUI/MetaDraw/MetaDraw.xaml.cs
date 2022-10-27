@@ -24,6 +24,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Easy.Common.Extensions;
+using Org.BouncyCastle.Asn1.Crmf;
 using OxyPlot.Wpf;
 
 namespace MetaMorpheusGUI
@@ -1030,6 +1031,10 @@ namespace MetaMorpheusGUI
 
         private void YAxisLogScaleCheckbox_OnChecked(object sender, RoutedEventArgs e)
         {
+            if (MetaDrawSettings.stackedBool)
+            {
+                MessageBox.Show("Stacked bars with logarithmic scale not recommended");
+            }
             MetaDrawSettings.yAxisLogScale = yAxisLogScaleCheckbox.IsChecked.Value;
             if (MetaDrawLogic != null)
                 PlotSelected(plotsListBox, null);
@@ -1044,6 +1049,10 @@ namespace MetaMorpheusGUI
 
         private void StackedBars_OnChecked(object sender, RoutedEventArgs e)
         {
+            if (MetaDrawSettings.yAxisLogScale)
+            {
+                MessageBox.Show("Stacked bars with logarithmic scale not recommended");
+            }
             MetaDrawSettings.stackedBool = stackedBars.IsChecked.Value;
             if (MetaDrawLogic != null)
                 PlotSelected(plotsListBox, null);
