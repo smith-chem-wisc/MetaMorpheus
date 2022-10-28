@@ -743,6 +743,8 @@ namespace MetaMorpheusGUI
             foreach (string fileName in selectSourceFileListBox.SelectedItems)
             {
                 var filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName].Where(p => p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+                if (!filteredPSMsForPlotsBSF.Any()) continue;
+
                 if (plotInverseBool)
                 {
                     filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName].Where(p => !p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
