@@ -742,16 +742,20 @@ namespace MetaMorpheusGUI
             Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBSF = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
             foreach (string fileName in selectSourceFileListBox.SelectedItems)
             {
-                var filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName].Where(p => p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+                //pull out those PSMs for each file that have a full sequence matching the filter
+                var filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName]
+                    .Where(p => p.FullSequence.ToUpper().Contains(searchString));
                 if (!filteredPSMsForPlotsBSF.Any()) continue;
 
+                //If the inverse box is checked, take the opposite PSMs
                 if (plotInverseBool)
                 {
-                    filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName].Where(p => !p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+                    filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName]
+                        .Where(p => !p.FullSequence.ToUpper().Contains(searchString));
                 }
 
+                //Save PSMs as observable collection
                 var filteredPSMsForPLotsBSFOC = new ObservableCollection<PsmFromTsv>(filteredPSMsForPlotsBSF);
-
                 psmsBSF.Add(fileName, filteredPSMsForPLotsBSFOC);
                 foreach (PsmFromTsv psm in MetaDrawLogic.PsmsGroupedByFile[fileName])
                 {
@@ -759,20 +763,25 @@ namespace MetaMorpheusGUI
                 }
             }
 
-            var filteredPSMsForPlots = psms.Where(p => p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+            //Filter all PSMs that pass the filter
+            var filteredPSMsForPlots = psms.Where(p => p.FullSequence.ToUpper().Contains(searchString));
 
+            //check that there are some PSMs
             if (!filteredPSMsForPlots.Any())
             {
                 MessageBox.Show("No PSMs pass the filter");
                 return;
             }
 
+            //If the inverse box is checked, take the opposite PSMs
             if (plotInverseBool)
             {
                 filteredPSMsForPlots = psms.Where(p => !p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
             }
-            var filteredPSMsForPlotsOC = new ObservableCollection<PsmFromTsv>(filteredPSMsForPlots);
 
+            //Save as observable collection
+            var filteredPSMsForPlotsOC = new ObservableCollection<PsmFromTsv>(filteredPSMsForPlots);
+            //Create the PlotModelStat with the filtered psms
             PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, filteredPSMsForPlotsOC, psmsBSF));
             plotViewStat.DataContext = plot;
             PlotViewStat_SizeChanged(plotViewStat, null);
@@ -1095,7 +1104,7 @@ namespace MetaMorpheusGUI
         private void TextBoxBase_OnTextChanged(object sender, TextChangedEventArgs e)
         {
             string txt = (sender as TextBox).Text;
-            searchString = txt;
+            searchString = txt.ToUpper();
             if (MetaDrawLogic != null)
                 PlotSelected(plotsListBox, null);
         }
