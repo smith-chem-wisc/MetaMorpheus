@@ -557,6 +557,29 @@ namespace EngineLayer
             return mobility;
         }
 
+        //Mobility based on Charge calculation at a given a pH and ionizable group pKa values. default pH set to 2.4.
+        private static double GetPkaBasedMobility(PeptideWithSetModifications pwsm, double pH = 2.4)
+        {
+            double KCharge = Math.Pow(10, 10.8 - pH) / (1 + Math.Pow(10, 10.8 - pH));
+;           double RCharge = Math.Pow(10, 12.5 - pH) / (1 + Math.Pow(10, 12.5 - pH));
+            double HCharge = Math.Pow(10, 6.5 - pH) / (1 + Math.Pow(10, 6.5 - pH));
+            double NTermCharge = Math.Pow(10, 8.6 - pH) / (1 + Math.Pow(10, 8.6 - pH));
+            double CCharge = Math.Pow(10, pH - 8.5) / (1 + Math.Pow(10, pH - 8.5));
+            double YCharge = Math.Pow(10, pH - 10.1) / (1 + Math.Pow(10, pH - 10.1));
+            double ECharge = Math.Pow(10, pH - 4.1) / (1 + Math.Pow(10, pH - 4.1));
+            double DCharge = Math.Pow(10, pH - 3.9) / (1 + Math.Pow(10, pH - 3.9));
+            double CTermCharge = Math.Pow(10, pH - 3.6) / (1 + Math.Pow(10, pH - 3.6));
+
+            double peptideCharge = NTermCharge + CTermCharge + pwsm.BaseSequence.Count(f => f == 'K') * KCharge + pwsm.BaseSequence.Count(f => f == 'R') * RCharge
+                + pwsm.BaseSequence.Count(f => f == 'H') * HCharge + pwsm.BaseSequence.Count(f => f == 'C') * CCharge +  pwsm.BaseSequence.Count(f => f == 'Y') * YCharge
+                +  pwsm.BaseSequence.Count(f => f == 'E') * ECharge +  pwsm.BaseSequence.Count(f => f == 'D') * DCharge
+                - CountModificationsThatShiftMobility(pwsm.AllModsOneIsNterminus.Values.AsEnumerable());
+
+            double mobility = (Math.Log(1 + 0.35 * peptideCharge)) / Math.Pow(pwsm.MonoisotopicMass, 0.411);
+
+            return mobility;
+        }
+
         private static float GetSSRCalcHydrophobicityZScore(PeptideSpectralMatch psm, PeptideWithSetModifications Peptide, Dictionary<string, Dictionary<int, Tuple<double, double>>> d)
         {
             //Using SSRCalc3 but probably any number of different calculators could be used instead. One could also use the CE mobility.
