@@ -16,12 +16,9 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using BayesianEstimation;
 using MathNet.Numerics;
 using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
-using ThermoFisher.CommonCore.Data.Interfaces;
-using Proteomics.AminoAcidPolymer;
 
 namespace TaskLayer
 {
@@ -329,7 +326,7 @@ namespace TaskLayer
                 //The number of psms should roughly increase by a factor of N, where N is the number of labels.
                 //It may not increase exactly by a factor of N if the amino acid(s) that gets labeled doesn't exist in the peptide
 
-                List<PeptideSpectralMatch> silacPsms = new List<PeptideSpectralMatch>(); //populate with duplicate psms for heavy/light
+                List<PeptideSpectralMatch> silacPsms = new(); //populate with duplicate psms for heavy/light
 
                 //multiply the psms by the number of labels
                 foreach (PeptideSpectralMatch psm in unambiguousPsmsBelowOnePercentFdr)
@@ -402,9 +399,9 @@ namespace TaskLayer
                         string endLabeledBaseSequence = SilacConversions.GetLabeledBaseSequence(unlabeledBaseSequence, endLabel);
 
                         //figure out which residues can be changed
-                        List<int> differentResidues = new List<int>();
-                        List<char> startUniqueResidues = new List<char>();
-                        List<char> endUniqueResidues = new List<char>();
+                        List<int> differentResidues = new();
+                        List<char> startUniqueResidues = new();
+                        List<char> endUniqueResidues = new();
                         for (int i = 0; i < startLabeledBaseSequence.Length; i++)
                         {
                             char startChar = startLabeledBaseSequence[i];
@@ -418,7 +415,7 @@ namespace TaskLayer
                         }
 
                         //create missed cleavage combinations (only create HL; don't make HL and LH or FlashLFQ freaks at the ambiguity)
-                        List<string> labeledBaseSequences = new List<string> { startLabeledBaseSequence };
+                        List<string> labeledBaseSequences = new() { startLabeledBaseSequence };
                         string sequenceToModify = startLabeledBaseSequence;
                         for (int i = 0; i < differentResidues.Count; i++)
                         {
@@ -726,7 +723,6 @@ namespace TaskLayer
                         PsmsGroupedByFile = tempPsmsGroupedByFile.ToList();
                     }
                 }
-
 
                 //write the individual result files for each datafile
                 foreach (var fullFilePath in PsmsGroupedByFile.Select(v => v.Key))
@@ -1231,19 +1227,19 @@ namespace TaskLayer
             int stopLossCount = 0;
 
             // dictionaries facilitate the determination of unique variant sites
-            Dictionary<Protein, HashSet<SequenceVariation>> MNVmissenseVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();
-            Dictionary<Protein, HashSet<SequenceVariation>> SNVmissenseVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();
-            Dictionary<Protein, HashSet<SequenceVariation>> insertionVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();
-            Dictionary<Protein, HashSet<SequenceVariation>> deletionVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();
-            Dictionary<Protein, HashSet<SequenceVariation>> frameshiftVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();
-            Dictionary<Protein, HashSet<SequenceVariation>> stopGainVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();
-            Dictionary<Protein, HashSet<SequenceVariation>> stopLossVariants = new Dictionary<Protein, HashSet<SequenceVariation>>();
+            Dictionary<Protein, HashSet<SequenceVariation>> MNVmissenseVariants = new();
+            Dictionary<Protein, HashSet<SequenceVariation>> SNVmissenseVariants = new();
+            Dictionary<Protein, HashSet<SequenceVariation>> insertionVariants = new();
+            Dictionary<Protein, HashSet<SequenceVariation>> deletionVariants = new();
+            Dictionary<Protein, HashSet<SequenceVariation>> frameshiftVariants = new();
+            Dictionary<Protein, HashSet<SequenceVariation>> stopGainVariants = new();
+            Dictionary<Protein, HashSet<SequenceVariation>> stopLossVariants = new();
 
             double FdrFilterValue = CommonParameters.QValueOutputFilter != 1.0 ? CommonParameters.QValueOutputFilter : 0.01;
 
             List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps.Where(p => p.ModsIdentified != null && p.ModsIdentified.Count > 0 && p.FdrInfo.QValue <= FdrFilterValue && p.FdrInfo.QValueNotch <= FdrFilterValue && !p.IsDecoy && !p.IsContaminant).ToList(); //modification can be on any AA in variant peptide
 
-            List<PeptideSpectralMatch> modifiedVariantSitePeptides = new List<PeptideSpectralMatch>();// modification is speciifcally on the variant residue within the peptide
+            List<PeptideSpectralMatch> modifiedVariantSitePeptides = new();// modification is speciifcally on the variant residue within the peptide
             foreach (var entry in modifiedVariantPeptides)
             {
                 var variantPWSM = entry.BestMatchingPeptides.FirstOrDefault().Peptide;
@@ -1493,7 +1489,7 @@ namespace TaskLayer
 
         private static void WriteTree(BinTreeStructure myTreeStructure, string writtenFile)
         {
-            using (StreamWriter output = new StreamWriter(writtenFile))
+            using (StreamWriter output = new(writtenFile))
             {
                 output.WriteLine("MassShift\tCount\tCountDecoy\tCountTarget\tCountLocalizeableTarget\tCountNonLocalizeableTarget\tFDR\tArea 0.01t\tArea 0.255\tFracLocalizeableTarget\tMine\tUnimodID\tUnimodFormulas\tUnimodDiffs\tAA\tCombos\tModsInCommon\tAAsInCommon\tResidues\tprotNtermLocFrac\tpepNtermLocFrac\tpepCtermLocFrac\tprotCtermLocFrac\tFracWithSingle\tOverlappingFrac\tMedianLength\tUniprot");
                 foreach (Bin bin in myTreeStructure.FinalBins.OrderByDescending(b => b.Count))
@@ -1529,7 +1525,7 @@ namespace TaskLayer
             }
         }
 
-        private void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
+        private static void WritePsmsForPercolator(List<PeptideSpectralMatch> psmList, string writtenFileForPercolator)
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
