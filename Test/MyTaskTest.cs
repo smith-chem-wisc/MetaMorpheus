@@ -425,7 +425,7 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("All target peptides within 1% FDR: 4"))
+                    if (line.Contains("All target peptides with q-value = 0.01 : 4"))
                     {
                         foundD = true;
                     }
