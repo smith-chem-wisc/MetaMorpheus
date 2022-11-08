@@ -585,7 +585,7 @@ namespace TaskLayer
 
 
             // write summary text
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSM" + filterType + psmOrPeptideCountForResults  + Environment.NewLine);
+            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSM" + filterType + Math.Round(filterCutoffForResultsCounts,2) + ": " + psmOrPeptideCountForResults  + Environment.NewLine);
             if (Parameters.SearchParameters.DoParsimony)
             {
                 Parameters.SearchTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
