@@ -2,7 +2,7 @@ TaskType = "Search"
 
 [SearchParameters]
 DisposeOfFileWhenDone = true
-DoParsimony = false
+DoParsimony = true
 ModPeptidesAreDifferent = false
 NoOneHitWonders = false
 MatchBetweenRuns = false
