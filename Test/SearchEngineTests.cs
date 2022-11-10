@@ -140,7 +140,7 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(127, parsedPsms.Count);
+            Assert.AreEqual(37, parsedPsms.Count);
             Assert.AreEqual(0, warnings.Count);
         }
 
