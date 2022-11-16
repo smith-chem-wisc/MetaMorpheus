@@ -155,8 +155,6 @@ namespace Test
                 @"TestMbrAnalysisOutput\AllQuantifiedPeaks.tsv");
             string[] peaksResults = File.ReadAllLines(referenceDataPath).Skip(1).ToArray();
 
-            int placeholder = 0;
-
             foreach (string row in peaksResults)
             {
                 string[] rowSplit = row.Split('\t');
