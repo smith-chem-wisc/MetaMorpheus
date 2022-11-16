@@ -86,11 +86,12 @@ namespace Test
         }
 
         [Test]
-        public static void testingTMTonBigScan()
+        public static void TestingTMTonBigScan()
         {
             Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tmt18test.mzML");
             FilteringParams filter = new FilteringParams();
+            int fasd = 5;
             MyMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter, 1);
             var scans2 = MyMsDataFiles[origDataFile].GetAllScansList();
             var trimmedScans = scans2.Where(m => m.MsnOrder == 3).ToList();
