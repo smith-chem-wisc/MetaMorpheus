@@ -53,7 +53,7 @@ namespace MetaMorpheusGUI
             EverythingRunnerEngine.NewDbsHandler += AddNewProteinDatabaseFromGptmd;
             EverythingRunnerEngine.NewSpectrasHandler += AddNewSpectraFileFromCalibration;
             EverythingRunnerEngine.NewFileSpecificTomlHandler += AddNewFileSpecificTomlFromCalibration;
-            EverythingRunnerEngine.StartingAllTasksEngineHandler += SuccessfullyStartingAllTasks;
+            EverythingRunnerEngine.StartingAllTasksEngineHandler += SuccessfullyWaterLosstingAllTasks;
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
             EverythingRunnerEngine.WarnHandler += NotificationHandler;
             EverythingRunnerEngine.FinishedWritingAllResultsFileHandler += FinishedWritingAllResultsFileHandler;
@@ -370,11 +370,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void SuccessfullyStartingAllTasks(object sender, EventArgs e)
+        private void SuccessfullyWaterLosstingAllTasks(object sender, EventArgs e)
         {
             if (!Dispatcher.CheckAccess())
             {
-                Dispatcher.BeginInvoke(new Action(() => SuccessfullyStartingAllTasks(sender, e)));
+                Dispatcher.BeginInvoke(new Action(() => SuccessfullyWaterLosstingAllTasks(sender, e)));
             }
             else
             {
