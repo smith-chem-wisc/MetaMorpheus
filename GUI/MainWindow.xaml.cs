@@ -711,6 +711,11 @@ namespace MetaMorpheusGUI
             OpenNewTaskWindow(MyTask.GlycoSearch);
         }
 
+        private void AddAveragingTaskButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            OpenNewTaskWindow(MyTask.Average);
+        }
+
         /// <summary>
         /// Event fires when the "Add Task" button is clicked.
         /// </summary>
@@ -1706,6 +1711,7 @@ namespace MetaMorpheusGUI
                 case MyTask.Gptmd: defaultTomlName = "GptmdTaskDefault.toml"; break;
                 case MyTask.XLSearch: defaultTomlName = "XLSearchTaskDefault.toml"; break;
                 case MyTask.GlycoSearch: defaultTomlName = "GlycoSearchTaskDefault.toml"; break;
+                case MyTask.Average: defaultTomlName = "AverageTaskDefault.toml"; break;
             }
 
             string defaultTomlFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", defaultTomlName);
@@ -1721,6 +1727,7 @@ namespace MetaMorpheusGUI
                         case MyTask.Gptmd: task = Toml.ReadFile<GptmdTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                         case MyTask.XLSearch: task = Toml.ReadFile<XLSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                         case MyTask.GlycoSearch: task = Toml.ReadFile<GlycoSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.Average: task = Toml.ReadFile<GlycoSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                     }
                 }
                 catch (Exception)
@@ -1950,7 +1957,5 @@ namespace MetaMorpheusGUI
         {
             OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
         }
-
-       
     }
 }

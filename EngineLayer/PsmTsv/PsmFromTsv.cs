@@ -543,9 +543,9 @@ namespace EngineLayer
                 if (positionMatch.Success && variantMatch.Success)
                 {
                     List<ProductType> abcProductTypes = new List<ProductType>() { ProductType.a, ProductType.aDegree, ProductType.aStar,
-                                                                    ProductType.b, ProductType.bDegree, ProductType.bStar, ProductType.c };
-                    List<ProductType> xyzProductTypes = new List<ProductType>() { ProductType.x, ProductType.y, ProductType.yDegree,
-                                                                    ProductType.yStar, ProductType.zDot, ProductType.zPlusOne};
+                                                                    ProductType.b, ProductType.bWaterLoss, ProductType.bAmmoniaLoss, ProductType.c };
+                    List<ProductType> xyzProductTypes = new List<ProductType>() { ProductType.x, ProductType.y, ProductType.yWaterLoss,
+                                                                    ProductType.yAmmoniaLoss, ProductType.zDot, ProductType.zPlusOne};
                     int peptideStart = int.Parse(positionMatch.Groups[1].Value);
                     int peptideEnd = int.Parse(positionMatch.Groups[2].Value);
                     int variantResidueStart = int.Parse(variantMatch.Groups[1].Value);
