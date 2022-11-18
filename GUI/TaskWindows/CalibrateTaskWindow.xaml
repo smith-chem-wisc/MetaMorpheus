@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
         xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         KeyDown="KeyPressed"

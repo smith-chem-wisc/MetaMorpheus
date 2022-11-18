@@ -1711,7 +1711,7 @@ namespace MetaMorpheusGUI
                 case MyTask.Gptmd: defaultTomlName = "GptmdTaskDefault.toml"; break;
                 case MyTask.XLSearch: defaultTomlName = "XLSearchTaskDefault.toml"; break;
                 case MyTask.GlycoSearch: defaultTomlName = "GlycoSearchTaskDefault.toml"; break;
-                case MyTask.Average: defaultTomlName = "AverageTaskDefault.toml"; break;
+                case MyTask.Average: defaultTomlName = "SpectralAverageTaskDefault.toml"; break;
             }
 
             string defaultTomlFilePath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", defaultTomlName);
@@ -1727,7 +1727,7 @@ namespace MetaMorpheusGUI
                         case MyTask.Gptmd: task = Toml.ReadFile<GptmdTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                         case MyTask.XLSearch: task = Toml.ReadFile<XLSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                         case MyTask.GlycoSearch: task = Toml.ReadFile<GlycoSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
-                        case MyTask.Average: task = Toml.ReadFile<GlycoSearchTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
+                        case MyTask.Average: task = Toml.ReadFile<SpectralAveragingTask>(defaultTomlFilePath, MetaMorpheusTask.tomlConfig); break;
                     }
                 }
                 catch (Exception)
@@ -1744,6 +1744,7 @@ namespace MetaMorpheusGUI
                 case MyTask.Gptmd: dialog = new GptmdTaskWindow((GptmdTask)task); break;
                 case MyTask.XLSearch: dialog = new XLSearchTaskWindow((XLSearchTask)task); break;
                 case MyTask.GlycoSearch: dialog = new GlycoSearchTaskWindow((GlycoSearchTask)task); break;
+                case MyTask.Average: dialog = new SpectralAveragingTaskWindow((SpectralAveragingTask)task); break;
             }
 
             // save the task to the task collection
@@ -1756,6 +1757,7 @@ namespace MetaMorpheusGUI
                     case MyTask.Gptmd: AddTaskToCollection(((GptmdTaskWindow)dialog).TheTask); break;
                     case MyTask.XLSearch: AddTaskToCollection(((XLSearchTaskWindow)dialog).TheTask); break;
                     case MyTask.GlycoSearch: AddTaskToCollection(((GlycoSearchTaskWindow)dialog).TheTask); break;
+                    case MyTask.Average: AddTaskToCollection(((SpectralAveragingTaskWindow)dialog).TheTask); break;
                 }
 
                 UpdateGuiOnPreRunChange();
