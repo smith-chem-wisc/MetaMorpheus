@@ -53,7 +53,7 @@
                 
                 <!-- Averaging Parameters -->
                 <GroupBox Header="Averaging Parameters" DockPanel.Dock="Top">
-                    <Expander x:Name="averagingOptionsExpander">
+                    <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -62,9 +62,8 @@
 
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="*" />
-                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
-                            
+
                             <!-- Left side -->
                             <!-- Averaging Type, Type Specific Options, and Normalization -->
                             <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
@@ -185,10 +184,12 @@
                                     </ListBox>
                                 </GroupBox>
                             </StackPanel>
+                        </Grid>
 
-                            <!-- Bottom -->
-                            <!-- Text Fields -->
-                            <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" >
+                        <!-- Bottom -->
+                        <!-- Text Fields -->
+                        <GroupBox Style="{StaticResource GroupBoxStyle}">
+                            <Grid HorizontalAlignment="Stretch" VerticalAlignment="Top" >
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="*" />
@@ -231,16 +232,17 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>
-                        </Grid>
-                    </Expander>
+                        </GroupBox>
+                    </StackPanel>
                 </GroupBox>
 
                 <!-- Output Parameters -->
-                <GroupBox Header="Output Options">
+                <!-- NOTE: Commented out as outputting spectra as txt files seems dumb in MM -->
+                <!--<GroupBox Header="Output Options">
                     <Expander x:Name="outputOptionsExpander">
                         <StackPanel>
 
-                            <!-- Output Options -->
+                            --><!-- Output Options --><!--
                             <GroupBox Header="Output Options" Style="{StaticResource GroupBoxStyle}">
                                 <ListBox ItemsSource="{Binding OutputTypes}" SelectedItem="{Binding OutputType}">
                                     <ListBox.ItemContainerStyle>
@@ -267,7 +269,7 @@
                             </GroupBox>
                         </StackPanel>
                     </Expander>
-                </GroupBox>
+                </GroupBox>-->
             </DockPanel>
         </ScrollViewer>
 
