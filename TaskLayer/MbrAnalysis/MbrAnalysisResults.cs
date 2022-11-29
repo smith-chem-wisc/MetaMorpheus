@@ -92,8 +92,8 @@ namespace TaskLayer.MbrAnalysis
                     PeptideScoreDict.TryGetValue(peptide, out List<string> scoreList);
                     BestMbrMatches.TryGetValue(peaksForFile[peptide], out var mbrSpectralMatch);
                     string score = mbrSpectralMatch.spectralLibraryMatch != null && mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
-                        ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
-                        : "Spectrum Not Found";
+                        ? '\t' + mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
+                        : "\tSpectrum Not Found";
                     scoreList.Add(score);
                 }
 
@@ -101,7 +101,7 @@ namespace TaskLayer.MbrAnalysis
                 {
                     if (PeptideScoreDict.TryGetValue(peptide, out List<string> scoreList))
                     {
-                        scoreList.Add("NA");
+                        scoreList.Add("\tNA");
                     }
                 }
             }
