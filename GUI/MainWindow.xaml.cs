@@ -912,8 +912,12 @@ namespace MetaMorpheusGUI
             }
             if (!ProteinDatabases.Any())
             {
-                NotificationHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
-                return;
+                // will not throw this if averaging is the only task
+                if (PreRunTasks.Any(p => p.metaMorpheusTask.TaskType != MyTask.Average))
+                {
+                    NotificationHandler(null, new StringEventArgs("You need to add at least one protein database!", null));
+                    return;
+                }
             }
 
             // check that experimental design is defined if normalization is enabled
@@ -1663,6 +1667,11 @@ namespace MetaMorpheusGUI
                                     var glyco = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                                     AddTaskToCollection(glyco);
                                     break;
+
+                                case "Average":
+                                    var average = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
+                                    AddTaskToCollection(average);
+                                    break;
                             }
                         }
                         catch (Exception e)
@@ -1874,6 +1883,12 @@ namespace MetaMorpheusGUI
                 case MyTask.GlycoSearch:
                     var GlycoSearchdialog = new GlycoSearchTaskWindow(preRunTask.metaMorpheusTask as GlycoSearchTask);
                     GlycoSearchdialog.ShowDialog();
+                    break;
+
+                case MyTask.Average:
+                    var averagingDialog =
+                        new SpectralAveragingTaskWindow(preRunTask.metaMorpheusTask as SpectralAveragingTask);
+                    averagingDialog.ShowDialog();
                     break;
             }
 

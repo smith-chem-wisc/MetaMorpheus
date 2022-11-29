@@ -273,7 +273,7 @@
 
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
             <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_OnClick" />
-            <Button x:Name="SaveButton" Content="Save Calibrate Task" Click="SaveButton_OnClick"  FontSize="24" />
+            <Button x:Name="SaveButton" Content="Save Averaging Task" Click="SaveButton_OnClick"  FontSize="24" />
             <Button x:Name="SetDefaultbutton" Click="SetDefaultbutton_OnClick"  Width="100" >
                 <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
                 <ToolTipService.ToolTip>

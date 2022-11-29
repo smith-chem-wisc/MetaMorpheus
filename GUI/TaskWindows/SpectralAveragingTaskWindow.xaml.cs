@@ -16,6 +16,7 @@ using MzLibSpectralAveraging;
 using Nett;
 using TaskLayer;
 using System.IO;
+using MassSpectrometry;
 
 namespace MetaMorpheusGUI
 {
@@ -44,10 +45,12 @@ namespace MetaMorpheusGUI
         private void SaveButton_OnClick(object sender, RoutedEventArgs e)
         {
             // TODO: Make sure nothing else is needed here
+            // TODO: Add max threads per file as a param that can be set on the GUI for task
+            // setting dissociation type ensures no filters occur when loading files in MM Task
             CommonParameters commParamsToSave = new CommonParameters(
-                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "AveragingTask");
-
-
+                taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "AveragingTask", 
+                dissociationType: DissociationType.LowCID,
+                maxThreadsToUsePerFile: 2);
 
             TheTask.CommonParameters = commParamsToSave;
             DialogResult = true;
@@ -56,7 +59,7 @@ namespace MetaMorpheusGUI
         private void SetDefaultbutton_OnClick(object sender, RoutedEventArgs e)
         {
             SaveButton_OnClick(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SpectralAveragingTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", "SpectralAverageTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
         private void SpectralAveragingTaskWindow_OnKeyDown(object sender, KeyEventArgs e)
