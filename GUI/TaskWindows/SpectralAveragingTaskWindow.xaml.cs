@@ -44,7 +44,6 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_OnClick(object sender, RoutedEventArgs e)
         {
-            // TODO: Make sure nothing else is needed here
             // TODO: Add max threads per file as a param that can be set on the GUI for task
             // setting dissociation type ensures no filters occur when loading files in MM Task
             CommonParameters commParamsToSave = new CommonParameters(
