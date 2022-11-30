@@ -230,7 +230,6 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(testPath, "Task2-Search", "ExperimentalDesign.tsv")));
 
             Directory.Delete(testPath, true);
-            Directory.Delete(Path.Combine(TestFolder, "Task Settings"), true);
         }
 
         [Test]
