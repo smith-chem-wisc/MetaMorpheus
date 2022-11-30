@@ -228,6 +228,9 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(testPath, "Task2-Search", "AllQuantifiedProteinGroups.tsv")));
             Assert.That(File.Exists(Path.Combine(testPath, "Task2-Search", "SmallCalibratible_Yeast-averaged.mzID")));
             Assert.That(File.Exists(Path.Combine(testPath, "Task2-Search", "ExperimentalDesign.tsv")));
+
+            Directory.Delete(testPath, true);
+            Directory.Delete(Path.Combine(TestFolder, "Task Settings"), true);
         }
 
         [Test]
@@ -336,10 +339,40 @@ namespace Test
         [Test]
         public static void TestMzLibSpecAveragingOptionsResetDefaults()
         {
+            // set all values
             SpectralAveragingOptions specOptions = new SpectralAveragingOptions()
                 { Percentile = 2, MinSigmaValue = 1.3, MaxSigmaValue = 3 };
             MzLibSpectralAveragingOptions options = new MzLibSpectralAveragingOptions(specOptions);
             MzLibAveragingOptionsViewModel optionsVM = new(options);
+            optionsVM.MzLibSpectralAveragingOptions = new MzLibSpectralAveragingOptions(specOptions);
+            optionsVM.RejectionType = RejectionType.AveragedSigmaClipping;
+            optionsVM.WeightingType = WeightingType.CauchyDistribution;
+            optionsVM.SpectraFileProcessingType = SpectraFileProcessingType.AverageDDAScansWithOverlap;
+            optionsVM.PerformNormalization = false;
+            optionsVM.Percentile = 14;
+            optionsVM.MinSigmaVale = 20;
+            optionsVM.MaxSigmaValue = 15;
+            optionsVM.BinSize = 4;
+            optionsVM.NumberOfScansToAverage = 20;
+            optionsVM.OutputType = OutputType.txt;
+            optionsVM.ScanOverlap = 10;
+
+            // ensure they were set
+            Assert.That(Math.Abs(optionsVM.Percentile - 14) < 0.0001);
+            Assert.That(optionsVM.RejectionType == RejectionType.AveragedSigmaClipping);
+            Assert.That(optionsVM.WeightingType == WeightingType.CauchyDistribution);
+            Assert.That(optionsVM.SpectraFileProcessingType == SpectraFileProcessingType.AverageDDAScansWithOverlap);
+            Assert.That(optionsVM.PerformNormalization == false);
+            Assert.That(optionsVM.OutputType == OutputType.txt);
+            Assert.That(optionsVM.ScanOverlap == 10);
+            Assert.That(optionsVM.NumberOfScansToAverage == 20);
+            Assert.That(Math.Abs(optionsVM.BinSize - 4) < 0.0001);
+            Assert.That(Math.Abs(optionsVM.MinSigmaVale - 20) < 0.0001);
+            Assert.That(Math.Abs(optionsVM.MaxSigmaValue - 15) < 0.0001);
+            Assert.That(optionsVM.Name == "Default Options");
+            Assert.That(optionsVM.SavedPath == null);
+
+            // reset all values and ensure they were set
             optionsVM.ResetDefaults();
             Assert.That(Math.Abs(optionsVM.Percentile - 0.1) < 0.0001);
             Assert.That(optionsVM.RejectionType == RejectionType.NoRejection);

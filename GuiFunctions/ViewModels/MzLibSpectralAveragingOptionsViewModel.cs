@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -199,6 +200,7 @@ namespace GuiFunctions
     /// <summary>
     /// Model for design time viewing
     /// </summary>
+    [ExcludeFromCodeCoverage]
     public class MzLibSpectralAveragingModel : MzLibAveragingOptionsViewModel
     {
         public static MzLibSpectralAveragingModel Instance => new MzLibSpectralAveragingModel();

@@ -151,7 +151,7 @@ namespace TaskLayer
                 var originalUnaveragedFilenameWithoutExtension = GlobalVariables.GetFilenameWithoutExtension(originalUnaveragedFilePath);
                 string averagedFilePath = Path.Combine(outputFolder, originalUnaveragedFilenameWithoutExtension + AveragingSuffix + ".mzML");
 
-                var calibratedSpectraFile = new SpectraFileInfo(averagedFilePath,
+                var averagedSpectraFile = new SpectraFileInfo(averagedFilePath,
                     unaveragedSpectraFile.Condition, unaveragedSpectraFile.BiologicalReplicate, unaveragedSpectraFile.TechnicalReplicate, unaveragedSpectraFile.Fraction);
 
                 if (unsuccessfullyAveragedFilePaths.Contains(unaveragedSpectraFile.FullFilePathWithExtension))
@@ -160,7 +160,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    newExperDesign.Add(calibratedSpectraFile);
+                    newExperDesign.Add(averagedSpectraFile);
                 }
             }
 
