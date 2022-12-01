@@ -10,6 +10,8 @@ using System.Windows.Input;
 using TaskLayer;
 using Proteomics.ProteolyticDigestion;
 using System.Globalization;
+using System.Windows.Media;
+using MassSpectrometry;
 
 namespace MetaMorpheusGUI
 {
@@ -82,6 +84,11 @@ namespace MetaMorpheusGUI
                 fileSpecificParameterExists = true;
                 parametersToWrite.Protease = (Protease)fileSpecificProtease.SelectedItem;
             }
+            if (fileSpecificDissociationTypesEnabled.IsChecked.Value)
+            {
+                fileSpecificParameterExists = true;
+                parametersToWrite.DissociationType = Enum.Parse<DissociationType>(fileSpecificDissociationType.SelectedItem.ToString());
+            }
             if (fileSpecificSeparationTypesEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
@@ -138,16 +145,6 @@ namespace MetaMorpheusGUI
                     return;
                 }
             }
-            //if (fileSpecificIonTypesEnabled.IsChecked.Value)
-            //{
-            //    paramsToSaveCount++;
-
-            //    // don't think there's any way to mess up checkboxes... no error message needed
-            //    parametersToWrite.BIons = bCheckBox.IsChecked;
-            //    parametersToWrite.YIons = yCheckBox.IsChecked;
-            //    parametersToWrite.CIons = cCheckBox.IsChecked;
-            //    parametersToWrite.ZdotIons = zdotCheckBox.IsChecked;
-            //}
 
             // write parameters to toml files for the selected spectra files
 
@@ -189,7 +186,7 @@ namespace MetaMorpheusGUI
         {
             //make a directory to store the old files. If the directory already exists, this method does not create a new directory
             string oldFileSpecificTomlDirectory = Path.Combine(directoryForThisMsFile, "OldFileSpecificTomls");
-            System.IO.Directory.CreateDirectory(oldFileSpecificTomlDirectory);
+            Directory.CreateDirectory(oldFileSpecificTomlDirectory);
             string fullFilePath = Path.Combine(oldFileSpecificTomlDirectory, filename);
             //if an old version already exists, we need to move it
             if(File.Exists(fullFilePath))
@@ -217,6 +214,7 @@ namespace MetaMorpheusGUI
             int tempMaxModsForPeptide = defaultParams.DigestionParams.MaxModsForPeptide;
             var tempPrecursorMassTolerance = defaultParams.PrecursorMassTolerance;
             var tempProductMassTolerance = defaultParams.ProductMassTolerance;
+            DissociationType tempDissociationType = defaultParams.DissociationType; 
             string tempSeparationType = defaultParams.SeparationType;
 
             // do any of the selected files already have file-specific parameters specified?
@@ -228,7 +226,7 @@ namespace MetaMorpheusGUI
                 if (File.Exists(tomlPath))
                 {
                     TomlTable tomlTable = Toml.ReadFile(tomlPath, MetaMorpheusTask.tomlConfig);
-                    FileSpecificParameters fileSpecificParams = new FileSpecificParameters(tomlTable);
+                    FileSpecificParameters fileSpecificParams = new(tomlTable);
 
                     if (fileSpecificParams.PrecursorMassTolerance != null)
                     {
@@ -244,6 +242,11 @@ namespace MetaMorpheusGUI
                     {
                         tempProtease = (fileSpecificParams.Protease);
                         fileSpecificProteaseEnabled.IsChecked = true;
+                    }
+                    if (fileSpecificParams.DissociationType != null)
+                    {
+                        tempDissociationType = (fileSpecificParams.DissociationType.Value);
+                        fileSpecificDissociationTypesEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.SeparationType != null)
                     {
@@ -288,6 +291,13 @@ namespace MetaMorpheusGUI
 
             fileSpecificProtease.SelectedItem = digestParams.Protease;
 
+            foreach (DissociationType dissociationType in Enum.GetValues(typeof(DissociationType)))
+            {
+                fileSpecificDissociationType.Items.Add(dissociationType);
+            }
+
+            fileSpecificDissociationType.SelectedItem = DissociationType.HCD;
+
             fileSpecificSeparationType.Items.Add("HPLC");
             fileSpecificSeparationType.Items.Add("CZE");
             fileSpecificSeparationType.SelectedIndex = fileSpecificSeparationType.Items.IndexOf(tempSeparationType);
@@ -314,15 +324,11 @@ namespace MetaMorpheusGUI
             {
                 missedCleavagesTextBox.Text = digestParams.MaxMissedCleavages.ToString();
             }
-            //yCheckBox.IsChecked = tempCommonParams.YIons;
-            //bCheckBox.IsChecked = tempCommonParams.BIons;
-            //cCheckBox.IsChecked = tempCommonParams.CIons;
-            //zdotCheckBox.IsChecked = tempCommonParams.ZdotIons;
         }
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)

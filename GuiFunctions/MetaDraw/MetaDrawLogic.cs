@@ -20,6 +20,7 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Org.BouncyCastle.Asn1.X509.Qualified;
 
 namespace GuiFunctions
 {
@@ -29,17 +30,19 @@ namespace GuiFunctions
         public ObservableCollection<string> SpectraFilePaths { get; private set; }
         public ObservableCollection<string> SpectralLibraryPaths { get; private set; }
         public ObservableCollection<PsmFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
+        public ObservableCollection<PsmFromTsv> ChimericPsms { get; private set; }
         public Dictionary<string, ObservableCollection<PsmFromTsv>> PsmsGroupedByFile { get; private set; }
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
         public DrawnSequence SequenceAnnotation { get; set; }
-        public PeptideSpectrumMatchPlot SpectrumAnnotation { get; set; }
+        public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
+        public SpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
 
         private List<PsmFromTsv> AllPsms; // all loaded PSMs
         private Dictionary<string, DynamicDataConnection> MsDataFiles; // key is file name without extension
-        private List<PeptideSpectrumMatchPlot> CurrentlyDisplayedPlots;
+        private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private SpectralLibrary SpectralLibrary;
 
@@ -54,7 +57,8 @@ namespace GuiFunctions
             MsDataFiles = new Dictionary<string, DynamicDataConnection>();
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
-            CurrentlyDisplayedPlots = new List<PeptideSpectrumMatchPlot>();
+            CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
+            ChimericPsms = new();
         }
 
         public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
@@ -90,13 +94,32 @@ namespace GuiFunctions
             return errors;
         }
 
+        public void DisplayChimeraSpectra(PlotView plotView, List<PsmFromTsv> psms, out List<string> errors)
+        {
+            CleanUpCurrentlyDisplayedPlots();
+            errors = null;
+
+            // get the scan
+            if (!MsDataFiles.TryGetValue(psms.First().FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+            {
+                errors = new List<string>();
+                errors.Add("The spectra file could not be found for this PSM: " + psms.First().FileNameWithoutExtension);
+                return;
+            }
+            MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psms.First().Ms2ScanNumber);
+            
+            ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, scan, psms);
+            ChimeraSpectrumMatchPlot.RefreshChart();
+            CurrentlyDisplayedPlots.Add(ChimeraSpectrumMatchPlot);
+        }
+
         public void DisplaySpectrumMatch(PlotView plotView, PsmFromTsv psm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
         {
             errors = null;
 
             // clear old parent/child scans
             parentChildScanPlotsView.Plots.Clear();
-            CurrentlyDisplayedPlots.Clear();
+            CleanUpCurrentlyDisplayedPlots();
 
             // get the scan
             if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out DynamicDataConnection spectraFile))
@@ -455,7 +478,7 @@ namespace GuiFunctions
 
         public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<PsmFromTsv> spectrumMatches,
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
-            Canvas ptmLegend = null, Vector ptmLegendLocationVector = new())
+            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new())
         {
             errors = new List<string>();
 
@@ -473,12 +496,22 @@ namespace GuiFunctions
                     return;
                 }
 
-                DisplaySequences(stationaryCanvas, null, null, psm);
-                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out var displayErrors);
-
-                if (displayErrors != null)
+                if (plotView.Name == "plotView")
                 {
-                    errors.AddRange(displayErrors);
+                    DisplaySequences(stationaryCanvas, null, null, psm);
+                    DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+                }
+                else if (plotView.Name == "chimeraPlot")
+                {
+                    List<PsmFromTsv> chimericPsms = FilteredListOfPsms
+                        .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
+                    DisplayChimeraSpectra(plotView, chimericPsms, out errors);
+                }
+                
+
+                if (errors != null)
+                {
+                    errors.AddRange(errors);
                 }
 
                 string sequence = illegalInFileName.Replace(psm.FullSequence, string.Empty);
@@ -498,12 +531,43 @@ namespace GuiFunctions
                         filePath = System.IO.Path.Combine(directory, plot.Scan.OneBasedScanNumber + "_" + sequence + "_" + i + "." + MetaDrawSettings.ExportType);
                         i++;
                     }
-                    plot.ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas, ptmLegend, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
+
+                    var type = plot.GetType();
+
+                    switch (type.Name)
+                    {
+                        case "PeptideSpectrumMatchPlot":
+                            ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                                legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
+                            break;
+
+                        case "ChimeraSpectrumMatchPlot":
+                            ((ChimeraSpectrumMatchPlot)plot).ExportPlot(filePath, legendCanvas, plotView.ActualWidth,
+                                plotView.ActualHeight);
+                            break;
+
+                        case "CrosslinkSpectrumMatchPlot":
+                            ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
+                                legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
+                            break;
+                    }
                 }
             }
 
-            DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
-            DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out var moreDisplayErrors);
+            if (plotView.Name == "plotView")
+            {
+                DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
+                DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out errors);
+            }
+            else if (plotView.Name == "chimeraPlot")
+            {
+                List<PsmFromTsv> chimericPsms = FilteredListOfPsms
+                    .Where(p => p.Ms2ScanNumber == spectrumMatches.First().Ms2ScanNumber &&
+                                p.FileNameWithoutExtension == spectrumMatches.First().FileNameWithoutExtension)
+                    .ToList();
+                DisplayChimeraSpectra(plotView, chimericPsms, out errors);
+            }
+
         }
 
         /// <summary>
@@ -680,6 +744,22 @@ namespace GuiFunctions
             }
         }
 
+        public void FilterPsmsToChimerasOnly()
+        {
+            lock (ThreadLocker)
+            {
+                FilteredListOfPsms.Clear();
+
+                var filteredChimericPsms = ChimericPsms.Where(p => MetaDrawSettings.FilterAcceptsPsm(p));
+                foreach (var psm in filteredChimericPsms)
+                {
+                    if (filteredChimericPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
+                        FilteredListOfPsms.Add(psm);
+                }
+            }
+
+        }
+
         public void CleanUpResources()
         {
             lock (ThreadLocker)
@@ -723,6 +803,12 @@ namespace GuiFunctions
                     SpectralLibrary.CloseConnections();
                 }
             }
+        }
+
+        public void CleanUpCurrentlyDisplayedPlots()
+        {
+            if (CurrentlyDisplayedPlots != null && CurrentlyDisplayedPlots.Any())
+                CurrentlyDisplayedPlots.Clear();
         }
 
         #region Private Helpers
@@ -872,7 +958,8 @@ namespace GuiFunctions
                 {
                     lock (ThreadLocker)
                     {
-                        foreach (PsmFromTsv psm in PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings))
+                        var psms = PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings);
+                        foreach (PsmFromTsv psm in psms)
                         {
                             if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)
                             {
@@ -894,6 +981,17 @@ namespace GuiFunctions
                         }
                     }
                 }
+
+                foreach (var psm in AllPsms)
+                {
+                    if (AllPsms.Count(p =>
+                            p.Ms2ScanNumber == psm.Ms2ScanNumber &&
+                            p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
+                    {
+                        ChimericPsms.Add(psm);
+                    }
+                }
+
             }
             catch (Exception e)
             {

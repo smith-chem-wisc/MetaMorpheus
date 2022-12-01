@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -16,7 +17,11 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using BayesianEstimation;
+using MathNet.Numerics;
 using UsefulProteomicsDatabases;
+using TaskLayer.MbrAnalysis;
+using ThermoFisher.CommonCore.Data.Interfaces;
 
 namespace TaskLayer
 {
@@ -25,6 +30,7 @@ namespace TaskLayer
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
+        private MbrAnalysisResults MbrAnalysisResults { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -68,20 +74,27 @@ namespace TaskLayer
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
 
             HistogramAnalysis();
+
             WritePsmResults();
             WriteProteinResults();
-            WriteQuantificationResults();
             WritePrunedDatabase();
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();
+                if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
+                {
+                    MbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters);
+                }      
             }
 
             if(Parameters.SearchParameters.UpdateSpectralLibrary)
             {
                 UpdateSpectralLibrary();
             }
-            if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count() > 0)))
+          
+            WriteQuantificationResults();
+
+            if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
                 WriteVariantResults();
             }
@@ -96,6 +109,7 @@ namespace TaskLayer
             MyTaskResults = new MyTaskResults(this);
             return null;
         }
+
 
         /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
@@ -240,11 +254,21 @@ namespace TaskLayer
             }
 
             // get PSMs to pass to FlashLFQ
-            var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                p.FdrInfo.QValue <= 0.01
-                && p.FdrInfo.QValueNotch <= 0.01
-                && !p.IsDecoy
-                && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+            List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr = new();
+            if (Parameters.AllPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
+            {
+                unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
+                    p.FdrInfo.PEP_QValue <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+            }
+            else
+            {
+                unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
+                    p.FdrInfo.QValue <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+            }
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -468,6 +492,7 @@ namespace TaskLayer
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+                matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
@@ -642,15 +667,25 @@ namespace TaskLayer
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
-            var FilteredPsmList = Parameters.AllPsms
-               .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
-            FilteredPsmList.RemoveAll(b => b.IsDecoy);
-            FilteredPsmList.RemoveAll(b => b.IsContaminant);
+            List<PeptideSpectralMatch> filteredPsmList = new();
+            if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
+            {
+                filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.5).ToList();
+                filteredPsmList.RemoveAll(b => b.IsDecoy);
+                filteredPsmList.RemoveAll(b => b.IsContaminant);
+            }
+            else
+            {
+                filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
+                filteredPsmList.RemoveAll(b => b.IsDecoy);
+                filteredPsmList.RemoveAll(b => b.IsContaminant);
+            }
+
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
             Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
-            foreach (var x in FilteredPsmList)
+            foreach (var x in filteredPsmList)
             {
-                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
+                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = filteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
                 (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
 
                 if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
@@ -684,36 +719,55 @@ namespace TaskLayer
                 string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
                 WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
 
-                //If SILAC and no light, we need to update the psms (which were found in the "light" file) and say they were found in the "heavy" file)
-                if (Parameters.SearchParameters.SilacLabels != null)
-                {
-                    //get the light filenames
-                    List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
-                    EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault();
-                    if (firstProteinGroup != null)
-                    {
-                        List<string> allFileNames = firstProteinGroup.FilesForQuantification.Select(x => x.FullFilePathWithExtension).ToList();
-                        string heavyFileToSet = allFileNames.Where(x => !fileNamesThatHadPsms.Contains(x)).First();
-                        List<PeptideSpectralMatch> psms = PsmsGroupedByFile.SelectMany(g => g).ToList();
-                        PsmsGroupedByFile = psms.GroupBy(x => heavyFileToSet); //set them all to the same file
-                    }
-                }
-
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
-
                 if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.SearchParameters.WriteIndividualFiles
                     || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml))
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
                 }
 
+
+                //If doing a SILAC search and no "unlabeled" labels were specified (i.e. multiple labels are used for multiplexing and no conditions are "unlabeled"),
+                //then we need to update the psms (which were found in the data file that has the "unlabeled" named) and say they were found in the "heavy" file)
+                if (Parameters.SearchParameters.SilacLabels != null) //if we have silac labels
+                {
+                    //get the original filenames
+                    List<string> fileNamesThatHadPsms = PsmsGroupedByFile.Select(v => v.Key).ToList();
+                    EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault(); //grab the first protein to extract the files used for quantification
+                    if (firstProteinGroup != null) //check that we even have a protein group to write
+                    {
+                        var tempPsmsGroupedByFile = new List<IGrouping<string, PeptideSpectralMatch>>();
+                        //foreach original file
+                        foreach (string originalFile in fileNamesThatHadPsms)
+                        {
+                            //get all the "filenames" output by quantification. If no unlabeled condition was specified, the original datafile will not be present in the current grouping
+                            //Example: the datafile "test.mzml" that was searched with +4 or +10 neutron mass difference on arginine would appear as "test(R+4).mzml" and "test(R+10).mzml".
+                            //there would be no "test.mzml"
+                            List<string> labeledFiles = new List<string> { originalFile };
+                            foreach (SilacLabel label in Parameters.SearchParameters.SilacLabels)
+                            {
+                                //rediscover the previous naming conversion(s)
+                                labeledFiles.Add(SilacConversions.GetHeavyFileInfo(new SpectraFileInfo(originalFile, "", 0, 0, 0), label).FullFilePathWithExtension);
+                            }
+
+                            //rename the file group for all of the relevant psms to their original file
+                            List<PeptideSpectralMatch> psms = PsmsGroupedByFile.Where(g => labeledFiles.Contains(g.Key)).SelectMany(x => x).ToList(); //grab all the psms
+                            tempPsmsGroupedByFile.AddRange(psms.GroupBy(x => originalFile));
+                        }
+                        //overwrite the grouping for downstream processing
+                        PsmsGroupedByFile = tempPsmsGroupedByFile.ToList();
+                    }
+                }
+
+
+                //write the individual result files for each datafile
                 foreach (var fullFilePath in PsmsGroupedByFile.Select(v => v.Key))
                 {
                     string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                     List<PeptideSpectralMatch> psmsForThisFile = PsmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
-                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath)).ToList();
+                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
 
                     ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
                         Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent,
@@ -778,11 +832,25 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
-                WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
+                if (MbrAnalysisResults != null)
+                {
+                    MbrAnalysisResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
+                }
+                else
+                {
+                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
+                }
 
                 // write peptide quant results
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
-                WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
+                if (MbrAnalysisResults != null)
+                {
+                    MbrAnalysisResults.WritePeptideQuantificationResultsToTsv(Parameters.OutputFolder, filename);
+                }
+                else
+                {
+                    WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
+                }
 
                 // write individual results
                 if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
@@ -1443,6 +1511,7 @@ namespace TaskLayer
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
 
+
         private static void WriteTree(BinTreeStructure myTreeStructure, string writtenFile)
         {
             using (StreamWriter output = new StreamWriter(writtenFile))
@@ -1496,8 +1565,8 @@ namespace TaskLayer
                 }
 
                 string header = "SpecId\tLabel\tScanNr\t";
-                header = header + String.Join("\t", PsmData.trainingInfos[searchType]);
-                header = header + "\tPeptide\tProteins";
+                header += String.Join("\t", PsmData.trainingInfos[searchType]);
+                header += "\tPeptide\tProteins";
 
                 output.WriteLine(header);
 
@@ -1519,11 +1588,9 @@ namespace TaskLayer
                     foreach (var peptide in psm.BestMatchingPeptides)
                     {
                         output.Write(idNumber.ToString());
-
                         output.Write('\t' + (peptide.Peptide.Protein.IsDecoy ? -1 : 1).ToString());
                         output.Write('\t' + psm.ScanNumber.ToString());
                         output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
-
                         output.Write('\t' + (peptide.Peptide.PreviousAminoAcid + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextAminoAcid).ToString());
                         output.Write('\t' + (peptide.Peptide.Protein.Accession).ToString());
                         output.WriteLine();

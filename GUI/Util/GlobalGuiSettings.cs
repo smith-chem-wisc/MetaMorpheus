@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using System.Windows;
 
 namespace MetaMorpheusGUI
@@ -32,7 +33,8 @@ namespace MetaMorpheusGUI
             string maxModsPerPeptide,
             string maxFragmentMass,
             string qValueFilter,
-            string pepqValueFilter
+            string pepqValueFilter,
+            string minInternalIonLength
             )
         {
             maxMissedCleavages = MaxValueConversion(maxMissedCleavages);
@@ -57,7 +59,8 @@ namespace MetaMorpheusGUI
                 (CheckNumberOfDatabasePartitions(numberOfDatabaseSearches)),
                 (CheckMaxModsPerPeptide(maxModsPerPeptide)),
                 (CheckMaxFragementMass(maxFragmentMass)),
-                (CheckQValueFilters(qValueFilter, pepqValueFilter))
+                (CheckQValueFilters(qValueFilter, pepqValueFilter)),
+                (CheckMinInternalFragmentIonLength(minInternalIonLength))
             };
 
             if (results.Contains(false))
@@ -70,17 +73,10 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Checks to see if the given text contains non-numerical characters (letters, etc.)
         /// </summary>
-        public static bool CheckIsNumber(string text)
+        public static bool CheckIsPositiveInteger(string text)
         {
-            bool result = true;
-            foreach (var character in text)
-            {
-                if (!Char.IsDigit(character) && !(character == '.') && !(character == '-'))
-                {
-                    result = false;
-                }
-            }
-            return result;
+            Regex regex = new Regex("[^0-9]+");
+            return regex.IsMatch(text);
         }
 
         #region Check Task Validity
@@ -313,17 +309,31 @@ namespace MetaMorpheusGUI
         }
 
         public static bool VariableModCheck(List<(string, string)> listOfModsVariable)
+        {
+            if (listOfModsVariable.Count > 1)
             {
-                if (listOfModsVariable.Count > 1)
+                var dialogResult = MessageBox.Show("More than 1 modification has been selected as variable. Using the GPTMD task to discover modifications is recommended instead. \n\nContinue anyway?", "Multiple Variable Mods Detected", MessageBoxButton.OKCancel);
+                if (dialogResult == MessageBoxResult.Cancel)
                 {
-                    var dialogResult = MessageBox.Show("More than 1 modification has been selected as variable. Using the GPTMD task to discover modifications is recommended instead. \n\nContinue anyway?", "Multiple Variable Mods Detected", MessageBoxButton.OKCancel);
-                    if (dialogResult == MessageBoxResult.Cancel)
-                    {
-                        return false;
-                    }
+                    return false;
                 }
+            }
+            return true;
+        }
+
+        public static bool CheckMinInternalFragmentIonLength(string text)
+        {
+            if (text == null)
+            {
                 return true;
             }
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double minInternalFragmentIonLength) || (minInternalFragmentIonLength <= 0))
+            {
+                MessageBox.Show("Minimum internal fragment ion length must be greater than 0");
+                return false;
+            }
+            return true;
+        }
 
             #endregion Check Task Validity
         }
