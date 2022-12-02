@@ -10,6 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using MzLibUtil;
+using ClassExtensions = Chemistry.ClassExtensions;
 
 namespace Test
 {
@@ -86,55 +88,38 @@ namespace Test
         }
 
         [Test]
-        public static void testingTMTonBigScan()
+        public static void TestAbilityToIDTMTDiagnosticIons()
         {
-            Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tmt18test.mzML");
-            FilteringParams filter = new FilteringParams();
-            MyMsDataFiles[origDataFile] = Mzml.LoadAllStaticData(origDataFile, filter, 1);
-            var scans2 = MyMsDataFiles[origDataFile].GetAllScansList();
-            var trimmedScans = scans2.Where(m => m.MsnOrder == 3).ToList();
-
-            Protein p = new Protein("LAALNPESNTAGLDIFAK", "accession");
-            List<Modification> fixedModifications = new List<Modification>();
-            fixedModifications.AddRange(GlobalVariables.AllModsKnown);
-            List<Modification> tmt18Mods = fixedModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).ToList();
-            DigestionParams digestionParams = new DigestionParams(minPeptideLength: 1);
-            var aPeptideWithSetModifications = p.Digest(digestionParams, tmt18Mods, new List<Modification>()).First();
-            var theseTheoreticalFragments = new List<Product>();
-            aPeptideWithSetModifications.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theseTheoreticalFragments);
-            theseTheoreticalFragments = theseTheoreticalFragments.Where(n => n.ProductType == ProductType.D).ToList();
-            double ppmTolerance = 20;
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\tmt18test2.mzML");
+            var scans = Mzml.LoadAllStaticData(origDataFile).GetAllScansList();
+            var tolerance = new PpmTolerance(20);
             int roundTo = 5;
+            var diagnosticIons = GlobalVariables.AllModsKnown
+                .First(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).DiagnosticIons
+                .First().Value.Select(p => Math.Round(p, roundTo)).ToList();
 
-            List<double> diagnosticIons = new List<double>();
-            for (int k = 0; k < theseTheoreticalFragments.Count(); k++)
+            // iterate through each scan
+            foreach (var scan in scans)
             {
-                diagnosticIons.Add(Math.Round(theseTheoreticalFragments[k].NeutralMass, roundTo));
-            }
-
-            int i = 460;
-            do
-            {
-                if (i == trimmedScans.Count())
+                if (!diagnosticIons.Any())
                     break;
-                var massList = trimmedScans[i].MassSpectrum.XArray.ToList();
-                for (int j = 0; j < massList.Count(); j++)
-                {
-                    massList[j] = Math.Round(massList[j], roundTo);
-                }
 
-                for (int l = 0; l < massList.Count(); l++)
+                // find all possible matches to diagnostic ions
+                var possibleMatches = scan.MassSpectrum.XArray
+                    .Where(p => p <= diagnosticIons.Max() + tolerance.GetMaximumValue(diagnosticIons.Max()))
+                    .Select(m => Math.Round(m, roundTo)).ToList();
+
+                // check to see if the spectrum has each diagnostic ions
+                for (int j = 0; j < diagnosticIons.Count; j++)
                 {
-                    for (int m = 0; m < diagnosticIons.Count(); m++)
+                    // remove from diagnostic ion list if found within scan
+                    if (possibleMatches.Any(p => tolerance.Within(p, diagnosticIons[j])))
                     {
-                        double toleranceValue = ppmTolerance / Math.Pow(10, 6) * massList[l];
-                        if ((massList[l] < diagnosticIons[m] + toleranceValue) & (massList[l] > diagnosticIons[m] - toleranceValue))
-                            diagnosticIons.Remove(diagnosticIons[m]);
+                        diagnosticIons.Remove(diagnosticIons[j]);
                     }
                 }
-                i++;
-            } while (diagnosticIons.Count() > 0);
+            }
+            // will pass if all diagnostic ions are found in scans
             Assert.AreEqual(0, diagnosticIons.Count());
         }
 
