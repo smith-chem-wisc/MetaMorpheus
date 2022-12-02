@@ -66,6 +66,8 @@ namespace TaskLayer
 
                 // get filename stuff
                 var originalUnaveragedFilepath = currentRawFileList[spectraFileIndex];
+                if (originalUnaveragedFilepath.Contains(".RAW"))
+                    originalUnaveragedFilepath = originalUnaveragedFilepath.Replace(".RAW", ".raw");
                 var originalUnaveragedFilepathWithoutExtenstion = Path.GetFileNameWithoutExtension(originalUnaveragedFilepath);
                 var averagedFilepath = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML");
 

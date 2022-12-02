@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using EngineLayer;
@@ -247,7 +248,8 @@ namespace Test
                 SpectraFileProcessingType = SpectraFileProcessingType.AverageDDAScans,
                 NumberOfScansToAverage = 5,
             };
-            SpectralAveragingTask averagingTask = new(options) { CommonParameters = commonParameters };
+            SpectralAveragingTask averagingTask = new() { CommonParameters = commonParameters };
+            averagingTask.GetType().GetProperty("Options")?.SetValue(averagingTask, options);
             CalibrationTask calibrationTask = new CalibrationTask();
             SearchTask searchTask = new SearchTask();
 
@@ -390,6 +392,27 @@ namespace Test
             Assert.That(optionsVM.RejectionTypes.SequenceEqual(Enum.GetValues<RejectionType>().Where(p => p != RejectionType.Thermo).ToArray()));
             Assert.That(optionsVM.WeightingTypes.SequenceEqual(Enum.GetValues<WeightingType>()));
             Assert.That(optionsVM.SpectraFileProcessingTypes.SequenceEqual(Enum.GetValues<SpectraFileProcessingType>()));
+        }
+
+        [Test]
+        public static void TestMzLibSpectralAveragingOptionsSpecialGettersAndSetters()
+        {
+            SpectralAveragingOptions specOptions = new SpectralAveragingOptions()
+                { Percentile = 2, MinSigmaValue = 1.3, MaxSigmaValue = 3 };
+            MzLibSpectralAveragingOptions options = new MzLibSpectralAveragingOptions(specOptions);
+            MzLibAveragingOptionsViewModel optionsVM = new(options);
+            optionsVM.SpectraFileProcessingType = SpectraFileProcessingType.AverageEverynScansWithOverlap;
+            optionsVM.ScanOverlap = 3;
+
+            optionsVM.SpectraFileProcessingType = SpectraFileProcessingType.AverageEverynScans;
+            Assert.That(optionsVM.ScanOverlap == 0);
+
+            optionsVM.SpectraFileProcessingType = SpectraFileProcessingType.AverageDDAScansWithOverlap;
+            Assert.That(optionsVM.ScanOverlap == 3);
+
+            optionsVM.SavedPath = Path.Combine(TestFolder, "testingtesting.toml");
+            Assert.That(optionsVM.SavedPath == Path.Combine(TestFolder, "testingtesting.toml"));
+            Assert.That(optionsVM.Name == "testingtesting");
         }
     }
 }

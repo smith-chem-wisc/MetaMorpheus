@@ -109,26 +109,22 @@ namespace TaskLayer
                     }
                     else
                     {
+                        List<string> successfulFiles = new();
                         // at least one file was not successfully calibrated
                         if (ok.Item2.TaskType == MyTask.Calibrate)
                         {
-                            var successfullyCalibFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p).Replace(CalibrationTask.CalibSuffix, "")).ToList();
-                            var origFiles = CurrentRawDataFilenameList.Select(p => Path.GetFileNameWithoutExtension(p)).ToList();
-                            var unsuccessfullyCalibFiles = origFiles.Except(successfullyCalibFiles).ToList();
-                            var unsuccessfullyCalibFilePaths = CurrentRawDataFilenameList.Where(p => unsuccessfullyCalibFiles.Contains(Path.GetFileNameWithoutExtension(p))).ToList();
-                            CurrentRawDataFilenameList = myTaskResults.NewSpectra;
-                            CurrentRawDataFilenameList.AddRange(unsuccessfullyCalibFilePaths);
+                            successfulFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p).Replace(CalibrationTask.CalibSuffix, "")).ToList();
                         }
                         // at least one file was not successfully averaged
                         else if (ok.Item2.TaskType == MyTask.Average)
                         {
-                            var successfullyAveragedFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p).Replace(SpectralAveragingTask.AveragingSuffix, "")).ToList();
-                            var origFiles = CurrentRawDataFilenameList.Select(p => Path.GetFileNameWithoutExtension(p)).ToList();
-                            var unsuccessfullyAveragedFiles = origFiles.Except(successfullyAveragedFiles).ToList();
-                            var unsuccessfullyAveragedFilePaths = CurrentRawDataFilenameList.Where(p => unsuccessfullyAveragedFiles.Contains(Path.GetFileNameWithoutExtension(p))).ToList();
-                            CurrentRawDataFilenameList = myTaskResults.NewSpectra;
-                            CurrentRawDataFilenameList.AddRange(unsuccessfullyAveragedFilePaths);
+                            successfulFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p).Replace(SpectralAveragingTask.AveragingSuffix, "")).ToList();
                         }
+                        var origFiles = CurrentRawDataFilenameList.Select(p => Path.GetFileNameWithoutExtension(p)).ToList();
+                        var unsuccessfulFiles = origFiles.Except(successfulFiles).ToList();
+                        var unsuccessfulFilePaths = CurrentRawDataFilenameList.Where(p => unsuccessfulFiles.Contains(Path.GetFileNameWithoutExtension(p))).ToList();
+                        CurrentRawDataFilenameList = myTaskResults.NewSpectra;
+                        CurrentRawDataFilenameList.AddRange(unsuccessfulFilePaths);
                     }
 
                     NewSpectras(myTaskResults.NewSpectra);
