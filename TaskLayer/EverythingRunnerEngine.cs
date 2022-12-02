@@ -109,17 +109,8 @@ namespace TaskLayer
                     }
                     else
                     {
-                        List<string> successfulFiles = new();
                         // at least one file was not successfully calibrated
-                        if (ok.Item2.TaskType == MyTask.Calibrate)
-                        {
-                            successfulFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p).Replace(CalibrationTask.CalibSuffix, "")).ToList();
-                        }
-                        // at least one file was not successfully averaged
-                        else if (ok.Item2.TaskType == MyTask.Average)
-                        {
-                            successfulFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p).Replace(SpectralAveragingTask.AveragingSuffix, "")).ToList();
-                        }
+                        var successfulFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p).Replace(CalibrationTask.CalibSuffix, "")).ToList();
                         var origFiles = CurrentRawDataFilenameList.Select(p => Path.GetFileNameWithoutExtension(p)).ToList();
                         var unsuccessfulFiles = origFiles.Except(successfulFiles).ToList();
                         var unsuccessfulFilePaths = CurrentRawDataFilenameList.Where(p => unsuccessfulFiles.Contains(Path.GetFileNameWithoutExtension(p))).ToList();

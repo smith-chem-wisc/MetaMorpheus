@@ -191,16 +191,16 @@ namespace Test
             SpectralAveragingTask averagingTask = new(options) { CommonParameters = commonParameters };
             SearchTask searchTask = new SearchTask();
 
-            // set up original experimental design (input to calibration)
-            SpectraFileInfo fileInfo = new SpectraFileInfo(spectraFile, "condition", 0, 0, 0);
-            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
-
             // run the tasks
             EverythingRunnerEngine everythingRunnerEngine = new EverythingRunnerEngine(
                 new List<(string, MetaMorpheusTask)> { ("Task1-Average", averagingTask), ("Task2-Search", searchTask) },
                 new List<string> { spectraFile },
                 new List<DbForTask> { new DbForTask(myDatabase, false) },
                 testPath);
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo = new SpectraFileInfo(spectraFile, "condition", 0, 0, 0);
+            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
 
             everythingRunnerEngine.Run();
 
