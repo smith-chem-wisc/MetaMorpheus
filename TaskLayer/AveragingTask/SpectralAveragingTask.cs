@@ -115,11 +115,16 @@ namespace TaskLayer
             }
 
             // re-write experimental design (if it has been defined) with new calibrated file names
-            string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
-            assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
-            if (File.Exists(assumedPathToExperDesign))
+            string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First())?.FullName;
+            if (assumedPathToExperDesign != null)
             {
-                WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, currentRawFileList, unsuccessfulyAveragedFilePaths);
+                assumedPathToExperDesign =
+                    Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+                if (File.Exists(assumedPathToExperDesign))
+                {
+                    WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, currentRawFileList,
+                        unsuccessfulyAveragedFilePaths);
+                }
             }
 
             // finished calibrating all files for the task
