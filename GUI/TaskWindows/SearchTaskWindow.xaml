@@ -479,16 +479,15 @@
 
                         <Grid>
                             <Grid.ColumnDefinitions>
-                                
+
                                 <!-- Writing Options  -->
                                 <ColumnDefinition Width="*" />
-                                
+
                                 <!-- Filtering options -->
                                 <ColumnDefinition Width="*" />
-                                
-                            </Grid.ColumnDefinitions>
 
-                            <!--<Expander x:Name="OutputExpander">-->
+                            </Grid.ColumnDefinitions>
+                            
                             <!-- writing options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
                                 <CheckBox x:Name="CkbMzId" Content="Write .mzID" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}" ToolTipService.ShowOnDisabled="True">
@@ -501,6 +500,7 @@
                                 <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                                 <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
+                                <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update SpectralLibrary" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                                 
                             </StackPanel>
