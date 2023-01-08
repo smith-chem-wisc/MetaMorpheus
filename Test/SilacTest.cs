@@ -352,7 +352,7 @@ namespace Test
 
             MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
 
-            //nested directory needed to test path mapping in 
+            //nested directory needed to test path mapping in ProteinGroup.ConstructSubsetProteinGroup
             string directoryName = "testDirectory";
             Directory.CreateDirectory(directoryName);
             string mzmlName = Path.Combine(directoryName, "silac.mzML");
@@ -660,21 +660,5 @@ namespace Test
             //Test no crash in weird situations
             SilacConversions.SilacConversionsPostQuantification(null, null, null, new List<FlashLFQ.SpectraFileInfo>(), null, new HashSet<DigestionParams>(), null, new List<PeptideSpectralMatch>(), new Dictionary<string, int>(), true);
         }
-
-        //[Test]
-        //public static void TestSilacTurnoverFileMapping()
-        //{
-        //    //when remaking protein groups, make sure that we can correctly map the novel filenames
-        //    //(i.e. *_Original, *_NewlySynthesized) back to their original files
-        //    var p = new HashSet<Protein>();
-        //    List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
-
-        //    // make protein A
-        //    p.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
-
-        //    // add protein B and A to the protein group
-        //    ProteinGroup pg = new ProteinGroup(p, null, null);
-        //    pg.ConstructSubsetProteinGroup()
-        //}
     }
 }
