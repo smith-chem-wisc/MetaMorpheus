@@ -351,7 +351,11 @@ namespace Test
             List<List<double>> massDifferences = new List<List<double>> { new List<double> { massShift, massShift * 2 } }; //LH and HH
 
             MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
-            string mzmlName = @"silac.mzML";
+
+            //nested directory needed to test path mapping in 
+            string directoryName = "testDirectory";
+            Directory.CreateDirectory(directoryName);
+            string mzmlName = Path.Combine(directoryName, "silac.mzML");
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //create another file to test the handling is done correctly
@@ -470,6 +474,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
+            Directory.Delete(directoryName, true);
         }
 
         [Test]
@@ -655,5 +660,21 @@ namespace Test
             //Test no crash in weird situations
             SilacConversions.SilacConversionsPostQuantification(null, null, null, new List<FlashLFQ.SpectraFileInfo>(), null, new HashSet<DigestionParams>(), null, new List<PeptideSpectralMatch>(), new Dictionary<string, int>(), true);
         }
+
+        //[Test]
+        //public static void TestSilacTurnoverFileMapping()
+        //{
+        //    //when remaking protein groups, make sure that we can correctly map the novel filenames
+        //    //(i.e. *_Original, *_NewlySynthesized) back to their original files
+        //    var p = new HashSet<Protein>();
+        //    List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
+
+        //    // make protein A
+        //    p.Add(new Protein("-----F----**", "A", null, gn, new Dictionary<int, List<Modification>>(), isDecoy: true));
+
+        //    // add protein B and A to the protein group
+        //    ProteinGroup pg = new ProteinGroup(p, null, null);
+        //    pg.ConstructSubsetProteinGroup()
+        //}
     }
 }
