@@ -125,7 +125,7 @@
                                 <StackPanel>
                                     <CheckBox Name="StationarySequenceCheckBox" Content="Stationary Sequence" Margin="3" />
                                     <CheckBox Name="SequencenNumbersCheckBox" Content="Sequence Numbering" Margin="3" />
-                                    <CheckBox Name="ShowLegendCheckBox" Content="PTM Color Legend" Margin="3" ToolTip="Also removes legend in sequence annotation"/>
+                                    <CheckBox Name="ShowLegendCheckBox" Content="Display Legend" Margin="3" ToolTip="Also removes legend in sequence annotation"/>
                                 </StackPanel>
                             </Expander>
 

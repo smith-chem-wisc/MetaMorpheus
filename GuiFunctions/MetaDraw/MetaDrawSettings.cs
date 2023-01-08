@@ -247,7 +247,7 @@ namespace GuiFunctions
                 CoverageTypeToColorValues = CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
                 UnannotatedPeakColor = UnannotatedPeakColor.GetColorName(),
-                InternalIonColor = InternalIonColor.GetColorName()
+                InternalIonColor = InternalIonColor.GetColorName(),
             };
         }
 
