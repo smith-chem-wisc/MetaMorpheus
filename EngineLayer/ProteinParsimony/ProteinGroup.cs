@@ -628,9 +628,9 @@ namespace EngineLayer
                     //if still no hits, might be SILAC turnover
                     if (spectraFileInfo == null)
                     {
-                        string filenameWithoutExtension = Path.GetFileNameWithoutExtension(fullFilePath);
+                        string filepathWithoutExtension = Path.Combine(Path.GetDirectoryName(fullFilePath), Path.GetFileNameWithoutExtension(fullFilePath));
                         string extension = Path.GetExtension(fullFilePath);
-                        string fakeFilePath = filenameWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME + extension;
+                        string fakeFilePath = filepathWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME + extension;
                         spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath).FirstOrDefault();
                     }
                 }
