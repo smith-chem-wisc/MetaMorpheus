@@ -172,8 +172,8 @@ namespace TaskLayer.MbrAnalysis
                 {
                     string scores = PeptideScoreDict.TryGetValue(peptide.Key, out var scoreList)
                         ? string.Join('\t', scoreList)
-                        : new('\t', FlashLfqResults.SpectraFiles.Count);
-                    output.WriteLine(peptide.Value.ToString(FlashLfqResults.SpectraFiles) + scores.TrimEnd());
+                        : new('\t', FlashLfqResults.SpectraFiles.Count-1);
+                    output.WriteLine(peptide.Value.ToString(FlashLfqResults.SpectraFiles) + '\t' + scores.TrimEnd());
                 }
             }
         }
