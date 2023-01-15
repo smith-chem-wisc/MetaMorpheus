@@ -176,6 +176,11 @@ namespace Test
             var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, new List<ProductType>(), peptide, peptideWithMod);
 
             var fragments_ethcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, new List<ProductType>(), peptide, peptideWithMod);
+
+            var customIons = new List<ProductType> { ProductType.c, ProductType.zDot };
+            var fragments_custom = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.Custom, customIons, peptide, peptideWithMod);
+
+            Assert.That(fragments_hcd.Count == fragments_custom.Count && fragments_hcd.Count == fragments_ethcd.Count - 20);
         }
 
         [Test]
@@ -482,5 +487,16 @@ namespace Test
             Assert.That(route.Mods.First().Item3);
         }
 
+        [Test]
+        public static void OGlycoTest_DissociationTypeContainETD()
+        {
+            DissociationType dissociationType = DissociationType.Custom;
+
+            List<ProductType> customIons = new List<ProductType> { ProductType.zDot };
+
+            var isETDType = GlycoPeptides.DissociationTypeContainETD(dissociationType, customIons);
+
+            Assert.That(isETDType);
+        }
     }
 }
