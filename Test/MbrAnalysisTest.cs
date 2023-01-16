@@ -45,9 +45,9 @@ namespace Test
                 MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
                     filePath, new CommonParameters());
-                Protein protein = new Protein(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName,
-                    isDecoy: readPsm.DecoyContamTarget == "D" ? true : false,
-                    isContaminant: readPsm.DecoyContamTarget == "C" ? true : false);
+                Protein protein = new(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName,
+                    isDecoy: readPsm.DecoyContamTarget == "D",
+                    isContaminant: readPsm.DecoyContamTarget == "C");
                 string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
@@ -154,8 +154,6 @@ namespace Test
             string referenceDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestMbrAnalysisOutput\AllQuantifiedPeaks.tsv");
             string[] peaksResults = File.ReadAllLines(referenceDataPath).Skip(1).ToArray();
-
-            int placeholder = 0;
 
             foreach (string row in peaksResults)
             {

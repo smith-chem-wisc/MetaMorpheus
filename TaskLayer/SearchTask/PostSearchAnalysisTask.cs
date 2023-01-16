@@ -8,6 +8,7 @@ using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using Proteomics;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -85,6 +86,12 @@ namespace TaskLayer
                     MbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters);
                 }      
             }
+
+            if(Parameters.SearchParameters.UpdateSpectralLibrary)
+            {
+                UpdateSpectralLibrary();
+            }
+          
             WriteQuantificationResults();
 
             if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
@@ -316,7 +323,7 @@ namespace TaskLayer
             }
 
             //If SILAC (Pre-Quantification) preparation
-            //setup variables
+            //Setup variables
             List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
             SilacLabel startLabel = Parameters.SearchParameters.StartTurnoverLabel;
             SilacLabel endLabel = Parameters.SearchParameters.EndTurnoverLabel;
@@ -609,6 +616,54 @@ namespace TaskLayer
             }
         }
 
+        private void UpdateSpectralLibrary()
+        {
+            var FilteredPsmList = Parameters.AllPsms
+               .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
+            FilteredPsmList.RemoveAll(b => b.IsDecoy);
+            FilteredPsmList.RemoveAll(b => b.IsContaminant);
+
+            //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
+            Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
+            foreach (var x in FilteredPsmList)
+            {
+                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
+                (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
+
+                if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
+                {
+                    PsmsGroupByPeptideAndCharge.Add(peptideWithChargeState, psmsWithSamePeptideAndSameCharge);
+                }
+            }
+
+            //load the original library
+            var originalSpectralLibrary = Parameters.spectralLibrary;
+            var allToUpdateLibrarySpectra = originalSpectralLibrary.LibrarySpectrumBuffer;
+
+            foreach (var psm in PsmsGroupByPeptideAndCharge)
+            {
+                // if we have the corresponding spectrum in the original library, we compare the new spectrum with the library spectrum , and keep the one with higher core
+                string key = psm.Key.Item1 + "/" + psm.Key.Item2;
+                if (allToUpdateLibrarySpectra.TryGetValue(key, out var librarySpectrum))
+                {
+                    // if the new spectrum has higher score, we will replace the original library spectrum with the new one
+                    if (Math.Truncate(psm.Value[0].Score) > librarySpectrum.MatchedFragmentIons.Count)
+                    {
+                        allToUpdateLibrarySpectra.Remove(key);
+                        var betterLibrarySpectrum = new LibrarySpectrum(psm.Value[0].FullSequence, psm.Value[0].ScanPrecursorMonoisotopicPeakMz, psm.Value[0].ScanPrecursorCharge, psm.Value[0].MatchedFragmentIons, psm.Value[0].ScanRetentionTime);
+                        allToUpdateLibrarySpectra.Add(key, betterLibrarySpectrum);
+                    }
+                }
+                // if we don't have the corresponding spetrum in the original library, we directly store it as a new entry in the library
+                else
+                {
+                    var newSpectrum = new LibrarySpectrum(psm.Value[0].FullSequence, psm.Value[0].ScanPrecursorMonoisotopicPeakMz, psm.Value[0].ScanPrecursorCharge, psm.Value[0].MatchedFragmentIons, psm.Value[0].ScanRetentionTime);
+                    allToUpdateLibrarySpectra.Add(key, newSpectrum);
+                }
+            }
+            WriteSpectralLibrary(allToUpdateLibrarySpectra.Values.ToList(), Parameters.OutputFolder);
+        }
+
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
@@ -645,8 +700,8 @@ namespace TaskLayer
                 spectraLibrary.Add(standardSpectrum);
             }
             WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
-        }
 
+        }
         private void WriteProteinResults()
         {
             if (Parameters.SearchParameters.DoParsimony)
