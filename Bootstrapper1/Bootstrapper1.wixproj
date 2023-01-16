@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 <Project Sdk="WixToolset.Sdk/4.0.0-rc.1">
+=======
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+>>>>>>> parent of 14a2ac0d (WiXv4 upgrade test)
   <PropertyGroup>
     <OutputName>MetaMorpheusInstaller</OutputName>
     <OutputType>Bundle</OutputType>
