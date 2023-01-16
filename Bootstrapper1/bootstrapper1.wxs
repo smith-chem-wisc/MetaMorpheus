@@ -6,7 +6,7 @@
     </BootstrapperApplication>
     <util:FileSearch Path="[WindowsFolder]System32\ucrtbase.dll" Variable="VCDISTINSTALLED" />
     <Chain>
-      <MsiPackage DisplayInternalUI="yes" SourceFile="$(var.MetaMorpheusSetup.TargetPath)" />
+      <MsiPackage SourceFile = "$(var.MetaMorpheusSetup.TargetPath)" />
     </Chain>
   </Bundle>
 </Wix>
