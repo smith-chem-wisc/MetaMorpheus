@@ -22,7 +22,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.ML" Version="1.3.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="1.3.1" />
-    <PackageReference Include="mzLib" Version="1.0.528" />
+    <PackageReference Include="mzLib" Version="1.0.537" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
@@ -129,6 +129,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\DoubleProtease.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\ea05196_02042021_T16_F20.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\empty.fa">
@@ -269,6 +272,12 @@
     <None Update="TestData\SpectralLibrarySearch\SmallCalibratible_Yeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralLibrarySearch\spectralLibrary.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralLibrarySearch\spectralLibraryForTestingLibraryUpdate.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\spectralLibraryNeutralLossTest.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -288,9 +297,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\tinySemi.mgf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="TestData\tmt18test.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\tmt18test2.mzML">

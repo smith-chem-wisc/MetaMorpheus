@@ -16,7 +16,7 @@ namespace EngineLayer
         private List<string> LibraryPaths;
         private Dictionary<string, (string filePath, long byteOffset)> SequenceToFileAndLocation;
         private Queue<string> LibrarySpectrumBufferList;
-        private Dictionary<string, LibrarySpectrum> LibrarySpectrumBuffer;
+        public Dictionary<string, LibrarySpectrum> LibrarySpectrumBuffer;
         private int MaxElementsInBuffer = 10000;
         private Dictionary<string, StreamReader> StreamReaders;
         private static Regex IonParserRegex = new Regex(@"^(\D{1,})(\d{1,})(?:[\^]|$)(\d{1,}|$)");
