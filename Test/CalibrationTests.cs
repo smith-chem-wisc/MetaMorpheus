@@ -6,12 +6,14 @@ using MassSpectrometry;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using TaskLayer;
 using ThermoFisher.CommonCore.Data;
+using ThermoFisher.CommonCore.Data.Business;
 using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 
 namespace Test
@@ -158,5 +160,45 @@ namespace Test
             _ = ExperimentalDesign.ReadExperimentalDesign(experimentalDesignPath, rawFilePaths, out var errors);
             Assert.IsTrue(errors[0].ToString().Contains(expectedError));
         }
+
+        [Test]
+        public static void TestWriteNewExperimentalDesignFileDuringCalibration()
+        {
+            string badExperimentalDesignPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData", @"TestExperimentalDesign", "WrongNumberOfCells", "ExperimentalDesign.tsv");
+
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+            
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, "filename1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+            // set up original BAD experimental design (input to calibration)
+            string experimentalDesignPath = Path.Combine(unitTestFolder, "ExperimentalDesign.tsv");
+            File.Copy(badExperimentalDesignPath, experimentalDesignPath, true);
+            
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // run calibration
+            CalibrationTask calibrationTask = new CalibrationTask();
+
+
+            bool wasCalled = false;
+            MetaMorpheusTask.WarnHandler += (o, e) => wasCalled = true;
+            
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+            
+            //The original experimental design file is bad so we expect Warn event in "WriteNewExperimentalDesignFile"
+            Assert.IsTrue(wasCalled);
+            
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
     }
 }
