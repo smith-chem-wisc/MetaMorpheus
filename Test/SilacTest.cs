@@ -176,7 +176,6 @@ namespace Test
             //make heavy residue and add to search task
             Residue heavyLysine = new("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue lightLysine = Residue.GetResidue('K');
-
             SearchTask task = new()
             {
                 SearchParameters = new SearchParameters
@@ -205,6 +204,11 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSilac");
             _ = Directory.CreateDirectory(outputFolder);
             string theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
+
+            string mzIDPath1 = Path.ChangeExtension(TestContext.CurrentContext.TestDirectory + @"/TestSilac/Individual File Results/" + mzmlName, ".mzID");
+            string mzIDPath2 = Path.ChangeExtension(TestContext.CurrentContext.TestDirectory + @"/TestSilac/Individual File Results/" + mzmlName2, ".mzID");
+            Assert.IsTrue(File.Exists(mzIDPath1));
+            Assert.IsTrue(File.Exists(mzIDPath2));
 
             Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
@@ -347,7 +351,11 @@ namespace Test
             List<List<double>> massDifferences = new List<List<double>> { new List<double> { massShift, massShift * 2 } }; //LH and HH
 
             MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
-            string mzmlName = @"silac.mzML";
+
+            //nested directory needed to test path mapping in ProteinGroup.ConstructSubsetProteinGroup
+            string directoryName = "testDirectory";
+            Directory.CreateDirectory(directoryName);
+            string mzmlName = Path.Combine(directoryName, "silac.mzML");
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //create another file to test the handling is done correctly
@@ -466,6 +474,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
+            Directory.Delete(directoryName, true);
         }
 
         [Test]

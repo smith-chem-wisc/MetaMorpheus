@@ -15,6 +15,7 @@ namespace TaskLayer
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
             DoQuantification = true;
+            DoMbrAnalysis = true;
             QuantifyPpmTol = 5;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
@@ -73,6 +74,7 @@ namespace TaskLayer
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoQuantification { get; set; }
+        public bool DoMbrAnalysis { get; set; }
         public SearchType SearchType { get; set; }
         public List<FdrCategory> LocalFdrCategories { get; set; }
         public string CustomMdac { get; set; }
@@ -87,6 +89,7 @@ namespace TaskLayer
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }
         public bool WriteSpectralLibrary { get; set; }
+        public bool UpdateSpectralLibrary { get; set; }
         public bool CompressIndividualFiles { get; set; }
         public List<SilacLabel> SilacLabels { get; set; }
         public SilacLabel StartTurnoverLabel { get; set; } //used for SILAC turnover experiments
