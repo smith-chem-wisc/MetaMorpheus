@@ -15,6 +15,7 @@ using System.Linq;
 using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using PsmFromTsv = EngineLayer.PsmFromTsv;
 
 namespace Test
 {
@@ -454,6 +455,70 @@ namespace Test
 
             longestSeries = PeptideSpectralMatch.GetLongestIonSeriesBidirectional(PeptidesToMatchingFragments, pwsm);
             Assert.AreEqual(1, longestSeries);
+        }
+
+        [Test]
+        public static void TestPSMFragmentCoverage()
+        {
+            CommonParameters commonParameters = new CommonParameters();
+
+            Protein p1 = new Protein("PEPTIDEPEPTIDE", null);
+            PeptideWithSetModifications pep1 = p1.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+
+            Protein p2 = new Protein("GGGGGGGGGGGGGGKPEPTIDEPEPTIDE", null);
+            PeptideWithSetModifications pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList()[1];
+
+            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2});
+
+            //psm 1 - test first and last amino acid positions, along with one internal Amino Acid position
+            Product productC3 = new Product(ProductType.y, FragmentationTerminus.C, 0, 3, 12, 0);
+            Product productC4 = new Product(ProductType.y, FragmentationTerminus.C, 0, 4, 11, 0);
+            Product productC7 = new Product(ProductType.y, FragmentationTerminus.C, 0, 7, 8, 0);
+            Product productC13 = new Product(ProductType.y, FragmentationTerminus.C, 0, 13, 2, 0);
+            Product productN3 = new Product(ProductType.b, FragmentationTerminus.N, 0, 3, 3, 0);
+            Product productN4 = new Product(ProductType.b, FragmentationTerminus.N, 0, 4, 4, 0);
+            Product productN6 = new Product(ProductType.b, FragmentationTerminus.N, 0, 6, 6, 0);
+            Product productN8 = new Product(ProductType.b, FragmentationTerminus.N, 0, 8, 8, 0);
+            Product productN13 = new Product(ProductType.b, FragmentationTerminus.N, 0, 13, 13, 0);
+            MatchedFragmentIon mfiC3 = new MatchedFragmentIon(ref productC3, 0, 0, 1);
+            MatchedFragmentIon mfiC4 = new MatchedFragmentIon(ref productC4, 0, 0, 1);
+            MatchedFragmentIon mfiC7 = new MatchedFragmentIon(ref productC7, 0, 0, 1);
+            MatchedFragmentIon mfiC13 = new MatchedFragmentIon(ref productC13, 0, 0, 1);
+            MatchedFragmentIon mfiN3 = new MatchedFragmentIon(ref productN3, 0, 0, 1);
+            MatchedFragmentIon mfiN4 = new MatchedFragmentIon(ref productN4, 0, 0, 1);
+            MatchedFragmentIon mfiN6 = new MatchedFragmentIon(ref productN6, 0, 0, 1);
+            MatchedFragmentIon mfiN8 = new MatchedFragmentIon(ref productN8, 0, 0, 1);
+            MatchedFragmentIon mfiN13 = new MatchedFragmentIon(ref productN13, 0, 0, 1);
+            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfiC3, mfiC4, mfiC7, mfiC13, mfiN3, mfiN4, mfiN6, mfiN8, mfiN13};
+            MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, 0, 1, null, new CommonParameters());
+            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 0, 0, scan1, commonParameters, mfis1);
+            psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
+            psm1.ResolveAllAmbiguities();
+            psm1.GetAminoAcidCoverage();
+            //First amino acid
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(1));
+            //sequential N term Frags
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(4));
+            //Last amino acid
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(14));
+            //Covered from both directions inclusive
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(8));
+            //Covered from both directions exclusive
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(7));
+            //Sequential C term Frags
+            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(11));
+            //Not coveredRT
+            Assert.IsFalse(psm1.FragmentCoveragePositionInPeptide.Contains(5));
+
+
+            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan1, commonParameters, mfis1);
+            psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0); // valid psm
+            psm2.ResolveAllAmbiguities();
+            psm2.GetAminoAcidCoverage();
+
+            //check that fragment coverage positions are the same
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.SequenceEqual(psm2.FragmentCoveragePositionInPeptide));
         }
     }
 }

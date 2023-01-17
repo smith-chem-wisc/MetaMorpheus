@@ -67,7 +67,7 @@ namespace MetaMorpheusGUI
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -321,6 +321,7 @@ namespace MetaMorpheusGUI
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
             WriteSpectralLibraryCheckBox.IsChecked = task.SearchParameters.WriteSpectralLibrary;
+            UpdateSpectralLibraryCheckBox.IsChecked = task.SearchParameters.UpdateSpectralLibrary;
             CompressIndividualResultsCheckBox.IsChecked = task.SearchParameters.CompressIndividualFiles;
             IncludeMotifInModNamesCheckBox.IsChecked = task.SearchParameters.IncludeModMotifInMzid;
 
@@ -415,7 +416,7 @@ namespace MetaMorpheusGUI
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
                 PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
                 MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, 
-                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text))
+                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text, InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
             {
                 return;
             }
@@ -932,6 +933,18 @@ namespace MetaMorpheusGUI
             }
         }
 
+        private void MbrAnalysisUpdate(object sender, RoutedEventArgs e)
+        {
+            if (CheckBoxLFQwMBR.IsChecked.Value)
+            {
+                if (UpdateGUISettings.UseMBRAnalysisMandatorySettings())
+                {
+                    CheckBoxMatchBetweenRuns.IsChecked = true;
+                    WriteSpectralLibraryCheckBox.IsChecked = true;
+                }
+            }
+        }
+
         private void KeyPressed(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)
@@ -1287,6 +1300,16 @@ namespace MetaMorpheusGUI
             {
                 InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)InitiatorMethionineBehavior.Retain;
             }
+        }
+
+        /// <summary>
+        /// Sets the value of the Internal Ions TextBox upon being checked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void InternalIonsCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            MinInternalFragmentLengthTextBox.Text = "4";
         }
     }
 
