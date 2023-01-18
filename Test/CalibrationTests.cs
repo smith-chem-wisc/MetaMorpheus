@@ -1,13 +1,20 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.Calibration;
 using FlashLFQ;
 using MassSpectrometry;
 using NUnit.Framework;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using TaskLayer;
+using ThermoFisher.CommonCore.Data;
+using ThermoFisher.CommonCore.Data.Business;
+using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 
 namespace Test
 {
@@ -137,5 +144,60 @@ namespace Test
             // clean up
             Directory.Delete(unitTestFolder, true);
         }
+
+        [Test]
+        [TestCase("ExpDesFileNotFound","small.mzML", "Experimental design file not found!")]
+        [TestCase("WrongNumberOfCells", "small.mzML", "Error: The experimental design was not formatted correctly. Expected 5 cells, but found 4 on line 2")]
+        [TestCase("BioRepNotInteger", "small.mzML", "Error: The experimental design was not formatted correctly. The biorep on line 2 is not an integer")]
+        [TestCase("FractionNotInteger", "small.mzML", "Error: The experimental design was not formatted correctly. The fraction on line 2 is not an integer")]
+        [TestCase("TechRepNotInt", "small.mzML", "Error: The experimental design was not formatted correctly. The techrep on line 2 is not an integer")]
+        [TestCase("mzMLmissing", "small.mzML", "Error: The experimental design did not contain the file(s):")] //tough to check b/c local path not translated to appveyor
+        public static void TestExperimentalDesignErrors(string experimentalFolder, string rawFile, string expectedError)
+        {
+            string experimentalDesignPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData", @"TestExperimentalDesign", experimentalFolder, "ExperimentalDesign.tsv");
+            List<string> rawFilePaths = new() { Path.Combine(experimentalDesignPath, rawFile) };
+            _ = ExperimentalDesign.ReadExperimentalDesign(experimentalDesignPath, rawFilePaths, out var errors);
+            Assert.IsTrue(errors[0].ToString().Contains(expectedError));
+        }
+
+        [Test]
+        public static void TestWriteNewExperimentalDesignFileDuringCalibration()
+        {
+            string badExperimentalDesignPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData", @"TestExperimentalDesign", "WrongNumberOfCells", "ExperimentalDesign.tsv");
+
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+            
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, "filename1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+            // set up original BAD experimental design (input to calibration)
+            string experimentalDesignPath = Path.Combine(unitTestFolder, "ExperimentalDesign.tsv");
+            File.Copy(badExperimentalDesignPath, experimentalDesignPath, true);
+            
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // run calibration
+            CalibrationTask calibrationTask = new CalibrationTask();
+
+
+            bool wasCalled = false;
+            MetaMorpheusTask.WarnHandler += (o, e) => wasCalled = true;
+            
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+            
+            //The original experimental design file is bad so we expect Warn event in "WriteNewExperimentalDesignFile"
+            Assert.IsTrue(wasCalled);
+            
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
     }
 }

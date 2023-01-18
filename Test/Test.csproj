@@ -296,6 +296,36 @@
     <None Update="TestData\Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\TestExperimentalDesign\BioRepNotInteger\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\BioRepNotInteger\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\ExpDesFileNotFound\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\FractionNotInteger\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\FractionNotInteger\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\mzMLmissing\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\TechRepNotInt\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\TechRepNotInt\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\WrongNumberOfCells\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\WrongNumberOfCells\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
