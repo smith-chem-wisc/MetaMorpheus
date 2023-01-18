@@ -414,7 +414,7 @@ namespace EngineLayer
                     psm.GetAminoAcidCoverage();
                     if (psm.FragmentCoveragePositionInPeptide == null) continue;
                     //loop through each peptide within the psm
-                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p=>p.Protein.Accession == protein.Accession);
+                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingPeptides.Select(p => p.Peptide).Where(p => p.Protein.Accession == protein.Accession);
                     foreach (PeptideWithSetModifications pwsm in pwsms)
                     {
                         //create a hashset to store the covered residues for the peptide, converted to the corresponding indices of the protein
@@ -642,9 +642,9 @@ namespace EngineLayer
                     //if still no hits, might be SILAC turnover
                     if (spectraFileInfo == null)
                     {
-                        string filenameWithoutExtension = Path.GetFileNameWithoutExtension(fullFilePath);
+                        string filepathWithoutExtension = Path.Combine(Path.GetDirectoryName(fullFilePath), Path.GetFileNameWithoutExtension(fullFilePath));
                         string extension = Path.GetExtension(fullFilePath);
-                        string fakeFilePath = filenameWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME + extension;
+                        string fakeFilePath = filepathWithoutExtension + SilacConversions.ORIGINAL_TURNOVER_LABEL_NAME + extension;
                         spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fakeFilePath).FirstOrDefault();
                     }
                 }

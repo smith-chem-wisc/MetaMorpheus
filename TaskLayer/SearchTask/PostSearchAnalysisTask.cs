@@ -343,7 +343,7 @@ namespace TaskLayer
             }
 
             //If SILAC (Pre-Quantification) preparation
-            //setup variables
+            //Setup variables
             List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
             SilacLabel startLabel = Parameters.SearchParameters.StartTurnoverLabel;
             SilacLabel endLabel = Parameters.SearchParameters.EndTurnoverLabel;
