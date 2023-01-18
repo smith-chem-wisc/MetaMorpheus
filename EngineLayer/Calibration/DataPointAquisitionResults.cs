@@ -1,9 +1,9 @@
 ﻿using Chemistry;
+using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MathNet.Numerics.Statistics;
 
 namespace EngineLayer.Calibration
 {
@@ -25,16 +25,11 @@ namespace EngineLayer.Calibration
             Ms1List = ms1List;
             Ms2List = ms2List;
 
-            var ms1Range = Ms1List.Select(b => b.ExperimentalMz - b.TheoreticalMz).ToArray();
-            var ms2Range = Ms2List.Select(b => b.ExperimentalMz - b.TheoreticalMz).ToArray();
-            Ms1InfoTh = new Tuple<double, double>(ArrayStatistics.Mean(ms1Range), ArrayStatistics.StandardDeviation(ms1Range));
-            Ms2InfoTh = new Tuple<double, double>(ArrayStatistics.Mean(ms2Range), ArrayStatistics.StandardDeviation(ms2Range));
+            Ms1InfoTh = Ms1List.Select(b => b.ExperimentalMz - b.TheoreticalMz).MeanStandardDeviation();
+            Ms2InfoTh = Ms2List.Select(b => b.ExperimentalMz - b.TheoreticalMz).MeanStandardDeviation();
 
-
-            var ms1PpmRange = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
-            var ms2PpmRange = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
-            Ms1InfoPpm = new Tuple<double, double>(ArrayStatistics.Mean(ms1PpmRange), ArrayStatistics.StandardDeviation(ms1PpmRange));
-            Ms2InfoPpm = new Tuple<double, double>(ArrayStatistics.Mean(ms2PpmRange), ArrayStatistics.StandardDeviation(ms2PpmRange));
+            Ms1InfoPpm = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).MeanStandardDeviation();
+            Ms2InfoPpm = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).MeanStandardDeviation();
 
             NumMs1MassChargeCombinationsConsidered = numMs1MassChargeCombinationsConsidered;
             NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
@@ -42,12 +37,12 @@ namespace EngineLayer.Calibration
             NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
 
             var precursorErrors = psms.Select(p => (p.ScanPrecursorMass - p.PeptideMonisotopicMass.Value) / p.PeptideMonisotopicMass.Value * 1e6).ToList();
-            PsmPrecursorIqrPpmError = precursorErrors.InterquartileRange();
-            PsmPrecursorMedianPpmError = precursorErrors.Median();
+            PsmPrecursorIqrPpmError = Statistics.InterquartileRange(precursorErrors);
+            PsmPrecursorMedianPpmError = Statistics.Median(precursorErrors);
 
             var productErrors = psms.Where(p => p.MatchedFragmentIons != null).SelectMany(p => p.MatchedFragmentIons).Select(p => (p.Mz.ToMass(p.Charge) - p.NeutralTheoreticalProduct.NeutralMass) / p.NeutralTheoreticalProduct.NeutralMass * 1e6).ToList();
-            PsmProductIqrPpmError = productErrors.InterquartileRange();
-            PsmProductMedianPpmError = productErrors.Median();
+            PsmProductIqrPpmError = Statistics.InterquartileRange(productErrors);
+            PsmProductMedianPpmError = Statistics.Median(productErrors);
         }
 
         public Tuple<double, double> Ms1InfoTh { get; }

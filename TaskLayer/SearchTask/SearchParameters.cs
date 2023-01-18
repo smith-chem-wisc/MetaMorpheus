@@ -89,7 +89,6 @@ namespace TaskLayer
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }
         public bool WriteSpectralLibrary { get; set; }
-        public bool UpdateSpectralLibrary { get; set; }
         public bool CompressIndividualFiles { get; set; }
         public List<SilacLabel> SilacLabels { get; set; }
         public SilacLabel StartTurnoverLabel { get; set; } //used for SILAC turnover experiments

@@ -351,11 +351,7 @@ namespace Test
             List<List<double>> massDifferences = new List<List<double>> { new List<double> { massShift, massShift * 2 } }; //LH and HH
 
             MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
-
-            //nested directory needed to test path mapping in ProteinGroup.ConstructSubsetProteinGroup
-            string directoryName = "testDirectory";
-            Directory.CreateDirectory(directoryName);
-            string mzmlName = Path.Combine(directoryName, "silac.mzML");
+            string mzmlName = @"silac.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //create another file to test the handling is done correctly
@@ -474,7 +470,6 @@ namespace Test
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
-            Directory.Delete(directoryName, true);
         }
 
         [Test]
