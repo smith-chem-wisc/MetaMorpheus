@@ -17,12 +17,12 @@ namespace Test
         [Test]
         public static void TestTomlFunction()
         {
-            SearchTask searchTask = new SearchTask
+            SearchTask searchTask = new()
             {
                 CommonParameters = new CommonParameters(
                     productMassTolerance: new PpmTolerance(666),
-                    listOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") },
-                    listOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),
+                    listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") },
+                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation on M") }),
             };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
@@ -53,7 +53,7 @@ namespace Test
             var resultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv"));
             Assert.That(results.SequenceEqual(resultsToml));
 
-            CalibrationTask calibrationTask = new CalibrationTask();
+            CalibrationTask calibrationTask = new();
             Toml.WriteFile(calibrationTask, "CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
             var calibrationTaskLoaded = Toml.ReadFile<CalibrationTask>("CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
 
