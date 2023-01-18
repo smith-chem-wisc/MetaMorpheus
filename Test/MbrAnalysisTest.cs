@@ -28,10 +28,10 @@ namespace Test
         private static string outputFolder;
         private static Dictionary<string, int[]> numSpectraPerFile;
 
-    [OneTimeSetUp]
+        [OneTimeSetUp]
         public void MbrAnalysisSetup()
         {
-             // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
+            // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"MbrAnalysisTest\MSMSids.psmtsv");
             tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
             psms = new List<PeptideSpectralMatch>();
@@ -88,11 +88,6 @@ namespace Test
             };
             searchTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
 
-        }
-
-        [Test]
-        public static void MbrPostSearchAnalysisTest()
-        {
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {
@@ -128,6 +123,12 @@ namespace Test
             };
 
             postSearchTask.Run();
+
+        }
+
+        [Test]
+        public static void MbrPostSearchAnalysisTest()
+        {
 
             List<string> warnings;
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\MbrAnalysis\MbrAnalysis.psmtsv");
@@ -182,7 +183,7 @@ namespace Test
                     {
                         Assert.That(rowSplit[8].Equals("MSMS"));
                         Assert.That(double.TryParse(rowSplit[9], out var contrastAngle) &&
-                                    Math.Abs(contrastAngle-0.6567) < 0.001);
+                                    Math.Abs(contrastAngle - 0.6567) < 0.001);
                         break;
                     }
                     else
@@ -279,7 +280,7 @@ namespace Test
                         MatchBetweenRuns = true,
                         DoMbrAnalysis = true,
                         WriteMzId = false,
-                        WriteDecoys = false, 
+                        WriteDecoys = false,
                         WriteContaminants = false,
                         QuantifyPpmTol = 25
                     }
@@ -302,14 +303,8 @@ namespace Test
 
             testLibraryWithoutDecoy.CloseConnections();
 
-        }
-
-        [Test]
-        public static void SpectralWriterSub100Test()
-        {
-
             // new task with less than 100 psms.
-            PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
+            postSearchTask = new PostSearchAnalysisTask()
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
@@ -344,10 +339,12 @@ namespace Test
 
             postSearchTask.Run();
 
-            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\spectralLibrary.msp");
-            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+            testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
 
-            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out var spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
+
+            testLibraryWithoutDecoy.CloseConnections();
+
         }
 
         [Test]
@@ -359,6 +356,13 @@ namespace Test
             for (int i = 0; i < psmHeaderSplit.Length; i++) newHeaderSplit[i] = "Original " + psmHeaderSplit[i];
             string newHeader = string.Join('\t', newHeaderSplit);
 
+        }
+
+        [OneTimeTearDown]
+        public static void MbrAnalysisTeardown()
+        {
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");
+            Directory.Delete(filePath, true);
         }
     }
 }
