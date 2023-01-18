@@ -409,6 +409,7 @@ namespace EngineLayer.GlycoSearch
             {
                 if (OxoniumIonFilter && !GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow]))
                 {
+                    iDLow++;
                     continue;
                 }
                 if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods)

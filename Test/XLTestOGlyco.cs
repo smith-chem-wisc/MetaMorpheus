@@ -422,7 +422,8 @@ namespace Test
         [Test]
         public static void OGlycoTest_Run3()
         {
-            //The scan is modified to contain no 274 and 292 oxonium ion.
+            //Test search EThcD scan with setting DissociationType ETD.The Oxonium ion always matches, but the filter is user controlled.
+            //The scan is modified to contain no 274 and 292 oxonium ions.
             var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig_ETD.toml"), MetaMorpheusTask.tomlConfig);   
 
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
@@ -432,13 +433,13 @@ namespace Test
             var resultsPath = File.ReadAllLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\task\oglyco.psmtsv"));
             Assert.That(resultsPath.Length > 1);
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
-            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
 
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             var task2 = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig_ETD.toml"), MetaMorpheusTask.tomlConfig);
             task2._glycoSearchParameters.OxoniumIonFilt = true;
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task2) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
-            var resultsPath2 = File.ReadAllLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\task\oglyco.psmtsv"));
-            Assert.That(resultsPath2.Length <= 1);
+            var resultsExist = File.Exists(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\task\oglyco.psmtsv"));
+            Assert.That(!resultsExist);
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 
