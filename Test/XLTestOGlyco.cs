@@ -420,6 +420,29 @@ namespace Test
         }
 
         [Test]
+        public static void OGlycoTest_Run3()
+        {
+            //The scan is modified to contain no 274 and 292 oxonium ion.
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig_ETD.toml"), MetaMorpheusTask.tomlConfig);   
+
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/FiveMucinFasta.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\22-12-14_EclipseOglyco_EThcD_150ms_calRxn_17360.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            var resultsPath = File.ReadAllLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\task\oglyco.psmtsv"));
+            Assert.That(resultsPath.Length > 1);
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
+
+            var task2 = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig_ETD.toml"), MetaMorpheusTask.tomlConfig);
+            task2._glycoSearchParameters.OxoniumIonFilt = true;
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task2) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            var resultsPath2 = File.ReadAllLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\task\oglyco.psmtsv"));
+            Assert.That(resultsPath2.Length <= 1);
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+        }
+
+        [Test]
         public static void OGlycoTest_GetLeft()
         {
             int[] array1 = new int[6] { 0, 0, 0, 1, 1, 2 };
