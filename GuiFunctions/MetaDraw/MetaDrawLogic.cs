@@ -699,7 +699,7 @@ namespace GuiFunctions
             }
             catch (Exception)
             {
-                finalImage.Dispose();
+                finalImage?.Dispose();
                 throw;
             }
             finally
