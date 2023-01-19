@@ -99,7 +99,10 @@ namespace Test
                 model.LoadSettings();
                 Assert.Fail();
             }
-            catch (Exception e) { }
+            catch (Exception)
+            {
+                // ignored
+            }
 
             Assert.That(model.Modifications.First().Children.First().SelectedColor == "Green");
             model.Modifications.First().Children.First().SelectionChanged("Blue");
@@ -298,7 +301,7 @@ namespace Test
             {
                 Assert.That(e.Message == ("ResiduesPerSegment cannot be less than one"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Assert.That(false);
             }
@@ -319,7 +322,7 @@ namespace Test
             {
                 Assert.That(e.Message == ("SegmentsPerRow cannot be less than one"));
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Assert.That(false);
             }
