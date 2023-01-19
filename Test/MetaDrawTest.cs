@@ -22,6 +22,7 @@ using Easy.Common.Extensions;
 using IO.MzML;
 using TaskLayer;
 using ThermoFisher.CommonCore.Data.Business;
+using System.Drawing;
 
 namespace Test
 {
@@ -575,7 +576,7 @@ namespace Test
 
             // write pdf with legend
             Canvas ptmLegend = new();
-            Size legendSize = new(100, 100);
+            System.Windows.Size legendSize = new(100, 100);
             ptmLegend.Measure(legendSize);
             ptmLegend.Arrange(new Rect(legendSize));
             ptmLegend.UpdateLayout();
@@ -730,7 +731,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
 
             Canvas ptmLegend = new();
-            Size legendSize = new(100, 100);
+            System.Windows.Size legendSize = new(100, 100);
             ptmLegend.Measure(legendSize);
             ptmLegend.Arrange(new Rect(legendSize));
             ptmLegend.UpdateLayout();   
@@ -875,7 +876,7 @@ namespace Test
 
             string export = MetaDrawSettings.ExportType;
             Canvas ptmLegend = new();
-            Size legendSize = new(100, 100);
+            System.Windows.Size legendSize = new(100, 100);
             ptmLegend.Measure(legendSize);
             ptmLegend.Arrange(new Rect(legendSize));
             ptmLegend.UpdateLayout();
@@ -1355,6 +1356,14 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.bmp")));
 
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawCombineBitmapTryCatch()
+        {
+            List<Bitmap> bmList = new();
+            List<System.Windows.Point> pts = new();
+            Assert.Throws<ArgumentException>(() => MetaDrawLogic.CombineBitmap(bmList, pts, false));  
         }
 
         [Test]

@@ -109,7 +109,7 @@ namespace GuiFunctions
             }
         }
 
-        public new void ExportPlot(string path, Canvas legend = null,  double width = 700, double height = 370)
+        public void ExportPlot(string path, Canvas legend = null,  double width = 700, double height = 370)
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
