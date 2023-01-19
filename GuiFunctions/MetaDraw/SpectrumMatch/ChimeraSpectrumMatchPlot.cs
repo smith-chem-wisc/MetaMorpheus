@@ -48,19 +48,19 @@ namespace GuiFunctions
         /// <summary>
         /// Annotates the matched ions based upon the protein of origin, and the unique proteoform ID's
         /// </summary>
-        protected new void AnnotateMatchedIons()
+        protected void AnnotateMatchedIons()
         {
-            List<MatchedFragmentIon> allMatchedIons = new();
+            var allMatchedIons = new List<MatchedFragmentIon>();
             List<(string, MatchedFragmentIon)> allDrawnIons = new();
-            Queue<OxyColor> overflowColors = OverflowColors;
+            var overflowColors = OverflowColors;
 
-            int proteinIndex = 0;
+            var proteinIndex = 0;
             foreach (var proteinGroup in PsmsByProteinDictionary.Values)
             {
-                List<MatchedFragmentIon> proteinMatchedIons = new();
-                List<MatchedFragmentIon> proteinDrawnIons = new();
+                var proteinMatchedIons = new List<MatchedFragmentIon>();
+                var proteinDrawnIons = new List<MatchedFragmentIon>();
 
-                for (int j = 0; j < proteinGroup.Count; j++)
+                for (var j = 0; j < proteinGroup.Count; j++)
                 {
                     proteinMatchedIons.AddRange(proteinGroup[j].MatchedIons);
                     allMatchedIons.AddRange(proteinGroup[j].MatchedIons);
@@ -113,11 +113,11 @@ namespace GuiFunctions
         {
             width = width > 0 ? width : 700;
             height = height > 0 ? height : 300;
-            string tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
-            string tempLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
+            var tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
+            var tempLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
             List<System.Drawing.Bitmap> bitmaps = new();
             List<Point> points = new();
-            double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
+            var dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
             // export model as png and load as bitmap
             ExportToPng(tempModelPath, (int)width, (int)height);
@@ -133,9 +133,9 @@ namespace GuiFunctions
                 RenderTargetBitmap legendRenderBitmap = new((int)(dpiScale * legend.ActualWidth), (int)(dpiScale * legend.ActualHeight),
                          MetaDrawSettings.CanvasPdfExportDpi, MetaDrawSettings.CanvasPdfExportDpi, PixelFormats.Pbgra32);
                 legendRenderBitmap.Render(legend);
-                PngBitmapEncoder legendEncoder = new PngBitmapEncoder();
+                var legendEncoder = new PngBitmapEncoder();
                 legendEncoder.Frames.Add(BitmapFrame.Create(legendRenderBitmap));
-                using (FileStream file = File.Create(tempLegendPngPath))
+                using (var file = File.Create(tempLegendPngPath))
                 {
                     legendEncoder.Save(file);
                 }
@@ -151,7 +151,7 @@ namespace GuiFunctions
             }
 
             // combine the bitmaps
-            System.Drawing.Bitmap combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points, false);
+            var combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points, false);
             File.Delete(tempModelPath);
             File.Delete(tempLegendPngPath);
             base.ExportPlot(path, combinedBitmaps, width, height);
