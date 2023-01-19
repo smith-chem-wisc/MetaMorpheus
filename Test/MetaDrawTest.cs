@@ -1363,7 +1363,15 @@ namespace Test
         {
             List<Bitmap> bmList = new();
             List<System.Windows.Point> pts = new();
-            Assert.Throws<ArgumentException>(() => MetaDrawLogic.CombineBitmap(bmList, pts, false));  
+            Assert.Throws<ArgumentException>(() => MetaDrawLogic.CombineBitmap(bmList, pts, false));
+
+            Bitmap bigBmp = new(500, 500, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+            for (int i = 0; i < 10; i++)
+            {
+                bmList.Add(bigBmp);
+            }
+            Assert.Throws<ArgumentOutOfRangeException>(() => MetaDrawLogic.CombineBitmap(bmList, pts, false));
+
         }
 
         [Test]
