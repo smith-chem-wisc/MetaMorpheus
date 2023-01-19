@@ -11,6 +11,8 @@ using IO.Mgf;
 using IO.MzML;
 using IO.ThermoRawFileReader;
 using MassSpectrometry;
+using Proteomics.ProteolyticDigestion;
+using System.Text.RegularExpressions;
 
 namespace EngineLayer.PsmTsv
 {
@@ -160,6 +162,7 @@ namespace EngineLayer.PsmTsv
                             try
                             {
                                 Identification id = GetIdentification(psm, silent, rawFileDictionary, fileType);
+                                PeptideWithSetModifications pswm = GetPWSM(psm, silent, rawFileDictionary, fileType);
                                 if (id != null)
                                 {
                                     if (psm.Split('\t')[_matchScoreCol].IsNullOrEmptyOrWhiteSpace())
@@ -220,7 +223,8 @@ namespace EngineLayer.PsmTsv
             return flashLfqIdentifications;
         }
 
-        internal static ChromatographicPeak GetMbrPeak(Identification id, string psm, Dictionary<string, SpectraFileInfo> fileDictionary)
+        internal static ChromatographicPeak GetMbrPeak(Identification id, string psm,
+            Dictionary<string, SpectraFileInfo> fileDictionary)
         {
             string[] psmSplit = psm.Split('\t');
             string fileName = psmSplit[_fileNameCol];
@@ -234,6 +238,103 @@ namespace EngineLayer.PsmTsv
                 new FlashLFQ.IsotopicEnvelope(msPeak, Int32.Parse(psmSplit[_chargeStCol]), msPeak.Intensity);
             mbrPeak.IsotopicEnvelopes.Add(envelope);
             return mbrPeak;
+        }
+
+        internal static PeptideWithSetModifications GetPWSM(string psmString, bool silent,
+            Dictionary<string, SpectraFileInfo> fileDictionary, PsmFileType fileType)
+        {
+
+
+            return null;
+        }
+
+        /// <summary>
+        /// Parses the full sequence to identify mods
+        /// </summary>
+        /// <param name="fullSequence"> Full sequence of the peptide in question</param>
+        /// <returns> Dictionary with the key being the amino acid position of the mod and the value being the string representing the mod</returns>
+        public static Dictionary<int, List<string>> ParseMaxQuantFullSeq(string fullSeq)
+        {
+            // use a regex to get all modifications
+            string pattern = @"(\(.*\))"; // Matches parentheses pairs
+            Regex regex = new(pattern);
+
+            // remove each match after adding to the dict. Otherwise, getting positions
+            // of the modifications will be rather difficult.
+            //int patternMatches = regex.Matches(fullSeq).Count;
+            Dictionary<int, List<string>> modDict = new();
+
+            //RemoveSpecialCharacters(ref fullSeq);
+            MatchCollection matches = regex.Matches(fullSeq);
+            int currentPosition = 0;
+            foreach (Match match in matches)
+            {
+                GroupCollection group = match.Groups;
+                string val = group[1].Value;
+                int startIndex = group[0].Index;
+                int captureLength = group[0].Length;
+                //int position = group["(.+?)"].Index;
+
+                List<string> modList = new List<string>();
+
+                modList.Add(val);
+                // check to see if key already exist
+                // if there is a missed cleavage, then there will be a label on K and a Label on X modification.
+                // And, it'll be like [label]|[label] which complicates the positional stuff a little bit.
+                // if the already key exists, update the current position with the capture length + 1.
+                // otherwise, add the modification to the dict.
+
+                // int to add is startIndex - current position
+                int positionToAddToDict = startIndex - currentPosition;
+                if (modDict.ContainsKey(positionToAddToDict))
+                {
+                    modDict[positionToAddToDict].Add(val);
+                }
+                else
+                {
+                    modDict.Add(positionToAddToDict, modList);
+                }
+                currentPosition += startIndex + captureLength;
+            }
+            return modDict;
+        }
+
+        public static void ParseMaxQuantMod(string modString)
+        {
+            string locationPattern = @"\(.*\(([^\)]*)\)";
+            Regex locationRegex = new(locationPattern);
+
+            string modificationPattern = @"\((.*)\(";
+            Regex modRegex = new(modificationPattern);
+
+            //Protein N-term
+
+            
+
+        }
+
+        public static string ModLocationOnPeptideOrProtein(string _locationRestriction)
+        {
+            switch (_locationRestriction)
+            {
+                case "N-terminal.": // Protein N-term
+                    return _locationRestriction;
+
+                case "C-terminal.": // Protein C-term
+                    return _locationRestriction;
+
+                case "Peptide N-terminal.": // N-term
+                    return _locationRestriction;
+
+                case "Peptide C-terminal.": // C-term
+                    return _locationRestriction;
+
+                case "Anywhere.":
+                    return _locationRestriction;
+
+                default:
+                    return "Unassigned.";
+            }
         }
 
         internal static Identification GetIdentification(string line, bool silent, Dictionary<string, SpectraFileInfo> rawFileDictionary, PsmFileType fileType)
