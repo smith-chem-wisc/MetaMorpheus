@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 using Easy.Common.Extensions;
 using UsefulProteomicsDatabases;
 using IO.Mgf;
@@ -13,6 +14,7 @@ using IO.ThermoRawFileReader;
 using MassSpectrometry;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
+using Proteomics;
 
 namespace EngineLayer.PsmTsv
 {
@@ -248,93 +250,221 @@ namespace EngineLayer.PsmTsv
             return null;
         }
 
-        /// <summary>
-        /// Parses the full sequence to identify mods
-        /// </summary>
-        /// <param name="fullSequence"> Full sequence of the peptide in question</param>
-        /// <returns> Dictionary with the key being the amino acid position of the mod and the value being the string representing the mod</returns>
-        public static Dictionary<int, List<string>> ParseMaxQuantFullSeq(string fullSeq)
+        public static string MaxQuantToPWSM(string mqFullSeq, List<Modification> fixedMods)
         {
-            // use a regex to get all modifications
-            string pattern = @"(\(.*\))"; // Matches parentheses pairs
-            Regex regex = new(pattern);
+            string mqTrimmedSeq = mqFullSeq.Trim('_');
+            string fullSeq = null;
 
-            // remove each match after adding to the dict. Otherwise, getting positions
-            // of the modifications will be rather difficult.
-            //int patternMatches = regex.Matches(fullSeq).Count;
-            Dictionary<int, List<string>> modDict = new();
-
-            //RemoveSpecialCharacters(ref fullSeq);
-            MatchCollection matches = regex.Matches(fullSeq);
-            int currentPosition = 0;
-            foreach (Match match in matches)
+            if (FindVariableModsInMaxQuantSequence(mqTrimmedSeq, out var modDict))
             {
-                GroupCollection group = match.Groups;
-                string val = group[1].Value;
-                int startIndex = group[0].Index;
-                int captureLength = group[0].Length;
-                //int position = group["(.+?)"].Index;
+                // Matches all AA sequences except for the last
+                string internalAAPattern = @"([A-Z]*)\(";
+                Regex internalAARegex = new Regex(internalAAPattern);
+                IEnumerable<string> internalAAs = internalAARegex.Matches(mqTrimmedSeq)
+                    .Select(m => m.Groups[1].Value)
+                    .Where(s => s.IsNotNullOrEmptyOrWhiteSpace());
 
-                List<string> modList = new List<string>();
+                // The second  regular expression ( "\([A-Z]*" ) captures the last section
+                // of the peptide. 
+                string finalAAPattern = @"([A-Z]*)$";
+                Regex finalAARegex = new Regex(finalAAPattern);
+                var match = finalAARegex.Match(mqTrimmedSeq);
+                string finalAAs = finalAARegex.Match(mqTrimmedSeq).Groups[1].Value;
 
-                modList.Add(val);
-                // check to see if key already exist
-                // if there is a missed cleavage, then there will be a label on K and a Label on X modification.
-                // And, it'll be like [label]|[label] which complicates the positional stuff a little bit.
-                // if the already key exists, update the current position with the capture length + 1.
-                // otherwise, add the modification to the dict.
+                    var orderedMods = modDict.
+                    OrderBy(kvp => kvp.Key).ToList();
 
-                // int to add is startIndex - current position
-                int positionToAddToDict = startIndex - currentPosition;
-                if (modDict.ContainsKey(positionToAddToDict))
+                if (orderedMods[0].Key == 1)
                 {
-                    modDict[positionToAddToDict].Add(val);
+                    fullSeq = string.Concat(
+                        orderedMods.
+                            Select(kvp => kvp.Value).
+                            Select(mod => '[' + mod.ModificationType + ":" + mod.IdWithMotif + ']').
+                            Zip(internalAAs.Append(finalAAs), (first, second) => first + second)
+                    );
                 }
                 else
                 {
-                    modDict.Add(positionToAddToDict, modList);
+                    fullSeq = string.Concat(
+                        internalAAs.
+                            Zip(orderedMods, (first, second) => 
+                                first + '[' + second.Value.ModificationType + ":" + second.Value.IdWithMotif + ']')
+                            // Zip combines elements into pairs, which results in a dangling tail,
+                            // which requires manually adding the last peptide sequence.
+                            .Append(finalAAs)
+                    );
                 }
-                currentPosition += startIndex + captureLength;
             }
-            return modDict;
+            else
+            {
+                fullSeq = mqTrimmedSeq;
+            }
+
+            fixedMods = new List<Modification> { GlobalVariables.AllModsKnownDictionary["Carbamidomethyl on C"] };
+            foreach (Modification mod in fixedMods)
+            {
+                //string[] locations = mod.LocationRestriction
+            }
+
+            return fullSeq;
         }
 
-        public static void ParseMaxQuantMod(string modString)
+
+        /// <summary>
+        /// Converts a MaxQuant sequence to a MetaMorpheus sequence
+        /// </summary>
+        /// <param name="fullSequence"> Full sequence of the peptide in question, taken from a MaxQuant file</param>
+        /// <param name="modDict">A dictionary with integer positions as keys, Modifications as values. 1 represents the n-terminus</param>
+        /// <returns> True if modifications were present, false otherwise </returns>
+        public static bool FindVariableModsInMaxQuantSequence(string fullSeq, out Dictionary<int, Modification> modDict)
         {
-            string locationPattern = @"\(.*\(([^\)]*)\)";
-            Regex locationRegex = new(locationPattern);
+            // use a regex to get all modifications
+            string pattern = @"(.\([A-Z][a-z]*[\s]\([^\(]*\)\).)"; // Matches single modification + leading and trailing AAs
+            Regex regex = new(pattern);
+            MatchCollection matches = regex.Matches(fullSeq);
+
+            // Here, int is a one based index (one represents the n-terminus) of the location of each mod
+            // within the peptide
+            if (matches.Any())
+            {
+                int currentPosition = 0;
+                modDict = new();
+                foreach (Match match in matches)
+                {
+                    GroupCollection group = match.Groups;
+                    string modString = group[1].Value;
+                    int startIndex = group[0].Index;
+                    int captureLength = group[0].Length;
+
+                    // int to add is startIndex - current position + 1 (one based indexing)
+                    int positionToAddToDict = 1 + startIndex - currentPosition;
+                    modDict.Add(positionToAddToDict, ParseMaxQuantMod(modString));
+
+                    currentPosition += startIndex + captureLength;
+                }
+                return true;
+            }
+
+            modDict = null;
+            return false;
+
+        }
+
+        /// <summary>
+        /// Returns a Modification object that most closely matches the modification
+        /// found in a MaxQuant results file
+        /// </summary>
+        /// <param name="modString">A MaxQuant modification, in the form of (Mod Name (Location))</param>
+        /// <returns>A Modification object that most closely matches the input string</returns>
+        public static Modification ParseMaxQuantMod(string modString)
+        {
+            if (MaxQuantToMetaModDictionary == null) MaxQuantToMetaModDictionary = new();
+
+            if (MaxQuantToMetaModDictionary.TryGetValue(modString, out var metaMod))
+            {
+                return metaMod;
+            }
 
             string modificationPattern = @"\((.*)\(";
             Regex modRegex = new(modificationPattern);
+            string mod = modRegex.Match(modString).Groups[1].Value;
 
-            //Protein N-term
+            string location = TranslateMaxQuantPosition(modString);
 
-            
+            // Search MM modifications to find the closest match
+            metaMod = GlobalVariables.AllModsKnown.
+                OrderBy(m => ComputeLevenshteinDistance(mod, m.OriginalId)).
+                Where(m => m.Target.ToString().Equals(location)).
+                FirstOrDefault();
+
+
+            if (metaMod != null) MaxQuantToMetaModDictionary.Add(modString, metaMod);
+            return metaMod;
 
         }
 
-        public static string ModLocationOnPeptideOrProtein(string _locationRestriction)
+        public static Dictionary<string, Modification> MaxQuantToMetaModDictionary { get; set; }
+
+        // Ripped straight from StackOverflow:
+        // https://stackoverflow.com/questions/13793560/find-closest-match-to-input-string-in-a-list-of-strings
+        /// <summary>
+        /// Compute the distance between two strings.
+        /// </summary>
+        /// <returns> An int representing the string distance, where a value of 0 represents a perfect match</returns>
+        public static int ComputeLevenshteinDistance(string s, string t)
         {
-            switch (_locationRestriction)
+            int n = s.Length;
+            int m = t.Length;
+            int[,] d = new int[n + 1, m + 1];
+
+            // Step 1
+            if (n == 0)
             {
-                case "N-terminal.": // Protein N-term
-                    return _locationRestriction;
+                return m;
+            }
 
-                case "C-terminal.": // Protein C-term
-                    return _locationRestriction;
+            if (m == 0)
+            {
+                return n;
+            }
 
-                case "Peptide N-terminal.": // N-term
-                    return _locationRestriction;
+            // Step 2
+            for (int i = 0; i <= n; d[i, 0] = i++)
+            {
+            }
 
-                case "Peptide C-terminal.": // C-term
-                    return _locationRestriction;
+            for (int j = 0; j <= m; d[0, j] = j++)
+            {
+            }
 
-                case "Anywhere.":
-                    return _locationRestriction;
+            // Step 3
+            for (int i = 1; i <= n; i++)
+            {
+                //Step 4
+                for (int j = 1; j <= m; j++)
+                {
+                    // Step 5
+                    int cost = (t[j - 1] == s[i - 1]) ? 0 : 1;
+
+                    // Step 6
+                    d[i, j] = Math.Min(
+                        Math.Min(d[i - 1, j] + 1, d[i, j - 1] + 1),
+                        d[i - 1, j - 1] + cost);
+                }
+            }
+            // Step 7
+            return d[n, m];
+        }
+
+        /// <summary>
+        /// Translates a position given by MaxQuant to the Metamorpheus format
+        /// </summary>
+        /// <param name="location"> MaxQuant position as a trimmed string</param>
+        /// <returns> Position in the MetaMorpheus format</returns>
+        public static string TranslateMaxQuantPosition(string modString)
+        {
+            string locationPattern = @"\(.*\(([^\)]*)\)";
+            Regex locationRegex = new(locationPattern);
+            string location = locationRegex.Match(modString).Groups[1].Value;
+
+            // Assume that any 1 character location is a single amino acid
+            if (location.Length == 1) return location; 
+            // Any hyphenated location is a terminus
+            else switch (location) 
+            {
+                case "Protein N-term":
+                case "N-term":
+                    return modString[modString.Length - 1].ToString();
+
+                case "Protein C-term":
+                case "C-term": 
+                    return modString[0].ToString();
 
                 default:
-                    return "Unassigned.";
+                    return "X";
             }
+
+
         }
 
         internal static Identification GetIdentification(string line, bool silent, Dictionary<string, SpectraFileInfo> rawFileDictionary, PsmFileType fileType)
@@ -908,19 +1038,6 @@ namespace EngineLayer.PsmTsv
             return type;
         }
 
-        internal static string ApplyRegex(FastaHeaderFieldRegex regex, string line)
-        {
-            string result = null;
-            if (regex != null)
-            {
-                var matches = regex.Regex.Matches(line);
-                if (matches.Count > regex.Match && matches[regex.Match].Groups.Count > regex.Group)
-                {
-                    result = matches[regex.Match].Groups[regex.Group].Value;
-                }
-            }
-            return result;
-        }
     }
 
     public class ScanHeaderInfo

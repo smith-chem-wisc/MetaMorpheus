@@ -32,10 +32,20 @@ namespace Test
         [Test]
         public static void ParseModificationsTest()
         {
-            string fullSeq = "_AM(Oxidation (M))LESIGVPLEK_";
-            var resultsDictionary = PsmGenericReader.ParseMaxQuantFullSeq(fullSeq);
+            string fullSeq = "_AM(Oxidation (M))LESIGVT(Phospho (T))PLEK_";
+            string fullSeq2 = "_(Acetyl (Protein N-term))AAAAAAAAAAGAAGGR_";
 
-            int placeholder = 0;
+            string x = PsmGenericReader.MaxQuantToPWSM(fullSeq, null);
+            string y = PsmGenericReader.MaxQuantToPWSM(fullSeq2, null);
+
+            var testMod = GlobalVariables.AllModsKnown.Where(m => m.OriginalId.Contains("Phospho"));
+            //var resultsDictionary = PsmGenericReader.ParseMaxQuantFullSeq(fullSeq);
+            foreach (var mod in testMod)
+            {
+                int placeholder = 0;
+            }
+
+
         }
     }
 }
