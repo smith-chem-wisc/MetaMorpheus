@@ -128,7 +128,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchXcorrWithToml()
         {
-            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Search.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
