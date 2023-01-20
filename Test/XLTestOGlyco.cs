@@ -147,7 +147,7 @@ namespace Test
             var scan = MetaMorpheusTask.GetMs2Scans(file, spectraFile, commonParameters).First();
 
             var productSearchMode = new SinglePpmAroundZeroSearchMode(20);
-            var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(scan, productSearchMode, DissociationType.EThcD);
+            var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(scan, productSearchMode);
 
             //Get glycanBox          
             var glycanBox = OGlycanBoxes[19];
@@ -173,9 +173,14 @@ namespace Test
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[8]);
             Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on X]LFKNVS[O-Glycosylation:N1 on X]LYK");
 
-            var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, peptide, peptideWithMod);
+            var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, new List<ProductType>(), peptide, peptideWithMod);
 
-            var fragments_ethcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
+            var fragments_ethcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, new List<ProductType>(), peptide, peptideWithMod);
+
+            var customIons = new List<ProductType> { ProductType.c, ProductType.zDot };
+            var fragments_custom = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.Custom, customIons, peptide, peptideWithMod);
+
+            Assert.That(fragments_hcd.Count == fragments_custom.Count && fragments_hcd.Count == fragments_ethcd.Count - 20);
         }
 
         [Test]
@@ -192,17 +197,17 @@ namespace Test
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[24]);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]VYLGAS[O-Glycosylation:H1N1A1 on X]K");
 
-            var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, peptide, peptideWithMod);
+            var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
 
 
             Assert.That(fragments_etd.Count == 22);
             Assert.That(fragments_etd.Last().Annotation == "zDot8");
             Assert.That(fragments_etd.Last().NeutralMass > 1824);
 
-            var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, peptide, peptideWithMod);
+            var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, new List<ProductType>(), peptide, peptideWithMod);
             Assert.That(fragments_hcd.Where(p=>p.ProductType == ProductType.M).Count() == 5);
 
-            var fragments_ethcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
+            var fragments_ethcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, new List<ProductType>(), peptide, peptideWithMod);
             Assert.That(fragments_ethcd.Where(p => p.ProductType == ProductType.M).Count() == 5);
         }
 
@@ -281,7 +286,7 @@ namespace Test
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]T[O-Glycosylation:H1N1 on X]GSLEPSS[O-Glycosylation:N1 on X]GASGPQVSSVK");
-            List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, peptide, peptideWithMod);
+            List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, new List<ProductType>(), peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Graph Localization
@@ -336,7 +341,7 @@ namespace Test
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[1] {4}, peptide, glycanBox);
             Assert.That(peptideWithMod.FullSequence == "AAT[O-Glycosylation:N1 on X]VGSLAGQPLQER");
             //List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
-            List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, peptide, peptideWithMod);
+            List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
             //Get hashset int
@@ -415,6 +420,30 @@ namespace Test
         }
 
         [Test]
+        public static void OGlycoTest_Run3()
+        {
+            //Test search EThcD scan with setting DissociationType ETD.The Oxonium ion always matches, but the filter is user controlled.
+            //The scan is modified to contain no 274 and 292 oxonium ions.
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig_ETD.toml"), MetaMorpheusTask.tomlConfig);   
+
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/FiveMucinFasta.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\22-12-14_EclipseOglyco_EThcD_150ms_calRxn_17360.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            var resultsPath = File.ReadAllLines(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\task\oglyco.psmtsv"));
+            Assert.That(resultsPath.Length > 1);
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+
+            Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
+            var task2 = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig_ETD.toml"), MetaMorpheusTask.tomlConfig);
+            task2._glycoSearchParameters.OxoniumIonFilt = true;
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task2) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            var resultsExist = File.Exists(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\task\oglyco.psmtsv"));
+            Assert.That(!resultsExist);
+            Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
+        }
+
+        [Test]
         public static void OGlycoTest_GetLeft()
         {
             int[] array1 = new int[6] { 0, 0, 0, 1, 1, 2 };
@@ -482,5 +511,16 @@ namespace Test
             Assert.That(route.Mods.First().Item3);
         }
 
+        [Test]
+        public static void OGlycoTest_DissociationTypeContainETD()
+        {
+            DissociationType dissociationType = DissociationType.Custom;
+
+            List<ProductType> customIons = new List<ProductType> { ProductType.zDot };
+
+            var isETDType = GlycoPeptides.DissociationTypeContainETD(dissociationType, customIons);
+
+            Assert.That(isETDType);
+        }
     }
 }
