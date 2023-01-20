@@ -1,13 +1,17 @@
-﻿using EngineLayer;
+﻿using Chemistry;
+using EngineLayer;
+using EngineLayer.ClassicSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -17,12 +21,12 @@ namespace Test
         [Test]
         public static void TestTomlFunction()
         {
-            SearchTask searchTask = new SearchTask
+            SearchTask searchTask = new()
             {
                 CommonParameters = new CommonParameters(
                     productMassTolerance: new PpmTolerance(666),
-                    listOfModsFixed: new List<(string, string)> { ("a", "b"), ("c", "d") },
-                    listOfModsVariable: new List<(string, string)> { ("e", "f"), ("g", "h") }),
+                    listOfModsFixed: new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") },
+                    listOfModsVariable: new List<(string, string)> { ("Common Variable", "Oxidation on M") }),
             };
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
@@ -53,9 +57,9 @@ namespace Test
             var resultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv"));
             Assert.That(results.SequenceEqual(resultsToml));
 
-            CalibrationTask calibrationTask = new CalibrationTask();
+            CalibrationTask calibrationTask = new();
             Toml.WriteFile(calibrationTask, "CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
-            var calibrationTaskLoaded = Toml.ReadFile<CalibrationTask>("CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
+            _ = Toml.ReadFile<CalibrationTask>("CalibrationTask.toml", MetaMorpheusTask.tomlConfig);
 
             GptmdTask gptmdTask = new GptmdTask();
             Toml.WriteFile(gptmdTask, "GptmdTask.toml", MetaMorpheusTask.tomlConfig);
@@ -143,6 +147,51 @@ namespace Test
 
             //Clear result files
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestOldModsInToml()
+        {
+            //These mods are not formatted correctly. This should throw a warning in MetaMorpheusTask
+            List<(string, string)> variableMods = new() {("","") };
+            List<(string, string)> fixedMods = new() { ("", "") };
+
+            CommonParameters commonParameters = new(listOfModsFixed: fixedMods, listOfModsVariable: variableMods);
+
+            SearchTask searchTask = new()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    Normalize = true
+                },
+                CommonParameters = commonParameters
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestNormalizationExperDesign");
+            string experimentalDesignFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\ExperimentalDesign.tsv");
+            using (StreamWriter output = new StreamWriter(experimentalDesignFile))
+            {
+                output.WriteLine("FileName\tCondition\tBiorep\tFraction\tTechrep");
+                output.WriteLine("PrunedDbSpectra.mzml" + "\t" + "condition" + "\t" + "1" + "\t" + "1" + "\t" + "1");
+            }
+            DbForTask db = new(myDatabase, false);
+
+            // run the task
+            Directory.CreateDirectory(folderPath);
+            
+
+            bool wasCalled = false;
+            MetaMorpheusTask.WarnHandler += (o, e) => wasCalled = true;
+
+            //Executing this run task will load modifications in the MetaMorpheusTask. Mods are written incorrectly, which will throw a warning.
+            searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "normal");
+
+            Directory.Delete(folderPath, true);
+
+            //
+            Assert.IsTrue(wasCalled);
         }
 
         [Test]

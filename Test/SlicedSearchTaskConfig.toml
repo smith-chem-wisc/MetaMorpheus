@@ -3,8 +3,8 @@ TaskType = "Search"
 [CommonParameters]
 MaxDegreeOfParallelism = 1
 LocalizeAll = true
-ListOfModsFixed = "Common Fixed\tCarbamidomethyl of C"
-ListOfModsVariable = "Common Variable\tOxidation of M"
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C"
+ListOfModsVariable = "Common Variable\tOxidation on M"
 ListOfModsLocalize = ""
 DoPrecursorDeconvolution = true
 UseProvidedPrecursorInfo = true
