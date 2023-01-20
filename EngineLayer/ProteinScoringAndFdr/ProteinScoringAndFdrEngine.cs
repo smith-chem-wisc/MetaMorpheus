@@ -24,7 +24,6 @@ namespace EngineLayer
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             ProteinScoringAndFdrResults myAnalysisResults = new ProteinScoringAndFdrResults(this);
-
             ScoreProteinGroups(ProteinGroups, NewPsms);
             myAnalysisResults.SortedAndScoredProteinGroups = DoProteinFdr(ProteinGroups);
 

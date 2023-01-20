@@ -31,6 +31,10 @@
     <PackageReference Include="Microsoft.ML.DataView" Version="1.5.5" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="1.5.5" />
     <PackageReference Include="mzLib" Version="1.0.528" />
+    <PackageReference Include="coverlet.msbuild" Version="3.2.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
@@ -139,7 +143,13 @@
     <None Update="TestData\DoubleProtease.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\ea05196_02042021_T16_F20.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\empty.fa">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\ExcelEditedPeptide.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\frameshift.xml">
@@ -178,7 +188,34 @@
     <None Update="TestData\LowResSnip_B6_mouse_11700_117500pruned.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\MbrAnalysisTest\ExpectedMBRHits.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\HumanFastaSlice.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\K13_02ng_1min_frac1.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\K13_20ng_1min_frac1.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\MbrTest_J3.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\MbrTest_K13.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\MbrAnalysisTest\MsMsids.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\myPrositLib.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\noSAreaderTest.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\oglyco.psmtsv">
@@ -247,6 +284,12 @@
     <None Update="TestData\SpectralLibrarySearch\SmallCalibratible_Yeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralLibrarySearch\spectralLibrary.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralLibrarySearch\spectralLibraryForTestingLibraryUpdate.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\spectralLibraryNeutralLossTest.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -265,10 +308,37 @@
     <None Update="TestData\Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\tinySemi.mgf">
+    <None Update="TestData\TestExperimentalDesign\BioRepNotInteger\ExperimentalDesign.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="TestData\tmt18test.mzML">
+    <None Update="TestData\TestExperimentalDesign\BioRepNotInteger\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\ExpDesFileNotFound\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\FractionNotInteger\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\FractionNotInteger\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\mzMLmissing\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\TechRepNotInt\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\TechRepNotInt\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\WrongNumberOfCells\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TestExperimentalDesign\WrongNumberOfCells\small.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\tmt18test2.mzML">
@@ -338,6 +408,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TopDownTestData\slicedTDYeast.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TopDownTestData\TDGPTMDSearchResults.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TopDownTestData\TDGPTMDSearchSingleSpectra.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="VariantSearchTaskconfig.toml">

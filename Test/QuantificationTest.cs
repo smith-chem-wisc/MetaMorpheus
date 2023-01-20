@@ -191,7 +191,7 @@ namespace Test
                             mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=1");
 
                         // create the MS2 scan
-                        PeptideWithSetModifications pep = new(peptide, new Dictionary<string, Proteomics.Modification>());
+                        var pep = new PeptideWithSetModifications(peptide, new Dictionary<string, Proteomics.Modification>());
                         List<Product> frags = new List<Product>();
                         pep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
                         double[] mz2 = frags.Select(v => v.NeutralMass.ToMz(1)).ToArray();
@@ -223,7 +223,7 @@ namespace Test
 
             // run the search/quantification
             SearchTask task = new SearchTask();
-            _ = task.RunTask(unitTestFolder, new List<DbForTask> { new DbForTask(dbName, false) }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
+            task.RunTask(unitTestFolder, new List<DbForTask> { new DbForTask(dbName, false) }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
 
             // read in the protein quant results
             Assert.That(File.Exists(Path.Combine(unitTestFolder, "AllQuantifiedProteinGroups.tsv")));

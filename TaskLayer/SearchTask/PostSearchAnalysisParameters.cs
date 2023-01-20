@@ -25,5 +25,6 @@ namespace TaskLayer
         public MyFileManager MyFileManager { get; set; }
         public List<DbForTask> DatabaseFilenameList { get; set; }
         public List<string> CurrentRawFileList { get; set; }
+        public SpectralLibrary spectralLibrary { get; set; }
     }
 }

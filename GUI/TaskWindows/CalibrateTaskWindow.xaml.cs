@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using GuiFunctions;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -22,8 +23,8 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class CalibrateTaskWindow : Window
     {
-        private readonly ObservableCollection<ModTypeForTreeView> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
-        private readonly ObservableCollection<ModTypeForTreeView> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeView>();
+        private readonly ObservableCollection<ModTypeForTreeViewModel> FixedModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
+        private readonly ObservableCollection<ModTypeForTreeViewModel> VariableModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
@@ -85,13 +86,13 @@ namespace MetaMorpheusGUI
                     if (theMod != null)
                         theMod.Use = true;
                     else
-                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                        theModType.Children.Add(new ModForTreeViewModel("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
                 else
                 {
-                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    theModType = new ModTypeForTreeViewModel(mod.Item1, true);
                     FixedModTypeForTreeViewObservableCollection.Add(theModType);
-                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
             foreach (var mod in task.CommonParameters.ListOfModsVariable)
@@ -103,13 +104,13 @@ namespace MetaMorpheusGUI
                     if (theMod != null)
                         theMod.Use = true;
                     else
-                        theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                        theModType.Children.Add(new ModForTreeViewModel("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
                 else
                 {
-                    theModType = new ModTypeForTreeView(mod.Item1, true);
+                    theModType = new ModTypeForTreeViewModel(mod.Item1, true);
                     VariableModTypeForTreeViewObservableCollection.Add(theModType);
-                    theModType.Children.Add(new ModForTreeView("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel("UNKNOWN MODIFICATION!", true, mod.Item2, true, theModType));
                 }
             }
 
@@ -154,12 +155,12 @@ namespace MetaMorpheusGUI
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
-                var theModType = new ModTypeForTreeView(hm.Key, false);
+                var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 FixedModTypeForTreeViewObservableCollection.Add(theModType);
 
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
 
@@ -167,12 +168,12 @@ namespace MetaMorpheusGUI
 
             foreach (var hm in GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType))
             {
-                var theModType = new ModTypeForTreeView(hm.Key, false);
+                var theModType = new ModTypeForTreeViewModel(hm.Key, false);
                 VariableModTypeForTreeViewObservableCollection.Add(theModType);
 
                 foreach (var uah in hm)
                 {
-                    theModType.Children.Add(new ModForTreeView(uah.ToString(), false, uah.IdWithMotif, false, theModType));
+                    theModType.Children.Add(new ModForTreeViewModel(uah.ToString(), false, uah.IdWithMotif, false, theModType));
                 }
             }
 
@@ -191,7 +192,8 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, fieldNotUsed))
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
+                 null, null, null))
             {
                 return;
             }
@@ -204,6 +206,7 @@ namespace MetaMorpheusGUI
             int maxHeterozygousVariants = int.Parse(MaxHeterozygousVariantsTextBox.Text, NumberStyles.Any, CultureInfo.InvariantCulture);
             int maxModificationIsoforms = int.Parse(MaxModificationIsoformsTextBox.Text, CultureInfo.InvariantCulture);
             int maxModsPerPeptide = int.Parse(MaxModsPerPeptideTextBox.Text, CultureInfo.InvariantCulture);
+            //bool addTruncations = addTruncations.
             DissociationType dissociationType = GlobalVariables.AllSupportedDissociationTypes[DissociationTypeComboBox.SelectedItem.ToString()];
             CustomFragmentationWindow.Close();
 
@@ -298,7 +301,7 @@ namespace MetaMorpheusGUI
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
         {
-            e.Handled = !GlobalGuiSettings.CheckIsNumber(e.Text);
+            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
 
         private void KeyPressed(object sender, KeyEventArgs e)

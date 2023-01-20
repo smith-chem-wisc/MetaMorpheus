@@ -31,8 +31,8 @@
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.7.82" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.528" />
-    <PackageReference Include="Nett" Version="0.13.0" />
+    <PackageReference Include="mzLib" Version="1.0.537" />
+    <PackageReference Include="Nett" Version="0.15.0" />
   </ItemGroup>
 
   <ItemGroup>

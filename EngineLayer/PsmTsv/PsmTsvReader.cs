@@ -97,6 +97,8 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.DecoyContaminantTarget, Array.IndexOf(spl, PsmTsvHeader.DecoyContaminantTarget));
             parsedHeader.Add(PsmTsvHeader.MatchedIonMzRatios, Array.IndexOf(spl, PsmTsvHeader.MatchedIonMzRatios));
             parsedHeader.Add(PsmTsvHeader.MatchedIonIntensities, Array.IndexOf(spl, PsmTsvHeader.MatchedIonIntensities));
+            parsedHeader.Add(PsmTsvHeader.MatchedIonMassDiffDa, Array.IndexOf(spl, PsmTsvHeader.MatchedIonMassDiffDa));
+            parsedHeader.Add(PsmTsvHeader.SpectralAngle, Array.IndexOf(spl, PsmTsvHeader.SpectralAngle));
             parsedHeader.Add(PsmTsvHeader.QValue, Array.IndexOf(spl, PsmTsvHeader.QValue));
             parsedHeader.Add(PsmTsvHeader.QValueNotch, Array.IndexOf(spl, PsmTsvHeader.QValueNotch));
             parsedHeader.Add(PsmTsvHeader.PEP, Array.IndexOf(spl, PsmTsvHeader.PEP));

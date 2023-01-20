@@ -32,10 +32,11 @@
     <PackageReference Include="Microsoft.ML.DataView" Version="1.5.5" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="1.5.5" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.528" />
+    <PackageReference Include="mzLib" Version="1.0.537" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
-    <PackageReference Include="Nett" Version="0.13.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Nett" Version="0.15.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="TopDownProteomics" Version="0.0.290" />
   </ItemGroup>
 
   <ItemGroup>
