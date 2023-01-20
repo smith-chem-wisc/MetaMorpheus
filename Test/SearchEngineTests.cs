@@ -613,10 +613,10 @@ namespace Test
             }
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
-            Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: ChemicalFormula.ParseFormula("O1").MonoisotopicMass);
+            Modification mod1 = new Modification(_originalId: "Oxidation on M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: ChemicalFormula.ParseFormula("O1").MonoisotopicMass);
 
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
 
             var variableModifications = new List<Modification>
             {
@@ -721,7 +721,7 @@ namespace Test
             Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: ChemicalFormula.ParseFormula("O1").MonoisotopicMass);
 
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
 
             var variableModifications = new List<Modification>
             {
@@ -1002,7 +1002,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             fixedModifications.Add(mod2);
 
             var proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGGGGG", null) };
@@ -1109,7 +1109,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             fixedModifications.Add(mod2);
 
             var proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
