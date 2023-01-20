@@ -166,7 +166,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
             //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
             MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(20);
-            var oxoinumIonsExist = GlycoPeptides.ScanOxoniumIonFilter(listOfSortedms2Scans[0], massDiffAcceptor, commonParameters.DissociationType);
+            var oxoinumIonsExist = GlycoPeptides.ScanOxoniumIonFilter(listOfSortedms2Scans[0], massDiffAcceptor);
             Assert.AreEqual(oxoinumIonsExist.Where(p=>p>0).Count(), 9);
         }
 
