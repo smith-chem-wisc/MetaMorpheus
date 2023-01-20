@@ -697,12 +697,10 @@ namespace GuiFunctions
 
                 return finalImage;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                if (finalImage != null)
-                    finalImage.Dispose();
-
-                throw ex;
+                finalImage?.Dispose();
+                throw;
             }
             finally
             {

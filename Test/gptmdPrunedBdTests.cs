@@ -188,7 +188,7 @@ namespace Test
         [Test]
         public static void TestUserModSelectionInPrunedDB()
         {
-            List<(string, string)> listOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl of C"), ("Common Fixed", "Carbamidomethyl of U") };
+            List<(string, string)> listOfModsFixed = new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             //Create Search Task
             SearchTask task5 = new SearchTask
             {

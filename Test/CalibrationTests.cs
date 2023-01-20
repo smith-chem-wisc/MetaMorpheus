@@ -39,11 +39,11 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
 
             // set up original experimental design (input to calibration)
-            SpectraFileInfo fileInfo = new SpectraFileInfo(nonCalibratedFilePath, "condition", 0, 0, 0);
-            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+            SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
 
             // run calibration
-            CalibrationTask calibrationTask = new CalibrationTask();
+            CalibrationTask calibrationTask = new();
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
 
             // test new experimental design written by calibration
@@ -81,8 +81,7 @@ namespace Test
         {
             CalibrationTask calibrationTask = new CalibrationTask();
 
-            EngineLayer.CommonParameters CommonParameters = new EngineLayer.CommonParameters
-                (dissociationType: MassSpectrometry.DissociationType.LowCID,
+            CommonParameters CommonParameters = new(dissociationType: DissociationType.LowCID,
                 scoreCutoff: 1);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
@@ -119,8 +118,8 @@ namespace Test
             File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
 
             // set up original experimental design (input to calibration)
-            SpectraFileInfo fileInfo = new SpectraFileInfo(nonCalibratedFilePath, "condition", 0, 0, 0);
-            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+            SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
 
             // set up tasks (calibration + search)
             CalibrationTask calibrationTask = new CalibrationTask();

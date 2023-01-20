@@ -27,7 +27,7 @@ namespace Test
             string xmlName = @"TestData\okk.xml";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestLoadAndRunMgf");
 
-            SearchTask task1 = new SearchTask
+            SearchTask task1 = new()
             {
                 SearchParameters = new SearchParameters
                 {
@@ -35,7 +35,7 @@ namespace Test
                     DoQuantification = true
                 }
             };
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>
+            List<(string, MetaMorpheusTask)> taskList = new()
             {
                 ("task1", task1),
             };
@@ -51,7 +51,7 @@ namespace Test
         public static void TestCompressionDecompression()
         {
             string testInputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CompressionTest");
-            DirectoryInfo testDirectory = new DirectoryInfo(testInputFolder);
+            DirectoryInfo testDirectory = new(testInputFolder);
             MyFileManager.CompressDirectory(testDirectory);
 
             foreach (FileInfo file in testDirectory.GetFiles())
@@ -70,9 +70,9 @@ namespace Test
         [Test]
         public static void TestMs2ScanWithSpecificMass()
         {
-            Ms2ScanWithSpecificMass scanB = new Ms2ScanWithSpecificMass(
+            Ms2ScanWithSpecificMass scanB = new(
                 new MsDataScan(
-                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    new MzSpectrum(Array.Empty<double>(), Array.Empty<double>(), false),
                     2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
                 100, 1, null, new CommonParameters(), null);
 
