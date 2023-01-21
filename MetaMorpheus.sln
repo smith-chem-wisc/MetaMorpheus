@@ -11,12 +11,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EngineLayer", "EngineLayer\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TaskLayer", "TaskLayer\TaskLayer.csproj", "{9CD3D75C-4E3C-40AC-A3D8-C32DD528DB7F}"
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "MetaMorpheusSetup", "MetaMorpheusSetup\MetaMorpheusSetup.wixproj", "{BE72541A-66A4-4958-9D19-56ACC7D3876B}"
+Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "MetaMorpheusSetup", "MetaMorpheusSetup\MetaMorpheusSetup.wixproj", "{BE72541A-66A4-4958-9D19-56ACC7D3876B}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C654FC97-FBD1-43D7-9F61-35FDD1A4E0AD} = {C654FC97-FBD1-43D7-9F61-35FDD1A4E0AD}
 	EndProjectSection
 EndProject
-Project("{930C7802-8A8C-48F9-8165-68863BCCD9DD}") = "Bootstrapper1", "Bootstrapper1\Bootstrapper1.wixproj", "{FBA0315B-076D-4470-AFB0-64C8AB4A65A9}"
+Project("{B7DD6F7E-DEF8-4E67-B5B7-07EF123DB6F0}") = "Bootstrapper", "Bootstrapper1\Bootstrapper.wixproj", "{FBA0315B-076D-4470-AFB0-64C8AB4A65A9}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GuiFunctions", "GuiFunctions\GuiFunctions.csproj", "{653015B3-CC5A-4D1C-AAD3-1CE2A0C4D197}"
 EndProject
