@@ -1,26 +1,20 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+﻿<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs" xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
   <!--Shorthand way of getting the install directory-->
   <?define GUI_TargetDir=$(var.GUI.TargetDir)?>
   <?define CMD_TargetDir=$(var.CMD.TargetDir)?>
 
   <!--Product compiles into an msi file. Only one can be present.-->
   <!--Version needs to be replaced automatically-->
-  <Product Id="*" Name="MetaMorpheus" Language="1033" Version="!(bind.FileVersion.MetaMorpheusGUI.exe)" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5">
-    <!--Properties about the package to be placed in the Summary Information Stream.-->
+  <Package Name="MetaMorpheus" Language="1033" Version="!(bind.FileVersion.MetaMorpheusGUI.exe)" Manufacturer="Smith Group" UpgradeCode="438ad6ff-f027-423a-ab0b-c73384c0e2e5"><!--Properties about the package to be placed in the Summary Information Stream.-->
     <!--These are visible from COM through the IStream interface, and these properties can be seen on the package in Explorer.-->
-    <Package Id="*" InstallerVersion="500" Compressed="yes" InstallScope="perMachine" Platform="x64" />
+    
     <Icon Id="icon.ico" SourceFile="$(var.GUI.TargetDir)..\..\..\Icons\MMnice.ico" />
     <Property Id="ARPPRODUCTICON" Value="icon.ico" />
     <MajorUpgrade AllowSameVersionUpgrades="yes" Schedule="afterInstallValidate" DowngradeErrorMessage="A newer version of MetaMorpheus is already installed." />
 
-    <Condition Message="This application is only supported on Windows 7 or higher.">
-      <![CDATA[Installed OR (VersionNT >= 601)]]>
-    </Condition>
+    <Launch Condition="Installed OR (VersionNT &gt;= 601)" Message="This application is only supported on Windows 7 or higher." />
 
-    <Condition Message="This application requires 64-bit windows">
-      <![CDATA[Installed OR VersionNT64]]>
-    </Condition>
+    <Launch Condition="Installed OR VersionNT64" Message="This application requires 64-bit windows" />
     <MediaTemplate EmbedCab="yes" />
 
     <!--A feature for the Feature table. Features are the smallest installable unit.-->
@@ -48,41 +42,70 @@
       <ComponentRef Id="DesktopShortcut" />
     </Feature>
 
-    <Directory Id="TARGETDIR" Name="SourceDir">
+    
+
+    <UI>
+      <ui:WixUI Id="WixUI_Mondo" />
+      <UIRef Id="newDlg" />
+      <UIRef Id="MyMaintenance" />
+      <Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="LicenseAgreementDlg" Order="1" />
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="MetaSCDlg" Order="1" />
+      <Publish Dialog="MetaSCDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="1" />
+      <Publish Dialog="MetaSCDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1" />
+      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MetaSCDlg" Order="1" />
+      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MyMaintenanceTypeDlg" />
+      <Publish Dialog="MyMaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="1" />
+      <!--<Publish Dialog="MyMaintenanceTypeDlg" Control="Next" Event="NewDialog" Value="ExitDialog" Order="1">1</Publish>-->
+      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication" Condition="WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed" />
+    </UI>
+
+    <CustomAction Id="LaunchFile" ExeCommand="" Return="asyncNoWait" FileRef="MetaMorpheusGUI.exe" />
+    <Property Id="OVERWRITEAPPDATA" Value="1" />
+    <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
+    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
+    <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
+    <Property Id="EXCELDEFAULTPROPERTY" />
+    <Property Id="EXCELSELECT" Value="1">
+      <RegistrySearch Id="CheckFileDir" Root="HKCR" Key="Excel.Backup\shell\Open\command" Type="file">
+        <FileSearch Name="EXCEL.exe" />
+      </RegistrySearch>
+    </Property>
+    <CustomAction Id="LaunchApplication" DllEntry="WixShellExec" Impersonate="yes" BinaryRef="Wix4UtilCA_X86" />
+  
       <!--Desktop Shortcut Installation-->
-      <Directory Id="DesktopFolder" Name="Desktop">
-        <Component Id="DesktopShortcut" Guid="ef1fd292-b162-4990-80cb-cd2a0c839d4b">
-          <Condition>INSTALLDESKTOPSHORTCUT</Condition>
+      <StandardDirectory Id="DesktopFolder">
+        <Component Id="DesktopShortcut" Guid="ef1fd292-b162-4990-80cb-cd2a0c839d4b" Condition="INSTALLDESKTOPSHORTCUT">
+          
           <RegistryKey Root="HKCU" Key="Software\SmithGroup\MetaMorpheus">
             <RegistryValue Name="MetaMorpheusDeskTop" Value="1" Type="integer" KeyPath="yes" />
           </RegistryKey>
           <Shortcut Id="AppDeskTopSC" Name="MetaMorpheus" Description="Shortcut to App" Target="[#MetaMorpheusGUI.exe]" WorkingDirectory="MetaMorpheusInstallFolder" />
         </Component>
-      </Directory>
+      </StandardDirectory>
 
-      <Directory Id="ProgramFiles64Folder">
+      <StandardDirectory Id="ProgramFiles64Folder">
         <Directory Id="MetaMorpheusInstallFolder" Name="MetaMorpheus">
           <Directory Id="NativeMathDllFolder_runtimes" Name="runtimes">
             <Directory Id="NativeMathDllFolder_win_x64" Name="win-x64">
-              <Directory Id="NativeMathDllFolder_win_x64_native" Name="native"/>
+              <Directory Id="NativeMathDllFolder_win_x64_native" Name="native" />
             </Directory>
             <Directory Id="NativeMathDllFolder_linux_x64" Name="linux-x64">
-              <Directory Id="NativeMathDllFolder_linux_x64_native" Name="nativeLinux"/>
+              <Directory Id="NativeMathDllFolder_linux_x64_native" Name="nativeLinux" />
             </Directory>
             <Directory Id="NativeMathDllFolder_osx_x64" Name="osx-x64">
-              <Directory Id="NativeMathDllFolder_osx_x64_native" Name="nativeOsx"/>
+              <Directory Id="NativeMathDllFolder_osx_x64_native" Name="nativeOsx" />
             </Directory>
           </Directory>
-          <Directory Id="MathNumericsFolder_x64" Name="x64"/>
+          <Directory Id="MathNumericsFolder_x64" Name="x64" />
         </Directory>
-      </Directory>
+      </StandardDirectory>
       
-      <Directory Id="ProgramMenuFolder">
+      <StandardDirectory Id="ProgramMenuFolder">
         <Directory Id="MetaMorpheusProgramMenuFolder" Name="MetaMorpheus" />
-      </Directory>
+      </StandardDirectory>
       
       <!--These are the directories created in the local user app data folder-->
-      <Directory Id="LocalAppDataFolder">
+      <StandardDirectory Id="LocalAppDataFolder">
         <Directory Id="MetaMorpheusAppFolder" Name="MetaMorpheus">
           <Component Id="RemoveApp" Guid="a5443b89-65b0-4855-b521-e7bcc9c5a85c">
             <RemoveFolder Id="MetaMorpheusAppFolder" On="uninstall" />
@@ -93,7 +116,7 @@
           <Directory Id="MetaAppDataFolder" Name="Data" />
 
           <!--Mods Folder-->
-          <Directory Id="MetaAppModsFolder" Name="Mods"/>
+          <Directory Id="MetaAppModsFolder" Name="Mods" />
           
           <!--NGlycan and OGlycan are not sub folders of mods-->
           <Directory Id="MetaAppGlycan_ModsFolder" Name="Glycan_Mods">
@@ -110,38 +133,10 @@
           <!--Proteomes Folder-->
           <Directory Id="MetaAppProteomesFolder" Name="Proteomes" />
         </Directory>
-      </Directory>
+      </StandardDirectory>
       <!--End user local app data folders-->
     
-    </Directory>
-
-    <UI>
-      <UIRef Id="WixUI_Mondo" />
-      <UIRef Id="newDlg" />
-      <UIRef Id="MyMaintenance" />
-      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
-      <Publish Dialog="MetaSCDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="1">1</Publish>
-      <Publish Dialog="MetaSCDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="1">1</Publish>
-      <Publish Dialog="VerifyReadyDlg" Control="Back" Event="NewDialog" Value="MetaSCDlg" Order="1">1</Publish>
-      <Publish Dialog="MaintenanceWelcomeDlg" Control="Next" Event="NewDialog" Value="MyMaintenanceTypeDlg">1</Publish>
-      <Publish Dialog="MyMaintenanceTypeDlg" Control="Back" Event="NewDialog" Value="MaintenanceWelcomeDlg" Order="1">1</Publish>
-      <!--<Publish Dialog="MyMaintenanceTypeDlg" Control="Next" Event="NewDialog" Value="ExitDialog" Order="1">1</Publish>-->
-      <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="LaunchApplication">WIXUI_EXITDIALOGOPTIONALCHECKBOX = 1 and NOT Installed</Publish>
-    </UI>
-
-    <CustomAction Id="LaunchFile" FileKey="MetaMorpheusGUI.exe" ExeCommand="" Return="asyncNoWait" />
-    <Property Id="OVERWRITEAPPDATA" Value="1" />
-    <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
-    <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
-    <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
-    <Property Id="EXCELDEFAULTPROPERTY" />
-    <Property Id="EXCELSELECT" Value="1">
-      <RegistrySearch Id="CheckFileDir" Root="HKCR" Key="Excel.Backup\shell\Open\command" Type="file">
-        <FileSearch Name="EXCEL.exe" />
-      </RegistrySearch>
-    </Property>
-    <CustomAction Id="LaunchApplication" BinaryKey="WixCA" DllEntry="WixShellExec" Impersonate="yes" />
-  </Product>
+    </Package>
 
   <!--Executables and libraries-->
   <Fragment>
@@ -440,57 +435,57 @@
   <!--Build the App Mods folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Mods_files" Directory="MetaAppModsFolder">
-      <Component Id="RemoveMods" Guid="284c0784-2183-4f80-af61-56cadeb800bf">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="RemoveMods" Guid="284c0784-2183-4f80-af61-56cadeb800bf" Condition="OVERWRITEAPPDATA">
+        
         <RemoveFolder Id="MetaAppModsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
 
       <!-- aListOfmods.txt -->
-      <Component Id="Appsrc_Mods_aListOfmods.txt" Guid="0aa9b5ed-b47d-4a78-93b1-49ebc104d011">
+      <Component Id="Appsrc_Mods_aListOfmods.txt" Guid="0aa9b5ed-b47d-4a78-93b1-49ebc104d011" Condition="OVERWRITEAPPDATA">
         <File ReadOnly="no" Id="Appsrc_Mods_aListOfmods.txt" Name="aListOfmods.txt" Source="$(var.GUI_TargetDir)Mods\aListOfmods.txt" />
-        <Condition>OVERWRITEAPPDATA</Condition>
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       
       <!-- glyco.txt -->
-      <Component Id="Appsrc_Mods_glyco.txt" Guid="1707b26b-070e-46d5-9632-f1bc8bf4d281">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Mods_glyco.txt" Guid="1707b26b-070e-46d5-9632-f1bc8bf4d281" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Mods_glyco.txt" Name="glyco.txt" Source="$(var.GUI_TargetDir)Mods\glyco.txt" />
       </Component>
 
       <!-- Mods.txt -->
-      <Component Id="Appsrc_Mods_Mods.txt" Guid="9be193e3-266c-4c1d-9973-341f0a5d108a">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Mods_Mods.txt" Guid="9be193e3-266c-4c1d-9973-341f0a5d108a" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Mods_Mods.txt" Name="Mods.txt" Source="$(var.GUI_TargetDir)Mods\Mods.txt" />
       </Component>
 
       <!-- ProteaseMods.txt -->
-      <Component Id="Appsrc_Mods_ProteaseMods.txt" Guid="D95A127E-AD27-49CA-91B1-B7BD55B4CFBA">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Mods_ProteaseMods.txt" Guid="D95A127E-AD27-49CA-91B1-B7BD55B4CFBA" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Mods_ProteaseMods.txt" Name="ProteaseMods.txt" Source="$(var.GUI_TargetDir)Mods\ProteaseMods.txt" />
       </Component>
 
       <!-- substitutions.txt -->
-      <Component Id="Appsrc_Mods_substitutions.txt" Guid="f108606b-f9eb-4c3c-893b-7ec33c88a1d1">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Mods_substitutions.txt" Guid="f108606b-f9eb-4c3c-893b-7ec33c88a1d1" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Mods_substitutions.txt" Name="substitutions.txt" Source="$(var.GUI_TargetDir)Mods\substitutions.txt" />
       </Component>
 
       <!-- surfactants.txt -->
-      <Component Id="Appsrc_Mods_surfactants.txt" Guid="937d6734-a4c0-469a-b070-64bf5de84b13">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Mods_surfactants.txt" Guid="937d6734-a4c0-469a-b070-64bf5de84b13" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Mods_surfactants.txt" Name="surfactants.txt" Source="$(var.GUI_TargetDir)Mods\surfactants.txt" />
       </Component>
 
       <!-- tmt.txt -->
-      <Component Id="Appsrc_Mods_tmt.txt" Guid="f064b7a0-c650-4a40-8a9f-301cc6cb946e">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Mods_tmt.txt" Guid="f064b7a0-c650-4a40-8a9f-301cc6cb946e" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Mods_tmt.txt" Name="tmt.txt" Source="$(var.GUI_TargetDir)Mods\tmt.txt" />
       </Component>
@@ -500,13 +495,13 @@
   <!--Build the Mods NGlycan folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_NGlycan_files" Directory="MetaAppNGlycanFolder">
-      <Component Id="RemoveNGlycan" Guid="676F63E9-1942-444E-BDA1-FCFF732BF308">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="RemoveNGlycan" Guid="676F63E9-1942-444E-BDA1-FCFF732BF308" Condition="OVERWRITEAPPDATA">
+        
         <RemoveFolder Id="MetaAppNGlycanFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <Component Id="Appsrc_Data_NGlycan182.gdb" Guid="1AE1B223-9C67-4378-BA07-ABA31BCE4EAB">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_NGlycan182.gdb" Guid="1AE1B223-9C67-4378-BA07-ABA31BCE4EAB" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_NGlycan182.gdb" Name="NGlycan182.gdb" Source="$(var.GUI_TargetDir)Glycan_Mods\NGlycan\NGlycan182.gdb" />
       </Component>
@@ -516,38 +511,38 @@
   <!--Build the Mods OGlycan folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_OGlycan_files" Directory="MetaAppOGlycanFolder">
-      <Component Id="RemoveOGlycan" Guid="A9489498-459A-4D6A-9337-92BFE9347FBD">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="RemoveOGlycan" Guid="A9489498-459A-4D6A-9337-92BFE9347FBD" Condition="OVERWRITEAPPDATA">
+        
         <RemoveFolder Id="MetaAppOGlycanFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <Component Id="Appsrc_Data_OGlycan.gdb" Guid="08054759-2D7E-4760-A174-A53E5A77507F">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_OGlycan.gdb" Guid="08054759-2D7E-4760-A174-A53E5A77507F" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_OGlycan.gdb" Name="OGlycan.gdb" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\OGlycan.gdb" />
       </Component>
-      <Component Id="Appsrc_OlgycanDatabase28glycansplusSodium56total.txt" Guid="BCA7AE90-98BA-4F94-9A6A-0BB8486F5532">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_OlgycanDatabase28glycansplusSodium56total.txt" Guid="BCA7AE90-98BA-4F94-9A6A-0BB8486F5532" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycansplusSodium56total.txt" Name="Olgycan Database 28 glycans plus Sodium 56 total.txt" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\Olgycan Database 28 glycans plus Sodium 56 total.txt" />
       </Component>
-      <Component Id="Appsrc_OlgycanDatabase28glycansplusSulfo56total.txt" Guid="FB4F3975-AC0E-4FFC-8FF1-D3925DF7E316">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_OlgycanDatabase28glycansplusSulfo56total.txt" Guid="FB4F3975-AC0E-4FFC-8FF1-D3925DF7E316" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycansplusSulfo56total.txt" Name="Olgycan Database 28 glycans plus Sulfo 56 total.txt" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\Olgycan Database 28 glycans plus Sulfo 56 total.txt" />
       </Component>
-      <Component Id="Appsrc_OlgycanDatabase28glycans.txt" Guid="51746266-C4B9-42D5-AA13-0C07D57122DA">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_OlgycanDatabase28glycans.txt" Guid="51746266-C4B9-42D5-AA13-0C07D57122DA" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_OlgycanDatabase28glycans.txt" Name="Olgycan Database 28 glycans.txt" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\Olgycan Database 28 glycans.txt" />
       </Component>
-      <Component Id="Appsrc_OlgycanDatabase32glycans.txt" Guid="C25BAFAC-583B-4694-BF0A-D2694AE23DB6">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_OlgycanDatabase32glycans.txt" Guid="C25BAFAC-583B-4694-BF0A-D2694AE23DB6" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_OlgycanDatabase32glycans.txt" Name="Olgycan Database 32 glycans.txt" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\Olgycan Database 32 glycans.txt" />
       </Component>
-      <Component Id="Appsrc_OlgycanDatabase36glycanswithMann.txt" Guid="F51F7BC6-6119-459B-ABB9-25408BA1930D">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_OlgycanDatabase36glycanswithMann.txt" Guid="F51F7BC6-6119-459B-ABB9-25408BA1930D" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_OlgycanDatabase36glycanswithMann.txt" Name="Olgycan Database 36 glycans with Mann.txt" Source="$(var.GUI_TargetDir)Glycan_Mods\OGlycan\Olgycan Database 36 glycans with Mann.txt" />
       </Component>
@@ -557,8 +552,8 @@
   <!--Builds the App Glycan_Mods folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Glycan_Mods_files" Directory="MetaAppGlycan_ModsFolder">
-      <Component Id="RemoveGlycanModsData" Guid="40090707-AEFF-4C5C-9693-F9A11F9D0402">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="RemoveGlycanModsData" Guid="40090707-AEFF-4C5C-9693-F9A11F9D0402" Condition="OVERWRITEAPPDATA">
+        
         <RemoveFolder Id="MetaAppGlycan_ModsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>      
@@ -568,48 +563,48 @@
   <!--Builds the App Data folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Data_files" Directory="MetaAppDataFolder">
-      <Component Id="RemoveData" Guid="80dd5110-5563-499a-93ee-652e351c64f9">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="RemoveData" Guid="80dd5110-5563-499a-93ee-652e351c64f9" Condition="OVERWRITEAPPDATA">
+        
         <RemoveFolder Id="MetaAppDataFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <Component Id="Appsrc_Data_combos.txt" Guid="e16d25a3-d773-4a7f-9252-63d737c2c7ba">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_combos.txt" Guid="e16d25a3-d773-4a7f-9252-63d737c2c7ba" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Data_combos.txt" Name="combos.txt" Source="$(var.GUI_TargetDir)Data\combos.txt" />
       </Component>
-      <Component Id="Appsrc_Data_PSI_MOD.obo.xml" Guid="348109bd-4645-448e-b272-19a126e4c3cf">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_PSI_MOD.obo.xml" Guid="348109bd-4645-448e-b272-19a126e4c3cf" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Data_PSI_MOD.obo.xml" Name="PSI-MOD.obo.xml" Source="$(var.GUI_TargetDir)Data\PSI-MOD.obo.xml" />
       </Component>
-      <Component Id="Appsrc_Data_ptmlist.txt" Guid="ea6237f4-9acd-4660-a4e8-831b7aab8c39">
+      <Component Id="Appsrc_Data_ptmlist.txt" Guid="ea6237f4-9acd-4660-a4e8-831b7aab8c39" Condition="OVERWRITEAPPDATA">
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <Condition>OVERWRITEAPPDATA</Condition>
+        
         <File ReadOnly="no" Id="Appsrc_Data_ptmlist.txt" Name="ptmlist.txt" Source="$(var.GUI_TargetDir)Data\ptmlist.txt" />
       </Component>
-      <Component Id="Appsrc_Data_unimod.xml" Guid="cb7b6d9e-3eb0-47ac-857f-7a0009d95619">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_unimod.xml" Guid="cb7b6d9e-3eb0-47ac-857f-7a0009d95619" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Data_unimod.xml" Name="unimod.xml" Source="$(var.GUI_TargetDir)Data\unimod.xml" />
       </Component>
-      <Component Id="Appsrc_Data_elements.dat" Guid="5ba496cc-8b84-4d25-a410-b2274718ebf9">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_elements.dat" Guid="5ba496cc-8b84-4d25-a410-b2274718ebf9" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Data_elements.dat" Name="elements.dat" Source="$(var.GUI_TargetDir)Data\elements.dat" />
       </Component>
-      <Component Id="Appsrc_Data_Crosslinkers.tsv" Guid="9F0C2C0A-FF6E-4714-BEF3-3E739B6573D2">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_Crosslinkers.tsv" Guid="9F0C2C0A-FF6E-4714-BEF3-3E739B6573D2" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Crosslinkers.tsv" Name="Crosslinkers.tsv" Source="$(var.GUI_TargetDir)Data\Crosslinkers.tsv" />
       </Component>
-      <Component Id="Appsrc_Data_SmallCalibratible_Yeast.mzML" Guid="8CA11AAC-0D36-4E99-BD37-E119003270FA">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_SmallCalibratible_Yeast.mzML" Guid="8CA11AAC-0D36-4E99-BD37-E119003270FA" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_SmallCalibratible_Yeast.mzML" Name="SmallCalibratible_Yeast.mzML" Source="$(var.GUI_TargetDir)Data\SmallCalibratible_Yeast.mzML" />
       </Component>
-      <Component Id="Appsrc_Data_SmallYeast.fasta" Guid="E8447600-B6AE-49BF-9130-340A604DFA70">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Data_SmallYeast.fasta" Guid="E8447600-B6AE-49BF-9130-340A604DFA70" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_SmallYeast.fasta" Name="SmallYeast.fasta" Source="$(var.GUI_TargetDir)Data\SmallYeast.fasta" />
       </Component>
@@ -619,13 +614,13 @@
   <!--Builds the App ProteolyticDigestion folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
-      <Component Id="RemoveProteolyticDigestion">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="RemoveProteolyticDigestion" Condition="OVERWRITEAPPDATA">
+        
         <RemoveFolder Id="MetaAppProteolyticDigestionFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <Component Id="Appsrc_ProteolyticDigestion_proteases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_ProteolyticDigestion_proteases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_ProteolyticDigestion_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)ProteolyticDigestion\proteases.tsv" />
       </Component>
@@ -635,13 +630,13 @@
   <!--Builds the App Contaminants folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Contaminants_files" Directory="MetaAppContaminantsFolder">
-      <Component Id="RemoveContaminants" Guid="D40C37B7-1F04-4DCC-A4AC-46D9F613570A">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="RemoveContaminants" Guid="D40C37B7-1F04-4DCC-A4AC-46D9F613570A" Condition="OVERWRITEAPPDATA">
+        
         <RemoveFolder Id="MetaAppContaminantsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <Component Id="Appsrc_Contaminants_MetaMorpheus_Contaminants.xml" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="Appsrc_Contaminants_MetaMorpheus_Contaminants.xml" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d" Condition="OVERWRITEAPPDATA">
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Contaminants_MetaMorpheusContaminants.xml" Name="MetaMorpheusContaminants.xml" Source="$(var.GUI_TargetDir)Contaminants\MetaMorpheusContaminants.xml" />
       </Component>
@@ -651,14 +646,14 @@
   <!--Build the Proteomes folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Proteomes_files" Directory="MetaAppProteomesFolder">
-      <Component Id="RemoveProteomes" Guid="CE2297F1-81E4-4268-9976-50A5A48C391D">
-        <Condition>OVERWRITEAPPDATA</Condition>
+      <Component Id="RemoveProteomes" Guid="CE2297F1-81E4-4268-9976-50A5A48C391D" Condition="OVERWRITEAPPDATA">
+        
         <RemoveFolder Id="MetaAppProteomesFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <Component Id="Appsrc_Proteomes_availableUniProtProteomes.txt.gz" Guid="89F6BBC1-4668-4F9C-A52B-69603CE418C1">
+      <Component Id="Appsrc_Proteomes_availableUniProtProteomes.txt.gz" Guid="89F6BBC1-4668-4F9C-A52B-69603CE418C1" Condition="OVERWRITEAPPDATA">
         <File ReadOnly="yes" Id="Appsrc_Proteomes_availableUniProtProteomes.txt" Name="availableUniProtProteomes.txt.gz" Source="$(var.GUI_TargetDir)Proteomes\availableUniProtProteomes.txt.gz" />
-        <Condition>OVERWRITEAPPDATA</Condition>
+        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
@@ -667,8 +662,8 @@
   <!--Excel Default actions-->
   <Fragment>
     <ComponentGroup Id="ExcelDefaults">
-      <Component Id="ExcelDefault" Directory="ProgramFiles64Folder" Guid="{D6A1CF31-27C8-4DCB-A92F-D36D6EDB7C70}" Permanent="yes">
-        <Condition> EXCELDEFAULTPROPERTY</Condition>
+      <Component Id="ExcelDefault" Directory="ProgramFiles64Folder" Guid="{D6A1CF31-27C8-4DCB-A92F-D36D6EDB7C70}" Permanent="yes" Condition="EXCELDEFAULTPROPERTY">
+        
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv" />
         <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
           <RegistryValue Name="a" Value="EXCEL.EXE" Type="string" />
@@ -686,8 +681,8 @@
           <RegistryValue Name="psmtsv_auto_file" Value="0000" Type="binary" />
         </RegistryKey>
       </Component>
-      <Component Id="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="{A19A382C-8DD8-4A03-8DE8-66973C197A98}" Permanent="yes">
-        <Condition><![CDATA[EXCELSELECT<>"1"]]> </Condition>
+      <Component Id="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="{A19A382C-8DD8-4A03-8DE8-66973C197A98}" Permanent="yes" Condition="EXCELSELECT&lt;&gt;&quot;1&quot;">
+        
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command" />
         <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">
           <RegistryValue Action="write" Value="&quot;[EXCELSELECT]&quot; &quot;%1&quot;" Type="string" />
