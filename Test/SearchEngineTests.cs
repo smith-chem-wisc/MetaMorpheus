@@ -153,7 +153,6 @@ namespace Test
         public static void TestFilteringAndXCorrProcessing()
         {
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
-
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
                 maxThreadsToUsePerFile: 1,
