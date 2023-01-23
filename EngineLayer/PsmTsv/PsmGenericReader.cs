@@ -245,15 +245,29 @@ namespace EngineLayer.PsmTsv
         internal static PeptideWithSetModifications GetPWSM(string psmString, bool silent,
             Dictionary<string, SpectraFileInfo> fileDictionary, PsmFileType fileType)
         {
+            string[] psmInfo = psmString.Split('\t');
+            string metaMorpheusFullSequence =
+                ConvertMaxQuantFullSequence(psmInfo[_fullSequCol], out var allKnownMods, out var numFixedMods);
 
 
             return null;
         }
 
-        public static string MaxQuantToPWSM(string mqFullSeq, List<Modification> fixedMods = null)
+        /// <summary>
+        /// Takes in a full peptide sequence in the MaxQuant format, and returns a full peptide sequence
+        /// that's compatible with MetaMorphues
+        /// </summary>
+        /// <param name="mqFullSeq"> MaxQuant's full sequence for the given peptide </param>
+        /// <param name="allKnownMods">Dictionary containing mod IdWithMotifs as keys and Modifications as values</param>
+        /// <param name="numFixedMods">The number of fixed mods used to construct the peptide </param>
+        /// <param name="fixedMods"> A list of fixed modifications, defaults to Carbamomidomethylation on C if left null</param>
+        /// <returns></returns>
+        public static string ConvertMaxQuantFullSequence(string mqFullSeq, out Dictionary<string, Modification> allKnownMods,
+            out int numFixedMods, List<Modification> fixedMods = null)
         {
             string mqTrimmedSeq = mqFullSeq.Trim('_');
             string fullSeq = null;
+            allKnownMods = new();
 
             if (FindVariableModsInMaxQuantSequence(mqTrimmedSeq, out var modDict))
             {
@@ -271,7 +285,7 @@ namespace EngineLayer.PsmTsv
                 var match = finalAARegex.Match(mqTrimmedSeq);
                 string finalAAs = finalAARegex.Match(mqTrimmedSeq).Groups[1].Value;
 
-                    var orderedMods = modDict.
+                var orderedMods = modDict.
                     OrderBy(kvp => kvp.Key).ToList();
 
                 if (orderedMods[0].Key == 1)
@@ -294,34 +308,43 @@ namespace EngineLayer.PsmTsv
                             .Append(finalAAs)
                     );
                 }
+
+                foreach (var mod in orderedMods.Select(kvp => kvp.Value))
+                {
+                    allKnownMods.Add(mod.IdWithMotif, mod);
+                }
             }
             else
             {
                 fullSeq = mqTrimmedSeq;
             }
 
-            return AddFixedMods(fullSeq, fixedMods, out var modPositions);
+            fixedMods ??= new List<Modification> { GlobalVariables.AllModsKnownDictionary["Carbamidomethyl on C"] };
+            fullSeq = AddFixedMods(fullSeq, fixedMods, out numFixedMods);
+            foreach (var mod in fixedMods)
+            {
+                allKnownMods.Add(mod.IdWithMotif, mod);
+            }
+
+            return fullSeq;
         }
 
         /// <summary>
         /// Adds fixed modifications to a string containing a full peptide sequence. 
         /// </summary>
-        /// <param name="fullSequence">The sequence to be modified</param>
-        /// <param name="fixedMods">A list of fixed modifications.
+        /// <param name="fullSequence"> The sequence to be modified </param>
+        /// <param name="fixedMods"> A list of fixed modifications.
         /// If null, defaults to Carbamidomethylation on C</param>
         /// <returns>String containing the full sequence in MetaMorpheus format</returns>
-        public static string AddFixedMods(string fullSequence, List<Modification> fixedMods, 
-            out Dictionary<int, Modification> modPositions)
+        public static string AddFixedMods(string fullSequence, List<Modification> fixedMods, out int numberOfFixedModsPresentInPeptide)
         {
-            modPositions = new();
             string fullSeqWithFixedMods = fullSequence;
-            fixedMods ??= new List<Modification> { GlobalVariables.AllModsKnownDictionary["Carbamidomethyl on C"] };
+            numberOfFixedModsPresentInPeptide = 0;
             foreach (Modification mod in fixedMods)
             {
                 string location = mod.Target.ToString();
                 if (location.Length == 1) // Single AA target
                 {
-                    int modPosition = 1;
 
                     // Pattern employs a negative lookbehind - "(?<!\[|\:)" - as not to match existing modifications
                     // e.g. (PEPT[Common Biological:Phosphorylation on T]IDE), the C in Common will not be matched
@@ -337,15 +360,13 @@ namespace EngineLayer.PsmTsv
                         {
                             if (seqFragment.Equals(location))
                             {
-                                modPositions.Add(modPosition, mod);
                                 sb.Append(seqFragment + '[' + mod.ModificationType + ":" + mod.IdWithMotif + ']');
+                                numberOfFixedModsPresentInPeptide++;
                             }
                             else
                             {
                                 sb.Append(seqFragment);
                             }
-
-                            modPosition += seqFragment.Length;
                         }
 
                         fullSeqWithFixedMods = sb.ToString();
@@ -356,7 +377,6 @@ namespace EngineLayer.PsmTsv
             return fullSeqWithFixedMods;
         }
 
-
         /// <summary>
         /// Converts a MaxQuant sequence to a MetaMorpheus sequence
         /// </summary>
@@ -366,7 +386,7 @@ namespace EngineLayer.PsmTsv
         public static bool FindVariableModsInMaxQuantSequence(string fullSeq, out Dictionary<int, Modification> modDict)
         {
             // use a regex to get all modifications
-            string pattern = @"(.\([A-Z][a-z]*[\s]\([^\(]*\)\).)"; // Matches single modification + leading and trailing AAs
+            string pattern = @"(.?\([A-Z][a-z]*[\s]\([^\(]*\)\).?)"; // Matches single modification + leading and trailing AAs
             Regex regex = new(pattern);
             MatchCollection matches = regex.Matches(fullSeq);
 
@@ -399,7 +419,8 @@ namespace EngineLayer.PsmTsv
 
         /// <summary>
         /// Returns a Modification object that most closely matches the modification
-        /// found in a MaxQuant results file
+        /// found in a MaxQuant results file. Currently handles N and C terminal modifications
+        /// in a very ad-hoc way, TODO: Refactor for terminal mods
         /// </summary>
         /// <param name="modString">A MaxQuant modification, in the form of (Mod Name (Location))</param>
         /// <returns>A Modification object that most closely matches the input string</returns>
@@ -421,9 +442,8 @@ namespace EngineLayer.PsmTsv
             // Search MM modifications to find the closest match
             metaMod = GlobalVariables.AllModsKnown.
                 OrderBy(m => ComputeLevenshteinDistance(mod, m.OriginalId)).
-                Where(m => m.Target.ToString().Equals(location)).
+                Where(m => m.Target.ToString().Equals(location) | m.Target.ToString().Equals("X")).
                 FirstOrDefault();
-
 
             if (metaMod != null) MaxQuantToMetaModDictionary.Add(modString, metaMod);
             return metaMod;

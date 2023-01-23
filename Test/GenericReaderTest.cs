@@ -35,8 +35,8 @@ namespace Test
             string fullSeq = "_AM(Oxidation (M))LESICGVT(Phospho (T))PLEK_";
             string fullSeq2 = "_(Acetyl (Protein N-term))AAAAAAAAAAGAAGGR_";
 
-            string x = PsmGenericReader.MaxQuantToPWSM(fullSeq, null);
-            string y = PsmGenericReader.MaxQuantToPWSM(fullSeq2, null);
+            //string x = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq, out var allKnownMods, out int numFixedMods);
+            string y = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq2, out var allKnownMods, out var numFixedMods);
 
             var testMod = GlobalVariables.AllModsKnown.Where(m => m.OriginalId.Contains("Phospho"));
             //var resultsDictionary = PsmGenericReader.ParseMaxQuantFullSeq(fullSeq);
