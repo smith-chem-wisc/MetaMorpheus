@@ -388,9 +388,6 @@
 
     <!--Runtime Components-->
 	<ComponentGroup Id="LinuxNativeMathComponents" Directory="NativeMathDllFolder_linux_x64_native">
-      <Component Id="src_libCpuMathNative.so" Guid="63f99201-5eab-46e4-b3c7-937322d6a75d">
-        <File Id="src_libCpuMathNative.so" Name="libCpuMathNative.so" Source="$(var.GUI_TargetDir)runtimes\linux-x64\native\libCpuMathNative.so" />
-      </Component>
       <Component Id="src_libFastTreeNative.so" Guid="d01051e9-2728-4d45-8d16-539b0262d153">
         <File Id="src_libFastTreeNative.so" Name="libFastTreeNative.so" Source="$(var.GUI_TargetDir)runtimes\linux-x64\native\libFastTreeNative.so" />
       </Component>
@@ -399,9 +396,6 @@
       </Component>
     </ComponentGroup>
 	<ComponentGroup Id="OsxNativeMathComponents" Directory="NativeMathDllFolder_osx_x64_native">
-      <Component Id="src_libCpuMathNative.dylib" Guid="f73a9f22-4c51-46a8-927e-276c6c6abadf">
-        <File Id="src_libCpuMathNative.dylib" Name="libCpuMathNative.dylib" Source="$(var.GUI_TargetDir)runtimes\osx-x64\native\libCpuMathNative.dylib" />
-      </Component>
       <Component Id="src_libFastTreeNative.dylib" Guid="5c6a425c-6983-458a-975a-103fbfff2a62">
         <File Id="src_libFastTreeNative.dylib" Name="libFastTreeNative.dylib" Source="$(var.GUI_TargetDir)runtimes\osx-x64\native\libFastTreeNative.dylib" />
       </Component>
@@ -410,9 +404,6 @@
       </Component>
     </ComponentGroup>
     <ComponentGroup Id="WinNativeMathComponents" Directory="NativeMathDllFolder_win_x64_native">
-      <Component Id="src_CpuMathNative.dll" Guid="436C233C-5BCD-4386-90C7-F2AC489B09CF">
-        <File Id="src_CpuMathNative.dll" Name="CpuMathNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\CpuMathNative.dll" />
-      </Component>
       <Component Id="src_FastTreeNative.dll" Guid="EF4AB27C-25D6-4B30-B259-9671EC40042A">
         <File Id="src_FastTreeNative.dll" Name="FastTreeNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\FastTreeNative.dll" />
       </Component>
