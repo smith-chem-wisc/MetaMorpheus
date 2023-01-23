@@ -32,7 +32,7 @@ namespace Test
         [Test]
         public static void ParseModificationsTest()
         {
-            string fullSeq = "_AM(Oxidation (M))LESIGVT(Phospho (T))PLEK_";
+            string fullSeq = "_AM(Oxidation (M))LESICGVT(Phospho (T))PLEK_";
             string fullSeq2 = "_(Acetyl (Protein N-term))AAAAAAAAAAGAAGGR_";
 
             string x = PsmGenericReader.MaxQuantToPWSM(fullSeq, null);

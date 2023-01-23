@@ -250,7 +250,7 @@ namespace EngineLayer.PsmTsv
             return null;
         }
 
-        public static string MaxQuantToPWSM(string mqFullSeq, List<Modification> fixedMods)
+        public static string MaxQuantToPWSM(string mqFullSeq, List<Modification> fixedMods = null)
         {
             string mqTrimmedSeq = mqFullSeq.Trim('_');
             string fullSeq = null;
@@ -300,13 +300,60 @@ namespace EngineLayer.PsmTsv
                 fullSeq = mqTrimmedSeq;
             }
 
-            fixedMods = new List<Modification> { GlobalVariables.AllModsKnownDictionary["Carbamidomethyl on C"] };
+            return AddFixedMods(fullSeq, fixedMods, out var modPositions);
+        }
+
+        /// <summary>
+        /// Adds fixed modifications to a string containing a full peptide sequence. 
+        /// </summary>
+        /// <param name="fullSequence">The sequence to be modified</param>
+        /// <param name="fixedMods">A list of fixed modifications.
+        /// If null, defaults to Carbamidomethylation on C</param>
+        /// <returns>String containing the full sequence in MetaMorpheus format</returns>
+        public static string AddFixedMods(string fullSequence, List<Modification> fixedMods, 
+            out Dictionary<int, Modification> modPositions)
+        {
+            modPositions = new();
+            string fullSeqWithFixedMods = fullSequence;
+            fixedMods ??= new List<Modification> { GlobalVariables.AllModsKnownDictionary["Carbamidomethyl on C"] };
             foreach (Modification mod in fixedMods)
             {
-                //string[] locations = mod.LocationRestriction
-            }
+                string location = mod.Target.ToString();
+                if (location.Length == 1) // Single AA target
+                {
+                    int modPosition = 1;
 
-            return fullSeq;
+                    // Pattern employs a negative lookbehind - "(?<!\[|\:)" - as not to match existing modifications
+                    // e.g. (PEPT[Common Biological:Phosphorylation on T]IDE), the C in Common will not be matched
+                    string fixedModPattern = @"(?<!\[|\:)(" + location + ")";
+                    Regex fixedModRegex = new(fixedModPattern);
+                    string[] sequenceFragments = fixedModRegex.Split(fullSequence);
+
+                    if (sequenceFragments.Length > 1)
+                    {
+                        StringBuilder sb = new();
+
+                        foreach (string seqFragment in sequenceFragments)
+                        {
+                            if (seqFragment.Equals(location))
+                            {
+                                modPositions.Add(modPosition, mod);
+                                sb.Append(seqFragment + '[' + mod.ModificationType + ":" + mod.IdWithMotif + ']');
+                            }
+                            else
+                            {
+                                sb.Append(seqFragment);
+                            }
+
+                            modPosition += seqFragment.Length;
+                        }
+
+                        fullSeqWithFixedMods = sb.ToString();
+                    }
+                }
+                // Fixed mods with variable positions are currently unhandled
+            }
+            return fullSeqWithFixedMods;
         }
 
 
