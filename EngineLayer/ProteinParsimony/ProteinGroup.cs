@@ -25,6 +25,7 @@ namespace EngineLayer
             ProteinGroupScore = 0;
             BestPeptideScore = 0;
             QValue = 0;
+            PEPQvalue = double.NaN;
             IsDecoy = false;
             IsContaminant = false;
             ModsInfo = new List<string>();
@@ -72,10 +73,11 @@ namespace EngineLayer
         public List<string> FragmentSequenceCoverageDisplayList { get; private set; }
 
         public double QValue { get; set; }
+        public double PEPQvalue { get; set; }
 
         public double BestPeptideQValue { get; set; }
-
         public double BestPeptideScore { get; set; }
+        public double BestPeptidePEP { get; set; }
 
         public int CumulativeTarget { get; set; }
 
@@ -178,8 +180,10 @@ namespace EngineLayer
             sb.Append("Protein Cumulative Target" + '\t');
             sb.Append("Protein Cumulative Decoy" + '\t');
             sb.Append("Protein QValue" + '\t');
+            sb.Append("Protein PEP-QValue" + '\t');
             sb.Append("Best Peptide Score" + '\t');
-            sb.Append("Best Peptide Notch QValue");
+            sb.Append("Best Peptide Notch QValue" + '\t');
+            sb.Append("Best Peptide PEP");
             return sb.ToString();
         }
 
@@ -333,12 +337,20 @@ namespace EngineLayer
             sb.Append(QValue);
             sb.Append("\t");
 
+            // pepq value
+            sb.Append(PEPQvalue);
+            sb.Append("\t");
+
             // best peptide score
             sb.Append(BestPeptideScore);
             sb.Append("\t");
 
             // best peptide q value
             sb.Append(BestPeptideQValue);
+            sb.Append("\t");
+
+            // best peptide q value
+            sb.Append(BestPeptidePEP);
             sb.Append("\t");
 
             return sb.ToString();
@@ -589,7 +601,9 @@ namespace EngineLayer
             this.Proteins.UnionWith(other.Proteins);
             this.AllPeptides.UnionWith(other.AllPeptides);
             this.UniquePeptides.UnionWith(other.UniquePeptides);
+
             this.AllPsmsBelowOnePercentFDR.UnionWith(other.AllPsmsBelowOnePercentFDR);
+
             other.ProteinGroupScore = 0;
 
             ListOfProteinsOrderedByAccession = Proteins.OrderBy(p => p.Accession).ToList();

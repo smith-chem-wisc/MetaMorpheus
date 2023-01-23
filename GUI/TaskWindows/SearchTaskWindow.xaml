@@ -359,6 +359,11 @@
                                     <ToolTip Content="Constructs protein groups according to the rule of maximum parsimony (Occam's razor)"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+                            <CheckBox x:Name="CheckBoxFilterPeptidesByPepForParsimony" Content="Filter peptides using PEP for protein parsimony">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Filter peptides using PEP and PEP q-value prior to construction of protein groups" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                </ToolTipService.ToolTip>
+                            </CheckBox>
                             <CheckBox x:Name="CheckBoxNoOneHitWonders" Content="Require at least two peptides to identify protein" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="At least 2 peptides below 1% FDR are required to construct a target/contaminant protein group" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />

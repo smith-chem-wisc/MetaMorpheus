@@ -312,7 +312,7 @@ namespace Test
 
             var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), fsp, new List<string>());
 
-            fdrEngine.CountPsm();
+            fdrEngine.AssignPsmCountForUnambiguousPsmsMeetingQvalueCutoff();
             var psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
             Assert.That(psmGroups.First().Count() == 2);
             Assert.That(psmGroups.First().First().PsmCount == 1);
@@ -320,7 +320,7 @@ namespace Test
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm3.ResolveAllAmbiguities();
 
-            fdrEngine.CountPsm();
+            fdrEngine.AssignPsmCountForUnambiguousPsmsMeetingQvalueCutoff();
             psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
             Assert.That(psmGroups.First().Count() == 3);
         }

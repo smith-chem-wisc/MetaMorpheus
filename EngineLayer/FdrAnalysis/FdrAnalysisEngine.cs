@@ -165,7 +165,7 @@ namespace EngineLayer.FdrAnalysis
         {
             if (AnalysisType == "PSM")
             {
-                CountPsm();
+                AssignPsmCountForUnambiguousPsmsMeetingQvalueCutoff();
                 //Need some reasonable number of PSMs to train on to get a reasonable estimation of the PEP
                 if (AllPsms.Count > 100)
                 {
@@ -179,7 +179,7 @@ namespace EngineLayer.FdrAnalysis
 
                     Compute_PEPValue_Based_QValue(AllPsms);
                 }
-                CountPsm(); // recounting Psm's after PEP based disambiguation
+                AssignPsmCountForUnambiguousPsmsMeetingQvalueCutoff(); // recounting Psm's after PEP based disambiguation
             }
 
             if (AnalysisType == "Peptide")
@@ -229,7 +229,7 @@ namespace EngineLayer.FdrAnalysis
             return cumulative_target;
         }
 
-        public void CountPsm()
+        public void AssignPsmCountForUnambiguousPsmsMeetingQvalueCutoff()
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
             var allUnambiguousPsms = AllPsms.Where(psm => psm.FullSequence != null);
@@ -239,7 +239,7 @@ namespace EngineLayer.FdrAnalysis
                 && psm.FdrInfo.QValueNotch <= 0.01)
                 .GroupBy(p => p.FullSequence);
 
-            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+            Dictionary<string, int> sequenceToPsmCount = new();
 
             foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
             {
