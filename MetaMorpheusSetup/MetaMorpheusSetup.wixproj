@@ -1,4 +1,4 @@
-<Project>
+﻿<Project>
   <Import Project="Sdk.props" Sdk="WixToolset.Sdk" Version="4.0.0-rc.2" />
   <PropertyGroup>
     <Platform Condition=" '$(Platform)' == '' ">x64</Platform>

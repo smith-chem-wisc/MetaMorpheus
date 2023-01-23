@@ -64,7 +64,7 @@
     <Property Id="WIXUI_MONDO" Value="INSTALLFOLDER" />
     <Property Id="WIXUI_EXITDIALOGOPTIONALCHECKBOXTEXT" Value="Launch MetaMorpheus" />
     <Property Id="WixShellExecTarget" Value="[#MetaMorpheusGUI.exe]" />
-    <Property Id="EXCELDEFAULTPROPERTY" />
+    <Property Id="EXCELDEFAULTPROPERTY" Value="1" />
     <Property Id="EXCELSELECT" Value="1">
       <RegistrySearch Id="CheckFileDir" Root="HKCR" Key="Excel.Backup\shell\Open\command" Type="file">
         <FileSearch Name="EXCEL.exe" />
