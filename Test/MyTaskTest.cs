@@ -276,7 +276,7 @@ namespace Test
 
             // RUN!
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
-            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1"));
+            Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value = 0.01: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
@@ -425,7 +425,7 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("All target peptides within 1% FDR: 4"))
+                    if (line.Contains("All target peptides with q-value = 0.01 : 4"))
                     {
                         foundD = true;
                     }
