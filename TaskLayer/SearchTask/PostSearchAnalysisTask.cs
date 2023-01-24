@@ -592,7 +592,7 @@ namespace TaskLayer
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSM" + filterType + Math.Round(filterCutoffForResultsCounts,2) + ": " + psmOrPeptideCountForResults  + Environment.NewLine);
             if (Parameters.SearchParameters.DoParsimony)
             {
-                Parameters.SearchTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
+                Parameters.SearchTaskResults.AddTaskSummaryText("All target protein groups with q-value = 0.01 (1% FDR): " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
                     + Environment.NewLine);
             }
 
