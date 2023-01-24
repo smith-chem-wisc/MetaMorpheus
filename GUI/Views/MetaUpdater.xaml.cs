@@ -122,7 +122,7 @@ namespace MetaMorpheusGUI
                         allVersionsText.AppendLine();
                         allVersionsText.AppendLine("</font>");
                     }
-                    releases.NavigateToString(allVersionsText.ToString().IsNullOrEmpty() ? "" : allVersionsText.ToString());
+                    releases.NavigateToString(allVersionsText.Length == 0 ? " " : allVersionsText.ToString());
                     releases.Navigating += Releases_Navigating;
                 }
             }
