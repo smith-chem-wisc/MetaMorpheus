@@ -205,22 +205,22 @@ namespace Test
             _ = Directory.CreateDirectory(outputFolder);
             string theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName, mzmlName2 }, "taskId1").ToString();
 
-            string mzIDPath1 = Path.ChangeExtension(TestContext.CurrentContext.TestDirectory + @"/TestSilac/Individual File Results/" + mzmlName, ".mzID");
-            string mzIDPath2 = Path.ChangeExtension(TestContext.CurrentContext.TestDirectory + @"/TestSilac/Individual File Results/" + mzmlName2, ".mzID");
+            string mzIDPath1 = Path.ChangeExtension(TestContext.CurrentContext.TestDirectory + @"\TestSilac\Individual File Results\" + mzmlName, ".mzID");
+            string mzIDPath2 = Path.ChangeExtension(TestContext.CurrentContext.TestDirectory + @"\TestSilac\Individual File Results\" + mzmlName2, ".mzID");
             Assert.IsTrue(File.Exists(mzIDPath1));
             Assert.IsTrue(File.Exists(mzIDPath2));
 
-            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
+            Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value = 0.01: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
             ///Normal Peptide
             //test proteins
-            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
+            string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedProteinGroups.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[0].Contains("Intensity_silac\tIntensity_silacPart2\tIntensity_silac(K+8.014)\tIntensity_silacPart2(K+8.014)")); //test that two files were made
             Assert.IsTrue(output[1].Contains("875000.0000000009\t875000.0000000009\t437500.00000000047\t437500.00000000047")); //test the heavy intensity is half that of the light (per the raw file)
 
             //test peptides
-            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedPeptides.tsv");
             Assert.AreEqual(output.Length, 2);
             Assert.IsTrue(output[1].Contains("PEPTIDEK\taccession1\t"));//test the sequence and accession were not modified
             Assert.IsTrue(output[1].Contains("875000")); //test intensity
@@ -228,7 +228,7 @@ namespace Test
             Assert.IsTrue(output[1].Contains("437500")); //test intensity
 
             //test peaks
-            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
+            output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedPeaks.tsv");
             Assert.AreEqual(output.Length, 5);
             Assert.IsTrue(output[1].Contains("silac\t")); //test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
             Assert.IsTrue(output[2].Contains("silac\t"));//test the filename was NOT modified (it was for proteins, but we don't want it for peptides)
