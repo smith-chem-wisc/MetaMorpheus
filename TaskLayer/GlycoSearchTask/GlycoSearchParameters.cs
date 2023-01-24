@@ -16,6 +16,10 @@ namespace TaskLayer
             DecoyType = DecoyType.Reverse;
             GlycoSearchTopNum = 50;
             MaximumOGlycanAllowed = 4;
+
+            //Quantification
+            DoQuantification = true;
+            QuantifyPpmTol = 5;
         }
 
         public string OGlycanDatabasefile { get; set; }
@@ -25,5 +29,10 @@ namespace TaskLayer
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }
         public int MaximumOGlycanAllowed { get; set; }
+
+        //Quantification
+        public bool DoQuantification { get; set; }
+        public double QuantifyPpmTol { get; set; }
+        public bool Normalize { get; set; }
     }
 }
