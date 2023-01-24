@@ -35,7 +35,7 @@ namespace Test
             string[] allResults = File.ReadAllLines(allResultsFile);
             Assert.AreEqual("All target PSMs with q-value = 0.01: 41", allResults[12]);
             Assert.AreEqual("All target peptides with q-value = 0.01 : 32", allResults[13]);
-            Assert.AreEqual("All target protein groups within 1% FDR: 29", allResults[14]);
+            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 29", allResults[14]);
             Assert.AreEqual("sliced_b6 target PSMs with q-value = 0.01: 37", allResults[18]);
             Assert.AreEqual("sliced_b6_2 target PSMs with q-value = 0.01: 4", allResults[22]);
             Assert.AreEqual("Target protein groups within 1 % FDR in sliced_b6: 29", allResults[24]);
@@ -48,7 +48,7 @@ namespace Test
             string[] results = File.ReadAllLines(resultsFile);
             Assert.AreEqual("All target PSMs with q-value = 0.01: 41", results[7]);
             Assert.AreEqual("All target peptides with q-value = 0.01 : 32", results[8]);
-            Assert.AreEqual("All target protein groups within 1% FDR: 29", results[9]);
+            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 29", results[9]);
             Assert.AreEqual("sliced_b6 target PSMs with q-value = 0.01: 37", results[13]);
             Assert.AreEqual("sliced_b6_2 target PSMs with q-value = 0.01: 4", results[17]);
             Assert.AreEqual("Target protein groups within 1 % FDR in sliced_b6: 29", results[19]);
@@ -68,7 +68,7 @@ namespace Test
             allResults = File.ReadAllLines(allResultsFile);
             Assert.AreEqual("All target PSMs with pep q-value = 0.01: 46", allResults[12]);
             Assert.AreEqual("All target peptides with pep q-value = 0.01 : 35", allResults[13]);
-            Assert.AreEqual("All target protein groups within 1% FDR: 29", allResults[14]);
+            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 29", allResults[14]);
             Assert.AreEqual("sliced_b6 target PSMs with pep q-value = 0.01: 39", allResults[18]);
             Assert.AreEqual("sliced_b6_2 target PSMs with pep q-value = 0.01: 7", allResults[22]);
             Assert.AreEqual("Target protein groups within 1 % FDR in sliced_b6: 29", allResults[24]);
@@ -81,7 +81,7 @@ namespace Test
             results = File.ReadAllLines(resultsFile);
             Assert.AreEqual("All target PSMs with pep q-value = 0.01: 46", results[7]);
             Assert.AreEqual("All target peptides with pep q-value = 0.01 : 35", results[8]);
-            Assert.AreEqual("All target protein groups within 1% FDR: 29", results[9]);
+            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 29", results[9]);
             Assert.AreEqual("sliced_b6 target PSMs with pep q-value = 0.01: 39", results[13]);
             Assert.AreEqual("sliced_b6_2 target PSMs with pep q-value = 0.01: 7", results[17]);
             Assert.AreEqual("Target protein groups within 1 % FDR in sliced_b6: 29", results[19]);
