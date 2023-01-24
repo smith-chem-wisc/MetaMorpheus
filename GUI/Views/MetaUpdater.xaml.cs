@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Diagnostics;
@@ -121,7 +122,7 @@ namespace MetaMorpheusGUI
                         allVersionsText.AppendLine();
                         allVersionsText.AppendLine("</font>");
                     }
-                    releases.NavigateToString(allVersionsText.ToString() == null ? "" : allVersionsText.ToString());
+                    releases.NavigateToString(allVersionsText.ToString().IsNullOrEmpty() ? "" : allVersionsText.ToString());
                     releases.Navigating += Releases_Navigating;
                 }
             }
