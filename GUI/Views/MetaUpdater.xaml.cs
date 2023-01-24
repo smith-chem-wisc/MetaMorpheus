@@ -121,11 +121,13 @@ namespace MetaMorpheusGUI
                         allVersionsText.AppendLine();
                         allVersionsText.AppendLine("</font>");
                     }
-                    releases.NavigateToString(allVersionsText.ToString());
+                    releases.NavigateToString(allVersionsText.ToString() == null ? "" : allVersionsText.ToString());
                     releases.Navigating += Releases_Navigating;
                 }
             }
         }
+
+    
 
         public void Releases_Navigating(object sender, System.Windows.Navigation.NavigatingCancelEventArgs e)
         {
