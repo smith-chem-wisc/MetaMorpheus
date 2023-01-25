@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using static Nett.TomlObjectFactory;
 
 namespace Test
 {
@@ -127,7 +128,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchXcorrWithToml()
         {
-            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Search.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
@@ -140,15 +141,18 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(127, parsedPsms.Count);
+            Assert.AreEqual(127, parsedPsms.Count); //total psm count
+            Assert.AreEqual(37, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
             Assert.AreEqual(0, warnings.Count);
+
+            int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
+            Assert.AreEqual(37, countFromResultsTxt);
         }
 
         [Test]
         public static void TestFilteringAndXCorrProcessing()
         {
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
-
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
                 maxThreadsToUsePerFile: 1,
