@@ -104,6 +104,8 @@ namespace TaskLayer.MbrAnalysis
                         }
                     }
                 });
+
+                library.CloseConnections();
             }
 
             if (bestMbrMatches.Any())

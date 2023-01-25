@@ -2,7 +2,7 @@ TaskType = "Search"
 
 [SearchParameters]
 DisposeOfFileWhenDone = true
-DoParsimony = false
+DoParsimony = true
 ModPeptidesAreDifferent = false
 NoOneHitWonders = false
 MatchBetweenRuns = false
@@ -58,8 +58,9 @@ MinRatio = 0.01
 TrimMs1Peaks = false
 TrimMsMsPeaks = false
 UseDeltaScore = false
+QValueOutputFilter = 0.01
+PepQValueOutputFilter = 1.0
 CalculateEValue = false
-QValueOutputFilter = 1.0
 DissociationType = "LowCID"
 CustomIons = []
 AssumeOrphanPeaksAreZ1Fragments = true
