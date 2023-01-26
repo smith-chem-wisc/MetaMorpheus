@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -11,22 +12,41 @@ using NUnit.Framework;
 
 namespace Test
 {
+    [TestFixture]
     internal class GenericReaderTest
     {
 
         [Test]
         public static void TestMaxQuantEvidenceReader()
         {
-            string experimentalDesignFilepath = @"C/";
-            List<string> rawFilePathList = new();
+            string experimentalDesignFilepath = @"D:\HelaSingleCellQCmzML\ExperimentalDesign_rawFiles.tsv";
+            List<string> rawFilePathList = new List<string>
+            {
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_J3_30umTB_2ngQC_60m_2.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_K13_30umTA_02ngQC_60m_1.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_K13_30umTA_02ngQC_60m_2.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_K13_30umTA_2ngQC_60m_1.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_K13_30umTA_2ngQC_60m_2.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_W17_30umTA_02ngQC_60m_3.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_W17_30umTA_02ngQC_60m_4.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_W17_30umTB_2ngQC_60m_1.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_W17_30umTB_2ngQC_60m_2.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_J3_30umTB_02ngQC_60m_1.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_J3_30umTB_02ngQC_60m_2.raw",
+                @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_J3_30umTB_2ngQC_60m_1.raw"
+            };
             List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
                 experimentalDesignFilepath, rawFilePathList, out var errors);
 
-            string maxQuantEvidencePath = @"";
-            List<ChromatographicPeak> mbrPeaks = new();
-            List<Identification> maxQuantIds = PsmGenericReader.ReadPsms(
-                maxQuantEvidencePath, silent: false, spectraFiles, mbrPeaks);
+            string maxQuantEvidencePath = @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\evidence.txt";
+            List<ChromatographicPeak> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
+                maxQuantEvidencePath, silent: false, spectraFiles);
 
+            List<ChromatographicPeak> duplicatePeaks = new();
+            List<Identification> maxQuantIds = PsmGenericReader.ReadPsms(
+                maxQuantEvidencePath, silent: false, spectraFiles, duplicatePeaks);
+
+            Assert.That(mbrPeaks == duplicatePeaks);
         }
 
         [Test]

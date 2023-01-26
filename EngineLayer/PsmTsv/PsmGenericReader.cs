@@ -15,14 +15,17 @@ using MassSpectrometry;
 using Proteomics.ProteolyticDigestion;
 using System.Text.RegularExpressions;
 using Proteomics;
+using ThermoFisher.CommonCore.Data.Interfaces;
 
 namespace EngineLayer.PsmTsv
 {
     internal enum PsmFileType
     { MetaMorpheus, Morpheus, MaxQuant, MaxQuantEvidence, PeptideShaker, Generic, Percolator, Unknown }
 
+    // TODO: Refactor so this isn't static
     public class PsmGenericReader
     {
+        // This is all bad
         internal static int _fileNameCol;
         internal static int _baseSequCol;
         internal static int _fullSequCol;
@@ -46,8 +49,6 @@ namespace EngineLayer.PsmTsv
         internal static int _retentionLengthCol;
         internal static int _intensityCol;
         internal static int _mzCol;
-
-
 
         internal static Dictionary<string, double> _modSequenceToMonoMass;
         internal static Dictionary<string, FlashLFQ.ProteinGroup> allProteinGroups;
@@ -98,6 +99,7 @@ namespace EngineLayer.PsmTsv
                 Console.WriteLine("Opening PSM file " + filepath);
             }
 
+            // TODO: fix this, reader is never closed
             StreamReader reader;
             try
             {
@@ -227,6 +229,31 @@ namespace EngineLayer.PsmTsv
             return flashLfqIdentifications;
         }
 
+        public static List<PeptideSpectralMatch> ReadAcceptorPSMs(string filepath, List<SpectraFileInfo> rawfiles,
+            List<ChromatographicPeak> mbrPeaks)
+        {
+            Dictionary<string, List<PeptideSpectralMatch>> fullSeqToDonorsDict = mbrPeaks.
+                Select(p => p.Identifications.First().ModifiedSequence).
+                Distinct().
+                ToDictionary(seq => seq, seq => new List<PeptideSpectralMatch>());
+            
+
+            using (StreamReader reader = new StreamReader(filepath))
+            {
+                PsmFileType fileType = GetFileTypeFromHeader(reader.ReadLine());
+                if (fileType != PsmFileType.MaxQuant) return null;
+
+                while (!reader.EndOfStream)
+                {
+
+                }
+            }
+
+
+            return null;
+        }
+
+
         /// <summary>
         /// Reads a MaxQuant Evidence.txt file and returns all MBR identifications as a list of
         /// ChromatographicPeaks
@@ -235,74 +262,35 @@ namespace EngineLayer.PsmTsv
         /// <param name="silent"></param>
         /// <param name="rawfiles"></param>
         /// <returns></returns>
-        public static List<ChromatographicPeak> ReadMbrPeaks(string filepath, bool silent,
+        public static List<ChromatographicPeak> ReadInMbrPeaks(string filepath, bool silent,
             List<SpectraFileInfo> rawfiles)
         {
-            var rawFileDictionary = 
+            // initialize dictionaries required for reading (Why is this done in a static function??)
+            if (_modSequenceToMonoMass == null) _modSequenceToMonoMass = new Dictionary<string, double>();
+            if (allProteinGroups == null) allProteinGroups = new Dictionary<string, FlashLFQ.ProteinGroup>();
+
+            Dictionary<string, SpectraFileInfo> rawFileDictionary = 
                 rawfiles.ToDictionary(p => p.FilenameWithoutExtension, v => v);
             List<ChromatographicPeak> allMbrPeaks = new();
-            PsmFileType fileType = PsmFileType.Unknown;
 
-            if (!silent)
+            using (StreamReader reader = new StreamReader(filepath))
             {
-                Console.WriteLine("Opening PSM file " + filepath);
-            }
-
-            StreamReader reader;
-            try
-            {
-                reader = new StreamReader(filepath);
-            }
-            catch (Exception e)
-            {
-                if (!silent)
+                PsmFileType fileType = GetFileTypeFromHeader(reader.ReadLine());
+                if (fileType != PsmFileType.MaxQuantEvidence)
                 {
-                    Console.WriteLine("Error reading file " + filepath + "\n" + e.Message);
+                    return new List<ChromatographicPeak>();
                 }
 
-                return new List<ChromatographicPeak>();
-            }
-
-            List<string> inputPsms = File.ReadAllLines(filepath).ToList();
-            string[] header = inputPsms[0].Split('\t');
-
-            try
-            {
-                fileType = GetFileTypeFromHeader(inputPsms[0]);
-                inputPsms.RemoveAt(0);
-            }
-            catch
-            {
-                throw new Exception("Could not interpret PSM header labels from file: " + filepath);
-            }
-
-            if (fileType == PsmFileType.MaxQuantEvidence)
-            {
-                if (!silent)
-                {
-                    Console.WriteLine("Error: File was not recognized as a Max Quant Evidence file");
-                }
-                return new List<ChromatographicPeak>();
-            }
-
-            var psmsGroupedByFile = inputPsms.
-                GroupBy(p => MzLibUtil.PeriodTolerantFilenameWithoutExtension.GetPeriodTolerantFilenameWithoutExtension(p.Split('\t')[_fileNameCol])).ToList();
-
-            foreach (var fileSpecificPsms in psmsGroupedByFile)
-            {
-                string fullFilePathWithExtension = 
-                    rawFileDictionary[fileSpecificPsms.Key].FullFilePathWithExtension;
-                List<ChromatographicPeak> fileMbrPeaks = new();
-                List<ScanHeaderInfo> scanHeaderInfo = new();
-                foreach (var psm in fileSpecificPsms)
+                while(!reader.EndOfStream)
                 {
                     try
                     {
-                        Identification id = GetIdentification(psm, silent, rawFileDictionary, fileType);
-                        //PeptideWithSetModifications pswm = GetPWSM(psm, silent, rawFileDictionary, fileType);
-                        if (id != null && psm.Split('\t')[_matchScoreCol].IsNotNullOrEmptyOrWhiteSpace())
+                        // TODO: Refactor so the line only gets split once
+                        string psmLine = reader.ReadLine();
+                        if (psmLine.Split('\t')[_matchScoreCol].IsNotNullOrEmptyOrWhiteSpace())
                         {
-                            fileMbrPeaks.Add(GetMbrPeak(id, psm, rawFileDictionary));
+                            Identification id = GetIdentification(psmLine, silent, rawFileDictionary, fileType);
+                            if (id != null) allMbrPeaks.Add(GetMbrPeak(id, psmLine, rawFileDictionary));
                         }
                     }
                     catch (Exception e)
@@ -313,14 +301,9 @@ namespace EngineLayer.PsmTsv
                         }
                     }
                 }
-
-                _scanHeaderInfo.AddRange(scanHeaderInfo);
-                allMbrPeaks.AddRange(fileMbrPeaks);
             }
 
-            reader.Close();
             return allMbrPeaks;
-
         }
 
         internal static ChromatographicPeak GetMbrPeak(Identification id, string psm,
@@ -1203,6 +1186,12 @@ namespace EngineLayer.PsmTsv
             return type;
         }
 
+        internal static Dictionary<string, int> GetHeaderDictionary(PsmFileType fileType)
+        {
+
+
+            return new Dictionary<string, int>();
+        }
     }
 
     public class ScanHeaderInfo
