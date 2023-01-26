@@ -27,7 +27,7 @@ namespace EngineLayer.PsmTsv
         internal static int _baseSequCol;
         internal static int _fullSequCol;
         internal static int _monoMassCol;
-        internal static int _msmsRetnCol;
+        internal static int _retTimeCol;
         internal static int _msmsScanCol;
         internal static int _chargeStCol;
         internal static int _protNameCol;
@@ -88,7 +88,8 @@ namespace EngineLayer.PsmTsv
                 allProteinGroups = new Dictionary<string, FlashLFQ.ProteinGroup>();
             }
 
-            var rawFileDictionary = rawfiles.ToDictionary(p => p.FilenameWithoutExtension, v => v);
+            var rawFileDictionary = rawfiles.
+                ToDictionary(p => p.FilenameWithoutExtension, v => v);
             List<Identification> flashLfqIdentifications = new();
             PsmFileType fileType = PsmFileType.Unknown;
 
@@ -125,7 +126,8 @@ namespace EngineLayer.PsmTsv
                 throw new Exception("Could not interpret PSM header labels from file: " + filepath);
             }
 
-            var psmsGroupedByFile = inputPsms.GroupBy(p => MzLibUtil.PeriodTolerantFilenameWithoutExtension.GetPeriodTolerantFilenameWithoutExtension(p.Split('\t')[_fileNameCol])).ToList();
+            var psmsGroupedByFile = inputPsms.
+                GroupBy(p => MzLibUtil.PeriodTolerantFilenameWithoutExtension.GetPeriodTolerantFilenameWithoutExtension(p.Split('\t')[_fileNameCol])).ToList();
 
             foreach (var fileSpecificPsms in psmsGroupedByFile)
             {
@@ -164,7 +166,7 @@ namespace EngineLayer.PsmTsv
                             try
                             {
                                 Identification id = GetIdentification(psm, silent, rawFileDictionary, fileType);
-                                PeptideWithSetModifications pswm = GetPWSM(psm, silent, rawFileDictionary, fileType);
+                                //PeptideWithSetModifications pswm = GetPWSM(psm, silent, rawFileDictionary, fileType);
                                 if (id != null)
                                 {
                                     if (psm.Split('\t')[_matchScoreCol].IsNullOrEmptyOrWhiteSpace())
@@ -225,6 +227,102 @@ namespace EngineLayer.PsmTsv
             return flashLfqIdentifications;
         }
 
+        /// <summary>
+        /// Reads a MaxQuant Evidence.txt file and returns all MBR identifications as a list of
+        /// ChromatographicPeaks
+        /// </summary>
+        /// <param name="filepath"></param>
+        /// <param name="silent"></param>
+        /// <param name="rawfiles"></param>
+        /// <returns></returns>
+        public static List<ChromatographicPeak> ReadMbrPeaks(string filepath, bool silent,
+            List<SpectraFileInfo> rawfiles)
+        {
+            var rawFileDictionary = 
+                rawfiles.ToDictionary(p => p.FilenameWithoutExtension, v => v);
+            List<ChromatographicPeak> allMbrPeaks = new();
+            PsmFileType fileType = PsmFileType.Unknown;
+
+            if (!silent)
+            {
+                Console.WriteLine("Opening PSM file " + filepath);
+            }
+
+            StreamReader reader;
+            try
+            {
+                reader = new StreamReader(filepath);
+            }
+            catch (Exception e)
+            {
+                if (!silent)
+                {
+                    Console.WriteLine("Error reading file " + filepath + "\n" + e.Message);
+                }
+
+                return new List<ChromatographicPeak>();
+            }
+
+            List<string> inputPsms = File.ReadAllLines(filepath).ToList();
+            string[] header = inputPsms[0].Split('\t');
+
+            try
+            {
+                fileType = GetFileTypeFromHeader(inputPsms[0]);
+                inputPsms.RemoveAt(0);
+            }
+            catch
+            {
+                throw new Exception("Could not interpret PSM header labels from file: " + filepath);
+            }
+
+            if (fileType == PsmFileType.MaxQuantEvidence)
+            {
+                if (!silent)
+                {
+                    Console.WriteLine("Error: File was not recognized as a Max Quant Evidence file");
+                }
+                return new List<ChromatographicPeak>();
+            }
+
+            var psmsGroupedByFile = inputPsms.
+                GroupBy(p => MzLibUtil.PeriodTolerantFilenameWithoutExtension.GetPeriodTolerantFilenameWithoutExtension(p.Split('\t')[_fileNameCol])).ToList();
+
+            foreach (var fileSpecificPsms in psmsGroupedByFile)
+            {
+                string fullFilePathWithExtension = 
+                    rawFileDictionary[fileSpecificPsms.Key].FullFilePathWithExtension;
+                List<ChromatographicPeak> fileMbrPeaks = new();
+                List<ScanHeaderInfo> scanHeaderInfo = new();
+                foreach (var psm in fileSpecificPsms)
+                {
+                    try
+                    {
+                        Identification id = GetIdentification(psm, silent, rawFileDictionary, fileType);
+                        //PeptideWithSetModifications pswm = GetPWSM(psm, silent, rawFileDictionary, fileType);
+                        if (id != null && psm.Split('\t')[_matchScoreCol].IsNotNullOrEmptyOrWhiteSpace())
+                        {
+                            fileMbrPeaks.Add(GetMbrPeak(id, psm, rawFileDictionary));
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        if (!silent)
+                        {
+                            Console.WriteLine("Problem reading line in the identification file" + "; " + e.Message);
+                        }
+                    }
+                }
+
+                _scanHeaderInfo.AddRange(scanHeaderInfo);
+                allMbrPeaks.AddRange(fileMbrPeaks);
+            }
+
+            reader.Close();
+            return allMbrPeaks;
+
+        }
+
         internal static ChromatographicPeak GetMbrPeak(Identification id, string psm,
             Dictionary<string, SpectraFileInfo> fileDictionary)
         {
@@ -235,7 +333,7 @@ namespace EngineLayer.PsmTsv
                 Double.Parse(psmSplit[_mzCol]),
                 Double.Parse(psmSplit[_intensityCol]),
                 zeroBasedMs1ScanIndex: -1,
-                Double.Parse(psmSplit[_msmsRetnCol]));
+                Double.Parse(psmSplit[_retTimeCol]));
             FlashLFQ.IsotopicEnvelope envelope =
                 new FlashLFQ.IsotopicEnvelope(msPeak, Int32.Parse(psmSplit[_chargeStCol]), msPeak.Intensity);
             mbrPeak.IsotopicEnvelopes.Add(envelope);
@@ -611,7 +709,7 @@ namespace EngineLayer.PsmTsv
 
             // retention time
             double ms2RetentionTime = -1;
-            if (double.TryParse(param[_msmsRetnCol], NumberStyles.Number, CultureInfo.InvariantCulture, out double retentionTime))
+            if (double.TryParse(param[_retTimeCol], NumberStyles.Number, CultureInfo.InvariantCulture, out double retentionTime))
             {
                 ms2RetentionTime = retentionTime;
                 if (fileType == PsmFileType.PeptideShaker)
@@ -939,7 +1037,7 @@ namespace EngineLayer.PsmTsv
                 _baseSequCol = Array.IndexOf(split, "Base Sequence".ToLowerInvariant());
                 _fullSequCol = Array.IndexOf(split, "Full Sequence".ToLowerInvariant());
                 _monoMassCol = Array.IndexOf(split, "Peptide Monoisotopic Mass".ToLowerInvariant());
-                _msmsRetnCol = Array.IndexOf(split, "Scan Retention Time".ToLowerInvariant());
+                _retTimeCol = Array.IndexOf(split, "Scan Retention Time".ToLowerInvariant());
                 _chargeStCol = Array.IndexOf(split, "Precursor Charge".ToLowerInvariant());
                 _protNameCol = Array.IndexOf(split, "Protein Accession".ToLowerInvariant());
                 _decoyCol = Array.IndexOf(split, "Decoy/Contaminant/Target".ToLowerInvariant());
@@ -966,7 +1064,7 @@ namespace EngineLayer.PsmTsv
                 _baseSequCol = Array.IndexOf(split, "Base Peptide Sequence".ToLowerInvariant());
                 _fullSequCol = Array.IndexOf(split, "Peptide Sequence".ToLowerInvariant());
                 _monoMassCol = Array.IndexOf(split, "Theoretical Mass (Da)".ToLowerInvariant());
-                _msmsRetnCol = Array.IndexOf(split, "Retention Time (minutes)".ToLowerInvariant());
+                _retTimeCol = Array.IndexOf(split, "Retention Time (minutes)".ToLowerInvariant());
                 _chargeStCol = Array.IndexOf(split, "Precursor Charge".ToLowerInvariant());
                 _protNameCol = Array.IndexOf(split, "Protein Description".ToLowerInvariant());
                 _decoyCol = Array.IndexOf(split, "Decoy?".ToLowerInvariant());
@@ -992,7 +1090,7 @@ namespace EngineLayer.PsmTsv
                 _baseSequCol = Array.IndexOf(split, "Sequence".ToLowerInvariant());
                 _fullSequCol = Array.IndexOf(split, "Modified sequence".ToLowerInvariant());
                 _monoMassCol = Array.IndexOf(split, "Mass".ToLowerInvariant());
-                _msmsRetnCol = Array.IndexOf(split, "Retention time".ToLowerInvariant());
+                _retTimeCol = Array.IndexOf(split, "Retention time".ToLowerInvariant());
                 _chargeStCol = Array.IndexOf(split, "Charge".ToLowerInvariant());
                 _protNameCol = Array.IndexOf(split, "Proteins".ToLowerInvariant());
 
@@ -1025,7 +1123,7 @@ namespace EngineLayer.PsmTsv
                 _baseSequCol = Array.IndexOf(split, "Sequence".ToLowerInvariant());
                 _fullSequCol = Array.IndexOf(split, "Modified sequence".ToLowerInvariant());
                 _monoMassCol = Array.IndexOf(split, "Mass".ToLowerInvariant());
-                _msmsRetnCol = Array.IndexOf(split, "Retention time".ToLowerInvariant());
+                _retTimeCol = Array.IndexOf(split, "Retention time".ToLowerInvariant());
                 _chargeStCol = Array.IndexOf(split, "Charge".ToLowerInvariant());
                 _protNameCol = Array.IndexOf(split, "Proteins".ToLowerInvariant());
                 _geneNameCol = Array.IndexOf(split, "Gene Names".ToLowerInvariant());
@@ -1048,7 +1146,7 @@ namespace EngineLayer.PsmTsv
                 _baseSequCol = Array.IndexOf(split, "Sequence".ToLowerInvariant());
                 _fullSequCol = Array.IndexOf(split, "Modified Sequence".ToLowerInvariant());
                 _monoMassCol = Array.IndexOf(split, "Theoretical Mass".ToLowerInvariant());
-                _msmsRetnCol = Array.IndexOf(split, "RT".ToLowerInvariant());
+                _retTimeCol = Array.IndexOf(split, "RT".ToLowerInvariant());
                 _chargeStCol = Array.IndexOf(split, "Identification Charge".ToLowerInvariant());
                 _protNameCol = Array.IndexOf(split, "Protein(s)".ToLowerInvariant());
 
@@ -1092,7 +1190,7 @@ namespace EngineLayer.PsmTsv
                 _baseSequCol = Array.IndexOf(split, "Base Sequence".ToLowerInvariant());
                 _fullSequCol = Array.IndexOf(split, "Full Sequence".ToLowerInvariant());
                 _monoMassCol = Array.IndexOf(split, "Peptide Monoisotopic Mass".ToLowerInvariant());
-                _msmsRetnCol = Array.IndexOf(split, "Scan Retention Time".ToLowerInvariant());
+                _retTimeCol = Array.IndexOf(split, "Scan Retention Time".ToLowerInvariant());
                 _chargeStCol = Array.IndexOf(split, "Precursor Charge".ToLowerInvariant());
                 _protNameCol = Array.IndexOf(split, "Protein Accession".ToLowerInvariant());
 
