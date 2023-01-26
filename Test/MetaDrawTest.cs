@@ -1375,6 +1375,31 @@ namespace Test
         }
 
         [Test]
+        public static void EnsureNoCrashesWithNGlyco()
+        {
+            string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "nglyco_f5.psmtsv");
+            var psmOfInterest = PsmTsvReader.ReadTsv(psmsPath, out var warnings).First(p => p.FullSequence.Contains("LLSTEGSQ"));
+            Assert.That(!warnings.Any());
+
+            MetaDrawLogic metaDrawLogic = new();
+            metaDrawLogic.PsmResultFilePaths.Add(psmsPath);
+            var errors = metaDrawLogic.LoadFiles(false, true);
+            Assert.That(!errors.Any());
+            Assert.That(metaDrawLogic.FilteredListOfPsms.Any());
+            
+            var stationaryCanvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+
+            // drawing the first psm
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = psmOfInterest.BaseSeq.Length;
+            MetaDrawSettings.DrawMatchedIons = true;
+            metaDrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psmOfInterest);
+            Assert.That(errors == null || !errors.Any());
+        }
+
+        [Test]
         public static void TestMetaDrawSequenceDisplayOutputs()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
