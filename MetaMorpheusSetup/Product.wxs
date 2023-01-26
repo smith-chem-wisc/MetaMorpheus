@@ -491,10 +491,10 @@
         <RemoveFolder Id="MetaAppNGlycanFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
-      <Component Id="Appsrc_Data_NGlycan182.gdb" Guid="1AE1B223-9C67-4378-BA07-ABA31BCE4EAB" Condition="OVERWRITEAPPDATA">
+      <Component Id="Appsrc_Data_NGlycan.gdb" Guid="1AE1B223-9C67-4378-BA07-ABA31BCE4EAB" Condition="OVERWRITEAPPDATA">
         
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
-        <File ReadOnly="no" Id="Appsrc_NGlycan182.gdb" Name="NGlycan182.gdb" Source="$(var.GUI_TargetDir)Glycan_Mods\NGlycan\NGlycan182.gdb" />
+        <File ReadOnly="no" Id="Appsrc_NGlycan.gdb" Name="NGlycan.gdb" Source="$(var.GUI_TargetDir)Glycan_Mods\NGlycan\NGlycan.gdb" />
       </Component>
     </ComponentGroup>
   </Fragment>
