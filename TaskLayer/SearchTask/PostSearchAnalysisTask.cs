@@ -20,6 +20,8 @@ using System.Text;
 using MathNet.Numerics;
 using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
+using EngineLayer.Gptmd;
+using System.Threading.Tasks;
 
 namespace TaskLayer
 {
@@ -680,7 +682,10 @@ namespace TaskLayer
                     allToUpdateLibrarySpectra.Add(key, newSpectrum);
                 }
             }
-            WriteSpectralLibrary(allToUpdateLibrarySpectra.Values.ToList(), Parameters.OutputFolder);
+            var updateSpectralLibrary = UpdateSpectralLibrary(allToUpdateLibrarySpectra.Values.ToList(), Parameters.OutputFolder);
+
+            Parameters.SearchTaskResults.NewDatabases = new List<DbForTask>();
+            Parameters.SearchTaskResults.NewDatabases.Add(new DbForTask(updateSpectralLibrary, false));
         }
 
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score

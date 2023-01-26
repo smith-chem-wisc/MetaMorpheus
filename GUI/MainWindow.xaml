@@ -270,8 +270,8 @@
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>
-                        <RowDefinition Height="25"/>
-                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
@@ -280,7 +280,7 @@
                     <!--Text content-->
                     <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
                         MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
-                        as input, as well as spectra files in .mzML, .mgf, or Thermo .raw format. 
+                        as input, a spectral library (.msp) as well as spectra files in .mzML, .mgf, or Thermo .raw format. 
                         
                         <LineBreak />
                         <LineBreak />
@@ -391,6 +391,9 @@
                         
                         in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations,
                         whereas .fasta format only contains amino acid sequences.
+                        <LineBreak />
+                        Add spectral libraries in .msp format.
+                        <LineBreak />
                     </TextBlock>
 
                     <!--Buttons to add databases-->
