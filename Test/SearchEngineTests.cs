@@ -19,6 +19,7 @@ using System.IO;
 using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using static Nett.TomlObjectFactory;
 
 namespace Test
 {
@@ -127,7 +128,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchXcorrWithToml()
         {
-            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Search.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
@@ -140,15 +141,18 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(127, parsedPsms.Count);
+            Assert.AreEqual(127, parsedPsms.Count); //total psm count
+            Assert.AreEqual(37, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
             Assert.AreEqual(0, warnings.Count);
+
+            int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
+            Assert.AreEqual(37, countFromResultsTxt);
         }
 
         [Test]
         public static void TestFilteringAndXCorrProcessing()
         {
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
-
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
                 maxThreadsToUsePerFile: 1,
@@ -295,9 +299,9 @@ namespace Test
             Assert.That(expectedYarray.SequenceEqual(processedYarray));
 
             Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).ToList().Count);
-            Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.bDegree).ToList().Count);
+            Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.bWaterLoss).ToList().Count);
             Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).ToList().Count);
-            Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yDegree).ToList().Count);
+            Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yWaterLoss).ToList().Count);
 
             Assert.AreEqual(518.2, Math.Round(allPsmsArray[0].Score, 1));
 
@@ -608,10 +612,10 @@ namespace Test
             }
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
-            Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: ChemicalFormula.ParseFormula("O1").MonoisotopicMass);
+            Modification mod1 = new Modification(_originalId: "Oxidation on M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: ChemicalFormula.ParseFormula("O1").MonoisotopicMass);
 
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
 
             var variableModifications = new List<Modification>
             {
@@ -716,7 +720,7 @@ namespace Test
             Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: ChemicalFormula.ParseFormula("O1").MonoisotopicMass);
 
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
 
             var variableModifications = new List<Modification>
             {
@@ -997,7 +1001,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             fixedModifications.Add(mod2);
 
             var proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGGGGG", null) };
@@ -1104,7 +1108,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl of C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             fixedModifications.Add(mod2);
 
             var proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };

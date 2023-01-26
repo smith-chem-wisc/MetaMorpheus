@@ -33,7 +33,6 @@ namespace EngineLayer
                     if (GlobalVariables.StopLoops) { return; }
                     for (; i < psms.Length; i += maxThreadsPerFile)
                     {
-
                         lock (myLocks[i])
                         {
                             if (psms[i] != null)

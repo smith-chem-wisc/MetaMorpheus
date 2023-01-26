@@ -11,14 +11,9 @@ namespace EngineLayer.GlycoSearch
 {
     public static class GlycoPeptides
     {
-        public static double[] ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor, DissociationType dissociationType)
+        public static double[] ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
         {
             double[] oxoniumIonsintensities = new double[Glycan.AllOxoniumIons.Length];
-
-            if (dissociationType != DissociationType.HCD && dissociationType != DissociationType.CID && dissociationType != DissociationType.EThcD)
-            {
-                return oxoniumIonsintensities;
-            }
 
             for (int i = 0; i < Glycan.AllOxoniumIons.Length; i++)
             {
@@ -177,18 +172,26 @@ namespace EngineLayer.GlycoSearch
 
         #region O-Glyco related functions
 
-        public static bool DissociationTypeContainETD(DissociationType dissociationType)
+        public static bool DissociationTypeContainETD(DissociationType dissociationType, List<ProductType> customIons)
         {
             if (dissociationType == DissociationType.ETD || dissociationType == DissociationType.EThcD)
             {
                 return true;
             }
 
+            if (dissociationType == DissociationType.Custom )
+            {
+                if (customIons.Contains(ProductType.zDot) || customIons.Contains(ProductType.c))
+                {
+                    return true;
+                } 
+            }
+
             return false;
         }
 
         //TO THINK: filter reasonable fragments here. The final solution is to change mzLib.Proteomics.PeptideWithSetModifications.Fragment
-        public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
+        public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, List<ProductType> customIons, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
         {
             List<Product> theoreticalProducts = new List<Product>();        
             HashSet<double> masses = new HashSet<double>();
@@ -216,6 +219,25 @@ namespace EngineLayer.GlycoSearch
                 List<Product> etdProducts = new List<Product>();
                 modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, etdProducts);
                 products = products.Concat(etdProducts.Where(p => p.ProductType != ProductType.y)).ToList();
+            }
+            else if (dissociationType == DissociationType.Custom)
+            {
+                List<Product> diag = new List<Product>();
+                modPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, diag);
+
+                List<Product> hcdProducts = new List<Product>();
+                peptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, hcdProducts);
+
+                List<Product> etdProducts = new List<Product>();
+                modPeptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, etdProducts);
+
+                products = products.Concat(diag.Where(p => p.ProductType != ProductType.b && p.ProductType != ProductType.y)).ToList();
+                foreach (var pt in customIons)
+                {
+                    products = products.Concat(hcdProducts.Where(p => p.ProductType == pt)).ToList();
+                    products = products.Concat(etdProducts.Where(p => p.ProductType != ProductType.y && p.ProductType == pt)).ToList();
+                }
+
             }
 
             foreach (var fragment in products)

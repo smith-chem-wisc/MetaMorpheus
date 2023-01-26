@@ -25,7 +25,7 @@ namespace Test
             foreach (var modFile in Directory.GetFiles(@"Mods"))
                 GlobalVariables.AddMods(PtmListLoader.ReadModsFromFile(modFile, out var fmww), false);
 
-            CalibrationTask task1 = new CalibrationTask
+            CalibrationTask task1 = new()
             {
                 CommonParameters = new CommonParameters(digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain)),
 
@@ -36,12 +36,12 @@ namespace Test
                 }
             };
 
-            GptmdTask task2 = new GptmdTask
+            GptmdTask task2 = new()
             {
                 CommonParameters = new CommonParameters()
             };
 
-            SearchTask task3 = new SearchTask
+            SearchTask task3 = new()
             {
                 CommonParameters = new CommonParameters(),
 
@@ -53,7 +53,7 @@ namespace Test
                 }
             };
 
-            SearchTask task4 = new SearchTask
+            SearchTask task4 = new()
             {
                 CommonParameters = new CommonParameters(),
 
@@ -63,7 +63,7 @@ namespace Test
                 }
             };
 
-            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> {
+            List<(string, MetaMorpheusTask)> taskList = new() {
                 ("task1", task1),
                 ("task2", task2),
                 ("task3", task3),
@@ -73,7 +73,7 @@ namespace Test
             List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             // Generate data for files
-            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
+            Protein ParentProtein = new("MPEPTIDEKANTHE", "accession1");
 
             var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
@@ -86,12 +86,12 @@ namespace Test
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
-            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
+            Protein ParentProteinToNotInclude = new("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
-            Protein proteinWithChain = new Protein("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
+            Protein proteinWithChain = new("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
 
             string mzmlName = @"ok.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -127,7 +127,7 @@ namespace Test
                     NumFragmentsNeededForEveryIdentification = 6,
                 }
             };
-            GptmdTask task2 = new GptmdTask
+            GptmdTask task2 = new()
             {
                 CommonParameters = new CommonParameters
                 (
@@ -136,7 +136,7 @@ namespace Test
                 ),
             };
 
-            SearchTask task3 = new SearchTask
+            SearchTask task3 = new()
             {
                 CommonParameters = new CommonParameters(),
 
@@ -147,7 +147,7 @@ namespace Test
                     SearchType = SearchType.Modern,
                 }
             };
-            SearchTask task4 = new SearchTask
+            SearchTask task4 = new()
             {
                 CommonParameters = new CommonParameters(),
 
@@ -166,7 +166,7 @@ namespace Test
             List<Modification> fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => task1.CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
 
             // Generate data for files
-            Protein ParentProtein = new Protein("MPEPTIDEKANTHE", "accession1");
+            Protein ParentProtein = new("MPEPTIDEKANTHE", "accession1");
 
             var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
@@ -179,7 +179,7 @@ namespace Test
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
             dictHere.Add(3, new List<Modification> { new Modification(_originalId: "21", _modificationType: "myModType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
-            Protein ParentProteinToNotInclude = new Protein("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
+            Protein ParentProteinToNotInclude = new("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.AreEqual(4, digestedList.Count);
 
@@ -193,8 +193,8 @@ namespace Test
             string mzmlName2 = @"ok2.mzML";
             IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
 
-            Protein proteinWithChain1 = new Protein("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
-            Protein proteinWithChain2 = new Protein("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
+            Protein proteinWithChain1 = new("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
+            Protein proteinWithChain2 = new("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2", false, false, new List<DatabaseReference>(), new List<SequenceVariation>(), null);
 
             string xmlName = "okk.xml";
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain1, proteinWithChain2 }, xmlName);
@@ -232,7 +232,7 @@ namespace Test
             string xmlName = "MakeSureFdrDoesntSkip.xml";
 
             {
-                Protein theProtein = new Protein("MG", "accession1");
+                Protein theProtein = new("MG", "accession1");
                 ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
             }
 
@@ -240,13 +240,13 @@ namespace Test
 
             var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
-            List<Modification> fixedModifications = new List<Modification>();
+            List<Modification> fixedModifications = new();
 
             var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().ToList()).ToList();
 
             PeptideWithSetModifications targetGood = targetDigested.First();
 
-            TestDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood });
+            TestDataFile myMsDataFile = new(new List<PeptideWithSetModifications> { targetGood });
 
             var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
 
@@ -276,7 +276,7 @@ namespace Test
 
             // RUN!
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
-            Assert.IsTrue(theStringResult.Contains("All target PSMS within 1% FDR: 1"));
+            Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value = 0.01: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
@@ -289,7 +289,7 @@ namespace Test
 
             {
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                Modification myNewMod = new Modification(_originalId: "ok", _modificationType: "okType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 229);
+                Modification myNewMod = new(_originalId: "ok", _modificationType: "okType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 229);
 
                 GlobalVariables.AddMods(new List<Modification> { myNewMod }, false);
                 task1 = new GptmdTask
@@ -349,7 +349,7 @@ namespace Test
         [Test]
         public static void TestPeptideCount()
         {
-            SearchTask testPeptides = new SearchTask
+            SearchTask testPeptides = new()
             {
                 CommonParameters = new CommonParameters
                 (
@@ -421,11 +421,11 @@ namespace Test
             string line;
 
             bool foundD = false;
-            using (StreamReader file = new StreamReader(Path.Combine(MySetUpClass.outputFolder, "TestPeptides", "results.txt")))
+            using (StreamReader file = new(Path.Combine(MySetUpClass.outputFolder, "TestPeptides", "results.txt")))
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("All target peptides within 1% FDR: 4"))
+                    if (line.Contains("All target peptides with q-value = 0.01 : 4"))
                     {
                         foundD = true;
                     }
@@ -446,12 +446,12 @@ namespace Test
             task.SearchParameters.DecoyType = DecoyType.None;
             task.SearchParameters.WriteMzId = true;
 
-            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
-            DbForTask db2 = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"DbForPrunedDb.fasta"), false);
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
+            DbForTask db2 = new(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"DbForPrunedDb.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
             string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"PrunedDbSpectra.mzml");
-            EverythingRunnerEngine singleMassSpectraFile = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SingleMassSpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder);
-            EverythingRunnerEngine multipleMassSpectraFiles = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("MultipleMassSpectraFileOutput", task) }, new List<string> { raw, raw2 }, new List<DbForTask> { db, db2 }, thisTaskOutputFolder);
+            EverythingRunnerEngine singleMassSpectraFile = new(new List<(string, MetaMorpheusTask)> { ("SingleMassSpectraFileOutput", task) }, new List<string> { raw }, new List<DbForTask> { db }, thisTaskOutputFolder);
+            EverythingRunnerEngine multipleMassSpectraFiles = new(new List<(string, MetaMorpheusTask)> { ("MultipleMassSpectraFileOutput", task) }, new List<string> { raw, raw2 }, new List<DbForTask> { db, db2 }, thisTaskOutputFolder);
 
             singleMassSpectraFile.Run();
             multipleMassSpectraFiles.Run();
@@ -461,7 +461,7 @@ namespace Test
                 "AllPeptides.psmtsv", "AllQuantifiedProteinGroups.tsv", "AllPSMs.psmtsv", "AllPSMs_FormattedForPercolator.tab", "AllQuantifiedPeaks.tsv",
                 "AllQuantifiedPeptides.tsv", "AutoGeneratedManuscriptProse.txt", "results.txt", "sliced-raw.mzID" };
 
-            HashSet<string> files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
+            HashSet<string> files = new(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "SingleMassSpectraFileOutput")).Select(v => Path.GetFileName(v)));
 
             // these 2 lines are for debug purposes, so you can see which files you're missing (if any)
             var missingFiles = expectedFiles.Except(files);
@@ -558,9 +558,9 @@ namespace Test
         [Test]
         public static void TestModernAndClassicSearch()
         {
-            SearchTask classicSearch = new SearchTask();
+            SearchTask classicSearch = new();
 
-            SearchTask modernSearch = new SearchTask
+            SearchTask modernSearch = new()
             {
                 SearchParameters = new SearchParameters
                 {
