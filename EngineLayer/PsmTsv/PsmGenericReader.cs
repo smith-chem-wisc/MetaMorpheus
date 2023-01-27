@@ -19,7 +19,7 @@ using ThermoFisher.CommonCore.Data.Interfaces;
 
 namespace EngineLayer.PsmTsv
 {
-    internal enum PsmFileType
+    public enum PsmFileType
     { MetaMorpheus, Morpheus, MaxQuant, MaxQuantEvidence, PeptideShaker, Generic, Percolator, Unknown }
 
     // TODO: Refactor so this isn't static
@@ -240,8 +240,11 @@ namespace EngineLayer.PsmTsv
 
             using (StreamReader reader = new StreamReader(filepath))
             {
-                PsmFileType fileType = GetFileTypeFromHeader(reader.ReadLine());
+                string header = reader.ReadLine();
+                PsmFileType fileType = GetFileTypeFromHeader(header);
                 if (fileType != PsmFileType.MaxQuant) return null;
+                Dictionary<string, int> headerDictionary = GetHeaderDictionary(fileType, header);
+                
 
                 while (!reader.EndOfStream)
                 {
@@ -251,6 +254,36 @@ namespace EngineLayer.PsmTsv
 
 
             return null;
+        }
+
+        internal static Dictionary<string, int> GetHeaderDictionary(PsmFileType fileType, string header)
+        {
+            if (fileType != PsmFileType.MaxQuant) return null;
+
+            var parsedHeader = new Dictionary<string, int>();
+            var spl = header.Split('\t');
+
+            parsedHeader.Add(MaxQuantMsmsHeader.FullSequence, Array.IndexOf(spl, MaxQuantMsmsHeader.FullSequence));
+            parsedHeader.Add(MaxQuantMsmsHeader.Ms2ScanNumber, Array.IndexOf(spl, MaxQuantMsmsHeader.Ms2ScanNumber));
+            parsedHeader.Add(MaxQuantMsmsHeader.FileName, Array.IndexOf(spl, MaxQuantMsmsHeader.FileName));
+            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorScanNum, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorScanNum));
+            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorCharge, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorCharge));
+            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorMz, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorMz));
+            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorMass, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorMass));
+            parsedHeader.Add(MaxQuantMsmsHeader.Score, Array.IndexOf(spl, MaxQuantMsmsHeader.Score));
+            parsedHeader.Add(MaxQuantMsmsHeader.DeltaScore, Array.IndexOf(spl, MaxQuantMsmsHeader.DeltaScore));
+            parsedHeader.Add(MaxQuantMsmsHeader.BaseSequence, Array.IndexOf(spl, MaxQuantMsmsHeader.BaseSequence));
+            parsedHeader.Add(MaxQuantMsmsHeader.MassDiffDa, Array.IndexOf(spl, MaxQuantMsmsHeader.MassDiffDa));
+            parsedHeader.Add(MaxQuantMsmsHeader.MassDiffPpm, Array.IndexOf(spl, MaxQuantMsmsHeader.MassDiffPpm));
+            parsedHeader.Add(MaxQuantMsmsHeader.ProteinAccession, Array.IndexOf(spl, MaxQuantMsmsHeader.ProteinAccession));
+            parsedHeader.Add(MaxQuantMsmsHeader.ProteinName, Array.IndexOf(spl, MaxQuantMsmsHeader.ProteinName));
+            parsedHeader.Add(MaxQuantMsmsHeader.GeneName, Array.IndexOf(spl, MaxQuantMsmsHeader.GeneName));
+            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonMzRatios, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonMzRatios));
+            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonIntensities, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonIntensities));
+            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonMassDiffDa, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonMassDiffDa));
+            parsedHeader.Add(MaxQuantMsmsHeader.PEP, Array.IndexOf(spl, MaxQuantMsmsHeader.PEP));
+
+            return parsedHeader;
         }
 
 

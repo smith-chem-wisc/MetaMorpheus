@@ -7,7 +7,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using EngineLayer.GlycoSearch;
 using System.IO;
+using System.Text;
 using Easy.Common.Extensions;
+using EngineLayer.PsmTsv;
 
 namespace EngineLayer
 {
@@ -202,6 +204,75 @@ namespace EngineLayer
         }
 
         /// <summary>
+        /// Used for creating PSMs from the outputs of different search engines. Currently only support MaxQuant
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="split"></param>
+        /// <param name="parsedHeader"></param>
+        /// <param name="fileType"></param>
+        public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader, PsmFileType fileType)
+        {
+            if (fileType != PsmFileType.MaxQuant)
+                throw new ArgumentException("Only MaxQuant msms.txt is currently supported");
+            var spl = line.Split(split).Select(p => p.Trim('\"')).ToArray();
+
+            //Required properties
+            FileNameWithoutExtension = spl[parsedHeader[MaxQuantMsmsHeader.FileName]].Trim();
+
+            // remove file format, e.g., .raw, .mzML, .mgf
+            // this is more robust but slower than Path.GetFileNameWithoutExtension
+            if (FileNameWithoutExtension.Contains('.'))
+            {
+                foreach (var knownSpectraFileExtension in GlobalVariables.AcceptedSpectraFormats)
+                {
+                    FileNameWithoutExtension = Path.GetFileName(FileNameWithoutExtension.Replace(knownSpectraFileExtension, string.Empty, StringComparison.InvariantCultureIgnoreCase));
+                }
+            }
+
+            Ms2ScanNumber = int.Parse(spl[parsedHeader[MaxQuantMsmsHeader.Ms2ScanNumber]]);
+
+            // this will probably not be known in an .mgf data file
+            if (int.TryParse(spl[parsedHeader[MaxQuantMsmsHeader.PrecursorScanNum]].Trim(), out int result))
+            {
+                PrecursorScanNum = result;
+            }
+            else
+            {
+                PrecursorScanNum = 0;
+            }
+
+            PrecursorCharge = (int)double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorMz = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorMass = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
+            BaseSeq = RemoveParentheses(spl[parsedHeader[MaxQuantMsmsHeader.BaseSequence]].Trim());
+            FullSequence = spl[parsedHeader[MaxQuantMsmsHeader.FullSequence]];
+            Score = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.Score]].Trim(), CultureInfo.InvariantCulture);
+            MatchedIons = ReadFragmentIonsFromList(
+                BuildFragmentStringsFromMaxQuant(
+                    spl[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
+                    spl[parsedHeader[MaxQuantMsmsHeader.MatchedIonMzRatios]]
+                ),
+                BuildFragmentStringsFromMaxQuant(
+                    spl[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
+                    spl[parsedHeader[MaxQuantMsmsHeader.MatchedIonIntensities]]
+                ),
+                BaseSeq
+            );
+
+            DeltaScore = (parsedHeader[MaxQuantMsmsHeader.DeltaScore] < 0) ? null : (double?)double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.DeltaScore]].Trim(), CultureInfo.InvariantCulture);
+            MassDiffDa = (parsedHeader[MaxQuantMsmsHeader.MassDiffDa] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.MassDiffDa]].Trim();
+            MassDiffPpm = (parsedHeader[MaxQuantMsmsHeader.MassDiffPpm] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.MassDiffPpm]].Trim();
+            ProteinAccession = (parsedHeader[MaxQuantMsmsHeader.ProteinAccession] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.ProteinAccession]].Trim();
+            ProteinName = (parsedHeader[MaxQuantMsmsHeader.ProteinName] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.ProteinName]].Trim();
+            GeneName = (parsedHeader[MaxQuantMsmsHeader.GeneName] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.GeneName]].Trim();
+            RetentionTime = (parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
+            PEP = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
+
+
+            
+        }
+
+        /// <summary>
         /// Constructor used to disambiguate PsmFromTsv to a single psm object
         /// </summary>
         /// <param name="psm">psm to disambiguate</param>
@@ -386,6 +457,142 @@ namespace EngineLayer
             fullSeq = regexSpecialChar.Replace(fullSeq, replacement);
         }
 
+        private static List<MatchedFragmentIon> ReadFragmentIonsFromList(List<string> peakMzs, List<string> peakIntensities,
+            string peptideBaseSequence, List<string> peakMassErrorDa = null)
+        {
+            List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
+
+            for (int index = 0; index < peakMzs.Count; index++)
+            {
+                string peak = peakMzs[index];
+                string[] split = peak.Split(new char[] { '+', ':' }); //TODO: needs update for negative charges that doesn't break internal fragment ions or neutral losses
+
+                // if there is a mismatch between the number of peaks and number of intensities from the psmtsv, the intensity will be set to 1
+                double intensity = peakMzs.Count == peakIntensities.Count ? //TODO: needs update for negative charges that doesn't break internal fragment ions or neutral losses
+                    double.Parse(peakIntensities[index].Split(new char[] { '+', ':', ']' })[2], CultureInfo.InvariantCulture) :
+                    1.0;
+
+                int fragmentNumber = 0;
+                int secondaryFragmentNumber = 0;
+                ProductType productType;
+                ProductType? secondaryProductType = null;
+                FragmentationTerminus terminus = FragmentationTerminus.None; //default for internal fragments
+                int aminoAcidPosition;
+                double neutralLoss = 0;
+
+                //get theoretical fragment
+                string ionTypeAndNumber = split[0];
+
+                //if an internal fragment
+                if (ionTypeAndNumber.Contains("["))
+                {
+                    // if there is no mismatch between intensity and peak counts from the psmtsv
+                    if (!intensity.Equals(1.0))
+                    {
+                        intensity = double.Parse(peakIntensities[index].Split(new char[] { '+', ':', ']' })[3],
+                            CultureInfo.InvariantCulture);
+                    }
+                    string[] internalSplit = split[0].Split('[');
+                    string[] productSplit = internalSplit[0].Split("I");
+                    string[] positionSplit = internalSplit[1].Replace("]", "").Split('-');
+                    productType = (ProductType)Enum.Parse(typeof(ProductType), productSplit[0]);
+                    secondaryProductType = (ProductType)Enum.Parse(typeof(ProductType), productSplit[1]);
+                    fragmentNumber = int.Parse(positionSplit[0]);
+                    secondaryFragmentNumber = int.Parse(positionSplit[1]);
+                    aminoAcidPosition = secondaryFragmentNumber - fragmentNumber;
+                }
+                else //terminal fragment
+                {
+                    Match result = IonParser.Match(ionTypeAndNumber);
+                    productType = (ProductType)Enum.Parse(typeof(ProductType), result.Groups[1].Value);
+                    fragmentNumber = int.Parse(result.Groups[2].Value);
+                    // check for neutral loss  
+                    if (ionTypeAndNumber.Contains("("))
+                    {
+                        string temp = ionTypeAndNumber.Replace("(", "");
+                        temp = temp.Replace(")", "");
+                        var split2 = temp.Split('-');
+                        neutralLoss = double.Parse(split2[1], CultureInfo.InvariantCulture);
+                    }
+
+                    //get terminus
+                    if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.ContainsKey(productType))
+                    {
+                        terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
+                    }
+
+                    //get amino acid position
+                    aminoAcidPosition = terminus == FragmentationTerminus.C ?
+                        peptideBaseSequence.Split('|')[0].Length - fragmentNumber :
+                        fragmentNumber;
+                }
+
+                //get mass error in Daltons
+                double errorDa = 0;
+                if (peakMassErrorDa.IsNotNullOrEmpty() && peakMassErrorDa[index].IsNotNullOrEmpty())
+                {
+                    string peakError = peakMassErrorDa[index];
+                    string[] errorSplit = peakError.Split(new char[] { '+', ':', ']' });
+                    errorDa = double.Parse(errorSplit[2], CultureInfo.InvariantCulture);
+                }
+
+                //get charge and mz
+                int z = int.Parse(split[1]);
+                double mz = double.Parse(split[2], CultureInfo.InvariantCulture);
+                double neutralExperimentalMass = mz.ToMass(z); //read in m/z converted to mass
+                double neutralTheoreticalMass = neutralExperimentalMass - errorDa; //theoretical mass is measured mass - measured error
+
+                //The product created here is the theoretical product, with the mass back-calculated from the measured mass and measured error
+                Product theoreticalProduct = new Product(productType,
+                  terminus,
+                  neutralTheoreticalMass,
+                  fragmentNumber,
+                  aminoAcidPosition,
+                  neutralLoss,
+                  secondaryProductType,
+                  secondaryFragmentNumber);
+
+                matchedIons.Add(new MatchedFragmentIon(ref theoreticalProduct, mz, intensity, z));
+            }
+        
+            return matchedIons;
+        }
+
+        private static List<string> BuildFragmentStringsFromMaxQuant(string fragmentString, string informationString)
+        {
+            List<string> fragments = new List<string>();
+            string[] fragmentName = fragmentString.Split(';');
+            string[] fragmentInfo = informationString.Split(';');
+
+            
+            Regex fragmentRegex = new Regex(@"[^\(\-]*");
+            
+            
+
+            for (int i = 0; i < fragmentName.Length; i++)
+            {
+                string charge = "1";
+                string fragment = fragmentName[i];
+                if (fragmentName[i].Contains('('))
+                {
+                    Regex chargeRegex = new Regex(@"\(\+(\d*)\)");
+                    charge = chargeRegex.Match(fragmentName[i]).Groups[1].Value;
+                    fragment = fragmentRegex.Match(fragmentName[i]).Groups[1].Value;
+                } 
+                if (fragmentName[i].Contains('-'))
+                {
+                    Regex neutralLossRegex = new Regex(@"\-([A-Z\d]+)");
+                    ChemicalFormula neutralLoss = ChemicalFormula.ParseFormula(
+                        neutralLossRegex.Match(fragmentName[i]).Groups[1].Value);
+
+                    fragment = '(' + fragmentRegex.Match(fragmentName[i]).Groups[1].Value + 
+                               '-' + neutralLoss.MonoisotopicMass.ToString() + ')';
+                }
+                fragments.Add(fragment + '+' + charge + ':' + fragmentInfo[i]);
+            }
+
+            return fragments;
+        }
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string matchedIntensityString, string peptideBaseSequence, string matchedMassErrorDaString = null)
         {
