@@ -62,7 +62,12 @@ namespace TaskLayer.MbrAnalysis
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = MetaMorpheusTask
                     .GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, commonParameters)
                     .OrderBy(b => b.RetentionTime).ToArray();
-                string spectralLibraryPath = Path.Combine(parameters.OutputFolder, @"spectralLibrary.msp");
+
+                var list = Directory.GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories);
+                string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
+                string spectralLibraryPath = Path.Combine(parameters.OutputFolder, matchingvalue);
+                //var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
+                //string spectralLibraryPath = Path.Combine(parameters.OutputFolder, @"spectralLibrary.msp");
                 SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
 
                 MiniClassicSearchEngine mcse = new(

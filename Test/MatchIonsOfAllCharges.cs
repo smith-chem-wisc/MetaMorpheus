@@ -363,8 +363,11 @@ namespace Test
 
             MassSpectraFile.Run();
             File.Delete(rawCopy);
-            string test = Path.Combine(thisTaskOutputFolder, @"SpectraFileOutput\spectralLibrary.msp");
-
+            var list = Directory.GetFiles(thisTaskOutputFolder, "*.*", SearchOption.AllDirectories);
+            string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
+            var lib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
+            var libPath = Path.Combine(thisTaskOutputFolder, matchingvalue);
+           
             string testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGenaration");
             string outputDir = Path.Combine(testDir, @"SpectralLibraryTest");
 
@@ -374,7 +377,7 @@ namespace Test
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { db,new DbForTask(test, false) }, outputDir);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { db,new DbForTask(libPath, false) }, outputDir);
             engine.Run();
             var test11 = Path.Combine(outputDir, @"ClassicSearch\AllPSMs.psmtsv");
             string[] results = File.ReadAllLines(test11);
@@ -394,7 +397,8 @@ namespace Test
                 }
             }
             Assert.That(spectralAngleList.Average() > 0.9);
-            Directory.Delete(outputDir, true);
+            lib.CloseConnections();
+            Directory.Delete(thisTaskOutputFolder, true);
         }
 
         [Test]
@@ -421,7 +425,9 @@ namespace Test
             UpdateLibrary.Run();
 
             File.Delete(rawCopy);
-            var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, @"UpdateSpectraFileOutput\spectralLibrary.msp") });
+            var list = Directory.GetFiles(thisTaskOutputFolder, "*.*", SearchOption.AllDirectories);
+            string matchingvalue = list.Where(p => p.Contains("updateSpectralLibrary")).First().ToString();
+            var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
             var oldLib = new SpectralLibrary(new List<string> { lib });
 
             //get the spectra from original library and the update library
@@ -437,6 +443,9 @@ namespace Test
             Assert.That(old_spectrum2.MatchedFragmentIons.Count < new_spectrum2.MatchedFragmentIons.Count);
             Assert.That(old_spectrum3.MatchedFragmentIons.Count < new_spectrum3.MatchedFragmentIons.Count);
             Assert.That(oldLib.GetAllLibrarySpectra().ToList().Count < updatedLib.GetAllLibrarySpectra().ToList().Count);
+
+            updatedLib.CloseConnections();
+            Directory.Delete(thisTaskOutputFolder, true);
         }
 
         [Test]
