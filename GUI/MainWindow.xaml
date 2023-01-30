@@ -280,7 +280,8 @@
                     <!--Text content-->
                     <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
                         MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
-                        as input, a spectral library (.msp) as well as spectra files in .mzML, .mgf, or Thermo .raw format. 
+                        as input,as well as spectra files in .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
+                        (.msp) can be used to improve search results.
                         
                         <LineBreak />
                         <LineBreak />
@@ -379,7 +380,7 @@
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
-                    <Label Content="Protein Databases" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4"/>
+                    <Label Content="Protein Databases and Spectral Libraries" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4"/>
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
@@ -391,9 +392,11 @@
                         
                         in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations,
                         whereas .fasta format only contains amino acid sequences.
-                        <LineBreak />
-                        Add spectral libraries in .msp format.
-                        <LineBreak />
+                       <Hyperlink NavigateUri="https://chemdata.nist.gov/dokuwiki/doku.php?id=peptidew:start" RequestNavigate="Hyperlink_RequestNavigate">
+                            Spectral libraries
+                       </Hyperlink>
+
+                       in .msp format can be added to improve search results.>
                     </TextBlock>
 
                     <!--Buttons to add databases-->

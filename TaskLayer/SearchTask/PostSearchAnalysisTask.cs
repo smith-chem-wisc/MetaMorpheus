@@ -686,6 +686,10 @@ namespace TaskLayer
 
             Parameters.SearchTaskResults.NewDatabases = new List<DbForTask>();
             Parameters.SearchTaskResults.NewDatabases.Add(new DbForTask(updateSpectralLibrary, false));
+
+            DbForTask originalFastaDb = Parameters.DatabaseFilenameList.Where(p => p.IsSpectralLibrary == false && p.IsContaminant == false).First();
+            Parameters.SearchTaskResults.NewDatabases.Add(originalFastaDb);
+
         }
 
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
