@@ -145,35 +145,30 @@ namespace GuiFunctions
 
                 #region Setting Color Defaults
 
-                    ModificationTypeToColor = GlobalVariables.AllModsKnown.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
+                    ModificationTypeToColor = GlobalVariables.AllModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
                     
                     // setting whole groups
-                    var commonBiological = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Biological").Select(p => p.IdWithMotif);
-                    foreach (var mod in commonBiological)
+                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Common Biological").Select(p => p.IdWithMotif))
                     {
                         ModificationTypeToColor[mod] = OxyColors.Plum;
                     }
-
-                    var lessCommon = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Less Common").Select(p => p.IdWithMotif);
-                    foreach (var mod in lessCommon)
+                    
+                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Less Common").Select(p => p.IdWithMotif))
                     {
                         ModificationTypeToColor[mod] = OxyColors.PowderBlue;
                     }
-
-                    var commonArtificat = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Artifact").Select(p => p.IdWithMotif);
-                    foreach (var mod in commonArtificat)
+                    
+                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Common Artifact").Select(p => p.IdWithMotif))
                     {
                         ModificationTypeToColor[mod] = OxyColors.Teal;
                     }
-
-                    var metal = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Metal").Select(p => p.IdWithMotif);
-                    foreach (var mod in metal)
+                    
+                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Metal").Select(p => p.IdWithMotif))
                     {
                         ModificationTypeToColor[mod] = OxyColors.Maroon;
                     }
-
-                    var glyco = GlobalVariables.AllModsKnown.Where(p => p.ModificationType.Contains("glycosylation")).Select(p => p.IdWithMotif);
-                    foreach (var mod in glyco)
+                    
+                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType.Contains("Glycosylation")).Select(p => p.IdWithMotif))
                     {
                         ModificationTypeToColor[mod] = OxyColors.Maroon;
                     }
