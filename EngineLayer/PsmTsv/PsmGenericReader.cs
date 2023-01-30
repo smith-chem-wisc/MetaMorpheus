@@ -229,14 +229,16 @@ namespace EngineLayer.PsmTsv
             return flashLfqIdentifications;
         }
 
-        public static List<PeptideSpectralMatch> ReadAcceptorPSMs(string filepath, List<SpectraFileInfo> rawfiles,
-            List<ChromatographicPeak> mbrPeaks)
+        public static List<PsmFromTsv> GetDonorPsms(string filepath, List<SpectraFileInfo> rawfiles,
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks)
         {
-            Dictionary<string, List<PeptideSpectralMatch>> fullSeqToDonorsDict = mbrPeaks.
+            Dictionary<string, List<PsmFromTsv>> fullSeqToDonorsDict = mbrPeaks.Values.
+                First().
                 Select(p => p.Identifications.First().ModifiedSequence).
                 Distinct().
-                ToDictionary(seq => seq, seq => new List<PeptideSpectralMatch>());
-            
+                ToDictionary(seq => seq, seq => new List<PsmFromTsv>());
+
+            List<PsmFromTsv> donorPsms = new();
 
             using (StreamReader reader = new StreamReader(filepath))
             {
@@ -248,7 +250,15 @@ namespace EngineLayer.PsmTsv
 
                 while (!reader.EndOfStream)
                 {
-
+                    string currentLine = reader.ReadLine();
+                    string currentFullSeq = currentLine.Split('\t')[headerDictionary[MaxQuantMsmsHeader.FullSequence]];
+                    if (fullSeqToDonorsDict.ContainsKey(currentFullSeq))
+                    {
+                        fullSeqToDonorsDict[currentFullSeq].Add( 
+                            new PsmFromTsv(currentLine, new char[] {'\t'}, headerDictionary, PsmFileType.MaxQuant)
+                            );
+                        int placeholder = 0;
+                    }
                 }
             }
 
@@ -278,6 +288,7 @@ namespace EngineLayer.PsmTsv
             parsedHeader.Add(MaxQuantMsmsHeader.ProteinAccession, Array.IndexOf(spl, MaxQuantMsmsHeader.ProteinAccession));
             parsedHeader.Add(MaxQuantMsmsHeader.ProteinName, Array.IndexOf(spl, MaxQuantMsmsHeader.ProteinName));
             parsedHeader.Add(MaxQuantMsmsHeader.GeneName, Array.IndexOf(spl, MaxQuantMsmsHeader.GeneName));
+            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonSeries, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonSeries));
             parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonMzRatios, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonMzRatios));
             parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonIntensities, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonIntensities));
             parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonMassDiffDa, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonMassDiffDa));
@@ -295,7 +306,7 @@ namespace EngineLayer.PsmTsv
         /// <param name="silent"></param>
         /// <param name="rawfiles"></param>
         /// <returns></returns>
-        public static List<ChromatographicPeak> ReadInMbrPeaks(string filepath, bool silent,
+        public static Dictionary<string, List<ChromatographicPeak>> ReadInMbrPeaks(string filepath, bool silent,
             List<SpectraFileInfo> rawfiles)
         {
             // initialize dictionaries required for reading (Why is this done in a static function??)
@@ -304,14 +315,14 @@ namespace EngineLayer.PsmTsv
 
             Dictionary<string, SpectraFileInfo> rawFileDictionary = 
                 rawfiles.ToDictionary(p => p.FilenameWithoutExtension, v => v);
-            List<ChromatographicPeak> allMbrPeaks = new();
+            Dictionary<string, List<ChromatographicPeak>> allMbrPeaks = new();
 
             using (StreamReader reader = new StreamReader(filepath))
             {
                 PsmFileType fileType = GetFileTypeFromHeader(reader.ReadLine());
                 if (fileType != PsmFileType.MaxQuantEvidence)
                 {
-                    return new List<ChromatographicPeak>();
+                    return allMbrPeaks;
                 }
 
                 while(!reader.EndOfStream)
@@ -320,10 +331,22 @@ namespace EngineLayer.PsmTsv
                     {
                         // TODO: Refactor so the line only gets split once
                         string psmLine = reader.ReadLine();
-                        if (psmLine.Split('\t')[_matchScoreCol].IsNotNullOrEmptyOrWhiteSpace())
+                        string[] psmLineSplit = psmLine.Split('\t');
+                        if (psmLineSplit[_matchScoreCol].IsNotNullOrEmptyOrWhiteSpace())
                         {
                             Identification id = GetIdentification(psmLine, silent, rawFileDictionary, fileType);
-                            if (id != null) allMbrPeaks.Add(GetMbrPeak(id, psmLine, rawFileDictionary));
+                            if (id != null && allMbrPeaks.ContainsKey(psmLineSplit[_fullSequCol]))
+                            {
+                                allMbrPeaks[psmLineSplit[_fullSequCol]].
+                                    Add(GetMbrPeak(id, psmLine, rawFileDictionary));
+                            }
+                            else
+                            {
+                                allMbrPeaks.Add(psmLineSplit[_fullSequCol], new List<ChromatographicPeak>
+                                {
+                                    GetMbrPeak(id, psmLine, rawFileDictionary)
+                                });
+                            }
                         }
                     }
                     catch (Exception e)

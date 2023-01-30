@@ -268,8 +268,6 @@ namespace EngineLayer
             RetentionTime = (parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
             PEP = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
 
-
-            
         }
 
         /// <summary>
@@ -457,7 +455,7 @@ namespace EngineLayer
             fullSeq = regexSpecialChar.Replace(fullSeq, replacement);
         }
 
-        private static List<MatchedFragmentIon> ReadFragmentIonsFromList(List<string> peakMzs, List<string> peakIntensities,
+        public static List<MatchedFragmentIon> ReadFragmentIonsFromList(List<string> peakMzs, List<string> peakIntensities,
             string peptideBaseSequence, List<string> peakMassErrorDa = null)
         {
             List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
@@ -558,34 +556,29 @@ namespace EngineLayer
             return matchedIons;
         }
 
-        private static List<string> BuildFragmentStringsFromMaxQuant(string fragmentString, string informationString)
+        public static List<string> BuildFragmentStringsFromMaxQuant(string fragmentString, string informationString)
         {
             List<string> fragments = new List<string>();
             string[] fragmentName = fragmentString.Split(';');
             string[] fragmentInfo = informationString.Split(';');
-
-            
             Regex fragmentRegex = new Regex(@"[^\(\-]*");
             
-            
-
             for (int i = 0; i < fragmentName.Length; i++)
             {
                 string charge = "1";
                 string fragment = fragmentName[i];
                 if (fragmentName[i].Contains('('))
                 {
-                    Regex chargeRegex = new Regex(@"\(\+(\d*)\)");
+                    Regex chargeRegex = new Regex(@"\((\d*)\+\)");
                     charge = chargeRegex.Match(fragmentName[i]).Groups[1].Value;
-                    fragment = fragmentRegex.Match(fragmentName[i]).Groups[1].Value;
+                    fragment = fragmentRegex.Match(fragmentName[i]).Groups[0].Value;
                 } 
                 if (fragmentName[i].Contains('-'))
                 {
                     Regex neutralLossRegex = new Regex(@"\-([A-Z\d]+)");
                     ChemicalFormula neutralLoss = ChemicalFormula.ParseFormula(
                         neutralLossRegex.Match(fragmentName[i]).Groups[1].Value);
-
-                    fragment = '(' + fragmentRegex.Match(fragmentName[i]).Groups[1].Value + 
+                    fragment = '(' + fragmentRegex.Match(fragmentName[i]).Groups[0].Value + 
                                '-' + neutralLoss.MonoisotopicMass.ToString() + ')';
                 }
                 fragments.Add(fragment + '+' + charge + ':' + fragmentInfo[i]);
