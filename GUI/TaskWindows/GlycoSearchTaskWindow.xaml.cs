@@ -168,6 +168,7 @@ namespace MetaMorpheusGUI
             //Quantification
             CheckBoxNoQuant.IsChecked = !task._glycoSearchParameters.DoQuantification;
             CheckBoxLFQ.IsChecked = task._glycoSearchParameters.DoQuantification;
+            PeakFindingToleranceTextBox.Text = task._glycoSearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxNormalize.IsChecked = task._glycoSearchParameters.Normalize;
 
             foreach (var mod in task.CommonParameters.ListOfModsFixed)
