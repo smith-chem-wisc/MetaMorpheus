@@ -56,7 +56,7 @@
     <None Update="Data\unimod.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Update="Glycan_Mods\NGlycan\NGlycan182.gdb">
+    <None Update="Glycan_Mods\NGlycan\NGlycan.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Glycan_Mods\OGlycan\OGlycan.gdb">
