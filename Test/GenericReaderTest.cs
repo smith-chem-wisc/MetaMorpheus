@@ -12,6 +12,7 @@ using EngineLayer.PsmTsv;
 using FlashLFQ;
 using NUnit.Framework;
 using Proteomics.Fragmentation;
+using static iText.IO.Image.Jpeg2000ImageData;
 
 namespace Test
 {
@@ -49,7 +50,27 @@ namespace Test
             List<PsmFromTsv> maxQuantIds = PsmGenericReader.GetDonorPsms(
                 maxQuantMsmsPath, spectraFiles, mbrPeaks);
 
-            //Assert.That(mbrPeaks == duplicatePeaks);
+            // Every MBR run ID should have a corresponding PSM in the msms.txt file
+            Assert.That(mbrPeaks.Count == maxQuantIds.Count);
+
+            // Writing a spectral library
+            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in maxQuantIds)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
+                spectraForSpectraLibrary.Add(standardSpectrum);
+            }
+            string spectrumFilePath = @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\spectralLibrary.msp";
+            if(File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var librarySpectrum in spectraForSpectraLibrary)
+                {
+                    output.WriteLine(librarySpectrum.ToString());
+                }
+            }
+
+            int placeholder = 0;
         }
 
         [Test]
@@ -104,7 +125,7 @@ namespace Test
                 Where(i => i.NeutralTheoreticalProduct.Annotation.Equals("b8")).
                 Select(i => i.Charge).
                 First() == 2);
-            Assert.That(ions.Where(i => i.Charge == 1).Count() == 18);
+            Assert.That(ions.Count(i => i.Charge == 1) == 18);
 
         }
     }

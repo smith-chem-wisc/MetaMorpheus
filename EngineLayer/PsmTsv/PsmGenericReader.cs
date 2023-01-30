@@ -232,13 +232,11 @@ namespace EngineLayer.PsmTsv
         public static List<PsmFromTsv> GetDonorPsms(string filepath, List<SpectraFileInfo> rawfiles,
             Dictionary<string, List<ChromatographicPeak>> mbrPeaks)
         {
-            Dictionary<string, List<PsmFromTsv>> fullSeqToDonorsDict = mbrPeaks.Values.
-                First().
-                Select(p => p.Identifications.First().ModifiedSequence).
+            Dictionary<string, List<PsmFromTsv>> fullSeqToDonorsDict = mbrPeaks.
+                Where(kvp => kvp.Value.IsNotNullOrEmpty()).
+                Select(p => p.Value.First().Identifications.First().ModifiedSequence).
                 Distinct().
                 ToDictionary(seq => seq, seq => new List<PsmFromTsv>());
-
-            List<PsmFromTsv> donorPsms = new();
 
             using (StreamReader reader = new StreamReader(filepath))
             {
@@ -246,7 +244,6 @@ namespace EngineLayer.PsmTsv
                 PsmFileType fileType = GetFileTypeFromHeader(header);
                 if (fileType != PsmFileType.MaxQuant) return null;
                 Dictionary<string, int> headerDictionary = GetHeaderDictionary(fileType, header);
-                
 
                 while (!reader.EndOfStream)
                 {
@@ -257,13 +254,24 @@ namespace EngineLayer.PsmTsv
                         fullSeqToDonorsDict[currentFullSeq].Add( 
                             new PsmFromTsv(currentLine, new char[] {'\t'}, headerDictionary, PsmFileType.MaxQuant)
                             );
+                    }
+                    else
+                    {
                         int placeholder = 0;
                     }
                 }
             }
 
+            List<PsmFromTsv> donorPsms = new();
+            foreach (var kvp in fullSeqToDonorsDict)
+            {
+                if (kvp.Value.IsNotNullOrEmpty())
+                {
+                    donorPsms.Add(kvp.Value.OrderByDescending(p => p.Score).First());
+                }
+            }
 
-            return null;
+            return donorPsms;
         }
 
         internal static Dictionary<string, int> GetHeaderDictionary(PsmFileType fileType, string header)
@@ -275,6 +283,7 @@ namespace EngineLayer.PsmTsv
 
             parsedHeader.Add(MaxQuantMsmsHeader.FullSequence, Array.IndexOf(spl, MaxQuantMsmsHeader.FullSequence));
             parsedHeader.Add(MaxQuantMsmsHeader.Ms2ScanNumber, Array.IndexOf(spl, MaxQuantMsmsHeader.Ms2ScanNumber));
+            parsedHeader.Add(MaxQuantMsmsHeader.Ms2ScanRetentionTime, Array.IndexOf(spl, MaxQuantMsmsHeader.Ms2ScanRetentionTime));
             parsedHeader.Add(MaxQuantMsmsHeader.FileName, Array.IndexOf(spl, MaxQuantMsmsHeader.FileName));
             parsedHeader.Add(MaxQuantMsmsHeader.PrecursorScanNum, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorScanNum));
             parsedHeader.Add(MaxQuantMsmsHeader.PrecursorCharge, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorCharge));
