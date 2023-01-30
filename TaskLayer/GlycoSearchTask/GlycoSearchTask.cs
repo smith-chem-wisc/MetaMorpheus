@@ -11,6 +11,7 @@ using System.Linq;
 using MzLibUtil;
 using EngineLayer.FdrAnalysis;
 using System;
+using FlashLFQ;
 
 namespace TaskLayer
 {
@@ -51,6 +52,8 @@ namespace TaskLayer
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
             MyFileManager myFileManager = new MyFileManager(true);
+            FlashLfqResults flashLfqResults = null;
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             int completedFiles = 0;
 
@@ -202,10 +205,33 @@ namespace TaskLayer
                 }
             }
 
-            PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask();
+            PostGlycoSearchAnalysisParameters parameters = new()
+            {
+                GlycoSearchTaskResults = MyTaskResults,
+                SearchTaskId = taskId,
+                GlycoSearchParameters = _glycoSearchParameters,
+                ProteinList = proteinList,
+                AllPsms = GsmPerScans,
+                VariableModifications = variableModifications,
+                FixedModifications = fixedModifications,
+                ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams)),
+                CurrentRawFileList = currentRawFileList,
+                MyFileManager = myFileManager,
+                OutputFolder = OutputFolder,
+                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
+                FlashLfqResults = flashLfqResults,
+                FileSettingsList = fileSettingsList,
+                DatabaseFilenameList = dbFilenameList,
+            };
+            PostGlycoSearchAnalysisTask postProcessing = new()
+            {
+                Parameters = parameters,
+                FileSpecificParameters = this.FileSpecificParameters,
+                CommonParameters = CommonParameters
+            };
 
-            postGlycoSearchAnalysisTask.FileSpecificParameters = this.FileSpecificParameters;
-            return postGlycoSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.Score).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
+            postProcessing.FileSpecificParameters = this.FileSpecificParameters;
+            return postProcessing.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.Score).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
         }
 

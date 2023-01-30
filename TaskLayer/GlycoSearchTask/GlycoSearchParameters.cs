@@ -1,5 +1,3 @@
-using EngineLayer;
-using System.Linq;
 using UsefulProteomicsDatabases;
 using EngineLayer.GlycoSearch;
 
@@ -20,6 +18,8 @@ namespace TaskLayer
             //Quantification
             DoQuantification = true;
             QuantifyPpmTol = 5;
+
+            WriteIndividualFiles = false;
         }
 
         public string OGlycanDatabasefile { get; set; }
@@ -34,5 +34,8 @@ namespace TaskLayer
         public bool DoQuantification { get; set; }
         public double QuantifyPpmTol { get; set; }
         public bool Normalize { get; set; }
+
+        //Output
+        public bool WriteIndividualFiles { get; set; }
     }
 }

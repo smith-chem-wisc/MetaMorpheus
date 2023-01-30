@@ -8,7 +8,6 @@ using FlashLFQ;
 using MassSpectrometry;
 using MathNet.Numerics.Distributions;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -17,11 +16,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
-using BayesianEstimation;
-using MathNet.Numerics;
 using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
-using ThermoFisher.CommonCore.Data.Interfaces;
 
 namespace TaskLayer
 {

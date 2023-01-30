@@ -8,27 +8,22 @@ using System.IO;
 using System.Linq;
 using FlashLFQ;
 using Proteomics.ProteolyticDigestion;
-using TaskLayer.MbrAnalysis;
 
 namespace TaskLayer
 {
     public class PostGlycoSearchAnalysisTask : MetaMorpheusTask
     {
-        public PostSearchAnalysisParameters Parameters { get; set; }
+        public PostGlycoSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
-        public PostGlycoSearchAnalysisTask() : base(MyTask.Search)
+        private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
+        public PostGlycoSearchAnalysisTask() : base(MyTask.GlycoSearch)
         {
-        }
-
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
-        {
-            return null;
         }
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<GlycoSpectralMatch> allPsms, CommonParameters commonParameters, GlycoSearchParameters glycoSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
             // Stop loop if canceled
-            if (GlobalVariables.StopLoops) { return Parameters.SearchTaskResults; }
+            if (GlobalVariables.StopLoops) { return Parameters.GlycoSearchTaskResults; }
 
             if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch)
             {
@@ -59,7 +54,6 @@ namespace TaskLayer
             else if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch)
             {
                 var allPsmsSingle = allPsms.Where(p => p.Routes == null ).OrderByDescending(p => p.Score).ToList();
-                SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 if (allPsmsSingle.Any())
                 {
@@ -131,6 +125,11 @@ namespace TaskLayer
             }
         }
 
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        {
+            MyTaskResults = new MyTaskResults(this);
+            return null;
+        }
         //Calculate the FDR of single peptide FP/TP
         private void SingleFDRAnalysis(List<GlycoSpectralMatch> items, CommonParameters commonParameters, List<string> taskIds)
         {
@@ -142,7 +141,7 @@ namespace TaskLayer
 
         private void QuantificationAnalysis(List<GlycoSpectralMatch> gsms)
         {
-            if (!Parameters.SearchParameters.DoQuantification)
+            if (!Parameters.GlycoSearchParameters.DoQuantification)
             {
                 return;
             }
@@ -184,7 +183,7 @@ namespace TaskLayer
                     return;
                 }
             }
-            else if (Parameters.SearchParameters.Normalize)
+            else if (Parameters.GlycoSearchParameters.Normalize)
             {
                 Warn("Could not find experimental design file at " + assumedExperimentalDesignPath + ", which is required for normalization. Skipping quantification");
                 return;
@@ -308,10 +307,10 @@ namespace TaskLayer
             // run FlashLFQ
             var FlashLfqEngine = new FlashLfqEngine(
                 allIdentifications: flashLFQIdentifications,
-                normalize: Parameters.SearchParameters.Normalize,
-                ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
-                matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
-                matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+                normalize: Parameters.GlycoSearchParameters.Normalize,
+                ppmTolerance: Parameters.GlycoSearchParameters.QuantifyPpmTol,
+                matchBetweenRunsPpmTolerance: Parameters.GlycoSearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
+                matchBetweenRuns: false, //we'll probably add this back later
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
@@ -345,7 +344,7 @@ namespace TaskLayer
 
         private void WriteQuantificationResults(string apppendTextToFilename)
         {
-            if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
+            if (Parameters.GlycoSearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
                 WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks" + "_" + apppendTextToFilename, new List<string> { Parameters.SearchTaskId });
@@ -355,7 +354,7 @@ namespace TaskLayer
                 WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename + "_" + apppendTextToFilename, new List<string> { Parameters.SearchTaskId });
                 
                 // write individual results
-                if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
+                if (Parameters.CurrentRawFileList.Count > 1 && Parameters.GlycoSearchParameters.WriteIndividualFiles)
                 {
                     foreach (var file in Parameters.FlashLfqResults.Peaks)
                     {
