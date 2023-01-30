@@ -10,7 +10,7 @@ namespace TaskLayer
         public GlycoSearchParameters()
         {        
             OGlycanDatabasefile = "OGlycan.gdb";
-            NGlycanDatabasefile = "NGlycan182.gdb";
+            NGlycanDatabasefile = "NGlycan.gdb";
             GlycoSearchType = GlycoSearchType.OGlycanSearch;
             OxoniumIonFilt = true;
             DecoyType = DecoyType.Reverse;
