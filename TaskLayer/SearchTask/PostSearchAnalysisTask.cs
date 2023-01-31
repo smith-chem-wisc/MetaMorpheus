@@ -158,6 +158,7 @@ namespace TaskLayer
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
+
             foreach (PeptideSpectralMatch psm in Parameters.AllPsms)
             {
                 psm.ResolveAllAmbiguities();
