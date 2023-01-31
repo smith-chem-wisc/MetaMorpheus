@@ -47,7 +47,6 @@ namespace EngineLayer.ClassicSearch
         public IEnumerable<PeptideSpectralMatch> SearchAroundPeak(PeptideWithSetModifications donorPwsm, double peakApexRT)
         {
             var targetFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
-            
 
             // check if we're supposed to autodetect dissociation type from the scan header or not
             if (FileSpecificParameters.DissociationType == DissociationType.Autodetect)
@@ -85,6 +84,7 @@ namespace EngineLayer.ClassicSearch
                 if (peptideTheorProducts.Count == 0)
                 {
                     donorPwsm.Fragment(dissociationType, FileSpecificParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                    targetFragmentsForEachDissociationType[dissociationType].AddRange(peptideTheorProducts);
                 }
 
                 // match theoretical target ions to spectrum
