@@ -84,7 +84,7 @@ namespace EngineLayer.ClassicSearch
                 if (peptideTheorProducts.Count == 0)
                 {
                     donorPwsm.Fragment(dissociationType, FileSpecificParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
-                    targetFragmentsForEachDissociationType[dissociationType].AddRange(peptideTheorProducts);
+                    targetFragmentsForEachDissociationType[dissociationType] = peptideTheorProducts;
                 }
 
                 // match theoretical target ions to spectrum
