@@ -11,6 +11,8 @@ namespace TaskLayer
 {
     public class PostGlycoSearchAnalysisTask : MetaMorpheusTask
     {
+        public PostGlycoSearchAnalysisParameters Parameters { get; set; }
+        private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         public PostGlycoSearchAnalysisTask() : base(MyTask.Search)
         {
         }
@@ -26,6 +28,7 @@ namespace TaskLayer
             {
                 var allPsmsSingle = allPsms.Where(p => p.NGlycan == null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
+                ProteinAnalysis(allPsms);
 
                 var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
@@ -44,6 +47,7 @@ namespace TaskLayer
             {
                 var allPsmsSingle = allPsms.Where(p => p.Routes == null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
+                ProteinAnalysis(allPsms);
 
                 var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
@@ -102,6 +106,36 @@ namespace TaskLayer
             List<PeptideSpectralMatch> psms = items.Select(p => p as PeptideSpectralMatch).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
 
+        }
+        private void ProteinAnalysis(List<GlycoSpectralMatch> gsms)
+        {
+            // convert gsms to psms
+            List<PeptideSpectralMatch> allPsms = gsms.Select(p => p as PeptideSpectralMatch).ToList();
+
+            if (!Parameters.GlycoSearchParameters.DoParsimony)
+            {
+                return;
+            }
+
+            Status("Constructing protein groups...", Parameters.SearchTaskId);
+
+            List<PeptideSpectralMatch> psmsForProteinParsimony = allPsms;
+
+            // run parsimony
+            ProteinParsimonyResults proteinAnalysisResults = (ProteinParsimonyResults)(new ProteinParsimonyEngine(psmsForProteinParsimony, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run());
+
+            // score protein groups and calculate FDR
+            ProteinScoringAndFdrResults proteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(proteinAnalysisResults.ProteinGroups, psmsForProteinParsimony,
+                Parameters.GlycoSearchParameters.NoOneHitWonders, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent, true, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run();
+
+            ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
+
+            foreach (PeptideSpectralMatch psm in Parameters.AllPsms)
+            {
+                psm.ResolveAllAmbiguities();
+            }
+
+            Status("Done constructing protein groups!", Parameters.SearchTaskId);
         }
 
     }
