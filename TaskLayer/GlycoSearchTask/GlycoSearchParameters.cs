@@ -16,6 +16,10 @@ namespace TaskLayer
             DecoyType = DecoyType.Reverse;
             GlycoSearchTopNum = 50;
             MaximumOGlycanAllowed = 4;
+
+            DoParsimony = false;
+            NoOneHitWonders = false;
+            ModPeptidesAreDifferent = false;
         }
 
         public string OGlycanDatabasefile { get; set; }
@@ -25,5 +29,9 @@ namespace TaskLayer
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }
         public int MaximumOGlycanAllowed { get; set; }
+
+        public bool DoParsimony { get; set; }
+        public bool NoOneHitWonders { get; set; }
+        public bool ModPeptidesAreDifferent { get; set; }
     }
 }

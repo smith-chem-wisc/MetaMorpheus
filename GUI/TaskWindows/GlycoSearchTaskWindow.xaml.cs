@@ -144,6 +144,10 @@ namespace MetaMorpheusGUI
                 ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
             }
 
+            CheckBoxParsimony.IsChecked = task._glycoSearchParameters.DoParsimony;
+            CheckBoxNoOneHitWonders.IsChecked = task._glycoSearchParameters.NoOneHitWonders;
+            ModPepsAreUnique.IsChecked = task._glycoSearchParameters.ModPeptidesAreDifferent;
+
             CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
             RadioButtonReverseDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Reverse;
             RadioButtonSlideDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Slide;
