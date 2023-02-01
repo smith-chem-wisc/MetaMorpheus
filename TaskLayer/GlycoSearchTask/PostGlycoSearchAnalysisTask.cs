@@ -6,6 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Easy.Common.Extensions;
+using FlashLFQ;
+using Proteomics.ProteolyticDigestion;
 
 namespace TaskLayer
 {
@@ -48,6 +51,7 @@ namespace TaskLayer
                 var allPsmsSingle = allPsms.Where(p => p.Routes == null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 ProteinAnalysis(allPsms);
+                WriteProteinResults();
 
                 var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
@@ -136,6 +140,122 @@ namespace TaskLayer
             }
 
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
+        }
+
+        private void WriteProteinResults(List<GlycoSpectralMatch> gsms)
+        {
+            // convert gsms to psms
+            List<PeptideSpectralMatch> allPsms = gsms.Select(p => p as PeptideSpectralMatch).ToList();
+
+            if (Parameters.GlycoSearchParameters.DoParsimony)
+            {
+                string fileName = "AllProteinGroups.tsv";
+
+                if (Parameters.GlycoSearchParameters.DoQuantification)
+                {
+                    fileName = "AllQuantifiedProteinGroups.tsv";
+                }
+
+                // write protein groups to tsv
+                string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
+                WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
+
+                // write all individual file results to subdirectory
+                // local protein fdr, global parsimony, global psm fdr
+                if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.GlycoSearchParameters.WriteIndividualFiles
+                    || Parameters.GlycoSearchParameters.WriteMzId || Parameters.GlycoSearchParameters.WritePepXml))
+                {
+                    Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
+                }
+
+                //write the individual result files for each datafile
+                foreach (var fullFilePath in PsmsGroupedByFile.Select(v => v.Key))
+                {
+                    string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
+
+                    List<PeptideSpectralMatch> psmsForThisFile = PsmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
+                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
+
+                    ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
+                        Parameters.GlycoSearchParameters.NoOneHitWonders, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent,
+                        false, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }).Run();
+
+                    subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
+
+                    Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
+
+                    // write individual spectra file protein groups results to tsv
+                    if (Parameters.GlycoSearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
+                    {
+                        writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
+                        WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
+                    }
+
+                    // write mzID
+                    if (Parameters.GlycoSearchParameters.WriteMzId)
+                    {
+                        Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+
+                        string mzidFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".mzID");
+                        if (Parameters.CurrentRawFileList.Count > 1)
+                        {
+                            mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
+                        }
+                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
+                                                                         && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList(),
+                            subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.GlycoSearchParameters.SilacLabels,
+                            new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
+                            CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath,
+                            Parameters.GlycoSearchParameters.IncludeModMotifInMzid);
+
+                        FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+                    }
+
+                    // write pepXML
+                    if (Parameters.GlycoSearchParameters.WritePepXml)
+                    {
+                        Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+
+                        string pepXMLFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".pep.XML");
+                        if (Parameters.CurrentRawFileList.Count > 1)
+                        {
+                            pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
+                        }
+
+                        PepXMLWriter.WritePepXml(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
+                                                                         && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList(), Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
+                            CommonParameters, pepXMLFilePath, CommonParameters.QValueOutputFilter);
+
+                        FinishedWritingFile(pepXMLFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+                    }
+
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }));
+                }
+            }
+        }
+        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
+        {
+            if (proteinGroups != null && proteinGroups.Any())
+            {
+                using (StreamWriter output = new StreamWriter(filePath))
+                {
+                    output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
+                    for (int i = 0; i < proteinGroups.Count; i++)
+                    {
+                        if ((!Parameters.GlycoSearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) ||
+                            (!Parameters.GlycoSearchParameters.WriteContaminants && proteinGroups[i].IsContaminant))
+                        {
+                            continue;
+                        }
+                        else if (proteinGroups[i].QValue <= qValueCutoff)
+                        {
+                            output.WriteLine(proteinGroups[i]);
+                        }
+                    }
+                }
+
+                FinishedWritingFile(filePath, nestedIds);
+            }
         }
 
     }
