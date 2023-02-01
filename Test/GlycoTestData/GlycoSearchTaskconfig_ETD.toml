@@ -8,6 +8,9 @@ OxoniumIonFilt = false
 DecoyType = "Slide"
 GlycoSearchTopNum = 10
 MaximumOGlycanAllowed = 3
+DoQuantification = true
+QuantifyPpmTol = 5.0
+Normalize = false
 
 [CommonParameters]
 TaskDescriptor = "GlycoSearchTask"

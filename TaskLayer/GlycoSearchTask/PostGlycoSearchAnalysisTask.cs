@@ -27,7 +27,7 @@ namespace TaskLayer
 
             if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch)
             {
-                var allPsmsSingle = allPsms.Where(p => p.NGlycan == null ).OrderByDescending(p => p.Score).ToList();
+                var allPsmsSingle = allPsms.Where(p => p.NGlycan == null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 if (allPsmsSingle.Any())
                 {
@@ -88,7 +88,7 @@ namespace TaskLayer
             }
             else
             {
-                var allPsmsSingle = allPsms.Where(p => p.NGlycan == null && p.Routes == null).OrderByDescending(p => p.Score).ToList();
+                var allPsmsSingle = allPsms.Where(p => p.Routes == null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 if (allPsmsSingle.Any())
                 {
@@ -99,27 +99,16 @@ namespace TaskLayer
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
                 FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
 
-                var allPsmsNGly = allPsms.Where(p => p.NGlycan != null).OrderByDescending(p => p.Score).ToList();
-                SingleFDRAnalysis(allPsmsNGly, commonParameters, new List<string> { taskId });
-                if (allPsmsNGly.Any())
+                var allPsmsGly = allPsms.Where(p => p.NGlycan != null).ToList();
+                SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
+                if (allPsmsGly.Any())
                 {
-                    QuantificationAnalysis(allPsmsNGly);
+                    QuantificationAnalysis(allPsmsGly);
                 }
-                WriteQuantificationResults("allNGlycanPsms");
-                var writtenFileNGlyco = Path.Combine(OutputFolder, "nglyco" + ".psmtsv");
-                WriteFile.WritePsmGlycoToTsv(allPsmsNGly, writtenFileNGlyco, 3);
+                WriteQuantificationResults("allPsmsGly");
+                var writtenFileNGlyco = Path.Combine(OutputFolder, "n_o_glyco" + ".psmtsv");
+                WriteFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileNGlyco, 3);
                 FinishedWritingFile(writtenFileNGlyco, new List<string> { taskId });
-
-                var allPsmsOGly = allPsms.Where(p => p.Routes != null).OrderByDescending(p => p.Score).ToList();
-                SingleFDRAnalysis(allPsmsOGly, commonParameters, new List<string> { taskId });
-                if (allPsmsOGly.Any())
-                {
-                    QuantificationAnalysis(allPsmsOGly);
-                }
-                WriteQuantificationResults("allOGlycoPsms");
-                var writtenFileOGlyco = Path.Combine(OutputFolder, "oglyco" + ".psmtsv");
-                WriteFile.WritePsmGlycoToTsv(allPsmsOGly, writtenFileOGlyco, 2);
-                FinishedWritingFile(writtenFileOGlyco, new List<string> { taskId });
 
                 return MyTaskResults;
             }

@@ -442,6 +442,25 @@ namespace Test
             Assert.That(!resultsExist);
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
+        [Test]
+        public static void N_OGlycoTest_WithFileSpecificSettings()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\TestOutput");
+            string settingsFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\Task Settings");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
+            string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
+            List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p=>p.Contains("raw")).ToList();
+
+            // run task
+            CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
+
+            Directory.CreateDirectory(outputFolder);
+            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters, _glycoSearchParameters = new GlycoSearchParameters() { GlycoSearchType = GlycoSearchType.N_O_GlycanSearch, DoQuantification = true, QuantifyPpmTol = 5 } };
+            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");     
+            
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(settingsFolder, true); //auto generated during task
+        }
 
         [Test]
         public static void OGlycoTest_GetLeft()

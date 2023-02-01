@@ -63,18 +63,6 @@ namespace Test
             var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0);
 
-            
-            //using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycanFragmentions.txt")))
-            //{
-            //    foreach (var product in fragmentIons)
-            //    {
-            //        foreach (var ion in product.Item2)
-            //        {
-            //            output.WriteLine(ion.Annotation + "\t" + ion.NeutralLoss.ToString() + "\t" + ion.NeutralMass.ToString());
-            //        }
-            //    }
-            //}
-
             CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20), trimMsMsPeaks: false);
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/Glyco_3383.mgf"); //"25170.mgf"
             MyFileManager myFileManager = new MyFileManager(true);
@@ -120,7 +108,7 @@ namespace Test
             Protein pep = new Protein("TNSSFIQGFVDHVKEDCDR", "accession");
             DigestionParams digestionParams = new DigestionParams(minPeptideLength: 19);
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif2);
-            Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
+            Modification mod2 = new(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             var fixedModifications = new List<Modification>() { mod2 };
             var aPeptideWithSetModifications = pep.Digest(digestionParams, fixedModifications, new List<Modification>());
 
@@ -131,7 +119,7 @@ namespace Test
             Tolerance tolerance = new PpmTolerance(20);
             CommonParameters commonParameters = new CommonParameters(doPrecursorDeconvolution:false, trimMsMsPeaks:false, dissociationType:DissociationType.EThcD, productMassTolerance: tolerance);
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/11901_AIETD.mgf"); 
-            MyFileManager myFileManager = new MyFileManager(true);
+            MyFileManager myFileManager = new(true);
             var msDataFile = myFileManager.LoadFile(filePath, commonParameters);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(msDataFile, filePath, commonParameters).ToArray();
 
@@ -139,14 +127,14 @@ namespace Test
             var precusorMatched = XLPrecusorSearchMode.Accepts(aPeptideWithSetModifications.Last().MonoisotopicMass + (double)glycan.Mass/1E5, listOfSortedms2Scans[0].PrecursorMass);
             Assert.AreEqual(precusorMatched, 0);
 
-            var glycanMod = Glycan.NGlycanToModification(glycan);
+            _ = Glycan.NGlycanToModification(glycan);
             var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
-            List<Product> fragmentIons = new List<Product>();
+            List<Product> fragmentIons = new();
             glycopep.Fragment(DissociationType.EThcD, FragmentationTerminus.Both, fragmentIons);
                
-            var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
+            _ = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
 
-            using (StreamWriter output = new StreamWriter(Path.Combine(TestContext.CurrentContext.TestDirectory, "11091_NGlyco_AIETD.tsv")))
+            using (StreamWriter output = new(Path.Combine(TestContext.CurrentContext.TestDirectory, "11091_NGlyco_AIETD.tsv")))
             {
                 foreach (var product in fragmentIons)
                 {

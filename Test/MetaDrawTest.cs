@@ -59,7 +59,6 @@ namespace Test
             Directory.Delete(folderPath, true);
         }
 
-
         [Test]
         public static void TestMetaDrawReadPsmFileWithoutSpectralAngle()
         {
