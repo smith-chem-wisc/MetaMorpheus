@@ -68,6 +68,12 @@ namespace TaskLayer.MbrAnalysis
             PopulatePeptideScoreDict();
         }
 
+        public MbrAnalysisResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches)
+        {
+            BestMbrMatches = bestMbrMatches;
+            FlashLfqResults = null;
+        }
+
         /// <summary>
         /// Creates a dictionary mapping modified peptide sequences (string) to the MBR spectral angle for peptides
         /// in each file (list of strings, with list length == number of files)
@@ -115,12 +121,21 @@ namespace TaskLayer.MbrAnalysis
         public void WritePeakQuantificationResultsToTsv(string outputFolder, string fileName)
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
+            List<ChromatographicPeak> orderedPeaks = new();
 
-            IEnumerable<ChromatographicPeak> orderedPeaks = FlashLfqResults.Peaks.
-                SelectMany(p => p.Value)
-                .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
-                .ThenByDescending(p => p.Intensity);
-
+            if (FlashLfqResults != null)
+            {
+                orderedPeaks = FlashLfqResults.Peaks.
+                    SelectMany(p => p.Value)
+                    .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
+                    .ThenByDescending(p => p.Intensity).ToList();
+            }
+            else
+            {
+                orderedPeaks = BestMbrMatches.Select(kvp => kvp.Key)
+                    .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
+                    .ThenByDescending(p => p.Intensity).ToList();
+            }
 
             if (fullSeqPath != null)
             {
@@ -139,6 +154,11 @@ namespace TaskLayer.MbrAnalysis
                         }
 
                         string[] peakStringSplit = peak.ToString().Split('\t');
+                        // Peaks generated from MaxQuant data don't have an Apex, so retention time has to be pulledfrom IndexedPeak
+                        if (peakStringSplit[10].Equals("-"))
+                        {
+                            peakStringSplit[10] = peak.IsotopicEnvelopes.First().IndexedPeak.RetentionTime.ToString();
+                        }
                         StringBuilder sb = new();
                         sb.Append(string.Join('\t', peakStringSplit[0..16]));
                         sb.Append('\t');

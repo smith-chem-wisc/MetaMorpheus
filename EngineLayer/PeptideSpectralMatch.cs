@@ -97,7 +97,9 @@ namespace EngineLayer
         {
             get
             {
-                return _BestMatchingPeptides.OrderBy(p => p.Pwsm.FullSequence)
+                var sequenceOrderedPeptides = _BestMatchingPeptides.OrderBy(p => p.Pwsm.FullSequence);
+                if (sequenceOrderedPeptides.Any(p => p.Pwsm.Protein == null)) return sequenceOrderedPeptides;
+                return sequenceOrderedPeptides
                     .ThenBy(p => p.Pwsm.Protein.Accession)
                     .ThenBy(p => p.Pwsm.OneBasedStartResidueInProtein);
             }
@@ -194,6 +196,17 @@ namespace EngineLayer
         /// </summary>
         public void ResolveAllAmbiguities()
         {
+            // Ad-hoc error handling for MaxQuant PsmFromTsv
+            if (_BestMatchingPeptides.Any(p => p.Pwsm.Protein == null))
+            {
+                FullSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.FullSequence)).ResolvedValue;
+                BaseSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.BaseSequence)).ResolvedValue;
+                PeptideLength = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.Length)).ResolvedValue;
+                PeptideMonisotopicMass = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.MonoisotopicMass)).ResolvedValue;
+                ModsIdentified = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.AllModsOneIsNterminus)).ResolvedValue;
+                ModsChemicalFormula = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
+                return;
+            }
             IsDecoy = _BestMatchingPeptides.Any(p => p.Pwsm.Protein.IsDecoy);
             IsContaminant = _BestMatchingPeptides.Any(p => p.Pwsm.Protein.IsContaminant);
             FullSequence = PsmTsvWriter.Resolve(_BestMatchingPeptides.Select(b => b.Pwsm.FullSequence)).ResolvedValue;

@@ -44,7 +44,7 @@ namespace EngineLayer
         //public const string IdentifiedSequenceVariations = "Identified Sequence Variations";
         //public const string SpliceSites = "Splice Sites";
         //public const string Contaminant = "Contaminant";
-        //public const string Decoy = "Decoy";
+        public const string Decoy = "Reverse";
         //public const string PeptideDesicription = "Peptide Description";
         //public const string StartAndEndResiduesInProtein = "Start and End Residues In Protein";
         //public const string PreviousAminoAcid = "Previous Amino Acid";

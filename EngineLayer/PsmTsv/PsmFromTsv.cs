@@ -10,6 +10,9 @@ using System.IO;
 using System.Text;
 using Easy.Common.Extensions;
 using EngineLayer.PsmTsv;
+using Proteomics.ProteolyticDigestion;
+using FlashLFQ;
+using Proteomics;
 
 namespace EngineLayer
 {
@@ -89,6 +92,7 @@ namespace EngineLayer
         public string GlycanComposition { get; set; }
         public LocalizationLevel? GlycanLocalizationLevel { get; set; }
         public string LocalizedGlycan { get; set; }
+        public PeptideWithSetModifications PeptideWithSetModifications { get; }
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
@@ -213,14 +217,14 @@ namespace EngineLayer
         /// <param name="split"></param>
         /// <param name="parsedHeader"></param>
         /// <param name="fileType"></param>
-        public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader, PsmFileType fileType)
+        public PsmFromTsv(string[] splitLine, Dictionary<string, int> parsedHeader, PsmFileType fileType, 
+            Dictionary<string, Modification> allKnownMods = null, int numFixedMods = 0)
         {
             if (fileType != PsmFileType.MaxQuant)
-                throw new ArgumentException("Only MaxQuant msms.txt is currently supported");
-            var spl = line.Split(split).Select(p => p.Trim('\"')).ToArray();
+                throw new NotImplementedException("Only MaxQuant msms.txt is currently supported");
 
             //Required properties
-            FileNameWithoutExtension = spl[parsedHeader[MaxQuantMsmsHeader.FileName]].Trim();
+            FileNameWithoutExtension = splitLine[parsedHeader[MaxQuantMsmsHeader.FileName]].Trim();
 
             // remove file format, e.g., .raw, .mzML, .mgf
             // this is more robust but slower than Path.GetFileNameWithoutExtension
@@ -232,10 +236,10 @@ namespace EngineLayer
                 }
             }
 
-            Ms2ScanNumber = int.Parse(spl[parsedHeader[MaxQuantMsmsHeader.Ms2ScanNumber]]);
+            Ms2ScanNumber = int.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.Ms2ScanNumber]]);
 
             // this will probably not be known in an .mgf data file
-            if (int.TryParse(spl[parsedHeader[MaxQuantMsmsHeader.PrecursorScanNum]].Trim(), out int result))
+            if (int.TryParse(splitLine[parsedHeader[MaxQuantMsmsHeader.PrecursorScanNum]].Trim(), out int result))
             {
                 PrecursorScanNum = result;
             }
@@ -244,33 +248,44 @@ namespace EngineLayer
                 PrecursorScanNum = 0;
             }
 
-            PrecursorCharge = (int)double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
-            PrecursorMz = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
-            PrecursorMass = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
-            BaseSeq = RemoveParentheses(spl[parsedHeader[MaxQuantMsmsHeader.BaseSequence]].Trim());
-            FullSequence = spl[parsedHeader[MaxQuantMsmsHeader.FullSequence]];
-            Score = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.Score]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorCharge = (int)double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorMz = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorMass = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
+            BaseSeq = RemoveParentheses(splitLine[parsedHeader[MaxQuantMsmsHeader.BaseSequence]].Trim());
+            FullSequence = splitLine[parsedHeader[MaxQuantMsmsHeader.FullSequence]];
+            Score = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.Score]].Trim(), CultureInfo.InvariantCulture);
             MatchedIons = ReadFragmentIonsFromList(
                 BuildFragmentStringsFromMaxQuant(
-                    spl[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
-                    spl[parsedHeader[MaxQuantMsmsHeader.MatchedIonMzRatios]]
+                    splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
+                    splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonMzRatios]]
                 ),
                 BuildFragmentStringsFromMaxQuant(
-                    spl[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
-                    spl[parsedHeader[MaxQuantMsmsHeader.MatchedIonIntensities]]
+                    splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
+                    splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonIntensities]]
                 ),
                 BaseSeq
             );
 
-            DeltaScore = (parsedHeader[MaxQuantMsmsHeader.DeltaScore] < 0) ? null : (double?)double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.DeltaScore]].Trim(), CultureInfo.InvariantCulture);
-            MassDiffDa = (parsedHeader[MaxQuantMsmsHeader.MassDiffDa] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.MassDiffDa]].Trim();
-            MassDiffPpm = (parsedHeader[MaxQuantMsmsHeader.MassDiffPpm] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.MassDiffPpm]].Trim();
-            ProteinAccession = (parsedHeader[MaxQuantMsmsHeader.ProteinAccession] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.ProteinAccession]].Trim();
-            ProteinName = (parsedHeader[MaxQuantMsmsHeader.ProteinName] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.ProteinName]].Trim();
-            GeneName = (parsedHeader[MaxQuantMsmsHeader.GeneName] < 0) ? null : spl[parsedHeader[MaxQuantMsmsHeader.GeneName]].Trim();
-            RetentionTime = (parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
-            PEP = double.Parse(spl[parsedHeader[MaxQuantMsmsHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
+            DeltaScore = (parsedHeader[MaxQuantMsmsHeader.DeltaScore] < 0) ? null : (double?)double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.DeltaScore]].Trim(), CultureInfo.InvariantCulture);
+            MassDiffDa = (parsedHeader[MaxQuantMsmsHeader.MassDiffDa] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.MassDiffDa]].Trim();
+            MassDiffPpm = (parsedHeader[MaxQuantMsmsHeader.MassDiffPpm] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.MassDiffPpm]].Trim();
+            ProteinAccession = (parsedHeader[MaxQuantMsmsHeader.ProteinAccession] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.ProteinAccession]].Trim();
+            ProteinName = (parsedHeader[MaxQuantMsmsHeader.ProteinName] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.ProteinName]].Trim();
+            GeneName = (parsedHeader[MaxQuantMsmsHeader.GeneName] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.GeneName]].Trim();
+            RetentionTime = (parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
+            PEP = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
+            DecoyContamTarget = splitLine[parsedHeader[MaxQuantMsmsHeader.Decoy]].IsNullOrEmptyOrWhiteSpace() ? "T" : "D";
 
+            if (!MassDiffDa.Equals("NaN") && Double.TryParse(MassDiffDa, out double massDiff)) PeptideMonoMass = (PrecursorMass + massDiff).ToString();
+            else PeptideMonoMass = PrecursorMass.ToString();
+
+            if (allKnownMods != null)
+            {
+                Protein protein = new Protein(sequence: BaseSeq, accession: ProteinAccession,
+                    geneNames: new List<Tuple<string, string>> { new Tuple<string, string>("Unknown", GeneName) },
+                    isDecoy: DecoyContamTarget == "D");
+                PeptideWithSetModifications = new PeptideWithSetModifications(FullSequence, allKnownMods, numFixedMods, p: protein);
+            }
         }
 
         /// <summary>

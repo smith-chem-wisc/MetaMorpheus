@@ -10,8 +10,14 @@ using Easy.Common.Extensions;
 using EngineLayer;
 using EngineLayer.PsmTsv;
 using FlashLFQ;
+using MassSpectrometry;
+using MzLibUtil;
 using NUnit.Framework;
+using Proteomics;
 using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
+using TaskLayer;
+using TaskLayer.MbrAnalysis;
 using static iText.IO.Image.Jpeg2000ImageData;
 
 namespace Test
@@ -19,6 +25,17 @@ namespace Test
     [TestFixture]
     internal class GenericReaderTest
     {
+        public string SpectrumFilePath;
+        public Dictionary<string, PsmFromTsv> MaxQuantPsms;
+        public Dictionary<string, List<ChromatographicPeak>> MbrPeaks;
+        public List<SpectraFileInfo> SpectraFiles;
+
+
+        [OneTimeSetUp]
+        public void HelaSingleCellSetup()
+        {
+
+        }
 
         [Test]
         public static void TestMaxQuantEvidenceReader()
@@ -47,15 +64,21 @@ namespace Test
                 maxQuantEvidencePath, silent: false, spectraFiles);
 
             string maxQuantMsmsPath = @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\msms.txt";
-            List<PsmFromTsv> maxQuantIds = PsmGenericReader.GetDonorPsms(
+            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
                 maxQuantMsmsPath, spectraFiles, mbrPeaks);
 
             // Every MBR run ID should have a corresponding PSM in the msms.txt file
-            Assert.That(mbrPeaks.Count == maxQuantIds.Count);
+            Assert.That(mbrPeaks.Count == maxQuantPsms.Count);
+
+            PpmTolerance testTolerance = new PpmTolerance(5);
+            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
+            // matches for every psm
+            Assert.IsFalse(maxQuantPsms.Values.Any(p => 
+                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
 
             // Writing a spectral library
             var spectraForSpectraLibrary = new List<LibrarySpectrum>();
-            foreach (var psm in maxQuantIds)
+            foreach (var psm in maxQuantPsms.Values)
             {
                 var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
                 spectraForSpectraLibrary.Add(standardSpectrum);
@@ -70,24 +93,55 @@ namespace Test
                 }
             }
 
-            int placeholder = 0;
+            // Tolerances taken from MaxQuant defaults
+            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect, 
+                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
+
+            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+                spectraFiles,
+                mbrPeaks,
+                maxQuantPsms,
+                spectrumFilePath,
+                @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\",
+                commonParams);
+
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\", "PeakQuantFirst");
+        }
+
+        [Test]
+        public static void TestMbrAnalysisFromMaxQuant()
+        {
+            
         }
 
         [Test]
         public static void ParseModificationsTest()
         {
-            string fullSeq = "_AM(Oxidation (M))LESICGVT(Phospho (T))PLEK_";
+            string fullSeq = "_DEM(Oxidation (M))LESICGVT(Phospho (T))PLEK_";
             string fullSeq2 = "_(Acetyl (Protein N-term))AAAAAAAAAAGAAGGR_";
+            string fullSeq3 = "_CCCC_";
+            string fullSeq4 = "_(Acetyl (Protein N-term))M(Oxidation (M))M(Oxidation (M))IGLPGAGK_";
+            string fullSeq5 = "_(Acetyl (Protein N-term))CNTPTYCDLGK_";
 
-            //string x = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq, out var allKnownMods, out int numFixedMods);
-            string y = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq2, out var allKnownMods, out var numFixedMods);
+            string mmFullSeq = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq, out var allKnownMods, out int numFixedMods);
+            Assert.That(mmFullSeq.Equals("DEM[Common Variable:Oxidation on M]LESIC[Common Fixed:Carbamidomethyl on C]GVT[Unimod:Phospho on T]PLEK"));
+            Assert.That(allKnownMods.Count == 3 & numFixedMods == 1);
 
-            var testMod = GlobalVariables.AllModsKnown.Where(m => m.OriginalId.Contains("Phospho"));
-            //var resultsDictionary = PsmGenericReader.ParseMaxQuantFullSeq(fullSeq);
-            foreach (var mod in testMod)
-            {
-                int placeholder = 0;
-            }
+            string mmFullSeq2 = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq2, out allKnownMods, out numFixedMods);
+            Assert.That(mmFullSeq2.Equals("[Unimod:Acetyl on X]AAAAAAAAAAGAAGGR"));
+            Assert.That(allKnownMods.Count == 1 & numFixedMods == 0);
+
+            string mmFullSeq3 = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq3, out allKnownMods, out numFixedMods);
+            Assert.That(mmFullSeq3.Equals("C[Common Fixed:Carbamidomethyl on C]C[Common Fixed:Carbamidomethyl on C]C[Common Fixed:Carbamidomethyl on C]C[Common Fixed:Carbamidomethyl on C]"));
+            Assert.That(allKnownMods.Count == 1 & numFixedMods == 4);
+
+            string mmFullSeq4 = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq4, out allKnownMods, out numFixedMods);
+            Assert.That(mmFullSeq4.Equals("[Unimod:Acetyl on X]M[Common Variable:Oxidation on M]M[Common Variable:Oxidation on M]IGLPGAGK"));
+            Assert.That(allKnownMods.Count == 2 & numFixedMods == 0);
+
+            string mmFullSeq5 = PsmGenericReader.ConvertMaxQuantFullSequence(fullSeq5, out allKnownMods, out numFixedMods);
+            Assert.That(mmFullSeq5.Equals("[Unimod:Acetyl on C]C[Common Fixed:Carbamidomethyl on C]NTPTYC[Common Fixed:Carbamidomethyl on C]DLGK"));
+            Assert.That(allKnownMods.Count == 2 & numFixedMods == 2);
 
         }
 

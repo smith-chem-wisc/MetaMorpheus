@@ -228,8 +228,12 @@ namespace EngineLayer
             s[PsmTsvHeader.PeptideDesicription] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PeptideDescription)).ResolvedString;
             s[PsmTsvHeader.StartAndEndResiduesInProtein] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => ($"[{b.OneBasedStartResidueInProtein.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidueInProtein.ToString(CultureInfo.InvariantCulture)}]")), psm.FullSequence).ResolvedString;
-            s[PsmTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
-            s[PsmTsvHeader.NextAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
+            try
+            {
+                s[PsmTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousAminoAcid.ToString())).ResolvedString;
+                s[PsmTsvHeader.NextAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextAminoAcid.ToString())).ResolvedString;
+            } catch (Exception e) {}
+
 
             string theoreticalsSearched = " ";
             s[PsmTsvHeader.TheoreticalsSearched] = theoreticalsSearched;

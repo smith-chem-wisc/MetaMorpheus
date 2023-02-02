@@ -130,6 +130,115 @@ namespace TaskLayer.MbrAnalysis
             return new MbrAnalysisResults(bestMbrMatches, parameters.FlashLfqResults);
         }
 
+        /// <summary>
+        /// Performs secondary analysis of MBR results by searching acceptor files for candidate spectra,
+        /// and comparing those spectra to a spectral library. Results (PEP model and .psmtsv) are written to
+        /// unique MbrAnalysis folder.
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="commonParameters"></param>
+        /// <param name="fileSpecificParameters"></param>
+        public static MbrAnalysisResults RunMbrAnalysisFromMaxQuant(
+            List<SpectraFileInfo> spectraFiles,
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaksDict,
+            Dictionary<string, PsmFromTsv> donorPsmDict,
+            string spectralLibraryPath,
+            string outputFolder,
+            CommonParameters commonParameters)
+        {
+
+            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+
+            ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches = new();
+
+            foreach (SpectraFileInfo spectraFile in spectraFiles)
+            {
+                MyFileManager myFileManager = new(true);
+                MsDataFile myMsDataFile =
+                    myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, commonParameters);
+                // These parameters are hardcoded for now
+                MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(
+                    commonParameters.PrecursorMassTolerance,
+                    MassDiffAcceptorType.OneMM, customMdac: "");
+                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = MetaMorpheusTask
+                    .GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, commonParameters)
+                    .OrderBy(b => b.RetentionTime).ToArray();
+                SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
+
+                MiniClassicSearchEngine mcse = new(
+                    arrayOfMs2ScansSortedByRT,
+                    massDiffAcceptor,
+                    commonParameters,
+                    library,
+                    fileSpecificParameters: null,
+                    maxQuantAnalysis: true);
+
+                // This is a cursed LINQ statement
+                var fileSpecificMbrPeaks =
+                    mbrPeaksDict.ToDictionary(
+                        kvp => kvp.Key, 
+                        kvp => kvp.Value.Where(p => p.SpectraFileInfo == spectraFile).
+                            FirstOrDefault()
+                    ).
+                        Where(kvp => kvp.Value != null).
+                        ToList();
+
+                Parallel.ForEach(threads, (i) =>
+                {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops) { return; }
+
+                    for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
+                    {
+                        ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i].Value;
+                        string maxQuantFullSeq = fileSpecificMbrPeaks[i].Key;
+
+                        if (donorPsmDict.TryGetValue(maxQuantFullSeq, out PsmFromTsv donorPsm))
+                        {
+                            IEnumerable<PeptideSpectralMatch> peptideSpectralMatches =
+                                mcse.SearchAroundPeak(
+                                    donorPsm.PeptideWithSetModifications,
+                                    mbrPeak.IsotopicEnvelopes.First().IndexedPeak.RetentionTime
+                                    );
+
+                            if (peptideSpectralMatches == null || !peptideSpectralMatches.Any())
+                            {
+                                bestMbrMatches.TryAdd(mbrPeak, new MbrSpectralMatch(null, mbrPeak));
+                            }
+                            else
+                            {
+                                bestMbrMatches.TryAdd(mbrPeak,
+                                    new MbrSpectralMatch(BestPsmForMbrPeak(peptideSpectralMatches), mbrPeak));
+                            }
+                        }
+                    }
+                });
+
+                library.CloseConnections();
+            }
+
+            // Currently, this type of analysis doesn't make sense when analyzing MaxQuant results
+            //if (bestMbrMatches.Any())
+            //{
+            //    List<PeptideSpectralMatch> allPsms = parameters.AllPsms.
+            //        OrderByDescending(p => p.Score).
+            //        ThenBy(p => p.FullFilePath).
+            //        ThenBy(x => x.ScanNumber).
+            //        ThenBy(p => p.FullSequence).
+            //        ThenBy(p => p.ProteinAccession).ToList();
+
+            //    AssignEstimatedPsmQvalue(bestMbrMatches, allPsms);
+            //    FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
+            //    AssignEstimatedPsmPepQValue(bestMbrMatches, allPsms);
+            //    foreach (MbrSpectralMatch match in bestMbrMatches.Values) match.FindOriginalPsm(allPsms);
+            //}
+
+            WriteMbrPsmResults(bestMbrMatches, null, outputFolder);
+
+            return new MbrAnalysisResults(bestMbrMatches);
+        }
+
         private static List<PeptideSpectralMatch> GetAllPeptides(
             PostSearchAnalysisParameters parameters,
             CommonParameters commonParameters,
@@ -282,10 +391,11 @@ namespace TaskLayer.MbrAnalysis
             }
         }
 
-        private static void WriteMbrPsmResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches, PostSearchAnalysisParameters parameters)
+        private static void WriteMbrPsmResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches, PostSearchAnalysisParameters parameters, 
+            string outputFolder = null)
         {
-            string mbrOutputPath = Path.Combine(Path.Join(parameters.OutputFolder, mbrAnalysisFolder), @"MbrAnalysis.psmtsv");
-            using (var output = new StreamWriter(mbrOutputPath))
+            string mbrOutputFolder = outputFolder ?? Path.Join(parameters.OutputFolder, mbrAnalysisFolder);
+            using (var output = new StreamWriter(Path.Combine(mbrOutputFolder, @"MbrAnalysis.psmtsv")))
             {
                 output.WriteLine(MbrSpectralMatch.TabSeparatedHeader);
                 IEnumerable<MbrSpectralMatch> orderedMatches = bestMbrMatches.Select(p => p.Value).

@@ -53,6 +53,7 @@ namespace EngineLayer.PsmTsv
         internal static Dictionary<string, double> _modSequenceToMonoMass;
         internal static Dictionary<string, FlashLFQ.ProteinGroup> allProteinGroups;
         internal static List<ScanHeaderInfo> _scanHeaderInfo = new List<ScanHeaderInfo>();
+        public static Dictionary<string, Modification> MaxQuantToMetaModDictionary { get; set; }
 
         //Delimiters refere to contents of one field, not the delimiter between fields
         internal static readonly Dictionary<PsmFileType, string[]> delimiters = new Dictionary<PsmFileType, string[]>
@@ -229,83 +230,6 @@ namespace EngineLayer.PsmTsv
             return flashLfqIdentifications;
         }
 
-        public static List<PsmFromTsv> GetDonorPsms(string filepath, List<SpectraFileInfo> rawfiles,
-            Dictionary<string, List<ChromatographicPeak>> mbrPeaks)
-        {
-            Dictionary<string, List<PsmFromTsv>> fullSeqToDonorsDict = mbrPeaks.
-                Where(kvp => kvp.Value.IsNotNullOrEmpty()).
-                Select(p => p.Value.First().Identifications.First().ModifiedSequence).
-                Distinct().
-                ToDictionary(seq => seq, seq => new List<PsmFromTsv>());
-
-            using (StreamReader reader = new StreamReader(filepath))
-            {
-                string header = reader.ReadLine();
-                PsmFileType fileType = GetFileTypeFromHeader(header);
-                if (fileType != PsmFileType.MaxQuant) return null;
-                Dictionary<string, int> headerDictionary = GetHeaderDictionary(fileType, header);
-
-                while (!reader.EndOfStream)
-                {
-                    string currentLine = reader.ReadLine();
-                    string currentFullSeq = currentLine.Split('\t')[headerDictionary[MaxQuantMsmsHeader.FullSequence]];
-                    if (fullSeqToDonorsDict.ContainsKey(currentFullSeq))
-                    {
-                        fullSeqToDonorsDict[currentFullSeq].Add( 
-                            new PsmFromTsv(currentLine, new char[] {'\t'}, headerDictionary, PsmFileType.MaxQuant)
-                            );
-                    }
-                    else
-                    {
-                        int placeholder = 0;
-                    }
-                }
-            }
-
-            List<PsmFromTsv> donorPsms = new();
-            foreach (var kvp in fullSeqToDonorsDict)
-            {
-                if (kvp.Value.IsNotNullOrEmpty())
-                {
-                    donorPsms.Add(kvp.Value.OrderByDescending(p => p.Score).First());
-                }
-            }
-
-            return donorPsms;
-        }
-
-        internal static Dictionary<string, int> GetHeaderDictionary(PsmFileType fileType, string header)
-        {
-            if (fileType != PsmFileType.MaxQuant) return null;
-
-            var parsedHeader = new Dictionary<string, int>();
-            var spl = header.Split('\t');
-
-            parsedHeader.Add(MaxQuantMsmsHeader.FullSequence, Array.IndexOf(spl, MaxQuantMsmsHeader.FullSequence));
-            parsedHeader.Add(MaxQuantMsmsHeader.Ms2ScanNumber, Array.IndexOf(spl, MaxQuantMsmsHeader.Ms2ScanNumber));
-            parsedHeader.Add(MaxQuantMsmsHeader.Ms2ScanRetentionTime, Array.IndexOf(spl, MaxQuantMsmsHeader.Ms2ScanRetentionTime));
-            parsedHeader.Add(MaxQuantMsmsHeader.FileName, Array.IndexOf(spl, MaxQuantMsmsHeader.FileName));
-            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorScanNum, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorScanNum));
-            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorCharge, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorCharge));
-            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorMz, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorMz));
-            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorMass, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorMass));
-            parsedHeader.Add(MaxQuantMsmsHeader.Score, Array.IndexOf(spl, MaxQuantMsmsHeader.Score));
-            parsedHeader.Add(MaxQuantMsmsHeader.DeltaScore, Array.IndexOf(spl, MaxQuantMsmsHeader.DeltaScore));
-            parsedHeader.Add(MaxQuantMsmsHeader.BaseSequence, Array.IndexOf(spl, MaxQuantMsmsHeader.BaseSequence));
-            parsedHeader.Add(MaxQuantMsmsHeader.MassDiffDa, Array.IndexOf(spl, MaxQuantMsmsHeader.MassDiffDa));
-            parsedHeader.Add(MaxQuantMsmsHeader.MassDiffPpm, Array.IndexOf(spl, MaxQuantMsmsHeader.MassDiffPpm));
-            parsedHeader.Add(MaxQuantMsmsHeader.ProteinAccession, Array.IndexOf(spl, MaxQuantMsmsHeader.ProteinAccession));
-            parsedHeader.Add(MaxQuantMsmsHeader.ProteinName, Array.IndexOf(spl, MaxQuantMsmsHeader.ProteinName));
-            parsedHeader.Add(MaxQuantMsmsHeader.GeneName, Array.IndexOf(spl, MaxQuantMsmsHeader.GeneName));
-            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonSeries, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonSeries));
-            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonMzRatios, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonMzRatios));
-            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonIntensities, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonIntensities));
-            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonMassDiffDa, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonMassDiffDa));
-            parsedHeader.Add(MaxQuantMsmsHeader.PEP, Array.IndexOf(spl, MaxQuantMsmsHeader.PEP));
-
-            return parsedHeader;
-        }
-
 
         /// <summary>
         /// Reads a MaxQuant Evidence.txt file and returns all MBR identifications as a list of
@@ -322,7 +246,7 @@ namespace EngineLayer.PsmTsv
             if (_modSequenceToMonoMass == null) _modSequenceToMonoMass = new Dictionary<string, double>();
             if (allProteinGroups == null) allProteinGroups = new Dictionary<string, FlashLFQ.ProteinGroup>();
 
-            Dictionary<string, SpectraFileInfo> rawFileDictionary = 
+            Dictionary<string, SpectraFileInfo> rawFileDictionary =
                 rawfiles.ToDictionary(p => p.FilenameWithoutExtension, v => v);
             Dictionary<string, List<ChromatographicPeak>> allMbrPeaks = new();
 
@@ -334,7 +258,7 @@ namespace EngineLayer.PsmTsv
                     return allMbrPeaks;
                 }
 
-                while(!reader.EndOfStream)
+                while (!reader.EndOfStream)
                 {
                     try
                     {
@@ -388,20 +312,101 @@ namespace EngineLayer.PsmTsv
             return mbrPeak;
         }
 
-        internal static PeptideWithSetModifications GetPWSM(string psmString, bool silent,
-            Dictionary<string, SpectraFileInfo> fileDictionary, PsmFileType fileType)
+        /// <summary>
+        /// Reads in a MaxQuant msms.txt file and finds the best PSMs corresponding to the mbr peaks.
+        /// </summary>
+        /// <param name="filepath">Path to the msms.txt file</param>
+        /// <param name="rawfiles">List of SpectraFileInfo objects</param>
+        /// <param name="mbrPeaks">A dictionary with the MaxQuant format full sequence as the keys and lists of chromatographic peaks as the values</param>
+        /// <returns></returns>
+        public static Dictionary<string, PsmFromTsv> GetDonorPsms(string filepath, List<SpectraFileInfo> rawfiles,
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks)
         {
-            string[] psmInfo = psmString.Split('\t');
-            string metaMorpheusFullSequence =
-                ConvertMaxQuantFullSequence(psmInfo[_fullSequCol], out var allKnownMods, out var numFixedMods);
+            Dictionary<string, List<PsmFromTsv>> fullSeqToDonorsDict = mbrPeaks.
+                Where(kvp => kvp.Value.IsNotNullOrEmpty()).
+                Select(p => p.Value.First().Identifications.First().ModifiedSequence).
+                Distinct().
+                ToDictionary(seq => seq, seq => new List<PsmFromTsv>());
 
+            using (StreamReader reader = new StreamReader(filepath))
+            {
+                string header = reader.ReadLine();
+                PsmFileType fileType = GetFileTypeFromHeader(header);
+                if (fileType != PsmFileType.MaxQuant) return null;
+                Dictionary<string, int> headerDictionary = GetHeaderDictionary(fileType, header);
 
-            return null;
+                while (!reader.EndOfStream)
+                {
+                    string[] lineSplit = reader.ReadLine().Split('\t');
+                    string currentFullSeq = lineSplit[headerDictionary[MaxQuantMsmsHeader.FullSequence]];
+                    if (fullSeqToDonorsDict.ContainsKey(currentFullSeq))
+                    {
+                        string convertedFullSeq = ConvertMaxQuantFullSequence(currentFullSeq, out var allKnownMods,
+                            out int numFixedMods);
+                        lineSplit[headerDictionary[MaxQuantMsmsHeader.FullSequence]] = convertedFullSeq;
+                        PsmFromTsv psm = new PsmFromTsv(lineSplit, headerDictionary, PsmFileType.MaxQuant, allKnownMods, numFixedMods);
+                        fullSeqToDonorsDict[currentFullSeq].Add(psm);
+                    }
+                }
+            }
+
+            Dictionary<string, PsmFromTsv> donorPsms = new();
+            foreach (var kvp in fullSeqToDonorsDict)
+            {
+                if (kvp.Value.IsNotNullOrEmpty())
+                {
+                    donorPsms.Add(kvp.Key, kvp.Value.OrderByDescending(p => p.Score).First());
+                }
+            }
+
+            return donorPsms;
+        }
+
+        #region MaxQuantSequenceParsing
+
+        /// <summary>
+        /// Create a dictionary matching the names of columns with their 0-based position.
+        /// Column names correspond to fields within a header dictionary class
+        /// </summary>
+        /// <param name="fileType">Type of file being read in. Currently only MaxQuant is supported</param>
+        /// <param name="header">A string containing the fields in a results file</param>
+        /// <returns></returns>
+        internal static Dictionary<string, int> GetHeaderDictionary(PsmFileType fileType, string header, char sep = '\t')
+        {
+            if (fileType != PsmFileType.MaxQuant) throw new NotImplementedException();
+
+            var parsedHeader = new Dictionary<string, int>();
+            var spl = header.Split(sep);
+
+            parsedHeader.Add(MaxQuantMsmsHeader.FullSequence, Array.IndexOf(spl, MaxQuantMsmsHeader.FullSequence));
+            parsedHeader.Add(MaxQuantMsmsHeader.Ms2ScanNumber, Array.IndexOf(spl, MaxQuantMsmsHeader.Ms2ScanNumber));
+            parsedHeader.Add(MaxQuantMsmsHeader.Ms2ScanRetentionTime, Array.IndexOf(spl, MaxQuantMsmsHeader.Ms2ScanRetentionTime));
+            parsedHeader.Add(MaxQuantMsmsHeader.FileName, Array.IndexOf(spl, MaxQuantMsmsHeader.FileName));
+            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorScanNum, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorScanNum));
+            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorCharge, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorCharge));
+            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorMz, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorMz));
+            parsedHeader.Add(MaxQuantMsmsHeader.PrecursorMass, Array.IndexOf(spl, MaxQuantMsmsHeader.PrecursorMass));
+            parsedHeader.Add(MaxQuantMsmsHeader.Score, Array.IndexOf(spl, MaxQuantMsmsHeader.Score));
+            parsedHeader.Add(MaxQuantMsmsHeader.DeltaScore, Array.IndexOf(spl, MaxQuantMsmsHeader.DeltaScore));
+            parsedHeader.Add(MaxQuantMsmsHeader.BaseSequence, Array.IndexOf(spl, MaxQuantMsmsHeader.BaseSequence));
+            parsedHeader.Add(MaxQuantMsmsHeader.MassDiffDa, Array.IndexOf(spl, MaxQuantMsmsHeader.MassDiffDa));
+            parsedHeader.Add(MaxQuantMsmsHeader.MassDiffPpm, Array.IndexOf(spl, MaxQuantMsmsHeader.MassDiffPpm));
+            parsedHeader.Add(MaxQuantMsmsHeader.ProteinAccession, Array.IndexOf(spl, MaxQuantMsmsHeader.ProteinAccession));
+            parsedHeader.Add(MaxQuantMsmsHeader.ProteinName, Array.IndexOf(spl, MaxQuantMsmsHeader.ProteinName));
+            parsedHeader.Add(MaxQuantMsmsHeader.GeneName, Array.IndexOf(spl, MaxQuantMsmsHeader.GeneName));
+            parsedHeader.Add(MaxQuantMsmsHeader.Decoy, Array.IndexOf(spl, MaxQuantMsmsHeader.Decoy));
+            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonSeries, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonSeries));
+            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonMzRatios, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonMzRatios));
+            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonIntensities, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonIntensities));
+            parsedHeader.Add(MaxQuantMsmsHeader.MatchedIonMassDiffDa, Array.IndexOf(spl, MaxQuantMsmsHeader.MatchedIonMassDiffDa));
+            parsedHeader.Add(MaxQuantMsmsHeader.PEP, Array.IndexOf(spl, MaxQuantMsmsHeader.PEP));
+
+            return parsedHeader;
         }
 
         /// <summary>
         /// Takes in a full peptide sequence in the MaxQuant format, and returns a full peptide sequence
-        /// that's compatible with MetaMorphues
+        /// that's compatible with MetaMorpheus
         /// </summary>
         /// <param name="mqFullSeq"> MaxQuant's full sequence for the given peptide </param>
         /// <param name="allKnownMods">Dictionary containing mod IdWithMotifs as keys and Modifications as values</param>
@@ -457,7 +462,7 @@ namespace EngineLayer.PsmTsv
 
                 foreach (var mod in orderedMods.Select(kvp => kvp.Value))
                 {
-                    allKnownMods.Add(mod.IdWithMotif, mod);
+                    allKnownMods.TryAdd(mod.IdWithMotif, mod);
                 }
             }
             else
@@ -466,13 +471,106 @@ namespace EngineLayer.PsmTsv
             }
 
             fixedMods ??= new List<Modification> { GlobalVariables.AllModsKnownDictionary["Carbamidomethyl on C"] };
-            fullSeq = AddFixedMods(fullSeq, fixedMods, out numFixedMods);
-            foreach (var mod in fixedMods)
+            fullSeq = AddFixedMods(fullSeq, fixedMods, out var fixedModsPresentInPeptide);
+            numFixedMods = fixedModsPresentInPeptide.Count;
+            foreach (var mod in fixedModsPresentInPeptide)
             {
-                allKnownMods.Add(mod.IdWithMotif, mod);
+                allKnownMods.TryAdd(mod.IdWithMotif, mod);
             }
 
             return fullSeq;
+        }
+
+        /// <summary>
+        /// Converts a trimmed MaxQuant full sequence to a MetaMorpheus sequence
+        /// </summary>
+        /// <param name="fullSequence"> Full sequence of the peptide in question taken from a MaxQuant file with underscores removed</param>
+        /// <param name="modDict">A dictionary with integer positions as keys, Modifications as values. 1 represents the n-terminus</param>
+        /// <returns> True if modifications were present, false otherwise </returns>
+        public static bool FindVariableModsInMaxQuantSequence(string fullSeq, out Dictionary<int, Modification> modDict)
+        {
+            // use a regex to get all modifications
+            string pattern = @"\([A-Z][a-z]*[\s]\([^\(]*\)\)"; // Matches single modifications
+            Regex regex = new(pattern);
+            MatchCollection matches = regex.Matches(fullSeq);
+
+            // Here, current position is a one based index (one represents the n-terminus) of the location of each mod
+            // within the peptide
+            if (matches.Any())
+            {
+                int positionOffset = 0; // Cumulative number of characters in the full seq that are not AAs
+                modDict = new();
+                foreach (Match match in matches)
+                {
+                    GroupCollection group = match.Groups;
+                    string modString = group[0].Value;
+                    int startIndex = group[0].Index;
+                    int captureLength = group[0].Length;
+                    char? leadingAA = startIndex == 0 ? null : fullSeq[startIndex - 1];
+                    char? trailingAA = startIndex + captureLength == fullSeq.Length ? null : fullSeq[startIndex + captureLength];
+
+                    // int to add is startIndex - current position + 1 (one based indexing)
+                    int positionToAddToDict = 1 + startIndex - positionOffset;
+                    modDict.TryAdd(positionToAddToDict, ParseMaxQuantMod(modString, leadingAA, trailingAA));
+
+                    positionOffset += captureLength;
+                }
+                return true;
+            }
+
+            modDict = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Returns a Modification object that most closely matches the modification
+        /// found in a MaxQuant results file. Currently handles N and C terminal modifications
+        /// in a very ad-hoc way, TODO: Refactor for terminal mods
+        /// </summary>
+        /// <param name="modString">A MaxQuant modification, in the form of (Mod Name (Location))</param>
+        /// <returns>A Modification object that most closely matches the input string</returns>
+        public static Modification ParseMaxQuantMod(string modString, char? trailingAA, char? leadingAA)
+        {
+            if (MaxQuantToMetaModDictionary == null) MaxQuantToMetaModDictionary = new();
+
+            // If leading or trailing AA is null, the mod is terminal and can't be id'd by the modString alone
+            if (trailingAA != null & leadingAA != null &
+                MaxQuantToMetaModDictionary.TryGetValue(modString, out var metaMod))
+            {
+                return metaMod;
+            }
+
+            string modificationPattern = @"\((.*)\("; //Matches mod name, not position
+            Regex modRegex = new(modificationPattern);
+            string modName = modRegex.Match(modString).Groups[1].Value.Trim();
+
+            string location = TranslateMaxQuantPosition(modString, trailingAA, leadingAA);
+
+            var modsOrderedBySimilarity = GlobalVariables.AllModsKnown.
+                GroupBy(m => ComputeLevenshteinDistance(modName, m.OriginalId)).
+                OrderBy(g => g.Key);
+            foreach (var modGroup in modsOrderedBySimilarity)
+            {
+                foreach (Modification mod in modGroup)
+                {
+                    var test = mod.Target.ToString();
+                    if (mod.Target.ToString().Equals(location))
+                    {
+                        metaMod = mod;
+                        break;
+                    }
+                    if (mod.Target.ToString().Equals("X"))
+                    {
+                        metaMod = mod;
+                    }
+                }
+
+                if (metaMod != null) break;
+            }
+
+            if (metaMod != null & trailingAA != null & leadingAA != null) MaxQuantToMetaModDictionary.TryAdd(modString, metaMod);
+            return metaMod;
+
         }
 
         /// <summary>
@@ -482,10 +580,10 @@ namespace EngineLayer.PsmTsv
         /// <param name="fixedMods"> A list of fixed modifications.
         /// If null, defaults to Carbamidomethylation on C</param>
         /// <returns>String containing the full sequence in MetaMorpheus format</returns>
-        public static string AddFixedMods(string fullSequence, List<Modification> fixedMods, out int numberOfFixedModsPresentInPeptide)
+        public static string AddFixedMods(string fullSequence, List<Modification> fixedMods, out List<Modification> fixedModsPresentInPeptide)
         {
             string fullSeqWithFixedMods = fullSequence;
-            numberOfFixedModsPresentInPeptide = 0;
+            fixedModsPresentInPeptide = new();
             foreach (Modification mod in fixedMods)
             {
                 string location = mod.Target.ToString();
@@ -494,7 +592,7 @@ namespace EngineLayer.PsmTsv
 
                     // Pattern employs a negative lookbehind - "(?<!\[|\:)" - as not to match existing modifications
                     // e.g. (PEPT[Common Biological:Phosphorylation on T]IDE), the C in Common will not be matched
-                    string fixedModPattern = @"(?<!\[|\:)(" + location + ")";
+                    string fixedModPattern = @"(?<!\[|\:|\s)(" + location + ")";
                     Regex fixedModRegex = new(fixedModPattern);
                     string[] sequenceFragments = fixedModRegex.Split(fullSequence);
 
@@ -507,7 +605,7 @@ namespace EngineLayer.PsmTsv
                             if (seqFragment.Equals(location))
                             {
                                 sb.Append(seqFragment + '[' + mod.ModificationType + ":" + mod.IdWithMotif + ']');
-                                numberOfFixedModsPresentInPeptide++;
+                                fixedModsPresentInPeptide.Add(mod);
                             }
                             else
                             {
@@ -524,79 +622,35 @@ namespace EngineLayer.PsmTsv
         }
 
         /// <summary>
-        /// Converts a MaxQuant sequence to a MetaMorpheus sequence
+        /// Translates a position given by MaxQuant to the Metamorpheus format
         /// </summary>
-        /// <param name="fullSequence"> Full sequence of the peptide in question, taken from a MaxQuant file</param>
-        /// <param name="modDict">A dictionary with integer positions as keys, Modifications as values. 1 represents the n-terminus</param>
-        /// <returns> True if modifications were present, false otherwise </returns>
-        public static bool FindVariableModsInMaxQuantSequence(string fullSeq, out Dictionary<int, Modification> modDict)
+        /// <param name="location"> MaxQuant position as a trimmed string</param>
+        /// <returns> Position in the MetaMorpheus format</returns>
+        public static string TranslateMaxQuantPosition(string modString, char? trailingAA, char? leadingAA)
         {
-            // use a regex to get all modifications
-            string pattern = @"(.?\([A-Z][a-z]*[\s]\([^\(]*\)\).?)"; // Matches single modification + leading and trailing AAs
-            Regex regex = new(pattern);
-            MatchCollection matches = regex.Matches(fullSeq);
+            string locationPattern = @"\(.*\(([^\)]*)\)";
+            Regex locationRegex = new(locationPattern);
+            string location = locationRegex.Match(modString).Groups[1].Value;
 
-            // Here, int is a one based index (one represents the n-terminus) of the location of each mod
-            // within the peptide
-            if (matches.Any())
+            // Assume that any 1 character location is a single amino acid
+            if (location.Length == 1) return location;
+            // Any hyphenated location is a terminus
+            switch (location)
             {
-                int currentPosition = 0;
-                modDict = new();
-                foreach (Match match in matches)
-                {
-                    GroupCollection group = match.Groups;
-                    string modString = group[1].Value;
-                    int startIndex = group[0].Index;
-                    int captureLength = group[0].Length;
+                case "Protein N-term":
+                case "N-term":
+                    if (leadingAA == null) throw new ArgumentException("Error in parsing N-term mod: " + modString);
+                    return leadingAA.ToString();
 
-                    // int to add is startIndex - current position + 1 (one based indexing)
-                    int positionToAddToDict = 1 + startIndex - currentPosition;
-                    modDict.Add(positionToAddToDict, ParseMaxQuantMod(modString));
+                case "Protein C-term":
+                case "C-term":
+                    if (trailingAA == null) throw new ArgumentException("Error in parsing C-term mod: " + modString);
+                    return trailingAA.ToString();
 
-                    currentPosition += startIndex + captureLength;
-                }
-                return true;
+                default:
+                    return "X";
             }
-
-            modDict = null;
-            return false;
-
         }
-
-        /// <summary>
-        /// Returns a Modification object that most closely matches the modification
-        /// found in a MaxQuant results file. Currently handles N and C terminal modifications
-        /// in a very ad-hoc way, TODO: Refactor for terminal mods
-        /// </summary>
-        /// <param name="modString">A MaxQuant modification, in the form of (Mod Name (Location))</param>
-        /// <returns>A Modification object that most closely matches the input string</returns>
-        public static Modification ParseMaxQuantMod(string modString)
-        {
-            if (MaxQuantToMetaModDictionary == null) MaxQuantToMetaModDictionary = new();
-
-            if (MaxQuantToMetaModDictionary.TryGetValue(modString, out var metaMod))
-            {
-                return metaMod;
-            }
-
-            string modificationPattern = @"\((.*)\(";
-            Regex modRegex = new(modificationPattern);
-            string mod = modRegex.Match(modString).Groups[1].Value;
-
-            string location = TranslateMaxQuantPosition(modString);
-
-            // Search MM modifications to find the closest match
-            metaMod = GlobalVariables.AllModsKnown.
-                OrderBy(m => ComputeLevenshteinDistance(mod, m.OriginalId)).
-                Where(m => m.Target.ToString().Equals(location) | m.Target.ToString().Equals("X")).
-                FirstOrDefault();
-
-            if (metaMod != null) MaxQuantToMetaModDictionary.Add(modString, metaMod);
-            return metaMod;
-
-        }
-
-        public static Dictionary<string, Modification> MaxQuantToMetaModDictionary { get; set; }
 
         // Ripped straight from StackOverflow:
         // https://stackoverflow.com/questions/13793560/find-closest-match-to-input-string-in-a-list-of-strings
@@ -649,36 +703,7 @@ namespace EngineLayer.PsmTsv
             return d[n, m];
         }
 
-        /// <summary>
-        /// Translates a position given by MaxQuant to the Metamorpheus format
-        /// </summary>
-        /// <param name="location"> MaxQuant position as a trimmed string</param>
-        /// <returns> Position in the MetaMorpheus format</returns>
-        public static string TranslateMaxQuantPosition(string modString)
-        {
-            string locationPattern = @"\(.*\(([^\)]*)\)";
-            Regex locationRegex = new(locationPattern);
-            string location = locationRegex.Match(modString).Groups[1].Value;
-
-            // Assume that any 1 character location is a single amino acid
-            if (location.Length == 1) return location; 
-            // Any hyphenated location is a terminus
-            else switch (location) 
-            {
-                case "Protein N-term":
-                case "N-term":
-                    return modString[modString.Length - 1].ToString();
-
-                case "Protein C-term":
-                case "C-term": 
-                    return modString[0].ToString();
-
-                default:
-                    return "X";
-            }
-
-
-        }
+        #endregion
 
         internal static Identification GetIdentification(string line, bool silent, Dictionary<string, SpectraFileInfo> rawFileDictionary, PsmFileType fileType)
         {
@@ -906,6 +931,12 @@ namespace EngineLayer.PsmTsv
             {
                 // skip PSMs for files with no spectrum data input
                 return null;
+            }
+
+            double PEP = 0;
+            if (fileType == PsmFileType.MaxQuantEvidence)
+            {
+
             }
 
             // construct id
@@ -1251,12 +1282,6 @@ namespace EngineLayer.PsmTsv
             return type;
         }
 
-        internal static Dictionary<string, int> GetHeaderDictionary(PsmFileType fileType)
-        {
-
-
-            return new Dictionary<string, int>();
-        }
     }
 
     public class ScanHeaderInfo
