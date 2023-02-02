@@ -447,9 +447,9 @@ namespace Test
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\TestOutput");
             string settingsFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\Task Settings");
-            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\\LowResSnip_B6_mouse_11700_117500pruned.xml");
             string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
-            List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p=>p.Contains("raw")).ToList();
+            List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p=>p.Contains("mzML")).ToList();
 
             // run task
             CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
