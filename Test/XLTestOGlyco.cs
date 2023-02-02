@@ -447,19 +447,21 @@ namespace Test
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\TestOutput");
             string settingsFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\Task Settings");
+            string indexFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\DatabaseIndex");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\\LowResSnip_B6_mouse_11700_117500pruned.xml");
             string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
-            List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p=>p.Contains("mzML")).ToList();
+            List<string> rawFilePaths = Directory.GetFiles(spectraFileDirctory).Where(p => p.Contains("mzML")).ToList();
 
             // run task
             CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
 
             Directory.CreateDirectory(outputFolder);
             var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters, _glycoSearchParameters = new GlycoSearchParameters() { GlycoSearchType = GlycoSearchType.N_O_GlycanSearch, DoQuantification = true, QuantifyPpmTol = 5 } };
-            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");     
-            
+            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
+
             Directory.Delete(outputFolder, true);
             Directory.Delete(settingsFolder, true); //auto generated during task
+            Directory.Delete(indexFolder, true); //created during glyco search
         }
 
         [Test]
