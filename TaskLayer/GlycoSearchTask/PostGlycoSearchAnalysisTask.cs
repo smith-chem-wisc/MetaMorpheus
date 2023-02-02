@@ -51,7 +51,7 @@ namespace TaskLayer
                 var allPsmsSingle = allPsms.Where(p => p.Routes == null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
                 ProteinAnalysis(allPsms);
-                WriteProteinResults();
+                WriteProteinResults(allPsms);
 
                 var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
                 WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
@@ -147,6 +147,26 @@ namespace TaskLayer
             // convert gsms to psms
             List<PeptideSpectralMatch> allPsms = gsms.Select(p => p as PeptideSpectralMatch).ToList();
 
+            // get PSMs to pass to FlashLFQ
+            List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr = new();
+            if (allPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
+            {
+                unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
+                    p.FdrInfo.PEP_QValue <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+            }
+            else
+            {
+                unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
+                    p.FdrInfo.QValue <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+            }
+
+            //group psms by file
+            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
+
             if (Parameters.GlycoSearchParameters.DoParsimony)
             {
                 string fileName = "AllProteinGroups.tsv";
@@ -169,12 +189,12 @@ namespace TaskLayer
                 }
 
                 //write the individual result files for each datafile
-                foreach (var fullFilePath in PsmsGroupedByFile.Select(v => v.Key))
+                foreach (var fullFilePath in psmsGroupedByFile.Select(v => v.Key))
                 {
                     string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
-                    List<PeptideSpectralMatch> psmsForThisFile = PsmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
-                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
+                    List<PeptideSpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
+                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.GlycoSearchParameters.SilacLabels)).ToList();
 
                     ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
                         Parameters.GlycoSearchParameters.NoOneHitWonders, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent,
