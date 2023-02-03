@@ -196,9 +196,17 @@ namespace TaskLayer
             {
                 //someday when we compute PEP for glyco we can amend this
                 unambiguousPsmsBelowOnePercentFdr = gsms.Where(p =>
-                    p.FdrInfo.QValue <= 0.01
+                    p.FdrInfo.PEP_QValue <= 0.01
                     && !p.IsDecoy
                     && p.FullSequence != null).Select(p=>(PeptideSpectralMatch)p).ToList(); //if ambiguous, there's no full sequence
+            }
+            else
+            {
+                //someday when we compute PEP for glyco we can amend this
+                unambiguousPsmsBelowOnePercentFdr = gsms.Where(p =>
+                    p.FdrInfo.QValue <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null).Select(p => (PeptideSpectralMatch)p).ToList(); //if ambiguous, there's no full sequence
             }
 
             // pass protein group info for each PSM
