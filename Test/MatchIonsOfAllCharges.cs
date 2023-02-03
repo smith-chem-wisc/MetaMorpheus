@@ -14,6 +14,8 @@ using Chemistry;
 using System;
 using MassSpectrometry;
 using Nett;
+using EngineLayer.Gptmd;
+using static System.Net.WebRequestMethods;
 
 namespace Test
 {
@@ -357,12 +359,12 @@ namespace Test
 
             //we'll make a copy so that when we search this copy, we get enough psms to compute pep q-value. It gets deleted below.
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput\rawCopy.mzML");
-            File.Copy(raw, rawCopy);
+            System.IO.File.Copy(raw, rawCopy);
             
             EverythingRunnerEngine MassSpectraFile = new(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw, rawCopy }, new List<DbForTask> { db }, thisTaskOutputFolder);
 
             MassSpectraFile.Run();
-            File.Delete(rawCopy);
+            System.IO.File.Delete(rawCopy);
             var list = Directory.GetFiles(thisTaskOutputFolder, "*.*", SearchOption.AllDirectories);
             string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
             var lib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
@@ -380,7 +382,7 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { db,new DbForTask(libPath, false) }, outputDir);
             engine.Run();
             var test11 = Path.Combine(outputDir, @"ClassicSearch\AllPSMs.psmtsv");
-            string[] results = File.ReadAllLines(test11);
+            string[] results = System.IO.File.ReadAllLines(test11);
             string[] split = results[0].Split('\t');
             int ind = Array.IndexOf(split, "Normalized Spectral Angle");
             int indOfTarget = Array.IndexOf(split, "Decoy/Contaminant/Target");
@@ -418,13 +420,13 @@ namespace Test
 
 
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary\rawCopy.mzML");
-            File.Copy(raw, rawCopy);
+            System.IO.File.Copy(raw, rawCopy);
 
             EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw, rawCopy }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db,false) }, thisTaskOutputFolder);
 
             UpdateLibrary.Run();
 
-            File.Delete(rawCopy);
+            System.IO.File.Delete(rawCopy);
             var list = Directory.GetFiles(thisTaskOutputFolder, "*.*", SearchOption.AllDirectories);
             string matchingvalue = list.Where(p => p.Contains("updateSpectralLibrary")).First().ToString();
             var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
@@ -468,5 +470,27 @@ namespace Test
             Assert.That(decoySpectum[2].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[2].NeutralTheoreticalProduct.FragmentNumber == 3 && decoySpectum[2].Intensity == 3);
             Assert.That(decoySpectum[3].NeutralTheoreticalProduct.ProductType == ProductType.b && decoySpectum[3].NeutralTheoreticalProduct.FragmentNumber == 4 && decoySpectum[3].Intensity == 4);
         }
+
+        [Test]
+
+        public static void TestLibraryExistAfterGPTMDsearch()
+        {
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary");
+            _ = Directory.CreateDirectory(thisTaskOutputFolder);
+            SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
+
+   
+            string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibrary.msp");
+            
+            GptmdTask GptmdTask = new();
+            MyTaskResults afterGPTMD = GptmdTask.RunTask(thisTaskOutputFolder, new List<DbForTask> { new DbForTask(db, false), new DbForTask(lib, false) }, new List<string> { raw }, "test");
+            Assert.That(afterGPTMD.NewDatabases.Count > 0);
+            Assert.That(afterGPTMD.NewDatabases.Select(p => p.IsSpectralLibrary == true).ToList().Count() > 0);
+
+            Directory.Delete(thisTaskOutputFolder, true);
+        }
+       
     }
 }
