@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using FlashLFQ;
 using Proteomics.ProteolyticDigestion;
+using Easy.Common.Extensions;
 
 namespace TaskLayer
 {
@@ -130,7 +131,9 @@ namespace TaskLayer
 
         private void QuantificationAnalysis(List<GlycoSpectralMatch> gsms)
         {
-            if (!Parameters.GlycoSearchParameters.DoQuantification)
+            List<string> extensions = Parameters.CurrentRawFileList.Select(f => Path.GetExtension(f)).ToList();
+            
+            if (!Parameters.GlycoSearchParameters.DoQuantification || Parameters.CurrentRawFileList.Select(f => Path.GetExtension(f)).ToList().Any(f=>f == ".mgf"))//if there are mgf files then dont do quant
             {
                 return;
             }
