@@ -99,6 +99,24 @@
     <None Update="GlycoTestData\nglyco_f5.psmtsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\FourMucins_NoSigPeps_FASTA.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\P02649.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
