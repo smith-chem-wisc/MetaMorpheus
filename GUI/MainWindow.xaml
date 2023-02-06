@@ -374,7 +374,7 @@
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>
-                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="60"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
@@ -396,7 +396,7 @@
                             Spectral libraries
                        </Hyperlink>
 
-                       in .msp format can be added to improve search results.>
+                       in .msp format can be added to improve search results.
                     </TextBlock>
 
                     <!--Buttons to add databases-->
