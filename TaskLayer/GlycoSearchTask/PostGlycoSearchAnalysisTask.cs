@@ -16,7 +16,6 @@ namespace TaskLayer
     {
         public PostGlycoSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
-        private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
         public PostGlycoSearchAnalysisTask() : base(MyTask.GlycoSearch)
         {
         }
