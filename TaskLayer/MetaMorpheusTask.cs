@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using EngineLayer;
+using EngineLayer.Gptmd;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
@@ -13,6 +14,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
@@ -652,8 +654,22 @@ namespace TaskLayer
 
         protected static void WriteSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
+            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            string spectrumFilePath = outputFolder + "\\spectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var x in spectrumLibrary)
+                {
+                    output.WriteLine(x.ToString());
+                }
 
-            string spectrumFilePath = outputFolder + "\\spectralLibrary.msp";
+            }
+        }
+
+        protected string UpdateSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
+        {
+            var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
+            string spectrumFilePath = outputFolder + "\\updateSpectralLibrary" +"_" + startTimeForAllFilenames + ".msp";
             using (StreamWriter output = new StreamWriter(spectrumFilePath))
             {
 
@@ -663,6 +679,7 @@ namespace TaskLayer
                 }
 
             }
+            return spectrumFilePath;
         }
 
         protected void ReportProgress(ProgressEventArgs v)
