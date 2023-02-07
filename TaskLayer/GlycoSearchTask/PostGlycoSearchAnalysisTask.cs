@@ -175,13 +175,6 @@ namespace TaskLayer
                 string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
                 WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
 
-                // write all individual file results to subdirectory
-                // local protein fdr, global parsimony, global psm fdr
-                if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.GlycoSearchParameters.WriteIndividualFiles))
-                {
-                    Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
-                }
-
                 //write the individual result files for each datafile
                 foreach (var fullFilePath in psmsGroupedByFile.Select(v => v.Key))
                 {
@@ -197,13 +190,6 @@ namespace TaskLayer
                     subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
                     Parameters.GlycoSearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
-
-                    // write individual spectra file protein groups results to tsv
-                    if (Parameters.GlycoSearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
-                    {
-                        writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
-                        WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
-                    }
 
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }));
                 }
