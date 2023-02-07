@@ -45,10 +45,10 @@ namespace TaskLayer
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
                 && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
 
-            ProteinAnalysis(allPsms);
-            WriteProteinResults(allPsms);
+            ProteinAnalysis(filteredPeptidesForOutput);
+            WriteProteinResults(filteredPeptidesForOutput);
             var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
-            WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
+            WriteFile.WritePsmGlycoToTsv(filteredPeptidesForOutput, writtenFileSingle, 1);
             FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
 
             if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch)
@@ -175,24 +175,6 @@ namespace TaskLayer
                 string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
                 WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
 
-                //write the individual result files for each datafile
-                foreach (var fullFilePath in psmsGroupedByFile.Select(v => v.Key))
-                {
-                    string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
-
-                    List<PeptideSpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
-                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath)).ToList();
-
-                    ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
-                        Parameters.GlycoSearchParameters.NoOneHitWonders, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent,
-                        false, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }).Run();
-
-                    subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
-
-                    Parameters.GlycoSearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
-
-                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }));
-                }
             }
         }
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
