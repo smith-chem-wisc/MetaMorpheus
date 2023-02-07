@@ -29,9 +29,11 @@ namespace GuiFunctions
             "Histogram of Precursor Masses",
             "Histogram of Precursor m/z",
             "Histogram of Hydrophobicity scores",
+            "Histogram of Predicted Precursor Electrophoretic Mobility",
             "Precursor PPM Error vs. RT",
             "Histogram of PTM Spectral Counts",
-            "Predicted RT vs. Observed RT"
+            "Predicted RT vs. Observed RT",
+            "Predicted Electrophoretic Mobility vs. Observed MT (CZE)"
         };
 
         private static Dictionary<ProductType, OxyColor> productTypeDrawColors = new Dictionary<ProductType, OxyColor>
@@ -112,6 +114,9 @@ namespace GuiFunctions
                 case "Histogram of Hydrophobicity scores":
                     histogramPlot(8);
                     break;
+                case "Histogram of Predicted Precursor Electrophoretic Mobility":
+                    histogramPlot(9);
+                    break;
                 case "Precursor PPM Error vs. RT":
                     linePlot(1);
                     break;
@@ -121,6 +126,10 @@ namespace GuiFunctions
                 case "Predicted RT vs. Observed RT":
                     linePlot(3);
                     break;
+                case "Predicted Electrophoretic Mobility vs. Observed MT (CZE)":
+                    linePlot(4);
+                    break;
+
             }
         }
 
@@ -139,7 +148,7 @@ namespace GuiFunctions
             {
                 case 1: // Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)
                     xAxisTitle = "Precursor error (ppm)";
-                    binSize = 0.1;
+                    binSize = 1;
                     foreach (string key in psmsBySourceFile.Keys)
                     {
                         numbersBySourceFile.Add(key, psmsBySourceFile[key].Where(p => !p.MassDiffDa.Contains("|") && Math.Round(double.Parse(p.MassDiffDa, CultureInfo.InvariantCulture), 0) == 0).Select(p => double.Parse(p.MassDiffPpm, CultureInfo.InvariantCulture)));
@@ -228,6 +237,24 @@ namespace GuiFunctions
                         dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
                     }
                     break;
+                case 9: // Histogram of predicted Electrophoretic mobility
+                    xAxisTitle = "Predicted Electrophoretic Mobility";
+                    binSize = 2;
+                    labelAngle = -50;
+
+                    foreach (string key in psmsBySourceFile.Keys)
+                    {
+                        var values = new List<double>();
+                        foreach (var psm in psmsBySourceFile[key])
+                        {
+                            values.Add(CZE.PredictedElectrophoreticMobility(psm.BaseSeq.Split("|")[0], psm.PrecursorMass));
+
+                        }
+                        numbersBySourceFile.Add(key, values);
+                        var results = numbersBySourceFile[key].GroupBy(p => roundToBin(p, binSize)).OrderBy(p => p.Key).Select(p => p);
+                        dictsBySourceFile.Add(key, results.ToDictionary(p => p.Key.ToString(), v => v.Count()));
+                    }
+                    break;
             }
 
             String[] category;  // for labeling bottom axis
@@ -260,7 +287,20 @@ namespace GuiFunctions
                 // add a column series for each file
                 foreach (string key in dictsBySourceFile.Keys)
                 {
-                    ColumnSeries column = new ColumnSeries { ColumnWidth = 200, IsStacked = true, Title = key, TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}" };
+                    ColumnSeries column = new ColumnSeries { ColumnWidth = 200, Title = key, TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}" };
+                    if (MetaDrawSettings.yAxisLogScale)
+                    {
+                        column.BaseValue = 1;
+                    }
+                    if (MetaDrawSettings.stackedBool)
+                    {
+                        column.IsStacked = true;
+                    }
+                    else
+                    {
+                        column.IsStacked = false;
+                    }
+
                     foreach (var d in dictsBySourceFile[key])
                     {
                         int id = categoryIDs[d.Key];
@@ -298,7 +338,22 @@ namespace GuiFunctions
                 // add a column series for each file
                 foreach (string key in dictsBySourceFile.Keys)
                 {
-                    var column = new ColumnSeries { ColumnWidth = 200, IsStacked = true, Title = key, TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}" };
+                    var column = new ColumnSeries { ColumnWidth = 200, Title = key, TrackerFormatString = "Bin: {bin}\n{0}: {2}\nTotal: {total}"};
+                    //If the scale is logarithmic, the BaseValue needs to be one to avoid log(0)
+                    if (MetaDrawSettings.yAxisLogScale)
+                    {
+                        column.BaseValue = 1;
+                    }
+
+                    if (MetaDrawSettings.stackedBool)
+                    {
+                        column.IsStacked = true;
+                    }
+                    else
+                    {
+                        column.IsStacked = false;
+                    }
+
                     foreach (var d in dictsBySourceFile[key])
                     {
                         int bin = int.Parse(d.Key);
@@ -308,6 +363,8 @@ namespace GuiFunctions
                 }
             }
 
+
+          
             // add axes
             privateModel.Axes.Add(new CategoryAxis
             {
@@ -317,7 +374,17 @@ namespace GuiFunctions
                 GapWidth = 0.3,
                 Angle = labelAngle,
             });
-            privateModel.Axes.Add(new LinearAxis { Title = yAxisTitle, Position = AxisPosition.Left, AbsoluteMinimum = 0 });
+
+            if (MetaDrawSettings.yAxisLogScale)
+            {
+                //Need to set minimum equal to 1 to avoid log(0) errors. Columns with 0 observations will not be displayed.
+                privateModel.Axes.Add(new LogarithmicAxis() { Title = yAxisTitle, Position = AxisPosition.Left, AbsoluteMinimum = 0, Minimum = 1});
+            }
+            else
+            {
+                privateModel.Axes.Add(new LinearAxis { Title = yAxisTitle, Position = AxisPosition.Left, AbsoluteMinimum = 0 });
+            }
+            
         }
 
         private void linePlot(int plotType)
@@ -373,6 +440,23 @@ namespace GuiFunctions
                         {
                             variantxy.Add(new Tuple<double, double, string>(sSRCalc3.ScoreSequence(new PeptideWithSetModifications(psm.BaseSeq.Split('|')[0], null)),
                             (double)psm.RetentionTime, psm.FullSequence));
+                        }
+                    }
+                    break;
+                case 4: // Predicted electrophoretic mobility vs. Observed MT (CZE)
+                    yAxisTitle = "Predicted Electrophoretic Mobility";
+                    xAxisTitle = "Observed migration time";
+                    foreach (var psm in allPsms)
+                    {
+                        if (psm.IdentifiedSequenceVariations == null || psm.IdentifiedSequenceVariations.Equals(""))
+                        {
+                            xy.Add(new Tuple<double, double, string>(CZE.PredictedElectrophoreticMobility(psm.BaseSeq.Split('|')[0], psm.PrecursorMass),
+                                (double)psm.RetentionTime, psm.FullSequence));
+                        }
+                        else
+                        {
+                            variantxy.Add(new Tuple<double, double, string>(CZE.PredictedElectrophoreticMobility(psm.BaseSeq.Split('|')[0], psm.PrecursorMass),
+                                (double)psm.RetentionTime, psm.FullSequence));
                         }
                     }
                     break;

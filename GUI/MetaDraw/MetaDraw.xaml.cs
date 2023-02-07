@@ -23,6 +23,9 @@ using System.Windows.Data;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Easy.Common.Extensions;
+using Org.BouncyCastle.Asn1.Crmf;
+using OxyPlot.Wpf;
 
 namespace MetaMorpheusGUI
 {
@@ -43,6 +46,8 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private SettingsViewModel SettingsView;
+        private string searchString = string.Empty;
+        private bool plotInverseBool = false;
 
         public MetaDraw()
         {
@@ -737,13 +742,47 @@ namespace MetaMorpheusGUI
             Dictionary<string, ObservableCollection<PsmFromTsv>> psmsBSF = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
             foreach (string fileName in selectSourceFileListBox.SelectedItems)
             {
-                psmsBSF.Add(fileName, MetaDrawLogic.PsmsGroupedByFile[fileName]);
+                //pull out those PSMs for each file that have a full sequence matching the filter
+                var filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName]
+                    .Where(p => p.FullSequence.ToUpper().Contains(searchString));
+                if (!filteredPSMsForPlotsBSF.Any()) continue;
+
+                //If the inverse box is checked, take the opposite PSMs
+                if (plotInverseBool)
+                {
+                    filteredPSMsForPlotsBSF = MetaDrawLogic.PsmsGroupedByFile[fileName]
+                        .Where(p => !p.FullSequence.ToUpper().Contains(searchString));
+                }
+
+                //Save PSMs as observable collection
+                var filteredPSMsForPLotsBSFOC = new ObservableCollection<PsmFromTsv>(filteredPSMsForPlotsBSF);
+                psmsBSF.Add(fileName, filteredPSMsForPLotsBSFOC);
                 foreach (PsmFromTsv psm in MetaDrawLogic.PsmsGroupedByFile[fileName])
                 {
                     psms.Add(psm);
                 }
             }
-            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, psms, psmsBSF));
+
+            //Filter all PSMs that pass the filter
+            var filteredPSMsForPlots = psms.Where(p => p.FullSequence.ToUpper().Contains(searchString));
+
+            //check that there are some PSMs
+            if (!filteredPSMsForPlots.Any())
+            {
+                MessageBox.Show("No PSMs pass the filter");
+                return;
+            }
+
+            //If the inverse box is checked, take the opposite PSMs
+            if (plotInverseBool)
+            {
+                filteredPSMsForPlots = psms.Where(p => !p.FullSequence.ToUpper().Contains(searchString.ToUpper()));
+            }
+
+            //Save as observable collection
+            var filteredPSMsForPlotsOC = new ObservableCollection<PsmFromTsv>(filteredPSMsForPlots);
+            //Create the PlotModelStat with the filtered psms
+            PlotModelStat plot = await Task.Run(() => new PlotModelStat(plotName, filteredPSMsForPlotsOC, psmsBSF));
             plotViewStat.DataContext = plot;
             PlotViewStat_SizeChanged(plotViewStat, null);
         }
@@ -1016,7 +1055,7 @@ namespace MetaMorpheusGUI
         /// <param name="value">true = enabled, false = disable</param>
         private void ToggleButtonsEnabled(bool value)
         {
-            loadFiles.IsEnabled = value;
+            loadFiles.IsEnabled = value; 
             selectSpectraFileButton.IsEnabled = value;
             selectPsmFileButton.IsEnabled = value;
             selectSpecLibraryButton.IsEnabled = value;
@@ -1024,6 +1063,64 @@ namespace MetaMorpheusGUI
             resetSpectraFileButton.IsEnabled = value;
             resetSpectraFileButton.IsEnabled = value;
             ExportButton.IsEnabled = value;
+        }
+
+        private void YAxisLogScaleCheckbox_OnChecked(object sender, RoutedEventArgs e)
+        {
+            if (MetaDrawSettings.stackedBool)
+            {
+                MessageBox.Show("Stacked bars with logarithmic scale not recommended");
+            }
+            MetaDrawSettings.yAxisLogScale = yAxisLogScaleCheckbox.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void YAxisLogScaleCheckbox_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            MetaDrawSettings.yAxisLogScale = yAxisLogScaleCheckbox.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void StackedBars_OnChecked(object sender, RoutedEventArgs e)
+        {
+            if (MetaDrawSettings.yAxisLogScale)
+            {
+                MessageBox.Show("Stacked bars with logarithmic scale not recommended");
+            }
+            MetaDrawSettings.stackedBool = stackedBars.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void StackedBars_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            MetaDrawSettings.stackedBool = stackedBars.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void TextBoxBase_OnTextChanged(object sender, TextChangedEventArgs e)
+        {
+            string txt = (sender as TextBox).Text;
+            searchString = txt.ToUpper();
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void InvertFilter_OnChecked(object sender, RoutedEventArgs e)
+        {
+            plotInverseBool = invertFilter.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
+        }
+
+        private void InvertFilter_OnUnchecked(object sender, RoutedEventArgs e)
+        {
+            plotInverseBool = invertFilter.IsChecked.Value;
+            if (MetaDrawLogic != null)
+                PlotSelected(plotsListBox, null);
         }
     }
 }
