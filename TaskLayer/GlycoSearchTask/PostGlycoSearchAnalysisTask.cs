@@ -6,9 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Easy.Common.Extensions;
-using FlashLFQ;
-using Proteomics.ProteolyticDigestion;
+using MathNet.Numerics;
 
 namespace TaskLayer
 {
@@ -16,7 +14,7 @@ namespace TaskLayer
     {
         public PostGlycoSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
-        public PostGlycoSearchAnalysisTask() : base(MyTask.Search)
+        public PostGlycoSearchAnalysisTask() : base(MyTask.GlycoSearch)
         {
         }
 
@@ -27,16 +25,34 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<GlycoSpectralMatch> allPsms, CommonParameters commonParameters, GlycoSearchParameters glycoSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
+            var allPsmsSingle = allPsms.OrderByDescending(p => p.Score).ToList();
+
+            if (!Parameters.GlycoSearchParameters.WriteDecoys)
+            {
+                allPsmsSingle.RemoveAll(b => b.IsDecoy);
+            }
+            if (!Parameters.GlycoSearchParameters.WriteContaminants)
+            {
+                allPsmsSingle.RemoveAll(b => b.IsContaminant);
+            }
+            bool qValueUsedAsFilter = !CommonParameters.QValueOutputFilter.IsLarger(CommonParameters.PepQValueOutputFilter, 3);
+            string filterType = qValueUsedAsFilter ? "s with q-value = " : "s with pep q-value = ";
+            double filterCutoffForResultsCounts = qValueUsedAsFilter ? Math.Min(0.01, CommonParameters.QValueOutputFilter) : Math.Min(0.01, CommonParameters.PepQValueOutputFilter);
+
+            SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
+
+            var filteredPeptidesForOutput = allPsmsSingle.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
+                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
+                && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
+
+            ProteinAnalysis(allPsms);
+            WriteProteinResults(allPsms);
+            var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
+            WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
+            FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
+
             if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.NGlycanSearch)
             {
-                var allPsmsSingle = allPsms.Where(p => p.NGlycan == null ).OrderByDescending(p => p.Score).ToList();
-                SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-                ProteinAnalysis(allPsms);
-
-                var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
-                WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
-                FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
-
                 var allPsmsGly = allPsms.Where(p => p.NGlycan != null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
 
@@ -48,15 +64,6 @@ namespace TaskLayer
             }
             else if (glycoSearchParameters.GlycoSearchType == GlycoSearchType.OGlycanSearch)
             {
-                var allPsmsSingle = allPsms.Where(p => p.Routes == null ).OrderByDescending(p => p.Score).ToList();
-                SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-                ProteinAnalysis(allPsms);
-                WriteProteinResults(allPsms);
-
-                var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
-                WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
-                FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
-
                 var allPsmsGly = allPsms.Where(p => p.Routes != null ).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
 
@@ -78,13 +85,6 @@ namespace TaskLayer
             }
             else
             {
-                var allPsmsSingle = allPsms.Where(p => p.NGlycan == null && p.Routes == null).OrderByDescending(p => p.Score).ToList();
-                SingleFDRAnalysis(allPsmsSingle, commonParameters, new List<string> { taskId });
-
-                var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
-                WriteFile.WritePsmGlycoToTsv(allPsmsSingle, writtenFileSingle, 1);
-                FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
-
                 var allPsmsNGly = allPsms.Where(p => p.NGlycan != null).OrderByDescending(p => p.Score).ToList();
                 SingleFDRAnalysis(allPsmsNGly, commonParameters, new List<string> { taskId });
 
@@ -144,37 +144,32 @@ namespace TaskLayer
 
         private void WriteProteinResults(List<GlycoSpectralMatch> gsms)
         {
-            // convert gsms to psms
-            List<PeptideSpectralMatch> allPsms = gsms.Select(p => p as PeptideSpectralMatch).ToList();
-
-            // get PSMs to pass to FlashLFQ
-            List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr = new();
-            if (allPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
-            {
-                unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
-                    p.FdrInfo.PEP_QValue <= 0.01
-                    && !p.IsDecoy
-                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-            }
-            else
-            {
-                unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
-                    p.FdrInfo.QValue <= 0.01
-                    && !p.IsDecoy
-                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-            }
-
-            //group psms by file
-            var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
-
             if (Parameters.GlycoSearchParameters.DoParsimony)
             {
                 string fileName = "AllProteinGroups.tsv";
 
-                if (Parameters.GlycoSearchParameters.DoQuantification)
+                // convert gsms to psms
+                List<PeptideSpectralMatch> allPsms = gsms.Select(p => p as PeptideSpectralMatch).ToList();
+
+                // get PSMs to pass to FlashLFQ
+                List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr = new();
+                if (allPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
                 {
-                    fileName = "AllQuantifiedProteinGroups.tsv";
+                    unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
+                        p.FdrInfo.PEP_QValue <= 0.01
+                        && !p.IsDecoy
+                        && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
                 }
+                else
+                {
+                    unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
+                        p.FdrInfo.QValue <= 0.01
+                        && !p.IsDecoy
+                        && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
+                }
+
+                //group psms by file
+                var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
 
                 // write protein groups to tsv
                 string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
@@ -182,8 +177,7 @@ namespace TaskLayer
 
                 // write all individual file results to subdirectory
                 // local protein fdr, global parsimony, global psm fdr
-                if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.GlycoSearchParameters.WriteIndividualFiles
-                    || Parameters.GlycoSearchParameters.WriteMzId || Parameters.GlycoSearchParameters.WritePepXml))
+                if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.GlycoSearchParameters.WriteIndividualFiles))
                 {
                     Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
                 }
@@ -194,7 +188,7 @@ namespace TaskLayer
                     string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
 
                     List<PeptideSpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
-                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.GlycoSearchParameters.SilacLabels)).ToList();
+                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath)).ToList();
 
                     ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
                         Parameters.GlycoSearchParameters.NoOneHitWonders, Parameters.GlycoSearchParameters.ModPeptidesAreDifferent,
@@ -202,51 +196,13 @@ namespace TaskLayer
 
                     subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
-                    Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
+                    Parameters.GlycoSearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
 
                     // write individual spectra file protein groups results to tsv
                     if (Parameters.GlycoSearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                     {
                         writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
-                    }
-
-                    // write mzID
-                    if (Parameters.GlycoSearchParameters.WriteMzId)
-                    {
-                        Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-
-                        string mzidFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".mzID");
-                        if (Parameters.CurrentRawFileList.Count > 1)
-                        {
-                            mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
-                        }
-                        MzIdentMLWriter.WriteMzIdentMl(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
-                                                                         && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList(),
-                            subsetProteinGroupsForThisFile, Parameters.VariableModifications, Parameters.FixedModifications, Parameters.GlycoSearchParameters.SilacLabels,
-                            new List<Protease> { CommonParameters.DigestionParams.Protease }, CommonParameters.QValueOutputFilter, CommonParameters.ProductMassTolerance,
-                            CommonParameters.PrecursorMassTolerance, CommonParameters.DigestionParams.MaxMissedCleavages, mzidFilePath,
-                            Parameters.GlycoSearchParameters.IncludeModMotifInMzid);
-
-                        FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-                    }
-
-                    // write pepXML
-                    if (Parameters.GlycoSearchParameters.WritePepXml)
-                    {
-                        Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-
-                        string pepXMLFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".pep.XML");
-                        if (Parameters.CurrentRawFileList.Count > 1)
-                        {
-                            pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
-                        }
-
-                        PepXMLWriter.WritePepXml(psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
-                                                                         && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList(), Parameters.DatabaseFilenameList, Parameters.VariableModifications, Parameters.FixedModifications,
-                            CommonParameters, pepXMLFilePath, CommonParameters.QValueOutputFilter);
-
-                        FinishedWritingFile(pepXMLFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
 
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }));

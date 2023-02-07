@@ -11,6 +11,8 @@ using System.Linq;
 using MzLibUtil;
 using EngineLayer.FdrAnalysis;
 using System;
+using FlashLFQ;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -194,9 +196,48 @@ namespace TaskLayer
                 }
             }
 
-            PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask();
+            GlycoSearchParameters gsp = new()
+            {
+                OGlycanDatabasefile = _glycoSearchParameters.OGlycanDatabasefile,
+                NGlycanDatabasefile = _glycoSearchParameters.NGlycanDatabasefile,
+                GlycoSearchType = _glycoSearchParameters.GlycoSearchType,
+                OxoniumIonFilt = _glycoSearchParameters.OxoniumIonFilt,
+                DecoyType = _glycoSearchParameters.DecoyType,
+                GlycoSearchTopNum = _glycoSearchParameters.GlycoSearchTopNum,
+                MaximumOGlycanAllowed = _glycoSearchParameters.MaximumOGlycanAllowed,
 
+                DoParsimony = _glycoSearchParameters.DoParsimony,
+                NoOneHitWonders = _glycoSearchParameters.DoParsimony,
+                ModPeptidesAreDifferent = _glycoSearchParameters.ModPeptidesAreDifferent,
+
+                WriteIndividualFiles = _glycoSearchParameters.WriteIndividualFiles,
+                WriteDecoys = _glycoSearchParameters.WriteDecoys,
+                WriteContaminants = _glycoSearchParameters.WriteContaminants
+            };
+
+            PostGlycoSearchAnalysisParameters pgsap = new()
+            {
+                GlycoSearchTaskResults = MyTaskResults,
+                SearchTaskId = taskId,
+                GlycoSearchParameters = gsp,
+                ProteinList = proteinList,
+                VariableModifications = variableModifications,
+                FixedModifications = fixedModifications,
+                AllPsms = filteredAllPsms.OrderByDescending(p => p.Score).ToList(),
+                OutputFolder = OutputFolder,
+                FileSettingsList = fileSettingsList,
+                DatabaseFilenameList = dbFilenameList,
+                CurrentRawFileList = currentRawFileList
+            };
+            
+            PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask()
+            {
+                Parameters = pgsap,
+                FileSpecificParameters = this.FileSpecificParameters,
+                CommonParameters = this.CommonParameters
+            };
             postGlycoSearchAnalysisTask.FileSpecificParameters = this.FileSpecificParameters;
+
             return postGlycoSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.Score).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
         }

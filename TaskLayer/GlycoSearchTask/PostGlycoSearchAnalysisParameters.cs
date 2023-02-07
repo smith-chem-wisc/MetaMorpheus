@@ -1,16 +1,11 @@
 ﻿
-using EngineLayer;
 using EngineLayer.GlycoSearch;
 using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace TaskLayer.GlycoSearchTask
+namespace TaskLayer
 {
     public class PostGlycoSearchAnalysisParameters
     {

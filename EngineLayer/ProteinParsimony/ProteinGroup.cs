@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using ThermoFisher.CommonCore.Data;
 
 namespace EngineLayer
 {
@@ -597,7 +598,7 @@ namespace EngineLayer
             ProteinGroupName = string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Accession));
         }
 
-        public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath, List<SilacLabel> silacLabels)
+        public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath, List<SilacLabel> silacLabels = null)
         {
             var allPsmsForThisFile = new HashSet<PeptideSpectralMatch>(AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
             var allPeptidesForThisFile = new HashSet<PeptideWithSetModifications>(allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
@@ -614,7 +615,7 @@ namespace EngineLayer
             {
                 spectraFileInfo = FilesForQuantification.Where(p => p.FullFilePathWithExtension == fullFilePath).FirstOrDefault();
                 //check that file name wasn't changed (can occur in SILAC searches)
-                if (spectraFileInfo == null)
+                if (!silacLabels.IsNullOrEmpty() &&  spectraFileInfo == null)
                 {
                     foreach (SilacLabel label in silacLabels)
                     {

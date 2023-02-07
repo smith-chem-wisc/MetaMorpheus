@@ -16,18 +16,12 @@ namespace TaskLayer
             DecoyType = DecoyType.Reverse;
             GlycoSearchTopNum = 50;
             MaximumOGlycanAllowed = 4;
-            SilacLabels = false;
 
             DoParsimony = false;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
 
-            DoQuantification = false;
-
             WriteIndividualFiles = false;
-            WriteMzId = false;
-            IncludeModMotifInMzid = false;
-            WritePepXml = false;
             WriteDecoys = false;
             WriteContaminants = false;
         }
@@ -39,18 +33,13 @@ namespace TaskLayer
         public DecoyType DecoyType { get; set; }
         public int GlycoSearchTopNum { get; set; }
         public int MaximumOGlycanAllowed { get; set; }
-        public bool SilacLabels { get; set; }
 
         public bool DoParsimony { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool ModPeptidesAreDifferent { get; set; }
 
-        public bool DoQuantification { get; set; }
-
         public bool WriteIndividualFiles { get; set; }
-        public bool WriteMzId { get; set; }
-        public bool IncludeModMotifInMzid { get; set; }
-        public bool WritePepXml { get; set; }
+
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
     }
