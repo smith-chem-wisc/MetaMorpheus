@@ -3,7 +3,7 @@ TaskType = "GlycoSearch"
 [_glycoSearchParameters]
 OGlycanDatabasefile = "OGlycan.gdb"
 NGlycanDatabasefile = "NGlycan.gdb"
-GlycoSearchType = "OGlycanSearch"
+GlycoSearchType = "NGlycanSearch"
 OxoniumIonFilt = true
 DecoyType = "Reverse"
 GlycoSearchTopNum = 10

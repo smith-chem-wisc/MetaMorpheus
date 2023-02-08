@@ -13,7 +13,7 @@ namespace TaskLayer
     public class PostGlycoSearchAnalysisTask : MetaMorpheusTask
     {
         public PostGlycoSearchAnalysisParameters Parameters { get; set; }
-        private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
+        private List<ProteinGroup> ProteinGroups { get; set; }
         public PostGlycoSearchAnalysisTask() : base(MyTask.GlycoSearch)
         {
         }
@@ -147,51 +147,30 @@ namespace TaskLayer
             if (Parameters.GlycoSearchParameters.DoParsimony)
             {
                 string fileName = "AllProteinGroups.tsv";
-
-                // convert gsms to psms
-                List<PeptideSpectralMatch> allPsms = gsms.Select(p => p as PeptideSpectralMatch).ToList();
-
-                // get PSMs to pass to FlashLFQ
-                List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr = new();
-                if (allPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
-                {
-                    unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
-                        p.FdrInfo.PEP_QValue <= 0.01
-                        && !p.IsDecoy
-                        && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-                }
-                else
-                {
-                    unambiguousPsmsBelowOnePercentFdr = allPsms.Where(p =>
-                        p.FdrInfo.QValue <= 0.01
-                        && !p.IsDecoy
-                        && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-                }
-
-                //group psms by file
-                var psmsGroupedByFile = unambiguousPsmsBelowOnePercentFdr.GroupBy(p => p.FullFilePath);
-
-                // write protein groups to tsv
                 string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
                 WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
-
             }
         }
-        private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
+        private void WriteProteinGroupsToTsv(List<ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
         {
             if (proteinGroups != null && proteinGroups.Any())
             {
-                using (StreamWriter output = new StreamWriter(filePath))
+                using (StreamWriter output = new(filePath))
                 {
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
                     for (int i = 0; i < proteinGroups.Count; i++)
                     {
-                        if ((!Parameters.GlycoSearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) ||
-                            (!Parameters.GlycoSearchParameters.WriteContaminants && proteinGroups[i].IsContaminant))
+                        if(Parameters.GlycoSearchParameters.WriteDecoys && proteinGroups[i].IsDecoy && proteinGroups[i].QValue <= qValueCutoff)
                         {
+                            output.WriteLine(proteinGroups[i]);
                             continue;
                         }
-                        else if (proteinGroups[i].QValue <= qValueCutoff)
+                        else if(Parameters.GlycoSearchParameters.WriteContaminants && proteinGroups[i].IsContaminant && proteinGroups[i].QValue <= qValueCutoff)
+                        {
+                            output.WriteLine(proteinGroups[i]);
+                            continue;
+                        }
+                        else if(proteinGroups[i].QValue <= qValueCutoff)
                         {
                             output.WriteLine(proteinGroups[i]);
                         }

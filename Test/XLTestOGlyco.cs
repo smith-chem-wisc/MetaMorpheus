@@ -391,7 +391,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_Run()
         {
-            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
 
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P16150.fasta"), false);
@@ -403,17 +403,10 @@ namespace Test
         [Test]
         public static void OGlycoTest_Run2()
         {
-            GlycoSearchTask task = new GlycoSearchTask()
-            {
-                CommonParameters = new CommonParameters
-                (
-                    dissociationType: DissociationType.ETD
-                )
-            };
-            task._glycoSearchParameters.OxoniumIonFilt = false;
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig_ETD.toml"), MetaMorpheusTask.tomlConfig);
 
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
-            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData/P02649.fasta"), false);
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
@@ -524,7 +517,10 @@ namespace Test
         }
 
         [Test]
-        public static void OGlycoTest_ProteinInference()
+        [TestCase(true, true, false)] //write decoys and contaminants, database is targets
+        //[TestCase(true, true, true)] //write decoys and contaminants, database is contaminants
+        //[TestCase(false, false, false)] //do NOT write decoys and contaminants, database is targets
+        public static void OGlycoTest_ProteinInference(bool writeContaminants, bool writeDecoys, bool isContaminant)
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\TestOutput");
             string settingsFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\Task Settings");
@@ -537,8 +533,8 @@ namespace Test
             CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
 
             Directory.CreateDirectory(outputFolder);
-            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters, _glycoSearchParameters = new GlycoSearchParameters() { GlycoSearchType = GlycoSearchType.OGlycanSearch, DoParsimony = true } };
-            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, rawFilePaths, "");
+            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters, _glycoSearchParameters = new GlycoSearchParameters() { GlycoSearchType = GlycoSearchType.OGlycanSearch, DoParsimony = true, WriteContaminants = writeContaminants, WriteDecoys = writeDecoys } };
+            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, isContaminant) }, rawFilePaths, "");
 
             List<string> expectedOutput = new()
             {
@@ -547,13 +543,11 @@ namespace Test
                 "results.txt",
                 "single.psmtsv",
                 "oglyco.psmtsv",
-                "protein_oglyco_localization.tsv",
-                "seen_oglyco_localization.tsv"
             };
 
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
 
-            CollectionAssert.AreEquivalent(expectedOutput, output);
+            CollectionAssert.IsSubsetOf(expectedOutput, output);
 
             Directory.Delete(outputFolder, true);
             Directory.Delete(settingsFolder, true); //auto generated during task

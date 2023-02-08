@@ -23,6 +23,7 @@ using IO.MzML;
 using TaskLayer;
 using ThermoFisher.CommonCore.Data.Business;
 using System.Drawing;
+using Nett;
 
 namespace Test
 {
@@ -605,12 +606,11 @@ namespace Test
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\sliced_glyco_hcd_ethcd.raw");
 
-            // run task
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
+            var task = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
 
             Directory.CreateDirectory(outputFolder);
-            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters };
-            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
+
+            task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
 
             var psmFile = Path.Combine(outputFolder, @"oglyco.psmtsv");
 

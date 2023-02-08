@@ -209,7 +209,11 @@ namespace TaskLayer
                 DoParsimony = _glycoSearchParameters.DoParsimony,
                 NoOneHitWonders = _glycoSearchParameters.DoParsimony,
                 ModPeptidesAreDifferent = _glycoSearchParameters.ModPeptidesAreDifferent,
-            };
+
+                WriteIndividualFiles = _glycoSearchParameters.WriteIndividualFiles,
+                WriteDecoys = _glycoSearchParameters.WriteDecoys,
+                WriteContaminants = _glycoSearchParameters.WriteContaminants
+        };
 
             PostGlycoSearchAnalysisParameters pgsap = new()
             {
