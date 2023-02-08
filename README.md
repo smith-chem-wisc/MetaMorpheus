@@ -6,7 +6,6 @@
 [![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/MetaMorpheus/total.svg)](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
 [![Github All Releases](https://img.shields.io/docker/pulls/smithchemwisc/metamorpheus)](https://hub.docker.com/r/smithchemwisc/metamorpheus/tags?page=1&ordering=last_updated)
 
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/version.svg)](https://anaconda.org/conda-forge/metamorpheus)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/platforms.svg)](https://anaconda.org/conda-forge/metamorpheus)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/downloads.svg)](https://anaconda.org/conda-forge/metamorpheus)
