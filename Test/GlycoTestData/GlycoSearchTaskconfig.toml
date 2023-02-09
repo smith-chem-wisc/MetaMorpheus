@@ -6,14 +6,14 @@ NGlycanDatabasefile = "NGlycan.gdb"
 GlycoSearchType = "OGlycanSearch"
 OxoniumIonFilt = true
 DecoyType = "Reverse"
-GlycoSearchTopNum = 10
-MaximumOGlycanAllowed = 4
-DoParsimony = false
+GlycoSearchTopNum = 0
+MaximumOGlycanAllowed = 0
+DoParsimony = true
 NoOneHitWonders = false
 ModPeptidesAreDifferent = false
 WriteIndividualFiles = false
-WriteDecoys = false
-WriteContaminants = false
+WriteDecoys = true
+WriteContaminants = true
 
 [CommonParameters]
 TaskDescriptor = "GlycoSearchTask"

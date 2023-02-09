@@ -518,8 +518,8 @@ namespace Test
 
         [Test]
         [TestCase(true, true, false)] //write decoys and contaminants, database is targets
-        //[TestCase(true, true, true)] //write decoys and contaminants, database is contaminants
-        //[TestCase(false, false, false)] //do NOT write decoys and contaminants, database is targets
+        [TestCase(true, true, true)] //write decoys and contaminants, database is contaminants
+        [TestCase(false, false, false)] //do NOT write decoys and contaminants, database is targets
         public static void OGlycoTest_ProteinInference(bool writeContaminants, bool writeDecoys, bool isContaminant)
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\TestOutput");
@@ -533,7 +533,23 @@ namespace Test
             CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
 
             Directory.CreateDirectory(outputFolder);
-            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters, _glycoSearchParameters = new GlycoSearchParameters() { GlycoSearchType = GlycoSearchType.OGlycanSearch, DoParsimony = true, WriteContaminants = writeContaminants, WriteDecoys = writeDecoys } };
+            var glycoSearchTask = new GlycoSearchTask()
+            {
+                CommonParameters = commonParameters,
+                _glycoSearchParameters = new GlycoSearchParameters()
+                {
+                    OGlycanDatabasefile = "OGlycan.gdb",
+                    NGlycanDatabasefile = "NGlycan.gdb",
+                    GlycoSearchType = GlycoSearchType.OGlycanSearch,
+                    OxoniumIonFilt = true,
+                    DecoyType = DecoyType.Reverse,
+                    GlycoSearchTopNum = 50,
+                    MaximumOGlycanAllowed = 4,
+                    DoParsimony = true,
+                    WriteContaminants = writeContaminants,
+                    WriteDecoys = writeDecoys
+                }
+            };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, isContaminant) }, rawFilePaths, "");
 
             List<string> expectedOutput = new()
@@ -553,5 +569,6 @@ namespace Test
             Directory.Delete(settingsFolder, true); //auto generated during task
             Directory.Delete(indexFolder, true); //created during glyco search
         }
+
     }
 }
