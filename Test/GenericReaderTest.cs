@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer;
@@ -109,9 +110,147 @@ namespace Test
         }
 
         [Test]
+        public static void TestMaxQuantEvidenceReader955()
+        {
+            string experimentalDesignFilepath = @"D:\SingleCellDataSets\PXD031955\ExperimentalDesign_PXD031955.tsv";
+            List<string> rawFilePathList = new List<string>
+            {
+                @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC05_hip_cultured_neu0_125_ugul.raw",
+                @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC06_hip_cultured_neu0_25_ugul.raw",
+                @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC07_hip_cultured_neu0_25_ugul.raw",
+                @"D:\SingleCellDataSets\PXD031955\2016-04-01_SC03_hip_cultured_neu0_5_ugul.raw",
+                @"D:\SingleCellDataSets\PXD031955\2016-04-04_SC02_hip_cultured_neu0_5_ugul.raw",
+                @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC04_hip_cultured_neu0_125_ugul.raw",
+            };
+            List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilepath, rawFilePathList, out var errors);
+
+            string maxQuantEvidencePath = @"D:\SingleCellDataSets\PXD031955\combined\txt\evidence.txt";
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
+                maxQuantEvidencePath, silent: false, spectraFiles);
+
+            string maxQuantMsmsPath = @"D:\SingleCellDataSets\PXD031955\combined\txt\msms.txt";
+            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
+                maxQuantMsmsPath, spectraFiles, mbrPeaks);
+
+            // Every MBR run ID should have a corresponding PSM in the msms.txt file
+            Assert.That(mbrPeaks.Count == maxQuantPsms.Count);
+
+            PpmTolerance testTolerance = new PpmTolerance(5);
+            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
+            // matches for every psm
+            Assert.IsFalse(maxQuantPsms.Values.Any(p =>
+                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
+
+            // Writing a spectral library
+            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in maxQuantPsms.Values)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
+                spectraForSpectraLibrary.Add(standardSpectrum);
+            }
+            string spectrumFilePath = @"D:\SingleCellDataSets\PXD031955\combined\txt\spectralLibrary.msp";
+            if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var librarySpectrum in spectraForSpectraLibrary)
+                {
+                    output.WriteLine(librarySpectrum.ToString());
+                }
+            }
+
+            // Tolerances taken from MaxQuant defaults
+            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
+                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
+
+            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+                spectraFiles,
+                mbrPeaks,
+                maxQuantPsms,
+                spectrumFilePath,
+                @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\",
+                commonParams);
+
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\SingleCellDataSets\PXD031955\combined\txt\", "PeakQuantFirst");
+        }
+
+        [Test]
         public static void TestMbrAnalysisFromMaxQuant()
         {
             
+        }
+
+        [Test]
+        public static void LeetcodeScratchpad()
+        {
+            // Fruit Basket Problem
+            //int[] fruits = new int[] { 1, 1, 2, 3, 2, 2, 4, 5, 4, 5, 4, 5, 5, 2 };
+
+            //int currentPick = fruits[0];
+            //int secondPick = -1;
+            //int currentSum = 0;
+            //int cumSum = 0;
+            //int maxSum = 0;
+            //for (int i = 0; i < fruits.Length; i++)
+            //{
+            //    if (currentPick == fruits[i])
+            //    {
+            //        currentSum++;
+            //    }
+            //    else if (secondPick == fruits[i] | secondPick == -1)
+            //    {
+            //        // swap current and second
+            //        secondPick = currentPick;
+            //        currentPick = fruits[i];
+            //        cumSum += currentSum;
+            //        currentSum = 1;
+            //    }
+            //    else
+            //    {
+            //        secondPick = currentPick;
+            //        currentPick = fruits[i];
+
+            //        if (cumSum + currentSum > maxSum) maxSum = cumSum + currentSum;
+            //        cumSum = currentSum;
+            //        currentSum = 1;
+            //    }
+            //}
+
+            //// add last combination after loop
+            //if (cumSum + currentSum > maxSum) maxSum = cumSum + currentSum;
+
+            ////return maxSum;
+
+            // Jump Game II
+
+            int[] nums = new int[] { 2, 3, 1, 1, 4 };
+            int jumpMax = 0;
+            int jumpCount = 0;
+            int i = 0;
+
+            while (i != nums.Length - 1)
+            {
+                int jumpRange = i + nums[i];
+                if (jumpRange >= nums.Length - 1)
+                {
+                    jumpCount++;
+                    break;
+                }
+
+                for (int j = i; j <= jumpRange; j++)
+                {
+                    if (nums[j] + j > jumpMax)
+                    {
+                        jumpMax = nums[j] + j;
+                        i = j;
+                    }
+                }
+                jumpCount++;
+            }
+
+
+            int placeholder = 0;
+
         }
 
         [Test]
