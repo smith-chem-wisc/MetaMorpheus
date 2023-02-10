@@ -2,9 +2,7 @@
   <PropertyGroup>
     <OutputName>MetaMorpheusInstaller</OutputName>
     <OutputType>Bundle</OutputType>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
-    <DefineConstants>Debug</DefineConstants>
+    <Platforms>x64;ARM64</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.Util.wixext" Version="4.0.0-rc.2" />
