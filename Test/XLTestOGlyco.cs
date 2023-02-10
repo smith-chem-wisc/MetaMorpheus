@@ -394,55 +394,22 @@ namespace Test
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
-            // run task
-            CommonParameters commonParameters = new(
-                doPrecursorDeconvolution: true,
-                useProvidedPrecursorInfo: true,
-                deconvolutionIntensityRatio: 3,
-                deconvolutionMaxAssumedChargeState: 12,
-                deconvolutionMassTolerance: 4,
-                totalPartitions: 1,
-                productMassTolerance: 20,
-                precursorMassTolerance: 10,
-                addCompIons: false,
-                scoreCutoff: 3,
-                reportAllAmbiguity: true,
-                trimMs1Peaks: false,
-                trimMsMsPeaks: false,
-                useDeltaScore: false,
-                dissociationType: DissociationType.Custom,
-                ms2childScanDissociationType: DissociationType.Unknown,
-                ms3childScanDissociationType: DissociationType.Unknown);
-            
-            var glycoSearchTask = new GlycoSearchTask()
-            {
-                CommonParameters = commonParameters,
-                _glycoSearchParameters = new GlycoSearchParameters()
-                {
-                    OGlycanDatabasefile = "OGlycan.gdb",
-                    NGlycanDatabasefile = "NGlycan.gdb",
-                    GlycoSearchType = GlycoSearchType.OGlycanSearch,
-                    OxoniumIonFilt = false,
-                    DecoyType = DecoyType.Slide,
-                    GlycoSearchTopNum = 10,
-                    MaximumOGlycanAllowed = 4,
-                    DoParsimony = true,
-                    WriteContaminants = true,
-                    WriteDecoys = true
-                }
-            };
-
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
             Directory.Delete(outputFolder, true);
         }
 
         [Test]
         public static void OGlycoTest_Run2()
         {
-            
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run2.toml"), MetaMorpheusTask.tomlConfig);
+
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
