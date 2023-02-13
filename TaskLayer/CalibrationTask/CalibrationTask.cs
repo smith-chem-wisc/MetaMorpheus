@@ -205,6 +205,7 @@ namespace TaskLayer
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
 
                 FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                acquisitionResults = null; //we don't need these anymore
 
                 // finished calibrating this file
                 FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
