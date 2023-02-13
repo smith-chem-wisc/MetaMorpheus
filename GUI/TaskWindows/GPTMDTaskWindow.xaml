@@ -120,7 +120,7 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
-                                        <TextBox x:Name="PrecursorMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:DoubleTexBoxControl x:Name="PrecursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                             Accepted tolerance between experimental and theoretical MS1 peaks.
@@ -128,7 +128,7 @@
                                             This is a file specific parameter; calibration of spectra files will overwrite this value with the suggested tolerance(s).
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:DoubleTexBoxControl>
                                         <ComboBox x:Name="PrecursorMassToleranceComboBox" HorizontalAlignment="Left" />
                                     </StackPanel>
                                 </StackPanel>

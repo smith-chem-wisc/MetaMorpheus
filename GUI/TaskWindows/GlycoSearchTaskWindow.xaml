@@ -234,7 +234,7 @@
                                     <StackPanel>
                                         <StackPanel Orientation="Horizontal"  Margin="5">
                                             <Label x:Name="lblPrecusorMsTl"  Content="Precursor mass tolerance" />
-                                            <TextBox x:Name="PrecusorMsTlTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:DoubleTexBoxControl x:Name="PrecusorMsTlTextBox"  Width="45" />
                                             <ComboBox x:Name="cbbPrecusorMsTl" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
