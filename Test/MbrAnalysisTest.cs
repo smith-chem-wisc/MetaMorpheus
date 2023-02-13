@@ -294,8 +294,12 @@ namespace Test
 
             postSearchTask.Run();
 
-            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput\spectralLibrary.msp");
-            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput");
+            var list = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
+            var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
+            var libPath = Path.Combine(path, matchingvalue);
+
             var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
 
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("IAGQVAAANK", 2, out var spectrum));
@@ -339,12 +343,12 @@ namespace Test
 
             postSearchTask.Run();
 
-            testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
+            testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
 
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
             testLibraryWithoutDecoy.CloseConnections();
-
+           
         }
 
         [Test]
