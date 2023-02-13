@@ -218,7 +218,7 @@ namespace EngineLayer
         /// <param name="parsedHeader"></param>
         /// <param name="fileType"></param>
         public PsmFromTsv(string[] splitLine, Dictionary<string, int> parsedHeader, PsmFileType fileType, 
-            Dictionary<string, Modification> allKnownMods = null, int numFixedMods = 0)
+            Dictionary<string, Modification> allKnownMods = null, int numFixedMods = 0, bool ignoreArtifactIons = false)
         {
             if (fileType != PsmFileType.MaxQuant)
                 throw new NotImplementedException("Only MaxQuant msms.txt is currently supported");
@@ -263,7 +263,8 @@ namespace EngineLayer
                     splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
                     splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonIntensities]]
                 ),
-                BaseSeq
+                BaseSeq,
+                ignoreArtifactIons: ignoreArtifactIons
             );
 
             DeltaScore = (parsedHeader[MaxQuantMsmsHeader.DeltaScore] < 0) ? null : (double?)double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.DeltaScore]].Trim(), CultureInfo.InvariantCulture);
@@ -474,7 +475,7 @@ namespace EngineLayer
         }
 
         public static List<MatchedFragmentIon> ReadFragmentIonsFromList(List<string> peakMzs, List<string> peakIntensities,
-            string peptideBaseSequence, List<string> peakMassErrorDa = null)
+            string peptideBaseSequence, List<string> peakMassErrorDa = null, bool ignoreArtifactIons = false)
         {
             List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
 
@@ -525,6 +526,7 @@ namespace EngineLayer
                     // check for neutral loss  
                     if (ionTypeAndNumber.Contains("("))
                     {
+                        if (ignoreArtifactIons) continue;
                         string temp = ionTypeAndNumber.Replace("(", "");
                         temp = temp.Replace(")", "");
                         var split2 = temp.Split('-');

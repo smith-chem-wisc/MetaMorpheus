@@ -320,7 +320,7 @@ namespace EngineLayer.PsmTsv
         /// <param name="mbrPeaks">A dictionary with the MaxQuant format full sequence as the keys and lists of chromatographic peaks as the values</param>
         /// <returns></returns>
         public static Dictionary<string, PsmFromTsv> GetDonorPsms(string filepath, List<SpectraFileInfo> rawfiles,
-            Dictionary<string, List<ChromatographicPeak>> mbrPeaks)
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks, bool ignoreArtifactIons = false)
         {
             Dictionary<string, List<PsmFromTsv>> fullSeqToDonorsDict = mbrPeaks.
                 Where(kvp => kvp.Value.IsNotNullOrEmpty()).
@@ -344,7 +344,8 @@ namespace EngineLayer.PsmTsv
                         string convertedFullSeq = ConvertMaxQuantFullSequence(currentFullSeq, out var allKnownMods,
                             out int numFixedMods);
                         lineSplit[headerDictionary[MaxQuantMsmsHeader.FullSequence]] = convertedFullSeq;
-                        PsmFromTsv psm = new PsmFromTsv(lineSplit, headerDictionary, PsmFileType.MaxQuant, allKnownMods, numFixedMods);
+                        PsmFromTsv psm = new PsmFromTsv(lineSplit, headerDictionary, PsmFileType.MaxQuant, allKnownMods, numFixedMods,
+                            ignoreArtifactIons: ignoreArtifactIons);
                         fullSeqToDonorsDict[currentFullSeq].Add(psm);
                     }
                 }

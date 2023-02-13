@@ -41,7 +41,7 @@ namespace Test
         [Test]
         public static void TestMaxQuantEvidenceReader()
         {
-            string experimentalDesignFilepath = @"D:\HelaSingleCellQCmzML\ExperimentalDesign_rawFiles.tsv";
+            string experimentalDesignFilepath = @"D:\HelaSingleCellQCmzML\rawFiles\ExperimentalDesign.tsv";
             List<string> rawFilePathList = new List<string>
             {
                 @"D:\HelaSingleCellQCmzML\rawFiles\Ex_Auto_J3_30umTB_2ngQC_60m_2.raw",
@@ -60,13 +60,15 @@ namespace Test
             List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
                 experimentalDesignFilepath, rawFilePathList, out var errors);
 
+            Assert.That(spectraFiles.Count, Is.EqualTo(12));
+
             string maxQuantEvidencePath = @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\evidence.txt";
             Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
                 maxQuantEvidencePath, silent: false, spectraFiles);
 
             string maxQuantMsmsPath = @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\msms.txt";
             Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
-                maxQuantMsmsPath, spectraFiles, mbrPeaks);
+                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: false);
 
             // Every MBR run ID should have a corresponding PSM in the msms.txt file
             Assert.That(mbrPeaks.Count == maxQuantPsms.Count);
@@ -106,7 +108,7 @@ namespace Test
                 @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\",
                 commonParams);
 
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\", "PeakQuantFirst");
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\", "PeakQuant_Second");
         }
 
         [Test]
