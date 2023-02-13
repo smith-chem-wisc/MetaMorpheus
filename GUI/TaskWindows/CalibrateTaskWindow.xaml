@@ -71,7 +71,7 @@
                                 <StackPanel Grid.Column="1">
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="productMassToleranceLabel" Content="Product Mass Tolerance" />
-                                        <TextBox x:Name="ProductMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:DoubleTexBoxControl x:Name="ProductMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     Accepted tolerance between experimental and theoretical MS2 peaks.
@@ -79,7 +79,7 @@
                                                     For calibration, it is better to be too lenient than too strict
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:DoubleTexBoxControl>
                                         <ComboBox x:Name="ProductMassToleranceComboBox" HorizontalAlignment="Left" />
                                     </StackPanel>
                                 </StackPanel>
