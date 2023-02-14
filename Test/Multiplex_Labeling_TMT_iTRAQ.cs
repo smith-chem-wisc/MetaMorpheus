@@ -12,6 +12,8 @@ using System.IO;
 using System.Linq;
 using MzLibUtil;
 using ClassExtensions = Chemistry.ClassExtensions;
+using Nett;
+using TaskLayer;
 
 namespace Test
 {
@@ -272,5 +274,46 @@ namespace Test
                 Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass));
             }
         }
+        /// <summary>
+        /// We choose not to count diagnostic ions in the score directly. But we still want to detect and annotate them. This test shows that we identify
+        /// diagnostic ions but do not include them in the score.
+        /// 
+        /// NOTE: You can detect TMT diagnostic ions in LowCID because it lacks the resolution to isolate them.
+        /// 
+        /// </summary>
+        [Test]
+        public static void TestDoNotCountDiagnosticIonsInScore_HCD()
+        {
+            var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\TMT-Task1-SearchTaskconfig.toml");
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\TestOutput");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\VA084TQ_6.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_Test\mouseTmt.fasta");
+
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+            engineToml.Run();
+
+            string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
+
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            PsmFromTsv psm = parsedPsms.First();
+            
+
+            Assert.AreEqual(38, psm.MatchedIons.Count); //matched ions include b, y and D (diagnostic ions in TMT search)
+            Assert.AreEqual(8,psm.MatchedIons.Where(i=>i.NeutralTheoreticalProduct.ProductType == ProductType.D).Count()); //There are 8 discovered diagnostic ions
+            Assert.AreEqual(30, psm.MatchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType != ProductType.D).Count()); //There are 30 b and y ions (excluding diagnostic ions)
+            Assert.AreEqual(30.273, psm.Score); //score should only use non-diagnostic ions (start with 30 in this case).
+            Assert.AreEqual((int)psm.Score, psm.MatchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType != ProductType.D).Count()); //integer part of the MM score should match the count of non-diagnostic ions
+
+            Assert.AreEqual("VFNTTPDDLDLHVIYDVSHNIAK", psm.BaseSeq);
+            Assert.AreEqual("T", psm.DecoyContamTarget);
+            Assert.AreEqual("[Multiplex Label:TMT11 on X]VFNTTPDDLDLHVIYDVSHNIAK[Multiplex Label:TMT11 on K]", psm.FullSequence);
+            Assert.AreEqual("Mus musculus", psm.OrganismName);
+            Assert.AreEqual("full", psm.PeptideDescription);
+            Assert.AreEqual("Q99LF4", psm.ProteinAccession);
+
+            Directory.Delete(outputFolder,true);
+        }
+
     }
 }
