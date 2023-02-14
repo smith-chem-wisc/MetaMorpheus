@@ -6,7 +6,7 @@ namespace MetaMorpheusGUI
     /// <summary>
     /// This text box requires input text to be decimal only.
     /// </summary>
-    public class DoubleTexBoxControl : TextBox
+    public class DoubleTextBoxControl : TextBox
     {
         protected override void OnPreviewTextInput(TextCompositionEventArgs e)
         {
