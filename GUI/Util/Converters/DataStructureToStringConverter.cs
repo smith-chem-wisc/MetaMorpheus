@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MzLibSpectralAveraging;
 using SpectralAveraging;
 
 namespace MetaMorpheusGUI
@@ -17,7 +16,7 @@ namespace MetaMorpheusGUI
             string val = value.ToString();
 
             // spectra file processing specific
-            if (value.GetType() == typeof(SpectraFileProcessingType))
+            if (value.GetType() == typeof(SpectraFileAveragingType))
             {
                 if (val == "AverageEverynScans")
                     return "Average Every n Scans";

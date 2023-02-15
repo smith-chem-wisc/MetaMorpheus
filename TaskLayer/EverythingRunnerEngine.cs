@@ -70,13 +70,13 @@ namespace TaskLayer
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
-                if (!CurrentXmlDbFilenameList.Any())
+                if (!CurrentXmlDbFilenameList.Any() && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
                 {
                     Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
-                else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count== CurrentXmlDbFilenameList.Count)
+                else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count== CurrentXmlDbFilenameList.Count && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
                 {
                     Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(OutputFolder);

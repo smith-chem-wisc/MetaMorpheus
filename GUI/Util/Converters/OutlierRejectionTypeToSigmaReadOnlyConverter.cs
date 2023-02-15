@@ -12,10 +12,10 @@ namespace MetaMorpheusGUI
     {
         public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value.GetType() == typeof(RejectionType))
+            if (value.GetType() == typeof(OutlierRejectionType))
             {
-                RejectionType val = (RejectionType)value;
-                if (val is RejectionType.SigmaClipping or RejectionType.AveragedSigmaClipping or RejectionType.WinsorizedSigmaClipping)
+                OutlierRejectionType val = (OutlierRejectionType)value;
+                if (val is OutlierRejectionType.SigmaClipping or OutlierRejectionType.AveragedSigmaClipping or OutlierRejectionType.WinsorizedSigmaClipping)
                     return false;
                 else
                     return true;

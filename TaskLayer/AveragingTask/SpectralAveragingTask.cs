@@ -8,7 +8,7 @@ using EngineLayer;
 using FlashLFQ;
 using IO.MzML;
 using MassSpectrometry;
-using MzLibSpectralAveraging;
+using SpectralAveraging;
 using Nett;
 using UsefulProteomicsDatabases;
 
@@ -16,12 +16,12 @@ namespace TaskLayer
 {
     public class SpectralAveragingTask : MetaMorpheusTask
     {
-        public MzLibSpectralAveragingOptions Options { get; private set; }
+        public SpectralAveragingParameters Parameters { get; private set; }
         public const string AveragingSuffix = "-averaged";
 
-        public SpectralAveragingTask(MzLibSpectralAveragingOptions options) : base(MyTask.Average)
+        public SpectralAveragingTask(SpectralAveragingParameters parameters) : base(MyTask.Average)
         {
-            Options = options;
+            Parameters = parameters;
         }
 
         /// <summary>
@@ -38,17 +38,17 @@ namespace TaskLayer
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following averaging settings were used: ");
-            ProseCreatedWhileRunning.Append($"file averaging type = {Options.SpectraFileProcessingType}; ");
-            ProseCreatedWhileRunning.Append($"rejection type = {Options.RejectionType}; ");
-            ProseCreatedWhileRunning.Append($"weighting type = {Options.WeightingType}; ");
-            ProseCreatedWhileRunning.Append($"perform normalization = {Options.PerformNormalization}; ");
-            ProseCreatedWhileRunning.Append($"percentile = {Options.Percentile}; ");
-            ProseCreatedWhileRunning.Append($"minimum sigma value = {Options.MinSigmaValue}; ");
-            ProseCreatedWhileRunning.Append($"maximum sigma value = {Options.MaxSigmaValue}; ");
-            ProseCreatedWhileRunning.Append($"bin size = {Options.BinSize}; ");
-            ProseCreatedWhileRunning.Append($"number of scans to average = {(Options.SpectraFileProcessingType == SpectraFileProcessingType.AverageAll ? "All" : Options.NumberOfScansToAverage)}; " );
-            ProseCreatedWhileRunning.Append($"scan overlap = {Options.ScanOverlap}; ");
-            ProseCreatedWhileRunning.Append($"file output type = {Options.OutputType}; ");
+            ProseCreatedWhileRunning.Append($"file averaging type = {Parameters.SpectraFileAveragingType}; ");
+            ProseCreatedWhileRunning.Append($"rejection type = {Parameters.OutlierRejectionType}; ");
+            ProseCreatedWhileRunning.Append($"weighting type = {Parameters.SpectralWeightingType}; ");
+            ProseCreatedWhileRunning.Append($"normalization type = {Parameters.NormalizationType}; ");
+            ProseCreatedWhileRunning.Append($"percentile = {Parameters.Percentile}; ");
+            ProseCreatedWhileRunning.Append($"minimum sigma value = {Parameters.MinSigmaValue}; ");
+            ProseCreatedWhileRunning.Append($"maximum sigma value = {Parameters.MaxSigmaValue}; ");
+            ProseCreatedWhileRunning.Append($"bin size = {Parameters.BinSize}; ");
+            ProseCreatedWhileRunning.Append($"number of scans to average = {(Parameters.SpectraFileAveragingType == SpectraFileAveragingType.AverageAll ? "All" : Parameters.NumberOfScansToAverage)}; " );
+            ProseCreatedWhileRunning.Append($"scan overlap = {Parameters.ScanOverlap}; ");
+            ProseCreatedWhileRunning.Append($"file output type = {Parameters.OutputType}; ");
 
             //Start Averaging Task
             Status("Averaging...", new List<string>() { taskId });
@@ -79,7 +79,7 @@ namespace TaskLayer
 
                 // Average the spectra
                 Status("Averaging spectra file...", new List<string> { taskId, "Individual Spectra Files" });
-                var averagedScans = SpectraFileProcessing.ProcessSpectra(scanList, Options);
+                var averagedScans = SpectraFileAveraging.AverageSpectraFile(scanList, Parameters);
                 if (averagedScans == null || !averagedScans.Any())
                 {
                     Warn($"Averaging Failure! Could not average spectra for file {originalUnaveragedFilepathWithoutExtenstion}");

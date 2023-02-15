@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using EngineLayer;
 using GuiFunctions;
-using MzLibSpectralAveraging;
+using SpectralAveraging;
 using Nett;
 using TaskLayer;
 using System.IO;
@@ -33,8 +33,8 @@ namespace MetaMorpheusGUI
         public SpectralAveragingTaskWindow(SpectralAveragingTask task)
         {
             InitializeComponent();
-            TheTask = task ?? new SpectralAveragingTask(new MzLibSpectralAveragingOptions());
-            DataContext = new MzLibAveragingOptionsViewModel(TheTask.Options);
+            TheTask = task ?? new SpectralAveragingTask(new SpectralAveragingParameters());
+            DataContext = new SpectralAveragingParametersViewModel(TheTask.Parameters);
         }
 
         private void CancelButton_OnClick(object sender, RoutedEventArgs e)

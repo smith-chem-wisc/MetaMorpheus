@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using MzLibSpectralAveraging;
 using SpectralAveraging;
 
 namespace MetaMorpheusGUI
@@ -13,23 +12,23 @@ namespace MetaMorpheusGUI
     {
         public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value.GetType() == typeof(SpectraFileProcessingType))
+            if (value.GetType() == typeof(SpectraFileAveragingType))
             {
                 switch (value)
                 {
-                    case SpectraFileProcessingType.AverageAll:
+                    case SpectraFileAveragingType.AverageAll:
                         return true;
 
-                    case SpectraFileProcessingType.AverageEverynScans:
+                    case SpectraFileAveragingType.AverageEverynScans:
                         return true;
 
-                    case SpectraFileProcessingType.AverageEverynScansWithOverlap:
+                    case SpectraFileAveragingType.AverageEverynScansWithOverlap:
                         return false;
 
-                    case SpectraFileProcessingType.AverageDDAScans:
+                    case SpectraFileAveragingType.AverageDdaScans:
                         return true;
 
-                    case SpectraFileProcessingType.AverageDDAScansWithOverlap:
+                    case SpectraFileAveragingType.AverageDdaScansWithOverlap:
                         return false;
                 }
             }

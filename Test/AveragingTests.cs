@@ -379,24 +379,24 @@ namespace Test
             SpectralAveragingOptions specOptions = new SpectralAveragingOptions()
                 { Percentile = 2, MinSigmaValue = 1.3, MaxSigmaValue = 3 };
             MzLibSpectralAveragingOptions options = new MzLibSpectralAveragingOptions(specOptions);
-            MzLibAveragingOptionsViewModel optionsVM = new(options);
-            Assert.That(optionsVM.RejectionType == RejectionType.NoRejection);
-            Assert.That(optionsVM.WeightingType == WeightingType.NoWeight);
-            Assert.That(optionsVM.SpectraFileProcessingType == SpectraFileProcessingType.AverageAll);
-            Assert.That(optionsVM.PerformNormalization == true);
-            Assert.That(optionsVM.OutputType == OutputType.mzML);
-            Assert.That(optionsVM.ScanOverlap == 2);
-            Assert.That(optionsVM.NumberOfScansToAverage == 5);
-            Assert.That(Math.Abs(optionsVM.BinSize - 0.01) < 0.0001);
-            Assert.That(Math.Abs(optionsVM.MinSigmaVale - 1.3) < 0.0001);
-            Assert.That(Math.Abs(optionsVM.MaxSigmaValue - 3) < 0.0001);
-            Assert.That(Math.Abs(optionsVM.Percentile - 2) < 0.0001);
-            Assert.That(optionsVM.Name == "Default Options");
-            Assert.That(optionsVM.SavedPath == null);
-            Assert.That(optionsVM.OutputTypes.SequenceEqual(Enum.GetValues<OutputType>()));
-            Assert.That(optionsVM.RejectionTypes.SequenceEqual(Enum.GetValues<RejectionType>().Where(p => p != RejectionType.Thermo).ToArray()));
-            Assert.That(optionsVM.WeightingTypes.SequenceEqual(Enum.GetValues<WeightingType>()));
-            Assert.That(optionsVM.SpectraFileProcessingTypes.SequenceEqual(Enum.GetValues<SpectraFileProcessingType>()));
+            SpectralAveragingParametersViewModel parametersVm = new(options);
+            Assert.That(parametersVm.RejectionType == RejectionType.NoRejection);
+            Assert.That(parametersVm.WeightingType == WeightingType.NoWeight);
+            Assert.That(parametersVm.SpectraFileProcessingType == SpectraFileProcessingType.AverageAll);
+            Assert.That(parametersVm.NormalizationType == true);
+            Assert.That(parametersVm.OutputType == OutputType.mzML);
+            Assert.That(parametersVm.ScanOverlap == 2);
+            Assert.That(parametersVm.NumberOfScansToAverage == 5);
+            Assert.That(Math.Abs(parametersVm.BinSize - 0.01) < 0.0001);
+            Assert.That(Math.Abs(parametersVm.MinSigmaVale - 1.3) < 0.0001);
+            Assert.That(Math.Abs(parametersVm.MaxSigmaValue - 3) < 0.0001);
+            Assert.That(Math.Abs(parametersVm.Percentile - 2) < 0.0001);
+            Assert.That(parametersVm.Name == "Default Options");
+            Assert.That(parametersVm.SavedPath == null);
+            Assert.That(parametersVm.OutputTypes.SequenceEqual(Enum.GetValues<OutputType>()));
+            Assert.That(parametersVm.RejectionTypes.SequenceEqual(Enum.GetValues<RejectionType>().Where(p => p != RejectionType.Thermo).ToArray()));
+            Assert.That(parametersVm.WeightingTypes.SequenceEqual(Enum.GetValues<WeightingType>()));
+            Assert.That(parametersVm.SpectraFileProcessingTypes.SequenceEqual(Enum.GetValues<SpectraFileProcessingType>()));
         }
 
         [Test]
@@ -406,54 +406,54 @@ namespace Test
             SpectralAveragingOptions specOptions = new SpectralAveragingOptions()
                 { Percentile = 2, MinSigmaValue = 1.3, MaxSigmaValue = 3 };
             MzLibSpectralAveragingOptions options = new MzLibSpectralAveragingOptions(specOptions);
-            MzLibAveragingOptionsViewModel optionsVM = new(options);
-            optionsVM.MzLibSpectralAveragingOptions = new MzLibSpectralAveragingOptions(specOptions);
-            optionsVM.RejectionType = RejectionType.AveragedSigmaClipping;
-            optionsVM.WeightingType = WeightingType.CauchyDistribution;
-            optionsVM.SpectraFileProcessingType = SpectraFileProcessingType.AverageDDAScansWithOverlap;
-            optionsVM.PerformNormalization = false;
-            optionsVM.Percentile = 14;
-            optionsVM.MinSigmaVale = 20;
-            optionsVM.MaxSigmaValue = 15;
-            optionsVM.BinSize = 4;
-            optionsVM.NumberOfScansToAverage = 20;
-            optionsVM.OutputType = OutputType.txt;
-            optionsVM.ScanOverlap = 10;
+            SpectralAveragingParametersViewModel parametersVm = new(options);
+            parametersVm.SpectralAveragingParameters = new MzLibSpectralAveragingOptions(specOptions);
+            parametersVm.RejectionType = RejectionType.AveragedSigmaClipping;
+            parametersVm.WeightingType = WeightingType.CauchyDistribution;
+            parametersVm.SpectraFileProcessingType = SpectraFileProcessingType.AverageDDAScansWithOverlap;
+            parametersVm.NormalizationType = false;
+            parametersVm.Percentile = 14;
+            parametersVm.MinSigmaVale = 20;
+            parametersVm.MaxSigmaValue = 15;
+            parametersVm.BinSize = 4;
+            parametersVm.NumberOfScansToAverage = 20;
+            parametersVm.OutputType = OutputType.txt;
+            parametersVm.ScanOverlap = 10;
 
             // ensure they were set
-            Assert.That(Math.Abs(optionsVM.Percentile - 14) < 0.0001);
-            Assert.That(optionsVM.RejectionType == RejectionType.AveragedSigmaClipping);
-            Assert.That(optionsVM.WeightingType == WeightingType.CauchyDistribution);
-            Assert.That(optionsVM.SpectraFileProcessingType == SpectraFileProcessingType.AverageDDAScansWithOverlap);
-            Assert.That(optionsVM.PerformNormalization == false);
-            Assert.That(optionsVM.OutputType == OutputType.txt);
-            Assert.That(optionsVM.ScanOverlap == 10);
-            Assert.That(optionsVM.NumberOfScansToAverage == 20);
-            Assert.That(Math.Abs(optionsVM.BinSize - 4) < 0.0001);
-            Assert.That(Math.Abs(optionsVM.MinSigmaVale - 20) < 0.0001);
-            Assert.That(Math.Abs(optionsVM.MaxSigmaValue - 15) < 0.0001);
-            Assert.That(optionsVM.Name == "Default Options");
-            Assert.That(optionsVM.SavedPath == null);
+            Assert.That(Math.Abs(parametersVm.Percentile - 14) < 0.0001);
+            Assert.That(parametersVm.RejectionType == RejectionType.AveragedSigmaClipping);
+            Assert.That(parametersVm.WeightingType == WeightingType.CauchyDistribution);
+            Assert.That(parametersVm.SpectraFileProcessingType == SpectraFileProcessingType.AverageDDAScansWithOverlap);
+            Assert.That(parametersVm.NormalizationType == false);
+            Assert.That(parametersVm.OutputType == OutputType.txt);
+            Assert.That(parametersVm.ScanOverlap == 10);
+            Assert.That(parametersVm.NumberOfScansToAverage == 20);
+            Assert.That(Math.Abs(parametersVm.BinSize - 4) < 0.0001);
+            Assert.That(Math.Abs(parametersVm.MinSigmaVale - 20) < 0.0001);
+            Assert.That(Math.Abs(parametersVm.MaxSigmaValue - 15) < 0.0001);
+            Assert.That(parametersVm.Name == "Default Options");
+            Assert.That(parametersVm.SavedPath == null);
 
             // reset all values and ensure they were set
-            optionsVM.ResetDefaults();
-            Assert.That(Math.Abs(optionsVM.Percentile - 0.1) < 0.0001);
-            Assert.That(optionsVM.RejectionType == RejectionType.NoRejection);
-            Assert.That(optionsVM.WeightingType == WeightingType.NoWeight);
-            Assert.That(optionsVM.SpectraFileProcessingType == SpectraFileProcessingType.AverageAll);
-            Assert.That(optionsVM.PerformNormalization == true);
-            Assert.That(optionsVM.OutputType == OutputType.mzML);
-            Assert.That(optionsVM.ScanOverlap == 2);
-            Assert.That(optionsVM.NumberOfScansToAverage == 5);
-            Assert.That(Math.Abs(optionsVM.BinSize - 0.01) < 0.0001);
-            Assert.That(Math.Abs(optionsVM.MinSigmaVale - 1.5) < 0.0001);
-            Assert.That(Math.Abs(optionsVM.MaxSigmaValue - 1.5) < 0.0001);
-            Assert.That(optionsVM.Name == "Default Options");
-            Assert.That(optionsVM.SavedPath == null);
-            Assert.That(optionsVM.OutputTypes.SequenceEqual(Enum.GetValues<OutputType>()));
-            Assert.That(optionsVM.RejectionTypes.SequenceEqual(Enum.GetValues<RejectionType>().Where(p => p != RejectionType.Thermo).ToArray()));
-            Assert.That(optionsVM.WeightingTypes.SequenceEqual(Enum.GetValues<WeightingType>()));
-            Assert.That(optionsVM.SpectraFileProcessingTypes.SequenceEqual(Enum.GetValues<SpectraFileProcessingType>()));
+            parametersVm.ResetDefaults();
+            Assert.That(Math.Abs(parametersVm.Percentile - 0.1) < 0.0001);
+            Assert.That(parametersVm.RejectionType == RejectionType.NoRejection);
+            Assert.That(parametersVm.WeightingType == WeightingType.NoWeight);
+            Assert.That(parametersVm.SpectraFileProcessingType == SpectraFileProcessingType.AverageAll);
+            Assert.That(parametersVm.NormalizationType == true);
+            Assert.That(parametersVm.OutputType == OutputType.mzML);
+            Assert.That(parametersVm.ScanOverlap == 2);
+            Assert.That(parametersVm.NumberOfScansToAverage == 5);
+            Assert.That(Math.Abs(parametersVm.BinSize - 0.01) < 0.0001);
+            Assert.That(Math.Abs(parametersVm.MinSigmaVale - 1.5) < 0.0001);
+            Assert.That(Math.Abs(parametersVm.MaxSigmaValue - 1.5) < 0.0001);
+            Assert.That(parametersVm.Name == "Default Options");
+            Assert.That(parametersVm.SavedPath == null);
+            Assert.That(parametersVm.OutputTypes.SequenceEqual(Enum.GetValues<OutputType>()));
+            Assert.That(parametersVm.RejectionTypes.SequenceEqual(Enum.GetValues<RejectionType>().Where(p => p != RejectionType.Thermo).ToArray()));
+            Assert.That(parametersVm.WeightingTypes.SequenceEqual(Enum.GetValues<WeightingType>()));
+            Assert.That(parametersVm.SpectraFileProcessingTypes.SequenceEqual(Enum.GetValues<SpectraFileProcessingType>()));
         }
 
         [Test]
@@ -462,19 +462,19 @@ namespace Test
             SpectralAveragingOptions specOptions = new SpectralAveragingOptions()
                 { Percentile = 2, MinSigmaValue = 1.3, MaxSigmaValue = 3 };
             MzLibSpectralAveragingOptions options = new MzLibSpectralAveragingOptions(specOptions);
-            MzLibAveragingOptionsViewModel optionsVM = new(options);
-            optionsVM.SpectraFileProcessingType = SpectraFileProcessingType.AverageEverynScansWithOverlap;
-            optionsVM.ScanOverlap = 3;
+            SpectralAveragingParametersViewModel parametersVm = new(options);
+            parametersVm.SpectraFileProcessingType = SpectraFileProcessingType.AverageEverynScansWithOverlap;
+            parametersVm.ScanOverlap = 3;
 
-            optionsVM.SpectraFileProcessingType = SpectraFileProcessingType.AverageEverynScans;
-            Assert.That(optionsVM.ScanOverlap == 0);
+            parametersVm.SpectraFileProcessingType = SpectraFileProcessingType.AverageEverynScans;
+            Assert.That(parametersVm.ScanOverlap == 0);
 
-            optionsVM.SpectraFileProcessingType = SpectraFileProcessingType.AverageDDAScansWithOverlap;
-            Assert.That(optionsVM.ScanOverlap == 3);
+            parametersVm.SpectraFileProcessingType = SpectraFileProcessingType.AverageDDAScansWithOverlap;
+            Assert.That(parametersVm.ScanOverlap == 3);
 
-            optionsVM.SavedPath = Path.Combine(TestFolder, "testingtesting.toml");
-            Assert.That(optionsVM.SavedPath == Path.Combine(TestFolder, "testingtesting.toml"));
-            Assert.That(optionsVM.Name == "testingtesting");
+            parametersVm.SavedPath = Path.Combine(TestFolder, "testingtesting.toml");
+            Assert.That(parametersVm.SavedPath == Path.Combine(TestFolder, "testingtesting.toml"));
+            Assert.That(parametersVm.Name == "testingtesting");
         }
     }
 }

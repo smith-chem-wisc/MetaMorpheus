@@ -12,9 +12,9 @@ namespace MetaMorpheusGUI
     {
         public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (value.GetType() == typeof(RejectionType))
+            if (value.GetType() == typeof(OutlierRejectionType))
             {
-                if ((RejectionType)value == RejectionType.PercentileClipping)
+                if ((OutlierRejectionType)value == OutlierRejectionType.PercentileClipping)
                     return false;
                 else 
                     return true;
