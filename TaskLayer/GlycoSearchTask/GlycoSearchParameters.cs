@@ -34,7 +34,6 @@ namespace TaskLayer
         public bool DoParsimony { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool ModPeptidesAreDifferent { get; set; }
-
         public bool WriteIndividualFiles { get; set; }
 
         public bool WriteDecoys { get; set; }
