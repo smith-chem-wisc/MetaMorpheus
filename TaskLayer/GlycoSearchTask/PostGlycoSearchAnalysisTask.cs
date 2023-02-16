@@ -45,8 +45,8 @@ namespace TaskLayer
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
                 && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
 
-            ProteinAnalysis(filteredPeptidesForOutput);
-            WriteProteinResults(filteredPeptidesForOutput);
+            GlycoProteinAnalysis(filteredPeptidesForOutput);
+            WriteProteinResults();
             var writtenFileSingle = Path.Combine(OutputFolder, "single" + ".psmtsv");
             WriteFile.WritePsmGlycoToTsv(filteredPeptidesForOutput, writtenFileSingle, 1);
             FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
@@ -111,7 +111,7 @@ namespace TaskLayer
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
 
         }
-        private void ProteinAnalysis(List<GlycoSpectralMatch> gsms)
+        private void GlycoProteinAnalysis(List<GlycoSpectralMatch> gsms)
         {
             // convert gsms to psms
             List<PeptideSpectralMatch> allPsms = gsms.Select(p => p as PeptideSpectralMatch).ToList();
@@ -142,7 +142,7 @@ namespace TaskLayer
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
         }
 
-        private void WriteProteinResults(List<GlycoSpectralMatch> gsms)
+        private void WriteProteinResults()
         {
             if (Parameters.GlycoSearchParameters.DoParsimony)
             {
@@ -180,7 +180,6 @@ namespace TaskLayer
                 FinishedWritingFile(filePath, nestedIds);
             }
         }
-
     }
 }
 

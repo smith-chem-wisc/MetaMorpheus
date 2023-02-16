@@ -9,7 +9,19 @@ namespace TaskLayer
     {
         public GlycoSearchParameters()
         {
-
+            OGlycanDatabasefile = "OGlycan.gdb";
+            NGlycanDatabasefile = "NGlycan.gdb";
+            GlycoSearchType = GlycoSearchType.OGlycanSearch;
+            OxoniumIonFilt = true;
+            DecoyType = DecoyType.Reverse;
+            GlycoSearchTopNum = 50;
+            MaximumOGlycanAllowed = 4;
+            DoParsimony = true;
+            NoOneHitWonders = false;
+            ModPeptidesAreDifferent = false;
+            WriteIndividualFiles = false;
+            WriteDecoys = true;
+            WriteContaminants = true;
         }
         public string OGlycanDatabasefile { get; set; }
         public string NGlycanDatabasefile { get; set; }

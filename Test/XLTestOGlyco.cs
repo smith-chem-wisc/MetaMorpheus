@@ -399,6 +399,9 @@ namespace Test
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
+            
+            
+            
             Directory.Delete(outputFolder, true);
         }
 
@@ -566,6 +569,11 @@ namespace Test
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
 
             CollectionAssert.IsSubsetOf(expectedOutput, output);
+
+            string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "AllProteinGroups.tsv"));
+            string[] proteinGroupFields = allProteinGroups[1].Split('\t');
+
+            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
 
             Directory.Delete(outputFolder, true);
         }
