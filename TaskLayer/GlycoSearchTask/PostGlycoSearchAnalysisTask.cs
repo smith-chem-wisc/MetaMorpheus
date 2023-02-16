@@ -43,15 +43,21 @@ namespace TaskLayer
             {
                 if (Parameters.GlycoSearchParameters.WriteIndividualFiles)
                 {
-                    string individualFileFolder = Path.Combine(OutputFolder, "IndividualFileResults");
-                    if (!Directory.Exists(individualFileFolder))
+                    string individualFileResults = Path.Combine(OutputFolder, "IndividualFileResults");
+                    if (!Directory.Exists(individualFileResults))
                     {
-                        Directory.CreateDirectory(individualFileFolder);
+                        Directory.CreateDirectory(individualFileResults);
                     }
                     IEnumerable<IGrouping<string, PeptideSpectralMatch>> gsmsGroupedByFile = filteredGsms.GroupBy(p => p.FullFilePath).ToList();
                     foreach (var file in gsmsGroupedByFile)
                     {
-                        GlycoProteinAnalysis(filteredGsms, individualFileFolder);
+                        string individualFileFolder = Path.GetFileNameWithoutExtension(file.Key);
+                        string individualFileFolderPath = Path.Combine(individualFileResults, individualFileFolder);
+                        if (!Directory.Exists(individualFileFolderPath))
+                        {
+                            Directory.CreateDirectory(individualFileFolderPath);
+                        }
+                        GlycoProteinAnalysis(filteredGsms, individualFileFolderPath);
                     }
                 }
 
