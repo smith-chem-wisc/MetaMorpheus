@@ -270,9 +270,16 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
+
+            //Protien Inference
             TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
+
+            //Output Options
+            TheTask._glycoSearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
+            TheTask._glycoSearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
+            TheTask._glycoSearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
             {

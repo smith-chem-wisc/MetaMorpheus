@@ -410,10 +410,22 @@
                     </StackPanel>
                 </GroupBox>
 
+                <!-- Output Options -->
+                <GroupBox Header="Output Options" DockPanel.Dock="Top" ScrollViewer.CanContentScroll="True">
+                    
+                    <!-- writing options -->
+                    <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
+                        <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
+                        <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
+                        <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
+                    </StackPanel>
+                </GroupBox>
+                <!-- END Output Options -->
+
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">
-            <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="cancelButton" Content="Cancel" Click="CaWriteContaminantCheckBoxncelButton_Click" />
             <Button x:Name="saveButton" Content="Save GlycoSearch Task" Click="SaveButton_Click" FontSize="24" />
         </StackPanel>
     </Grid>
