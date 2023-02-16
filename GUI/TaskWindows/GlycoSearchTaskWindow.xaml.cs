@@ -144,9 +144,15 @@ namespace MetaMorpheusGUI
                 ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
             }
 
+            //protein inference
             CheckBoxParsimony.IsChecked = task._glycoSearchParameters.DoParsimony;
             CheckBoxNoOneHitWonders.IsChecked = task._glycoSearchParameters.NoOneHitWonders;
             ModPepsAreUnique.IsChecked = task._glycoSearchParameters.ModPeptidesAreDifferent;
+
+            //output options
+            WriteDecoyCheckBox.IsChecked = task._glycoSearchParameters.WriteDecoys;
+            WriteContaminantCheckBox.IsChecked = task._glycoSearchParameters.WriteContaminants;
+            WriteIndividualResultsCheckBox.IsChecked = task._glycoSearchParameters.WriteIndividualFiles;
 
             CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
             RadioButtonReverseDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Reverse;
