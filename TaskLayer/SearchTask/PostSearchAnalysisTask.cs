@@ -589,7 +589,6 @@ namespace TaskLayer
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
                 && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
 
-
             // write summary text
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSM" + filterType + Math.Round(filterCutoffForResultsCounts,2) + ": " + psmOrPeptideCountForResults  + Environment.NewLine);
             if (Parameters.SearchParameters.DoParsimony)
