@@ -133,7 +133,7 @@ namespace Test
 
             string maxQuantMsmsPath = @"D:\SingleCellDataSets\PXD031955\combined\txt\msms.txt";
             Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
-                maxQuantMsmsPath, spectraFiles, mbrPeaks);
+                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: true);
 
             // Every MBR run ID should have a corresponding PSM in the msms.txt file
             Assert.That(mbrPeaks.Count == maxQuantPsms.Count);
@@ -170,16 +170,328 @@ namespace Test
                 mbrPeaks,
                 maxQuantPsms,
                 spectrumFilePath,
-                @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\",
+                @"D:\SingleCellDataSets\PXD031955\combined\txt\",
                 commonParams);
 
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\SingleCellDataSets\PXD031955\combined\txt\", "PeakQuantFirst");
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\SingleCellDataSets\PXD031955\combined\txt\", "PeakQuant_NoArtifact");
+        }
+
+
+        [Test]
+        public static void TestMaxQuantEvidenceReader24017()
+        {
+            string folderPath = @"D:\SingleCellDataSets\PXD024017";
+            string experimentalDesignFilepath = @"D:\SingleCellDataSets\PXD024017\ExperimentalDesign_PXD024017_raw.tsv";
+            List<string> rawFilePathList = new List<string>
+            {
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_04.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_04.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250g_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_04.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_04.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_04.raw"
+            };
+            List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilepath, rawFilePathList, out var errors);
+
+            string maxQuantEvidencePath = Path.Join(folderPath, @"combined\txt\evidence.txt");
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
+                maxQuantEvidencePath, silent: false, spectraFiles);
+
+            string maxQuantMsmsPath = Path.Join(folderPath, @"combined\txt\msms.txt");
+            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
+                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: true);
+
+            // Every MBR run ID should have a corresponding PSM in the msms.txt file
+            Assert.AreEqual(mbrPeaks.Count, maxQuantPsms.Count, 1); // There is one donor where the matched fragments are missing
+
+            PpmTolerance testTolerance = new PpmTolerance(5);
+            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
+            // matches for every psm
+            Assert.IsFalse(maxQuantPsms.Values.Any(p =>
+                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
+
+            // Writing a spectral library
+            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in maxQuantPsms.Values)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
+                spectraForSpectraLibrary.Add(standardSpectrum);
+            }
+            string spectrumFilePath = Path.Join(folderPath, @"combined\txt\spectralLibrary.msp");
+            if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var librarySpectrum in spectraForSpectraLibrary)
+                {
+                    output.WriteLine(librarySpectrum.ToString());
+                }
+            }
+
+            // Tolerances taken from MaxQuant defaults
+            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
+                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
+
+            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+                spectraFiles,
+                mbrPeaks,
+                maxQuantPsms,
+                spectrumFilePath,
+                Path.Join(folderPath, @"combined\txt\"),
+                commonParams);
+
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(Path.Join(folderPath, @"combined\txt\"), "PeakQuant_NoArtifact");
         }
 
         [Test]
-        public static void TestMbrAnalysisFromMaxQuant()
+        public static void TestMaxQuantEvidenceReader19515()
         {
-            
+            string folderPath = @"D:\SingleCellDataSets\PXD019515";
+            string experimentalDesignFilepath = @"D:\SingleCellDataSets\PXD019515\ExperimentalDesign_PXD019515.tsv";
+            List<string> rawFilePathList = new List<string>
+            {
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_SingleMotorNeuron_2.raw",
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_SingleMotorNeuron_3.raw",
+                @"D:\SingleCellDataSets\PXD019515\ExperimentalDesign_PXD019515.tsv",
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_Single_HeLa_1.raw",
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_Single_HeLa_2.raw",
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_Single_HeLa_3.raw",
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_SingleInterNeuron_1.raw",
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_SingleInterNeuron_2.raw",
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_SingleInterNeuron_3.raw",
+                @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_SingleMotorNeuron_1.raw"
+            };
+            List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilepath, rawFilePathList, out var errors);
+
+            string maxQuantEvidencePath = Path.Join(folderPath, @"combined\txt\evidence.txt");
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
+                maxQuantEvidencePath, silent: false, spectraFiles);
+
+            string maxQuantMsmsPath = Path.Join(folderPath, @"combined\txt\msms.txt");
+            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
+                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: true);
+
+            // Every MBR run ID should have a corresponding PSM in the msms.txt file
+            Assert.AreEqual(mbrPeaks.Count, maxQuantPsms.Count, 1); // There is one donor where the matched fragments are missing
+
+            PpmTolerance testTolerance = new PpmTolerance(5);
+            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
+            // matches for every psm
+            Assert.IsFalse(maxQuantPsms.Values.Any(p =>
+                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
+
+            // Writing a spectral library
+            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in maxQuantPsms.Values)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
+                spectraForSpectraLibrary.Add(standardSpectrum);
+            }
+            string spectrumFilePath = Path.Join(folderPath, @"combined\txt\spectralLibrary.msp");
+            if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var librarySpectrum in spectraForSpectraLibrary)
+                {
+                    output.WriteLine(librarySpectrum.ToString());
+                }
+            }
+
+            // Tolerances taken from MaxQuant defaults
+            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
+                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
+
+            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+                spectraFiles,
+                mbrPeaks,
+                maxQuantPsms,
+                spectrumFilePath,
+                Path.Join(folderPath, @"combined\txt\"),
+                commonParams);
+
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(Path.Join(folderPath, @"combined\txt\"), "PeakQuant_NoArtifact");
+        }
+
+        [Test]
+        public static void TestMaxQuantEvidenceReader85937_HeLa()
+        {
+            string folderPath = @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics";
+            string experimentalDesignFilepath = @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\ExperimentalDesign_MSV000085937_HeLa_SCP.tsv";
+            List<string> rawFilePathList = new List<string>
+            {
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_Lib_Chip1_A4.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_Lib_Chip1_A5.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_A11.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B1.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B3.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B4.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B5.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B6.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B7.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B8.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B10.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_SC_Chip1_B11.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_Lib_Chip1_A1.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_Lib_Chip1_A2.raw",
+                @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\NanoPOTS_FAIMS_HeLa_Lib_Chip1_A3.raw"
+            };
+            List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilepath, rawFilePathList, out var errors);
+
+            string maxQuantEvidencePath = Path.Join(folderPath, @"combined\txt\evidence.txt");
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
+                maxQuantEvidencePath, silent: false, spectraFiles);
+
+            string maxQuantMsmsPath = Path.Join(folderPath, @"combined\txt\msms.txt");
+            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
+                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: true);
+
+            // Every MBR run ID should have a corresponding PSM in the msms.txt file
+            Assert.AreEqual(mbrPeaks.Count, maxQuantPsms.Count, 1); // There is one donor where the matched fragments are missing
+
+            PpmTolerance testTolerance = new PpmTolerance(5);
+            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
+            // matches for every psm
+            Assert.IsFalse(maxQuantPsms.Values.Any(p =>
+                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
+
+            // Writing a spectral library
+            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in maxQuantPsms.Values)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
+                spectraForSpectraLibrary.Add(standardSpectrum);
+            }
+            string spectrumFilePath = Path.Join(folderPath, @"combined\txt\spectralLibrary.msp");
+            if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var librarySpectrum in spectraForSpectraLibrary)
+                {
+                    output.WriteLine(librarySpectrum.ToString());
+                }
+            }
+
+            // Tolerances taken from MaxQuant defaults
+            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
+                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
+
+            Dictionary<SpectraFileInfo, string> calibFileDictionary = new Dictionary<SpectraFileInfo, string>();
+            foreach(SpectraFileInfo spectraFile in spectraFiles)
+            {
+                string calibFilePath = Path.Join(@"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics\Calibration\Task1-CalibrateTask",
+                    spectraFile.FilenameWithoutExtension + "-calib.mzML");
+                calibFileDictionary.Add(spectraFile, calibFilePath);
+            }
+
+
+            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+                spectraFiles,
+                mbrPeaks,
+                maxQuantPsms,
+                spectrumFilePath,
+                Path.Join(folderPath, @"combined\txt\"),
+                commonParams,
+                calibFileDictionary);
+
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(Path.Join(folderPath, @"combined\txt\"), "PeakQuant_Calibrated");
+        }
+
+
+        [Test]
+        public static void TestMaxQuantEvidenceReader85937_Lung()
+        {
+            string folderPath = @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics";
+            string experimentalDesignFilepath = @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\ExperimentalDesign_MSV000085937_NonDepletedLung_SCP.tsv";
+            List<string> rawFilePathList = new List<string>
+            {
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A7.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A8.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A10.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A11.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_B02.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Resting_Chip1_C1.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Resting_Chip1_C3.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Resting_Chip1_C4.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Resting_Chip1_C5.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Resting_Chip1_C6.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Resting_Chip1_C7.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Resting_Chip1_C8.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Resting_Chip1_C9.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A1.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A2.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A3.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A4.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A5.raw",
+                @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics\NanoPOTS_D022_Primary_SC_Non_Resting_Chip1_A6.raw"
+            };
+            List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilepath, rawFilePathList, out var errors);
+
+            Assert.That(errors.Count == 0);
+
+            string maxQuantEvidencePath = Path.Join(folderPath, @"combined\txt\evidence.txt");
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
+                maxQuantEvidencePath, silent: false, spectraFiles);
+
+            string maxQuantMsmsPath = Path.Join(folderPath, @"combined\txt\msms.txt");
+            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
+                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: true);
+
+            // Every MBR run ID should have a corresponding PSM in the msms.txt file
+            Assert.AreEqual(mbrPeaks.Count, maxQuantPsms.Count, 1); // There is one donor where the matched fragments are missing
+
+            PpmTolerance testTolerance = new PpmTolerance(5);
+            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
+            // matches for every psm
+            Assert.IsFalse(maxQuantPsms.Values.Any(p =>
+                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
+
+            // Writing a spectral library
+            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in maxQuantPsms.Values)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
+                spectraForSpectraLibrary.Add(standardSpectrum);
+            }
+            string spectrumFilePath = Path.Join(folderPath, @"combined\txt\spectralLibrary.msp");
+            if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var librarySpectrum in spectraForSpectraLibrary)
+                {
+                    output.WriteLine(librarySpectrum.ToString());
+                }
+            }
+
+            // Tolerances taken from MaxQuant defaults
+            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
+                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
+
+            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+                spectraFiles,
+                mbrPeaks,
+                maxQuantPsms,
+                spectrumFilePath,
+                Path.Join(folderPath, @"combined\txt\"),
+                commonParams);
+
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(Path.Join(folderPath, @"combined\txt\"), "PeakQuant_NoArtifact");
         }
 
         [Test]

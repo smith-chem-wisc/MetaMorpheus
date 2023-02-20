@@ -143,13 +143,15 @@ namespace TaskLayer.MbrAnalysis
         /// <param name="parameters"></param>
         /// <param name="commonParameters"></param>
         /// <param name="fileSpecificParameters"></param>
+        /// <param name ="calibratedFilePaths"> Optional param to link spectraFileInfo objects to the file path of a calibrated version of the same file</param>
         public static MbrAnalysisResults RunMbrAnalysisFromMaxQuant(
             List<SpectraFileInfo> spectraFiles,
             Dictionary<string, List<ChromatographicPeak>> mbrPeaksDict,
             Dictionary<string, PsmFromTsv> donorPsmDict,
             string spectralLibraryPath,
             string outputFolder,
-            CommonParameters commonParameters)
+            CommonParameters commonParameters,
+            Dictionary<SpectraFileInfo, string> calibratedFilePaths = null)
         {
 
             int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
@@ -160,8 +162,11 @@ namespace TaskLayer.MbrAnalysis
             foreach (SpectraFileInfo spectraFile in spectraFiles)
             {
                 MyFileManager myFileManager = new(true);
+                string spectraFilePath = calibratedFilePaths != null && calibratedFilePaths.TryGetValue(spectraFile, out string calibFilePath)
+                    ? calibFilePath
+                    : spectraFile.FullFilePathWithExtension;
                 MsDataFile myMsDataFile =
-                    myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, commonParameters);
+                    myFileManager.LoadFile(spectraFilePath, commonParameters);
                 // These parameters are hardcoded for now
                 MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(
                     commonParameters.PrecursorMassTolerance,

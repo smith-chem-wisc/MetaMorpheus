@@ -346,7 +346,7 @@ namespace EngineLayer.PsmTsv
                         lineSplit[headerDictionary[MaxQuantMsmsHeader.FullSequence]] = convertedFullSeq;
                         PsmFromTsv psm = new PsmFromTsv(lineSplit, headerDictionary, PsmFileType.MaxQuant, allKnownMods, numFixedMods,
                             ignoreArtifactIons: ignoreArtifactIons);
-                        fullSeqToDonorsDict[currentFullSeq].Add(psm);
+                        if (psm.MatchedIons != null) fullSeqToDonorsDict[currentFullSeq].Add(psm);
                     }
                 }
             }

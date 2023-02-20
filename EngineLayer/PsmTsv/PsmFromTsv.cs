@@ -254,18 +254,29 @@ namespace EngineLayer
             BaseSeq = RemoveParentheses(splitLine[parsedHeader[MaxQuantMsmsHeader.BaseSequence]].Trim());
             FullSequence = splitLine[parsedHeader[MaxQuantMsmsHeader.FullSequence]];
             Score = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.Score]].Trim(), CultureInfo.InvariantCulture);
-            MatchedIons = ReadFragmentIonsFromList(
-                BuildFragmentStringsFromMaxQuant(
-                    splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
-                    splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonMzRatios]]
-                ),
-                BuildFragmentStringsFromMaxQuant(
-                    splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
-                    splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonIntensities]]
-                ),
-                BaseSeq,
-                ignoreArtifactIons: ignoreArtifactIons
-            );
+
+            // MaxQuant msms sometimes contains empty fragment series, which causes problems down the line
+            if (splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]].IsNullOrEmptyOrWhiteSpace())
+            {
+                Score = 0;
+                MatchedIons = null;
+            }
+            else
+            {
+                MatchedIons = ReadFragmentIonsFromList(
+                    BuildFragmentStringsFromMaxQuant(
+                        splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
+                        splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonMzRatios]]
+                    ),
+                    BuildFragmentStringsFromMaxQuant(
+                        splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
+                        splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonIntensities]]
+                    ),
+                    BaseSeq,
+                    ignoreArtifactIons: ignoreArtifactIons
+                );
+            }
+            
 
             DeltaScore = (parsedHeader[MaxQuantMsmsHeader.DeltaScore] < 0) ? null : (double?)double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.DeltaScore]].Trim(), CultureInfo.InvariantCulture);
             MassDiffDa = (parsedHeader[MaxQuantMsmsHeader.MassDiffDa] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.MassDiffDa]].Trim();
