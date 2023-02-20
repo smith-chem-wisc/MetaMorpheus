@@ -120,7 +120,8 @@ namespace Test
                 "protein_oglyco_localization.tsv",
                 "results.txt",
                 "seen_oglyco_localization.tsv",
-                "single.psmtsv"
+                "single.psmtsv",
+                "AllProteinGroups.tsv"
             };
             
             //check they're the same
