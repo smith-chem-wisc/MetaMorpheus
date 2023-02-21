@@ -444,6 +444,15 @@
     <None Update="TestVariantPep.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TMT_test\mouseTmt.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\TMT-Task1-SearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\VA084TQ_6.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TopDownTestData\slicedTDYeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
