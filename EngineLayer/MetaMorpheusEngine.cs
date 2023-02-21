@@ -69,7 +69,8 @@ namespace EngineLayer
                         case ProductType.yAmmoniaLoss:
                             score += 0.01 * fragment.Intensity;
                             break;
-
+                        case ProductType.D: //count nothing for diagnostic ions.
+                            break;
                         default:
                             score += 1 * fragment.Intensity;
                             break;
@@ -81,7 +82,15 @@ namespace EngineLayer
                 // Morpheus score
                 for (int i = 0; i < matchedFragmentIons.Count; i++)
                 {
-                    score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
+                    switch (matchedFragmentIons[i].NeutralTheoreticalProduct.ProductType)
+                    {
+                        case ProductType.D:
+                            break;
+                        default:
+                            score += 1 + matchedFragmentIons[i].Intensity / thisScan.TotalIonCurrent;
+                            break;
+                    }
+                    
                 }
             }
 
