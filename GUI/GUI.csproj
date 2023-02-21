@@ -16,7 +16,7 @@
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
