@@ -15,6 +15,7 @@ namespace TaskLayer.MbrAnalysis
         public readonly ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> BestMbrMatches;
         public readonly FlashLfqResults FlashLfqResults;
         private Dictionary<string, List<string>> PeptideScoreDict;
+        public bool MaxQuantAnalysis { get; }
 
         /// <summary>
         /// A Tab Separated Header that is similar to a ChromatographicPeak header,
@@ -65,12 +66,14 @@ namespace TaskLayer.MbrAnalysis
         {
             BestMbrMatches = bestMbrMatches;
             FlashLfqResults = flashLfqResults;
+            MaxQuantAnalysis = false;
             PopulatePeptideScoreDict();
         }
 
         public MbrAnalysisResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches)
         {
             BestMbrMatches = bestMbrMatches;
+            MaxQuantAnalysis = true;
             FlashLfqResults = null;
         }
 
@@ -155,7 +158,7 @@ namespace TaskLayer.MbrAnalysis
 
                         string[] peakStringSplit = peak.ToString().Split('\t');
                         // Peaks generated from MaxQuant data don't have an Apex, so retention time has to be pulledfrom IndexedPeak
-                        if (peakStringSplit[10].Equals("-"))
+                        if (MaxQuantAnalysis && peakStringSplit[10].Equals("-"))
                         {
                             peakStringSplit[10] = peak.IsotopicEnvelopes.First().IndexedPeak.RetentionTime.ToString();
                         }

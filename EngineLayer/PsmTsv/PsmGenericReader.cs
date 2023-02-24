@@ -310,7 +310,7 @@ namespace EngineLayer.PsmTsv
                 new FlashLFQ.IsotopicEnvelope(msPeak, Int32.Parse(psmSplit[_chargeStCol]), msPeak.Intensity);
             mbrPeak.IsotopicEnvelopes.Add(envelope);
             mbrPeak.Intensity = msPeak.Intensity;
-            mbrPeak.RtShift = double.TryParse(psmSplit[_matchRtDeltaCol], out var rtDelta) ? rtDelta : Double.NaN
+            mbrPeak.RtShift = double.TryParse(psmSplit[_matchRtDeltaCol], out var rtDelta) ? rtDelta : Double.NaN;
             return mbrPeak;
         }
 
@@ -1360,6 +1360,7 @@ namespace EngineLayer.PsmTsv
 
         }
 
-        public double RtShift { get; set; }
+        public double? RtShift { get; set; }
+        public double? SpectralContrastAngle { get; set; }
     }
 }
