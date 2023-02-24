@@ -300,7 +300,7 @@ namespace EngineLayer.PsmTsv
         {
             string[] psmSplit = psm.Split('\t');
             string fileName = psmSplit[_fileNameCol];
-            ChromatographicPeak mbrPeak = new ChromatographicPeak(id, true, fileDictionary[fileName]);
+            MaxQuantChromatographicPeak mbrPeak = new MaxQuantChromatographicPeak(id, true, fileDictionary[fileName]);
             IndexedMassSpectralPeak msPeak = new IndexedMassSpectralPeak(
                 Double.Parse(psmSplit[_mzCol]),
                 Double.Parse(psmSplit[_intensityCol]),
@@ -309,6 +309,8 @@ namespace EngineLayer.PsmTsv
             FlashLFQ.IsotopicEnvelope envelope =
                 new FlashLFQ.IsotopicEnvelope(msPeak, Int32.Parse(psmSplit[_chargeStCol]), msPeak.Intensity);
             mbrPeak.IsotopicEnvelopes.Add(envelope);
+            mbrPeak.Intensity = msPeak.Intensity;
+            mbrPeak.RtShift = double.TryParse(psmSplit[_matchRtDeltaCol], out var rtDelta) ? rtDelta : Double.NaN
             return mbrPeak;
         }
 
@@ -1349,5 +1351,15 @@ namespace EngineLayer.PsmTsv
                 _ => DataFileType.unknown,
             };
         }
+    }
+
+    public class MaxQuantChromatographicPeak : ChromatographicPeak
+    {
+        public MaxQuantChromatographicPeak(Identification id, bool isMbrPeak, SpectraFileInfo fileInfo) : base(id, isMbrPeak, fileInfo)
+        {
+
+        }
+
+        public double RtShift { get; set; }
     }
 }
