@@ -485,5 +485,12 @@ namespace MetaMorpheusGUI
                 }
             }
         }
+
+        private void HandleUnchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBoxNoOneHitWonders.IsChecked = false;
+            ModPepsAreUnique.IsChecked = false;
+
+        }
     }
 }
