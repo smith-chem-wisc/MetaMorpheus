@@ -208,6 +208,31 @@ namespace TaskLayer
                         }
                     }
                 }
+        private void WriteProteinGroupsToTsv(List<ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
+        {
+            if (proteinGroups != null && proteinGroups.Any())
+            {
+                using (StreamWriter output = new(filePath))
+                {
+                    output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
+                    for (int i = 0; i < proteinGroups.Count; i++)
+                    {
+                        if(Parameters.GlycoSearchParameters.WriteDecoys && proteinGroups[i].IsDecoy && proteinGroups[i].QValue <= qValueCutoff)
+                        {
+                            output.WriteLine(proteinGroups[i]);
+                            continue;
+                        }
+                        else if(Parameters.GlycoSearchParameters.WriteContaminants && proteinGroups[i].IsContaminant && proteinGroups[i].QValue <= qValueCutoff)
+                        {
+                            output.WriteLine(proteinGroups[i]);
+                            continue;
+                        }
+                        else if(proteinGroups[i].QValue <= qValueCutoff)
+                        {
+                            output.WriteLine(proteinGroups[i]);
+                        }
+                    }
+                }
 
                 FinishedWritingFile(filePath, nestedIds);
             }

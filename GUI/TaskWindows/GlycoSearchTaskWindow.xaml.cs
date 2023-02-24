@@ -276,6 +276,9 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
+            TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
+            TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
+            TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
 
             //Protien Inference
             TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
@@ -497,6 +500,13 @@ namespace MetaMorpheusGUI
                     //if not an entry, don't update the other box.
                 }
             }
+        }
+
+        private void HandleUnchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBoxNoOneHitWonders.IsChecked = false;
+            ModPepsAreUnique.IsChecked = false;
+
         }
     }
 }

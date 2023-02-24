@@ -52,7 +52,7 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
-            MyFileManager myFileManager = new MyFileManager(true);
+            MyFileManager myFileManager = new(true);
 
             int completedFiles = 0;
 
@@ -196,30 +196,11 @@ namespace TaskLayer
                 }
             }
 
-            GlycoSearchParameters gsp = new()
-            {
-                OGlycanDatabasefile = _glycoSearchParameters.OGlycanDatabasefile,
-                NGlycanDatabasefile = _glycoSearchParameters.NGlycanDatabasefile,
-                GlycoSearchType = _glycoSearchParameters.GlycoSearchType,
-                OxoniumIonFilt = _glycoSearchParameters.OxoniumIonFilt,
-                DecoyType = _glycoSearchParameters.DecoyType,
-                GlycoSearchTopNum = _glycoSearchParameters.GlycoSearchTopNum,
-                MaximumOGlycanAllowed = _glycoSearchParameters.MaximumOGlycanAllowed,
-
-                DoParsimony = _glycoSearchParameters.DoParsimony,
-                NoOneHitWonders = _glycoSearchParameters.DoParsimony,
-                ModPeptidesAreDifferent = _glycoSearchParameters.ModPeptidesAreDifferent,
-
-                WriteIndividualFiles = _glycoSearchParameters.WriteIndividualFiles,
-                WriteDecoys = _glycoSearchParameters.WriteDecoys,
-                WriteContaminants = _glycoSearchParameters.WriteContaminants
-        };
-
             PostGlycoSearchAnalysisParameters pgsap = new()
             {
                 GlycoSearchTaskResults = MyTaskResults,
                 SearchTaskId = taskId,
-                GlycoSearchParameters = gsp,
+                GlycoSearchParameters = _glycoSearchParameters,
                 ProteinList = proteinList,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
@@ -236,7 +217,6 @@ namespace TaskLayer
                 FileSpecificParameters = this.FileSpecificParameters,
                 CommonParameters = this.CommonParameters
             };
-            postGlycoSearchAnalysisTask.FileSpecificParameters = this.FileSpecificParameters;
 
             return postGlycoSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.Score).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
