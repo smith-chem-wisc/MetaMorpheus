@@ -15,12 +15,13 @@ namespace TaskLayer.MbrAnalysis
         public readonly ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> BestMbrMatches;
         public readonly FlashLfqResults FlashLfqResults;
         private Dictionary<string, List<string>> PeptideScoreDict;
+        public bool MaxQuantAnalysis { get; }
 
         /// <summary>
         /// A Tab Separated Header that is similar to a ChromatographicPeak header,
         /// but with a new column appended at the zero-indexed 16th position
         /// </summary>
-        public static string PeaksTabSeparatedHeader
+        public string PeaksTabSeparatedHeader
         {
             get
             {
@@ -30,6 +31,11 @@ namespace TaskLayer.MbrAnalysis
                 sb.Append('\t');
                 sb.Append("Spectral Contrast Angle");
                 sb.Append('\t');
+                if (MaxQuantAnalysis)
+                {
+                    sb.Append("Retention Time Shift");
+                    sb.Append('\t');
+                }
                 sb.Append(string.Join('\t', peakHeaderSplit[16..]));
                 string header = sb.ToString();
                 return header.Trim();
@@ -65,7 +71,15 @@ namespace TaskLayer.MbrAnalysis
         {
             BestMbrMatches = bestMbrMatches;
             FlashLfqResults = flashLfqResults;
+            MaxQuantAnalysis = false;
             PopulatePeptideScoreDict();
+        }
+
+        public MbrAnalysisResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches)
+        {
+            BestMbrMatches = bestMbrMatches;
+            MaxQuantAnalysis = true;
+            FlashLfqResults = null;
         }
 
         /// <summary>
@@ -115,12 +129,21 @@ namespace TaskLayer.MbrAnalysis
         public void WritePeakQuantificationResultsToTsv(string outputFolder, string fileName)
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
+            List<ChromatographicPeak> orderedPeaks = new();
 
-            IEnumerable<ChromatographicPeak> orderedPeaks = FlashLfqResults.Peaks.
-                SelectMany(p => p.Value)
-                .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
-                .ThenByDescending(p => p.Intensity);
-
+            if (FlashLfqResults != null)
+            {
+                orderedPeaks = FlashLfqResults.Peaks.
+                    SelectMany(p => p.Value)
+                    .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
+                    .ThenByDescending(p => p.Intensity).ToList();
+            }
+            else
+            {
+                orderedPeaks = BestMbrMatches.Select(kvp => kvp.Key)
+                    .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
+                    .ThenByDescending(p => p.Intensity).ToList();
+            }
 
             if (fullSeqPath != null)
             {
@@ -139,6 +162,11 @@ namespace TaskLayer.MbrAnalysis
                         }
 
                         string[] peakStringSplit = peak.ToString().Split('\t');
+                        // Peaks generated from MaxQuant data don't have an Apex, so retention time has to be pulledfrom IndexedPeak
+                        if (MaxQuantAnalysis && peakStringSplit[10].Equals("-"))
+                        {
+                            peakStringSplit[10] = peak.IsotopicEnvelopes.First().IndexedPeak.RetentionTime.ToString();
+                        }
                         StringBuilder sb = new();
                         sb.Append(string.Join('\t', peakStringSplit[0..16]));
                         sb.Append('\t');
