@@ -1,0 +1,65 @@
+TaskType = "GlycoSearch"
+
+[_glycoSearchParameters]
+OGlycanDatabasefile = "OGlycan.gdb"
+NGlycanDatabasefile = "NGlycan.gdb"
+GlycoSearchType = "OGlycanSearch"
+OxoniumIonFilt = false
+DecoyType = "Slide"
+GlycoSearchTopNum = 10
+MaximumOGlycanAllowed = 3
+DoParsimony = false
+NoOneHitWonders = false
+ModPeptidesAreDifferent = false
+WriteIndividualFiles = false
+WriteDecoys = false
+WriteContaminants = false
+
+[CommonParameters]
+TaskDescriptor = "GlycoSearchTask"
+MaxThreadsToUsePerFile = 7
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C\t\tCommon Fixed\tCarbamidomethyl on U"
+ListOfModsVariable = "Common Variable\tOxidation on M"
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionIntensityRatio = 3.0
+DeconvolutionMaxAssumedChargeState = 12
+DeconvolutionMassTolerance = "±4.0000 PPM"
+TotalPartitions = 1
+ProductMassTolerance = "±20.0000 PPM"
+PrecursorMassTolerance = "±10.0000 PPM"
+AddCompIons = false
+ScoreCutoff = 3.0
+ReportAllAmbiguity = true
+NumberOfPeaksToKeepPerWindow = 1000
+MinimumAllowedIntensityRatioToBasePeak = 0.01
+NormalizePeaksAccrossAllWindows = false
+TrimMs1Peaks = false
+TrimMsMsPeaks = false
+UseDeltaScore = false
+QValueOutputFilter = 1.0
+PepQValueOutputFilter = 1.0
+CustomIons = ["c", "zDot"]
+AssumeOrphanPeaksAreZ1Fragments = true
+MaxHeterozygousVariants = 4
+MinVariantDepth = 1
+AddTruncations = false
+DissociationType = "Custom"
+SeparationType = "HPLC"
+MS2ChildScanDissociationType = "Unknown"
+MS3ChildScanDissociationType = "Unknown"
+
+[CommonParameters.DigestionParams]
+MaxMissedCleavages = 12
+InitiatorMethionineBehavior = "Variable"
+MinPeptideLength = 5
+MaxPeptideLength = 60
+MaxModificationIsoforms = 1024
+MaxModsForPeptide = 2
+Protease = "semi-trypsin"
+SearchModeType = "Full"
+FragmentationTerminus = "Both"
+SpecificProtease = "semi-trypsin"
+GeneratehUnlabeledProteinsForSilac = false
+KeepNGlycopeptide = false
+KeepOGlycopeptide = false
