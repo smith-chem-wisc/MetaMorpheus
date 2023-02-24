@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 using EngineLayer.GlycoSearch;
+using ThermoFisher.CommonCore.Data;
 
 namespace TaskLayer
 {
@@ -52,7 +53,7 @@ namespace TaskLayer
                     continue;
                 }
 
-                if (gsm.LocalizedGlycan.Count > 0)
+                if ((!gsm.LocalizedGlycan.IsNullOrEmpty()) && gsm.LocalizedGlycan.Count > 0)
                 {
                     foreach (var local in gsm.LocalizedGlycan)
                     {
