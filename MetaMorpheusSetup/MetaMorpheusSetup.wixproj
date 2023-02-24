@@ -5,7 +5,7 @@
     <OutputName>MetaMorpheusInstaller</OutputName>
     <Name>MetaMorpheusSetup</Name>
     <OutputPath>bin\$(Configuration)\</OutputPath>
-    <Platforms>x64;ARM64</Platforms>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <PlatformTarget>x64</PlatformTarget>

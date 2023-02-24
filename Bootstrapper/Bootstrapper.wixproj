@@ -2,7 +2,7 @@
   <PropertyGroup>
     <OutputName>MetaMorpheusInstaller</OutputName>
     <OutputType>Bundle</OutputType>
-    <Platforms>x64;ARM64</Platforms>
+    <Platforms>x64</Platforms>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.Util.wixext" Version="4.0.0-rc.2" />
