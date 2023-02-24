@@ -432,6 +432,15 @@
                     </StackPanel>
                 </GroupBox>
 
+                <!--output options-->
+                <GroupBox Header="Output Options" DockPanel.Dock="Top">
+                    <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
+                        <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
+                        <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
+                        <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
+                    </StackPanel>
+                </GroupBox>
+                
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">
