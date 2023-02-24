@@ -144,6 +144,10 @@ namespace MetaMorpheusGUI
                 ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
             }
 
+            CheckBoxParsimony.IsChecked = task._glycoSearchParameters.DoParsimony;
+            CheckBoxNoOneHitWonders.IsChecked = task._glycoSearchParameters.NoOneHitWonders;
+            ModPepsAreUnique.IsChecked = task._glycoSearchParameters.ModPeptidesAreDifferent;
+
             CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
             RadioButtonReverseDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Reverse;
             RadioButtonSlideDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Slide;
@@ -266,6 +270,9 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.GlycoSearchTopNum = int.Parse(txtTopNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.MaximumOGlycanAllowed = int.Parse(TbMaxOGlycanNum.Text, CultureInfo.InvariantCulture);
             TheTask._glycoSearchParameters.OxoniumIonFilt = CkbOxoniumIonFilt.IsChecked.Value;
+            TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
+            TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
+            TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
@@ -477,6 +484,13 @@ namespace MetaMorpheusGUI
                     //if not an entry, don't update the other box.
                 }
             }
+        }
+
+        private void HandleUnchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBoxNoOneHitWonders.IsChecked = false;
+            ModPepsAreUnique.IsChecked = false;
+
         }
     }
 }

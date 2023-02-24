@@ -11,6 +11,8 @@ using System.Linq;
 using MzLibUtil;
 using EngineLayer.FdrAnalysis;
 using System;
+using FlashLFQ;
+using UsefulProteomicsDatabases;
 
 namespace TaskLayer
 {
@@ -50,7 +52,7 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
-            MyFileManager myFileManager = new MyFileManager(true);
+            MyFileManager myFileManager = new(true);
 
             int completedFiles = 0;
 
@@ -121,14 +123,6 @@ namespace TaskLayer
 
                     //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
                     List<int>[] secondFragmentIndex = null;
-                    //if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID
-                    //&& !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
-                    //{
-                    //    //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
-                    //    var secondCombinedParams = CommonParameters.CloneWithNewDissociationType(combinedParams.MS2ChildScanDissociationType);
-                    //    var secondIndexEngine = new IndexingEngine(proteinListSubset, variableModifications, fixedModifications, null, null, null, currentPartition, _glycoSearchParameters.DecoyType, secondCombinedParams, this.FileSpecificParameters, 30000.0, false, dbFilenameList.Select(p => new FileInfo(p.FilePath)).ToList(), new List<string> { taskId });
-                    //    GenerateSecondIndexes(indexEngine, secondIndexEngine, dbFilenameList, ref secondFragmentIndex, proteinList, taskId);
-                    //}
 
                     Status("Searching files...", taskId);
                     new GlycoSearchEngine(newCsmsPerMS2ScanPerFile, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, secondFragmentIndex, currentPartition, combinedParams, this.FileSpecificParameters,
@@ -202,9 +196,28 @@ namespace TaskLayer
                 }
             }
 
-            PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask();
+            PostGlycoSearchAnalysisParameters pgsap = new()
+            {
+                GlycoSearchTaskResults = MyTaskResults,
+                SearchTaskId = taskId,
+                GlycoSearchParameters = _glycoSearchParameters,
+                ProteinList = proteinList,
+                VariableModifications = variableModifications,
+                FixedModifications = fixedModifications,
+                AllPsms = filteredAllPsms.OrderByDescending(p => p.Score).ToList(),
+                OutputFolder = OutputFolder,
+                FileSettingsList = fileSettingsList,
+                DatabaseFilenameList = dbFilenameList,
+                CurrentRawFileList = currentRawFileList
+            };
+            
+            PostGlycoSearchAnalysisTask postGlycoSearchAnalysisTask = new PostGlycoSearchAnalysisTask()
+            {
+                Parameters = pgsap,
+                FileSpecificParameters = this.FileSpecificParameters,
+                CommonParameters = this.CommonParameters
+            };
 
-            postGlycoSearchAnalysisTask.FileSpecificParameters = this.FileSpecificParameters;
             return postGlycoSearchAnalysisTask.Run(OutputFolder, dbFilenameList, currentRawFileList, taskId, fileSettingsList, filteredAllPsms.OrderByDescending(p => p.Score).ToList(), CommonParameters, _glycoSearchParameters, proteinList, variableModifications, fixedModifications, localizeableModificationTypes, MyTaskResults);
 
         }

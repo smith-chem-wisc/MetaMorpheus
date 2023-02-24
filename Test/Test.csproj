@@ -61,10 +61,10 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\11901_AIETD.mgf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\181217_Fusion_%28LC2%29_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz%28400_1200%29_21707.mgf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_4565.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -81,11 +81,20 @@
     <None Update="GlycoTestData\FiveMucinFasta.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="GlycoTestData\GlycoSearchTaskconfig.toml">
+    <None Update="GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run2.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\NGlycanSearchTaskconfig.toml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\GlycoSearchTaskconfig_ETD.toml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\Glyco_3383.mgf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -98,6 +107,24 @@
     </None>
     <None Update="GlycoTestData\nglyco_f5.psmtsv">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\2019_09_16_StcEmix_35trig_EThcD25_rep1_4999_5500.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\N_O_glycoWithFileSpecific\FourMucins_NoSigPeps_FASTA.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\P02649.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

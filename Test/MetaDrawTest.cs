@@ -23,6 +23,9 @@ using IO.MzML;
 using TaskLayer;
 using ThermoFisher.CommonCore.Data.Business;
 using System.Drawing;
+using Nett;
+using EngineLayer.GlycoSearch;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -605,11 +608,27 @@ namespace Test
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\sliced_glyco_hcd_ethcd.raw");
 
-            // run task
-            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
+            CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
+            var glycoSearchTask = new GlycoSearchTask()
+            {
+                CommonParameters = commonParameters,
+                _glycoSearchParameters = new GlycoSearchParameters()
+                {
+                    OGlycanDatabasefile = "OGlycan.gdb",
+                    NGlycanDatabasefile = "NGlycan.gdb",
+                    GlycoSearchType = GlycoSearchType.OGlycanSearch,
+                    OxoniumIonFilt = true,
+                    DecoyType = DecoyType.Reverse,
+                    GlycoSearchTopNum = 50,
+                    MaximumOGlycanAllowed = 4,
+                    DoParsimony = true,
+                    WriteContaminants = true,
+                    WriteDecoys = true
+                }
+            };
 
             Directory.CreateDirectory(outputFolder);
-            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters };
+
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
 
             var psmFile = Path.Combine(outputFolder, @"oglyco.psmtsv");
