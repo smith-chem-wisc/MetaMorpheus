@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Concurrent;
+using EngineLayer.PsmTsv;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 
@@ -218,8 +219,14 @@ namespace TaskLayer.MbrAnalysis
                             }
                             else
                             {
-                                bestMbrMatches.TryAdd(mbrPeak,
-                                    new MbrSpectralMatch(BestPsmForMbrPeak(peptideSpectralMatches), mbrPeak));
+                                PeptideSpectralMatch bestMatch = BestPsmForMbrPeak(peptideSpectralMatches);
+                                if (bestMatch != null && mbrPeak is MaxQuantChromatographicPeak mqPeak)
+                                {
+                                    mqPeak.SpectralContrastAngle = bestMatch.SpectralAngle;
+                                    mbrPeak = mqPeak;
+                                }
+                                bestMbrMatches.TryAdd(mbrPeak, 
+                                    new MbrSpectralMatch(bestMatch, mbrPeak));
                             }
                         }
                     }

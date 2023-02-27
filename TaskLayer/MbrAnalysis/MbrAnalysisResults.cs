@@ -1,4 +1,5 @@
-﻿using FlashLFQ;
+﻿using EngineLayer.PsmTsv;
+using FlashLFQ;
 using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Concurrent;
@@ -21,7 +22,7 @@ namespace TaskLayer.MbrAnalysis
         /// A Tab Separated Header that is similar to a ChromatographicPeak header,
         /// but with a new column appended at the zero-indexed 16th position
         /// </summary>
-        public static string PeaksTabSeparatedHeader
+        public string PeaksTabSeparatedHeader
         {
             get
             {
@@ -30,6 +31,17 @@ namespace TaskLayer.MbrAnalysis
                 sb.Append(string.Join('\t', peakHeaderSplit[0..16]));
                 sb.Append('\t');
                 sb.Append("Spectral Contrast Angle");
+                sb.Append('\t');
+                sb.Append("Retention Time Shift (min)");
+                sb.Append('\t');
+                if (MaxQuantAnalysis)
+                {
+                    sb.Append("Ppm Error");
+                }
+                else
+                {
+                    sb.Append("Retention Time Z-Score");
+                }
                 sb.Append('\t');
                 sb.Append(string.Join('\t', peakHeaderSplit[16..]));
                 string header = sb.ToString();
@@ -149,11 +161,21 @@ namespace TaskLayer.MbrAnalysis
                     foreach (var peak in orderedPeaks)
                     {
                         string spectralContrastAngle = "Spectrum Not Found";
+                        string retentionTimeShift = "";
+                        string ppmError = "";
+                        string rtZScore = "";
                         if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
                         {
                             spectralContrastAngle = mbrSpectralMatch.spectralLibraryMatch != null && mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
                                 ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
                                 : "Spectrum Not Found";
+                        }
+
+                        if (MaxQuantAnalysis && peak is MaxQuantChromatographicPeak mqPeak)
+                        {
+                            if (mqPeak.SpectralContrastAngle != null) spectralContrastAngle = mqPeak.SpectralContrastAngle.ToString();
+                            if (mqPeak.RtShift != null) retentionTimeShift = mqPeak.RtShift.ToString();
+                            if (mqPeak.PpmError != null) ppmError = mqPeak.PpmError.ToString();
                         }
 
                         string[] peakStringSplit = peak.ToString().Split('\t');
@@ -166,6 +188,17 @@ namespace TaskLayer.MbrAnalysis
                         sb.Append(string.Join('\t', peakStringSplit[0..16]));
                         sb.Append('\t');
                         sb.Append(spectralContrastAngle);
+                        sb.Append('\t');
+                        sb.Append(retentionTimeShift);
+                        sb.Append('\t');
+                        if (MaxQuantAnalysis)
+                        {
+                            sb.Append(ppmError);
+                        }
+                        else
+                        {
+                            sb.Append(rtZScore);
+                        }
                         sb.Append('\t');
                         sb.Append(string.Join('\t', peakStringSplit[16..]));
                         output.WriteLine(sb.ToString().Trim());

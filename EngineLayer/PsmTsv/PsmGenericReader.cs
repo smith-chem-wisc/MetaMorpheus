@@ -49,6 +49,7 @@ namespace EngineLayer.PsmTsv
         internal static int _retentionLengthCol;
         internal static int _intensityCol;
         internal static int _mzCol;
+        internal static int _ppmErrorCol;
 
         internal static Dictionary<string, double> _modSequenceToMonoMass;
         internal static Dictionary<string, FlashLFQ.ProteinGroup> allProteinGroups;
@@ -310,7 +311,8 @@ namespace EngineLayer.PsmTsv
                 new FlashLFQ.IsotopicEnvelope(msPeak, Int32.Parse(psmSplit[_chargeStCol]), msPeak.Intensity);
             mbrPeak.IsotopicEnvelopes.Add(envelope);
             mbrPeak.Intensity = msPeak.Intensity;
-            mbrPeak.RtShift = double.TryParse(psmSplit[_matchRtDeltaCol], out var rtDelta) ? rtDelta : Double.NaN;
+            mbrPeak.RtShift = double.TryParse(psmSplit[_matchRtDeltaCol], out var rtDelta) ? rtDelta : null;
+            mbrPeak.PpmError = double.TryParse(psmSplit[_ppmErrorCol], out var ppmError) ? ppmError : null;
             return mbrPeak;
         }
 
@@ -1188,6 +1190,7 @@ namespace EngineLayer.PsmTsv
                 _msmsScanCol = Array.IndexOf(split, "MS/MS scan number".ToLowerInvariant());
                 _intensityCol = Array.IndexOf(split, "Intensity".ToLowerInvariant());
                 _mzCol = Array.IndexOf(split, "m/z".ToLowerInvariant());
+                _ppmErrorCol = Array.IndexOf(split, "Mass error [ppm]".ToLowerInvariant());
 
                 return PsmFileType.MaxQuantEvidence;
             }
@@ -1362,5 +1365,7 @@ namespace EngineLayer.PsmTsv
 
         public double? RtShift { get; set; }
         public double? SpectralContrastAngle { get; set; }
+
+        public double? PpmError { get; set; }
     }
 }

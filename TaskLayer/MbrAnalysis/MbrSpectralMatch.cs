@@ -75,10 +75,10 @@ namespace TaskLayer.MbrAnalysis
             {
                 var sb = new StringBuilder();
                 sb.Append(PeptideSpectralMatch.GetTabSeparatedHeader());
-                sb.Append('\t');
-                sb.Append("Retention Time Shift");
-                sb.Append('\t');
-                sb.Append("Rt Shift Z-Score");
+                //sb.Append('\t');
+                //sb.Append("Retention Time Shift");
+                //sb.Append('\t');
+                //sb.Append("Rt Shift Z-Score");
                 sb.Append('\t');
                 sb.Append("Initial Search Q-Value");
                 sb.Append('\t');

@@ -32,14 +32,8 @@ namespace Test
         public List<SpectraFileInfo> SpectraFiles;
 
 
-        [OneTimeSetUp]
-        public void HelaSingleCellSetup()
-        {
-
-        }
-
         [Test]
-        public static void TestMaxQuantEvidenceReader()
+        public static void TestMaxQuantEvidenceReaderHeLa()
         {
             string experimentalDesignFilepath = @"D:\HelaSingleCellQCmzML\rawFiles\ExperimentalDesign.tsv";
             List<string> rawFilePathList = new List<string>
@@ -108,116 +102,45 @@ namespace Test
                 @"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\",
                 commonParams);
 
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\", "PeakQuant_Second");
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\HelaSingleCellQCmzML\rawFiles\combined\txt\", "PeakQuant_Third");
         }
-
-        [Test]
-        public static void TestMaxQuantEvidenceReader955()
-        {
-            string experimentalDesignFilepath = @"D:\SingleCellDataSets\PXD031955\ExperimentalDesign_PXD031955.tsv";
-            List<string> rawFilePathList = new List<string>
-            {
-                @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC05_hip_cultured_neu0_125_ugul.raw",
-                @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC06_hip_cultured_neu0_25_ugul.raw",
-                @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC07_hip_cultured_neu0_25_ugul.raw",
-                @"D:\SingleCellDataSets\PXD031955\2016-04-01_SC03_hip_cultured_neu0_5_ugul.raw",
-                @"D:\SingleCellDataSets\PXD031955\2016-04-04_SC02_hip_cultured_neu0_5_ugul.raw",
-                @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC04_hip_cultured_neu0_125_ugul.raw",
-            };
-            List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
-                experimentalDesignFilepath, rawFilePathList, out var errors);
-
-            string maxQuantEvidencePath = @"D:\SingleCellDataSets\PXD031955\combined\txt\evidence.txt";
-            Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
-                maxQuantEvidencePath, silent: false, spectraFiles);
-
-            string maxQuantMsmsPath = @"D:\SingleCellDataSets\PXD031955\combined\txt\msms.txt";
-            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
-                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: true);
-
-            // Every MBR run ID should have a corresponding PSM in the msms.txt file
-            Assert.That(mbrPeaks.Count == maxQuantPsms.Count);
-
-            PpmTolerance testTolerance = new PpmTolerance(5);
-            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
-            // matches for every psm
-            Assert.IsFalse(maxQuantPsms.Values.Any(p =>
-                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
-
-            // Writing a spectral library
-            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
-            foreach (var psm in maxQuantPsms.Values)
-            {
-                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
-                spectraForSpectraLibrary.Add(standardSpectrum);
-            }
-            string spectrumFilePath = @"D:\SingleCellDataSets\PXD031955\combined\txt\spectralLibrary.msp";
-            if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
-            using (StreamWriter output = new StreamWriter(spectrumFilePath))
-            {
-                foreach (var librarySpectrum in spectraForSpectraLibrary)
-                {
-                    output.WriteLine(librarySpectrum.ToString());
-                }
-            }
-
-            // Tolerances taken from MaxQuant defaults
-            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
-                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
-
-            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
-                spectraFiles,
-                mbrPeaks,
-                maxQuantPsms,
-                spectrumFilePath,
-                @"D:\SingleCellDataSets\PXD031955\combined\txt\",
-                commonParams);
-
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\SingleCellDataSets\PXD031955\combined\txt\", "PeakQuant_NoArtifact");
-        }
-
 
         //[Test]
-        //public static void TestMaxQuantEvidenceReader24017()
+        //public static void TestMaxQuantEvidenceReader955()
         //{
-        //    string folderPath = @"D:\SingleCellDataSets\PXD024017";
-        //    string experimentalDesignFilepath = @"D:\SingleCellDataSets\PXD024017\ExperimentalDesign_PXD024017_raw.tsv";
+        //    string experimentalDesignFilepath = @"D:\SingleCellDataSets\PXD031955\ExperimentalDesign_PXD031955.tsv";
         //    List<string> rawFilePathList = new List<string>
         //    {
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_03.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_02.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_01.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_04.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_03.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_02.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_01.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_04.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_03.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_02.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250g_01.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_04.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_03.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_01.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_02.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_04.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_03.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_02.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_01.raw",
-        //        @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_04.raw"
+        //        @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC05_hip_cultured_neu0_125_ugul.raw",
+        //        @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC06_hip_cultured_neu0_25_ugul.raw",
+        //        @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC07_hip_cultured_neu0_25_ugul.raw",
+        //        @"D:\SingleCellDataSets\PXD031955\2016-04-01_SC03_hip_cultured_neu0_5_ugul.raw",
+        //        @"D:\SingleCellDataSets\PXD031955\2016-04-04_SC02_hip_cultured_neu0_5_ugul.raw",
+        //        @"D:\SingleCellDataSets\PXD031955\2016-04-11_SC04_hip_cultured_neu0_125_ugul.raw",
         //    };
         //    List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
         //        experimentalDesignFilepath, rawFilePathList, out var errors);
 
-        //    string maxQuantEvidencePath = Path.Join(folderPath, @"combined\txt\evidence.txt");
+        //    string maxQuantEvidencePath = @"D:\SingleCellDataSets\PXD031955\combined\txt\evidence.txt";
         //    Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
         //        maxQuantEvidencePath, silent: false, spectraFiles);
 
-        //    string maxQuantMsmsPath = Path.Join(folderPath, @"combined\txt\msms.txt");
+        //    //foreach (var kvp in mbrPeaks)
+        //    //{
+        //    //    if (kvp.Value.Count == 0) continue;
+        //    //    var peak = kvp.Value.First();
+        //    //    if (peak is MaxQuantChromatographicPeak mqPeak)
+        //    //    {
+        //    //        int placeholder = 0;
+        //    //    }
+        //    //}
+
+        //    string maxQuantMsmsPath = @"D:\SingleCellDataSets\PXD031955\combined\txt\msms.txt";
         //    Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
         //        maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: true);
 
         //    // Every MBR run ID should have a corresponding PSM in the msms.txt file
-        //    Assert.AreEqual(mbrPeaks.Count, maxQuantPsms.Count, 1); // There is one donor where the matched fragments are missing
+        //    Assert.That(mbrPeaks.Count == maxQuantPsms.Count);
 
         //    PpmTolerance testTolerance = new PpmTolerance(5);
         //    // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
@@ -232,7 +155,7 @@ namespace Test
         //        var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
         //        spectraForSpectraLibrary.Add(standardSpectrum);
         //    }
-        //    string spectrumFilePath = Path.Join(folderPath, @"combined\txt\spectralLibrary.msp");
+        //    string spectrumFilePath = @"D:\SingleCellDataSets\PXD031955\combined\txt\spectralLibrary.msp";
         //    if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
         //    using (StreamWriter output = new StreamWriter(spectrumFilePath))
         //    {
@@ -251,11 +174,92 @@ namespace Test
         //        mbrPeaks,
         //        maxQuantPsms,
         //        spectrumFilePath,
-        //        Path.Join(folderPath, @"combined\txt\"),
+        //        @"D:\SingleCellDataSets\PXD031955\RtFromMaxQuant\",
         //        commonParams);
 
-        //    mbrAnalysisResults.WritePeakQuantificationResultsToTsv(Path.Join(folderPath, @"combined\txt\"), "PeakQuant_NoArtifact");
+        //    mbrAnalysisResults.WritePeakQuantificationResultsToTsv(@"D:\SingleCellDataSets\PXD031955\RtFromMaxQuant\", "PeakQuant_NoArtifact");
         //}
+
+
+        [Test]
+        public static void TestMaxQuantEvidenceReader24017()
+        {
+            string folderPath = @"D:\SingleCellDataSets\PXD024017";
+            string experimentalDesignFilepath = @"D:\SingleCellDataSets\PXD024017\ExperimentalDesign_PXD024017_raw.tsv";
+            List<string> rawFilePathList = new List<string>
+            {
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_04.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_2c5ng_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_04.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250pg_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_250g_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_04.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_1ng_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_04.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_03.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_02.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_5ng_01.raw",
+                @"D:\SingleCellDataSets\PXD024017\20201207_Exploris_RSLC9_PepSep_PHF-3um_HeLaPi_500pg_04.raw"
+            };
+            List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilepath, rawFilePathList, out var errors);
+
+            string maxQuantEvidencePath = Path.Join(folderPath, @"combined\txt\evidence.txt");
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
+                maxQuantEvidencePath, silent: false, spectraFiles);
+
+            string maxQuantMsmsPath = Path.Join(folderPath, @"combined\txt\msms.txt");
+            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
+                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: true);
+
+            // Every MBR run ID should have a corresponding PSM in the msms.txt file
+            Assert.AreEqual(mbrPeaks.Count, maxQuantPsms.Count, 1); // There is one donor where the matched fragments are missing
+
+            PpmTolerance testTolerance = new PpmTolerance(5);
+            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
+            // matches for every psm
+            Assert.IsFalse(maxQuantPsms.Values.Any(p =>
+                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
+
+            // Writing a spectral library
+            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in maxQuantPsms.Values)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
+                spectraForSpectraLibrary.Add(standardSpectrum);
+            }
+            string spectrumFilePath = Path.Join(folderPath, @"combined\txt\spectralLibrary.msp");
+            if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var librarySpectrum in spectraForSpectraLibrary)
+                {
+                    output.WriteLine(librarySpectrum.ToString());
+                }
+            }
+
+            // Tolerances taken from MaxQuant defaults
+            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
+                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
+
+            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+                spectraFiles,
+                mbrPeaks,
+                maxQuantPsms,
+                spectrumFilePath,
+                Path.Join(folderPath, @"combined\txt\"),
+                commonParams);
+
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(Path.Join(folderPath, @"combined\txt\"), "PeakQuant_NoArtifact");
+        }
 
         [Test]
         public static void TestMaxQuantEvidenceReader19515()
@@ -266,7 +270,6 @@ namespace Test
             {
                 @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_SingleMotorNeuron_2.raw",
                 @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_SingleMotorNeuron_3.raw",
-                @"D:\SingleCellDataSets\PXD019515\ExperimentalDesign_PXD019515.tsv",
                 @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_Single_HeLa_1.raw",
                 @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_Single_HeLa_2.raw",
                 @"D:\SingleCellDataSets\PXD019515\FAIMS_2CV_OTIT_HCD_300ITMS2_Single_HeLa_3.raw",
@@ -412,7 +415,6 @@ namespace Test
             mbrAnalysisResults.WritePeakQuantificationResultsToTsv(Path.Join(folderPath, @"combined\txt\"), "PeakQuant_Calibrated");
         }
 
-
         [Test]
         public static void TestMaxQuantEvidenceReader85937_Lung()
         {
@@ -492,79 +494,6 @@ namespace Test
                 commonParams);
 
             mbrAnalysisResults.WritePeakQuantificationResultsToTsv(Path.Join(folderPath, @"combined\txt\"), "PeakQuant_NoArtifact");
-        }
-
-        [Test]
-        public static void LeetcodeScratchpad()
-        {
-            // Fruit Basket Problem
-            //int[] fruits = new int[] { 1, 1, 2, 3, 2, 2, 4, 5, 4, 5, 4, 5, 5, 2 };
-
-            //int currentPick = fruits[0];
-            //int secondPick = -1;
-            //int currentSum = 0;
-            //int cumSum = 0;
-            //int maxSum = 0;
-            //for (int i = 0; i < fruits.Length; i++)
-            //{
-            //    if (currentPick == fruits[i])
-            //    {
-            //        currentSum++;
-            //    }
-            //    else if (secondPick == fruits[i] | secondPick == -1)
-            //    {
-            //        // swap current and second
-            //        secondPick = currentPick;
-            //        currentPick = fruits[i];
-            //        cumSum += currentSum;
-            //        currentSum = 1;
-            //    }
-            //    else
-            //    {
-            //        secondPick = currentPick;
-            //        currentPick = fruits[i];
-
-            //        if (cumSum + currentSum > maxSum) maxSum = cumSum + currentSum;
-            //        cumSum = currentSum;
-            //        currentSum = 1;
-            //    }
-            //}
-
-            //// add last combination after loop
-            //if (cumSum + currentSum > maxSum) maxSum = cumSum + currentSum;
-
-            ////return maxSum;
-
-            // Jump Game II
-
-            int[] nums = new int[] { 2, 3, 1, 1, 4 };
-            int jumpMax = 0;
-            int jumpCount = 0;
-            int i = 0;
-
-            while (i != nums.Length - 1)
-            {
-                int jumpRange = i + nums[i];
-                if (jumpRange >= nums.Length - 1)
-                {
-                    jumpCount++;
-                    break;
-                }
-
-                for (int j = i; j <= jumpRange; j++)
-                {
-                    if (nums[j] + j > jumpMax)
-                    {
-                        jumpMax = nums[j] + j;
-                        i = j;
-                    }
-                }
-                jumpCount++;
-            }
-
-
-            int placeholder = 0;
-
         }
 
         [Test]
