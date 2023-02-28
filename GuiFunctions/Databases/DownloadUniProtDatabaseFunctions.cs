@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using Proteomics.ProteolyticDigestion;
+using System.Text;
+using static Org.BouncyCastle.Bcpg.Attr.ImageAttrib;
 
 namespace GuiFunctions.Databases
 {
@@ -11,40 +13,41 @@ namespace GuiFunctions.Databases
         public static string GetUniProtHtmlQueryString(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
         {
             StringBuilder htmlQueryString = new StringBuilder();
-            htmlQueryString.Append("https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " ");
+            htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/stream?");
 
             if (!xmlFormat) //fasta
             {
-                htmlQueryString.Append("&format=fasta");
+                htmlQueryString.Append("format=fasta");
             }
             else
             {
-                htmlQueryString.Append("&format=xml");
+                htmlQueryString.Append("format=xml");
             }
 
             if (reviewed)
             {
-                htmlQueryString.Append("&reviewed:yes");
+                htmlQueryString.Append("&reviewed:true");
             }
 
             if (isoforms)
             {
-                htmlQueryString.Append("&include:yes");
+                htmlQueryString.Append("&include:true");
             }
             else
             {
-                htmlQueryString.Append("&include:no");
+                htmlQueryString.Append("&include:false");
             }
 
             if (compressed)
             {
-                htmlQueryString.Append("&compress=yes");
+                htmlQueryString.Append("&compress=true");
             }
             else
             {
-                htmlQueryString.Append("&compress=no");
+                htmlQueryString.Append("&compress=false");
             }
 
+            htmlQueryString.Append("&query=%28%28proteome%3A" + proteomeID + "%29%29");
             return htmlQueryString.ToString();
         }
 

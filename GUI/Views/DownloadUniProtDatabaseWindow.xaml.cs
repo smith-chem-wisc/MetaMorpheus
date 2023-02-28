@@ -51,11 +51,12 @@ namespace MetaMorpheusGUI
         {
             Uri uri = new(DownloadLink);
             HttpClient client = new();
+            client.Timeout = TimeSpan.FromMinutes(30);
             ProgressBarIndeterminate progress = new ProgressBarIndeterminate
             {
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
             };
-            progress.Show();
+            progress.Show();    
             Task.Factory.StartNew(() =>
             {
                 HttpResponseMessage urlResponse = Task.Run(() => client.GetAsync(uri)).Result;
@@ -73,7 +74,7 @@ namespace MetaMorpheusGUI
                     {
                         proteinDatabases.Add(new ProteinDbForDataGrid(TargetPath));
                     }
-                    File.SetCreationTime(TargetPath, DateTime.Now); //this is needed because overwriting an old file will not update the file creation time
+                    System.IO.File.SetCreationTime(TargetPath, DateTime.Now); //this is needed because overwriting an old file will not update the file creation time
                 }
                 this.Close();
             }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None,
@@ -82,6 +83,7 @@ namespace MetaMorpheusGUI
 
         private void DownloadProteomeButton_Click(object sender, RoutedEventArgs e)
         {
+
             if (!string.IsNullOrEmpty(selectedProteome) && availableProteomes.Contains(selectedProteome))
             {
                 string filename = DownloadUniProtDatabaseFunctions.GetUniprotFilename(GetProteomeId(selectedProteome), reviewedCheckBox.IsChecked.Value, addIsoformsCheckBox.IsChecked.Value, xmlBox.IsChecked.Value, compressedCheckBox.IsChecked.Value);
@@ -92,7 +94,7 @@ namespace MetaMorpheusGUI
 
         private static bool ProteomeDownloaded(string downloadedProteomeFullPath)
         {
-            return File.Exists(downloadedProteomeFullPath);
+            return System.IO.File.Exists(downloadedProteomeFullPath);
         }
 
         private static string GetProteomeId(string selectedProteome)
