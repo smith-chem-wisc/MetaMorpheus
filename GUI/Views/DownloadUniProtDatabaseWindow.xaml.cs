@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -51,7 +52,6 @@ namespace MetaMorpheusGUI
         {
             Uri uri = new(DownloadLink);
             HttpClient client = new();
-            client.Timeout = TimeSpan.FromMinutes(30);
             ProgressBarIndeterminate progress = new ProgressBarIndeterminate
             {
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
@@ -59,6 +59,8 @@ namespace MetaMorpheusGUI
             progress.Show();    
             Task.Factory.StartNew(() =>
             {
+                client.Timeout = TimeSpan.FromMinutes(30);
+                AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
                 HttpResponseMessage urlResponse = Task.Run(() => client.GetAsync(uri)).Result;
                 using (FileStream stream = new(TargetPath, FileMode.CreateNew))
                 {

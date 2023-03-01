@@ -24,29 +24,20 @@ namespace GuiFunctions.Databases
                 htmlQueryString.Append("format=xml");
             }
 
-            if (reviewed)
+            if (isoforms && !xmlFormat)
             {
-                htmlQueryString.Append("&reviewed:true");
+                htmlQueryString.Append("&includeIsoform=true");
             }
 
-            if (isoforms)
+            if (reviewed)
             {
-                htmlQueryString.Append("&include:true");
-            }
-            else
-            {
-                htmlQueryString.Append("&include:false");
+                htmlQueryString.Append("&reviewed=true");
             }
 
             if (compressed)
             {
-                htmlQueryString.Append("&compress=true");
+                htmlQueryString.Append("&compressed=true");
             }
-            else
-            {
-                htmlQueryString.Append("&compress=false");
-            }
-
             htmlQueryString.Append("&query=%28%28proteome%3A" + proteomeID + "%29%29");
             return htmlQueryString.ToString();
         }
@@ -63,7 +54,7 @@ namespace GuiFunctions.Databases
                 filename += "_withUnreviewed";
             }
 
-            if (isoforms)
+            if (isoforms && !xmlFormat)
             {
                 filename += "_isoform";
             }
