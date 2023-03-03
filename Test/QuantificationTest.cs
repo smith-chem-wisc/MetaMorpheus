@@ -166,10 +166,6 @@ namespace Test
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Search", searchTaskLoaded) }, mzMLFiles, new List<DbForTask> { new DbForTask(myDatabase, false) }, outPutDirectory);
             engineToml.Run();
 
-            //string psmFile = Path.Combine(outPutDirectory, @"SearchTOML\AllPSMs.psmtsv");
-
-            //List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-
             string topResultsFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData\Search");
 
             string allQuantifiedPeptidesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData\LFQOutput\Search\AllQuantifiedPeptides.tsv");
@@ -181,24 +177,34 @@ namespace Test
             int peptideOutputProteinGroupIndex = allPeptides[0].IndexOf("Protein Groups");
             int peptideOutputProteinGroupFileOneIntensityIndex = allPeptides[0].IndexOf("Intensity_20100614_Velos1_TaGe_SA_K562_3");
             int peptideOutputProteinGroupFileTwoIntensityIndex = allPeptides[0].IndexOf("Intensity_20100614_Velos1_TaGe_SA_K562_4");
+            allPeptides.RemoveAt(0);
 
-            List<string> allPeptidesProteinGroups = allPeptides.Select(p => p[peptideOutputProteinGroupIndex]).ToList();
-            allPeptidesProteinGroups.RemoveAt(0);
+            double fileOneIntensitySum = allPeptides.Select(p => Convert.ToDouble(p[peptideOutputProteinGroupFileOneIntensityIndex])).ToList().Sum();
+            double fileTwoIntensitySum = allPeptides.Select(p => Convert.ToDouble(p[peptideOutputProteinGroupFileTwoIntensityIndex])).ToList().Sum();
+            List<string> allPeptidesProteinGroups = allPeptides.Select(p => p[peptideOutputProteinGroupIndex]).Distinct().ToList();
 
             int proteinOutputProteinGroupIndex = allProteins[0].IndexOf("Protein Accession");
-            int proteinOutputProteinGroupFileOneIntensityIndex = allPeptides[0].IndexOf("Intensity_one_1");
-            int proteinOutputProteinGroupFileTwoIntensityIndex = allPeptides[0].IndexOf("Intensity_two_1");
+            int proteinOutputProteinGroupFileOneIntensityIndex = allProteins[0].IndexOf("Intensity_one_1");
+            int proteinOutputProteinGroupFileTwoIntensityIndex = allProteins[0].IndexOf("Intensity_two_1");
+            allProteins.RemoveAt(0);
 
-            List<string> allProteinGroupsProteinGroups = allProteins.Select(p => p[proteinOutputProteinGroupIndex]).ToList();
-            allProteinGroupsProteinGroups.RemoveAt(0);
+            List<string> fsda = allProteins.Where(p => p[proteinOutputProteinGroupFileOneIntensityIndex] != "").Select(p => p[proteinOutputProteinGroupFileOneIntensityIndex]).ToList();
+            List<double> sdf = fsda.Select(g => Convert.ToDouble(g)).ToList();
+            double d = sdf.Sum();
+
+            double proteinFileOneIntensitySum = allProteins.Where(p => p[proteinOutputProteinGroupFileOneIntensityIndex] != "").Select(p => Convert.ToDouble(p[proteinOutputProteinGroupFileOneIntensityIndex])).ToList().Sum();
+            double proteinFileTwoIntensitySum = allProteins.Where(p => p[proteinOutputProteinGroupFileTwoIntensityIndex] != "").Select(p => Convert.ToDouble(p[proteinOutputProteinGroupFileTwoIntensityIndex])).ToList().Sum();
+            List<string> allProteinGroupsProteinGroups = allProteins.Select(p => p[proteinOutputProteinGroupIndex]).Distinct().ToList();
 
             //some differences in this test are because some peptides have UNDEFINED in the protein group.
             //this is problematic for those proteins. I see that full and base sequence are not the same. 
 
+            Assert.AreEqual(299,allProteinGroupsProteinGroups.Count);
             CollectionAssert.AreEquivalent(allPeptidesProteinGroups, allProteinGroupsProteinGroups);
+            Assert.That(fileOneIntensitySum, Is.EqualTo(proteinFileOneIntensitySum).Within(1.0));
+            Assert.That(fileTwoIntensitySum, Is.EqualTo(proteinFileTwoIntensitySum).Within(1.0));
 
             Directory.Delete(outPutDirectory, true);
-            Assert.IsTrue(false);
         }
 
         [Test]
