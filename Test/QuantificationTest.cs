@@ -1,8 +1,10 @@
 ﻿using Chemistry;
+using Easy.Common.Extensions;
 using EngineLayer;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
@@ -146,6 +148,63 @@ namespace Test
 
             // tests complete. delete output directory
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void Test_LFQ()
+        {
+            string myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData\Task1-SearchTaskconfig.toml");
+            SearchTask searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            string outPutDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData\LFQOutput");
+            Directory.CreateDirectory(outPutDirectory);
+
+            List<string> mzMLFiles = new();
+            mzMLFiles.AddRange(Directory.GetFiles(Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData")).Where(f=>f.Contains("mzML")));
+
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData\UP000005640_reviewedproteinPruned.xml");
+
+            var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Search", searchTaskLoaded) }, mzMLFiles, new List<DbForTask> { new DbForTask(myDatabase, false) }, outPutDirectory);
+            engineToml.Run();
+
+            string topResultsFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData\Search");
+
+            string allQuantifiedPeptidesPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData\LFQOutput\Search\AllQuantifiedPeptides.tsv");
+            string allQuantifiedProteinsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"LFQTestData\LFQOutput\Search\AllQuantifiedProteinGroups.tsv");
+
+            List<string[]> allPeptides = File.ReadAllLines(allQuantifiedPeptidesPath).Select(l => l.Split('\t').ToArray()).ToList();
+            List<string[]> allProteins = File.ReadAllLines(allQuantifiedProteinsPath).Select(l => l.Split('\t').ToArray()).ToList();
+
+            int peptideOutputProteinGroupIndex = allPeptides[0].IndexOf("Protein Groups");
+            int peptideOutputProteinGroupFileOneIntensityIndex = allPeptides[0].IndexOf("Intensity_20100614_Velos1_TaGe_SA_K562_3");
+            int peptideOutputProteinGroupFileTwoIntensityIndex = allPeptides[0].IndexOf("Intensity_20100614_Velos1_TaGe_SA_K562_4");
+            allPeptides.RemoveAt(0);
+
+            double fileOneIntensitySum = allPeptides.Select(p => Convert.ToDouble(p[peptideOutputProteinGroupFileOneIntensityIndex])).ToList().Sum();
+            double fileTwoIntensitySum = allPeptides.Select(p => Convert.ToDouble(p[peptideOutputProteinGroupFileTwoIntensityIndex])).ToList().Sum();
+            List<string> allPeptidesProteinGroups = allPeptides.Select(p => p[peptideOutputProteinGroupIndex]).Distinct().ToList();
+
+            int proteinOutputProteinGroupIndex = allProteins[0].IndexOf("Protein Accession");
+            int proteinOutputProteinGroupFileOneIntensityIndex = allProteins[0].IndexOf("Intensity_one_1");
+            int proteinOutputProteinGroupFileTwoIntensityIndex = allProteins[0].IndexOf("Intensity_two_1");
+            allProteins.RemoveAt(0);
+
+            List<string> fsda = allProteins.Where(p => p[proteinOutputProteinGroupFileOneIntensityIndex] != "").Select(p => p[proteinOutputProteinGroupFileOneIntensityIndex]).ToList();
+            List<double> sdf = fsda.Select(g => Convert.ToDouble(g)).ToList();
+            double d = sdf.Sum();
+
+            double proteinFileOneIntensitySum = allProteins.Where(p => p[proteinOutputProteinGroupFileOneIntensityIndex] != "").Select(p => Convert.ToDouble(p[proteinOutputProteinGroupFileOneIntensityIndex])).ToList().Sum();
+            double proteinFileTwoIntensitySum = allProteins.Where(p => p[proteinOutputProteinGroupFileTwoIntensityIndex] != "").Select(p => Convert.ToDouble(p[proteinOutputProteinGroupFileTwoIntensityIndex])).ToList().Sum();
+            List<string> allProteinGroupsProteinGroups = allProteins.Select(p => p[proteinOutputProteinGroupIndex]).Distinct().ToList();
+
+            //some differences in this test are because some peptides have UNDEFINED in the protein group.
+            //this is problematic for those proteins. I see that full and base sequence are not the same. 
+
+            Assert.AreEqual(299,allProteinGroupsProteinGroups.Count);
+            CollectionAssert.AreEquivalent(allPeptidesProteinGroups, allProteinGroupsProteinGroups);
+            Assert.That(fileOneIntensitySum, Is.EqualTo(proteinFileOneIntensitySum).Within(1.0));
+            Assert.That(fileTwoIntensitySum, Is.EqualTo(proteinFileTwoIntensitySum).Within(1.0));
+
+            Directory.Delete(outPutDirectory, true);
         }
 
         [Test]

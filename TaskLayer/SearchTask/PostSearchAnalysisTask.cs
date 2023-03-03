@@ -254,22 +254,12 @@ namespace TaskLayer
             }
 
             // get PSMs to pass to FlashLFQ
-            List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr = new();
-            if (Parameters.AllPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
-            {
-                unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                    p.FdrInfo.PEP_QValue <= 0.01
-                    && !p.IsDecoy
-                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-            }
-            else
-            {
-                unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
+            List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr =  Parameters.AllPsms.Where(p =>
                     p.FdrInfo.QValue <= 0.01
+                    && p.FdrInfo.QValueNotch <= 0.01
                     && !p.IsDecoy
                     && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-            }
-
+            
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
             if (ProteinGroups != null && ProteinGroups.Count != 0) //ProteinGroups can be null if parsimony wasn't done, and it can be empty if you're doing the two peptide rule
@@ -282,7 +272,10 @@ namespace TaskLayer
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.GeneNames.Select(x => x.Item2).FirstOrDefault())),
                         string.Join("|", proteinsOrderedByAccession.Select(p => p.Organism).Distinct()));
 
-                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(v => v.FullSequence != null))
+                    foreach (var psm in proteinGroup.AllPsmsBelowOnePercentFDR.Where(p=>p.FdrInfo.QValue <= 0.01
+                    && p.FdrInfo.QValueNotch <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null))
                     {
                         if (psmToProteinGroups.TryGetValue(psm, out var flashLfqProteinGroups))
                         {
