@@ -128,6 +128,21 @@ namespace TaskLayer.MbrAnalysis
             }
         }
 
+        public static (double?, double?) CalculateRtShift(ChromatographicPeak acceptorPeak)
+        {
+            if (acceptorPeak.RtHypothesis == null || acceptorPeak.Apex == null || acceptorPeak.Apex.IndexedPeak == null) return (null, null);
+            double retentionTimeShift = acceptorPeak.Apex.IndexedPeak.RetentionTime - (double)acceptorPeak.RtHypothesis;
+
+            // Interquartile range is approximately equal to 1.35 standard deviations
+            double? rtStdDev = acceptorPeak.RtInterquartileRange != null
+                ? acceptorPeak.RtInterquartileRange / 1.35
+                : acceptorPeak.RtStdDev;
+            if (rtStdDev != null) return (retentionTimeShift, Math.Abs(retentionTimeShift / (double)rtStdDev));
+            else return (retentionTimeShift, null);
+        }
+
+
+
         /// <summary>
         /// Writes the peaks quantified by FlashLFQ to a .tsv file. Adds a column giving the spectralContrastAngle for MBR peaks
         /// </summary>
@@ -164,19 +179,28 @@ namespace TaskLayer.MbrAnalysis
                         string retentionTimeShift = "";
                         string ppmError = "";
                         string rtZScore = "";
-                        if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
-                        {
-                            spectralContrastAngle = mbrSpectralMatch.spectralLibraryMatch != null && mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
-                                ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
-                                : "Spectrum Not Found";
-                        }
 
-                        if (MaxQuantAnalysis && peak is MaxQuantChromatographicPeak mqPeak)
+                        if (!MaxQuantAnalysis)
+                        {
+                            if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
+                            {
+                                spectralContrastAngle = 
+                                    mbrSpectralMatch.spectralLibraryMatch != null && mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
+                                        ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
+                                        : "Spectrum Not Found";
+                            }
+                            (double?, double?) rtInfo = CalculateRtShift(peak);
+                            retentionTimeShift = rtInfo.Item1 != null ? rtInfo.Item1.ToString() : "";
+                            rtZScore = rtInfo.Item2 != null ? rtInfo.Item2.ToString() : "";
+                        }
+                        else if (peak is MaxQuantChromatographicPeak mqPeak)
                         {
                             if (mqPeak.SpectralContrastAngle != null) spectralContrastAngle = mqPeak.SpectralContrastAngle.ToString();
                             if (mqPeak.RtShift != null) retentionTimeShift = mqPeak.RtShift.ToString();
                             if (mqPeak.PpmError != null) ppmError = mqPeak.PpmError.ToString();
                         }
+
+                        
 
                         string[] peakStringSplit = peak.ToString().Split('\t');
                         // Peaks generated from MaxQuant data don't have an Apex, so retention time has to be pulledfrom IndexedPeak

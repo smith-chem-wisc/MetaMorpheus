@@ -83,6 +83,7 @@ namespace TaskLayer
                 SpectralLibraryGeneration();
                 if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
                 {
+                    Status("Running Enhanced MBR Analysis...", Parameters.SearchTaskId);
                     MbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters);
                 }      
             }
@@ -639,6 +640,7 @@ namespace TaskLayer
 
         private void UpdateSpectralLibrary()
         {
+            Status("Updating Spectral Library...", Parameters.SearchTaskId);
             var FilteredPsmList = Parameters.AllPsms
                .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
             FilteredPsmList.RemoveAll(b => b.IsDecoy);
@@ -695,6 +697,7 @@ namespace TaskLayer
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
+            Status("Generating Spectral Library...", Parameters.SearchTaskId);
             List<PeptideSpectralMatch> filteredPsmList = new();
             if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
             {
@@ -732,6 +735,7 @@ namespace TaskLayer
         }
         private void WriteProteinResults()
         {
+            Status("Writing Protein results...", Parameters.SearchTaskId);
             if (Parameters.SearchParameters.DoParsimony)
             {
                 string fileName = "AllProteinGroups.tsv";
@@ -856,6 +860,7 @@ namespace TaskLayer
 
         private void WriteQuantificationResults()
         {
+            Status("Writing Quantification results...", Parameters.SearchTaskId);
             if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
