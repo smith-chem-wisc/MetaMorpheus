@@ -1,6 +1,4 @@
-﻿using Proteomics.ProteolyticDigestion;
-using System.Text;
-using static Org.BouncyCastle.Bcpg.Attr.ImageAttrib;
+﻿using System.Text;
 
 namespace GuiFunctions.Databases
 {
@@ -24,7 +22,7 @@ namespace GuiFunctions.Databases
                 htmlQueryString.Append("format=xml");
             }
 
-            if (isoforms && !xmlFormat)
+            if (isoforms && !xmlFormat) //Only the .fasta file can be isoforms
             {
                 htmlQueryString.Append("&includeIsoform=true");
             }

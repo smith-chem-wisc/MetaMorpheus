@@ -6,7 +6,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -42,7 +41,7 @@ namespace MetaMorpheusGUI
 
         private void LoadAvailableProteomes()
         {
-            foreach (var item in EngineLayer.GlobalVariables.AvailableUniProtProteomes)
+            foreach (var item in GlobalVariables.AvailableUniProtProteomes)
             {
                 availableProteomes.Add(item.Value);
             }
@@ -59,7 +58,7 @@ namespace MetaMorpheusGUI
             progress.Show();    
             Task.Factory.StartNew(() =>
             {
-                client.Timeout = TimeSpan.FromMinutes(30);
+                client.Timeout = TimeSpan.FromMinutes(30); //This the time in case the process take a long time in this case have 30 min
                 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
                 HttpResponseMessage urlResponse = Task.Run(() => client.GetAsync(uri)).Result;
                 using (FileStream stream = new(TargetPath, FileMode.CreateNew))
@@ -76,11 +75,11 @@ namespace MetaMorpheusGUI
                     {
                         proteinDatabases.Add(new ProteinDbForDataGrid(TargetPath));
                     }
-                    System.IO.File.SetCreationTime(TargetPath, DateTime.Now); //this is needed because overwriting an old file will not update the file creation time
+                    File.SetCreationTime(TargetPath, DateTime.Now); //this is needed because overwriting an old file will not update the file creation time
                 }
                 this.Close();
-            }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None,
-            System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
+            }, System.Threading.CancellationToken.None, TaskContinuationOptions.None,
+            TaskScheduler.FromCurrentSynchronizationContext());
         }
 
         private void DownloadProteomeButton_Click(object sender, RoutedEventArgs e)
@@ -96,7 +95,7 @@ namespace MetaMorpheusGUI
 
         private static bool ProteomeDownloaded(string downloadedProteomeFullPath)
         {
-            return System.IO.File.Exists(downloadedProteomeFullPath);
+            return File.Exists(downloadedProteomeFullPath);
         }
 
         private static string GetProteomeId(string selectedProteome)
