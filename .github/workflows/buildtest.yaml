@@ -11,9 +11,9 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 15
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Set up .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
@@ -30,13 +30,31 @@ jobs:
         verbose: true
         files: Test/TestResults/*/coverage.cobertura.xml
 
-  WindowsAndLinuxDockerTests:
+  WindowsDockerTests:
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore CMD/CMD.csproj
+    - name: Build SpritzCMD
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
+    - name: Build Windows docker image
+      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
+    - name: Run Windows docker test
+      run: docker run --rm -v CMD/bin/x64/Release/net6.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
+
+  LinuxDockerTests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
@@ -46,8 +64,4 @@ jobs:
     - name: Build Linux docker image
       run: docker build -t smithchemwisc/metamorpheus:dev .
     - name: Run Linux docker Test
-      run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o ./mnt/data/DockerMicrovignetteOutput -v minimal
-    - name: Build Windows docker image
-      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
-    - name: Run Windows docker test
-      run: docker run --rm -v CMD/bin/x64/Release/net5.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
+      run: docker run --rm -v CMD/bin/x64/Release/net6.0/Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o ./mnt/data/DockerMicrovignetteOutput -v minimal
