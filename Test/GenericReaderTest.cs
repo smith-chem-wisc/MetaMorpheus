@@ -33,6 +33,7 @@ namespace Test
 
 
         [Test]
+        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReaderHeLa()
         {
             string experimentalDesignFilepath = @"D:\HelaSingleCellQCmzML\rawFiles\ExperimentalDesign.tsv";
@@ -110,6 +111,7 @@ namespace Test
 
 
         [Test]
+        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader955()
         {
             string folderPath = @"D:\SingleCellDataSets\PXD031955";
@@ -180,6 +182,7 @@ namespace Test
 
 
         [Test]
+        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader24017()
         {
             string folderPath = @"D:\SingleCellDataSets\PXD024017";
@@ -263,6 +266,7 @@ namespace Test
         }
 
         [Test]
+        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader19515()
         {
             string folderPath = @"D:\SingleCellDataSets\PXD019515";
@@ -335,6 +339,7 @@ namespace Test
         }
 
         [Test]
+        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader85937_HeLa()
         {
             string folderPath = @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics";
@@ -421,6 +426,7 @@ namespace Test
         }
 
         [Test]
+        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader85937_Lung()
         {
             string folderPath = @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics";
