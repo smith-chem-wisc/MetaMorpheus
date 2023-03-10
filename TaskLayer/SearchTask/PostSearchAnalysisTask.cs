@@ -254,21 +254,11 @@ namespace TaskLayer
             }
 
             // get PSMs to pass to FlashLFQ
-            List<PeptideSpectralMatch> unambiguousPsmsBelowOnePercentFdr = new();
-            if (Parameters.AllPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
-            {
-                unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                    p.FdrInfo.PEP_QValue <= 0.01
-                    && !p.IsDecoy
-                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-            }
-            else
-            {
-                unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                    p.FdrInfo.QValue <= 0.01
-                    && !p.IsDecoy
-                    && p.FullSequence != null).ToList(); //if ambiguous, there's no full sequence
-            }
+            var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
+                p.FdrInfo.QValue <= 0.01
+                && p.FdrInfo.QValueNotch <= 0.01
+                && !p.IsDecoy
+                && p.FullSequence != null).ToList();
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
