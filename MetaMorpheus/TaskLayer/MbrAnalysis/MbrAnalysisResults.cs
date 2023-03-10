@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using MzLibUtil;
 
 namespace TaskLayer.MbrAnalysis
 {
@@ -132,7 +133,20 @@ namespace TaskLayer.MbrAnalysis
                 else
                 {
                     sb.Append("Retention Time Z-Score");
+
+                    sb.Append('\t');
+                    sb.Append("Ms2 Retention Time-Recovered Spectrum");
+                    sb.Append('\t');
+                    sb.Append("Precursor Mass - Recovered Spectrum");
+                    sb.Append('\t');
+                    sb.Append("Intensity Integral (Most Abundant Peak)");
+                    sb.Append('\t');
+                    sb.Append("Intensity Integral (Whole Envelope)");
+                    sb.Append('\t');
+                    sb.Append("Most Abundant Peak [Retention Time, Intensity]");
                 }
+                sb.Append('\t');
+                sb.Append("Recovered Spectrum Ms2 Scan Time");
                 sb.Append('\t');
                 sb.Append(string.Join('\t', peakHeaderSplit[16..]));
                 string header = sb.ToString();
@@ -169,6 +183,8 @@ namespace TaskLayer.MbrAnalysis
                 using (StreamWriter output = new StreamWriter(fullSeqPath))
                 {
                     output.WriteLine(PeaksTabSeparatedHeader);
+                    // TODO: Change this so it reflects the actual ppm tolerance
+                    PpmTolerance tolerance = new PpmTolerance(5);
 
                     foreach (var peak in orderedPeaks)
                     {
@@ -177,18 +193,58 @@ namespace TaskLayer.MbrAnalysis
                         string ppmError = "";
                         string rtZScore = "";
 
+                        string recoveredSpectrumRt = "";
+                        string recoveredSpectrumPrecursorMass = "";
+
+                        string apexIntensityIntegral = "";
+                        string envelopeIntensityIntegral = "";
+
+                        string apexIntensityVsTime = "";
+
                         if (!MaxQuantAnalysis)
                         {
                             if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
                             {
-                                spectralContrastAngle = 
-                                    mbrSpectralMatch.spectralLibraryMatch != null && mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
-                                        ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
-                                        : "Spectrum Not Found";
+                                if (mbrSpectralMatch.spectralLibraryMatch != null)
+                                {
+                                    spectralContrastAngle =
+                                        mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
+                                            ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
+                                            : "Spectrum Not Found";
+                                    recoveredSpectrumRt =
+                                        mbrSpectralMatch.spectralLibraryMatch.ScanRetentionTime.ToString();
+                                    recoveredSpectrumPrecursorMass = mbrSpectralMatch.spectralLibraryMatch
+                                        .ScanPrecursorMonoisotopicPeakMz.ToString();
+                                }
                             }
                             (double?, double?) rtInfo = CalculateRtShift(peak);
                             retentionTimeShift = rtInfo.Item1 != null ? rtInfo.Item1.ToString() : "";
                             rtZScore = rtInfo.Item2 != null ? rtInfo.Item2.ToString() : "";
+
+                            var apexPeaks = peak.IsotopicEnvelopes
+                                .Select(e => e.IndexedPeak)
+                                .Where(p => tolerance.Within(p.Mz, peak.Apex.IndexedPeak.Mz))
+                                .OrderBy(p => p.RetentionTime)
+                                .ToList();
+0
+                            apexIntensityIntegral = apexPeaks
+                                .Sum(p => p.Intensity)
+                                .ToString();
+                            envelopeIntensityIntegral = peak.IsotopicEnvelopes
+                                .Sum(e => e.IndexedPeak.Intensity)
+                                .ToString();
+
+                            StringBuilder apexDescription = new StringBuilder();
+                            apexDescription.Append("[ ");
+                            foreach (IndexedMassSpectralPeak imsPeak in apexPeaks)
+                            {
+                                apexDescription.Append(imsPeak.RetentionTime);
+                                apexDescription.Append(",");
+                                apexDescription.Append(imsPeak.Intensity);
+                                apexDescription.Append("; ");
+                            }
+                            apexDescription.AppendLine("]");
+                            apexIntensityVsTime = apexDescription.ToString();
                         }
                         else if (peak is MaxQuantChromatographicPeak mqPeak)
                         {
@@ -196,8 +252,6 @@ namespace TaskLayer.MbrAnalysis
                             if (mqPeak.RtShift != null) retentionTimeShift = mqPeak.RtShift.ToString();
                             if (mqPeak.PpmError != null) ppmError = mqPeak.PpmError.ToString();
                         }
-
-                        
 
                         string[] peakStringSplit = peak.ToString().Split('\t');
                         // Peaks generated from MaxQuant data don't have an Apex, so retention time has to be pulledfrom IndexedPeak
