@@ -1,0 +1,28 @@
+﻿<Window x:Class="MetaMorpheusGUI.ThermoLicenceAgreementWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Title="Thermo RawFileReader Licence" Height="450" Width="500"
+        WindowStartupLocation="CenterScreen" >
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="20" />
+        </Grid.RowDefinitions>
+        
+        <RichTextBox x:Name="LicenceText" VerticalScrollBarVisibility="Visible" IsReadOnly="True" IsDocumentEnabled="True" Grid.Row="0" >
+                <RichTextBox.Resources>
+                    <Style TargetType="{x:Type Paragraph}">
+                        <Setter Property="Margin" Value="0" />
+                    </Style>
+                </RichTextBox.Resources>
+            </RichTextBox>
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1">
+            <Button Name="AgreeButton" Content="Agree" Click="AgreeButton_Click" />
+            <Button Name="DisagreeButton" Content="Disagree" Click="DisagreeButton_Click" />
+        </StackPanel>
+    </Grid>
+</Window>

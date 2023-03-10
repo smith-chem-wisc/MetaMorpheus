@@ -1,0 +1,4 @@
+Name	Sequences Inducing Cleavage	Sequences Preventing Cleavage	Cleavage Terminus	Cleavage Specificity	PSI-MS Accession Number	PSI-MS Name	Site Regular Expression	Notes
+Test1	K|R|D	"P,D|P|"	C|N|N	full				
+Test2	K|D		C|C	full				
+Test3	K|		C|N	full				

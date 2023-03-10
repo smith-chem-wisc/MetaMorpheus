@@ -1,0 +1,433 @@
+﻿<Window x:Class="MetaMorpheusGUI.CalibrateTaskWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        KeyDown="KeyPressed"
+        Title="Calibrate Task" Width="750" Height="750"  WindowStartupLocation="CenterScreen">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                    <Label Content="Task Name" />
+                    <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                        <TextBox.Style>
+                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                <Style.Resources>
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                        <VisualBrush.Visual>
+                                            <Label Content="CalibrateTask" Foreground="Gray" />
+                                        </VisualBrush.Visual>
+                                    </VisualBrush>
+                                </Style.Resources>
+                                <Style.Triggers>
+                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="Text" Value="{x:Null}">
+                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                    </Trigger>
+                                    <Trigger Property="IsKeyboardFocused" Value="True">
+                                        <Setter Property="Background" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBox.Style>
+                    </TextBox>
+                </StackPanel>
+                <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
+                    <Expander x:Name="SearchModeExpander">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="precursorMassToleranceLabel" Content="Precursor Mass Tolerance" />
+                                        <local:DoubleTextBoxControl x:Name="PrecursorMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    Accepted tolerance between experimental and theoretical MS1 peaks.
+                                                    <LineBreak/>
+                                                    For calibration, it is better to be too lenient than too strict
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </local:DoubleTextBoxControl>
+                                        <ComboBox x:Name="PrecursorMassToleranceComboBox" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="productMassToleranceLabel" Content="Product Mass Tolerance" />
+                                        <local:DoubleTextBoxControl x:Name="ProductMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    Accepted tolerance between experimental and theoretical MS2 peaks.
+                                                    <LineBreak/>
+                                                    For calibration, it is better to be too lenient than too strict
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </local:DoubleTextBoxControl>
+                                        <ComboBox x:Name="ProductMassToleranceComboBox" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="maxMissedCleavageLabel" Content="Max Missed Cleavages" />
+                                        <TextBox x:Name="MissedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    Maximum number of missed proteolytic cleavages allowed.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="proteaseLabel" Content="Protease" />
+                                        <ComboBox x:Name="ProteaseComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="ProteaseSpecificUpdate">
+                                            <ComboBox.ToolTip>
+                                                <TextBlock>
+                                                        Protease used for digestion.
+                                                        <LineBreak/>
+                                                        Proteases can be added/modified by the user at "Data -> Open folder with mods/data files -> ProteolyticDigestion -> proteases.tsv"
+                                                </TextBlock>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
+                                        <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        The minimum allowed peptide length. Must be a positive, non-zero integer.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                    <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
+                                        <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        The maximum allowed peptide length. Leave empty for no limitation.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="LbMinVariantDepth" Content="Min read depth for variants" />
+                                        <TextBox x:Name="MinVariantDepthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The minimum number of reads to consider a nucleic acid sequence variant.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="LbMaxHeterozygousVariants" Content="Max heterozygous variants for combinitorics" />
+                                        <TextBox x:Name="MaxHeterozygousVariantsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The maximum number of heterozygous variants for combinitorics.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="MinimumScoreLabel" Content="Minimum score allowed:" />
+                                        <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The minimum MetaMorpheus score allowed for a PSM to be reportable.
+                                                    <LineBreak/>
+                                                    Decreasing this number increases search time.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="initiatorMethionineLabel" Content="Initiator Methionine" />
+                                        <ComboBox x:Name="InitiatorMethionineBehaviorComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ComboBox.ToolTip>
+                                                <TextBlock>
+                                                        Assumed cleavage of the initiator Methionine present at the beginning of most proteins (start codon).
+                                                </TextBlock>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="separationType" Content="Separation Type" />
+                                        <ComboBox x:Name="SeparationTypeComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ComboBox.ToolTip>
+                                                <TextBlock>
+                                                        Specify is separation for prior to the mass-spec analysis was one with HPLC or with CZE.
+                                                </TextBlock>
+                                            </ComboBox.ToolTip>
+                                        </ComboBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="MaxModsPerPeptideLabel" Content="Max Mods Per Peptide" />
+                                        <TextBox x:Name="MaxModsPerPeptideTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                    The maximum number of modifications allowed on a single isoform.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="MaxModificationIsoformsLabel" Content="Max Modification Isoforms" />
+                                        <TextBox x:Name="MaxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        The maximum number of isoforms (sequences with modifications) allowed from a given unmodified "base-sequence". 
+                                                        <LineBreak/>
+                                                        This prevents highly ambiguous regions from greatly expanding the search space.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <Label.ToolTip>
+                                                <TextBlock>
+                                                        The type of fragmentation.
+                                                </TextBlock>
+                                            </Label.ToolTip>
+                                        </Label>
+                                        <ComboBox x:Name="DissociationTypeComboBox" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <Label Content="Max Threads" />
+                                        <TextBox x:Name="MaxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <TextBox.ToolTip>
+                                                <TextBlock>
+                                                        By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
+                                                        <LineBreak/>
+                                                        Enter a lower number to limit CPU usage.
+                                                </TextBlock>
+                                            </TextBox.ToolTip>
+                                        </TextBox>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                            <!--<CheckBox x:Name="conserveMemoryCheckBox" Content="Conserve memory (might be slow)" />-->
+                            <!--<StackPanel Orientation="Horizontal" Margin="5">
+                                <Label x:Name="ff" Content="Files to analyze in parallel" />
+                                <TextBox x:Name="maxDegreesOfParallelism" Width="45" />
+                            </StackPanel>-->
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
+                <GroupBox Header="Modifications" DockPanel.Dock="Top">
+                    <Expander x:Name="ModExpander">
+                        <Expander.Style>
+                            <Style TargetType="Expander">
+                                <Setter Property="Header" Value="{Binding ModExpanderTitle}" />
+                                <Style.Triggers>
+                                    <Trigger Property="IsExpanded" Value="True">
+                                        <Setter Property="Header" Value="Hide" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Expander.Style>
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <Label Content="Fixed" />
+                                    <TreeView x:Name="FixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
+                                        <TreeView.Resources>
+                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </HierarchicalDataTemplate>
+                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </TreeView.Resources>
+                                        <TreeView.ItemContainerStyle>
+                                            <Style TargetType="TreeViewItem">
+                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
+                                            </Style>
+                                        </TreeView.ItemContainerStyle>
+                                    </TreeView>
+                                    
+                                </StackPanel>
+                                <StackPanel Grid.Column="1">
+                                    <Label Content="Variable" />
+                                    <TreeView x:Name="VariableModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="400">
+                                        <TreeView.Resources>
+                                            <HierarchicalDataTemplate DataType="{x:Type guiFunctions:ModTypeForTreeViewModel}" ItemsSource="{Binding Children}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </HierarchicalDataTemplate>
+                                            <DataTemplate DataType="{x:Type guiFunctions:ModForTreeViewModel}">
+                                                <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}">
+                                                    <CheckBox x:Name="checkBoxHistogramAnalysis" IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </TreeView.Resources>
+                                        <TreeView.ItemContainerStyle>
+                                            <Style TargetType="TreeViewItem">
+                                                <Setter Property="IsExpanded" Value="{Binding Expanded}"/>
+                                            </Style>
+                                        </TreeView.ItemContainerStyle>
+                                    </TreeView>
+                                </StackPanel>
+                                <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                            <Style.Resources>
+                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                    <VisualBrush.Visual>
+                                                        <Label Content="Search..." Foreground="Gray" />
+                                                    </VisualBrush.Visual>
+                                                </VisualBrush>
+                                            </Style.Resources>
+                                            <Style.Triggers>
+                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="Text" Value="{x:Null}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter Property="Background" Value="White" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                <TextBox x:Name="SearchVarMod" TextChanged="TextChanged_Var" Grid.Column="1" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                    <TextBox.Style>
+                                        <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                            <Style.Resources>
+                                                <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                                    <VisualBrush.Visual>
+                                                        <Label Content="Search..." Foreground="Gray" />
+                                                    </VisualBrush.Visual>
+                                                </VisualBrush>
+                                            </Style.Resources>
+                                            <Style.Triggers>
+                                                <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="Text" Value="{x:Null}">
+                                                    <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                                </Trigger>
+                                                <Trigger Property="IsKeyboardFocused" Value="True">
+                                                    <Setter Property="Background" Value="White" />
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBox.Style>
+                                </TextBox>
+                                
+                                <!--<StackPanel Grid.Column="2">
+                                    <Label Content="Database Localized" />
+                                    <CheckBox x:Name="localizeAllCheckBox" Content="Localize All Modifications" IsChecked="True" />
+                                    <TreeView x:Name="localizeModsTreeView" ItemsSource="{Binding}" Height="400">
+                                        <TreeView.Style>
+                                            <Style TargetType="{x:Type TreeView}">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding ElementName=localizeAllCheckBox, Path=IsChecked}" Value="True">
+                                                        <Setter Property="Visibility" Value="Hidden" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TreeView.Style>
+                                        <TreeView.Resources>
+                                            <HierarchicalDataTemplate DataType="{x:Type local:ModTypeForLoc}">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <CheckBox IsChecked="{Binding Use}" />
+                                                    <TextBlock Text="{Binding DisplayName}" />
+                                                </StackPanel>
+                                            </HierarchicalDataTemplate>
+                                        </TreeView.Resources>
+                                    </TreeView>
+                                </StackPanel>-->
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
+                <GroupBox Header="Output Options" DockPanel.Dock="Top">
+                    <Expander x:Name="outputOptionsExpander">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="1*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0">
+                                    <StackPanel Orientation="Horizontal" Margin="5">
+                                        <CheckBox x:Name="writeIndexMzmlCheckbox" Content="Write indexed .mzML" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <CheckBox.ToolTip>
+                                                <TextBlock>
+                                                    Enabling this setting will write an index of scans to the end of the calibrated .mzML file written by this task. 
+                                                    <LineBreak/>
+                                                    This enables fast lookup of particular scans instead of having to load the entire file. Useful for visualizing search results.
+                                                </TextBlock>
+                                            </CheckBox.ToolTip>
+                                        </CheckBox>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
+                <!--<GroupBox Header="Calibration Parameters" DockPanel.Dock="Top">
+                    <Expander x:Name="CalibrationExpander">
+                        <StackPanel>
+                            <CheckBox x:Name="writeIntermediateFilesCheckBox" Content="Write Intermediate Files" />
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>-->
+            </DockPanel>
+        </ScrollViewer>
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
+            <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_Click" />
+            <Button x:Name="SaveButton" Content="Save Calibrate Task" Click="SaveButton_Click" FontSize="24" />
+            <Button x:Name="SetDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
+                <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                </ToolTipService.ToolTip>
+            </Button>
+        </StackPanel>
+    </Grid>
+</Window>

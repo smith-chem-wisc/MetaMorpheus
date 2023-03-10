@@ -1,0 +1,26 @@
+﻿<Window x:Class="MetaMorpheusGUI.ProteaseSpecificMsgBox"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Height="253.921" Width="545.393"
+        WindowStartupLocation="CenterScreen"
+        ResizeMode="NoResize">
+    <Grid Margin="5,5,5,5">
+        <StackPanel>
+            <Label Name="Label" Margin="5" Height="150" Width="500"/>
+            <CheckBox Name="DoNotAskAgainCheckBox" Content="Remember my decision and don't ask me again." HorizontalAlignment="Center">
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="This decision can be changed by editing the file MetaMorpheus/GUIsettings.toml"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                </ToolTipService.ToolTip>
+            </CheckBox>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Button Name="YesButton" Content="Yes"  Height="25"  VerticalAlignment="Top" Width="83" Margin="5" Click="YesButton_Click"/>
+                <Button Name="NoButton" Content="No" Height="25"  VerticalAlignment="Top" Width="83" Margin="5" Click="NoButton_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

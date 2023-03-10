@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mzLibProteinDb>
+  <entry>
+    <accession>accession1</accession>
+    <gene />
+    <sequence length="14">MPEPTIDEKANTHE</sequence>
+  </entry>
+  <entry>
+    <accession>accession3</accession>
+    <name>name2</name>
+    <protein>
+      <recommendedName>
+        <fullName>fullname2</fullName>
+      </recommendedName>
+    </protein>
+    <gene />
+    <organism>
+      <name type="scientific">organism</name>
+    </organism>
+    <feature type="chain">
+      <location>
+        <begin position="4" />
+        <end position="8" />
+      </location>
+    </feature>
+    <sequence length="10">MAACNNNCAA</sequence>
+  </entry>
+  <entry>
+    <accession>accession3</accession>
+    <name>name2</name>
+    <protein>
+      <recommendedName>
+        <fullName>fullname2</fullName>
+      </recommendedName>
+    </protein>
+    <gene />
+    <organism>
+      <name type="scientific">organism</name>
+    </organism>
+    <feature type="chain">
+      <location>
+        <begin position="4" />
+        <end position="8" />
+      </location>
+    </feature>
+    <sequence length="10">MAACNNNCAA</sequence>
+  </entry>
+</mzLibProteinDb>
