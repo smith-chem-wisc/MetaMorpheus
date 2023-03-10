@@ -22,6 +22,7 @@ namespace TaskLayer.MbrAnalysis
         public readonly FlashLfqResults FlashLfqResults;
         private Dictionary<string, List<string>> PeptideScoreDict;
         public Dictionary<Identification, PeptideWithSetModifications> IdsToPwsms { get; }
+        public Dictionary<SpectraFileInfo, Dictionary<int, double>> Ms1TicDictionary { get; }
         public bool MaxQuantAnalysis { get; }
 
         /// <summary>
@@ -48,8 +49,10 @@ namespace TaskLayer.MbrAnalysis
             }
         }
 
-        public MbrAnalysisResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches, FlashLfqResults flashLfqResults,
-            Dictionary<Identification, PeptideWithSetModifications> idsToPwsms)
+        public MbrAnalysisResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches,
+            FlashLfqResults flashLfqResults,
+            Dictionary<Identification, PeptideWithSetModifications> idsToPwsms = null,
+            Dictionary<SpectraFileInfo, Dictionary<int, double>> ms1TicDictionary = null)
         {
             BestMbrMatches = bestMbrMatches;
             FlashLfqResults = flashLfqResults;
@@ -180,8 +183,19 @@ namespace TaskLayer.MbrAnalysis
                     sb.Append("Intensity Integral (Most Abundant Peak)");
                     sb.Append('\t');
                     sb.Append("Intensity Integral (Whole Envelope)");
+                    if (IdsToPwsms != null)
+                    {
+                        sb.Append('\t');
+                        sb.Append("Precursor Isotopic Angle");
+                    }
+                    //if (Ms1TicDictionary != null)
+                    //{
+                    //    sb.Append('\t');
+                    //    sb.Append("Apex Ms1 TIC");
+                    //}
                     sb.Append('\t');
                     sb.Append("Most Abundant Peak [Retention Time, Intensity]");
+
                 }
                 sb.Append('\t');
                 sb.Append("Recovered Spectrum Ms2 Scan Time");
@@ -269,7 +283,7 @@ namespace TaskLayer.MbrAnalysis
 
                             if (IdsToPwsms != null && IdsToPwsms.TryGetValue(peak.Identifications.First(), out var peakId))
                             {
-                                precursorIsotopicAngle = GetIsotopeCorrelation(peakId, peak).ToString();
+                                if(peakId != null) precursorIsotopicAngle = GetIsotopeCorrelation(peakId, peak).ToString();
                             }
                             
                         }
@@ -308,10 +322,20 @@ namespace TaskLayer.MbrAnalysis
                             sb.Append(apexIntensityIntegral);
                             sb.Append('\t');
                             sb.Append(envelopeIntensityIntegral);
+                            if (IdsToPwsms != null)
+                            {
+                                sb.Append('\t');
+                                sb.Append(precursorIsotopicAngle);
+                            }
+
+                            //if (Ms1TicDictionary != null)
+                            //{
+                            //    sb.Append('\t');
+                            //    sb.Append(precursorIsotopicAngle);
+                            //}
                             sb.Append('\t');
                             sb.Append(apexIntensityVsTime);
-                            sb.Append('\t');
-                            sb.Append(precursorIsotopicAngle);
+                            
 
                         }
                         sb.Append('\t');
@@ -373,7 +397,7 @@ namespace TaskLayer.MbrAnalysis
 
             List<IndexedMassSpectralPeak> imsPeaksOrderedByMz = peak.IsotopicEnvelopes
                 .Select(e => e.IndexedPeak)
-                .Where(p => (p.RetentionTime - peak.Apex.IndexedPeak.RetentionTime) < 0.001)
+                .Where(p => Math.Abs(p.RetentionTime - peak.Apex.IndexedPeak.RetentionTime) < 0.0001)
                 .OrderBy(p => p.Mz)
                 .ToList();
 

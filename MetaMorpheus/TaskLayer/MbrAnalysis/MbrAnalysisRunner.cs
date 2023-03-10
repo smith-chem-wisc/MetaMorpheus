@@ -49,6 +49,7 @@ namespace TaskLayer.MbrAnalysis
 
             ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches = new();
 
+            //Dictionary<SpectraFileInfo, Dictionary<int, double>> ms1TicDictionary = new();
             foreach (SpectraFileInfo spectraFile in spectraFiles)
             {
                 List<ChromatographicPeak> fileSpecificMbrPeaks =
@@ -58,6 +59,8 @@ namespace TaskLayer.MbrAnalysis
                 MyFileManager myFileManager = new(true);
                 MsDataFile myMsDataFile =
                     myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, commonParameters);
+                //ms1TicDictionary.TryAdd(spectraFile, RetrieveMs1TicInfo(myMsDataFile));
+
                 MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(
                     commonParameters.PrecursorMassTolerance,
                     parameters.SearchParameters.MassDiffAcceptorType, parameters.SearchParameters.CustomMdac);
@@ -136,6 +139,21 @@ namespace TaskLayer.MbrAnalysis
 
             return new MbrAnalysisResults(bestMbrMatches, parameters.FlashLfqResults, idsToPwsms);
         }
+
+        //private static Dictionary<int, double> RetrieveMs1TicInfo(MsDataFile msDataFile)
+        //{
+        //    Dictionary<int, double> zeroBasedScanToTicDictionary = new();
+        //    //Dictionary<double, double> retentionTimeToTicDictionary = new();
+        //    IEnumerable<MsDataScan> ms1Scans = msDataFile.GetAllScansList().Where(x => x.MsnOrder == 1);
+        //    int zeroBasedScanIndex = 0;
+        //    foreach (MsDataScan scan in ms1Scans)
+        //    {
+        //        //retentionTimeToTicDictionary.TryAdd(scan.RetentionTime, scan.TotalIonCurrent);
+        //        zeroBasedScanToTicDictionary.TryAdd(zeroBasedScanIndex, scan.TotalIonCurrent);
+        //        zeroBasedScanIndex++;
+        //    }
+        //    return zeroBasedScanToTicDictionary;
+        //}
 
         /// <summary>
         /// Performs secondary analysis of MBR results by searching acceptor files for candidate spectra,
