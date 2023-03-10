@@ -32,7 +32,8 @@ namespace TaskLayer.MbrAnalysis
         public static MbrAnalysisResults RunMbrAnalysis(
             PostSearchAnalysisParameters parameters,
             CommonParameters commonParameters,
-            List<(string FileName, CommonParameters Parameters)> fileSpecificParameters)
+            List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
+            Dictionary<Identification, PeptideWithSetModifications> idsToPwsms = null)
         {
 
             if (!parameters.SearchParameters.DoMbrAnalysis | !parameters.SearchParameters.MatchBetweenRuns)
@@ -133,7 +134,7 @@ namespace TaskLayer.MbrAnalysis
             Directory.CreateDirectory(Path.Join(parameters.OutputFolder, mbrAnalysisFolder));
             WriteMbrPsmResults(bestMbrMatches, parameters);
 
-            return new MbrAnalysisResults(bestMbrMatches, parameters.FlashLfqResults);
+            return new MbrAnalysisResults(bestMbrMatches, parameters.FlashLfqResults, idsToPwsms);
         }
 
         /// <summary>

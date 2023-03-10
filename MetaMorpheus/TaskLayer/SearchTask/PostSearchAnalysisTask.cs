@@ -31,6 +31,7 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
         private MbrAnalysisResults MbrAnalysisResults { get; set; }
+        public Dictionary<Identification, PeptideWithSetModifications> IdsToPwsms { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -84,7 +85,7 @@ namespace TaskLayer
                 if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
                 {
                     Status("Running Enhanced MBR Analysis...", Parameters.SearchTaskId);
-                    MbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters);
+                    MbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters, IdsToPwsms);
                 }      
             }
 
@@ -477,14 +478,19 @@ namespace TaskLayer
 
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
+            IdsToPwsms = new();
             foreach (var spectraFile in psmsGroupedByFile)
             {
                 var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
 
                 foreach (var psm in spectraFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    Identification newId = new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge,
+                        psmToProteinGroups[psm]);
+                    flashLFQIdentifications.Add(newId);
+                    // Map IDs to PWSMs for later use in MbrAnalysis
+                    IdsToPwsms.TryAdd(newId, psm.BestMatchingPeptides.Any() ? psm.BestMatchingPeptides.FirstOrDefault().Peptide : null);
                 }
             }
 

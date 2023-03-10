@@ -9,6 +9,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using MzLibUtil;
+using Chemistry;
+using EngineLayer;
+using MassSpectrometry.MzSpectra;
+using Proteomics.ProteolyticDigestion;
 
 namespace TaskLayer.MbrAnalysis
 {
@@ -17,6 +21,7 @@ namespace TaskLayer.MbrAnalysis
         public readonly ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> BestMbrMatches;
         public readonly FlashLfqResults FlashLfqResults;
         private Dictionary<string, List<string>> PeptideScoreDict;
+        public Dictionary<Identification, PeptideWithSetModifications> IdsToPwsms { get; }
         public bool MaxQuantAnalysis { get; }
 
         /// <summary>
@@ -43,10 +48,12 @@ namespace TaskLayer.MbrAnalysis
             }
         }
 
-        public MbrAnalysisResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches, FlashLfqResults flashLfqResults)
+        public MbrAnalysisResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches, FlashLfqResults flashLfqResults,
+            Dictionary<Identification, PeptideWithSetModifications> idsToPwsms)
         {
             BestMbrMatches = bestMbrMatches;
             FlashLfqResults = flashLfqResults;
+            IdsToPwsms = idsToPwsms;
             MaxQuantAnalysis = false;
             PopulatePeptideScoreDict();
         }
@@ -108,6 +115,37 @@ namespace TaskLayer.MbrAnalysis
                 : acceptorPeak.RtStdDev;
             if (rtStdDev != null) return (retentionTimeShift, Math.Abs(retentionTimeShift / (double)rtStdDev));
             else return (retentionTimeShift, null);
+        }
+
+        public static (string apexI, string envelopeI, string peakShape) CalculateEnvelopeStatistics(ChromatographicPeak peak, PpmTolerance tolerance)
+        {
+            List<IndexedMassSpectralPeak> apexPeaks = peak.IsotopicEnvelopes
+                .Select(e => e.IndexedPeak)
+                .Where(p => tolerance.Within(p.Mz, peak.Apex.IndexedPeak.Mz))
+                .OrderBy(p => p.RetentionTime)
+                .ToList();
+
+            string apexIntensityIntegral = apexPeaks
+                .Sum(p => p.Intensity)
+                .ToString();
+            string envelopeIntensityIntegral = peak.IsotopicEnvelopes
+                .Sum(e => e.IndexedPeak.Intensity)
+                .ToString();
+
+            StringBuilder apexDescription = new StringBuilder();
+            apexDescription.Append("[ ");
+            foreach (IndexedMassSpectralPeak imsPeak in apexPeaks)
+            {
+                apexDescription.Append(imsPeak.RetentionTime);
+                apexDescription.Append(",");
+                apexDescription.Append(imsPeak.Intensity);
+                apexDescription.Append("; ");
+            }
+            apexDescription.Length--; // Removes the last "; " 
+            apexDescription.Append("]");
+            string apexIntensityVsTime = apexDescription.ToString();
+
+            return (apexIntensityIntegral, envelopeIntensityIntegral, apexIntensityVsTime);
         }
 
         /// <summary>
@@ -198,8 +236,9 @@ namespace TaskLayer.MbrAnalysis
 
                         string apexIntensityIntegral = "";
                         string envelopeIntensityIntegral = "";
-
                         string apexIntensityVsTime = "";
+
+                        string precursorIsotopicAngle = "";
 
                         if (!MaxQuantAnalysis)
                         {
@@ -217,34 +256,22 @@ namespace TaskLayer.MbrAnalysis
                                         .ScanPrecursorMonoisotopicPeakMz.ToString();
                                 }
                             }
+                            
+
                             (double?, double?) rtInfo = CalculateRtShift(peak);
                             retentionTimeShift = rtInfo.Item1 != null ? rtInfo.Item1.ToString() : "";
                             rtZScore = rtInfo.Item2 != null ? rtInfo.Item2.ToString() : "";
 
-                            var apexPeaks = peak.IsotopicEnvelopes
-                                .Select(e => e.IndexedPeak)
-                                .Where(p => tolerance.Within(p.Mz, peak.Apex.IndexedPeak.Mz))
-                                .OrderBy(p => p.RetentionTime)
-                                .ToList();
-0
-                            apexIntensityIntegral = apexPeaks
-                                .Sum(p => p.Intensity)
-                                .ToString();
-                            envelopeIntensityIntegral = peak.IsotopicEnvelopes
-                                .Sum(e => e.IndexedPeak.Intensity)
-                                .ToString();
+                            var envelopeResults = CalculateEnvelopeStatistics(peak, tolerance);
+                            apexIntensityIntegral = envelopeResults.apexI;
+                            envelopeIntensityIntegral = envelopeResults.envelopeI;
+                            apexIntensityVsTime = envelopeResults.peakShape;
 
-                            StringBuilder apexDescription = new StringBuilder();
-                            apexDescription.Append("[ ");
-                            foreach (IndexedMassSpectralPeak imsPeak in apexPeaks)
+                            if (IdsToPwsms != null && IdsToPwsms.TryGetValue(peak.Identifications.First(), out var peakId))
                             {
-                                apexDescription.Append(imsPeak.RetentionTime);
-                                apexDescription.Append(",");
-                                apexDescription.Append(imsPeak.Intensity);
-                                apexDescription.Append("; ");
+                                precursorIsotopicAngle = GetIsotopeCorrelation(peakId, peak).ToString();
                             }
-                            apexDescription.AppendLine("]");
-                            apexIntensityVsTime = apexDescription.ToString();
+                            
                         }
                         else if (peak is MaxQuantChromatographicPeak mqPeak)
                         {
@@ -273,6 +300,19 @@ namespace TaskLayer.MbrAnalysis
                         else
                         {
                             sb.Append(rtZScore);
+                            sb.Append('\t');
+                            sb.Append(recoveredSpectrumRt);
+                            sb.Append('\t');
+                            sb.Append(recoveredSpectrumPrecursorMass);
+                            sb.Append('\t');
+                            sb.Append(apexIntensityIntegral);
+                            sb.Append('\t');
+                            sb.Append(envelopeIntensityIntegral);
+                            sb.Append('\t');
+                            sb.Append(apexIntensityVsTime);
+                            sb.Append('\t');
+                            sb.Append(precursorIsotopicAngle);
+
                         }
                         sb.Append('\t');
                         sb.Append(string.Join('\t', peakStringSplit[16..]));
@@ -280,6 +320,82 @@ namespace TaskLayer.MbrAnalysis
                     }
                 }
             }
+        }
+
+        public static double GetIsotopeCorrelation(PeptideWithSetModifications selectedPeptide, ChromatographicPeak peak)
+        {
+            double isotopeAngle = 0;
+            double fineResolution = 0.01;
+            double minimumProbability = 0.005;
+            ChemicalFormula peptideFormula = null;
+            try
+            {
+                peptideFormula = selectedPeptide.FullChemicalFormula;
+            }
+            //XL data throws a nullReferenceException when you try to access the FullChemicalFormula
+            catch (NullReferenceException e) { }
+            if (peptideFormula == null || peptideFormula.AtomCount > 0)
+            {
+                // calculate averagine (used for isotopic distributions for unknown modifications)
+                double averageC = 4.9384;
+                double averageH = 7.7583;
+                double averageO = 1.4773;
+                double averageN = 1.3577;
+                double averageS = 0.0417;
+
+                double averagineMass =
+                    PeriodicTable.GetElement("C").AverageMass * averageC +
+                    PeriodicTable.GetElement("H").AverageMass * averageH +
+                    PeriodicTable.GetElement("O").AverageMass * averageO +
+                    PeriodicTable.GetElement("N").AverageMass * averageN +
+                    PeriodicTable.GetElement("S").AverageMass * averageS;
+
+                if (!String.IsNullOrEmpty(selectedPeptide.BaseSequence))
+                {
+                    Proteomics.AminoAcidPolymer.Peptide baseSequence = new Proteomics.AminoAcidPolymer.Peptide(selectedPeptide.BaseSequence);
+                    peptideFormula = baseSequence.GetChemicalFormula();
+                    // add averagine for any unknown mass difference (i.e., a modification)
+                    double massDiff = selectedPeptide.MonoisotopicMass - baseSequence.MonoisotopicMass;
+
+                    // Magic numbers are bad practice, but I pulled this directly from flashLfq
+                    if (Math.Abs(massDiff) >= 20)
+                    {
+                        double averagines = massDiff / averagineMass;
+
+                        peptideFormula.Add("C", (int)Math.Round(averagines * averageC, 0));
+                        peptideFormula.Add("H", (int)Math.Round(averagines * averageH, 0));
+                        peptideFormula.Add("O", (int)Math.Round(averagines * averageO, 0));
+                        peptideFormula.Add("N", (int)Math.Round(averagines * averageN, 0));
+                        peptideFormula.Add("S", (int)Math.Round(averagines * averageS, 0));
+                    }
+                }
+            }
+
+            List<IndexedMassSpectralPeak> imsPeaksOrderedByMz = peak.IsotopicEnvelopes
+                .Select(e => e.IndexedPeak)
+                .Where(p => (p.RetentionTime - peak.Apex.IndexedPeak.RetentionTime) < 0.001)
+                .OrderBy(p => p.Mz)
+                .ToList();
+
+            if (peptideFormula != null && imsPeaksOrderedByMz != null && imsPeaksOrderedByMz.Count > 0)
+            {
+                IsotopicDistribution peptideDistribution = IsotopicDistribution
+                    .GetDistribution(peptideFormula, fineResolution, minimumProbability);
+                SpectralSimilarity isotopeSimilarity = new(
+                    imsPeaksOrderedByMz.Select(p => p.Mz).ToArray(),
+                    imsPeaksOrderedByMz.Select(p => p.Intensity).ToArray(),
+                    peptideDistribution.Masses.ToArray(),
+                    peptideDistribution.Intensities.ToArray(),
+                    SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum,
+                    toleranceInPpm: 10.0,
+                    allPeaks: true,
+                    filterOutBelowThisMz: 200);
+                isotopeAngle = (double?)isotopeSimilarity.SpectralContrastAngle() ?? double.NaN;
+                return isotopeAngle;
+            }
+
+            return double.NaN;
+
         }
 
 
