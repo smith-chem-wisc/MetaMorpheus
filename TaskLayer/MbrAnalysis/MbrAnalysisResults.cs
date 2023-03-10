@@ -19,38 +19,6 @@ namespace TaskLayer.MbrAnalysis
         public bool MaxQuantAnalysis { get; }
 
         /// <summary>
-        /// A Tab Separated Header that is similar to a ChromatographicPeak header,
-        /// but with a new column appended at the zero-indexed 16th position
-        /// </summary>
-        public string PeaksTabSeparatedHeader
-        {
-            get
-            {
-                string[] peakHeaderSplit = ChromatographicPeak.TabSeparatedHeader.Split('\t');
-                StringBuilder sb = new();
-                sb.Append(string.Join('\t', peakHeaderSplit[0..16]));
-                sb.Append('\t');
-                sb.Append("Spectral Contrast Angle");
-                sb.Append('\t');
-                sb.Append("Retention Time Shift (min)");
-                sb.Append('\t');
-                if (MaxQuantAnalysis)
-                {
-                    sb.Append("Ppm Error");
-                }
-                else
-                {
-                    sb.Append("Retention Time Z-Score");
-                }
-                sb.Append('\t');
-                sb.Append(string.Join('\t', peakHeaderSplit[16..]));
-                string header = sb.ToString();
-                return header.Trim();
-            }
-        }
-
-
-        /// <summary>
         /// A Tab Separated Header that is similar to the QuantifiedPeptides header,
         /// but with a new column appended at the zero-indexed 16th position
         /// </summary>
@@ -141,7 +109,36 @@ namespace TaskLayer.MbrAnalysis
             else return (retentionTimeShift, null);
         }
 
-
+        /// <summary>
+        /// A Tab Separated Header that is similar to a ChromatographicPeak header,
+        /// but with a new column appended at the zero-indexed 16th position
+        /// </summary>
+        public string PeaksTabSeparatedHeader
+        {
+            get
+            {
+                string[] peakHeaderSplit = ChromatographicPeak.TabSeparatedHeader.Split('\t');
+                StringBuilder sb = new();
+                sb.Append(string.Join('\t', peakHeaderSplit[0..16]));
+                sb.Append('\t');
+                sb.Append("Spectral Contrast Angle");
+                sb.Append('\t');
+                sb.Append("Retention Time Shift (min)");
+                sb.Append('\t');
+                if (MaxQuantAnalysis)
+                {
+                    sb.Append("Ppm Error");
+                }
+                else
+                {
+                    sb.Append("Retention Time Z-Score");
+                }
+                sb.Append('\t');
+                sb.Append(string.Join('\t', peakHeaderSplit[16..]));
+                string header = sb.ToString();
+                return header.Trim();
+            }
+        }
 
         /// <summary>
         /// Writes the peaks quantified by FlashLFQ to a .tsv file. Adds a column giving the spectralContrastAngle for MBR peaks
