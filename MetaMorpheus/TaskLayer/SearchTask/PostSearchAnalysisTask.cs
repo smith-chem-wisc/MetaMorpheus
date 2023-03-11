@@ -25,6 +25,8 @@ using System.Threading.Tasks;
 using Chemistry;
 using MzLibUtil;
 using IsotopicEnvelope = MassSpectrometry.IsotopicEnvelope;
+using MassSpectrometry.MzSpectra;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace TaskLayer
 {
@@ -34,6 +36,7 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
         private MbrAnalysisResults MbrAnalysisResults { get; set; }
+        public Dictionary<Identification, PeptideWithSetModifications> IdsToPwsms { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -479,14 +482,19 @@ namespace TaskLayer
 
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
+            IdsToPwsms = new();
             foreach (var spectraFile in psmsGroupedByFile)
             {
                 var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
 
                 foreach (var psm in spectraFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    Identification newId = new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge,
+                        psmToProteinGroups[psm]);
+                    flashLFQIdentifications.Add(newId);
+                    // Map IDs to PWSMs for later use in MbrAnalysis
+                    IdsToPwsms.TryAdd(newId, psm.BestMatchingPeptides.Any() ? psm.BestMatchingPeptides.FirstOrDefault().Peptide : null);
                 }
             }
 
@@ -1728,6 +1736,9 @@ namespace TaskLayer
 
                     foreach (ChromatographicPeak peak in flashLFQResults.Peaks[flashLFQResults.SpectraFiles[i]])
                     {
+                        // Values to find
+                        string precursorAngle = "";
+
                         // Find apex scan number and associated ms1 scan
                         int scanIndex = peak.Apex.IndexedPeak.ZeroBasedMs1ScanIndex;
                         int apexCharge = peak.Apex.ChargeState;
@@ -1737,29 +1748,121 @@ namespace TaskLayer
                         if (Math.Abs(rtDelta) > 0.0001) throw new ArgumentException("Mismatch in MS1 scan indices");
 
                         // Get apex isotopic envelope
-                        var isotopicEnvelopes = deconvoluter.Deconvolute(
-                            ms1Scans[scanIndex],
-                            rangeToGetPeaksFrom: new MzRange(apexMz, apexMz + 10.0/(double)apexCharge));
-                        // Here, I'm assuming that we won't see more than 10 isotopic peaks. This feels like it should hold for bottom up
-
-                        IsotopicEnvelope bestEnvelope = isotopicEnvelopes
-                            .Where(e => tolerance.Within(e.MonoisotopicMass.ToMz(apexCharge), apexMz))
-                            .MaxBy(e => e.Score);
-                        // Assuming that higher scores are better
+                        // This assumes that no more than 10 isotopic peaks are present
+                        // and that higher envelope scores are better
+                        IsotopicEnvelope bestEnvelope = GetBestEnvelope(deconvoluter, ms1Scans[scanIndex], apexMz,
+                            apexCharge, tolerance); 
 
                         // Calculate precursor spectral contrast angle vs theoretical
+                        if (IdsToPwsms.TryGetValue(peak.Identifications.First(), out var pwsm))
+                        {
+                            precursorAngle = GetIsotopeCorrelation(pwsm, bestEnvelope).ToString();
+                        }
 
                         // Get apex envelope intensity sum
+                        double apexEnvelopeIntensity = bestEnvelope.Peaks.Select(p => p.intensity).Sum();
 
-                        // Get envelopes for all charge states
-                        // calculate all charge intensity sum
+                        // Get envelopes for all charge states and calculate all charge intensity sum
+                        double rtApexIntensitySum = apexEnvelopeIntensity;
+                        foreach (FlashLFQ.IsotopicEnvelope chargeEnvelope in peak.IsotopicEnvelopes.DistinctBy(e => e.ChargeState))
+                        {
+                            if (chargeEnvelope.ChargeState == apexCharge) continue;
+                            IsotopicEnvelope rtApexIsotopicEnvelope = GetBestEnvelope(deconvoluter, ms1Scans[scanIndex],
+                                chargeEnvelope.IndexedPeak.Mz, chargeEnvelope.ChargeState, tolerance);
+                            rtApexIntensitySum += rtApexIsotopicEnvelope.Peaks.Select(p => p.intensity).Sum();
+                        }
 
                         // Find LFQ envelope range
+                        peak.IsotopicEnvelopes.MinBy(e => e.IndexedPeak.RetentionTime);
+                        peak.IsotopicEnvelopes.MaxBy(e => e.IndexedPeak.RetentionTime);
                         // Calculate intensity integral for all isotopic peaks in range for apex charge
                         // " " for all charges
                     }
                 }
             });
+        }
+
+        private static IsotopicEnvelope GetBestEnvelope(Deconvoluter deconvoluter, MsDataScan scan, double mz,
+            int charge, Tolerance tolerance)
+        {
+            return deconvoluter.Deconvolute(
+                    scan,
+                    rangeToGetPeaksFrom: new MzRange(mz, mz + 10.0 / (double)charge))
+                .Where(e => tolerance.Within(e.MonoisotopicMass.ToMz(charge), mz))
+                .MaxBy(e => e.Score);
+        }
+
+        public static double GetIsotopeCorrelation(PeptideWithSetModifications selectedPeptide, IsotopicEnvelope envelope)
+        {
+            double isotopeAngle = 0;
+            double fineResolution = 0.01;
+            double minimumProbability = 0.005;
+            ChemicalFormula peptideFormula = null;
+            try
+            {
+                peptideFormula = selectedPeptide.FullChemicalFormula;
+            }
+            //XL data throws a nullReferenceException when you try to access the FullChemicalFormula
+            catch (NullReferenceException e) { }
+            if (peptideFormula == null || peptideFormula.AtomCount > 0)
+            {
+                // calculate averagine (used for isotopic distributions for unknown modifications)
+                double averageC = 4.9384;
+                double averageH = 7.7583;
+                double averageO = 1.4773;
+                double averageN = 1.3577;
+                double averageS = 0.0417;
+
+                double averagineMass =
+                    PeriodicTable.GetElement("C").AverageMass * averageC +
+                    PeriodicTable.GetElement("H").AverageMass * averageH +
+                    PeriodicTable.GetElement("O").AverageMass * averageO +
+                    PeriodicTable.GetElement("N").AverageMass * averageN +
+                    PeriodicTable.GetElement("S").AverageMass * averageS;
+
+                if (!String.IsNullOrEmpty(selectedPeptide.BaseSequence))
+                {
+                    Proteomics.AminoAcidPolymer.Peptide baseSequence = new Proteomics.AminoAcidPolymer.Peptide(selectedPeptide.BaseSequence);
+                    peptideFormula = baseSequence.GetChemicalFormula();
+                    // add averagine for any unknown mass difference (i.e., a modification)
+                    double massDiff = selectedPeptide.MonoisotopicMass - baseSequence.MonoisotopicMass;
+
+                    // Magic numbers are bad practice, but I pulled this directly from flashLfq
+                    if (Math.Abs(massDiff) >= 20)
+                    {
+                        double averagines = massDiff / averagineMass;
+
+                        peptideFormula.Add("C", (int)Math.Round(averagines * averageC, 0));
+                        peptideFormula.Add("H", (int)Math.Round(averagines * averageH, 0));
+                        peptideFormula.Add("O", (int)Math.Round(averagines * averageO, 0));
+                        peptideFormula.Add("N", (int)Math.Round(averagines * averageN, 0));
+                        peptideFormula.Add("S", (int)Math.Round(averagines * averageS, 0));
+                    }
+                }
+            }
+
+            var orderedPeaks = envelope.Peaks.OrderBy(p => p.mz);
+
+
+            if (peptideFormula != null && orderedPeaks.Count() > 0)
+            {
+                IsotopicDistribution peptideDistribution = IsotopicDistribution
+                    .GetDistribution(peptideFormula, fineResolution, minimumProbability);
+                SpectralSimilarity isotopeSimilarity = new(
+                    orderedPeaks.Select(p => p.mz).ToArray(),
+                    orderedPeaks.Select(p => p.intensity).ToArray(),
+                    peptideDistribution.Masses.ToArray(),
+                    peptideDistribution.Intensities.ToArray(),
+                    SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum,
+                    toleranceInPpm: 10.0,
+                    allPeaks: true,
+                    filterOutBelowThisMz: 200);
+                isotopeAngle = (double?)isotopeSimilarity.SpectralContrastAngle() ?? double.NaN;
+                return isotopeAngle;
+            }
+
+            return double.NaN;
+
         }
     }
 }
