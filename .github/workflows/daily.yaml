@@ -1,7 +1,8 @@
 name: Daily build & reporting
 
-schedule:
-  - cron: '0 4 * * 1,2,3,4,5,6,7'
+on:
+  schedule:
+    - cron: '0 4 * * 1,2,3,4,5,6,7'
 
 jobs:
   BuildAndReport:
@@ -21,8 +22,8 @@ jobs:
 
       - name: Build MetaMorpheus
         run: |
-          dotnet restore MetaMorpheus.sln &&
-          dotnet msbuild CMD/CMD.csproj -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false
+          dotnet restore MetaMorpheus/MetaMorpheus.sln &&
+          dotnet msbuild MetaMorpheus/CMD/CMD.csproj -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false
 
       - name: Build auditor
         run: |
@@ -38,7 +39,7 @@ jobs:
 
       - name: Classic search
         run:
-          CMD\bin\Release\net5.0\cmd.exe
+          MetaMorpheus\CMD\bin\Release\net6.0\cmd.exe
             -t $datafolder\Classic\Task1SearchExample.toml
             $datafolder\Classic\Task2CalibrationExample.toml
             $datafolder\Classic\Task3SearchExample.toml
@@ -52,7 +53,7 @@ jobs:
 
       - name: XL search
         run:
-          CMD\bin\Release\net5.0\cmd.exe
+          MetaMorpheus\CMD\bin\Release\net6.0\cmd.exe
             -t $datafolder\XL\XLSearchTaskconfig.toml
             -s $datafolder\XL\2017-11-21_XL_DSSO_Ribosome_RT60min_1-calib.mzml
             -d $datafolder\XL\RibosomeGO.fasta
@@ -60,7 +61,7 @@ jobs:
 
       - name: Nonspecific search
         run:
-          CMD\bin\Release\net5.0\cmd.exe
+          MetaMorpheus\CMD\bin\Release\net6.0\cmd.exe
             -t $datafolder\Nonspecific\SearchTaskconfig_Nonspecific.toml
             -s $datafolder\Nonspecific\20130504_EXQ3_MiBa_SA_Fib-2.raw
             -d $datafolder\Nonspecific\uniprot-filtered-reviewed_HomoSapiens.fasta
@@ -68,7 +69,7 @@ jobs:
 
       - name: Semispecific search
         run:
-          CMD\bin\Release\net5.0\cmd.exe
+          MetaMorpheus\CMD\bin\Release\net6.0\cmd.exe
             -t $datafolder\Semispecific\SearchTaskconfig_Semispecific.toml
             -s $datafolder\Classic\04-30-13_CAST_Frac4_6uL.raw
             $datafolder\Classic\04-30-13_CAST_Frac5_4uL.raw
@@ -78,7 +79,7 @@ jobs:
 
       - name: Modern search
         run:
-          CMD\bin\Release\net5.0\cmd.exe
+          MetaMorpheus\CMD\bin\Release\net6.0\cmd.exe
             -t $datafolder\Modern\SearchTaskconfig_Modern.toml
             -s $datafolder\Classic\04-30-13_CAST_Frac4_6uL.raw
             $datafolder\Classic\04-30-13_CAST_Frac5_4uL.raw
@@ -91,5 +92,6 @@ jobs:
           Jenkins-MetaMorpheus/Auditor/Auditor/bin/Debug/Auditor -i $outfolder/TestFiles/Results -o $outfolder/Results &&
           python Jenkins-MetaMorpheus/PlotGeneration/GeneratePsmPlot.py &&
           python Jenkins-MetaMorpheus/PlotGeneration/GenerateTaskTimePlot.py
+
       - name: Postsearch reporting
         run: python Jenkins-MetaMorpheus/PlotGeneration/EmailPlots.py
