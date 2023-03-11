@@ -23,16 +23,32 @@ jobs:
     - name: Add coverlet collector
       run: dotnet add Test/Test.csproj package coverlet.collector
     - name: Test
-      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" /p:CoverletOutputFormat=cobertura ./Test/Test.csproj
+      run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" /p:CoverletOutputFormat=cobertura MetaMorpheus/Test/Test.csproj
     - name: Codecov
       uses: codecov/codecov-action@v2
       with:
         verbose: true
-        files: Test/TestResults/*/coverage.cobertura.xml
+        files: MetaMorpheus/Test/TestResults/*/coverage.cobertura.xml
 
-  WindowsDockerTests:
+  BuildAndTestInstaller:
     runs-on: windows-latest
-    timeout-minutes: 90
+    timeout-minutes: 15
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup msbuild
+      uses: microsoft/setup-msbuild@v1
+    - name: Build Installer
+      run: |
+        $version= &git describe --tags &&
+        msbuild MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /p:Version=${version}
+    - name: Install MetaMorpheus
+      run: |
+        Write-Host "Installing MetaMorpheus" -BackgroundColor Blue
+        Start-Process -Wait -FilePath msiexec -ArgumentList /i, MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi, /qn, /l*v, "install.log"
+
+  BuildAndTestCMD:
+    runs-on: windows-latest
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
@@ -40,17 +56,31 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: dotnet restore CMD/CMD.csproj
+      run: dotnet restore MetaMorpheus/CMD/CMD.csproj
     - name: Build CMD
-      run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release MetaMorpheus/CMD/CMD.csproj
+    - name: Create archive
+        uses: thedoctor0/zip-release@master
+        with:
+          type: 'zip'
+          filename: 'MetaMorpheus_CommandLine.zip'
+          path: CMD/bin/x64/Release/net6.0/
+          directory: ./
+    - name: Test zipping commandline version. Fail build if .zip is <1kb (i.e., is empty).
+      run: |
+        If ((Get-Item MetaMorpheus_CommandLine.zip).length -lt 1kb)
+        {
+        Write-Host "The build failed because the command-line .zip did not build properly; is it empty?" -BackgroundColor Red
+        $host.SetShouldExit(1)
+        }
     - name: Build Windows docker image
-      run: docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
+      run: cd MetaMorpheus && docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
     - name: Run Windows docker test
-      run: docker run --rm -v CMD/bin/x64/Release/net6.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
+      run: docker run --rm -v MetaMorpheus/CMD/bin/x64/Release/net6.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
 
   LinuxDockerTests:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 15
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
@@ -58,10 +88,10 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: dotnet restore CMD/CMD.csproj
+      run: dotnet restore MetaMorpheus/CMD/CMD.csproj
     - name: Build CMD
-      run: dotnet build --no-restore /p:Platform=x64 --configuration Release CMD/CMD.csproj
+      run: dotnet build --no-restore /p:Platform=x64 --configuration Release MetaMorpheus/CMD/CMD.csproj
     - name: Build Linux docker image
-      run: docker build -t smithchemwisc/metamorpheus:dev .
+      run: cd MetaMorpheus && docker build -t smithchemwisc/metamorpheus:dev .
     - name: Run Linux docker Test
-      run: docker run --rm -v CMD/bin/x64/Release/net6.0/Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o ./mnt/data/DockerMicrovignetteOutput -v minimal
+      run: docker run --rm -v MetaMorpheus/CMD/bin/x64/Release/net6.0/Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o ./mnt/data/DockerMicrovignetteOutput -v minimal

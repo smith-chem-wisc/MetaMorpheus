@@ -12,4 +12,3 @@ RUN apk add --no-cache procps
 
 ## Set the entrypoint of the Docker image to CMD.dll
 ENTRYPOINT ["dotnet", "/metamorpheus/CMD.dll"]
-

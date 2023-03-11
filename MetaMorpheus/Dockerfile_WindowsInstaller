@@ -6,4 +6,3 @@ ADD CMD/bin/x64/Release/net6.0/ /metamorpheus/
 
 ## Set the entrypoint of the Docker image to CMD.exe
 ENTRYPOINT ["/metamorpheus/CMD.exe"]
-
