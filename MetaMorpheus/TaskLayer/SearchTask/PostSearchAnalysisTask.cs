@@ -31,6 +31,7 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
         private MbrAnalysisResults MbrAnalysisResults { get; set; }
+        public Dictionary<Identification, PeptideWithSetModifications> IdsToPwsms { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -83,7 +84,8 @@ namespace TaskLayer
                 SpectralLibraryGeneration();
                 if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
                 {
-                    MbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters);
+                    Status("Running Enhanced MBR Analysis...", Parameters.SearchTaskId);
+                    MbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters, IdsToPwsms);
                 }      
             }
 
@@ -466,14 +468,19 @@ namespace TaskLayer
 
             // pass PSM info to FlashLFQ
             var flashLFQIdentifications = new List<Identification>();
+            IdsToPwsms = new();
             foreach (var spectraFile in psmsGroupedByFile)
             {
                 var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
 
                 foreach (var psm in spectraFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    Identification newId = new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
+                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge,
+                        psmToProteinGroups[psm]);
+                    flashLFQIdentifications.Add(newId);
+                    // Map IDs to PWSMs for later use in MbrAnalysis
+                    IdsToPwsms.TryAdd(newId, psm.BestMatchingPeptides.Any() ? psm.BestMatchingPeptides.FirstOrDefault().Peptide : null);
                 }
             }
 
@@ -629,6 +636,7 @@ namespace TaskLayer
 
         private void UpdateSpectralLibrary()
         {
+            Status("Updating Spectral Library...", Parameters.SearchTaskId);
             var FilteredPsmList = Parameters.AllPsms
                .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
             FilteredPsmList.RemoveAll(b => b.IsDecoy);
@@ -685,6 +693,7 @@ namespace TaskLayer
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
+            Status("Generating Spectral Library...", Parameters.SearchTaskId);
             List<PeptideSpectralMatch> filteredPsmList = new();
             if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
             {
@@ -722,6 +731,7 @@ namespace TaskLayer
         }
         private void WriteProteinResults()
         {
+            Status("Writing Protein results...", Parameters.SearchTaskId);
             if (Parameters.SearchParameters.DoParsimony)
             {
                 string fileName = "AllProteinGroups.tsv";
@@ -846,6 +856,7 @@ namespace TaskLayer
 
         private void WriteQuantificationResults()
         {
+            Status("Writing Quantification results...", Parameters.SearchTaskId);
             if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks

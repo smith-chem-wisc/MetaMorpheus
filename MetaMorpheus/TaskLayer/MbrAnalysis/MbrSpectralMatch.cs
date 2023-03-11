@@ -17,10 +17,15 @@ namespace TaskLayer.MbrAnalysis
 
         public PeptideSpectralMatch originalSpectralMatch { get; private set; }
 
+        public double RetentionTimeShift { get; private set; }
+
+        public double? RetentionTimeZScore { get; private set; }
+
         public MbrSpectralMatch(PeptideSpectralMatch spectralLibraryMatch, ChromatographicPeak acceptorPeak)
         {
             this.spectralLibraryMatch = spectralLibraryMatch;
             this.acceptorPeak = acceptorPeak;
+            SetRetentionTimeShift();
             originalMatchFound = false;
         }
 
@@ -48,12 +53,32 @@ namespace TaskLayer.MbrAnalysis
             }
         }
 
+        /// <summary>
+        /// Calculates the difference between the actual and expected retention times in minutes.
+        /// Calculates the "Z-Score" by dividing this difference by the standard deviation of the alignment between
+        /// peaks in the donor and acceptor files
+        /// </summary>
+        public void SetRetentionTimeShift()
+        {
+            if (acceptorPeak.RtHypothesis == null || acceptorPeak.Apex == null) return;
+            RetentionTimeShift = acceptorPeak.Apex.IndexedPeak.RetentionTime - (double)acceptorPeak.RtHypothesis;
+
+            // Interquartile range is approximately equal to 1.35 standard deviations
+            double rtStdDev = acceptorPeak.RtStdDev ?? acceptorPeak.RtInterquartileRange / 1.35 ?? Double.NaN;
+            if (rtStdDev == Double.NaN) return;
+            RetentionTimeZScore = Math.Abs(RetentionTimeShift / rtStdDev);
+        }
+
         public static string TabSeparatedHeader
         {
             get
             {
                 var sb = new StringBuilder();
                 sb.Append(PeptideSpectralMatch.GetTabSeparatedHeader());
+                //sb.Append('\t');
+                //sb.Append("Retention Time Shift");
+                //sb.Append('\t');
+                //sb.Append("Rt Shift Z-Score");
                 sb.Append('\t');
                 sb.Append("Initial Search Q-Value");
                 sb.Append('\t');
@@ -66,11 +91,17 @@ namespace TaskLayer.MbrAnalysis
 
         public override string ToString()
         {
+            string retentionTimeShift = RetentionTimeShift.ToString();
+            string retentionTimeZScore = RetentionTimeZScore == null ? "" : RetentionTimeZScore.ToString();
             string originalPsmQ = originalSpectralMatch == null ? "Spectrum Not Found" : originalSpectralMatch.FdrInfo.QValue.ToString();
             string originalPsmPEP = originalSpectralMatch == null ? "" : originalSpectralMatch.FdrInfo.PEP.ToString();
             string originalPsmPEPQ = originalSpectralMatch == null ? "" : originalSpectralMatch.FdrInfo.PEP_QValue.ToString();
             var sb = new StringBuilder();
             sb.Append(spectralLibraryMatch.ToString());
+            sb.Append('\t');
+            sb.Append(retentionTimeShift);
+            sb.Append('\t');
+            sb.Append(retentionTimeZScore);
             sb.Append('\t');
             sb.Append(originalPsmQ);
             sb.Append('\t');
