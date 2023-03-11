@@ -22,6 +22,9 @@ using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using EngineLayer.Gptmd;
 using System.Threading.Tasks;
+using Chemistry;
+using MzLibUtil;
+using IsotopicEnvelope = MassSpectrometry.IsotopicEnvelope;
 
 namespace TaskLayer
 {
@@ -1680,6 +1683,83 @@ namespace TaskLayer
             flashLFQResults.WriteResults(peaksPath, null, null, null, true);
 
             FinishedWritingFile(peaksPath, nestedIds);
+        }
+
+        private void WriteExtendedPeakQuantificationResults(FlashLfqResults flashLFQResults, string outputFolder,
+            string fileName)
+        {
+            int maxThreads = CommonParameters.MaxThreadsToUsePerFile * flashLFQResults.SpectraFiles.Count;
+            int[] threads = Enumerable.Range(0, maxThreads).ToArray();
+
+            var test = flashLFQResults.Peaks.SelectMany(p => p.Value);
+
+            ExtendedWriter peakWriter = new ExtendedWriter(
+                flashLFQResults.Peaks.SelectMany(p => p.Value),
+                ChromatographicPeak.TabSeparatedHeader,
+                new List<(string, int)>
+                {
+                    ("test", 16),
+                    ("test2", 17)
+                });
+
+            Parallel.ForEach(threads, (i) =>
+            {
+                // Stop loop if canceled
+                if (GlobalVariables.StopLoops) { return; }
+
+                for (; i < flashLFQResults.SpectraFiles.Count; i += maxThreads)
+                {
+                    MyFileManager myFileManager = new(true);
+                    MsDataFile myMsDataFile =
+                        myFileManager.LoadFile(flashLFQResults.SpectraFiles[i].FullFilePathWithExtension, CommonParameters);
+
+                    var ms1Scans = myMsDataFile
+                        .GetAllScansList()
+                        .Where(x => x.MsnOrder == 1)
+                        .OrderBy(x => x.OneBasedScanNumber)
+                        .ToArray();
+
+                    DeconvolutionParameters deconParameters = new ClassicDeconvolutionParameters(
+                        minCharge: 1, maxCharge: 12, deconPpm: Parameters.SearchParameters.QuantifyPpmTol, intensityRatio: 3);
+                    Deconvoluter deconvoluter = new Deconvoluter(DeconvolutionTypes.ClassicDeconvolution, deconParameters);
+                    PpmTolerance tolerance = new PpmTolerance(Parameters.SearchParameters.QuantifyPpmTol);
+
+                    // create scan to TIC dict
+
+                    foreach (ChromatographicPeak peak in flashLFQResults.Peaks[flashLFQResults.SpectraFiles[i]])
+                    {
+                        // Find apex scan number and associated ms1 scan
+                        int scanIndex = peak.Apex.IndexedPeak.ZeroBasedMs1ScanIndex;
+                        int apexCharge = peak.Apex.ChargeState;
+                        double apexMz = peak.Apex.IndexedPeak.Mz;
+                        // Check that apex and ms1 scan have identical retention times
+                        double rtDelta = ms1Scans[scanIndex].RetentionTime - peak.Apex.IndexedPeak.RetentionTime;
+                        if (Math.Abs(rtDelta) > 0.0001) throw new ArgumentException("Mismatch in MS1 scan indices");
+
+                        // Get apex isotopic envelope
+                        var isotopicEnvelopes = deconvoluter.Deconvolute(
+                            ms1Scans[scanIndex],
+                            rangeToGetPeaksFrom: new MzRange(apexMz, apexMz + 10.0/(double)apexCharge));
+                        // Here, I'm assuming that we won't see more than 10 isotopic peaks. This feels like it should hold for bottom up
+
+                        IsotopicEnvelope bestEnvelope = isotopicEnvelopes
+                            .Where(e => tolerance.Within(e.MonoisotopicMass.ToMz(apexCharge), apexMz))
+                            .MaxBy(e => e.Score);
+                        // Assuming that higher scores are better
+
+                        // Calculate precursor spectral contrast angle vs theoretical
+
+                        // Get apex envelope intensity sum
+
+                        // Get envelopes for all charge states
+                        // calculate all charge intensity sum
+
+                        // Find LFQ envelope range
+                        // Calculate intensity integral for all isotopic peaks in range for apex charge
+                        // " " for all charges
+                    }
+                }
+            });
         }
     }
 }
