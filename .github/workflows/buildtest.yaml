@@ -19,9 +19,9 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore MetaMorpheus/MetaMorpheus.sln
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore MetaMorpheus/MetaMorpheus.sln
     - name: Add coverlet collector
-      run: dotnet add Test/Test.csproj package coverlet.collector
+      run: dotnet add MetaMorpheus/Test/Test.csproj package coverlet.collector
     - name: Test
       run: dotnet test --no-build --verbosity normal --collect:"XPlat Code Coverage" /p:CoverletOutputFormat=cobertura MetaMorpheus/Test/Test.csproj
     - name: Codecov
@@ -38,9 +38,7 @@ jobs:
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v1.1
     - name: Build Installer
-      run: |
-        $version= &git describe --tags &&
-        msbuild MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /p:Version=${version}
+      run: msbuild MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release
     - name: Install MetaMorpheus
       run: |
         Write-Host "Installing MetaMorpheus" -BackgroundColor Blue
@@ -64,7 +62,7 @@ jobs:
       with:
         type: 'zip'
         filename: 'MetaMorpheus_CommandLine.zip'
-        path: CMD/bin/x64/Release/net6.0/
+        path: MetaMorpheus/CMD/bin/x64/Release/net6.0/
         directory: ./
     - name: Test zipping commandline version. Fail build if .zip is <1kb (i.e., is empty).
       run: |
@@ -74,9 +72,13 @@ jobs:
         $host.SetShouldExit(1)
         }
     - name: Build Windows docker image
-      run: cd MetaMorpheus && docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
+      run: |
+        cd MetaMorpheus
+        docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
     - name: Run Windows docker test
-      run: docker run --rm -v MetaMorpheus/CMD/bin/x64/Release/net6.0/Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
+      run: |
+        cd CMD/bin/x64/Release/net6.0/
+        docker run --rm -v Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
 
   LinuxDockerTests:
     runs-on: ubuntu-latest
@@ -92,6 +94,10 @@ jobs:
     - name: Build CMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release MetaMorpheus/CMD/CMD.csproj
     - name: Build Linux docker image
-      run: cd MetaMorpheus && docker build -t smithchemwisc/metamorpheus:dev .
+      run: |
+        cd MetaMorpheus
+        docker build -t smithchemwisc/metamorpheus:dev .
     - name: Run Linux docker Test
-      run: docker run --rm -v MetaMorpheus/CMD/bin/x64/Release/net6.0/Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o ./mnt/data/DockerMicrovignetteOutput -v minimal
+      run: |
+        cd CMD/bin/x64/Release/net6.0/
+        docker run --rm -v Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o /mnt/data/DockerMicrovignetteOutput -v minimal
