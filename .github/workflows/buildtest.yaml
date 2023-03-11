@@ -77,7 +77,7 @@ jobs:
         docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
     - name: Run Windows docker test
       run: |
-        cd CMD/bin/x64/Release/net6.0/
+        cd MetaMorpheus/CMD/bin/x64/Release/net6.0/
         docker run --rm -v Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
 
   LinuxDockerTests:
@@ -99,5 +99,5 @@ jobs:
         docker build -t smithchemwisc/metamorpheus:dev .
     - name: Run Linux docker Test
       run: |
-        cd CMD/bin/x64/Release/net6.0/
+        cd MetaMorpheus/CMD/bin/x64/Release/net6.0/
         docker run --rm -v Data:/mnt/data smithchemwisc/metamorpheus:dev --test -o /mnt/data/DockerMicrovignetteOutput -v minimal
