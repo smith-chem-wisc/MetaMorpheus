@@ -77,7 +77,7 @@ jobs:
     - name: Generate .toml files
       run: dotnet $CMD_DIR/CMD.dll -g -o $CMD_DIR
     - name: Commandline search
-      run: dotnet $CMD_DIR/CMD.dll -s $CMD_DIR/Data/SmallCalibratible_Yeast.mzML -d $CMD_DIR\Data\SmallYeast.fasta -t $CMD_DIR\Data\SearchTask.toml -v minimal
+      run: dotnet $CMD_DIR/CMD.dll -s $CMD_DIR/Data/SmallCalibratible_Yeast.mzML -d $CMD_DIR/Data/SmallYeast.fasta -t $CMD_DIR/Data/SearchTask.toml -v minimal
     - name: Create archive
       uses: thedoctor0/zip-release@0.7.1
       with:
