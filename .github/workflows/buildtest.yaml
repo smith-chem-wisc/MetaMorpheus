@@ -75,7 +75,7 @@ jobs:
     - name: Build CMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release MetaMorpheus/CMD/CMD.csproj
     - name: Generate .toml files
-      run: dotnet $CMD_DIR/CMD.dll -g -o $CMD_DIR
+      run: dotnet $CMD_DIR/CMD.dll -g -o $CMD_DIR/Data
     - name: Commandline search
       run: dotnet $CMD_DIR/CMD.dll -s $CMD_DIR/Data/SmallCalibratible_Yeast.mzML -d $CMD_DIR/Data/SmallYeast.fasta -t $CMD_DIR/Data/SearchTask.toml -v minimal
     - name: Create archive
