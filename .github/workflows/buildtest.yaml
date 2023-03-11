@@ -17,7 +17,7 @@ jobs:
       with:
         dotnet-version: 6.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore MetaMorpheus/MetaMorpheus.sln
     - name: Build
       run: dotnet build --no-restore
     - name: Add coverlet collector
@@ -36,7 +36,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Setup msbuild
-      uses: microsoft/setup-msbuild@v1
+      uses: microsoft/setup-msbuild@v1.1
     - name: Build Installer
       run: |
         $version= &git describe --tags &&
@@ -60,7 +60,7 @@ jobs:
     - name: Build CMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release MetaMorpheus/CMD/CMD.csproj
     - name: Create archive
-      uses: thedoctor0/zip-release@master
+      uses: thedoctor0/zip-release@0.7.1
       with:
         type: 'zip'
         filename: 'MetaMorpheus_CommandLine.zip'
