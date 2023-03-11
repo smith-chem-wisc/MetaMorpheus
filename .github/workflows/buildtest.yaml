@@ -37,6 +37,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Setup msbuild
       uses: microsoft/setup-msbuild@v1.1
+    - name: Restore installer
+      run: MSBuild -Restore MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj
     - name: Build Installer
       run: msbuild MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release
     - name: Install MetaMorpheus
@@ -74,10 +76,12 @@ jobs:
     - name: Build Windows docker image
       run: |
         cd MetaMorpheus
+        "C:\Program Files\Docker\Docker\DockerCli.exe" -SwitchWindowsEngine
         docker build -f Dockerfile_WindowsInstaller -t smithchemwisc/metamorpheus:windowsinstaller .
     - name: Run Windows docker test
       run: |
         cd MetaMorpheus/CMD/bin/x64/Release/net6.0/
+        "C:\Program Files\Docker\Docker\DockerCli.exe" -SwitchWindowsEngine
         docker run --rm -v Data:C:\Output smithchemwisc/metamorpheus:windowsinstaller --test -o C:\Output\DockerMicrovignetteOutput -v minimal
 
   LinuxDockerTests:
