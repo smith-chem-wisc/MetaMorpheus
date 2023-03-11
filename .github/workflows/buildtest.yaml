@@ -83,7 +83,7 @@ jobs:
       with:
         type: 'zip'
         filename: 'MetaMorpheus_CommandLine.zip'
-        path: $CMD_DIR
+        path: '$CMD_DIR'
         directory: ./
     - name: Test zipping commandline version. Fail build if .zip is <1kb (i.e., is empty).
       run: |
