@@ -60,12 +60,12 @@ jobs:
     - name: Build CMD
       run: dotnet build --no-restore /p:Platform=x64 --configuration Release MetaMorpheus/CMD/CMD.csproj
     - name: Create archive
-        uses: thedoctor0/zip-release@master
-        with:
-          type: 'zip'
-          filename: 'MetaMorpheus_CommandLine.zip'
-          path: CMD/bin/x64/Release/net6.0/
-          directory: ./
+      uses: thedoctor0/zip-release@master
+      with:
+        type: 'zip'
+        filename: 'MetaMorpheus_CommandLine.zip'
+        path: CMD/bin/x64/Release/net6.0/
+        directory: ./
     - name: Test zipping commandline version. Fail build if .zip is <1kb (i.e., is empty).
       run: |
         If ((Get-Item MetaMorpheus_CommandLine.zip).length -lt 1kb)
