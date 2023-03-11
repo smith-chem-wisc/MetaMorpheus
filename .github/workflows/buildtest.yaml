@@ -8,7 +8,6 @@ on:
 
 env:
   CMD_DIR: MetaMorpheus/CMD/bin/x64/Release/net6.0
-  DOTNET_VERSION: 6.0.x
 
 jobs:
   BuildAndTest:
@@ -19,7 +18,7 @@ jobs:
     - name: Set up .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: $DOTNET_VERSION
+        dotnet-version: 6.0.x 
     - name: Restore dependencies
       run: dotnet restore MetaMorpheus/MetaMorpheus.sln
     - name: Build
@@ -45,7 +44,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: $DOTNET_VERSION 
+        dotnet-version: 6.0.x
     - name: Restore installer
       run: dotnet restore MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj
     - name: Build Installer
@@ -70,7 +69,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: $DOTNET_VERSION
+        dotnet-version: 6.0.x
     - name: Restore dependencies
       run: dotnet restore MetaMorpheus/CMD/CMD.csproj
     - name: Build CMD
