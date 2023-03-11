@@ -137,6 +137,20 @@ namespace TaskLayer
             AdditionalInfoDictionary[associatedPeak][field] = info;
         }
 
+        public void AddInfo(Object associatedPeak, Dictionary<string, string> fieldInfoDictionary)
+        {
+            if (!AdditionalInfoDictionary.ContainsKey(associatedPeak))
+                throw new ArgumentException("Associated peak not found");
+
+            foreach (var kvp in fieldInfoDictionary)
+            {
+                if (AdditionalInfoDictionary[associatedPeak].ContainsKey(kvp.Key))
+                {
+                    AdditionalInfoDictionary[associatedPeak][kvp.Key] = kvp.Value;
+                }
+            }
+        }
+
         /// <summary>
         /// Writes an object to a tab separated string corresponding to the ExtendedHeader
         /// </summary>

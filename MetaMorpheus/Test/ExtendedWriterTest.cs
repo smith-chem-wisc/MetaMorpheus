@@ -47,5 +47,11 @@ namespace Test
             Assert.AreEqual(writer.WriteExtendedString(peak1).Split('\t')[16], "1");
             Assert.AreEqual(writer.WriteExtendedString(peak2).Split('\t')[16], "0");
         }
+
+        [Test]
+        public static void TestWriteExtendedPeakQuant()
+        {
+
+        }
     }
 }

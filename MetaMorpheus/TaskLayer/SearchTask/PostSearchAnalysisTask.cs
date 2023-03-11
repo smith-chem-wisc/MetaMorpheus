@@ -1693,21 +1693,22 @@ namespace TaskLayer
             FinishedWritingFile(peaksPath, nestedIds);
         }
 
-        private void WriteExtendedPeakQuantificationResults(FlashLfqResults flashLFQResults, string outputFolder,
+        public ExtendedWriter WriteExtendedPeakQuantificationResults(FlashLfqResults flashLFQResults, string outputFolder,
             string fileName)
         {
             int maxThreads = CommonParameters.MaxThreadsToUsePerFile * flashLFQResults.SpectraFiles.Count;
             int[] threads = Enumerable.Range(0, maxThreads).ToArray();
-
-            var test = flashLFQResults.Peaks.SelectMany(p => p.Value);
 
             ExtendedWriter peakWriter = new ExtendedWriter(
                 flashLFQResults.Peaks.SelectMany(p => p.Value),
                 ChromatographicPeak.TabSeparatedHeader,
                 new List<(string, int)>
                 {
-                    ("test", 16),
-                    ("test2", 17)
+                    ("Precursor Angle", 16),
+                    ("Apex Envelope Intensity", 17),
+                    ("Apex Envelopes Intensity (All Charge States)", 18),
+                    ("Apex Charge Intensity Integral", 19),
+                    ("All Charge Intensity Integral", 20)
                 });
 
             Parallel.ForEach(threads, (i) =>
@@ -1737,49 +1738,79 @@ namespace TaskLayer
                     foreach (ChromatographicPeak peak in flashLFQResults.Peaks[flashLFQResults.SpectraFiles[i]])
                     {
                         // Values to find
-                        string precursorAngle = "";
+                        Dictionary<string, string> peakInfo = new Dictionary<string, string>
+                        {
+                            {"Precursor Angle", ""},
+                            {"Apex Envelope Intensity", ""},
+                            {"Apex Envelopes Intensity {All Charge States}", ""},
+                            {"Apex Charge Intensity Integral", ""},
+                            {"All Charge Intensity Integral", ""}
+                        };
 
-                        // Find apex scan number and associated ms1 scan
-                        int scanIndex = peak.Apex.IndexedPeak.ZeroBasedMs1ScanIndex;
+                        // Find scan indices
+                        int peakStartScanIndex = peak.IsotopicEnvelopes
+                            .MinBy(e => e.IndexedPeak.RetentionTime)
+                            .IndexedPeak.ZeroBasedMs1ScanIndex;
+                        int peakEndScanIndex = peak.IsotopicEnvelopes
+                            .MaxBy(e => e.IndexedPeak.RetentionTime)
+                            .IndexedPeak.ZeroBasedMs1ScanIndex;
+                        int apexScanIndex = peak.Apex.IndexedPeak.ZeroBasedMs1ScanIndex;
+
+                        IEnumerable<int> allObservedCharges = peak.IsotopicEnvelopes.Select(e => e.ChargeState).Distinct();
                         int apexCharge = peak.Apex.ChargeState;
-                        double apexMz = peak.Apex.IndexedPeak.Mz;
+                        double apexMass = peak.Apex.IndexedPeak.Mz.ToMass(apexCharge);
+
                         // Check that apex and ms1 scan have identical retention times
-                        double rtDelta = ms1Scans[scanIndex].RetentionTime - peak.Apex.IndexedPeak.RetentionTime;
+                        double rtDelta = ms1Scans[apexScanIndex].RetentionTime - peak.Apex.IndexedPeak.RetentionTime;
                         if (Math.Abs(rtDelta) > 0.0001) throw new ArgumentException("Mismatch in MS1 scan indices");
 
-                        // Get apex isotopic envelope
-                        // This assumes that no more than 10 isotopic peaks are present
-                        // and that higher envelope scores are better
-                        IsotopicEnvelope bestEnvelope = GetBestEnvelope(deconvoluter, ms1Scans[scanIndex], apexMz,
-                            apexCharge, tolerance); 
+                        // Calculate intensity integral for all isotopic peaks in range
+                        double allChargeIntegral = 0; // Integrated intensity for all isotopic peaks for all charge states
+                        double apexChargeIntegral = 0; // Integrated intensity for all isotopic peaks of the apex charge state
+                        double apexRtEnvelopeSum = 0; // Intensity for all isotopic peaks at the apex (charge state inclusive)
 
-                        // Calculate precursor spectral contrast angle vs theoretical
-                        if (IdsToPwsms.TryGetValue(peak.Identifications.First(), out var pwsm))
+                        // Iterates through all scans and charge states
+                        foreach (int scanIndex in Enumerable.Range(peakStartScanIndex, peakEndScanIndex))
                         {
-                            precursorAngle = GetIsotopeCorrelation(pwsm, bestEnvelope).ToString();
+                            foreach (int z in allObservedCharges)
+                            {
+                                IsotopicEnvelope bestEnvelope = GetBestEnvelope(deconvoluter, ms1Scans[scanIndex],
+                                    apexMass.ToMz(z), z, tolerance);
+                                double envelopeIntensitySum = bestEnvelope.Peaks.Select(p => p.intensity).Sum();
+                                allChargeIntegral += envelopeIntensitySum;
+
+                                if (apexCharge == z)
+                                {
+                                    apexChargeIntegral += envelopeIntensitySum;
+                                }
+
+                                if (scanIndex == apexScanIndex)
+                                {
+                                    apexRtEnvelopeSum += envelopeIntensitySum;
+                                    if (apexCharge == z)
+                                    {
+                                        peakInfo["Apex Envelope Intensity"] = envelopeIntensitySum.ToString();
+
+                                        // Calculate precursor spectral contrast angle vs theoretical
+                                        if (IdsToPwsms.TryGetValue(peak.Identifications.First(), out var pwsm))
+                                        {
+                                            peakInfo["Precursor Angle"] = GetIsotopeCorrelation(pwsm, bestEnvelope).ToString();
+                                        }
+                                    }
+                                }
+                            }
                         }
 
-                        // Get apex envelope intensity sum
-                        double apexEnvelopeIntensity = bestEnvelope.Peaks.Select(p => p.intensity).Sum();
-
-                        // Get envelopes for all charge states and calculate all charge intensity sum
-                        double rtApexIntensitySum = apexEnvelopeIntensity;
-                        foreach (FlashLFQ.IsotopicEnvelope chargeEnvelope in peak.IsotopicEnvelopes.DistinctBy(e => e.ChargeState))
-                        {
-                            if (chargeEnvelope.ChargeState == apexCharge) continue;
-                            IsotopicEnvelope rtApexIsotopicEnvelope = GetBestEnvelope(deconvoluter, ms1Scans[scanIndex],
-                                chargeEnvelope.IndexedPeak.Mz, chargeEnvelope.ChargeState, tolerance);
-                            rtApexIntensitySum += rtApexIsotopicEnvelope.Peaks.Select(p => p.intensity).Sum();
-                        }
-
-                        // Find LFQ envelope range
-                        peak.IsotopicEnvelopes.MinBy(e => e.IndexedPeak.RetentionTime);
-                        peak.IsotopicEnvelopes.MaxBy(e => e.IndexedPeak.RetentionTime);
-                        // Calculate intensity integral for all isotopic peaks in range for apex charge
-                        // " " for all charges
+                        peakInfo["All Charge Intensity Integral"] = allChargeIntegral.ToString();
+                        peakInfo["Apex Charge Intensity Integral"] = apexChargeIntegral.ToString();
+                        peakInfo["Apex Envelopes Intensity {All Charge States}"] = apexRtEnvelopeSum.ToString();
                     }
                 }
             });
+
+            // Need to write to tsv
+            return peakWriter;
+
         }
 
         private static IsotopicEnvelope GetBestEnvelope(Deconvoluter deconvoluter, MsDataScan scan, double mz,
