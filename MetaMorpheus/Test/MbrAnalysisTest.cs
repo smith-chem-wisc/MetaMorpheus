@@ -132,9 +132,16 @@ namespace Test
         [Test]
         public static void TestWriteExtendedPeakQuant()
         {
-            postSearchAnalysisTask.WriteExtendedPeakQuantificationResults(postSearchAnalysisTask.Parameters.FlashLfqResults, "FakePath", "fakename");
+            ExtendedWriter testWrite = postSearchAnalysisTask.WriteExtendedPeakQuantificationResults(postSearchAnalysisTask.Parameters.FlashLfqResults, "FakePath", "fakename");
 
             int placeholder = 0;
+
+            var test = testWrite.AdditionalInfoDictionary
+                .Where(kvp => kvp.Value.Values.Count(v => v.Equals("")) < 5);
+
+            testWrite.WriteResults(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput"), "ExtendedPeakQuant.tsv");
+
+            placeholder = 1;
         }
 
         [Test]

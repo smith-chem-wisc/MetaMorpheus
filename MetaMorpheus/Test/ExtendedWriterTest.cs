@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using FlashLFQ;
+using Nett;
 using NUnit.Framework;
 using TaskLayer;
 
@@ -51,7 +53,18 @@ namespace Test
         [Test]
         public static void TestWriteExtendedPeakQuant()
         {
+            var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"),
+                MetaMorpheusTask.tomlConfig);
 
+            DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fasta"), false);
+            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-raw.mzML");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSlicedTest1");
+            EverythingRunnerEngine a = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task", task) },
+                new List<string> { raw },
+                new List<DbForTask> { db }, outputFolder);
+
+            a.Run();
         }
     }
 }

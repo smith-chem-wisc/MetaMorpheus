@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -181,6 +182,16 @@ namespace TaskLayer
             return String.Join('\t', extendedInfo);
         }
 
-        
+        public void WriteResults(string filePath, string fileName)
+        {
+            using (StreamWriter output = new StreamWriter(Path.Join(filePath, fileName)))
+            {
+                output.WriteLine(ExtendedHeader);
+                foreach (Object key in AdditionalInfoDictionary.Keys)
+                {
+                    output.WriteLine(WriteExtendedString(key));
+                }
+            }
+        }
     }
 }

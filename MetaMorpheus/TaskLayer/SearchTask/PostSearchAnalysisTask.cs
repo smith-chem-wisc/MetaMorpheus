@@ -26,6 +26,7 @@ using Chemistry;
 using MzLibUtil;
 using IsotopicEnvelope = MassSpectrometry.IsotopicEnvelope;
 using MassSpectrometry.MzSpectra;
+using ThermoFisher.CommonCore.Data;
 using ThermoFisher.CommonCore.Data.Business;
 
 namespace TaskLayer
@@ -1696,8 +1697,10 @@ namespace TaskLayer
         public ExtendedWriter WriteExtendedPeakQuantificationResults(FlashLfqResults flashLFQResults, string outputFolder,
             string fileName)
         {
-            int maxThreads = CommonParameters.MaxThreadsToUsePerFile * flashLFQResults.SpectraFiles.Count;
-            int[] threads = Enumerable.Range(0, maxThreads).ToArray();
+            int numberOfThreadsToUse = CommonParameters.MaxThreadsToUsePerFile < flashLFQResults.SpectraFiles.Count
+                ? CommonParameters.MaxThreadsToUsePerFile
+                : flashLFQResults.SpectraFiles.Count;
+            int[] threads = Enumerable.Range(0, numberOfThreadsToUse).ToArray();
 
             ExtendedWriter peakWriter = new ExtendedWriter(
                 flashLFQResults.Peaks.SelectMany(p => p.Value),
@@ -1711,12 +1714,18 @@ namespace TaskLayer
                     ("All Charge Intensity Integral", 20)
                 });
 
+
+            // For Debugging
+            int peaksMissingIsoEnvelopes = 0;
+            int deconvoluterFailed = 0;
+            int deconvoluterCalled = 0;
+
             Parallel.ForEach(threads, (i) =>
             {
                 // Stop loop if canceled
                 if (GlobalVariables.StopLoops) { return; }
 
-                for (; i < flashLFQResults.SpectraFiles.Count; i += maxThreads)
+                for (; i < flashLFQResults.SpectraFiles.Count; i += numberOfThreadsToUse)
                 {
                     MyFileManager myFileManager = new(true);
                     MsDataFile myMsDataFile =
@@ -1737,12 +1746,18 @@ namespace TaskLayer
 
                     foreach (ChromatographicPeak peak in flashLFQResults.Peaks[flashLFQResults.SpectraFiles[i]])
                     {
+                        // I'm not sure what causes this, but it does happen occasionally
+                        if (peak.IsotopicEnvelopes.IsNullOrEmpty())
+                        {
+                            peaksMissingIsoEnvelopes++;
+                            continue;
+                        }
                         // Values to find
                         Dictionary<string, string> peakInfo = new Dictionary<string, string>
                         {
                             {"Precursor Angle", ""},
                             {"Apex Envelope Intensity", ""},
-                            {"Apex Envelopes Intensity {All Charge States}", ""},
+                            {"Apex Envelopes Intensity (All Charge States)", ""},
                             {"Apex Charge Intensity Integral", ""},
                             {"All Charge Intensity Integral", ""}
                         };
@@ -1770,12 +1785,18 @@ namespace TaskLayer
                         double apexRtEnvelopeSum = 0; // Intensity for all isotopic peaks at the apex (charge state inclusive)
 
                         // Iterates through all scans and charge states
-                        foreach (int scanIndex in Enumerable.Range(peakStartScanIndex, peakEndScanIndex))
+                        for (int scanIndex = peakStartScanIndex; scanIndex <= peakEndScanIndex; scanIndex++)
                         {
                             foreach (int z in allObservedCharges)
                             {
                                 IsotopicEnvelope bestEnvelope = GetBestEnvelope(deconvoluter, ms1Scans[scanIndex],
                                     apexMass.ToMz(z), z, tolerance);
+                                deconvoluterCalled++;
+                                if (bestEnvelope == null)
+                                {
+                                    deconvoluterFailed++;
+                                    continue;
+                                }
                                 double envelopeIntensitySum = bestEnvelope.Peaks.Select(p => p.intensity).Sum();
                                 allChargeIntegral += envelopeIntensitySum;
 
@@ -1803,7 +1824,8 @@ namespace TaskLayer
 
                         peakInfo["All Charge Intensity Integral"] = allChargeIntegral.ToString();
                         peakInfo["Apex Charge Intensity Integral"] = apexChargeIntegral.ToString();
-                        peakInfo["Apex Envelopes Intensity {All Charge States}"] = apexRtEnvelopeSum.ToString();
+                        peakInfo["Apex Envelopes Intensity (All Charge States)"] = apexRtEnvelopeSum.ToString();
+                        peakWriter.AddInfo(peak, peakInfo);
                     }
                 }
             });
@@ -1816,9 +1838,10 @@ namespace TaskLayer
         private static IsotopicEnvelope GetBestEnvelope(Deconvoluter deconvoluter, MsDataScan scan, double mz,
             int charge, Tolerance tolerance)
         {
+            MzRange peakRange = new MzRange(mz - 0.1, mz + 10.0 / (double)charge);
             return deconvoluter.Deconvolute(
                     scan,
-                    rangeToGetPeaksFrom: new MzRange(mz, mz + 10.0 / (double)charge))
+                    rangeToGetPeaksFrom: peakRange)
                 .Where(e => tolerance.Within(e.MonoisotopicMass.ToMz(charge), mz))
                 .MaxBy(e => e.Score);
         }
@@ -1882,7 +1905,7 @@ namespace TaskLayer
                 SpectralSimilarity isotopeSimilarity = new(
                     orderedPeaks.Select(p => p.mz).ToArray(),
                     orderedPeaks.Select(p => p.intensity).ToArray(),
-                    peptideDistribution.Masses.ToArray(),
+                    peptideDistribution.Masses.Select(m => m.ToMz(envelope.Charge)).ToArray(),
                     peptideDistribution.Intensities.ToArray(),
                     SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum,
                     toleranceInPpm: 10.0,
