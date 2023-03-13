@@ -27,6 +27,7 @@ namespace Test
         private static List<DbForTask> databaseList;
         private static string outputFolder;
         private static Dictionary<string, int[]> numSpectraPerFile;
+        private static PostSearchAnalysisTask postSearchAnalysisTask;
 
         [OneTimeSetUp]
         public void MbrAnalysisSetup()
@@ -124,6 +125,23 @@ namespace Test
 
             postSearchTask.Run();
 
+            postSearchAnalysisTask = postSearchTask;
+
+        }
+
+        [Test]
+        public static void TestWriteExtendedPeakQuant()
+        {
+            ExtendedWriter testWrite = postSearchAnalysisTask.WriteExtendedPeakQuantificationResults(postSearchAnalysisTask.Parameters.FlashLfqResults, "FakePath", "fakename");
+
+            int placeholder = 0;
+
+            var test = testWrite.AdditionalInfoDictionary
+                .Where(kvp => kvp.Value.Values.Count(v => v.Equals("")) < 5);
+
+            testWrite.WriteResults(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMbrAnalysisOutput"), "ExtendedPeakQuant.tsv");
+
+            placeholder = 1;
         }
 
         [Test]
