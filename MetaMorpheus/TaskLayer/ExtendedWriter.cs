@@ -58,20 +58,43 @@ namespace TaskLayer
         }
 
         /// <summary>
+        /// ExtendedWriter is a simple way to extend the results of any object that is written to a tsv.
+        /// Pass in a list of fields and their desired column position.
+        /// ExtendedWrite will create a modified header (Extended Header)
+        /// And produce corresponding string for every itemToWrite via the WriteExtendedString method
+        /// </summary>
+        /// <param name="exampleItem"> Currently accepts any item, but should be modified to accept some interfaced (e.g. IWriteable) </param>
+        /// <param name="tabSeparatedHeader"> The tab separated header associated with the example item </param>
+        /// <param name="tabSeparatedHeader"> The names of the additional </param>
+        public ExtendedWriter(IEnumerable<Object> itemsToWrite, string tabSeparatedHeader, List<string> newFields, int insertionIndex = -1)
+        {
+            if (!(itemsToWrite.First() is ChromatographicPeak)) throw new NotImplementedException();
+
+            WriteHeaderDictionary(tabSeparatedHeader);
+            WriteAdditionalFields(newFields, insertionIndex);
+            WriteHeaderArrays();
+
+            AdditionalInfoDictionary = new Dictionary<Object, Dictionary<string, string>>();
+            foreach (var peak in itemsToWrite)
+            {
+                AdditionalInfoDictionary.TryAdd(peak, new Dictionary<string, string>(_fieldInfoDictionaryReference));
+            }
+        }
+
+        /// <summary>
         /// Instantiates OriginalFields and HeaderOrderedDictionary,
         /// where the name of each header field are keys and the zero indexed position of each header field are values
         /// </summary>
         /// <param name="tabSeparatedHeader"> The tab separated header corresponding to the ToString method of the object </param>
         private void WriteHeaderDictionary(string tabSeparatedHeader)
         {
-            string[] headerFields = tabSeparatedHeader.Split('\t').Where(s => s.IsNotNullOrEmptyOrWhiteSpace()).ToArray();
-
             HeaderOrderedDictionary = new();
-            OriginalFields = new HashSet<string>(headerFields);
-            for (int position = 0; position < headerFields.Length; position++)
+            int position = 0;
+            foreach (string field in tabSeparatedHeader.Split('\t').Where(s => s.IsNotNullOrEmptyOrWhiteSpace()))
             {
-                HeaderOrderedDictionary.Add(headerFields[position], position);
+                HeaderOrderedDictionary.Add(field, position++);
             }
+            OriginalFields = new HashSet<string>(HeaderOrderedDictionary.Keys.Cast<string>());
         }
 
         /// <summary>
@@ -89,6 +112,27 @@ namespace TaskLayer
                 {
                     AddField(fieldPositionPair.Item1, fieldPositionPair.Item2);
                     _fieldInfoDictionaryReference.Add(fieldPositionPair.Item1, "");
+                }
+                catch (ArgumentException e) { }
+            }
+        }
+
+        /// <summary>
+        /// Adds new fields to the HeaderDictionary and AdditionalFields.
+        /// Instantiates _fieldInfoDictionaryReference
+        /// </summary>
+        /// <param name="newFieldsWithPositions"></param>
+        private void WriteAdditionalFields(List<string> newFields, int insertionIndex)
+        {
+            _fieldInfoDictionaryReference = new();
+            AdditionalFields = new();
+            insertionIndex = insertionIndex < 0 ? OriginalFields.Count : insertionIndex;
+            foreach (string field in newFields)
+            {
+                try
+                {
+                    AddField(field, insertionIndex++);
+                    _fieldInfoDictionaryReference.Add(field, "");
                 }
                 catch (ArgumentException e) { }
             }

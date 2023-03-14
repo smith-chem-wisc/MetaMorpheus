@@ -878,7 +878,27 @@ namespace TaskLayer
                 // write peaks
                 if (MbrAnalysisResults != null)
                 {
-                    MbrAnalysisResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
+                    List<string> additionalFields = MbrAnalysisResults.AdditionalHeaderFields;
+                    additionalFields.AddRange( new List<string>
+                    {
+                        "Precursor Angle",
+                        "Apex Envelope Intensity",
+                        "Apex Envelopes Intensity (All Charge States)",
+                        "Apex Charge Intensity Integral",
+                        "All Charge Intensity Integral"
+                    });
+
+                    ExtendedWriter peakQuantWriter = new ExtendedWriter(
+                        Parameters.FlashLfqResults.Peaks.SelectMany(p => p.Value),
+                        ChromatographicPeak.TabSeparatedHeader,
+                        additionalFields,
+                        insertionIndex: 16);
+
+                    MbrAnalysisResults.PopulateExtendedWriter(peakQuantWriter);
+                    WriteExtendedPeakQuantificationResults(Parameters.FlashLfqResults, Parameters.OutputFolder,
+                        "AllQuantifiedPeaks.tsv", peakQuantWriter);
+
+                    //MbrAnalysisResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
                 }
                 else
                 {
@@ -1699,15 +1719,15 @@ namespace TaskLayer
             FinishedWritingFile(peaksPath, nestedIds);
         }
 
-        public ExtendedWriter WriteExtendedPeakQuantificationResults(FlashLfqResults flashLFQResults, string outputFolder,
-            string fileName)
+        public void WriteExtendedPeakQuantificationResults(FlashLfqResults flashLFQResults, string outputFolder,
+            string fileName, ExtendedWriter peakWriter = null)
         {
             int numberOfThreadsToUse = CommonParameters.MaxThreadsToUsePerFile < flashLFQResults.SpectraFiles.Count
                 ? CommonParameters.MaxThreadsToUsePerFile
                 : flashLFQResults.SpectraFiles.Count;
             int[] threads = Enumerable.Range(0, numberOfThreadsToUse).ToArray();
 
-            ExtendedWriter peakWriter = new ExtendedWriter(
+            peakWriter ??= new ExtendedWriter(
                 flashLFQResults.Peaks.SelectMany(p => p.Value),
                 ChromatographicPeak.TabSeparatedHeader,
                 new List<(string, int)>
@@ -1745,7 +1765,7 @@ namespace TaskLayer
                     DeconvolutionParameters deconParameters = new ClassicDeconvolutionParameters(
                         minCharge: 1, maxCharge: 12, deconPpm: Parameters.SearchParameters.QuantifyPpmTol, intensityRatio: 3);
                     Deconvoluter deconvoluter = new Deconvoluter(DeconvolutionTypes.ClassicDeconvolution, deconParameters);
-                    PpmTolerance tolerance = new PpmTolerance(Parameters.SearchParameters.QuantifyPpmTol);
+                    PpmTolerance tolerance = new PpmTolerance(10);
 
                     // create scan to TIC dict
 
@@ -1835,9 +1855,7 @@ namespace TaskLayer
                 }
             });
 
-            // Need to write to tsv
-            return peakWriter;
-
+            peakWriter.WriteResults(outputFolder, fileName);
         }
 
         private static IsotopicEnvelope GetBestEnvelope(Deconvoluter deconvoluter, MsDataScan scan, double mz,

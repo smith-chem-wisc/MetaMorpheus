@@ -120,6 +120,7 @@ namespace TaskLayer.MbrAnalysis
             else return (retentionTimeShift, null);
         }
 
+        // None of this actually works, because the chromatographic peak envelopes only store the most abundant peak for each charge state
         public static (string apexI, string envelopeI, string peakShape) CalculateEnvelopeStatistics(ChromatographicPeak peak, PpmTolerance tolerance)
         {
             List<IndexedMassSpectralPeak> apexPeaks = peak.IsotopicEnvelopes
@@ -149,6 +150,45 @@ namespace TaskLayer.MbrAnalysis
             string apexIntensityVsTime = apexDescription.ToString();
 
             return (apexIntensityIntegral, envelopeIntensityIntegral, apexIntensityVsTime);
+        }
+
+        public static string GetPeakDistribution(ChromatographicPeak peak, int ppmTolerance = 5)
+        {
+            PpmTolerance tolerance = new PpmTolerance(ppmTolerance);
+            List<IndexedMassSpectralPeak> apexPeaks = peak.IsotopicEnvelopes
+                .Select(e => e.IndexedPeak)
+                .Where(p => tolerance.Within(p.Mz, peak.Apex.IndexedPeak.Mz))
+                .OrderBy(p => p.RetentionTime)
+                .ToList();
+
+            StringBuilder apexDescription = new StringBuilder();
+            apexDescription.Append("[ ");
+            foreach (IndexedMassSpectralPeak imsPeak in apexPeaks)
+            {
+                apexDescription.Append(imsPeak.RetentionTime);
+                apexDescription.Append(",");
+                apexDescription.Append(imsPeak.Intensity);
+                apexDescription.Append("; ");
+            }
+            apexDescription.Length--; // Removes the last "; " 
+            apexDescription.Append("]");
+            return apexDescription.ToString();
+        }
+
+        public List<string> AdditionalHeaderFields
+        {
+            get
+            {
+                return new List<string>
+                {
+                    "Spectral Contrast Angle",
+                    "Retention Time Shift (min)",
+                    "Retention Time Z-Score",
+                    "Ms2 Retention Time - Recovered Spectrum",
+                    "Precursor Mass - Recovered Spectrum",
+                    "Most Abundant Peak [Retention Time, Intensity]"
+                };
+            }
         }
 
         /// <summary>
@@ -188,11 +228,6 @@ namespace TaskLayer.MbrAnalysis
                         sb.Append('\t');
                         sb.Append("Precursor Isotopic Angle");
                     }
-                    //if (Ms1TicDictionary != null)
-                    //{
-                    //    sb.Append('\t');
-                    //    sb.Append("Apex Ms1 TIC");
-                    //}
                     sb.Append('\t');
                     sb.Append("Most Abundant Peak [Retention Time, Intensity]");
 
@@ -271,7 +306,6 @@ namespace TaskLayer.MbrAnalysis
                                 }
                             }
                             
-
                             (double?, double?) rtInfo = CalculateRtShift(peak);
                             retentionTimeShift = rtInfo.Item1 != null ? rtInfo.Item1.ToString() : "";
                             rtZScore = rtInfo.Item2 != null ? rtInfo.Item2.ToString() : "";
@@ -343,6 +377,39 @@ namespace TaskLayer.MbrAnalysis
                         output.WriteLine(sb.ToString().Trim());
                     }
                 }
+            }
+        }
+
+        public void PopulateExtendedWriter(ExtendedWriter writer)
+        {
+            if (MaxQuantAnalysis) throw new NotImplementedException();
+
+            foreach (ChromatographicPeak peak in FlashLfqResults.Peaks.SelectMany(p => p.Value))
+            {
+                Dictionary<string, string> peakInfo = AdditionalHeaderFields.ToDictionary(key => key, value => "");
+
+
+                if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
+                {
+                    if (mbrSpectralMatch.spectralLibraryMatch != null)
+                    {
+                        peakInfo["Spectral Contrast Angle"] =
+                            mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
+                                ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
+                                : "Spectrum Not Found";
+                        peakInfo["Ms2 Retention Time - Recovered Spectrum"] =
+                            mbrSpectralMatch.spectralLibraryMatch.ScanRetentionTime.ToString();
+                        peakInfo["Precursor Mass - Recovered Spectrum"] = mbrSpectralMatch.spectralLibraryMatch
+                            .ScanPrecursorMonoisotopicPeakMz.ToString();
+                    }
+                }
+
+                (double?, double?) rtInfo = CalculateRtShift(peak);
+                peakInfo["Retention Time Shift (min)"] = rtInfo.Item1 != null ? rtInfo.Item1.ToString() : "";
+                peakInfo["Retention Time Z-Score"] = rtInfo.Item2 != null ? rtInfo.Item2.ToString() : "";
+                peakInfo["Most Abundant Peak [Retention Time, Intensity]"] = GetPeakDistribution(peak);
+
+                writer.AddInfo(peak, peakInfo);
             }
         }
 
