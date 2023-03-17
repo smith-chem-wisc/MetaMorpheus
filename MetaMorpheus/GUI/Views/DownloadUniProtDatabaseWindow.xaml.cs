@@ -58,7 +58,7 @@ namespace MetaMorpheusGUI
             progress.Show();
             Task.Factory.StartNew(() =>
             {
-                client.Timeout = TimeSpan.FromMinutes(30); //This the time in case the process take response long time in this case have 30 min
+                client.Timeout = TimeSpan.FromMinutes(30); //This the time in case the process take response long time in this case have 30 min 
                 AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
                 try
                 {
