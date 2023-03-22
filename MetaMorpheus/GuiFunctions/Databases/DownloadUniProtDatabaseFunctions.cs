@@ -11,40 +11,32 @@ namespace GuiFunctions.Databases
         public static string GetUniProtHtmlQueryString(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
         {
             StringBuilder htmlQueryString = new StringBuilder();
-            htmlQueryString.Append("https://www.uniprot.org/uniprot/?query=proteome:" + proteomeID + " ");
+            htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/stream?");
 
             if (!xmlFormat) //fasta
             {
-                htmlQueryString.Append("&format=fasta");
+                htmlQueryString.Append("format=fasta");
             }
             else
             {
-                htmlQueryString.Append("&format=xml");
+                htmlQueryString.Append("format=xml");
+            }
+
+            if (isoforms && !xmlFormat) //Only the .fasta file can be isoforms
+            {
+                htmlQueryString.Append("&includeIsoform=true");
             }
 
             if (reviewed)
             {
-                htmlQueryString.Append("&reviewed:yes");
-            }
-
-            if (isoforms)
-            {
-                htmlQueryString.Append("&include:yes");
-            }
-            else
-            {
-                htmlQueryString.Append("&include:no");
+                htmlQueryString.Append("&reviewed=true");
             }
 
             if (compressed)
             {
-                htmlQueryString.Append("&compress=yes");
+                htmlQueryString.Append("&compressed=true");
             }
-            else
-            {
-                htmlQueryString.Append("&compress=no");
-            }
-
+            htmlQueryString.Append("&query=%28%28proteome%3A" + proteomeID + "%29%29");
             return htmlQueryString.ToString();
         }
 
@@ -60,7 +52,7 @@ namespace GuiFunctions.Databases
                 filename += "_withUnreviewed";
             }
 
-            if (isoforms)
+            if (isoforms && !xmlFormat)
             {
                 filename += "_isoform";
             }
