@@ -137,7 +137,11 @@ namespace GuiFunctions
         /// <param name="useLiteralPassedValues"></param>
         protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons, bool useLiteralPassedValues = false)
         {
-            foreach (MatchedFragmentIon matchedIon in matchedFragmentIons)
+            List<MatchedFragmentIon> ionsToDisplay = !MetaDrawSettings.DisplayInternalIons
+                ? matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.SecondaryProductType == null).ToList()
+                : matchedFragmentIons;
+
+            foreach (MatchedFragmentIon matchedIon in ionsToDisplay)
             {
                 AnnotatePeak(matchedIon, isBetaPeptide, useLiteralPassedValues);
             }
@@ -456,9 +460,9 @@ namespace GuiFunctions
                 text.Append(SpectrumMatch.BaseSeq.Length.ToString("F3").Split('.')[0]);
                 text.Append("\r\n");
             }
-            if (MetaDrawSettings.SpectrumDescription["ProForma Level: "])
+            if (MetaDrawSettings.SpectrumDescription["Ambiguity Level: "])
             {
-                text.Append("ProForma Level: ");
+                text.Append("Ambiguity Level: ");
                 text.Append(SpectrumMatch.AmbiguityLevel);
                 text.Append("\r\n");
             }

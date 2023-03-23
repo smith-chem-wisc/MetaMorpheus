@@ -23,9 +23,7 @@ using IO.MzML;
 using TaskLayer;
 using ThermoFisher.CommonCore.Data.Business;
 using System.Drawing;
-using Nett;
-using EngineLayer.GlycoSearch;
-using UsefulProteomicsDatabases;
+using pepXML.Generated;
 
 namespace Test
 {
@@ -340,6 +338,7 @@ namespace Test
             MetaDrawSettings.FirstAAonScreenIndex = 0;
             MetaDrawSettings.NumberOfAAOnScreen = psm.BaseSeq.Length;
             MetaDrawSettings.DrawMatchedIons = true;
+            MetaDrawSettings.DisplayInternalIons = false;
             metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
             Assert.That(errors == null || !errors.Any());
@@ -608,27 +607,11 @@ namespace Test
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\sliced_glyco_hcd_ethcd.raw");
 
-            CommonParameters commonParameters = new(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
-            var glycoSearchTask = new GlycoSearchTask()
-            {
-                CommonParameters = commonParameters,
-                _glycoSearchParameters = new GlycoSearchParameters()
-                {
-                    OGlycanDatabasefile = "OGlycan.gdb",
-                    NGlycanDatabasefile = "NGlycan.gdb",
-                    GlycoSearchType = GlycoSearchType.OGlycanSearch,
-                    OxoniumIonFilt = true,
-                    DecoyType = DecoyType.Reverse,
-                    GlycoSearchTopNum = 50,
-                    MaximumOGlycanAllowed = 4,
-                    DoParsimony = true,
-                    WriteContaminants = true,
-                    WriteDecoys = true
-                }
-            };
+            // run task
+            CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
 
             Directory.CreateDirectory(outputFolder);
-
+            var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters };
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
 
             var psmFile = Path.Combine(outputFolder, @"oglyco.psmtsv");
@@ -781,14 +764,16 @@ namespace Test
         public static void MetaDraw_TestChimeraScanSpectrumDisplay()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
-            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
-            List<MsDataScan> allScans = Mzml.LoadAllStaticData(spectraFile).GetAllScansList();
             Directory.CreateDirectory(outputFolder);
 
             // run search task
-            var searchtask = new SearchTask();
+            var searchtask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters() { MinAllowedInternalFragmentLength = 4},
+            };
             searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
@@ -801,22 +786,30 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(metadrawLogic.FilteredListOfPsms.Any());
 
-            // test filter to chimeras
-            metadrawLogic.FilterPsmsToChimerasOnly();
-            var chimerasGroups = metadrawLogic.FilteredListOfPsms
-                .GroupBy(p => p.Ms2ScanNumber);
-            Assert.That(chimerasGroups.All(p => p.Count() > 1));
+            // fix the scan number due to the trimmed spectra file
+            foreach (var psm in metadrawLogic.FilteredListOfPsms)
+            {
+                var type = psm.GetType();
+                var field = type.GetField("<Ms2ScanNumber>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                field.SetValue(psm, psm.Ms2ScanNumber + 27300);
+            }
+            var metaDrawDynamicScanConnection = (Dictionary<string, DynamicDataConnection>)metadrawLogic?.GetType()
+                .GetField("MsDataFiles", BindingFlags.Instance | BindingFlags.NonPublic)
+                ?.GetValue(metadrawLogic);
 
+
+            metadrawLogic.FilterPsmsToChimerasOnly();
             // test plotting on each instance of chimeras in this dataset
             var plotView = new OxyPlot.Wpf.PlotView() { Name = "chimeraPlot" };
-            foreach (var chimeraGroupIGrouping in chimerasGroups.AsEnumerable())
+            foreach (var chimeraGroup in metadrawLogic.FilteredListOfPsms
+                         .GroupBy(p => p.Ms2ScanNumber))
             {
-                List<PsmFromTsv> chimeraGroup = chimeraGroupIGrouping.ToList();
-                MsDataScan chimericScan =
-                    allScans.First(p => p.OneBasedScanNumber == chimeraGroup.First().Ms2ScanNumber);
+                Assert.That(chimeraGroup.Count(), Is.GreaterThanOrEqualTo(2));
+                MsDataScan chimericScan = metaDrawDynamicScanConnection.First().Value
+                    .GetOneBasedScanFromDynamicConnection(chimeraGroup.First().Ms2ScanNumber);
 
                 // plot the first chimera and test the results
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
                 Assert.That(errors == null || !errors.Any());
 
                 // test plot was drawn
@@ -836,7 +829,7 @@ namespace Test
                 int drawnIonsNotDefaultColor = model.Series.Count(p => ((LineSeries)p).Color != MetaDrawSettings.UnannotatedPeakColor);
                 List<MatchedFragmentIon> fragments = new();
                 chimeraGroup.Select(p => p.MatchedIons).ForEach(m => fragments.AddRange(m));
-                Assert.That(drawnIonsNotDefaultColor == fragments.Count);
+                Assert.That(drawnIonsNotDefaultColor, Is.EqualTo(fragments.Count));
 
                 // shared matched ions are default color
                 int drawnIonsShared = model.Series.Count(p => ((LineSeries)p).Color == ChimeraSpectrumMatchPlot.MultipleProteinSharedColor);
@@ -853,9 +846,9 @@ namespace Test
                 var unsharedIons = fragments.GroupBy(p => p)
                     .Where(m => m.Count() == 1)
                     .SelectMany(n => n).ToList();
-                for (var i = 0; i < chimeraGroup.Count; i++)
+                for (var i = 0; i < chimeraGroup.Count(); i++)
                 {
-                    var chimera = chimeraGroup[i];
+                    var chimera = chimeraGroup.ElementAt(i);
                     var chimeraSpecificPeaks = unsharedIons.Intersect(chimera.MatchedIons).ToList();
                     var chimeraSharedPeaks = sharedIons.Intersect(chimera.MatchedIons).ToList();
                     int drawnIonsOfSpecificID = model.Series.Count(p => ChimeraSpectrumMatchPlot.ColorByProteinDictionary[i].Any(m => m == ((LineSeries)p).Color));
@@ -869,16 +862,22 @@ namespace Test
                 // test with different drawing settings
                 MetaDrawSettings.AnnotateCharges = true;
                 MetaDrawSettings.AnnotateMzValues = true;
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
                 Assert.That(errors == null || !errors.Any());
 
                 MetaDrawSettings.DisplayIonAnnotations = false;
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup, out errors);
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
                 Assert.That(errors == null || !errors.Any());
+
+                MetaDrawSettings.DisplayInternalIons = false;
+                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                Assert.That(errors == null || !errors.Any());
+                MetaDrawSettings.DisplayInternalIons = true;
             }
 
             // test export of singlular plot
-            List<PsmFromTsv> firstChimeraGroup = chimerasGroups.First().ToList();
+            List<PsmFromTsv> firstChimeraGroup = metadrawLogic.FilteredListOfPsms
+                .GroupBy(p => p.Ms2ScanNumber).First().ToList();
             metadrawLogic.DisplayChimeraSpectra(plotView, firstChimeraGroup, out errors);
             Assert.That(errors == null || !errors.Any());
             foreach (var exportType in MetaDrawSettings.ExportTypes)
@@ -910,7 +909,8 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(outputFolder, fileNameWithoutDirectory)));
 
             // test export of multiple plots
-            List<PsmFromTsv> secondChimeraGroup = chimerasGroups.ToList()[1].ToList();
+            List<PsmFromTsv> secondChimeraGroup = metadrawLogic.FilteredListOfPsms
+                .GroupBy(p => p.Ms2ScanNumber).ToList()[1].ToList();
             metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
             Assert.That(errors == null || !errors.Any());
             foreach (var exportType in MetaDrawSettings.ExportTypes)
@@ -932,10 +932,12 @@ namespace Test
             // test error
             metadrawLogic.CleanUpResources();
             metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
-            Assert.That(errors != null && errors.First().Equals("The spectra file could not be found for this PSM: SmallCalibratible_Yeast"));
+            Assert.That(errors != null && errors.First().Equals("The spectra file could not be found for this PSM: TaGe_SA_HeLa_04_subset_longestSeq"));
             
             Directory.Delete(outputFolder, true);
         }
+
+  
 
         [Test]
         public static void TestMetaDrawErrors()

@@ -24,6 +24,7 @@ namespace GuiFunctions
         public static bool AnnotateMzValues { get; set; } = false;
         public static bool AnnotateCharges { get; set; } = false;
         public static bool AnnotationBold { get; set; } = false;
+        public static bool DisplayInternalIons { get; set; } = true;
         public static bool DisplayInternalIonAnnotations { get; set; }= true;
         public static Dictionary<OxyColor, string> PossibleColors { get; set; }
         public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
@@ -70,7 +71,7 @@ namespace GuiFunctions
         };
         public static string[] SpectrumDescriptors { get; set; } =
         {"Precursor Charge: ", "Precursor Mass: ", "Theoretical Mass: ", "Protein Accession: ", "Protein: ",
-        "Decoy/Contaminant/Target: ", "Sequence Length: ", "ProForma Level: ", "Spectral Angle: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
+        "Decoy/Contaminant/Target: ", "Sequence Length: ", "Ambiguity Level: ", "Spectral Angle: ", "Score: ", "Q-Value: ", "PEP: ", "PEP Q-Value: "};
         public static string[] CoverageTypes { get; set; } = { "N-Terminal Color", "C-Terminal Color", "Internal Color" };
         public static string[] ExportTypes { get; set; } = { "Pdf", "Png", "Jpeg", "Tiff", "Wmf", "Bmp" };
         public static string[] AmbiguityTypes { get; set; } = { "No Filter", "1", "2A", "2B", "2C", "2D", "3", "4", "5" };
@@ -78,7 +79,7 @@ namespace GuiFunctions
         #endregion
 
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
-        public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green; 
+        public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
         public static OxyColor InternalIonColor { get; set; } = OxyColors.Purple;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
@@ -227,6 +228,7 @@ namespace GuiFunctions
                 AnnotationBold = AnnotationBold,
                 ShowDecoys = ShowDecoys,
                 ShowContaminants = ShowContaminants,
+                DisplayInternalIons = DisplayInternalIons,
                 DisplayInternalIonAnnotations = DisplayInternalIonAnnotations,
                 QValueFilter = QValueFilter,
                 AmbiguityFilter = AmbiguityFilter,
@@ -257,6 +259,7 @@ namespace GuiFunctions
             AnnotationBold = settings.AnnotationBold;
             ShowDecoys = settings.ShowDecoys;
             ShowContaminants = settings.ShowContaminants;
+            DisplayInternalIons = settings.DisplayInternalIons;
             DisplayInternalIonAnnotations = settings.DisplayInternalIonAnnotations;
             QValueFilter = settings.QValueFilter;
             AmbiguityFilter = settings.AmbiguityFilter;
@@ -287,6 +290,8 @@ namespace GuiFunctions
             AnnotateMzValues = false;
             AnnotateCharges = false;
             AnnotationBold = false;
+            DisplayInternalIons = true;
+            DisplayInternalIonAnnotations = true;
             DrawStationarySequence = true;
             DrawNumbersUnderStationary = true;
             ShowLegend = true;
