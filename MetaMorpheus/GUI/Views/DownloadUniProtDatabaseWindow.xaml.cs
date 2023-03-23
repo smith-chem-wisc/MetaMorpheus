@@ -41,7 +41,7 @@ namespace MetaMorpheusGUI
 
         private void LoadAvailableProteomes()
         {
-            foreach (var item in EngineLayer.GlobalVariables.AvailableUniProtProteomes)
+            foreach (var item in GlobalVariables.AvailableUniProtProteomes)
             {
                 availableProteomes.Add(item.Value);
             }
@@ -51,17 +51,22 @@ namespace MetaMorpheusGUI
         {
             Uri uri = new(DownloadLink);
             HttpClient client = new();
-            ProgressBarIndeterminate progress = new ProgressBarIndeterminate
+            ProgressBarIndeterminate progress = new ProgressBarIndeterminate(client)
             {
                 WindowStartupLocation = WindowStartupLocation.CenterScreen
             };
             progress.Show();
             Task.Factory.StartNew(() =>
             {
-                HttpResponseMessage urlResponse = Task.Run(() => client.GetAsync(uri)).Result;
-                using (FileStream stream = new(TargetPath, FileMode.CreateNew))
+                client.Timeout = TimeSpan.FromMinutes(30); //This the time in case the process take response long time in this case have 30 min 
+                AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
+                try
                 {
-                    Task.Run(() => urlResponse.Content.CopyToAsync(stream)).Wait();
+                    Task.Run(() => ProgressInformation(uri, client, progress , TargetPath)).Wait();
+                }
+                catch
+                {
+                    //The task was canceled.
                 }
             }).ContinueWith(task =>
             {
@@ -76,12 +81,52 @@ namespace MetaMorpheusGUI
                     File.SetCreationTime(TargetPath, DateTime.Now); //this is needed because overwriting an old file will not update the file creation time
                 }
                 this.Close();
-            }, System.Threading.CancellationToken.None, System.Threading.Tasks.TaskContinuationOptions.None,
-            System.Threading.Tasks.TaskScheduler.FromCurrentSynchronizationContext());
+            }, System.Threading.CancellationToken.None, TaskContinuationOptions.None,
+            TaskScheduler.FromCurrentSynchronizationContext());
+        }
+
+        async Task ProgressInformation(Uri uri, HttpClient client, ProgressBarIndeterminate progressBar , string TargetPath)
+        {
+
+            var totalBytesRead = 0L;
+            var buffer = new byte[8192];
+            var isMoreToRead = true;
+            var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).Result;
+            using (var contentStream = await response.Content.ReadAsStreamAsync())
+            {
+                using (var fileStream = new FileStream(TargetPath, FileMode.Create, FileAccess.Write, FileShare.None, 8192, true))
+                {
+                    do
+                    {
+                        var bytesRead = await contentStream.ReadAsync(buffer, 0, buffer.Length);
+                        if (bytesRead == 0)
+                        {
+                            isMoreToRead = false;
+                            fileStream.Close();
+                            continue;
+                        }
+
+                        if(!progressBar.open && isMoreToRead)
+                        {
+                            isMoreToRead = false;
+                            fileStream.Close();
+                            File.Delete(TargetPath);
+                            break;
+                        }
+
+                        await fileStream.WriteAsync(buffer, 0, bytesRead);
+                        totalBytesRead += bytesRead;
+
+                        progressBar.Bytes = totalBytesRead < 10000000 ? (totalBytesRead / 1024).ToString("N0") + "KB" : (totalBytesRead / 1000000).ToString("N0") + "MB";
+                    }
+                    while (isMoreToRead);
+                }
+            }
         }
 
         private void DownloadProteomeButton_Click(object sender, RoutedEventArgs e)
         {
+
             if (!string.IsNullOrEmpty(selectedProteome) && availableProteomes.Contains(selectedProteome))
             {
                 string filename = DownloadUniProtDatabaseFunctions.GetUniprotFilename(GetProteomeId(selectedProteome), reviewedCheckBox.IsChecked.Value, addIsoformsCheckBox.IsChecked.Value, xmlBox.IsChecked.Value, compressedCheckBox.IsChecked.Value);

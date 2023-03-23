@@ -1,0 +1,17 @@
+﻿<Window x:Class="MetaMorpheusGUI.ProgressBarIndeterminate"
+        x:Name="Progress"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Title="Progress" Height="115" Width="300">
+    <StackPanel Margin="3">
+        <Grid Height="20">
+            <ProgressBar Minimum="0" Maximum="100" Name="pbStatus" IsIndeterminate="True"/>
+        </Grid>
+        <Label x:Name="BytesLabel" HorizontalAlignment="Center" Content="{Binding Bytes ,  ElementName=Progress}" FontSize="13"/>
+        <Button Name="Cancel" Height="20" Content="Cancel" FontSize="12" Width="60" HorizontalAlignment="Right" Click="Cancel_Click"></Button>
+    </StackPanel>
+</Window>
