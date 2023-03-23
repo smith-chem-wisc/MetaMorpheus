@@ -78,7 +78,7 @@ namespace GuiFunctions
         #endregion
 
         public static Dictionary<ProductType, double> ProductTypeToYOffset { get; set; }
-        public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green;
+        public static OxyColor VariantCrossColor { get; set; } = OxyColors.Green; 
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
         public static OxyColor InternalIonColor { get; set; } = OxyColors.Purple;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
