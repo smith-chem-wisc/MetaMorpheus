@@ -651,5 +651,56 @@ namespace Test
 
             Directory.Delete(outputFolder, true);
         }
+        [Test]
+        public static void TestNGlycoPsmsHeader()
+        {
+            List<string> headerTerms = new()
+            {
+                "File Name",
+                "Scan Number",
+                "Scan Retention Time",
+                "Precursor Scan Number",
+                "Precursor MZ",
+                "Precursor Charge",
+                "Precursor Mass",
+                "Protein Accession",
+                "Organism",
+                "Protein Name",
+                "Start and End Residues In Protein",
+                "Base Sequence",
+                "FlankingResidues",
+                "Full Sequence",
+                "Number of Mods",
+                "Peptide Monoisotopic Mass",
+                "Score",
+                "Rank",
+                "Matched Ion Series",
+                "Matched Ion Mass-To-Charge Ratios",
+                "Matched Ion Mass Diff (Da)",
+                "Matched Ion Mass Diff (Ppm)",
+                "Matched Ion Intensities",
+                "Matched Ion Counts",
+                "Decoy/Contaminant/Target",
+                "QValue",
+                "PEP",
+                "PEP_QValue",
+                "Localization Score",
+                "Yion Score",
+                "DiagonosticIon Score",
+                "GlycanMass",
+                "Plausible GlycanComposition",
+                "R138/144",
+                "Plausible GlycanStructure",
+                "GlycanLocalizationLevel",
+                "Localized Glycans with Peptide Site Specific Probability",
+                "Localized Glycans with Protein Site Specific Probability"
+            };
+
+            string nglycoHeaderString = GlycoSpectralMatch.GetTabSepHeaderNGlyco();
+            List<string> nGlycoHeaderTerms = nglycoHeaderString.Split('\t').ToList();
+            nGlycoHeaderTerms.RemoveAll(s => s == "");
+
+            CollectionAssert.AreEquivalent(headerTerms, nGlycoHeaderTerms);
+        }
     }
 }
