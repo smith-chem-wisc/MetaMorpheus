@@ -71,12 +71,12 @@ namespace MetaMorpheusGUI
             {
                 DissociationTypeComboBox.Items.Add(dissassociationType.Key);
                 ChildScanDissociationTypeComboBox.Items.Add(dissassociationType.Key);
-            }          
+            }
 
             cbbPrecusorMsTl.Items.Add("Da");
             cbbPrecusorMsTl.Items.Add("ppm");
 
-            CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanLocations.Select(p=> Path.GetFileName(p));
+            CmbOGlycanDatabase.ItemsSource = GlobalVariables.OGlycanLocations.Select(p => Path.GetFileName(p));
             CmbNGlycanDatabase.ItemsSource = GlobalVariables.NGlycanLocations.Select(p => Path.GetFileName(p));
 
             foreach (Protease protease in ProteaseDictionary.Dictionary.Values)
@@ -241,7 +241,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecusorMsTlTextBox.Text, productMassToleranceTextBox.Text, missedCleavagesTextBox.Text,
                 maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, maxThreadsTextBox.Text, minScoreAllowed.Text,
-                fieldNotUsed, fieldNotUsed, fieldNotUsed, TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text, 
+                fieldNotUsed, fieldNotUsed, fieldNotUsed, TopNPeaksTextBox.Text, MinRatioTextBox.Text, null, null, numberOfDatabaseSearchesTextBox.Text, TxtBoxMaxModPerPep.Text,
                 fieldNotUsed, null, null, null))
             {
                 return;

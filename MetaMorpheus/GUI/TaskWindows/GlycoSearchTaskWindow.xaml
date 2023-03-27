@@ -4,16 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
-        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         KeyDown="KeyPressed"
-        Title="Search Task" Width="750" Height="725" WindowStartupLocation="CenterScreen">
+        Title="GlycoSearchTaskWindow" Height="750" Width="750" WindowStartupLocation="CenterScreen">
     <Window.Resources>
-        <local:BooleanInverter x:Key="InvertedBooleanConverter" />
-
-        <!-- used in Quantifications -->
-        <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
-        <guiFunctions:BooleanOrConverter x:Key="boolOrConverter"/>
 
         <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
@@ -71,7 +66,7 @@
                 </StackPanel>
                 <StackPanel DockPanel.Dock="Top">
                     <Grid>
-                        
+
 
                     </Grid>
                 </StackPanel>
@@ -290,7 +285,7 @@
                         </StackPanel>
                     </Expander>
                 </GroupBox>
-                
+
                 <!--modifications-->
                 <GroupBox Header="Modifications" DockPanel.Dock="Top">
                     <Expander x:Name="ModExpander" Collapsed="ApmdExpander_Collapsed" Expanded="ModExpander_Expanded">
@@ -433,8 +428,6 @@
                         </CheckBox>
                     </StackPanel>
                 </GroupBox>
-
-
                 <!-- Quantification options -->
                 <GroupBox Header="Quantification" DockPanel.Dock="Top">
                     <StackPanel Margin="5">
