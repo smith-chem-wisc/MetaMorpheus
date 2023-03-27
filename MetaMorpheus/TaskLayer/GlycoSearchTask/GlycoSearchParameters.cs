@@ -49,5 +49,6 @@ namespace TaskLayer
         //quantification
         public bool DoQuantification { get; set; }
         public int QuantifyPpmTol { get; set; }
+
     }
 }
