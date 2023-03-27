@@ -89,8 +89,6 @@ namespace TaskLayer
             WriteFile.WritePsmGlycoToTsv(filteredGsms, writtenFileSingle, 1);
             FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
 
-
-
             return MyTaskResults;
         }
 
