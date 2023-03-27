@@ -6,7 +6,6 @@
 [![Github All Releases](https://img.shields.io/github/downloads/smith-chem-wisc/MetaMorpheus/total.svg)](https://github.com/smith-chem-wisc/MetaMorpheus/releases)
 [![Github All Releases](https://img.shields.io/docker/pulls/smithchemwisc/metamorpheus)](https://hub.docker.com/r/smithchemwisc/metamorpheus/tags?page=1&ordering=last_updated)
 
-[![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/installer/conda.svg)](https://conda.anaconda.org/conda-forge)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/version.svg)](https://anaconda.org/conda-forge/metamorpheus)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/platforms.svg)](https://anaconda.org/conda-forge/metamorpheus)
 [![Anaconda-Server Badge](https://anaconda.org/conda-forge/metamorpheus/badges/downloads.svg)](https://anaconda.org/conda-forge/metamorpheus)
@@ -32,7 +31,6 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
   * 64-bit operating system
   * .NET Core 6.0:
      * Windows: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-6.0.4-windows-x64-installer
-     * Windows: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-desktop-5.0.4-windows-x64-installer
      * macOS, x64 Intel processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-6.0.4-macos-x64-installer
      * macOS, ARM Apple Silicon processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-6.0.4-macos-arm64-installer
      * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers

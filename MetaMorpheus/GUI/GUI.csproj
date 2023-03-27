@@ -1,0 +1,136 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net6.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+	  <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <RootNamespace>MetaMorpheusGUI</RootNamespace>
+    <AssemblyName>MetaMorpheusGUI</AssemblyName>
+    <Configurations>Debug;Release</Configurations>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <PlatformTarget>x64</PlatformTarget>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Icons\Blogger.bmp" />
+    <None Remove="Icons\Blogger_20.bmp" />
+    <None Remove="Icons\git.bmp" />
+    <None Remove="Icons\git_20.bmp" />
+    <None Remove="Icons\mail.bmp" />
+    <None Remove="Icons\mail_20.bmp" />
+    <None Remove="Icons\MMnice.ico" />
+    <None Remove="Icons\proxl-ms.bmp" />
+    <None Remove="Icons\Slack_Mark_Web.bmp" />
+    <None Remove="Icons\spritz20.png" />
+    <None Remove="Icons\Twitter_Logo_Blue.bmp" />
+    <None Remove="Icons\update.bmp" />
+    <None Remove="Icons\update_20.bmp" />
+    <None Remove="Icons\wiki.bmp" />
+    <None Remove="Icons\wiki_20.bmp" />
+    <None Remove="Icons\youtube-256.bmp" />
+    <None Remove="Icons\youtube_20.bmp" />
+    <None Remove="MetaDraw\Icons\icons8-settings-256.bmp" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MarkdownSharp" Version="2.0.5" />
+    <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
+    <PackageReference Include="MathNet.Numerics.MKL.Win" Version="2.5.0" />
+    <PackageReference Include="Microsoft.ML" Version="2.0.0" />
+    <PackageReference Include="Microsoft.ML.CpuMath" Version="2.0.0" />
+    <PackageReference Include="Microsoft.ML.FastTree" Version="2.0.0" />
+    <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
+    <PackageReference Include="mzLib" Version="1.0.538" />
+    <PackageReference Include="Nett" Version="0.15.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="OxyPlot.Core" Version="2.0.0" />
+    <PackageReference Include="OxyPlot.Wpf" Version="2.0.0" />
+    <PackageReference Include="SharpLearning.CrossValidation" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.GradientBoost" Version="0.26.9" />
+    <PackageReference Include="SharpLearning.Metrics" Version="0.26.9" />
+    <PackageReference Include="System.Buffers" Version="4.5.1" />
+    <PackageReference Include="System.CodeDom" Version="5.0.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="5.0.3" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
+    <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="5.0.0" />
+    <PackageReference Include="System.Threading.Tasks.Dataflow" Version="5.0.0" />
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\EngineLayer\EngineLayer.csproj" />
+    <ProjectReference Include="..\GuiFunctions\GuiFunctions.csproj" />
+    <ProjectReference Include="..\TaskLayer\TaskLayer.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Icons\Blogger.bmp" />
+    <Resource Include="Icons\Blogger_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\git.bmp" />
+    <Resource Include="Icons\git_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\mail.bmp" />
+    <Resource Include="Icons\mail_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\MMnice.ico">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\proxl-ms.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\Slack_Mark_Web.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\spritz20.png" />
+    <Resource Include="Icons\Twitter_Logo_Blue.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\update.bmp" />
+    <Resource Include="Icons\update_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\wiki.bmp" />
+    <Resource Include="Icons\wiki_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Resource Include="Icons\youtube-256.bmp" />
+    <Resource Include="Icons\youtube_20.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
+    <Content Include="MetaDraw\Icons\icons8-settings-256.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="app.manifest">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="MetaDraw\Icons\icons8-settings-48.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>
