@@ -49,8 +49,8 @@ namespace TaskLayer
                     {
                         Directory.CreateDirectory(individualFileResults);
                     }
-                    var gsmsGroupedByFile = filteredGsms.GroupBy(p => p.FullFilePath).ToList();
-                    foreach (var fileSpecificGSMs in gsmsGroupedByFile)
+
+                    foreach (var fileSpecificGSMs in filteredGsms.GroupBy(p => p.FullFilePath))
                     {
                         string individualFileFolder = Path.GetFileNameWithoutExtension(fileSpecificGSMs.Key);
                         string individualFileFolderPath = Path.Combine(individualFileResults, individualFileFolder);
