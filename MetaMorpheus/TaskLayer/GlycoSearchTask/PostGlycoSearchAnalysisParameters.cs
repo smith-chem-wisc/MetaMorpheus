@@ -2,7 +2,6 @@
 using EngineLayer.GlycoSearch;
 using FlashLFQ;
 using Proteomics;
-using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 
 namespace TaskLayer
@@ -20,5 +19,6 @@ namespace TaskLayer
         public FileSpecificParameters[] FileSettingsList { get; set; }
         public List<DbForTask> DatabaseFilenameList { get; set; }
         public List<string> CurrentRawFileList { get; set; }
+        public FlashLfqResults FlashLfqResults { get; set; }
     }
 }
