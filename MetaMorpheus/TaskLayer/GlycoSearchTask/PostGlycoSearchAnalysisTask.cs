@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using FlashLFQ;
 using Proteomics.ProteolyticDigestion;
+using TaskLayer.MbrAnalysis;
 
 namespace TaskLayer
 {
@@ -15,6 +16,7 @@ namespace TaskLayer
     {
         public PostGlycoSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
+        private MbrAnalysisResults MbrAnalysisResults { get; set; }
         public PostGlycoSearchAnalysisTask() : base(MyTask.GlycoSearch)
         {
         }
@@ -408,6 +410,61 @@ namespace TaskLayer
                     }
                 }
             }
+        }
+
+        private void WriteQuantificationResults()
+        {
+            if (Parameters.GlycoSearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
+            {
+                // write peaks
+                if (MbrAnalysisResults != null)
+                {
+                    MbrAnalysisResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
+                }
+                else
+                {
+                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
+                }
+
+                // write peptide quant results
+                string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
+                if (MbrAnalysisResults != null)
+                {
+                    MbrAnalysisResults.WritePeptideQuantificationResultsToTsv(Parameters.OutputFolder, filename);
+                }
+                else
+                {
+                    WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
+                }
+
+                // write individual results
+                if (Parameters.CurrentRawFileList.Count > 1 && Parameters.GlycoSearchParameters.WriteIndividualFiles)
+                {
+                    foreach (var file in Parameters.FlashLfqResults.Peaks)
+                    {
+                        WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.IndividualResultsOutputFolder,
+                            file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
+                    }
+                }
+            }
+        }
+
+        private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
+        {
+            var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
+
+            flashLFQResults.WriteResults(null, fullSeqPath, null, null, true);
+
+            FinishedWritingFile(fullSeqPath, nestedIds);
+        }
+
+        private void WritePeakQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
+        {
+            var peaksPath = Path.Combine(outputFolder, fileName + ".tsv");
+
+            flashLFQResults.WriteResults(peaksPath, null, null, null, true);
+
+            FinishedWritingFile(peaksPath, nestedIds);
         }
     }
 }

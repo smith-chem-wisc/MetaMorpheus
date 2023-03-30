@@ -23,5 +23,6 @@ namespace TaskLayer
         public List<DbForTask> DatabaseFilenameList { get; set; }
         public List<string> CurrentRawFileList { get; set; }
         public FlashLfqResults FlashLfqResults { get; set; }
+        public string IndividualResultsOutputFolder { get; set; }
     }
 }
