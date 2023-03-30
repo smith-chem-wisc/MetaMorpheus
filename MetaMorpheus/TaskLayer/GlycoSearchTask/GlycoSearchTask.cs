@@ -52,8 +52,7 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
-            MyFileManager myFileManager = new(true);
-
+            MyFileManager myFileManager = new (_glycoSearchParameters.DisposeOfFileWhenDone);
             int completedFiles = 0;
 
             Status("Searching files...", taskId);
@@ -86,6 +85,8 @@ namespace TaskLayer
             }                
             
             ProseCreatedWhileRunning.Append("\n");
+
+            FlashLfqResults flashLfqResults = null;
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -206,6 +207,8 @@ namespace TaskLayer
                 FixedModifications = fixedModifications,
                 AllPsms = filteredAllPsms.OrderByDescending(p => p.Score).ToList(),
                 OutputFolder = OutputFolder,
+                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
+                FlashLfqResults = flashLfqResults,
                 FileSettingsList = fileSettingsList,
                 DatabaseFilenameList = dbFilenameList,
                 CurrentRawFileList = currentRawFileList

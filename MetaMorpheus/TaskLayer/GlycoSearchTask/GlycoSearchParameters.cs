@@ -31,6 +31,7 @@ namespace TaskLayer
             WriteIndividualFiles = false;
             WriteDecoys = true;
             WriteContaminants = true;
+            DisposeOfFileWhenDone = true;
         }
         public string OGlycanDatabasefile { get; set; }
         public string NGlycanDatabasefile { get; set; }
@@ -54,5 +55,6 @@ namespace TaskLayer
         public bool WriteIndividualFiles { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
+        public bool DisposeOfFileWhenDone { get; set; }
     }
 }
