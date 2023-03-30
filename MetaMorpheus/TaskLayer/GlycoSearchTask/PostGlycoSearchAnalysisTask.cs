@@ -89,6 +89,7 @@ namespace TaskLayer
             }
 
             QuantificationAnalysis();
+            WriteQuantificationResults();
 
             var writtenFileSingle = Path.Combine(OutputFolder, "AllPSMs.psmtsv");
             WriteFile.WritePsmGlycoToTsv(filteredGsms, writtenFileSingle, 1);
