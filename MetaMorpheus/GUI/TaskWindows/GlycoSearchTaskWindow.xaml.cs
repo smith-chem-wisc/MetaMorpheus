@@ -292,6 +292,12 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
 
+            //Quantification Options
+            TheTask._glycoSearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask._glycoSearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
+            TheTask._glycoSearchParameters.DoMbrAnalysis = CheckBoxMatchBetweenRuns.IsChecked.Value;
+            TheTask._glycoSearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
+
             //Output Options
             TheTask._glycoSearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask._glycoSearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
