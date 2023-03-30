@@ -13,6 +13,10 @@
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
+        <!-- used in Quantifications -->
+        <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
+        <guiFunctions:BooleanOrConverter x:Key="boolOrConverter"/>
+
         <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>
@@ -450,7 +454,6 @@
                                 <TextBox.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                        <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
                                     </MultiBinding>
                                 </TextBox.IsEnabled>
                                 <ToolTipService.ToolTip>
@@ -461,7 +464,6 @@
                                 <Label.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                        <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
                                     </MultiBinding>
                                 </Label.IsEnabled>
                             </Label>
@@ -470,7 +472,6 @@
                             <CheckBox.IsEnabled>
                                 <MultiBinding Converter="{StaticResource boolOrConverter}">
                                     <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                    <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
                                 </MultiBinding>
                             </CheckBox.IsEnabled>
                             <ToolTipService.ToolTip>
@@ -481,7 +482,6 @@
                             <CheckBox.IsEnabled>
                                 <MultiBinding Converter="{StaticResource boolOrConverter}">
                                     <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                    <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
                                 </MultiBinding>
                             </CheckBox.IsEnabled>
                             <ToolTipService.ToolTip>
