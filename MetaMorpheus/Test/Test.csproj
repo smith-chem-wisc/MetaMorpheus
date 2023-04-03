@@ -87,6 +87,9 @@
     <None Update="GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfig_ETD_Run3.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\NGlycanSearchTaskconfig.toml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
