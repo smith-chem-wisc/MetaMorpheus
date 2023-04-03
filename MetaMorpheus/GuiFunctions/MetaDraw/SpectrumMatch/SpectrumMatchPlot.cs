@@ -34,7 +34,16 @@ namespace GuiFunctions
         public MsDataScan Scan { get; protected set; }
         public PsmFromTsv SpectrumMatch { get; set; }
 
-        public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm, MsDataScan scan) : base(plotView)
+        /// <summary>
+        /// Base Spectrum match constructor
+        /// Matched fragment ions should only be passed in for glyco parent/child scan
+        /// </summary>
+        /// <param name="plotView">Where the plot is going</param>
+        /// <param name="psm">psm to plot</param>
+        /// <param name="scan">spectrum to plot</param>
+        /// <param name="matchedIons">glyco ONLY child matched ions</param>
+        public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm, 
+            MsDataScan scan, List<MatchedFragmentIon> matchedIons = null) : base(plotView)
         {
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
@@ -42,11 +51,17 @@ namespace GuiFunctions
             matchedFragmentIons = new();
 
             DrawSpectrum();
-            if (psm != null)
+            if (matchedIons is null && psm is not null)
             {
                 SpectrumMatch = psm;
                 matchedFragmentIons = SpectrumMatch.MatchedIons;
                 AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
+            }
+            else if (matchedIons is not null && psm is not null)
+            {
+                SpectrumMatch = psm;
+                matchedFragmentIons = matchedIons;
+                AnnotateMatchedIons(false, matchedIons);
             }
 
             ZoomAxes();
@@ -137,7 +152,11 @@ namespace GuiFunctions
         /// <param name="useLiteralPassedValues"></param>
         protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons, bool useLiteralPassedValues = false)
         {
-            foreach (MatchedFragmentIon matchedIon in matchedFragmentIons)
+            List<MatchedFragmentIon> ionsToDisplay = !MetaDrawSettings.DisplayInternalIons
+                ? matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.SecondaryProductType == null).ToList()
+                : matchedFragmentIons;
+
+            foreach (MatchedFragmentIon matchedIon in ionsToDisplay)
             {
                 AnnotatePeak(matchedIon, isBetaPeptide, useLiteralPassedValues);
             }
@@ -456,9 +475,9 @@ namespace GuiFunctions
                 text.Append(SpectrumMatch.BaseSeq.Length.ToString("F3").Split('.')[0]);
                 text.Append("\r\n");
             }
-            if (MetaDrawSettings.SpectrumDescription["ProForma Level: "])
+            if (MetaDrawSettings.SpectrumDescription["Ambiguity Level: "])
             {
-                text.Append("ProForma Level: ");
+                text.Append("Ambiguity Level: ");
                 text.Append(SpectrumMatch.AmbiguityLevel);
                 text.Append("\r\n");
             }
