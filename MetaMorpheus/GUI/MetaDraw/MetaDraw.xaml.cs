@@ -180,7 +180,7 @@ namespace MetaMorpheusGUI
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
 
             // Chimera plotter
-            if (((Grid)MetaDrawTabControl.SelectedContent).Name == "chimeraPlotGrid")
+            if (MetaDrawTabControl.SelectedContent is Grid { Name: "chimeraPlotGrid" })
             {
                 List<PsmFromTsv> chimericPsms = MetaDrawLogic.FilteredListOfPsms
                     .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
