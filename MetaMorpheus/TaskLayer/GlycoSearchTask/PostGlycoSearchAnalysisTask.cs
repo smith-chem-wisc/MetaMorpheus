@@ -224,11 +224,6 @@ namespace TaskLayer
             // pass quantification parameters to FlashLFQ
             Status("Quantifying...", Parameters.SearchTaskId);
 
-            foreach (var file in Parameters.CurrentRawFileList)
-            {
-                Parameters.MyFileManager.DoneWithFile(file);
-            }
-
             // construct file info for FlashLFQ
             List<SpectraFileInfo> spectraFileInfo;
 
