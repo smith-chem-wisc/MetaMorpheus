@@ -177,6 +177,11 @@ namespace MetaMorpheusGUI
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
             CheckBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            // If Spectral Recovery is enabled
+            if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
+            {
+                CheckBoxLFQwSpectralRecovery.IsChecked = task.SearchParameters.DoSpectralRecovery;
+            }
             //If SILAC turnover
             if (task.SearchParameters.StartTurnoverLabel != null || task.SearchParameters.EndTurnoverLabel != null)
             {
@@ -219,26 +224,6 @@ namespace MetaMorpheusGUI
             }
             //else if SILAC multiplex
             else if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
-            {
-                CheckBoxSILAC.IsChecked = true;
-                List<Proteomics.SilacLabel> labels = task.SearchParameters.SilacLabels;
-                foreach (Proteomics.SilacLabel label in labels)
-                {
-                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label, SilacModificationWindow.ExperimentType.Multiplex);
-                    if (label.AdditionalLabels != null)
-                    {
-                        foreach (Proteomics.SilacLabel additionalLabel in label.AdditionalLabels)
-                        {
-                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Multiplex));
-                        }
-                    }
-                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                }
-                if (task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac)
-                {
-                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Multiplex));
-                }
-            }
 
 
             CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
@@ -592,6 +577,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
@@ -934,11 +920,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void MbrAnalysisUpdate(object sender, RoutedEventArgs e)
+        private void SpectralRecoveryUpdate(object sender, RoutedEventArgs e)
         {
-            if (CheckBoxLFQwMBR.IsChecked.Value)
+            if (CheckBoxLFQwSpectralRecovery.IsChecked.Value)
             {
-                if (UpdateGUISettings.UseMBRAnalysisMandatorySettings())
+                if (UpdateGUISettings.UseSpectralRecoveryMandatorySettings())
                 {
                     CheckBoxMatchBetweenRuns.IsChecked = true;
                     WriteSpectralLibraryCheckBox.IsChecked = true;

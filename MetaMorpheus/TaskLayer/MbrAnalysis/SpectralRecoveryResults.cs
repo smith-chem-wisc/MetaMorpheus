@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace TaskLayer.MbrAnalysis
 {
-    public class MbrAnalysisResults
+    public class SpectralRecoveryResults
     {
-        public readonly ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> BestMbrMatches;
+        public readonly ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> BestMbrMatches;
         public readonly FlashLfqResults FlashLfqResults;
         private Dictionary<string, List<string>> PeptideScoreDict;
 
@@ -61,7 +61,7 @@ namespace TaskLayer.MbrAnalysis
             }
         }
 
-        public MbrAnalysisResults(ConcurrentDictionary<ChromatographicPeak, MbrSpectralMatch> bestMbrMatches, FlashLfqResults flashLfqResults)
+        public SpectralRecoveryResults(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, FlashLfqResults flashLfqResults)
         {
             BestMbrMatches = bestMbrMatches;
             FlashLfqResults = flashLfqResults;

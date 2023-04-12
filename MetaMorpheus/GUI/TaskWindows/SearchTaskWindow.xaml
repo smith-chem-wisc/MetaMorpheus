@@ -385,8 +385,8 @@
                                     <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxLFQwMBR" Content="LFQ + MBR Analysis: FlashLFQ quantification with enhanced match between runs" 
-                                         GroupName="QuantType" Click="MbrAnalysisUpdate">
+                            <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery identifies FlashLFQ quantification + MBR" 
+                                         GroupName="QuantType" Click="SpectralRecoveryUpdate">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Match between runs analysis via spectral library search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
