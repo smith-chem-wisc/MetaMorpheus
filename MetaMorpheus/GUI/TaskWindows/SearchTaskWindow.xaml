@@ -385,15 +385,15 @@
                                     <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery identifies FlashLFQ quantification + MBR" 
-                                         GroupName="QuantType" Click="SpectralRecoveryUpdate">
-                                <ToolTipService.ToolTip>
-                                    <ToolTip Content="Match between runs analysis via spectral library search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
-                                </ToolTipService.ToolTip>
-                            </RadioButton>
                             <RadioButton x:Name="CheckBoxSILAC" Content="SILAC/SILAM: Quantify peptides/proteins with stable isotope labels" GroupName="QuantType" Click="CheckBoxSILAC_Checked">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="SILAC quantification is performed using FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                </ToolTipService.ToolTip>
+                            </RadioButton>
+                            <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery finds misidentified MS/MS spectra common in single-cell proteomics data" 
+                                         GroupName="QuantType" Click="SpectralRecoveryUpdate">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Match between runs analysis via spectral library search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
                             <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" 
