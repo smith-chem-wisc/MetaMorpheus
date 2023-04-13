@@ -428,7 +428,7 @@
                                     <TextBox.IsEnabled>
                                         <MultiBinding Converter="{StaticResource boolOrConverter}">
                                             <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                            <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
+                                            <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                         </MultiBinding>
                                     </TextBox.IsEnabled>
                                     <ToolTipService.ToolTip>
@@ -439,17 +439,14 @@
                                     <Label.IsEnabled>
                                         <MultiBinding Converter="{StaticResource boolOrConverter}">
                                             <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                            <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
+                                            <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                         </MultiBinding>
                                     </Label.IsEnabled>
                                 </Label>
                             </StackPanel>
                             <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" >
                                 <CheckBox.IsEnabled>
-                                    <MultiBinding Converter="{StaticResource boolOrConverter}">
-                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                        <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
-                                    </MultiBinding>
+                                    <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
                                 </CheckBox.IsEnabled>
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified&#x0a;Selecting &quot;Write Spectral Library&quot; in the Output Options below will enable additional MBR analysis" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
@@ -459,7 +456,7 @@
                                 <CheckBox.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                        <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                     </MultiBinding>
                                 </CheckBox.IsEnabled>
                                 <ToolTipService.ToolTip>
