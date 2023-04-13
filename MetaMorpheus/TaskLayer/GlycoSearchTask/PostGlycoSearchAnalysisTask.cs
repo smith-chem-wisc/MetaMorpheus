@@ -439,7 +439,7 @@ namespace TaskLayer
                     foreach (var file in Parameters.FlashLfqResults.Peaks)
                     {
                         WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.IndividualResultsOutputFolder,
-                            file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.Key.FullFilePathWithExtension });
+                            file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
                     }
                 }
             }

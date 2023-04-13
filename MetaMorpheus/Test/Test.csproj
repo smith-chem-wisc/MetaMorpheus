@@ -138,6 +138,18 @@
     <None Update="GlycoTestData\Q9C0Y4.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\QuantData\171025_06subset_2.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\QuantData\171025_06subset_1.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\QuantData\171025_06_protein.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\sliced_glyco_hcd_ethcd.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

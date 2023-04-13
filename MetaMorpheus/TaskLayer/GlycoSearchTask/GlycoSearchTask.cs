@@ -210,7 +210,7 @@ namespace TaskLayer
                 FixedModifications = fixedModifications,
                 AllPsms = filteredAllPsms.OrderByDescending(p => p.Score).ToList(),
                 OutputFolder = OutputFolder,
-                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "Individual File Results"),
+                IndividualResultsOutputFolder = Path.Combine(OutputFolder, "IndividualFileResults"),
                 FlashLfqResults = flashLfqResults,
                 FileSettingsList = fileSettingsList,
                 DatabaseFilenameList = dbFilenameList,
