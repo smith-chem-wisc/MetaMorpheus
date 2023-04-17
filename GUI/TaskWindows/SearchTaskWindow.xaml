@@ -7,6 +7,7 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
+        d:Height="1500"
         Title="Search Task" Width="750" Height="725" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
@@ -78,6 +79,23 @@
 
                 <!-- BASIC SETTINGS -->
                 <StackPanel DockPanel.Dock="Top" Margin="10">
+
+                    <!-- save settings -->
+                    <StackPanel  x:Name="TaskSettingsCtrl" Height="Auto" DataContext="{Binding TaskSettingsViewModel}"
+                                 Background="{StaticResource BackgroundColor}" Orientation="Horizontal" HorizontalAlignment="Right">
+
+                        <ComboBox Name="TaskSettingsComboBox" Width="200" Height="20" VerticalAlignment="Center" 
+                                  HorizontalAlignment="Left" IsSynchronizedWithCurrentItem="True"
+                                  ItemsSource="{Binding Path=DataContext.AllSettings, ElementName=TaskSettingsCtrl}" 
+                                  SelectedItem="{Binding Path=DataContext.SelectedSettings, ElementName=TaskSettingsCtrl}">
+                        </ComboBox> 
+                        <Button x:Name="Save" Content="Save" FontSize="10" 
+                                Width="60" Margin="5,5,2.5,5" Command="{Binding SaveSettingsCommand}"/>
+                        <Button x:Name="SaveAs" Content="Save as" FontSize="10" 
+                                Width="60" Margin="5,5,2.5,5" Click="SaveAs_Click"/>
+                        <Button x:Name="Delete"  Content="Delete" FontSize="10" Width="60" Margin="5,5,2.5,5"
+                                Command="{Binding DeleteSettingsCommand}"/>
+                    </StackPanel>
 
                     <!-- Search Parameters -->
                     <GroupBox Header="Search Parameters" DockPanel.Dock="Top" >

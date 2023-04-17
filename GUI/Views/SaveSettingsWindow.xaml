@@ -1,0 +1,42 @@
+﻿<Window x:Class="MetaMorpheusGUI.SaveSettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        mc:Ignorable="d"
+        Title="SaveSettingsWindow" Height="350" Width="600">
+    <d:UserControl.DataContext>
+        <guiFunctions:TaskSettingViewModel/>
+    </d:UserControl.DataContext>
+    
+   
+
+    <Grid >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="2*"/>
+            <RowDefinition Height="6*"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <ListBox Grid.Row="1" x:Name="SavedSettingsListBox" IsSynchronizedWithCurrentItem="True"
+                 ItemsSource="{Binding Path=AllSettings}" SelectedItem="{Binding SelectedSettings,Mode=TwoWay}" 
+                 VerticalAlignment="Stretch"  HorizontalAlignment="Stretch" 
+                 Margin="10" FontSize="15" 
+                 d:ItemsSource="{d:SampleData ItemCount=15}">
+        </ListBox>
+
+        <TextBox Grid.Row="0" Text="{Binding TypedSettingsName}" Height="40"
+                 HorizontalAlignment="Stretch"  VerticalAlignment="Top"
+                 Margin="10" FontSize="25" x:Name="NameTextBox">
+        </TextBox>
+
+        <Button x:Name="Delete"  Grid.Row="2" Content="Delete" FontSize="20" Height="30" 
+                Width="200" VerticalAlignment="Center"  HorizontalAlignment="Left"
+                Command="{Binding DeleteSettingsCommand}"/>
+        <Button x:Name="Save" Grid.Row="2" Content="Save" FontSize="20" Height="30" 
+                Width="200" VerticalAlignment="Center" HorizontalAlignment="Right"
+                Command="{Binding SaveSettingsFromWindowCommand}" CommandParameter="{Binding TypedSettingsName}"/>
+    </Grid>
+</Window>
