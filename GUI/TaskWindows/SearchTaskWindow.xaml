@@ -87,14 +87,14 @@
                         <ComboBox Name="TaskSettingsComboBox" Width="200" Height="20" VerticalAlignment="Center" 
                                   HorizontalAlignment="Left" IsSynchronizedWithCurrentItem="True"
                                   ItemsSource="{Binding Path=DataContext.AllSettings, ElementName=TaskSettingsCtrl}" 
-                                  SelectedItem="{Binding Path=DataContext.SelectedSettings, ElementName=TaskSettingsCtrl}">
+                                  SelectedItem="{Binding Path=DataContext.SelectedSettings, ElementName=TaskSettingsCtrl}" SelectionChanged="TaskSettingsComboBox_SelectionChanged">
                         </ComboBox> 
                         <Button x:Name="Save" Content="Save" FontSize="10" 
-                                Width="60" Margin="5,5,2.5,5" Command="{Binding SaveSettingsCommand}"/>
+                                Width="60" Margin="5,5,2.5,5" Command="{Binding SaveSettingsCommand}" Click="Save_Click"/>
                         <Button x:Name="SaveAs" Content="Save as" FontSize="10" 
                                 Width="60" Margin="5,5,2.5,5" Click="SaveAs_Click"/>
                         <Button x:Name="Delete"  Content="Delete" FontSize="10" Width="60" Margin="5,5,2.5,5"
-                                Command="{Binding DeleteSettingsCommand}"/>
+                                Command="{Binding DeleteSettingsCommand}" Click="Delete_Click"/>
                     </StackPanel>
 
                     <!-- Search Parameters -->

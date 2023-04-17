@@ -20,16 +20,30 @@ namespace GuiFunctions
 
         private string selectedSettings;
         private string typedSettingsName;
+        private ObservableCollection<string> allSettings;
 
         #endregion
 
         #region Public Properties
 
-        public ObservableCollection<string> AllSettings;
+        public ObservableCollection<string> AllSettings
+        {
+            get => allSettings;
+            set
+            {
+                allSettings = value;
+                OnPropertyChanged(nameof(AllSettings));
+            }
+        }
+
         public string SelectedSettings
         {
-            get { return selectedSettings; }
-            set { selectedSettings = value; OnPropertyChanged(nameof(SelectedSettings)); }
+            get => selectedSettings; 
+            set
+            { 
+                selectedSettings = value; 
+                OnPropertyChanged(nameof(SelectedSettings)); 
+            }
         }
 
         public string TypedSettingsName
@@ -75,7 +89,7 @@ namespace GuiFunctions
             AllSettings = new ObservableCollection<string>(AllSettingsDict.Select(p=>p.Key));
             SaveSettingsCommand = new RelayCommand(() => SaveSettings());
             DeleteSettingsCommand = new RelayCommand(() => DeleteSettings());
-            SaveSettingsFromWindowCommand = new DelegateCommand((param) => SaveSettingsFromWindow(param));
+            SaveSettingsFromWindowCommand = new DelegateCommand((param) => SaveSettingsFromWindow());
 
         }
 
@@ -101,7 +115,7 @@ namespace GuiFunctions
             AllSettings = new ObservableCollection<string>(AllSettingsDict.Select(p => p.Key));
             SaveSettingsCommand = new RelayCommand(() => SaveSettings());
             DeleteSettingsCommand = new RelayCommand(() => DeleteSettings());
-            SaveSettingsFromWindowCommand = new DelegateCommand((param) => SaveSettingsFromWindow(param));
+            SaveSettingsFromWindowCommand = new DelegateCommand((param) => SaveSettingsFromWindow());
         }
 
 
@@ -121,16 +135,16 @@ namespace GuiFunctions
             TomlFileFolderSerializer.Save(SelectedSettings, TheTask);
         }
 
-        public void SaveSettingsFromWindow(object name)
+        public void SaveSettingsFromWindow()
         {
 
-            if (name is null || name.ToString().IsNullOrEmptyOrWhiteSpace())
+            if (TypedSettingsName is null || TypedSettingsName.IsNullOrEmptyOrWhiteSpace())
             {
                 MessageBox.Show("The name cannot be empty", "Save Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            string settingsName = name.ToString();
+            string settingsName = TypedSettingsName.ToString();
 
             if (AllSettingsDict.ContainsKey(settingsName))
             {

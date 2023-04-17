@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
-        Title="SaveSettingsWindow" Height="350" Width="600">
+        Title="SaveSettingsWindow" Height="135" Width="600">
     <d:UserControl.DataContext>
         <guiFunctions:TaskSettingViewModel/>
     </d:UserControl.DataContext>
@@ -16,27 +16,22 @@
     <Grid >
         <Grid.RowDefinitions>
             <RowDefinition Height="2*"/>
-            <RowDefinition Height="6*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <ListBox Grid.Row="1" x:Name="SavedSettingsListBox" IsSynchronizedWithCurrentItem="True"
-                 ItemsSource="{Binding Path=AllSettings}" SelectedItem="{Binding SelectedSettings,Mode=TwoWay}" 
-                 VerticalAlignment="Stretch"  HorizontalAlignment="Stretch" 
-                 Margin="10" FontSize="15" 
-                 d:ItemsSource="{d:SampleData ItemCount=15}">
-        </ListBox>
-
-        <TextBox Grid.Row="0" Text="{Binding TypedSettingsName}" Height="40"
+        <TextBox Grid.Row="0" Text="{Binding TypedSettingsName}" Height="35"
                  HorizontalAlignment="Stretch"  VerticalAlignment="Top"
                  Margin="10" FontSize="25" x:Name="NameTextBox">
         </TextBox>
 
-        <Button x:Name="Delete"  Grid.Row="2" Content="Delete" FontSize="20" Height="30" 
-                Width="200" VerticalAlignment="Center"  HorizontalAlignment="Left"
-                Command="{Binding DeleteSettingsCommand}"/>
+        <Button x:Name="Cancel"  Grid.Row="2" Content="Cancel" 
+                FontSize="20" Height="30" IsCancel="true" Click="CloseWindow"
+                Width="200" VerticalAlignment="Center"  HorizontalAlignment="Right"/>
+        
         <Button x:Name="Save" Grid.Row="2" Content="Save" FontSize="20" Height="30" 
-                Width="200" VerticalAlignment="Center" HorizontalAlignment="Right"
-                Command="{Binding SaveSettingsFromWindowCommand}" CommandParameter="{Binding TypedSettingsName}"/>
+                Width="200" VerticalAlignment="Center" HorizontalAlignment="Left"
+                 Click="Save_Click"/>
+        <!--Command="{Binding SaveSettingsFromWindowCommand}" 
+                CommandParameter="{Binding TypedSettingsName}"-->
     </Grid>
 </Window>
