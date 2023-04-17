@@ -354,7 +354,7 @@ namespace Test
         {
             string psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader().Trim();
             StringBuilder sb = new();
-            sb.AppendLine(psmHeader);
+            sb.Append(psmHeader);
             sb.Append('\t');
             sb.Append("Initial Search Q-Value");
             sb.Append('\t');
