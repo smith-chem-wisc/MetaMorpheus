@@ -24,8 +24,6 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
             this.DataContext = viewModel;
-            SavedSettingsListBox.ItemsSource = viewModel.AllSettings;
-            SavedSettingsListBox.SelectedItem = viewModel.SelectedSettings;
         }
     }
 }

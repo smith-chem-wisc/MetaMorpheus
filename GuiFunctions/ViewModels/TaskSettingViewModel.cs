@@ -20,25 +20,47 @@ namespace GuiFunctions
 
         private string selectedSettings;
         private string typedSettingsName;
+        private Dictionary<string, MetaMorpheusTask> allSettingsDict;
+        private ObservableCollection<string> allSettings => new ObservableCollection<string>(allSettingsDict.Keys);
 
         #endregion
 
         #region Public Properties
 
-        public ObservableCollection<string> AllSettings;
-        public string SelectedSettings
+        public ObservableCollection<string> AllSettings
         {
-            get { return selectedSettings; }
-            set { selectedSettings = value; OnPropertyChanged(nameof(SelectedSettings)); }
+            get => allSettings;
         }
 
         public string TypedSettingsName
         {
-            get { return typedSettingsName; }
-            set { typedSettingsName = value; OnPropertyChanged(nameof(TypedSettingsName)); }
+            get => typedSettingsName;
+            set
+            {
+                typedSettingsName = value;
+                OnPropertyChanged(nameof(TypedSettingsName));
+            }
         }
 
-        public Dictionary<string, MetaMorpheusTask> AllSettingsDict { get; set; }
+        public string SelectedSettings
+        {
+            get => selectedSettings;
+            set
+            {
+                selectedSettings = value;
+                OnPropertyChanged(nameof(SelectedSettings));
+            }
+        }
+
+        public Dictionary<string, MetaMorpheusTask> AllSettingsDict
+        {
+            get => allSettingsDict;
+            set
+            {
+                allSettingsDict = value;
+                OnPropertyChanged(nameof(AllSettingsDict));
+            }
+    }
 
         //public String AllSettingNames {get; set; }
 
@@ -72,9 +94,8 @@ namespace GuiFunctions
             }
             AllSettingsDict = tempDict;
 
-            AllSettings = new ObservableCollection<string>(AllSettingsDict.Select(p=>p.Key));
-            SaveSettingsCommand = new RelayCommand(() => SaveSettings());
-            DeleteSettingsCommand = new RelayCommand(() => DeleteSettings());
+            SaveSettingsCommand = new RelayCommand(SaveSettings);
+            DeleteSettingsCommand = new RelayCommand(DeleteSettings);
             SaveSettingsFromWindowCommand = new DelegateCommand((param) => SaveSettingsFromWindow(param));
 
         }
@@ -98,9 +119,8 @@ namespace GuiFunctions
             }
             AllSettingsDict = tempDict;
 
-            AllSettings = new ObservableCollection<string>(AllSettingsDict.Select(p => p.Key));
-            SaveSettingsCommand = new RelayCommand(() => SaveSettings());
-            DeleteSettingsCommand = new RelayCommand(() => DeleteSettings());
+            SaveSettingsCommand = new RelayCommand(SaveSettings);
+            DeleteSettingsCommand = new RelayCommand(DeleteSettings);
             SaveSettingsFromWindowCommand = new DelegateCommand((param) => SaveSettingsFromWindow(param));
         }
 
@@ -116,7 +136,7 @@ namespace GuiFunctions
                 return;
             }
             AllSettingsDict.Add(SelectedSettings, TheTask);
-            AllSettings.Add(SelectedSettings);
+            OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
             TomlFileFolderSerializer.Save(SelectedSettings, TheTask);
         }
@@ -139,7 +159,7 @@ namespace GuiFunctions
             }
 
             AllSettingsDict.Add(settingsName, TheTask);
-            AllSettings.Add(settingsName);
+            OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
             TomlFileFolderSerializer.Save(settingsName, TheTask);
             
@@ -152,7 +172,7 @@ namespace GuiFunctions
                 return;
             }
             AllSettingsDict.Remove(SelectedSettings);
-            AllSettings.Remove(SelectedSettings);
+            OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
             TomlFileFolderSerializer.Delete(TheTask.GetType(), SelectedSettings);
         }

@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
-        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions" 
         mc:Ignorable="d"
         KeyDown="KeyPressed"
         d:Height="1500"
@@ -16,7 +16,7 @@
         <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
         <guiFunctions:BooleanOrConverter x:Key="boolOrConverter"/>
 
-            <!-- Style GroupBoxes -->
+        <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>
             <Setter Property="Padding" Value="5"/>
@@ -81,14 +81,15 @@
                 <StackPanel DockPanel.Dock="Top" Margin="10">
 
                     <!-- save settings -->
-                    <StackPanel  x:Name="TaskSettingsCtrl" Height="Auto" DataContext="{Binding TaskSettingsViewModel}"
+                    <StackPanel  x:Name="TaskSettingsCtrl" Height="Auto" 
+                                 DataContext="{Binding TaskSettingViewModel}"
                                  Background="{StaticResource BackgroundColor}" Orientation="Horizontal" HorizontalAlignment="Right">
 
                         <ComboBox Name="TaskSettingsComboBox" Width="200" Height="20" VerticalAlignment="Center" 
                                   HorizontalAlignment="Left" IsSynchronizedWithCurrentItem="True"
-                                  ItemsSource="{Binding Path=DataContext.AllSettings, ElementName=TaskSettingsCtrl}" 
-                                  SelectedItem="{Binding Path=DataContext.SelectedSettings, ElementName=TaskSettingsCtrl}">
-                        </ComboBox> 
+                                  ItemsSource="{Binding Path=.AllSettings}" 
+                                  SelectedItem="{Binding Path=SelectedSettings}">
+                        </ComboBox>
                         <Button x:Name="Save" Content="Save" FontSize="10" 
                                 Width="60" Margin="5,5,2.5,5" Command="{Binding SaveSettingsCommand}"/>
                         <Button x:Name="SaveAs" Content="Save as" FontSize="10" 
@@ -255,11 +256,12 @@
                         <StackPanel Height="115">
                             <Grid>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="1*" />
-                                    <ColumnDefinition Width="1*" />
+                                    <ColumnDefinition Width="118*" />
+                                    <ColumnDefinition Width="21*" />
+                                    <ColumnDefinition Width="97*"/>
 
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Margin="5 0 5 0">
+                                <StackPanel Margin="5,0,5,0">
                                     <Label Content="Fixed:" />
                                     <TreeView x:Name="FixedModsTreeView" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}" Height="85">
                                         <TreeView.Resources>
@@ -283,7 +285,7 @@
                                         </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
-                                <StackPanel Grid.Column="1" Margin="5 0 3 0">
+                                <StackPanel Grid.Column="1" Margin="5,0,3,0" Grid.ColumnSpan="2">
                                     <Label Content="Variable:"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <Label.ToolTip>
                                             <TextBlock>
@@ -341,7 +343,7 @@
                                         </Style>
                                     </TextBox.Style>
                                 </TextBox>
-                                <TextBox x:Name="SearchVarMod" TextChanged="TextChanged_Var" Grid.Column="1" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
+                                <TextBox x:Name="SearchVarMod" TextChanged="TextChanged_Var" Grid.Column="2" HorizontalAlignment="Left" Margin="19,4,0,410" TextWrapping="Wrap" Width="140">
                                     <TextBox.Style>
                                         <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
                                             <Style.Resources>
@@ -500,7 +502,7 @@
                                 <ColumnDefinition Width="*" />
 
                             </Grid.ColumnDefinitions>
-                            
+
                             <!-- writing options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
                                 <CheckBox x:Name="CkbMzId" Content="Write .mzID" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}" ToolTipService.ShowOnDisabled="True">
@@ -515,9 +517,9 @@
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update SpectralLibrary" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
-                                
+
                             </StackPanel>
-                            
+
                             <!-- filtering options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="1">
 
@@ -538,14 +540,14 @@
                                     <TextBox x:Name="PepQValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
                                              IsEnabled="{Binding IsChecked, ElementName=PepQValueRadioButton}" Width="45" Height="23" />
                                 </Grid>
-                                
+
                                 <!-- q value button -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="400" />
                                         <ColumnDefinition Width="50" />
                                     </Grid.ColumnDefinitions>
-                                    
+
                                     <RadioButton x:Name="QValueRadioButton" Content="Filter results to q-value:" 
                                                  IsChecked="False" GroupName="Filtering" Checked="QValueRadioButton_Checked">
                                         <ToolTipService.ToolTip>
@@ -557,7 +559,7 @@
                                     <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
                                              IsEnabled="{Binding IsChecked, ElementName=QValueRadioButton}" Width="45" Height="23" />
                                 </Grid>
-                                
+
                                 <!-- min score allowed box -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -577,10 +579,10 @@
                                     </TextBox>
                                 </Grid>
                             </StackPanel>
-                            
+
                         </Grid>
-                        
-                        
+
+
                         <!--</Expander>-->
                     </GroupBox>
                 </StackPanel>
