@@ -1335,7 +1335,32 @@ namespace MetaMorpheusGUI
         private void SaveAs_Click(object sender, RoutedEventArgs e)
         {
             SaveSettingsWindow newWindow = new SaveSettingsWindow(TaskSettingViewModel);
-            newWindow.ShowDialog();
+
+            // if user hit save button
+            if (newWindow.ShowDialog() == true)
+            {
+                TaskSettingViewModel.SaveSettingsFromWindow();
+            }
+            // if user hit cancel
+            else
+            {
+                this.Close();
+            }
+        }
+
+        private void TaskSettingsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void Delete_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 

@@ -25,5 +25,22 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             this.DataContext = viewModel;
         }
+
+        private void Save_Click(object sender, RoutedEventArgs e)
+        {
+            DialogResult = true;
+            this.Close();
+        }
+
+        private void CloseWindow(object sender, RoutedEventArgs e)
+        {
+            DialogResult = false;
+            this.Close();
+        }
+
+        private void Save_Click_1(object sender, RoutedEventArgs e)
+        {
+
+        }
     }
 }

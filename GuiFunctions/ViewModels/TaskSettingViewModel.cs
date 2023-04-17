@@ -62,11 +62,8 @@ namespace GuiFunctions
             }
     }
 
-        //public String AllSettingNames {get; set; }
-
+      
         public ICommand SaveSettingsCommand { get; set; }
-        public ICommand SaveSettingsFromWindowCommand { get; set; }
-
         public ICommand DeleteSettingsCommand { get; set; }
 
         public MetaMorpheusTask TheTask { get; set; }
@@ -96,8 +93,6 @@ namespace GuiFunctions
 
             SaveSettingsCommand = new RelayCommand(SaveSettings);
             DeleteSettingsCommand = new RelayCommand(DeleteSettings);
-            SaveSettingsFromWindowCommand = new DelegateCommand((param) => SaveSettingsFromWindow(param));
-
         }
 
         public TaskSettingViewModel()
@@ -121,7 +116,6 @@ namespace GuiFunctions
 
             SaveSettingsCommand = new RelayCommand(SaveSettings);
             DeleteSettingsCommand = new RelayCommand(DeleteSettings);
-            SaveSettingsFromWindowCommand = new DelegateCommand((param) => SaveSettingsFromWindow(param));
         }
 
 
@@ -141,16 +135,16 @@ namespace GuiFunctions
             TomlFileFolderSerializer.Save(SelectedSettings, TheTask);
         }
 
-        public void SaveSettingsFromWindow(object name)
+        public void SaveSettingsFromWindow()
         {
 
-            if (name is null || name.ToString().IsNullOrEmptyOrWhiteSpace())
+            if (TypedSettingsName is null || TypedSettingsName.IsNullOrEmptyOrWhiteSpace())
             {
                 MessageBox.Show("The name cannot be empty", "Save Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
-            string settingsName = name.ToString();
+            string settingsName = TypedSettingsName.ToString();
 
             if (AllSettingsDict.ContainsKey(settingsName))
             {
