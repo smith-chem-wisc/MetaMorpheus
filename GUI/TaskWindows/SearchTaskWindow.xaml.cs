@@ -155,16 +155,6 @@ namespace MetaMorpheusGUI
         }
 
 
-        ///// <summary>
-        ///// Calls the UpdateFieldsFromTask Method from an event
-        ///// </summary>
-        ///// <param name="sender"></param>
-        ///// <param name="args"></param>
-        //private void UpdateFieldsFromTask(object sender, MetaMorpheusTaskEventArgs args)
-        //{
-        //    UpdateFieldsFromTask(args.TheTask as SearchTask);
-        //}
-
         /// <summary>
         /// Initializes the fields in the search task window upon opening to the settings of the param Task
         /// </summary>
