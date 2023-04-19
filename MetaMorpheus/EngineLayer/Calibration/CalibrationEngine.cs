@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Readers;
 
 namespace EngineLayer.Calibration
 {
@@ -102,7 +103,7 @@ namespace EngineLayer.Calibration
                 }
             }
 
-            CalibratedDataFile = new MsDataFile(calibratedScans, MyMsDataFile.SourceFile);
+            CalibratedDataFile = new GenericMsDataFile(calibratedScans, MyMsDataFile.SourceFile);
             return new MetaMorpheusEngineResults(this);
         }
 
