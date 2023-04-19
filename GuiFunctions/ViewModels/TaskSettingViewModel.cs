@@ -129,10 +129,19 @@ namespace GuiFunctions
             {
                 return;
             }
+
+            if (SelectedSettings.Contains("(Default)"))
+            {
+                MessageBox.Show("Default Setting cannot be modified. Please use \"Save as Default\" button", "Modifying Default Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            TomlFileFolderSerializer.Delete(TheTask.GetType(), SelectedSettings);
+            TomlFileFolderSerializer.Save(SelectedSettings, TheTask);
+            AllSettingsDict.Remove(SelectedSettings);
             AllSettingsDict.Add(SelectedSettings, TheTask);
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
-            TomlFileFolderSerializer.Save(SelectedSettings, TheTask);
         }
 
         public void SaveSettingsFromWindow()
@@ -141,6 +150,7 @@ namespace GuiFunctions
             if (TypedSettingsName is null || TypedSettingsName.IsNullOrEmptyOrWhiteSpace())
             {
                 MessageBox.Show("The name cannot be empty", "Save Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                TypedSettingsName = "";
                 return;
             }
 
@@ -149,6 +159,7 @@ namespace GuiFunctions
             if (AllSettingsDict.ContainsKey(settingsName))
             {
                 MessageBox.Show("The name already exists", "Repeated Name Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                TypedSettingsName = "";
                 return;
             }
 
@@ -156,6 +167,7 @@ namespace GuiFunctions
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
             TomlFileFolderSerializer.Save(settingsName, TheTask);
+            TypedSettingsName = "";
             
         }
 
@@ -165,10 +177,16 @@ namespace GuiFunctions
             {
                 return;
             }
+            if (SelectedSettings.Contains("(Default)"))
+            {
+                MessageBox.Show("Default Setting cannot be deleted", "Deleting Default Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            TomlFileFolderSerializer.Delete(TheTask.GetType(), SelectedSettings);
             AllSettingsDict.Remove(SelectedSettings);
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
-            TomlFileFolderSerializer.Delete(TheTask.GetType(), SelectedSettings);
         }
 
         #endregion

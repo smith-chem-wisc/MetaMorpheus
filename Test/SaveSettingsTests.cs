@@ -33,11 +33,11 @@ namespace Test
         [OneTimeTearDown]
         public static void OneTimeTearDown()
         {
-            //Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "SettingsDataFiles"), true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "SettingsDataFiles"), true);
         }
 
         [Test]
-        public void test1()
+        public void testConstructor()
         {
             TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask());
             var a = testTaskSettingViewModel.AllSettings;
@@ -76,6 +76,13 @@ namespace Test
             Assert.That(testStringArray[2].Equals("customCZ.toml"));
         }
 
-        //TODO:TestGetFilePath returns toml file
+        [Test]
+        public void testGetFilePath()
+        {
+            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask());
+            var tomlFile1 = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBCZ.toml"), MetaMorpheusTask.tomlConfig);
+            string testPath = TomlFileFolderSerializer.GetFilePath(tomlFile1.GetType(), "customBCZ.toml");
+            Assert.That(testPath.Contains("toml"));
+        }
     }
 }

@@ -1344,7 +1344,7 @@ namespace MetaMorpheusGUI
             // if user hit cancel
             else
             {
-                this.Close();
+
             }
         }
 
@@ -1359,6 +1359,11 @@ namespace MetaMorpheusGUI
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void TaskSettingsComboBox_SelectionChanged_1(object sender, SelectionChangedEventArgs e)
         {
 
         }

@@ -87,8 +87,8 @@
 
                         <ComboBox Name="TaskSettingsComboBox" Width="200" Height="20" VerticalAlignment="Center" 
                                   HorizontalAlignment="Left" IsSynchronizedWithCurrentItem="True"
-                                  ItemsSource="{Binding Path=.AllSettings}" 
-                                  SelectedItem="{Binding Path=SelectedSettings}">
+                                  ItemsSource="{Binding Path=AllSettings}" 
+                                  SelectedItem="{Binding Path=SelectedSettings}" SelectionChanged="TaskSettingsComboBox_SelectionChanged_1">
                         </ComboBox>
                         <Button x:Name="Save" Content="Save" FontSize="10" 
                                 Width="60" Margin="5,5,2.5,5" Command="{Binding SaveSettingsCommand}" Click="Save_Click"/>
