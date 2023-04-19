@@ -48,6 +48,7 @@ namespace GuiFunctions
             set
             {
                 selectedSettings = value;
+                UpdateFieldsInGuiWithNewTask.Invoke(AllSettingsDict[SelectedSettings]);
                 OnPropertyChanged(nameof(SelectedSettings));
             }
         }
@@ -60,23 +61,27 @@ namespace GuiFunctions
                 allSettingsDict = value;
                 OnPropertyChanged(nameof(AllSettingsDict));
             }
-    }
+        }
 
       
         public ICommand SaveSettingsCommand { get; set; }
         public ICommand DeleteSettingsCommand { get; set; }
 
         public MetaMorpheusTask TheTask { get; set; }
-
+        public Func<MetaMorpheusTask> GetTaskFromGui { get; set; }
+        public Action<MetaMorpheusTask> UpdateFieldsInGuiWithNewTask { get; set; }
 
         #endregion
 
         #region Constructor
 
-        public TaskSettingViewModel(MetaMorpheusTask task)
+        public TaskSettingViewModel(MetaMorpheusTask task, Action<MetaMorpheusTask> updateFieldsInGuiEventHandler, Func<MetaMorpheusTask> getTaskFromGui)
         {
+            
             TheTask = task;
-            var temp = typeof(SearchTask);
+            UpdateFieldsInGuiWithNewTask = updateFieldsInGuiEventHandler;
+            GetTaskFromGui = getTaskFromGui;
+
             var type = task.GetType();
             MethodInfo method = typeof(TomlFileFolderSerializer).GetMethod("LoadAllOfTypeT");
             MethodInfo genericMethod = method.MakeGenericMethod(type);
@@ -118,10 +123,12 @@ namespace GuiFunctions
             DeleteSettingsCommand = new RelayCommand(DeleteSettings);
         }
 
+        
+        #endregion
 
-            #endregion
 
-            #region Command Methods
+
+        #region Command Methods
 
         public void SaveSettings()
         {
@@ -144,8 +151,8 @@ namespace GuiFunctions
             OnPropertyChanged(nameof(AllSettingsDict));
         }
 
-        public void SaveSettingsFromWindow()
-        {
+    public void SaveSettingsFromWindow()
+    {
 
             if (TypedSettingsName is null || TypedSettingsName.IsNullOrEmptyOrWhiteSpace())
             {
@@ -154,7 +161,7 @@ namespace GuiFunctions
                 return;
             }
 
-            string settingsName = TypedSettingsName.ToString();
+        string settingsName = TypedSettingsName.ToString();
 
             if (AllSettingsDict.ContainsKey(settingsName))
             {
@@ -189,7 +196,7 @@ namespace GuiFunctions
             OnPropertyChanged(nameof(AllSettingsDict));
         }
 
-        #endregion
+    #endregion
 
         #region Helpers
 
