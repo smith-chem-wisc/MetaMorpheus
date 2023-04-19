@@ -48,6 +48,7 @@ namespace GuiFunctions
             set
             {
                 selectedSettings = value;
+                UpdateFieldsInGuiWithNewTask.Invoke(AllSettingsDict[SelectedSettings]);
                 OnPropertyChanged(nameof(SelectedSettings));
             }
         }
@@ -60,23 +61,27 @@ namespace GuiFunctions
                 allSettingsDict = value;
                 OnPropertyChanged(nameof(AllSettingsDict));
             }
-    }
+        }
 
       
         public ICommand SaveSettingsCommand { get; set; }
         public ICommand DeleteSettingsCommand { get; set; }
 
         public MetaMorpheusTask TheTask { get; set; }
-
+        public Func<MetaMorpheusTask> GetTaskFromGui { get; set; }
+        public Action<MetaMorpheusTask> UpdateFieldsInGuiWithNewTask { get; set; }
 
         #endregion
 
         #region Constructor
 
-        public TaskSettingViewModel(MetaMorpheusTask task)
+        public TaskSettingViewModel(MetaMorpheusTask task, Action<MetaMorpheusTask> updateFieldsInGuiEventHandler, Func<MetaMorpheusTask> getTaskFromGui)
         {
+            
             TheTask = task;
-            var temp = typeof(SearchTask);
+            UpdateFieldsInGuiWithNewTask = updateFieldsInGuiEventHandler;
+            GetTaskFromGui = getTaskFromGui;
+
             var type = task.GetType();
             MethodInfo method = typeof(TomlFileFolderSerializer).GetMethod("LoadAllOfTypeT");
             MethodInfo genericMethod = method.MakeGenericMethod(type);
@@ -118,60 +123,65 @@ namespace GuiFunctions
             DeleteSettingsCommand = new RelayCommand(DeleteSettings);
         }
 
-
-            #endregion
-
-            #region Command Methods
-
-        public void SaveSettings()
-        {
-            if (SelectedSettings == null)
-            {
-                return;
-            }
-            AllSettingsDict.Add(SelectedSettings, TheTask);
-            OnPropertyChanged(nameof(AllSettings));
-            OnPropertyChanged(nameof(AllSettingsDict));
-            TomlFileFolderSerializer.Save(SelectedSettings, TheTask);
-        }
-
-        public void SaveSettingsFromWindow()
-        {
-
-            if (TypedSettingsName is null || TypedSettingsName.IsNullOrEmptyOrWhiteSpace())
-            {
-                MessageBox.Show("The name cannot be empty", "Save Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            string settingsName = TypedSettingsName.ToString();
-
-            if (AllSettingsDict.ContainsKey(settingsName))
-            {
-                MessageBox.Show("The name already exists", "Repeated Name Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            AllSettingsDict.Add(settingsName, TheTask);
-            OnPropertyChanged(nameof(AllSettings));
-            OnPropertyChanged(nameof(AllSettingsDict));
-            TomlFileFolderSerializer.Save(settingsName, TheTask);
-            
-        }
-
-        public void DeleteSettings()
-        {
-            if(SelectedSettings == null)
-            {
-                return;
-            }
-            AllSettingsDict.Remove(SelectedSettings);
-            OnPropertyChanged(nameof(AllSettings));
-            OnPropertyChanged(nameof(AllSettingsDict));
-            TomlFileFolderSerializer.Delete(TheTask.GetType(), SelectedSettings);
-        }
-
+        
         #endregion
+
+
+
+        #region Command Methods
+
+    public void SaveSettings()
+    {
+   
+        if (SelectedSettings == null)
+        {
+            return;
+        }
+        AllSettingsDict.Add(SelectedSettings, TheTask);
+        OnPropertyChanged(nameof(AllSettings));
+        OnPropertyChanged(nameof(AllSettingsDict));
+        TomlFileFolderSerializer.Save(SelectedSettings, TheTask);
+
+
+    }
+
+    public void SaveSettingsFromWindow()
+    {
+
+        if (TypedSettingsName is null || TypedSettingsName.IsNullOrEmptyOrWhiteSpace())
+        {
+            MessageBox.Show("The name cannot be empty", "Save Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        string settingsName = TypedSettingsName.ToString();
+
+        if (AllSettingsDict.ContainsKey(settingsName))
+        {
+            MessageBox.Show("The name already exists", "Repeated Name Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        AllSettingsDict.Add(settingsName, TheTask);
+        OnPropertyChanged(nameof(AllSettings));
+        OnPropertyChanged(nameof(AllSettingsDict));
+        TomlFileFolderSerializer.Save(settingsName, TheTask);
+        
+    }
+
+    public void DeleteSettings()
+    {
+        if(SelectedSettings == null)
+        {
+            return;
+        }
+        AllSettingsDict.Remove(SelectedSettings);
+        OnPropertyChanged(nameof(AllSettings));
+        OnPropertyChanged(nameof(AllSettingsDict));
+        TomlFileFolderSerializer.Delete(TheTask.GetType(), SelectedSettings);
+    }
+
+    #endregion
 
         #region Helpers
 

@@ -37,6 +37,7 @@ namespace MetaMorpheusGUI
         private CustomFragmentationWindow CustomFragmentationWindow;
         public TaskSettingViewModel TaskSettingViewModel { get; set; }
 
+
         internal SearchTask TheTask { get; private set; }
 
         public SearchTaskWindow(SearchTask task)
@@ -44,9 +45,10 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             TheTask = task ?? new SearchTask();
 
-            TaskSettingViewModel = new(TheTask);
+            var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as SearchTask);
+            TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
             TaskSettingsCtrl.DataContext = TaskSettingViewModel;
-            
+
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
@@ -151,6 +153,17 @@ namespace MetaMorpheusGUI
                 LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             }
         }
+
+
+        ///// <summary>
+        ///// Calls the UpdateFieldsFromTask Method from an event
+        ///// </summary>
+        ///// <param name="sender"></param>
+        ///// <param name="args"></param>
+        //private void UpdateFieldsFromTask(object sender, MetaMorpheusTaskEventArgs args)
+        //{
+        //    UpdateFieldsFromTask(args.TheTask as SearchTask);
+        //}
 
         /// <summary>
         /// Initializes the fields in the search task window upon opening to the settings of the param Task
@@ -421,6 +434,8 @@ namespace MetaMorpheusGUI
             TheTask = task;
             DialogResult = true;
         }
+
+
 
         private SearchTask GetTaskFromGui()
         {
@@ -1344,7 +1359,7 @@ namespace MetaMorpheusGUI
             // if user hit cancel
             else
             {
-                this.Close();
+           
             }
         }
 
