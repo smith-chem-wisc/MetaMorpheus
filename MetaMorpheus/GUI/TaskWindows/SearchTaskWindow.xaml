@@ -491,7 +491,7 @@
                                 <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                                 <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                                 <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
-                                <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
+                                <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" IsEnabled="{Binding IsChecked, Converter={local:BooleanInverter}, ElementName=CheckBoxLFQwSpectralRecovery }"/>
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                                 
