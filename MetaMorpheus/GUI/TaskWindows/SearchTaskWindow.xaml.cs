@@ -224,6 +224,26 @@ namespace MetaMorpheusGUI
             }
             //else if SILAC multiplex
             else if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
+            {
+                CheckBoxSILAC.IsChecked = true;
+                List<Proteomics.SilacLabel> labels = task.SearchParameters.SilacLabels;
+                foreach (Proteomics.SilacLabel label in labels)
+                {
+                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label, SilacModificationWindow.ExperimentType.Multiplex);
+                    if (label.AdditionalLabels != null)
+                    {
+                        foreach (Proteomics.SilacLabel additionalLabel in label.AdditionalLabels)
+                        {
+                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Multiplex));
+                        }
+                    }
+                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                }
+                if (task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac)
+                {
+                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Multiplex));
+                }
+            }
 
 
             CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
