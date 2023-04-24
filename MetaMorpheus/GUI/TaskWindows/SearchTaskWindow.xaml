@@ -13,7 +13,8 @@
 
         <!-- used in Quantifications -->
         <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
-        <guiFunctions:BooleanOrConverter x:Key="boolOrConverter"/>
+        <local:BooleanOrConverter x:Key="boolOrConverter"/>
+        <local:BooleanOrToVisibilityConverter x:Key="boolOr2VisConverter"/>
 
             <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
@@ -385,15 +386,15 @@
                                     <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxLFQwMBR" Content="LFQ + MBR Analysis: FlashLFQ quantification with enhanced match between runs" 
-                                         GroupName="QuantType" Click="MbrAnalysisUpdate">
-                                <ToolTipService.ToolTip>
-                                    <ToolTip Content="Match between runs analysis via spectral library search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
-                                </ToolTipService.ToolTip>
-                            </RadioButton>
                             <RadioButton x:Name="CheckBoxSILAC" Content="SILAC/SILAM: Quantify peptides/proteins with stable isotope labels" GroupName="QuantType" Click="CheckBoxSILAC_Checked">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="SILAC quantification is performed using FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                </ToolTipService.ToolTip>
+                            </RadioButton>
+                            <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery finds misidentified MS/MS spectra common in single-cell proteomics data" 
+                                         GroupName="QuantType" Click="SpectralRecoveryUpdate">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Match between runs analysis via spectral library search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
                             <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" 
@@ -428,9 +429,15 @@
                                     <TextBox.IsEnabled>
                                         <MultiBinding Converter="{StaticResource boolOrConverter}">
                                             <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                            <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
+                                            <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                         </MultiBinding>
                                     </TextBox.IsEnabled>
+                                    <TextBox.Visibility>
+                                        <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                            <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                            <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                        </MultiBinding>
+                                    </TextBox.Visibility>
                                     <ToolTipService.ToolTip>
                                         <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                     </ToolTipService.ToolTip>
@@ -439,18 +446,26 @@
                                     <Label.IsEnabled>
                                         <MultiBinding Converter="{StaticResource boolOrConverter}">
                                             <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                            <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
+                                            <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                         </MultiBinding>
                                     </Label.IsEnabled>
+                                    <Label.Visibility>
+                                        <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                            <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                            <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                        </MultiBinding>
+                                    </Label.Visibility>
                                 </Label>
                             </StackPanel>
-                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" >
-                                <CheckBox.IsEnabled>
-                                    <MultiBinding Converter="{StaticResource boolOrConverter}">
+                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" 
+                                      Content="Match between runs"
+                                      IsEnabled ="{Binding IsChecked, ElementName=CheckBoxLFQ}">
+                                <CheckBox.Visibility>
+                                    <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                        <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                     </MultiBinding>
-                                </CheckBox.IsEnabled>
+                                </CheckBox.Visibility>
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified&#x0a;Selecting &quot;Write Spectral Library&quot; in the Output Options below will enable additional MBR analysis" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
@@ -459,9 +474,15 @@
                                 <CheckBox.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                        <Binding  ElementName="CheckBoxLFQwMBR" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                     </MultiBinding>
                                 </CheckBox.IsEnabled>
+                                <CheckBox.Visibility>
+                                    <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.Visibility>
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
@@ -494,7 +515,7 @@
                                 <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                                 <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                                 <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
-                                <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" />
+                                <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" IsEnabled="{Binding IsChecked, Converter={local:BooleanInverter}, ElementName=CheckBoxLFQwSpectralRecovery }"/>
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
                                 

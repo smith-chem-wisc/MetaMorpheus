@@ -30,7 +30,7 @@ namespace TaskLayer
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
-        private MbrAnalysisResults MbrAnalysisResults { get; set; }
+        private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -83,7 +83,7 @@ namespace TaskLayer
                 SpectralLibraryGeneration();
                 if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
                 {
-                    MbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysis(Parameters, CommonParameters, FileSpecificParameters);
+                    SpectralRecoveryResults = SpectralRecoveryRunner.RunSpectralRecoveryAlgorithm(Parameters, CommonParameters, FileSpecificParameters);
                 }      
             }
 
@@ -848,9 +848,9 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
-                if (MbrAnalysisResults != null)
+                if (SpectralRecoveryResults != null)
                 {
-                    MbrAnalysisResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
+                    SpectralRecoveryResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
                 }
                 else
                 {
@@ -859,9 +859,9 @@ namespace TaskLayer
 
                 // write peptide quant results
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
-                if (MbrAnalysisResults != null)
+                if (SpectralRecoveryResults != null)
                 {
-                    MbrAnalysisResults.WritePeptideQuantificationResultsToTsv(Parameters.OutputFolder, filename);
+                    SpectralRecoveryResults.WritePeptideQuantificationResultsToTsv(Parameters.OutputFolder, filename);
                 }
                 else
                 {

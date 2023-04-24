@@ -177,6 +177,11 @@ namespace MetaMorpheusGUI
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
             CheckBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            // If Spectral Recovery is enabled
+            if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
+            {
+                CheckBoxLFQwSpectralRecovery.IsChecked = task.SearchParameters.DoSpectralRecovery;
+            }
             //If SILAC turnover
             if (task.SearchParameters.StartTurnoverLabel != null || task.SearchParameters.EndTurnoverLabel != null)
             {
@@ -592,6 +597,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
@@ -934,11 +940,11 @@ namespace MetaMorpheusGUI
             }
         }
 
-        private void MbrAnalysisUpdate(object sender, RoutedEventArgs e)
+        private void SpectralRecoveryUpdate(object sender, RoutedEventArgs e)
         {
-            if (CheckBoxLFQwMBR.IsChecked.Value)
+            if (CheckBoxLFQwSpectralRecovery.IsChecked.Value)
             {
-                if (UpdateGUISettings.UseMBRAnalysisMandatorySettings())
+                if (UpdateGUISettings.UseSpectralRecoveryMandatorySettings())
                 {
                     CheckBoxMatchBetweenRuns.IsChecked = true;
                     WriteSpectralLibraryCheckBox.IsChecked = true;
