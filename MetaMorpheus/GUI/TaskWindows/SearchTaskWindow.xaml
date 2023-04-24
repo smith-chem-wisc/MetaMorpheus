@@ -13,7 +13,8 @@
 
         <!-- used in Quantifications -->
         <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
-        <guiFunctions:BooleanOrConverter x:Key="boolOrConverter"/>
+        <local:BooleanOrConverter x:Key="boolOrConverter"/>
+        <local:BooleanOrToVisibilityConverter x:Key="boolOr2VisConverter"/>
 
             <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
@@ -431,6 +432,12 @@
                                             <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                         </MultiBinding>
                                     </TextBox.IsEnabled>
+                                    <TextBox.Visibility>
+                                        <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                            <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                            <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                        </MultiBinding>
+                                    </TextBox.Visibility>
                                     <ToolTipService.ToolTip>
                                         <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                     </ToolTipService.ToolTip>
@@ -442,12 +449,23 @@
                                             <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                         </MultiBinding>
                                     </Label.IsEnabled>
+                                    <Label.Visibility>
+                                        <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                            <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                            <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                        </MultiBinding>
+                                    </Label.Visibility>
                                 </Label>
                             </StackPanel>
-                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" >
-                                <CheckBox.IsEnabled>
-                                    <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
-                                </CheckBox.IsEnabled>
+                            <CheckBox x:Name="CheckBoxMatchBetweenRuns" 
+                                      Content="Match between runs"
+                                      IsEnabled ="{Binding IsChecked, ElementName=CheckBoxLFQ}">
+                                <CheckBox.Visibility>
+                                    <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.Visibility>
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified&#x0a;Selecting &quot;Write Spectral Library&quot; in the Output Options below will enable additional MBR analysis" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
@@ -459,6 +477,12 @@
                                         <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
                                     </MultiBinding>
                                 </CheckBox.IsEnabled>
+                                <CheckBox.Visibility>
+                                    <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.Visibility>
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
