@@ -62,6 +62,7 @@ namespace TaskLayer.MbrAnalysis
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = MetaMorpheusTask
                     .GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, commonParameters)
                     .OrderBy(b => b.RetentionTime).ToArray();
+                MsDataScan[] arrayOfMs2MsDataScansSortedByRt = myMsDataFile.GetAllScansList().Where(x => x.MsnOrder == 2).ToArray();
 
                 var list = Directory.GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories);
                 string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
@@ -96,7 +97,7 @@ namespace TaskLayer.MbrAnalysis
                         PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
 
                         IEnumerable<PeptideSpectralMatch> peptideSpectralMatches =
-                            mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak.Apex.IndexedPeak.RetentionTime);
+                            mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak.Apex.IndexedPeak.RetentionTime, peakCharge: mbrPeak.Apex.ChargeState);
 
                         if (peptideSpectralMatches == null || !peptideSpectralMatches.Any())
                         {
