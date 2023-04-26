@@ -162,9 +162,11 @@ namespace Test
                 string[] rowSplit = row.Split('\t');
                 if (rowSplit[15].Equals("MBR") && double.TryParse(rowSplit[16], out var contrastAngle))
                 {
+                    // Updated spectral recovery considers a scan that was missed in the old version,
+                    // which is why the spectral contrast angle increases.
                     if (rowSplit[1].Equals("EGERPAR"))
                     {
-                        //Assert.That(contrastAngle, Is.EqualTo(0.6567).Within(0.001));
+                        Assert.That(contrastAngle, Is.EqualTo(0.7957).Within(0.001));
                         break;
                     }
                 }
@@ -184,15 +186,29 @@ namespace Test
                     if (rowSplit[7].Equals("MBR"))
                     {
                         Assert.That(rowSplit[8].Equals("MSMS"));
-                        Assert.That(double.TryParse(rowSplit[9], out var contrastAngle) &&
-                                    Math.Abs(contrastAngle - 0.6567) < 0.001);
+                        if (double.TryParse(rowSplit[9], out var contrastAngle))
+                        {
+                            Assert.That(contrastAngle, Is.EqualTo(0.7957).Within(0.001));
+                        }
+                        else
+                        {
+                            Assert.Fail();
+                        }
+                        
                         break;
                     }
                     else
                     {
                         Assert.That(rowSplit[7].Equals("MSMS"));
-                        Assert.That(double.TryParse(rowSplit[10], out var contrastAngle) &&
-                                    Math.Abs(contrastAngle - 0.6567) < 0.001);
+                        if (double.TryParse(rowSplit[10], out var contrastAngle))
+                        {
+                            Assert.That(contrastAngle, Is.EqualTo(0.7957).Within(0.001));
+                        }
+                        else
+                        {
+                            Assert.Fail();
+                        }
+
                         break;
                     }
                 }
