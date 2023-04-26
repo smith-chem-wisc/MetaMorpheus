@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Easy.Common.Extensions;
+using FlashLFQ;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
 
@@ -30,7 +31,7 @@ namespace Test
         private static string outputFolder;
         private static Dictionary<string, int[]> numSpectraPerFile;
 
-        [OneTimeSetUp]
+        [Test]
         public void SpectralRecoveryTestSetup()
         {
             // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
@@ -89,7 +90,6 @@ namespace Test
                 CommonParameters = new CommonParameters()
             };
             searchTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
-
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {
@@ -216,8 +216,8 @@ namespace Test
             string decoySpectralLibrary = Path.Combine(testDir, @"P16858_decoy.msp");
 
             List<string> specLibs = new List<string> { targetSpectralLibrary, decoySpectralLibrary };
-
             SpectralLibrary sl = new(specLibs);
+
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
@@ -237,19 +237,19 @@ namespace Test
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
 
+            MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
+                myMsDataFile,
+                sl,
+                commonParameters,
+                null,
+                myFile);
+
             foreach (PeptideSpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
                 PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
 
-                MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
-                    listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),
-                    searchModes,
-                    commonParameters,
-                    sl,
-                    null);
-
                 PeptideSpectralMatch[] peptideSpectralMatches =
-                    mcse.SearchAroundPeak(pwsm, allPsmsArray[5].ScanRetentionTime).ToArray();
+                    mcse.SearchAroundPeak(pwsm, null, allPsmsArray[5].ScanRetentionTime, allPsmsArray[5].ScanPrecursorCharge).ToArray();
 
                 Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);
                 Assert.That(peptideSpectralMatches[0].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));

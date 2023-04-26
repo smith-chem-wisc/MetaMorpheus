@@ -54,31 +54,23 @@ namespace TaskLayer.MbrAnalysis
                 if (fileSpecificMbrPeaks == null || (!fileSpecificMbrPeaks.Any())) break;
 
                 MyFileManager myFileManager = new(true);
-                MsDataFile myMsDataFile =
-                    myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, commonParameters);
-                MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(
-                    commonParameters.PrecursorMassTolerance,
-                    parameters.SearchParameters.MassDiffAcceptorType, parameters.SearchParameters.CustomMdac);
-                Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByRT = MetaMorpheusTask
-                    .GetMs2Scans(myMsDataFile, spectraFile.FullFilePathWithExtension, commonParameters)
-                    .OrderBy(b => b.RetentionTime).ToArray();
-                MsDataScan[] arrayOfMs2MsDataScansSortedByRt = myMsDataFile.GetAllScansList().Where(x => x.MsnOrder == 2).ToArray();
 
-                var list = Directory.GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories);
-                string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
-                string spectralLibraryPath = Path.Combine(parameters.OutputFolder, matchingvalue);
-                //var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
-                //string spectralLibraryPath = Path.Combine(parameters.OutputFolder, @"spectralLibrary.msp");
+                string spectralLibraryFile = Directory
+                    .GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories)
+                    .Where(p => p.Contains("spectralLibrary"))
+                    .First()
+                    .ToString();
+                string spectralLibraryPath = Path.Combine(parameters.OutputFolder, spectralLibraryFile);
                 SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
 
                 MiniClassicSearchEngine mcse = new(
-                    arrayOfMs2ScansSortedByRT,
-                    massDiffAcceptor,
+                    dataFile: myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, commonParameters),
+                    spectralLibrary: library,
                     commonParameters,
-                    library,
                     fileSpecificParameters.
                         Where(t => t.FileName.Equals(spectraFile.FilenameWithoutExtension)).
-                        Select(t => t.Parameters).FirstOrDefault());
+                        Select(t => t.Parameters).FirstOrDefault(),
+                    spectraFile.FullFilePathWithExtension);
 
                 Parallel.ForEach(threads, (i) =>
                 {
@@ -96,8 +88,7 @@ namespace TaskLayer.MbrAnalysis
                         }
                         PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
 
-                        IEnumerable<PeptideSpectralMatch> peptideSpectralMatches =
-                            mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak.Apex.IndexedPeak.RetentionTime, peakCharge: mbrPeak.Apex.ChargeState);
+                        List<PeptideSpectralMatch> peptideSpectralMatches = mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak);
 
                         if (peptideSpectralMatches == null || !peptideSpectralMatches.Any())
                         {
@@ -179,7 +170,7 @@ namespace TaskLayer.MbrAnalysis
                 {
                     psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
                 }
-                if (nonNullPsms.Select(p => p.SpectralAngle).Any(g => g != double.NaN))
+                if (nonNullPsms.Select(p => p.SpectralAngle).Any(a => a > -1))
                 {
                     double maxSpectralAngle = nonNullPsms.Select(p => p.SpectralAngle).Max();
                     return nonNullPsms.Where(p => p.SpectralAngle == maxSpectralAngle).FirstOrDefault();
@@ -188,6 +179,7 @@ namespace TaskLayer.MbrAnalysis
             }
             return null;
         }
+
         private static void AssignEstimatedPsmQvalue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
         {
             double[] allScores = allPsms.Select(s => s.Score).OrderByDescending(s => s).ToArray();
