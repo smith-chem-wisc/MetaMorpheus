@@ -74,7 +74,7 @@ namespace GuiFunctions
         /// <summary>
         /// 
         /// </summary>
-        public MetaMorpheusTask TheTask { get; set; }
+        public MetaMorpheusTask TheTask => AllSettingsDict[SelectedSettings];
 
         /// <summary>
         /// 
@@ -92,15 +92,18 @@ namespace GuiFunctions
 
         public TaskSettingViewModel(MetaMorpheusTask task, Action<MetaMorpheusTask> updateFieldsInGuiEventHandler, Func<MetaMorpheusTask> getTaskFromGui)
         {
-            
-            TheTask = task;
+            // initial construction
+            var type = task.GetType();
             UpdateFieldsInGuiWithNewTask = updateFieldsInGuiEventHandler;
             GetTaskFromGui = getTaskFromGui;
+            SaveSettingsCommand = new RelayCommand(SaveSettings);
+            DeleteSettingsCommand = new RelayCommand(DeleteSettings);
+            SaveAsDefaultSettingsCommand = new RelayCommand(SaveAsDefaultSettings);
 
-            var type = task.GetType();
+            // load in all settings from directory of specific object type
             MethodInfo method = typeof(TomlFileFolderSerializer).GetMethod("LoadAllOfTypeT");
             MethodInfo genericMethod = method.MakeGenericMethod(type);
-            System.Collections.IDictionary result = ((System.Collections.IDictionary)genericMethod.Invoke(null, new object[] {TheTask}));
+            System.Collections.IDictionary result = ((System.Collections.IDictionary)genericMethod.Invoke(null, new object[] {task}));
 
             var keys = result.Keys.Cast<string>().ToList();
             var values = result.Values.Cast<MetaMorpheusTask>().ToList();
@@ -111,10 +114,6 @@ namespace GuiFunctions
             }
             AllSettingsDict = tempDict;
 
-            
-            SaveSettingsCommand = new RelayCommand(SaveSettings);
-            DeleteSettingsCommand = new RelayCommand(DeleteSettings);
-            SaveAsDefaultSettingsCommand = new RelayCommand(SaveAsDefaultSettings);
             SelectDefaultAuto();
         }
 
@@ -122,14 +121,12 @@ namespace GuiFunctions
         /// ONLY USED FOR TESTING
         /// </summary>
         /// <param name="task"></param>
-        internal TaskSettingViewModel(MetaMorpheusTask task)
+        internal TaskSettingViewModel(MetaMorpheusTask task = null)
         {
-            TheTask = task;
-
-            var type = task.GetType();
+            var type = task.GetType() ?? typeof(SearchTask);
             MethodInfo method = typeof(TomlFileFolderSerializer).GetMethod("LoadAllOfTypeT");
             MethodInfo genericMethod = method.MakeGenericMethod(type);
-            System.Collections.IDictionary result = ((System.Collections.IDictionary)genericMethod.Invoke(null, new object[] { TheTask }));
+            System.Collections.IDictionary result = ((System.Collections.IDictionary)genericMethod.Invoke(null, new object[] { task ?? new SearchTask() }));
 
             var keys = result.Keys.Cast<string>().ToList();
             var values = result.Values.Cast<MetaMorpheusTask>().ToList();
@@ -145,35 +142,6 @@ namespace GuiFunctions
             SaveAsDefaultSettingsCommand = new RelayCommand(SaveAsDefaultSettings);
             SelectDefaultAuto();
         }
-
-        /// <summary>
-        ///  Used only for design time viewing of data 
-        /// </summary>
-        public TaskSettingViewModel()
-        {
-            MetaMorpheusTask task = new SearchTask();
-            TheTask = task;
-            var temp = typeof(SearchTask);
-            var type = task.GetType();
-            MethodInfo method = typeof(TomlFileFolderSerializer).GetMethod("LoadAllOfTypeT");
-            MethodInfo genericMethod = method.MakeGenericMethod(type);
-            System.Collections.IDictionary result = ((System.Collections.IDictionary)genericMethod.Invoke(null, new object[] { TheTask }));
-
-            var keys = result.Keys.Cast<string>().ToList();
-            var values = result.Values.Cast<MetaMorpheusTask>().ToList();
-            Dictionary<string, MetaMorpheusTask> tempDict = new();
-            for (int i = 0; i < keys.Count; i++)
-            {
-                tempDict.Add(keys[i], values[i]);
-            }
-            AllSettingsDict = tempDict;
-
-            SaveSettingsCommand = new RelayCommand(SaveSettings);
-            DeleteSettingsCommand = new RelayCommand(DeleteSettings);
-            SaveAsDefaultSettingsCommand = new RelayCommand(SaveAsDefaultSettings);
-            SelectDefaultAuto();
-        }
-
         
         #endregion
 
@@ -193,14 +161,12 @@ namespace GuiFunctions
                 MessageBox.Show("Default Setting cannot be modified. Please use \"Save as Default\" button", "Modifying Default Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
-            
+
+            var taskFromGUI = GetTaskFromGui.Invoke();
             TomlFileFolderSerializer.Delete(TheTask.GetType(), SelectedSettings);
             AllSettingsDict.Remove(SelectedSettings);
-
-            TheTask = GetTaskFromGui.Invoke();
-
-            TomlFileFolderSerializer.Save(SelectedSettings, TheTask);
-            AllSettingsDict.Add(SelectedSettings, TheTask);
+            TomlFileFolderSerializer.Save(SelectedSettings, taskFromGUI);
+            AllSettingsDict.Add(SelectedSettings, taskFromGUI);
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
             SelectDefaultAuto();
@@ -226,12 +192,12 @@ namespace GuiFunctions
             }
 
             // get current gui representation
-            TheTask = GetTaskFromGui.Invoke();
-            AllSettingsDict.Add(settingsName, TheTask);
+            var taskFromGUI = GetTaskFromGui.Invoke();
+            AllSettingsDict.Add(settingsName, taskFromGUI);
 
             // revert modified settings before saving
-            string settingsThatWereModifiedButNotMeantToBeSavedPath = TomlFileFolderSerializer.GetFilePath(TheTask.GetType(), SelectedSettings);
-            var type = TheTask.GetType();
+            string settingsThatWereModifiedButNotMeantToBeSavedPath = TomlFileFolderSerializer.GetFilePath(taskFromGUI.GetType(), SelectedSettings);
+            var type = taskFromGUI.GetType();
             MethodInfo method = typeof(TomlFileFolderSerializer).GetMethod("Deserialize");
             MethodInfo genericMethod = method.MakeGenericMethod(type);
             var reloadedModifiedSettings = genericMethod.Invoke(null, new object[] { settingsThatWereModifiedButNotMeantToBeSavedPath });
@@ -239,7 +205,7 @@ namespace GuiFunctions
 
             // save modified settings with new name
             SelectedSettings = settingsName;
-            TomlFileFolderSerializer.Save(settingsName, TheTask);
+            TomlFileFolderSerializer.Save(settingsName, taskFromGUI);
 
             // update gui representation
             OnPropertyChanged(nameof(AllSettings));
@@ -281,24 +247,26 @@ namespace GuiFunctions
                 return;
             }
 
-            // if there is currently a default
+            var temp = TheTask;
+            string currentName = SelectedSettings;
+
+            // if there is currently a default, remove "(Default)" and save with new name
             if (AllSettingsDict.Any(p => p.Key.Contains("(Default)")))
             {
                 var oldDefault = AllSettingsDict.First(p => p.Key.Contains("(Default)"));
-                string oldDefaultName = oldDefault.Key;
-                string changedOldDefaultName = oldDefaultName.Remove(oldDefaultName.Length - 9);
-                var oldDefaultValue = oldDefault.Value;
-                TomlFileFolderSerializer.Delete(oldDefaultValue.GetType(), oldDefaultName);
-                AllSettingsDict.Remove(oldDefaultName);
-                TomlFileFolderSerializer.Save(changedOldDefaultName, oldDefaultValue);
-                AllSettingsDict.Add(changedOldDefaultName, oldDefaultValue);               
+                string newOldDefaultName = oldDefault.Key.Remove(oldDefault.Key.Length - 9); // TODO
+                TomlFileFolderSerializer.Delete(oldDefault.Value.GetType(), oldDefault.Key);
+                AllSettingsDict.Remove(oldDefault.Key);
+                TomlFileFolderSerializer.Save(newOldDefaultName, oldDefault.Value);
+                AllSettingsDict.Add(newOldDefaultName, oldDefault.Value);
             }
 
-            var temp = TheTask;
+            // save currently selected settings as new default
             TomlFileFolderSerializer.Delete(TheTask.GetType(), SelectedSettings); 
             AllSettingsDict.Remove(SelectedSettings);
-            TomlFileFolderSerializer.Save(SelectedSettings + "(Default)", temp);
-            AllSettingsDict.Add(SelectedSettings + "(Default)", temp);
+            TomlFileFolderSerializer.Save(currentName + "(Default)", temp);
+            AllSettingsDict.Add(currentName + "(Default)", temp);
+
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
             SelectDefaultAuto();

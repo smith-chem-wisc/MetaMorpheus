@@ -52,7 +52,7 @@ namespace MetaMorpheusGUI
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             
-            UpdateFieldsFromTask(TheTask);
+            //UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (task == null)
