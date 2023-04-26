@@ -29,7 +29,17 @@ namespace EngineLayer.ClassicSearch
         /// </summary>
         public double RetentionTimeWindowHalfWidth { get; }
 
-        // Each instance of MCSE will be specific to one file.
+        /// <summary>
+        /// Every instance of MCSE is specific to one file.
+        /// </summary>
+        /// <param name="dataFile">File to be searched</param>
+        /// <param name="spectralLibrary">Spectral library containing donor spectra </param>
+        /// <param name="commonParameters"></param>
+        /// <param name="fileSpecificParameters"></param>
+        /// <param name="fullFilePath"></param>
+        /// <param name="retentionTimeWindowHalfWidth"> The width of the retention time window for spectral recovery.
+        /// Should be close to 1/2 the expected chromatographic peak width </param>
+        /// <exception cref="ArgumentNullException"></exception>
         public MiniClassicSearchEngine(
             MsDataFile dataFile,
             SpectralLibrary spectralLibrary,
