@@ -172,7 +172,6 @@ namespace Test
                 }
             }
 
-            // Why did the contrast angle go up??
             referenceDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestSpectralRecoveryOutput\AllQuantifiedPeptides.tsv");
 
