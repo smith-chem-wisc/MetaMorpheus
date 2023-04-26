@@ -88,14 +88,14 @@
                         <ComboBox Name="TaskSettingsComboBox" Width="200" Height="20" VerticalAlignment="Center" 
                                   HorizontalAlignment="Left" IsSynchronizedWithCurrentItem="True"
                                   ItemsSource="{Binding Path=AllSettings}" 
-                                  SelectedItem="{Binding Path=SelectedSettings}" SelectionChanged="TaskSettingsComboBox_SelectionChanged_1">
+                                  SelectedItem="{Binding Path=SelectedSettings}">
                         </ComboBox>
                         <Button x:Name="Save" Content="Save" FontSize="10" 
-                                Width="60" Margin="5,5,2.5,5" Command="{Binding SaveSettingsCommand}" Click="Save_Click"/>
+                                Width="60" Margin="5,5,2.5,5" Command="{Binding SaveSettingsCommand}" />
                         <Button x:Name="SaveAs" Content="Save as" FontSize="10" 
                                 Width="60" Margin="5,5,2.5,5" Click="SaveAs_Click"/>
                         <Button x:Name="Delete"  Content="Delete" FontSize="10" Width="60" Margin="5,5,2.5,5"
-                                Command="{Binding DeleteSettingsCommand}" Click="Delete_Click"/>
+                                Command="{Binding DeleteSettingsCommand}" />
                     </StackPanel>
 
                     <!-- Search Parameters -->
@@ -1197,7 +1197,9 @@
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
-            <Button x:Name="setDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
+            <Button x:Name="setDefaultbutton"  Width="100" 
+                    Command="{Binding Path=TaskSettingViewModel.SaveAsDefaultSettingsCommand, 
+                RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Window}}}">
                 <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
                 <ToolTipService.ToolTip>
                     <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />

@@ -64,7 +64,7 @@ namespace GuiFunctions
         /// <returns></returns>
         public static string GetFilePath(Type folder, string name)
         {
-            string txtFilePath = folder.ToString() + "/" + name + ".toml";
+            string txtFilePath = Path.Combine(folder.FullName, $"{name}.toml");
             string path = Path.Combine(PathToCheck, txtFilePath);
             return path;
         }

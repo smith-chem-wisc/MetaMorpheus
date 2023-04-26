@@ -43,6 +43,7 @@ namespace MetaMorpheusGUI
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
+            PopulateChoices();
             TheTask = task ?? new SearchTask();
 
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as SearchTask);
@@ -50,7 +51,7 @@ namespace MetaMorpheusGUI
             TaskSettingsCtrl.DataContext = TaskSettingViewModel;
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
-            PopulateChoices();
+            
             UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
@@ -1351,21 +1352,6 @@ namespace MetaMorpheusGUI
             {
            
             }
-        }
-
-        private void TaskSettingsComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-
-        }
-
-        private void Delete_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void Save_Click(object sender, RoutedEventArgs e)
-        {
-
         }
     }
 
