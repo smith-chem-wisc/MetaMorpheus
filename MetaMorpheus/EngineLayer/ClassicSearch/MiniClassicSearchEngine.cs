@@ -79,11 +79,13 @@ namespace EngineLayer.ClassicSearch
             {
                 throw new ArgumentException("Peak can not be null!");
             }
-            if (!SpectralLibrary.TryGetSpectrum(donorPwsm.FullSequence, peak.Apex.ChargeState,
+            if (!SpectralLibrary.TryGetSpectrum(donorPwsm.FullSequence, peakCharge,
                     out LibrarySpectrum donorSpectrum))
             {
                 throw new MetaMorpheusException("Donor spectrum not found");
             }
+            // For testing
+            if (donorPwsm.FullSequence.Equals("")) ;
 
             Dictionary<DissociationType, List<Product>> targetFragmentsForEachDissociationType = CreateFragmentDictionary();
             List<RecoveredMs2ScanWithSpecificMass> acceptableScans = RecoverScans(donorPwsm.MonoisotopicMass, peakRetentionTime, peakCharge);
