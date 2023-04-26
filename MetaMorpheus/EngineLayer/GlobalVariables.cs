@@ -351,8 +351,6 @@ namespace EngineLayer
             else
             {
                 DataDir = AppDomain.CurrentDomain.BaseDirectory;
-                string dataDirTemp = AppDomain.CurrentDomain.BaseDirectory;
-                int placeHolder = 0;
             }
 
             if (UserSpecifiedDataDir != null)
