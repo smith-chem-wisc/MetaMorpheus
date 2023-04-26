@@ -36,10 +36,21 @@ namespace Test
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "SettingsDataFiles"), true);
         }
 
+        private MetaMorpheusTask GetFakeSearchTaskFromGui() => new SearchTask();
+        private MetaMorpheusTask GetFakeGptmdTaskFromGui() => new GptmdTask();
+        private MetaMorpheusTask GetFakeCalibrationTaskFromGui() => new CalibrationTask();
+        private MetaMorpheusTask GetFakeXLSearchTaskFromGui() => new XLSearchTask();
+        private MetaMorpheusTask GetFakeGlycoSearchTaskFromGui() => new GlycoSearchTask();
+
+        private void UpdateFieldsFromNewTask(MetaMorpheusTask task)
+        {
+
+        }
+        
         [Test]
         public void testConstructor()
         {
-            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask());
+            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask(), UpdateFieldsFromNewTask, GetFakeSearchTaskFromGui);
             var a = testTaskSettingViewModel.AllSettings;
             string[] testArrayOfKeys = testTaskSettingViewModel.AllSettingsDict.Keys.ToArray();
             Assert.That(testArrayOfKeys[0].Equals("customBCZ.toml"));

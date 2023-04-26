@@ -426,8 +426,6 @@ namespace MetaMorpheusGUI
             DialogResult = true;
         }
 
-
-
         private SearchTask GetTaskFromGui()
         {
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected

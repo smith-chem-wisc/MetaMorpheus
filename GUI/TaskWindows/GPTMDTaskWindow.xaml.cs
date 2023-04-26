@@ -29,15 +29,18 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> GptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        public TaskSettingViewModel TaskSettingViewModel { get; set; }
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
         {
             InitializeComponent();
+            PopulateChoices();
             TheTask = myGPTMDtask ?? new GptmdTask();
 
+            var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as GptmdTask);
+
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
-            PopulateChoices();
-            UpdateFieldsFromTask(TheTask);
+            //UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (myGPTMDtask == null)
