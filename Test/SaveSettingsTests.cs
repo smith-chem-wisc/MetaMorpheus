@@ -36,21 +36,45 @@ namespace Test
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "SettingsDataFiles"), true);
         }
 
-        private MetaMorpheusTask GetFakeSearchTaskFromGui() => new SearchTask();
-        private MetaMorpheusTask GetFakeGptmdTaskFromGui() => new GptmdTask();
-        private MetaMorpheusTask GetFakeCalibrationTaskFromGui() => new CalibrationTask();
-        private MetaMorpheusTask GetFakeXLSearchTaskFromGui() => new XLSearchTask();
-        private MetaMorpheusTask GetFakeGlycoSearchTaskFromGui() => new GlycoSearchTask();
-
-        private void UpdateFieldsFromNewTask(MetaMorpheusTask task)
+        private class FakeGuiWindow
         {
+            public MetaMorpheusTask TheTask { get; private set; }
+            public FakeGuiWindow(MyTask taskType)
+            {
+                TheTask = taskType switch
+                {
+                    MyTask.Search => new SearchTask(),
+                    MyTask.Gptmd => new GptmdTask(),
+                    MyTask.Calibrate => new CalibrationTask(),
+                    MyTask.XLSearch => new XLSearchTask(),
+                    MyTask.GlycoSearch => new GlycoSearchTask(),
+                    _ => throw new ArgumentOutOfRangeException(nameof(taskType), taskType, null)
+                };
+            }
 
+            public MetaMorpheusTask GetTaskFromGui()
+            {
+                return TheTask;
+            }
+
+            public void UpdateFieldsFromNewTask(MetaMorpheusTask task)
+            {
+                TheTask = task;
+            }
         }
-        
+
+        [Test]
+        public void ExampleTest()
+        {
+            var fakeTaskWindow = new FakeGuiWindow(MyTask.Search);
+            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask(), fakeTaskWindow.UpdateFieldsFromNewTask, fakeTaskWindow.GetTaskFromGui);
+        }
+
         [Test]
         public void testConstructor()
         {
-            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask(), UpdateFieldsFromNewTask, GetFakeSearchTaskFromGui);
+            var fakeTaskWindow = new FakeGuiWindow(MyTask.Search);
+            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask(), fakeTaskWindow.UpdateFieldsFromNewTask, fakeTaskWindow.GetTaskFromGui);
             var a = testTaskSettingViewModel.AllSettings;
             string[] testArrayOfKeys = testTaskSettingViewModel.AllSettingsDict.Keys.ToArray();
             Assert.That(testArrayOfKeys[0].Equals("customBCZ.toml"));
