@@ -28,15 +28,19 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private TaskSettingViewModel TaskSettingViewModel;
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
         {
             InitializeComponent();
+            PopulateChoices();
             TheTask = myCalibrateTask ?? new CalibrationTask();
 
+            var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as CalibrationTask);
+            TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
+            //TaskSettingsCtrl.DataContext = TaskSettingViewModel;
+
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
-            PopulateChoices();
-            UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (myCalibrateTask == null)
@@ -188,14 +192,24 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            CalibrationTask task = GetTaskFromGui();
+            if (task == null)
+                return;
+
+            TheTask = task;
+            DialogResult = true;
+        }
+
+        private CalibrationTask GetTaskFromGui()
+        {
             string fieldNotUsed = "1";
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed,
                  null, null, null))
             {
-                return;
+                return null;
             }
 
             Protease protease = (Protease)ProteaseComboBox.SelectedItem;
@@ -226,7 +240,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
             {
-                return;
+                return null;
             }
 
             var listOfModsFixed = new List<(string, string)>();
@@ -296,7 +310,7 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.CalibrationParameters.WriteIndexedMzml = writeIndexMzmlCheckbox.IsChecked.Value;
-            DialogResult = true;
+            return TheTask;
         }
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)

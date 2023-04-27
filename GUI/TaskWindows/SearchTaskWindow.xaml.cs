@@ -35,7 +35,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
-        public TaskSettingViewModel TaskSettingViewModel { get; set; }
+        private TaskSettingViewModel TaskSettingViewModel;
 
 
         internal SearchTask TheTask { get; private set; }
@@ -51,8 +51,6 @@ namespace MetaMorpheusGUI
             TaskSettingsCtrl.DataContext = TaskSettingViewModel;
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
-            
-            //UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (task == null)
@@ -418,7 +416,7 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
-            SearchTask task =  GetTaskFromGui();
+            SearchTask task = GetTaskFromGui();
             if (task == null)
                 return;
 
