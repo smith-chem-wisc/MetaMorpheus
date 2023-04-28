@@ -6,10 +6,11 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Readers;
 
 namespace Test
 {
-    internal class TestDataFile : MsDataFile
+    internal class TestDataFile : GenericMsDataFile
     {
         public TestDataFile() : base(2, new SourceFile(null, null, null, null, null))
         {

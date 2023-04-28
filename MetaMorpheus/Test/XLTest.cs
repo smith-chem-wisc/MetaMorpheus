@@ -18,6 +18,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -1527,7 +1528,7 @@ namespace Test
             Assert.AreEqual(arrayIndex, CrosslinkSearchEngine.BinarySearchGetIndex(massArray, targetMass));
         }
 
-        internal class XLTestDataFile : MsDataFile
+        internal class XLTestDataFile : GenericMsDataFile
         {
             //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match.
             public XLTestDataFile() : base(2, new SourceFile(null, null, null, null, null))
@@ -1595,7 +1596,7 @@ namespace Test
             }
         }
 
-        internal class XLTestDataFileDiffSite : MsDataFile
+        internal class XLTestDataFileDiffSite : GenericMsDataFile
         {
             //Create DSSO crosslinked fake MS data. Include single, deadend, loop, inter, intra crosslinks ms2 data for match.
             public XLTestDataFileDiffSite() : base(2, new SourceFile(null, null, null, null, null))
