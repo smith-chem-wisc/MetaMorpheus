@@ -190,20 +190,27 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     // add complementary ions
                     if (CommonParameters.AddCompIons)
                     {
-                        //TODO: this is broken for EThcD because that method needs two conversions
-                        double protonMassShift = complementaryIonConversionDictionary[dissociationType];
-                        protonMassShift = Chemistry.ClassExtensions.ToMass(protonMassShift, 1);
-                        fragmentBin = (int)Math.Round((scan.PrecursorMass + protonMassShift - masses[i]) / 1.0005079);
-                        bin = FragmentIndex[fragmentBin];
-
-                        //score
-                        if (bin != null)
+                        if (complementaryIonConversionDictionary.ContainsKey(CommonParameters.DissociationType))
                         {
-                            for (int pep = 0; pep < bin.Count; pep++)
+                            foreach (double massShift in complementaryIonConversionDictionary[CommonParameters.DissociationType])
                             {
-                                scoringTable[bin[pep]]++;
+                                double protonMassShift = massShift.ToMass(1);
+                                protonMassShift = Chemistry.ClassExtensions.ToMass(protonMassShift, 1);
+                                fragmentBin = (int)Math.Round((scan.PrecursorMass + protonMassShift - masses[i]) / 1.0005079);
+                                bin = FragmentIndex[fragmentBin];
+
+                                //score
+                                if (bin != null)
+                                {
+                                    for (int pep = 0; pep < bin.Count; pep++)
+                                    {
+                                        scoringTable[bin[pep]]++;
+                                    }
+                                }
                             }
                         }
+
+                        
                     }
                 }
             }
@@ -258,41 +265,46 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     // add complementary ions
                     if (CommonParameters.AddCompIons)
                     {
-                        //okay, we're not actually adding in complementary m/z peaks, we're doing a shortcut and just straight up adding the bins
-                        //TODO: this is broken for EThcD because that method needs two conversions
-                        double protonMassShift = Chemistry.ClassExtensions.ToMass(complementaryIonConversionDictionary[dissociationType], 1);
-                        int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentCeilingMass;
-                        int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentFloorMass;
-                        if (compFragmentCeilingMass > 350000)
+                        if (complementaryIonConversionDictionary.ContainsKey(dissociationType))
                         {
-                            // prevent index out of bounds errors
-                            if (compFragmentCeilingMass >= FragmentIndex.Length)
+                            foreach (double massShift in complementaryIonConversionDictionary[dissociationType])
                             {
-                                compFragmentCeilingMass = FragmentIndex.Length - 1;
-                                if (compFragmentFloorMass >= FragmentIndex.Length)
+                                double protonMassShift = massShift.ToMass(1);
+                                int compFragmentFloorMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentCeilingMass;
+                                int compFragmentCeilingMass = (int)Math.Round(((scan.PrecursorMass + protonMassShift) * FragmentBinsPerDalton)) - obsFragmentFloorMass;
+                                if (compFragmentCeilingMass > 350000)
                                 {
-                                    compFragmentFloorMass = FragmentIndex.Length - 1;
-                                }
-                            }
-                            if (compFragmentFloorMass < 0)
-                            {
-                                compFragmentFloorMass = 0;
-                            }
-
-                            for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
-                            {
-                                List<int> bin = FragmentIndex[fragmentBin];
-
-                                //score
-                                if (bin != null)
-                                {
-                                    for (int pep = 0; pep < bin.Count; pep++)
+                                    // prevent index out of bounds errors
+                                    if (compFragmentCeilingMass >= FragmentIndex.Length)
                                     {
-                                        scoringTable[bin[pep]]++;
+                                        compFragmentCeilingMass = FragmentIndex.Length - 1;
+                                        if (compFragmentFloorMass >= FragmentIndex.Length)
+                                        {
+                                            compFragmentFloorMass = FragmentIndex.Length - 1;
+                                        }
+                                    }
+                                    if (compFragmentFloorMass < 0)
+                                    {
+                                        compFragmentFloorMass = 0;
+                                    }
+
+                                    for (int fragmentBin = compFragmentFloorMass; fragmentBin <= compFragmentCeilingMass; fragmentBin++)
+                                    {
+                                        List<int> bin = FragmentIndex[fragmentBin];
+
+                                        //score
+                                        if (bin != null)
+                                        {
+                                            for (int pep = 0; pep < bin.Count; pep++)
+                                            {
+                                                scoringTable[bin[pep]]++;
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
+                        
                     }
                 }
             }

@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using Microsoft.ML.Trainers.FastTree;
 using MzLibUtil;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -14,11 +15,12 @@ namespace EngineLayer
 {
     public abstract class MetaMorpheusEngine
     {
-        protected static readonly Dictionary<DissociationType, double> complementaryIonConversionDictionary = new Dictionary<DissociationType, double>
+        protected static readonly Dictionary<DissociationType, List<double>> complementaryIonConversionDictionary = new Dictionary<DissociationType, List<double>>
         {
-            { DissociationType.HCD, Constants.ProtonMass },
-            { DissociationType.ETD, 2 * Constants.ProtonMass }, //presence of zplusone (zdot) makes this two instead of one
-            { DissociationType.CID, Constants.ProtonMass },
+            { DissociationType.HCD, new List<double>(){ Constants.ProtonMass } },
+            { DissociationType.ETD,new List<double>() {2 * Constants.ProtonMass } }, //presence of zplusone (zdot) makes this two instead of one
+            { DissociationType.CID,new List<double>() {Constants.ProtonMass } },
+            { DissociationType.EThcD,new List<double>() {Constants.ProtonMass, 2 * Constants.ProtonMass } },
             //TODO: refactor such that complementary ions are generated specifically for their complementary pair.
             //TODO: create a method to auto-determine the conversion
         };
@@ -195,29 +197,32 @@ namespace EngineLayer
             }
             if (commonParameters.AddCompIons)
             {
-                double protonMassShift = complementaryIonConversionDictionary[commonParameters.DissociationType].ToMass(1);
-
-                for (int i = 0; i < theoreticalProducts.Count; i++)
+                foreach (double massShift in complementaryIonConversionDictionary[commonParameters.DissociationType])
                 {
-                    var product = theoreticalProducts[i];
-                    // unknown fragment mass or diagnostic ion or precursor; skip those
-                    if (double.IsNaN(product.NeutralMass) || product.ProductType == ProductType.D || product.ProductType == ProductType.M)
+                    double protonMassShift = massShift.ToMass(1);
+
+                    for (int i = 0; i < theoreticalProducts.Count; i++)
                     {
-                        continue;
-                    }
+                        var product = theoreticalProducts[i];
+                        // unknown fragment mass or diagnostic ion or precursor; skip those
+                        if (double.IsNaN(product.NeutralMass) || product.ProductType == ProductType.D || product.ProductType == ProductType.M)
+                        {
+                            continue;
+                        }
 
-                    double compIonMass = scan.PrecursorMass + protonMassShift - product.NeutralMass;
+                        double compIonMass = scan.PrecursorMass + protonMassShift - product.NeutralMass;
 
-                    // get the closest peak in the spectrum to the theoretical peak
-                    IsotopicEnvelope closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(compIonMass);
+                        // get the closest peak in the spectrum to the theoretical peak
+                        IsotopicEnvelope closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(compIonMass);
 
-                    // is the mass error acceptable?
-                    if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, compIonMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
-                    {
-                        //found the peak, but we don't want to save that m/z because it's the complementary of the observed ion that we "added". Need to create a fake ion instead.
-                        double mz = (scan.PrecursorMass + protonMassShift - closestExperimentalMass.MonoisotopicMass).ToMz(closestExperimentalMass.Charge);
+                        // is the mass error acceptable?
+                        if (commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, compIonMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)
+                        {
+                            //found the peak, but we don't want to save that m/z because it's the complementary of the observed ion that we "added". Need to create a fake ion instead.
+                            double mz = (scan.PrecursorMass + protonMassShift - closestExperimentalMass.MonoisotopicMass).ToMz(closestExperimentalMass.Charge);
 
-                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                            matchedFragmentIons.Add(new MatchedFragmentIon(ref product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                        }
                     }
                 }
             }
