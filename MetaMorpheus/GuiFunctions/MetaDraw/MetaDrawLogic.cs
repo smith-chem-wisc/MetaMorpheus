@@ -21,6 +21,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Org.BouncyCastle.Asn1.X509.Qualified;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -41,7 +42,7 @@ namespace GuiFunctions
         public ICollectionView PeptideSpectralMatchesView;
 
         private List<PsmFromTsv> AllPsms; // all loaded PSMs
-        private Dictionary<string, DynamicDataConnection> MsDataFiles; // key is file name without extension
+        private Dictionary<string, MsDataFile> MsDataFiles; // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private SpectralLibrary SpectralLibrary;
@@ -54,7 +55,7 @@ namespace GuiFunctions
             FilteredListOfPsms = new ObservableCollection<PsmFromTsv>();
             PsmsGroupedByFile = new Dictionary<string, ObservableCollection<PsmFromTsv>>();
             AllPsms = new List<PsmFromTsv>();
-            MsDataFiles = new Dictionary<string, DynamicDataConnection>();
+            MsDataFiles = new Dictionary<string, MsDataFile>();
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
             CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
@@ -100,14 +101,14 @@ namespace GuiFunctions
             errors = null;
 
             // get the scan
-            if (!MsDataFiles.TryGetValue(psms.First().FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+            if (!MsDataFiles.TryGetValue(psms.First().FileNameWithoutExtension, out MsDataFile spectraFile))
             {
                 errors = new List<string>();
                 errors.Add("The spectra file could not be found for this PSM: " + psms.First().FileNameWithoutExtension);
                 return;
             }
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psms.First().Ms2ScanNumber);
-            
+
             ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, scan, psms);
             ChimeraSpectrumMatchPlot.RefreshChart();
             CurrentlyDisplayedPlots.Add(ChimeraSpectrumMatchPlot);
@@ -122,7 +123,7 @@ namespace GuiFunctions
             CleanUpCurrentlyDisplayedPlots();
 
             // get the scan
-            if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+            if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
             {
                 errors = new List<string>();
                 errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
@@ -261,9 +262,9 @@ namespace GuiFunctions
 
                 if (sequenceAnnotationCanvas != null)
                 {
-                   SequenceAnnotation = new(sequenceAnnotationCanvas, psm, false, true);
+                    SequenceAnnotation = new(sequenceAnnotationCanvas, psm, false, true);
                 }
-            }   
+            }
         }
 
         //draw the sequence coverage map: write out the sequence, overlay modifications, and display matched fragments
@@ -299,7 +300,7 @@ namespace GuiFunctions
             //create circles for mods, if needed and able
             if (!psm.FullSequence.Contains("|")) //can't draw mods if not localized/identified
             {
-                DrawnSequence.AnnotateModifications(psm, sequenceText, psm.FullSequence, textHeight-4, spacing, xShift+5);
+                DrawnSequence.AnnotateModifications(psm, sequenceText, psm.FullSequence, textHeight - 4, spacing, xShift + 5);
             }
 
             //draw lines for each matched fragment
@@ -371,18 +372,12 @@ namespace GuiFunctions
             }
 
             //internal fragments
-            if (MetaDrawSettings.DisplayInternalIons)
+            foreach (MatchedFragmentIon fragment in internalFragments)
             {
-                foreach (MatchedFragmentIon fragment in internalFragments)
-                {
-                    DrawHorizontalLine(fragment.NeutralTheoreticalProduct.FragmentNumber,
-                        fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber, map, heightForThisFragment,
-                        internalColor, spacing);
-                    internalIntensityArray[fragment.NeutralTheoreticalProduct.FragmentNumber - 1] += fragment.Intensity;
-                    internalIntensityArray[fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber - 1] +=
-                        fragment.Intensity;
-                    heightForThisFragment += heightIncrement;
-                }
+                DrawHorizontalLine(fragment.NeutralTheoreticalProduct.FragmentNumber, fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber, map, heightForThisFragment, internalColor, spacing);
+                internalIntensityArray[fragment.NeutralTheoreticalProduct.FragmentNumber - 1] += fragment.Intensity;
+                internalIntensityArray[fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber - 1] += fragment.Intensity;
+                heightForThisFragment += heightIncrement;
             }
 
             map.Height = heightForThisFragment + 100;
@@ -492,11 +487,11 @@ namespace GuiFunctions
             {
                 Directory.CreateDirectory(directory);
             }
-            
+
             foreach (var psm in spectrumMatches)
             {
                 // get the scan
-                if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out DynamicDataConnection spectraFile))
+                if (!MsDataFiles.TryGetValue(psm.FileNameWithoutExtension, out MsDataFile spectraFile))
                 {
                     errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
                     return;
@@ -513,7 +508,7 @@ namespace GuiFunctions
                         .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
                     DisplayChimeraSpectra(plotView, chimericPsms, out errors);
                 }
-                
+
 
                 if (errors != null)
                 {
@@ -603,7 +598,7 @@ namespace GuiFunctions
             System.Drawing.Bitmap textBitmap = ConvertCanvasToBitmap(textCanvas, directory);
             Point textPoint = new(0, 0);
             System.Drawing.Bitmap mapBitmap = ConvertCanvasToBitmap(mapCanvas, directory);
-            Point mapPoint = new(0, textCanvas.ActualHeight );
+            Point mapPoint = new(0, textCanvas.ActualHeight);
 
             List<System.Drawing.Bitmap> toCombine = new List<System.Drawing.Bitmap>() { textBitmap, mapBitmap };
             List<Point> points = new List<Point>() { textPoint, mapPoint };
@@ -640,7 +635,7 @@ namespace GuiFunctions
             sequenceAnnotaitonCanvas.Width = width;
             System.Drawing.Bitmap annotationBitmap = ConvertCanvasToBitmap(sequenceAnnotaitonCanvas, directory);
             Point annotationPoint = new(-100, 0);
-            
+
             System.Drawing.Bitmap ptmLegendBitmap = ConvertUIElementToBitmap(ptmLegend, directory);
             Point ptmLegendPoint = new((annotationBitmap.Width / 2) - (ptmLegend.RenderSize.Width / 2) - 50, sequenceAnnotaitonCanvas.Height);
 
@@ -742,7 +737,7 @@ namespace GuiFunctions
                 PeptideSpectralMatchesView.Filter = obj =>
                 {
                     PsmFromTsv psm = obj as PsmFromTsv;
-                    return ((psm.Ms2ScanNumber.ToString()).StartsWith(searchString) || psm.FullSequence.ToUpper().Contains(searchString.ToUpper()) 
+                    return ((psm.Ms2ScanNumber.ToString()).StartsWith(searchString) || psm.FullSequence.ToUpper().Contains(searchString.ToUpper())
                     || psm.ProteinName.Contains(searchString) || psm.OrganismName.Contains(searchString));
                 };
             }
@@ -1024,27 +1019,8 @@ namespace GuiFunctions
                     var fileNameWithoutExtension = filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty);
                     fileNameWithoutExtension = System.IO.Path.GetFileName(fileNameWithoutExtension);
 
-                    DynamicDataConnection spectraFile = null;
-                    string extension = GlobalVariables.GetFileExtension(filepath);
-
-                    if (extension.Equals(".mzML", StringComparison.OrdinalIgnoreCase))
-                    {
-                        spectraFile = new MzmlDynamicData(filepath);
-                    }
-                    else if (extension.Equals(".mgf", StringComparison.OrdinalIgnoreCase))
-                    {
-                        spectraFile = new MgfDynamicData(filepath);
-                    }
-                    else if (extension.Equals(".raw", StringComparison.OrdinalIgnoreCase))
-                    {
-                        spectraFile = new ThermoDynamicData(filepath);
-                    }
-                    else
-                    {
-                        errors.Add("Unrecognized spectra file type: " + extension);
-                        continue;
-                    }
-
+                    var spectraFile = MsDataFileReader.GetDataFile(filepath);
+                    spectraFile.InitiateDynamicConnection();
                     if (!MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
                     {
                         spectraFile.CloseDynamicConnection();

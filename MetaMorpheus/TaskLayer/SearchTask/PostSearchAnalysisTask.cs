@@ -482,6 +482,7 @@ namespace TaskLayer
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+                quantifyAmbiguousPeptides: Parameters.SearchParameters.QuantifyAmbiguousPeptides,
                 matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,

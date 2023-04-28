@@ -17,6 +17,7 @@ namespace TaskLayer
             DoQuantification = true;
             DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
+            QuantifyAmbiguousPeptides = false;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
@@ -66,6 +67,7 @@ namespace TaskLayer
         public bool MatchBetweenRuns { get; set; }
         public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
+        public bool QuantifyAmbiguousPeptides { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
         public DecoyType DecoyType { get; set; }

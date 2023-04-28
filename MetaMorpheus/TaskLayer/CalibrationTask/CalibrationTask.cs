@@ -9,6 +9,7 @@ using MzLibUtil;
 using Nett;
 using Proteomics;
 using Proteomics.Fragmentation;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -176,7 +177,7 @@ namespace TaskLayer
                 myMsDataFile = engine.CalibratedDataFile;
 
                 // write the calibrated mzML file
-                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
+                myMsDataFile.ExportAsMzML(calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
                 myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // stats after calibration
