@@ -18,7 +18,7 @@ namespace GuiFunctions
     {
         public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm, MsDataScan scan,
             List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null, bool stationarySequence = false)
-            : base(plotView, psm, scan)
+            : base(plotView, psm, scan, matchedFragmentIons)
         {
             if (annotateProperties)
             {

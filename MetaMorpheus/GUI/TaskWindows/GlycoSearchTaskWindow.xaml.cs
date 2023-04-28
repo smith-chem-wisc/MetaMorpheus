@@ -144,9 +144,15 @@ namespace MetaMorpheusGUI
                 ChildScanDissociationTypeComboBox.SelectedItem = task.CommonParameters.MS2ChildScanDissociationType.ToString();
             }
 
+            //protein inference
             CheckBoxParsimony.IsChecked = task._glycoSearchParameters.DoParsimony;
             CheckBoxNoOneHitWonders.IsChecked = task._glycoSearchParameters.NoOneHitWonders;
             ModPepsAreUnique.IsChecked = task._glycoSearchParameters.ModPeptidesAreDifferent;
+
+            //output options
+            WriteDecoyCheckBox.IsChecked = task._glycoSearchParameters.WriteDecoys;
+            WriteContaminantCheckBox.IsChecked = task._glycoSearchParameters.WriteContaminants;
+            WriteIndividualResultsCheckBox.IsChecked = task._glycoSearchParameters.WriteIndividualFiles;
 
             CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
             RadioButtonReverseDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Reverse;
@@ -273,6 +279,16 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
+
+            //Protien Inference
+            TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
+            TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
+            TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
+
+            //Output Options
+            TheTask._glycoSearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
+            TheTask._glycoSearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
+            TheTask._glycoSearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
