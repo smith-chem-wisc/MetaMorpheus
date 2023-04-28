@@ -600,7 +600,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
-            TheTask.SearchParameters.QuantifyAmbiguousPeptides = CheckBoxNormalize.IsChecked.Value;
+            TheTask.SearchParameters.QuantifyAmbiguousPeptides = CheckBoxQuantifyAmbiguousPeptides.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);

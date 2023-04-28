@@ -487,7 +487,7 @@
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
-                            <CheckBox x:Name="CheckBoxQuantifyAmbiguousPeptides" Content="Report intensity values for ambiguous peptide identifications">
+                            <CheckBox x:Name="CheckBoxQuantifyAmbiguousPeptides" Content="Quantify ambiguous peptides">
                                 <CheckBox.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
