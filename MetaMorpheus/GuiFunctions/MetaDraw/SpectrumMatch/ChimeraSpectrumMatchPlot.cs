@@ -75,6 +75,10 @@ namespace GuiFunctions
                     // each matched ion
                     foreach (var matchedIon in proteinGroup[j].MatchedIons)
                     {
+                        if (!MetaDrawSettings.DisplayInternalIons &&
+                            matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null)
+                            continue;
+
                         OxyColor color;
 
                         // if drawn by the same protein already
@@ -93,12 +97,9 @@ namespace GuiFunctions
                             // more proteoforms than programmed colors
                             if (j + 1 >= ColorByProteinDictionary[proteinIndex].Count)
                             {
-                                color = overflowColors.Dequeue();
+                                ColorByProteinDictionary[proteinIndex].Add(overflowColors.Dequeue());
                             }
-                            else
-                            {
-                                color = ColorByProteinDictionary[proteinIndex][j + 1];
-                            }
+                            color = ColorByProteinDictionary[proteinIndex][j + 1];
                             proteinDrawnIons.Add(matchedIon);
                         }
                         AnnotatePeak(matchedIon, false, false, color);

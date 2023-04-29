@@ -51,7 +51,7 @@ namespace MetaMorpheusGUI
             ContaminantsCheckBox.IsChecked = MetaDrawSettings.ShowContaminants;
             ShowInternalIonAnnotationsCheckBox.IsChecked = MetaDrawSettings.DisplayInternalIonAnnotations;
             PrecursorChargeCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Charge: "];
-            ShowInternalIonsCheckBox.IsChecked = MetaDrawSettings.InternalIonColor != OxyColors.Transparent;
+            ShowInternalIonsCheckBox.IsChecked = MetaDrawSettings.DisplayInternalIons;
             PrecursorMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Mass: "];
             TheoreticalMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Theoretical Mass: "];
             ScoreCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Score: "];
@@ -60,7 +60,7 @@ namespace MetaMorpheusGUI
             DecoyContaminantTargetCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "];
             QValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Q-Value: "];
             SequenceLengthCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Sequence Length: "];
-            ProFormaLevelCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["ProForma Level: "];
+            AmbiguityLevelCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Ambiguity Level: "];
             SpectralAngleCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Spectral Angle: "];
             PEPCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP: "];
             PEPQValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP Q-Value: "];
@@ -92,8 +92,9 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.AnnotateMzValues = MZCheckBox.IsChecked.Value;
             MetaDrawSettings.AnnotateCharges = ChargesCheckBox.IsChecked.Value;
             MetaDrawSettings.AnnotationBold = BoldTextCheckBox.IsChecked.Value;
-            MetaDrawSettings.ShowDecoys = BoldTextCheckBox.IsChecked.Value;
-            MetaDrawSettings.ShowContaminants = BoldTextCheckBox.IsChecked.Value;
+            MetaDrawSettings.ShowDecoys = DecoysCheckBox.IsChecked.Value;
+            MetaDrawSettings.ShowContaminants = ContaminantsCheckBox.IsChecked.Value;
+            MetaDrawSettings.DisplayInternalIons = ShowInternalIonsCheckBox.IsChecked.Value;
             MetaDrawSettings.DisplayInternalIonAnnotations = ShowInternalIonAnnotationsCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Charge: "] = PrecursorChargeCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Mass: "] = PrecursorMassCheckBox.IsChecked.Value;
@@ -104,7 +105,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "] = DecoyContaminantTargetCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Q-Value: "] = QValueCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Sequence Length: "] = SequenceLengthCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["ProForma Level: "] = ProFormaLevelCheckBox.IsChecked.Value;
+            MetaDrawSettings.SpectrumDescription["Ambiguity Level: "] = AmbiguityLevelCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Spectral Angle: "] = SpectralAngleCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["PEP: "] = PEPCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["PEP Q-Value: "] = PEPQValueCheckBox.IsChecked.Value;

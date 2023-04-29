@@ -106,7 +106,7 @@
                                     <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
                                     <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
                                     <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
-                                    <CheckBox Name="ProFormaLevelCheckBox" Content="ProForma Level" Margin="3" 
+                                    <CheckBox Name="AmbiguityLevelCheckBox" Content="Ambiguity Level" Margin="3" 
                                         ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <ToolTipService.ToolTip>
                                             J. Proteome Res. 2018, 17, 3, 1321–1325
@@ -165,7 +165,7 @@
                             <Expander Name="PTMColorSelection" Header="PTM Color Selection"
                                   DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
                                 <StackPanel>
-                                    <ItemsControl x:Name="PTMColorExpander" ItemBindingGroup="{Binding}" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}">
+                                    <ItemsControl x:Name="PTMColorExpander" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}">
                                         <ItemsControl.ItemTemplate>
                                             <DataTemplate>
                                                 <Expander Header="{Binding DisplayName}" Margin="10 2 0 0">

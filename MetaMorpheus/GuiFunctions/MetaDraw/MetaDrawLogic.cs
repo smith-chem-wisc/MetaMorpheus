@@ -372,12 +372,18 @@ namespace GuiFunctions
             }
 
             //internal fragments
-            foreach (MatchedFragmentIon fragment in internalFragments)
+            if (MetaDrawSettings.DisplayInternalIons)
             {
-                DrawHorizontalLine(fragment.NeutralTheoreticalProduct.FragmentNumber, fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber, map, heightForThisFragment, internalColor, spacing);
-                internalIntensityArray[fragment.NeutralTheoreticalProduct.FragmentNumber - 1] += fragment.Intensity;
-                internalIntensityArray[fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber - 1] += fragment.Intensity;
-                heightForThisFragment += heightIncrement;
+                foreach (MatchedFragmentIon fragment in internalFragments)
+                {
+                    DrawHorizontalLine(fragment.NeutralTheoreticalProduct.FragmentNumber,
+                        fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber, map, heightForThisFragment,
+                        internalColor, spacing);
+                    internalIntensityArray[fragment.NeutralTheoreticalProduct.FragmentNumber - 1] += fragment.Intensity;
+                    internalIntensityArray[fragment.NeutralTheoreticalProduct.SecondaryFragmentNumber - 1] +=
+                        fragment.Intensity;
+                    heightForThisFragment += heightIncrement;
+                }
             }
 
             map.Height = heightForThisFragment + 100;
