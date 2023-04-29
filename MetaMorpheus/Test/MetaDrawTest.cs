@@ -793,7 +793,7 @@ namespace Test
                 var field = type.GetField("<Ms2ScanNumber>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
                 field.SetValue(psm, psm.Ms2ScanNumber + 27300);
             }
-            var metaDrawDynamicScanConnection = (Dictionary<string, DynamicDataConnection>)metadrawLogic?.GetType()
+            var metaDrawDynamicScanConnection = (Dictionary<string, MsDataFile>)metadrawLogic?.GetType()
                 .GetField("MsDataFiles", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(metadrawLogic);
 
