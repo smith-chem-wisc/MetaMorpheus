@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.ViewModels.Legends;
-using IO.MzML;
+using Readers;
 using NUnit.Framework;
 using OxyPlot;
 using Proteomics.Fragmentation;

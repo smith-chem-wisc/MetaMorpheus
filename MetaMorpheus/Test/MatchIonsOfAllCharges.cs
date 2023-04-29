@@ -3,7 +3,7 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
-using IO.MzML;
+using Readers;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;

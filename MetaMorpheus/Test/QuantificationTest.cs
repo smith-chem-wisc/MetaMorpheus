@@ -12,6 +12,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Readers;
 using TaskLayer;
 
 namespace Test
@@ -205,8 +206,8 @@ namespace Test
 
                         // write the .mzML
                         string fullPath = Path.Combine(unitTestFolder, fileToWrite);
-                        IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(
-                            new MsDataFile(scans, new SourceFile(@"scan number only nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null)),
+                        Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(
+                            new GenericMsDataFile(scans, new SourceFile(@"scan number only nativeID format", "mzML format", null, "SHA-1", @"C:\fake.mzML", null)),
                             fullPath, false);
 
                         SpectraFileInfo spectraFileInfo = new(fullPath, condition, b, r, f);

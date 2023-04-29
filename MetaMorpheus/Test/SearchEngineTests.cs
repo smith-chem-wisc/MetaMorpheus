@@ -4,7 +4,7 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
-using IO.MzML;
+using Readers;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -1810,7 +1810,7 @@ namespace Test
             var spectrum = new MzSpectrum(new double[1], new double[1], false);
             scans[0] = new MsDataScan(spectrum, 1, 1, true, Polarity.Positive, 1.0, new MzRange(0, 1), "", MZAnalyzerType.Orbitrap,
                 1, null, null, "");
-            var fileWithNoMs2Scans = new MsDataFile(scans, null);
+            var fileWithNoMs2Scans = new Readers.GenericMsDataFile(scans, null);
             var ms2Scans = MetaMorpheusTask.GetMs2Scans(fileWithNoMs2Scans, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             Assert.That(!ms2Scans.Any());
         }
@@ -1838,7 +1838,7 @@ namespace Test
 
             MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { peptide, peptide2, peptide3, peptide4, peptide5, peptide6, peptide7 });
             string mzmlName = @"test.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "testDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");

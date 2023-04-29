@@ -19,7 +19,7 @@ using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using Easy.Common.Extensions;
-using IO.MzML;
+using Readers;
 using TaskLayer;
 using ThermoFisher.CommonCore.Data.Business;
 using System.Drawing;
@@ -793,10 +793,9 @@ namespace Test
                 var field = type.GetField("<Ms2ScanNumber>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
                 field.SetValue(psm, psm.Ms2ScanNumber + 27300);
             }
-            var metaDrawDynamicScanConnection = (Dictionary<string, DynamicDataConnection>)metadrawLogic?.GetType()
+            var metaDrawDynamicScanConnection = (Dictionary<string, GenericMsDataFile>)metadrawLogic?.GetType()
                 .GetField("MsDataFiles", BindingFlags.Instance | BindingFlags.NonPublic)
                 ?.GetValue(metadrawLogic);
-
 
             metadrawLogic.FilterPsmsToChimerasOnly();
             // test plotting on each instance of chimeras in this dataset
@@ -804,6 +803,7 @@ namespace Test
             foreach (var chimeraGroup in metadrawLogic.FilteredListOfPsms
                          .GroupBy(p => p.Ms2ScanNumber))
             {
+                metaDrawDynamicScanConnection.First().Value.InitiateDynamicConnection();
                 Assert.That(chimeraGroup.Count(), Is.GreaterThanOrEqualTo(2));
                 MsDataScan chimericScan = metaDrawDynamicScanConnection.First().Value
                     .GetOneBasedScanFromDynamicConnection(chimeraGroup.First().Ms2ScanNumber);
@@ -873,6 +873,8 @@ namespace Test
                 metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
                 Assert.That(errors == null || !errors.Any());
                 MetaDrawSettings.DisplayInternalIons = true;
+
+                metaDrawDynamicScanConnection.First().Value.CloseDynamicConnection();
             }
 
             // test export of singlular plot
