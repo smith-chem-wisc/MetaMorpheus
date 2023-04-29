@@ -55,7 +55,7 @@
     <PackageReference Include="Microsoft.ML.CpuMath" Version="2.0.0" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="2.0.0" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="5.0.556" />
+    <PackageReference Include="mzLib" Version="1.0.539" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="OxyPlot.Core" Version="2.0.0" />
