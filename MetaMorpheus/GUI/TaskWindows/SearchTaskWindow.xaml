@@ -487,6 +487,23 @@
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+                            <CheckBox x:Name="CheckBoxQuantifyAmbiguousPeptides" Content="Quantify ambiguous peptides">
+                                <CheckBox.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource boolOrConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.IsEnabled>
+                                <CheckBox.Visibility>
+                                    <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.Visibility>
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Reports identical intensity values for all ambiguous peptides associated with a given chromatographic peak" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                </ToolTipService.ToolTip>
+                            </CheckBox>
                         </StackPanel>
                     </GroupBox>
 

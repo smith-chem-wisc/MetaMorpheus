@@ -177,6 +177,7 @@ namespace MetaMorpheusGUI
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
             CheckBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            CheckBoxQuantifyAmbiguousPeptides.IsChecked = task.SearchParameters.QuantifyAmbiguousPeptides;
             // If Spectral Recovery is enabled
             if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
             {
@@ -599,6 +600,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
+            TheTask.SearchParameters.QuantifyAmbiguousPeptides = CheckBoxQuantifyAmbiguousPeptides.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
