@@ -14,7 +14,7 @@ namespace TaskLayer
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
-            DoQuantification = true;
+            DoLabelFreeQuantification = true;
             DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
@@ -73,7 +73,7 @@ namespace TaskLayer
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
-        public bool DoQuantification { get; set; }
+        public bool DoLabelFreeQuantification { get; set; }
         public bool DoSpectralRecovery { get; set; }
         public SearchType SearchType { get; set; }
         public List<FdrCategory> LocalFdrCategories { get; set; }

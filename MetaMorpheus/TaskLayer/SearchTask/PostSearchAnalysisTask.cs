@@ -85,7 +85,7 @@ namespace TaskLayer
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();
-                if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
+                if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
                 {
                     SpectralRecoveryResults = SpectralRecoveryRunner.RunSpectralRecoveryAlgorithm(Parameters, CommonParameters, FileSpecificParameters);
                 }      
@@ -207,8 +207,8 @@ namespace TaskLayer
 
         private void QuantificationAnalysis()
         {
-            // Here, DoQuantification is only referring to label free quant
-            if (!Parameters.SearchParameters.DoQuantification)
+            // Here, DoLabelFreeQuantification is only referring to label free quant
+            if (!Parameters.SearchParameters.DoLabelFreeQuantification)
             {
                 // Determine if multiplex labeling was used. 
                 List<Modification> multiplexMods = Parameters.VariableModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
@@ -768,7 +768,7 @@ namespace TaskLayer
             {
                 string fileName = "AllProteinGroups.tsv";
 
-                if (Parameters.SearchParameters.DoQuantification)
+                if (Parameters.SearchParameters.DoLabelFreeQuantification)
                 {
                     fileName = "AllQuantifiedProteinGroups.tsv";
                 }
@@ -888,7 +888,7 @@ namespace TaskLayer
 
         private void WriteQuantificationResults()
         {
-            if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
+            if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
                 if (SpectralRecoveryResults != null)
