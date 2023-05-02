@@ -175,8 +175,8 @@ namespace MetaMorpheusGUI
             }
             CheckBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
-            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
-            CheckBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
             // If Spectral Recovery is enabled
             if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
             {
@@ -596,7 +596,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.MinAllowedInternalFragmentLength = InternalIonsCheckBox.IsChecked.Value ? Convert.ToInt32(MinInternalFragmentLengthTextBox.Text) : 0;
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
-            TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask.SearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;

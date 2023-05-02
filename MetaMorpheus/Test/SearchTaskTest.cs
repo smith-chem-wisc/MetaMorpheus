@@ -531,7 +531,7 @@ namespace Test
             {
                 SearchParameters = new SearchParameters
                 {
-                    DoQuantification = false // quant disabled just to save some time
+                    DoLabelFreeQuantification = false // quant disabled just to save some time
                 },
 
                 // use DissociationType.Autodetect as the dissociation type. this signals to the search that the dissociation type
@@ -557,7 +557,7 @@ namespace Test
             {
                 SearchParameters = new SearchParameters
                 {
-                    DoQuantification = false
+                    DoLabelFreeQuantification = false
                 },
 
                 CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD)

@@ -8,6 +8,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using MzLibUtil;
@@ -75,6 +76,8 @@ namespace Test
             List<Modification> gptmdModifications = new List<Modification>();
             gptmdModifications.AddRange(GlobalVariables.AllModsKnown);
             List<Modification> tmt10Mods = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT10")).ToList();
+            List<Modification> tmtMods = gptmdModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
+
 
             Protein P = new Protein(peptide, "", "", null, null, null, null, null, false, false, null, null, null, null);
             CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 1));
@@ -87,6 +90,29 @@ namespace Test
             productMasses.Sort();
 
             Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+        }
+
+        [Test]
+        public static void TestMultiplexIonIntensityDetection()
+        {
+            double[] ionMzs = { 1, 2, 3, 4, 5 };
+            Tolerance tol = new PpmTolerance(10);
+
+            MzSpectrum fakeSpectrum = new MzSpectrum(
+                mz: new double[] { 1, 2, 3, 4, 5 },
+                intensities: new double[] { 2, 4, 6, 8, 10 },
+                shouldCopy: false);
+            Assert.AreEqual(
+                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
+                fakeSpectrum.YArray);
+
+            fakeSpectrum = new MzSpectrum(
+                mz: new double[] { 1, 2.5, 3, 4.5, 5 },
+                intensities: new double[] { 2, 4, 6, 8, 10 },
+                shouldCopy: false);
+            Assert.AreEqual(
+                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol), 
+                new double[] { 2, 0 ,6, 0 , 10}); 
         }
 
         [Test]

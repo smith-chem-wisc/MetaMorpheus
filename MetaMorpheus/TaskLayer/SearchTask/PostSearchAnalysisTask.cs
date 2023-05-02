@@ -16,12 +16,15 @@ using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Text;
 using MathNet.Numerics;
 using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using EngineLayer.Gptmd;
 using System.Threading.Tasks;
+using MzLibUtil;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace TaskLayer
 {
@@ -70,6 +73,7 @@ namespace TaskLayer
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
+            
 
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files" }));
 
@@ -110,6 +114,16 @@ namespace TaskLayer
             return null;
         }
 
+        private void MultiplexAnalysis()
+        {
+            List<Modification> multiplexMods = Parameters.VariableModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
+            multiplexMods.AddRange(Parameters.VariableModifications.Where(m => m.ModificationType == "Multiplex Label"));
+            if (multiplexMods.IsNotNullOrEmpty())
+            {
+                Modification modForAnalysis = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
+
+            }
+        }
 
         /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
@@ -193,8 +207,16 @@ namespace TaskLayer
 
         private void QuantificationAnalysis()
         {
+            // Here, DoQuantification is only referring to label free quant
             if (!Parameters.SearchParameters.DoQuantification)
             {
+                // Determine if multiplex labeling was used. 
+                List<Modification> multiplexMods = Parameters.VariableModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
+                multiplexMods.AddRange(Parameters.VariableModifications.Where(m => m.ModificationType == "Multiplex Label"));
+                if (multiplexMods.IsNotNullOrEmpty())
+                {
+                    Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
+                }
                 return;
             }
 
@@ -539,6 +561,27 @@ namespace TaskLayer
             }
         }
 
+        /// <summary>
+        /// Writes PSMs to a .psmtsv file. If multiplex labeling was used (e.g., TMT), the intensities of the diagnostic ions are
+        /// included, with each ion being reported in a separate column.
+        /// </summary>
+        /// <param name="psms">PSMs to be written</param>
+        /// <param name="filePath">Full file path, up to and including the filename and extensioh. </param>
+        protected void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath)
+        {
+            if (Parameters.MultiplexModification != null &&
+                psms.Any(p => p.BestMatchingPeptides
+                    .SelectMany(pwsm => pwsm.Peptide.AllModsOneIsNterminus.Values)
+                    .Any(mod => mod.Equals(Parameters.MultiplexModification))))
+            {
+                WritePsmPlusMultiplexIons(psms, filePath);
+            }
+            else
+            {
+                WritePsmsToTsv(psms, filePath, Parameters.SearchParameters.ModsToWriteSelection);
+            }
+        }
+
         private void WritePsmResults()
         {
             Status("Writing PSM results...", Parameters.SearchTaskId);
@@ -558,7 +601,7 @@ namespace TaskLayer
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(FilteredPsmListForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsToTsv(FilteredPsmListForOutput, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
@@ -615,7 +658,7 @@ namespace TaskLayer
 
                     // write PSMs
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
-                    WritePsmsToTsv(filteredPSMsForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                    WritePsmsToTsv(filteredPSMsForOutput, writtenFile);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
 
                     // write PSMs for percolator
@@ -1179,7 +1222,7 @@ namespace TaskLayer
                 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
                 && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
 
-            WritePsmsToTsv(filteredPeptidesForOutput, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsToTsv(filteredPeptidesForOutput, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target " + GlobalVariables.AnalyteType.ToLower() + filterType + Math.Round(filterCutoffForResultsCounts,2).ToString() + " : " + psmOrPeptideCountForResults);
@@ -1210,10 +1253,58 @@ namespace TaskLayer
                     // write best (highest-scoring) PSM per peptide
                     filename = "_" + GlobalVariables.AnalyteType + "s.psmtsv";
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + filename);
-                    WritePsmsToTsv(filteredPeptidesForFile, writtenFile, Parameters.SearchParameters.ModsToWriteSelection);
+                    WritePsmsToTsv(filteredPeptidesForFile, writtenFile);
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
             }
+        }
+
+        private void WritePsmPlusMultiplexIons(IEnumerable<PeptideSpectralMatch> psms, string filePath)
+        {
+            PpmTolerance ionTolerance = new PpmTolerance(10);
+            using (StreamWriter output = new StreamWriter(filePath))
+            {
+                double[] labelIonMzs = Parameters.MultiplexModification.DiagnosticIons.First().Value.OrderBy(x => x).ToArray();
+                string diagnosticHeader = PeptideSpectralMatch.GetTabSeparatedHeader().Trim() + '\t' + 
+                                          String.Join('\t', labelIonMzs.Select(d => d.ToString(CultureInfo.CurrentCulture)));
+                output.WriteLine(diagnosticHeader);
+                foreach (var psm in psms)
+                {
+                    IEnumerable<string> labelIonIntensities =
+                        GetMultiplexIonIntensities(psm.MsDataScan.MassSpectrum, labelIonMzs, ionTolerance)
+                            .Select(d => d.ToString(CultureInfo.CurrentCulture));
+
+                    output.Write(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection).Trim());
+                    output.Write('\t');
+                    output.WriteLine(String.Join('\t', labelIonIntensities));
+                }
+            }
+        }
+
+        public static double[] GetMultiplexIonIntensities(MzSpectrum scan, double[] theoreticalIonMzs, Tolerance tolerance)
+        {
+            int peakIndex = scan.GetClosestPeakIndex(theoreticalIonMzs[0]);
+            int lastPeakIndex = scan.GetClosestPeakIndex(theoreticalIonMzs.Last());
+            double[] ionIntensities = new double[theoreticalIonMzs.Length];
+            
+            for (int ionIndex = 0; ionIndex < ionIntensities.Length; ionIndex++)
+            {
+                while (scan.XArray[peakIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[ionIndex]))
+                {
+                    peakIndex++;
+                }
+                if (peakIndex > lastPeakIndex)
+                {
+                    break;
+                }
+                if (tolerance.Within(scan.XArray[peakIndex], theoreticalIonMzs[ionIndex]))
+                {
+                    ionIntensities[ionIndex] = scan.YArray[peakIndex];
+                    peakIndex++;
+                }
+            }
+            
+            return ionIntensities;
         }
 
         private void CompressIndividualFileResults()
@@ -1250,14 +1341,14 @@ namespace TaskLayer
 
             possibleVariantPsms.OrderBy(p => p.FdrInfo.QValue).ThenByDescending(p => p.Score).ThenBy(p => p.FdrInfo.CumulativeTarget).ToList();
 
-            WritePsmsToTsv(possibleVariantPsms, variantPsmFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsToTsv(possibleVariantPsms, variantPsmFile);
 
             List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b => b.Score).ToList();
             List<PeptideSpectralMatch> confidentVariantPeps = new List<PeptideSpectralMatch>();
 
             new FdrAnalysisEngine(variantPeptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "variant_Peptides").Run();
 
-            WritePsmsToTsv(variantPeptides, variantPeptideFile, Parameters.SearchParameters.ModsToWriteSelection);
+            WritePsmsToTsv(variantPeptides, variantPeptideFile);
 
             // if a potential variant peptide can be explained by a canonical protein seqeunce then should not be counted as a confident variant peptide
             //because it is most probable that the peptide originated from the canonical protien.
@@ -1538,7 +1629,6 @@ namespace TaskLayer
             }
             return peptideWithSetModifications.OneBasedStartResidueInProtein + oneIsNterminus - 2;
         }
-
 
         private static void WriteTree(BinTreeStructure myTreeStructure, string writtenFile)
         {
