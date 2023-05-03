@@ -156,19 +156,6 @@ namespace Test
         [Test]
         public static void TestTmtQuantificationOutput()
         {
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML");
-            var scans = Readers.Mzml.LoadAllStaticData(origDataFile).GetAllScansList();
-            var tolerance = new PpmTolerance(20);
-            int roundTo = 4;
-            var temp = tolerance.GetRange(131.1445);
-            var tmt10 = GlobalVariables.AllModsKnown
-                .First(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT11"));
-            var diagnosticIons = GlobalVariables.AllModsKnown
-                .First(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT11")).DiagnosticIons
-                .First().Value
-                .Select(p => Math.Round(p.ToMz(1), roundTo))
-                .ToList();
-
             var searchTask = Toml.ReadFile<SearchTask>(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
                 MetaMorpheusTask.tomlConfig);
@@ -181,29 +168,20 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
 
-            // iterate through each scan
-            foreach (var scan in scans)
+            string[] peaksResults = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPeptides.psmtsv")).ToArray();
+            Assert.That(peaksResults.Length == 5);
+
+            string[] header = peaksResults[0].Trim().Split('\t');
+            string[] ionLabelsInHeader = header[^11..]; // Last 11 columns should be the TMT labels
+            Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[]
+                { "126", "127N", "127C", "128N", "128C", "129N", "129C", "130N", "130C", "131N", "131C" }));
+            
+            double channelSum127N = 0;
+            for (int i = 1; i < peaksResults.Length; i++)
             {
-                if (!diagnosticIons.Any())
-                    break;
-
-                // find all possible matches to diagnostic ions
-                var possibleMatches = scan.MassSpectrum.XArray
-                    .Where(p => p <= diagnosticIons.Max() + tolerance.GetMaximumValue(diagnosticIons.Max()))
-                    .Select(m => Math.Round(m, roundTo)).ToList();
-
-                // check to see if the spectrum has each diagnostic ions
-                for (int j = 0; j < diagnosticIons.Count; j++)
-                {
-                    // remove from diagnostic ion list if found within scan
-                    if (possibleMatches.Any(p => tolerance.Within(p, diagnosticIons[j])))
-                    {
-                        diagnosticIons.Remove(diagnosticIons[j]);
-                    }
-                }
+                channelSum127N += Double.Parse(peaksResults[i].Trim().Split('\t')[^10]);
             }
-            // will pass if all diagnostic ions are found in scans
-            Assert.AreEqual(0, diagnosticIons.Count());
+            Assert.That(channelSum127N, Is.EqualTo(577226.336).Within(0.001));
         }
 
         [Test]
