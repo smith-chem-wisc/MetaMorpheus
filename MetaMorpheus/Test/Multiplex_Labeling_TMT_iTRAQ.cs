@@ -15,6 +15,8 @@ using MzLibUtil;
 using ClassExtensions = Chemistry.ClassExtensions;
 using Nett;
 using TaskLayer;
+using UsefulProteomicsDatabases;
+using System.Threading.Tasks;
 
 namespace Test
 {
@@ -125,6 +127,59 @@ namespace Test
             var diagnosticIons = GlobalVariables.AllModsKnown
                 .First(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT18")).DiagnosticIons
                 .First().Value.Select(p => Math.Round(p, roundTo)).ToList();
+
+            // iterate through each scan
+            foreach (var scan in scans)
+            {
+                if (!diagnosticIons.Any())
+                    break;
+
+                // find all possible matches to diagnostic ions
+                var possibleMatches = scan.MassSpectrum.XArray
+                    .Where(p => p <= diagnosticIons.Max() + tolerance.GetMaximumValue(diagnosticIons.Max()))
+                    .Select(m => Math.Round(m, roundTo)).ToList();
+
+                // check to see if the spectrum has each diagnostic ions
+                for (int j = 0; j < diagnosticIons.Count; j++)
+                {
+                    // remove from diagnostic ion list if found within scan
+                    if (possibleMatches.Any(p => tolerance.Within(p, diagnosticIons[j])))
+                    {
+                        diagnosticIons.Remove(diagnosticIons[j]);
+                    }
+                }
+            }
+            // will pass if all diagnostic ions are found in scans
+            Assert.AreEqual(0, diagnosticIons.Count());
+        }
+
+        [Test]
+        public static void TestTmtQuantificationOutput()
+        {
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\VA084TQ_6.mzML");
+            var scans = Readers.Mzml.LoadAllStaticData(origDataFile).GetAllScansList();
+            var tolerance = new PpmTolerance(20);
+            int roundTo = 4;
+            var temp = tolerance.GetRange(131.1445);
+            var tmt10 = GlobalVariables.AllModsKnown
+                .First(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT11"));
+            var diagnosticIons = GlobalVariables.AllModsKnown
+                .First(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT11")).DiagnosticIons
+                .First().Value
+                .Select(p => Math.Round(p.ToMz(1), roundTo))
+                .ToList();
+
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+            searchTask.SearchParameters.DoLabelFreeQuantification = false;
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
+            string mzmlName = @"TMT_test\VA084TQ_6.mzML";
+            string fastaName =  @"TMT_test\mouseTMT.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            engine.Run();
 
             // iterate through each scan
             foreach (var scan in scans)
