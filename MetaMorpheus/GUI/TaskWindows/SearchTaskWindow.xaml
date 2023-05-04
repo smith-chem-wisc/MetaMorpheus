@@ -259,11 +259,6 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
-                                        <TreeView.ItemContainerStyle>
-                                            <Style TargetType="TreeViewItem">
-                                                <Setter Property="IsExpanded" Value="{Binding Expanded}" />
-                                            </Style>
-                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="5 0 3 0">
@@ -293,11 +288,6 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
-                                        <TreeView.ItemContainerStyle>
-                                            <Style TargetType="TreeViewItem">
-                                                <Setter Property="IsExpanded" Value="{Binding Expanded}" />
-                                            </Style>
-                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
                                 <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
