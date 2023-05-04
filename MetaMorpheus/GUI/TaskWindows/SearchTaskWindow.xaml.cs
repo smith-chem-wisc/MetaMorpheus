@@ -839,6 +839,7 @@ namespace MetaMorpheusGUI
             {
                 mod.Use = mod.DisplayName.Contains(selectedModId);
             }
+            UpdateModSelectionGrid();
         }
 
         //this one is used by the GUI
