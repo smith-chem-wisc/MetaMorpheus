@@ -36,6 +36,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private string _defaultMultiplexType = "TMT10";
 
         internal SearchTask TheTask { get; private set; }
 
@@ -153,7 +154,7 @@ namespace MetaMorpheusGUI
             {
                 MultiplexComboBox.Items.Add(labelModType);
             }
-            ProteaseComboBox.SelectedItem = "TMT10";
+            MultiplexComboBox.SelectedItem = _defaultMultiplexType;
         }
 
         /// <summary>
@@ -187,7 +188,7 @@ namespace MetaMorpheusGUI
             CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification;
             CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
             CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
-            MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId;
+            MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
             // If Spectral Recovery is enabled
             if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
             {
@@ -827,13 +828,15 @@ namespace MetaMorpheusGUI
 
         /// <summary>
         /// When a new multiplex label is selected from the drop-down menu (MultiplexComboBox),
-        /// the fixed mod tree view is updated so that only those mods are selected
+        /// the fixed mod tree view is updated so that only those mods are selected. 
         /// </summary>
-        private void MultiplexSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        private void MultiplexUpdate(object sender, RoutedEventArgs routedEventArgs)
         {
             ModTypeForTreeViewModel multiplexModType = FixedModTypeForTreeViewObservableCollection
                 .FirstOrDefault(b => b.DisplayName.Equals("Multiplex Label"));
-            string selectedModId = (string)MultiplexComboBox.SelectedItem;
+            string selectedModId = CheckBoxMultiplex.IsChecked.Value
+                ? (string)MultiplexComboBox.SelectedItem
+                : "NoMatchingMod";
 
             foreach (ModForTreeViewModel mod in multiplexModType.Children)
             {

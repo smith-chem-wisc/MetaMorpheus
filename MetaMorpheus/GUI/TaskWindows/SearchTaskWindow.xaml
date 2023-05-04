@@ -382,7 +382,7 @@
                                     <ToolTip Content="SILAC quantification is performed using FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxMultiplex" Content="Multiplex Quantification: Quantify peptides labeled with isobaric tags" GroupName="QuantType" Click="CheckBoxMultiplex_Checked">
+                            <RadioButton x:Name="CheckBoxMultiplex" Content="Multiplex Quantification: Quantify peptides labeled with isobaric tags" GroupName="QuantType" Unchecked="MultiplexUpdate" Checked="MultiplexUpdate">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Intensity of reporter ions are reported as additional columns in AllPeptides.psmtsv and AllPSMs.psmtsv" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                 </ToolTipService.ToolTip>
@@ -490,8 +490,12 @@
 
                             <!-- Multiplex Options -->
                             <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
-                                <Label x:Name="MultiplexTag" Content="Label Type:" Width="75" />
-                                <ComboBox x:Name="MultiplexComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" SelectionChanged="MultiplexSpecificUpdate">
+                                <Label x:Name="MultiplexTag" Content="Label Type:" Width="75" 
+                                       Visibility="{Binding IsChecked, ElementName=CheckBoxMultiplex, Converter={StaticResource bool2VisConverter}}"/>
+                                <ComboBox x:Name="MultiplexComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" 
+                                          SelectionChanged="MultiplexUpdate"
+                                          IsEnabled="{Binding IsChecked, ElementName=CheckBoxMultiplex}"
+                                          Visibility="{Binding IsChecked, ElementName=CheckBoxMultiplex, Converter={StaticResource bool2VisConverter}}">
                                     <ComboBox.ToolTip>
                                         <TextBlock>
                                             Isobaric label used for multiplexing
