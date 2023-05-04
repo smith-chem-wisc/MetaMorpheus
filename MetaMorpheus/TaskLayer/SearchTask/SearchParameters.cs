@@ -74,6 +74,8 @@ namespace TaskLayer
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoLabelFreeQuantification { get; set; }
+        public bool DoMultiplexQuantification { get; set; }
+        public string MultiplexModId { get; set; }
         public bool DoSpectralRecovery { get; set; }
         public SearchType SearchType { get; set; }
         public List<FdrCategory> LocalFdrCategories { get; set; }

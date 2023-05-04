@@ -97,7 +97,7 @@ namespace TaskLayer
                 UpdateSpectralLibrary();
             }
           
-            WriteQuantificationResults();
+            WriteFlashLFQResults();
 
             if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
             {
@@ -208,15 +208,18 @@ namespace TaskLayer
 
         private void QuantificationAnalysis()
         {
-            if (!Parameters.SearchParameters.DoLabelFreeQuantification)
+            if (Parameters.SearchParameters.DoMultiplexQuantification)
             {
-                // Determine if multiplex labeling was used. 
-                // TODO: Fix this so that users can select the label to use from quantification in search parameters
                 List<Modification> multiplexMods = Parameters.FixedModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
                 if (multiplexMods.IsNotNullOrEmpty())
                 {
                     Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
                 }
+                return;
+            }
+
+            if (!Parameters.SearchParameters.DoLabelFreeQuantification)
+            {
                 return;
             }
 
@@ -569,7 +572,8 @@ namespace TaskLayer
         /// <param name="filePath">Full file path, up to and including the filename and extensioh. </param>
         protected void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath)
         {
-            if (Parameters.MultiplexModification != null &&
+            if (Parameters.SearchParameters.DoMultiplexQuantification &&
+                Parameters.MultiplexModification != null &&
                 psms.Any(p => p.BestMatchingPeptides
                     .SelectMany(pwsm => pwsm.Peptide.AllModsOneIsNterminus.Values)
                     .Any(mod => mod.Equals(Parameters.MultiplexModification))))
@@ -886,7 +890,7 @@ namespace TaskLayer
             }
         }
 
-        private void WriteQuantificationResults()
+        private void WriteFlashLFQResults()
         {
             if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
             {

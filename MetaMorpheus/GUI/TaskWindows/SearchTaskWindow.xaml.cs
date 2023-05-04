@@ -17,6 +17,8 @@ using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using GuiFunctions;
+using Proteomics;
+using System.Threading.Tasks;
 
 namespace MetaMorpheusGUI
 {
@@ -145,6 +147,13 @@ namespace MetaMorpheusGUI
             {
                 LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             }
+
+            foreach (string labelModType in GlobalVariables.AllModsKnown.Where(m => m.ModificationType.Equals("Multiplex Label"))
+                         .Select(m => m.OriginalId).Distinct())
+            {
+                MultiplexComboBox.Items.Add(labelModType);
+            }
+            ProteaseComboBox.SelectedItem = "TMT10";
         }
 
         /// <summary>
@@ -177,6 +186,8 @@ namespace MetaMorpheusGUI
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification;
             CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
+            MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId;
             // If Spectral Recovery is enabled
             if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
             {
@@ -598,6 +609,8 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
+            TheTask.SearchParameters.DoMultiplexQuantification = CheckBoxMultiplex.IsChecked.Value;
+            TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
@@ -809,6 +822,22 @@ namespace MetaMorpheusGUI
                 AddCompIonCheckBox.IsChecked = false;
                 NTerminalIons.IsChecked = true;
                 CTerminalIons.IsChecked = true;
+            }
+        }
+
+        /// <summary>
+        /// When a new multiplex label is selected from the drop-down menu (MultiplexComboBox),
+        /// the fixed mod tree view is updated so that only those mods are selected
+        /// </summary>
+        private void MultiplexSpecificUpdate(object sender, SelectionChangedEventArgs e)
+        {
+            ModTypeForTreeViewModel multiplexModType = FixedModTypeForTreeViewObservableCollection
+                .FirstOrDefault(b => b.DisplayName.Equals("Multiplex Label"));
+            string selectedModId = (string)MultiplexComboBox.SelectedItem;
+
+            foreach (ModForTreeViewModel mod in multiplexModType.Children)
+            {
+                mod.Use = mod.DisplayName.Contains(selectedModId);
             }
         }
 
@@ -1266,6 +1295,11 @@ namespace MetaMorpheusGUI
         private void CheckBoxSILAC_Checked(object sender, RoutedEventArgs e)
         {
             CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
+        }
+
+        private void CheckBoxMultiplex_Checked(object sender, RoutedEventArgs e)
+        {
+
         }
 
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
