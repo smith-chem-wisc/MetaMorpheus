@@ -115,17 +115,6 @@ namespace TaskLayer
             return null;
         }
 
-        private void MultiplexAnalysis()
-        {
-            List<Modification> multiplexMods = Parameters.VariableModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
-            multiplexMods.AddRange(Parameters.VariableModifications.Where(m => m.ModificationType == "Multiplex Label"));
-            if (multiplexMods.IsNotNullOrEmpty())
-            {
-                Modification modForAnalysis = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
-
-            }
-        }
-
         /// <summary>
         /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
