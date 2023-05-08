@@ -565,7 +565,7 @@ namespace TaskLayer
                 Parameters.MultiplexModification != null &&
                 psms.Any(p => p.BestMatchingPeptides
                     .SelectMany(pwsm => pwsm.Peptide.AllModsOneIsNterminus.Values)
-                    .Any(mod => mod.Equals(Parameters.MultiplexModification))))
+                    .Any(mod => mod.OriginalId.Equals(Parameters.MultiplexModification.OriginalId))))
             {
                 WritePsmPlusMultiplexIons(psms, filePath);
             }
@@ -1254,7 +1254,7 @@ namespace TaskLayer
 
         private void WritePsmPlusMultiplexIons(IEnumerable<PeptideSpectralMatch> psms, string filePath)
         {
-            PpmTolerance ionTolerance = new PpmTolerance(20);
+            PpmTolerance ionTolerance = new PpmTolerance(10);
             double[] reporterIonMzs = Parameters.MultiplexModification.DiagnosticIons.First().Value
                 .Select(x => x.ToMz(1))
                 .OrderBy(x => x)
@@ -1280,18 +1280,17 @@ namespace TaskLayer
 
         private string GetMultiplexHeader()
         {
+            List<string> ionLabels = new();
+            var labelGroups = Parameters.MultiplexModification.DiagnosticIons.First().Value
+                .Select(x => x.ToMz(1))
+                .OrderBy(x => x)
+                .GroupBy(x => (int)Math.Floor(x));
+
             if (Parameters.MultiplexModification.IdWithMotif.Contains("TMT"))
             {
-                var labelGroups = Parameters.MultiplexModification.DiagnosticIons.First().Value
-                    .Select(x => x.ToMz(1))
-                    .OrderBy(x => x)
-                    .GroupBy(x => (int)Math.Floor(x));
-
-                List<string> ionLabels = new();
-
-                // TMT 126 is no heavy isotopes. TMT 127N has one N15, TMT127C has one C15.
+                // TMT 126 contains no heavy isotopes. TMT 127N has one N15, TMT127C has one C15.
                 // The "N" labels are slightly lighter than the "C" labels. 
-                // Labels for the diagnostic ions are created using that information
+                // Labels for the diagnostic ions are created accordingly
                 foreach (var group in labelGroups)
                 {
                     if (group.Count() == 1)
@@ -1303,16 +1302,23 @@ namespace TaskLayer
                         ionLabels.Add(group.Key + "N");
                         ionLabels.Add(group.Key + "C");
                     }
+                }
+            }
+            else
+            {
+                foreach (var group in labelGroups)
+                {
+                    if (group.Count() == 1)
+                    {
+                        ionLabels.Add(group.Key.ToString());
+                    }
                     else
                     {
-                        ionLabels.AddRange(group.Select(x => x.ToString(CultureInfo.CurrentCulture)));
+                        ionLabels.AddRange(group.Select(mz => Math.Round(mz, 3).ToString(CultureInfo.CurrentCulture)));
                     }
                 }
-
-                return String.Join('\t', ionLabels);
             }
-
-            throw new NotImplementedException();
+            return String.Join('\t', ionLabels);
         }
 
         public static double[] GetMultiplexIonIntensities(MzSpectrum scan, double[] theoreticalIonMzs, Tolerance tolerance)

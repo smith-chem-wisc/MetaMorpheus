@@ -126,6 +126,41 @@ namespace Test
             Assert.AreEqual(
                 PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
                 new double[] { 2, 4, 6, 0, 0 });
+
+            // This test uses values from a 12-plex DiLeu experiment
+            ionMzs = new double[] { 117.13147, 117.13731, 117.14363, 118.14067, 118.14699, 118.15283 };
+            fakeSpectrum = new MzSpectrum(
+                mz: new double[] { 
+                    117.131741292845, // 1
+                    117.134464401653,
+                    117.137487573882, // 2
+                    117.141610419051,
+                    117.143971287762, // 3
+                    117.146374792442,
+                    118.138548390966,
+                    118.140942895911, // 4
+                    118.147293426491, // 5
+                    118.153027983766, // 6
+                    118.177848927571
+                },
+                intensities: new double[]
+                {
+                    1,
+                    0,
+                    2,
+                    0, 
+                    3,
+                    0,
+                    0,
+                    4,
+                    5,
+                    6,
+                    0
+                },
+                shouldCopy: false);
+            Assert.AreEqual(
+                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
+                new double[] { 1, 2, 3, 4, 5, 6 });
         }
 
         [Test]
@@ -170,7 +205,6 @@ namespace Test
             var searchTask = Toml.ReadFile<SearchTask>(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\TMT-Task1-SearchTaskconfig.toml"),
                 MetaMorpheusTask.tomlConfig);
-            searchTask.SearchParameters.DoLabelFreeQuantification = false;
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
             string mzmlName = @"TMT_test\VA084TQ_6.mzML";
@@ -193,6 +227,55 @@ namespace Test
                 channelSum127N += Double.Parse(peaksResults[i].Trim().Split('\t')[^10]);
             }
             Assert.That(channelSum127N, Is.EqualTo(577226.336).Within(0.001));
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestDiLeuQuantificationOutput()
+        {
+            var searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\DiLeu-12plex-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
+            string mzmlName = @"TMT_test\DiLeu_Slice_PXD029269.mzML";
+            string fastaName = @"TMT_test\DiLeuSlice.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestDiLeuOutput");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            engine.Run();
+
+            string[] peaksResults = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPeptides.psmtsv")).ToArray();
+            Assert.That(peaksResults.Length == 2);
+
+            string[] header = peaksResults[0].Trim().Split('\t');
+            string[] ionLabelsInHeader = header[^12..]; // Last 11 columns should be the TMT labels
+            Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[]
+                { "115.125", "115.131", "116.128", "116.134", "116.14", "117.131", "117.137", "117.144", "118.135", "118.141", "118.147", "118.153" }));
+
+            double ionSum = peaksResults[1].Trim().Split('\t')[^12..].Select(s => double.Parse(s)).Sum();
+            Assert.That(ionSum, Is.EqualTo(173357).Within(1));
+
+            Directory.Delete(outputFolder, true);
+
+            // Same data as above, but here we're pretending that DiLeu 4-plex was used
+            searchTask = Toml.ReadFile<SearchTask>(
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TMT_test\DiLeu-4plex-Task1-SearchTaskconfig.toml"),
+                MetaMorpheusTask.tomlConfig);
+            taskList = new List<(string, MetaMorpheusTask)> { ("search", searchTask) };
+            engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            engine.Run();
+
+            peaksResults = File.ReadAllLines(Path.Combine(outputFolder, "search", "AllPeptides.psmtsv")).ToArray();
+            Assert.That(peaksResults.Length == 2);
+
+            ionLabelsInHeader = peaksResults[0].Trim().Split('\t')[^4..];
+            Assert.That(ionLabelsInHeader, Is.EquivalentTo(new string[] {"115", "116", "117", "118"}));
+
+            ionSum = peaksResults[1].Trim().Split('\t')[^4..].Select(s => double.Parse(s)).Sum();
+            Assert.That(ionSum, Is.EqualTo(115537).Within(1));
+
+            Directory.Delete(outputFolder, true);
         }
 
         [Test]
@@ -263,7 +346,6 @@ namespace Test
 
         [Test]
         [TestCase("C5 N2 H12 C{13}1", 114.110679698, true)]
-        //[TestCase("C4 N2 H12 C{13}2", 115.114034533, true)] this is old style (ABI or Thermo, don't know). no longer used
         [TestCase("C5 C{13}1 N1 N{15}1 H12", 115.107714592, true)]
         [TestCase("C4 N1 H12 C{13}2 N{15}1", 116.111069427, true)]
         [TestCase("C3 N1 H12 C{13}3 N{15}1", 117.114424262, true)]
@@ -271,6 +353,7 @@ namespace Test
         [TestCase("C4 N1O1 H12 C{13}3 N{15}1", 144.102062415, false)]
         [TestCase("C7 N3O3 H24 C{13}7 N{15}1", 304.205359390, false)]//for tmt 8-plex 113, 114, 116, 117
         [TestCase("C8 N2O3 H24 C{13}6 N{15}2", 304.199039449, false)]//for tmt 8-plex 115, 118, 119, 121
+        //[TestCase("C4 N2 H12 C{13}2", 115.114034533, true)] this is old style (ABI or Thermo, don't know). no longer used
         public static void TestChemicalFormulaWithIsotopes_iTRAQ(string formula, double mass, bool mz)
         {
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
