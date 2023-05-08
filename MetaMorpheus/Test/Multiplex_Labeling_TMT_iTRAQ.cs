@@ -100,6 +100,7 @@ namespace Test
             double[] ionMzs = { 1, 2, 3, 4, 5 };
             Tolerance tol = new PpmTolerance(10);
 
+            // 1-to-1 concordance between theoretical and observed diagnostic ions
             MzSpectrum fakeSpectrum = new MzSpectrum(
                 mz: new double[] { 1, 2, 3, 4, 5 },
                 intensities: new double[] { 2, 4, 6, 8, 10 },
@@ -108,13 +109,23 @@ namespace Test
                 PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
                 fakeSpectrum.YArray);
 
+            // Every other diagnostic ion is present in spectrum
             fakeSpectrum = new MzSpectrum(
                 mz: new double[] { 1, 2.5, 3, 4.5, 5 },
                 intensities: new double[] { 2, 4, 6, 8, 10 },
                 shouldCopy: false);
             Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol), 
-                new double[] { 2, 0 ,6, 0 , 10}); 
+                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
+                new double[] { 2, 0, 6, 0, 10 });
+
+            // Last two diagnostic ions (highest m/z) are not observed
+            fakeSpectrum = new MzSpectrum(
+                mz: new double[] { 1, 2, 3 },
+                intensities: new double[] { 2, 4, 6 },
+                shouldCopy: false);
+            Assert.AreEqual(
+                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
+                new double[] { 2, 4, 6, 0, 0 });
         }
 
         [Test]

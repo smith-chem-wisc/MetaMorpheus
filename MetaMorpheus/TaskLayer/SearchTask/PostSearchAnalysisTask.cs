@@ -1318,12 +1318,13 @@ namespace TaskLayer
         public static double[] GetMultiplexIonIntensities(MzSpectrum scan, double[] theoreticalIonMzs, Tolerance tolerance)
         {
             int peakIndex = scan.GetClosestPeakIndex(theoreticalIonMzs[0]);
-            int lastPeakIndex = scan.GetClosestPeakIndex(theoreticalIonMzs.Last()) + 1;
+            int lastPeakIndex = Math.Min(scan.GetClosestPeakIndex(theoreticalIonMzs.Last()) + 1, scan.XArray.Length - 1);
             double[] ionIntensities = new double[theoreticalIonMzs.Length];
             
             for (int ionIndex = 0; ionIndex < ionIntensities.Length; ionIndex++)
             {
-                while (scan.XArray[peakIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[ionIndex]))
+                while (peakIndex <= lastPeakIndex && 
+                       scan.XArray[peakIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[ionIndex]))
                 {
                     peakIndex++;
                 }
