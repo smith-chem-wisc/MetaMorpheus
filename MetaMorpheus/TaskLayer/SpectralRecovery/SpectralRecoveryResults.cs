@@ -86,7 +86,7 @@ namespace TaskLayer.SpectralRecovery
                 PeptideScoreDict["fileName"].Add(spectraFile.FilenameWithoutExtension);
                 var peaksForFile = BestMbrMatches
                     .Select(kvp => kvp.Key)
-                    .Where(p => p.SpectraFileInfo == spectraFile && p.Identifications.Any())
+                    .Where(p => p.SpectraFileInfo.Equals(spectraFile) && p.Identifications.Any())
                     .ToDictionary(p => p.Identifications.First().ModifiedSequence, p => p);
 
                 IEnumerable<string> peptidesNotInFile = PeptideScoreDict.Keys.Except(peaksForFile.Keys);
@@ -131,13 +131,12 @@ namespace TaskLayer.SpectralRecovery
 
 
             using StreamWriter output = new StreamWriter(fullSeqPath);
-            
             output.WriteLine(PeaksTabSeparatedHeader);
 
             foreach (var peak in orderedPeaks)
             {
                 string spectralContrastAngle = 
-                    BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch) && mbrSpectralMatch.SpectralAngle > -1
+                    BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch) && mbrSpectralMatch != null && mbrSpectralMatch.SpectralAngle > -1
                     ? mbrSpectralMatch.SpectralAngle.ToString()
                     : "Spectrum Not Found";
                 

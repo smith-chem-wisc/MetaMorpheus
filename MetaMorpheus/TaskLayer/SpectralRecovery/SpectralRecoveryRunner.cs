@@ -114,7 +114,10 @@ namespace TaskLayer.SpectralRecovery
                 AssignEstimatedPsmQvalue(bestMbrMatches, allPsms);
                 FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
                 AssignEstimatedPsmPepQValue(bestMbrMatches, allPsms);
-                foreach (SpectralRecoveryPSM match in bestMbrMatches.Values) match.FindOriginalPsm(allPsms);
+                foreach (SpectralRecoveryPSM match in bestMbrMatches.Values.Where(m => m != null))
+                {
+                    match.FindOriginalPsm(allPsms);
+                }
             }
 
             Directory.CreateDirectory(Path.Join(parameters.OutputFolder, SpectralRecoveryFolder));
