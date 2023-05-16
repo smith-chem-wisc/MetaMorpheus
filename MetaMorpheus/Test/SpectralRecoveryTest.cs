@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
+using EngineLayer.SpectralRecovery;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
@@ -13,7 +14,7 @@ using System.Text;
 using Easy.Common.Extensions;
 using FlashLFQ;
 using TaskLayer;
-using TaskLayer.MbrAnalysis;
+using TaskLayer.SpectralRecovery;
 
 namespace Test
 {
@@ -130,7 +131,6 @@ namespace Test
         [Test]
         public static void SpectralRecoveryPostSearchAnalysisTest()
         {
-
             List<string> warnings;
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput\SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
@@ -263,7 +263,7 @@ namespace Test
             {
                 PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
 
-                PeptideSpectralMatch[] peptideSpectralMatches =
+                SpectralRecoveryPSM[] peptideSpectralMatches =
                     mcse.SearchAroundPeak(pwsm, null, allPsmsArray[5].ScanRetentionTime, allPsmsArray[5].ScanPrecursorCharge).ToArray();
 
                 Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);

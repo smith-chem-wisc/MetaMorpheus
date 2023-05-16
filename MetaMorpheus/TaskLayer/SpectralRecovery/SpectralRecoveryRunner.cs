@@ -1,8 +1,7 @@
 ﻿using EngineLayer;
-using EngineLayer.ClassicSearch;
+using EngineLayer.SpectralRecovery;
 using EngineLayer.FdrAnalysis;
 using FlashLFQ;
-using MassSpectrometry;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -13,12 +12,11 @@ using System.Collections.Concurrent;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 
-namespace TaskLayer.MbrAnalysis
+namespace TaskLayer.SpectralRecovery
 {
-    
     public static class SpectralRecoveryRunner
     {
-        public const string spectralRecoveryFolder = "SpectralRecovery";
+        public const string SpectralRecoveryFolder = "SpectralRecovery";
 
         /// <summary>
         /// Performs secondary analysis of MBR results by searching acceptor files for candidate spectra,
@@ -51,14 +49,13 @@ namespace TaskLayer.MbrAnalysis
             {
                 List<ChromatographicPeak> fileSpecificMbrPeaks =
                     parameters.FlashLfqResults.Peaks[spectraFile].Where(p => p.IsMbrPeak).ToList();
-                if (fileSpecificMbrPeaks == null || (!fileSpecificMbrPeaks.Any())) break;
+                if (!fileSpecificMbrPeaks.Any()) break;
 
                 MyFileManager myFileManager = new(true);
 
                 string spectralLibraryFile = Directory
                     .GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories)
-                    .Where(p => p.Contains("spectralLibrary"))
-                    .First()
+                    .First(p => p.Contains("spectralLibrary"))
                     .ToString();
                 string spectralLibraryPath = Path.Combine(parameters.OutputFolder, spectralLibraryFile);
                 SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
@@ -80,24 +77,23 @@ namespace TaskLayer.MbrAnalysis
                     for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
                     {
                         ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
-                        PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p =>
-                            p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).FirstOrDefault();
+                        PeptideSpectralMatch bestDonorPsm = allPeptides.FirstOrDefault(p =>
+                            p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence);
                         if (bestDonorPsm == null)
                         {
                             break;
                         }
                         PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
 
-                        List<PeptideSpectralMatch> peptideSpectralMatches = mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak);
+                        List<SpectralRecoveryPSM> peptideSpectralMatches = mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak);
 
                         if (peptideSpectralMatches == null || !peptideSpectralMatches.Any())
                         {
-                            bestMbrMatches.TryAdd(mbrPeak, new SpectralRecoveryPSM(null, mbrPeak));
+                            bestMbrMatches.TryAdd(mbrPeak, null);
                         }
                         else
                         {
-                            bestMbrMatches.TryAdd(mbrPeak,
-                                new SpectralRecoveryPSM(BestPsmForMbrPeak(peptideSpectralMatches), mbrPeak));
+                            bestMbrMatches.TryAdd(mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches));
                         }
                     }
                 });
@@ -121,7 +117,7 @@ namespace TaskLayer.MbrAnalysis
                 foreach (SpectralRecoveryPSM match in bestMbrMatches.Values) match.FindOriginalPsm(allPsms);
             }
 
-            Directory.CreateDirectory(Path.Join(parameters.OutputFolder, spectralRecoveryFolder));
+            Directory.CreateDirectory(Path.Join(parameters.OutputFolder, SpectralRecoveryFolder));
             WriteSpectralRecoveryPsmResults(bestMbrMatches, parameters);
 
             return new SpectralRecoveryResults(bestMbrMatches, parameters.FlashLfqResults);
@@ -159,23 +155,19 @@ namespace TaskLayer.MbrAnalysis
             return peptides;
         }
 
-        private static PeptideSpectralMatch BestPsmForMbrPeak(IEnumerable<PeptideSpectralMatch> peptideSpectralMatches)
+        private static SpectralRecoveryPSM BestPsmForMbrPeak(IEnumerable<SpectralRecoveryPSM> SpectralRecoveryPSMes)
         {
-            List<PeptideSpectralMatch> nonNullPsms = peptideSpectralMatches.Where(p => p != null).ToList();
+            List<SpectralRecoveryPSM> nonNullPsms = SpectralRecoveryPSMes.Where(p => p != null).ToList();
 
             if (nonNullPsms.Any())
             {
                 // Setting Qvalue, QValueNotch, PEP, and PEP_Qvalue equal to 0 is necessary for MetaDraw to read the .psmtsv
-                foreach (PeptideSpectralMatch psm in nonNullPsms)
+                foreach (SpectralRecoveryPSM psm in nonNullPsms)
                 {
                     psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
                 }
-                if (nonNullPsms.Select(p => p.SpectralAngle).Any(a => a > -1))
-                {
-                    double maxSpectralAngle = nonNullPsms.Select(p => p.SpectralAngle).Max();
-                    return nonNullPsms.Where(p => p.SpectralAngle == maxSpectralAngle).FirstOrDefault();
-                }
-                return nonNullPsms.FirstOrDefault();
+
+                return nonNullPsms.MaxBy(p => p.SpectralAngle);
             }
             return null;
         }
@@ -187,21 +179,21 @@ namespace TaskLayer.MbrAnalysis
 
             foreach (SpectralRecoveryPSM match in bestMbrMatches.Values)
             {
-                if (match.spectralLibraryMatch != null)
+                if (match != null)
                 {
                     int myIndex = 0;
-                    while (myIndex < (allScores.Length - 1) && allScores[myIndex] >= match.spectralLibraryMatch.Score)
+                    while (myIndex < (allScores.Length - 1) && allScores[myIndex] >= match.Score)
                     {
                         myIndex++;
                     }
                     if (myIndex == allScores.Length - 1)
                     {
-                        match.spectralLibraryMatch.FdrInfo.QValue = allQValues.Last();
+                        match.FdrInfo.QValue = allQValues.Last();
                     }
                     else
                     {
                         double estimatedQ = (allQValues[myIndex] + allQValues[myIndex + 1]) / 2;
-                        match.spectralLibraryMatch.FdrInfo.QValue = estimatedQ;
+                        match.FdrInfo.QValue = estimatedQ;
                     }
                 }
             }
@@ -210,7 +202,7 @@ namespace TaskLayer.MbrAnalysis
             PostSearchAnalysisParameters parameters, List<(string, CommonParameters)> fileSpecificParameters)
         {
             List<PeptideSpectralMatch> psms = bestMbrMatches.
-                Select(p => p.Value.spectralLibraryMatch).
+                Select(p => p.Value as PeptideSpectralMatch).
                 Where(v => v != null).
                 ToList();
             List<int>[] psmGroupIndices = PEP_Analysis_Cross_Validation.Get_PSM_Group_Indices(psms, 1);
@@ -253,7 +245,7 @@ namespace TaskLayer.MbrAnalysis
         private static void AssignEstimatedPsmPepQValue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
         {
             List<double> pepValues = bestMbrMatches. 
-                Select(p => p.Value.spectralLibraryMatch).
+                Select(p => p.Value).
                 Where(p => p != null).
                 OrderBy(p => p.FdrInfo.PEP).
                 Select(p => p.FdrInfo.PEP).
@@ -261,33 +253,33 @@ namespace TaskLayer.MbrAnalysis
 
             foreach (SpectralRecoveryPSM match in bestMbrMatches.Values)
             {
-                if (match.spectralLibraryMatch == null) continue;
+                if (match == null) continue;
 
                 int myIndex = 0;
-                while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= match.spectralLibraryMatch.FdrInfo.PEP)
+                while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= match.FdrInfo.PEP)
                 {
                     myIndex++;
                 }
                 if (myIndex == pepValues.Count - 1)
                 {
-                    match.spectralLibraryMatch.FdrInfo.PEP_QValue = pepValues.Last();
+                    match.FdrInfo.PEP_QValue = pepValues.Last();
                 }
                 else
                 {
                     double estimatedQ = (pepValues[myIndex - 1] + pepValues[myIndex]) / 2;
-                    match.spectralLibraryMatch.FdrInfo.PEP_QValue = estimatedQ;
+                    match.FdrInfo.PEP_QValue = estimatedQ;
                 }
             }
         }
 
         private static void WriteSpectralRecoveryPsmResults(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, PostSearchAnalysisParameters parameters)
         {
-            string mbrOutputPath = Path.Combine(Path.Join(parameters.OutputFolder, spectralRecoveryFolder), @"RecoveredSpectra.psmtsv");
+            string mbrOutputPath = Path.Combine(Path.Join(parameters.OutputFolder, SpectralRecoveryFolder), @"RecoveredSpectra.psmtsv");
             using (var output = new StreamWriter(mbrOutputPath))
             {
                 output.WriteLine(SpectralRecoveryPSM.TabSeparatedHeader);
                 IEnumerable<SpectralRecoveryPSM> orderedMatches = bestMbrMatches.Select(p => p.Value).
-                    Where(p => p.spectralLibraryMatch != null).OrderByDescending(p => p.spectralLibraryMatch.Score);
+                    Where(p => p != null).OrderByDescending(p => p.Score);
                 foreach (SpectralRecoveryPSM match in orderedMatches)
                 {
                     output.WriteLine(match.ToString());

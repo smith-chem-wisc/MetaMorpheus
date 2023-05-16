@@ -11,7 +11,7 @@ using FlashLFQ;
 using IsotopicEnvelope = MassSpectrometry.IsotopicEnvelope;
 
 
-namespace EngineLayer.ClassicSearch
+namespace EngineLayer.SpectralRecovery
 {
     public class MiniClassicSearchEngine
     {
@@ -73,7 +73,7 @@ namespace EngineLayer.ClassicSearch
         /// <param name="donorPwsm"> Donor peptide</param>
         /// <param name="peak"> Acceptor peak </param>
         /// <returns></returns>
-        public List<PeptideSpectralMatch> SearchAroundPeak(PeptideWithSetModifications donorPwsm,
+        public List<SpectralRecoveryPSM> SearchAroundPeak(PeptideWithSetModifications donorPwsm,
             ChromatographicPeak peak = null, double peakRetentionTime = -1, int peakCharge = -1)
         {
             if (peak?.Apex != null)
@@ -93,7 +93,7 @@ namespace EngineLayer.ClassicSearch
 
             Dictionary<DissociationType, List<Product>> targetFragmentsForEachDissociationType = CreateFragmentDictionary();
             List<RecoveredMs2ScanWithSpecificMass> acceptableScans = FindScansInWindow(donorPwsm.MonoisotopicMass, peakRetentionTime, peakCharge);
-            List<PeptideSpectralMatch> acceptablePsms = new();
+            List<SpectralRecoveryPSM> acceptablePsms = new();
             
             foreach (RecoveredMs2ScanWithSpecificMass scan in acceptableScans)
             {
@@ -119,15 +119,14 @@ namespace EngineLayer.ClassicSearch
                 // calculate the peptide's score
                 double thisScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan, matchedIons);
 
-                PeptideSpectralMatch psm = new PeptideSpectralMatch(donorPwsm, notch: -1, thisScore, scanIndex: -1,
-                    scan, _fileSpecificParameters, matchedIons);
+                SpectralRecoveryPSM psm = new SpectralRecoveryPSM(peak, donorPwsm, thisScore, scan, _fileSpecificParameters, matchedIons);
 
                 CalculateSpectralAngle(psm, donorSpectrum);
                 
                 acceptablePsms.Add(psm);
             }
 
-            foreach (PeptideSpectralMatch psm in acceptablePsms)
+            foreach (var psm in acceptablePsms)
             {
                 psm.ResolveAllAmbiguities();
             }
