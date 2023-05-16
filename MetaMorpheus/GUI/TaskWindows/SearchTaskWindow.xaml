@@ -457,6 +457,14 @@
                                     </Label.Visibility>
                                 </Label>
                             </StackPanel>
+                            <StackPanel Orientation="Horizontal"  Visibility="{Binding IsChecked, ElementName=CheckBoxLFQwSpectralRecovery, Converter={StaticResource bool2VisConverter}}">
+                                <TextBox x:Name="SpectralRecoveryWidthTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20">
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip Content="Half width of the retention time window in which spectral recovery is performed" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    </ToolTipService.ToolTip>
+                                </TextBox>
+                                <Label x:Name="SpectralRecoveryHalfWidthLabel" Content=" half width of the retention time search window for Spectral Recovery (min)"/>
+                            </StackPanel>
                             <CheckBox x:Name="CheckBoxMatchBetweenRuns" 
                                       Content="Match between runs"
                                       IsEnabled ="{Binding IsChecked, ElementName=CheckBoxLFQ}">

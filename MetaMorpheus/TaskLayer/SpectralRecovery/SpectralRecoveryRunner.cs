@@ -67,7 +67,8 @@ namespace TaskLayer.SpectralRecovery
                     fileSpecificParameters.
                         Where(t => t.FileName.Equals(spectraFile.FilenameWithoutExtension)).
                         Select(t => t.Parameters).FirstOrDefault(),
-                    spectraFile.FullFilePathWithExtension);
+                    spectraFile.FullFilePathWithExtension,
+                    parameters.SearchParameters.SpectralRecoveryWindowHalfWidth);
 
                 Parallel.ForEach(threads, (i) =>
                 {
