@@ -20,7 +20,15 @@ namespace EngineLayer
         public const double ToleranceForScoreDifferentiation = 1e-9;
         protected List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
 
-        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
+        public PeptideSpectralMatch(
+            PeptideWithSetModifications peptide,
+            int notch,
+            double score,
+            int scanIndex,
+            Ms2ScanWithSpecificMass scan,
+            CommonParameters commonParameters,
+            List<MatchedFragmentIon> matchedFragmentIons,
+            double xcorr = 0)
         {
             _BestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
             ScanIndex = scanIndex;
@@ -70,6 +78,11 @@ namespace EngineLayer
         public double ScanPrecursorMonoisotopicPeakMz { get; }
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; private set; }
+        /// <summary>
+        /// This refers to the index of the Ms2ScanWithSpecificMass within
+        /// the array. This array contains duplicate scans (for chimeras) and is
+        /// sorted by precursor mass (ascending.)
+        /// </summary>
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingPeptides.Count; } }
         public FdrInfo FdrInfo { get; private set; }

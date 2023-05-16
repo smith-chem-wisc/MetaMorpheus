@@ -6,12 +6,10 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Chemistry;
 using FlashLFQ;
 using IsotopicEnvelope = MassSpectrometry.IsotopicEnvelope;
-using ThermoFisher.CommonCore.Data.Business;
-using Easy.Common.Extensions;
+
 
 namespace EngineLayer.ClassicSearch
 {
@@ -24,15 +22,13 @@ namespace EngineLayer.ClassicSearch
         /// </summary>
         public double RetentionTimeWindowHalfWidth { get; }
 
-        // private fields
+        // no locks are implemented, because it's assumed that the the MsDataScans will not be modified in any way
+        // violate this assumption at your own peril!!!
+        private readonly MsDataScan[] _ms2DataScansByRetentionTime;
+        private readonly double[] _arrayOfMs2RTs; 
         private readonly CommonParameters _fileSpecificParameters;
         private readonly string _fullFilePath;
-        private readonly MsDataScan[] _ms2DataScansByRetentionTime;
-        // because the ms2DataScans aren't being modified (only read), the locks aren't strictly necessary
-        // however
-        private object[] _ms2DataScanLocks;
-        private readonly double[] _arrayOfMs2RTs;
-        
+
 
         /// <summary>
         /// Every instance of MCSE is specific to one file.
