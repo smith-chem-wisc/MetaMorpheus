@@ -23,6 +23,7 @@ namespace EngineLayer.SpectralRecovery
         /// to the theoretical precursor m/z. ClosestPrecursorPeak stores that info
         /// </summary>
         public MzPeak ClosestPrecursorPeak { get; }
+        public bool DeconvolutablePrecursor { get; }
         public PeptideWithSetModifications DonorPeptide { get; }
 
         public SpectralRecoveryPSM(
@@ -40,6 +41,17 @@ namespace EngineLayer.SpectralRecovery
             AcceptorPeak = acceptorPeak;
             DonorPeptide = peptide;
             ClosestPrecursorPeak = scan.PeakClosestToDonor;
+            DeconvolutablePrecursor = true;
+
+            //In cases where the precursor wasn't deconvoluted, the precursor mz and mass are set to 0 and 0 - z*1.008, respectively.
+            // This updates the precursor mz and mass using the ClosestPrecursorPeak mz
+            if (Math.Abs(ScanPrecursorMonoisotopicPeakMz) < 0.1)
+            {
+                DeconvolutablePrecursor = false;
+
+                ScanPrecursorMonoisotopicPeakMz = ClosestPrecursorPeak.Mz;
+                ScanPrecursorMass = ScanPrecursorMonoisotopicPeakMz.ToMass(AcceptorPeak.Apex.ChargeState);
+            }
         }
 
         public void FindOriginalPsm(List<PeptideSpectralMatch> originalSearchPsms)
@@ -67,22 +79,57 @@ namespace EngineLayer.SpectralRecovery
             IReadOnlyDictionary<string, int> modsToWritePruned)
         {
             // Get information from base PSM class
-            Dictionary<string, string> psmDictionary = DataDictionary(srPsm, modsToWritePruned);
+            Dictionary<string, string> psmDictionary = new();
 
-            // Populate fields specific to RecoveredPSMs
-            psmDictionary[PsmTsvHeader_SpectralRecovery.IsolationWindowCenter] = 
+            PsmTsvWriter.AddBasicMatchData(psmDictionary, srPsm);
+            AddSpectralRecoveryData(psmDictionary, srPsm);
+            PsmTsvWriter.AddPeptideSequenceData(psmDictionary, srPsm, modsToWritePruned);
+            PsmTsvWriter.AddMatchedIonsData(psmDictionary, srPsm?.MatchedFragmentIons);
+            PsmTsvWriter.AddMatchScoreData(psmDictionary, srPsm);
+
+            return psmDictionary;
+        }
+
+        /// <summary>
+        /// In cases where the precursor wasn't deconvoluted, the precursor mz and mass are 0 and 0 - z*1.008, respectively.
+        /// This updates the precursor mz and mass using the closest peak (m/z in ms1 closest to theoretical precursor mz.)
+        /// </summary>
+        /// <param name="psmDictionary"></param>
+        /// <param name="srPsm"></param>
+        private static void UpdatePrecursorInfo(Dictionary<string, string> psmDictionary,
+            SpectralRecoveryPSM srPsm)
+        {
+            if (psmDictionary[PsmTsvHeader.PrecursorMz].Equals("0") && srPsm.ClosestPrecursorPeak != null)
+            {
+                double closestMz = srPsm.ClosestPrecursorPeak.Mz;
+                double closestMass = closestMz.ToMass(srPsm.ScanPrecursorCharge);
+                psmDictionary[PsmTsvHeader.PrecursorMz] =
+                    (closestMz * -1.0).ToString(CultureInfo.InvariantCulture);
+                psmDictionary[PsmTsvHeader.PrecursorMass] = (closestMz.ToMass(srPsm.ScanPrecursorCharge)).ToString(CultureInfo.InvariantCulture);
+            }
+        }
+
+        /// <summary>
+        /// Populate fields specific to RecoveredPSMs
+        /// </summary>
+        /// <param name="psmDictionary"></param>
+        /// <param name="srPsm"></param>
+        /// <returns></returns>
+        private static void AddSpectralRecoveryData(Dictionary<string, string> psmDictionary,
+            SpectralRecoveryPSM srPsm)
+        {
+            psmDictionary[PsmTsvHeader_SpectralRecovery.IsolationWindowCenter] =
                 srPsm == null ? "" : srPsm.MsDataScan.IsolationMz.NullableToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorOffset] =
                 srPsm == null ? "" : CalculatePrecursorOffset(srPsm).NullableToString(CultureInfo.InvariantCulture);
-            psmDictionary[PsmTsvHeader_SpectralRecovery.IsolationWindowWidth] = 
+            psmDictionary[PsmTsvHeader_SpectralRecovery.IsolationWindowWidth] =
                 srPsm == null ? "" : srPsm.MsDataScan.IsolationMz.NullableToString(CultureInfo.InvariantCulture);
-            psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmQ] = 
+            psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmQ] =
                 srPsm?.OriginalSpectralMatch == null ? "" : srPsm.OriginalSpectralMatch.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmPEP] =
                 srPsm?.OriginalSpectralMatch == null ? "" : srPsm.OriginalSpectralMatch.FdrInfo.PEP.ToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmPEP_QValue] =
                 srPsm?.OriginalSpectralMatch == null ? "" : srPsm.OriginalSpectralMatch.FdrInfo.PEP_QValue.ToString(CultureInfo.InvariantCulture);
-            return psmDictionary;
         }
 
         private static double? CalculatePrecursorOffset(SpectralRecoveryPSM srPsm)
