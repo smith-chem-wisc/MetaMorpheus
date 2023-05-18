@@ -75,8 +75,8 @@ namespace EngineLayer
         public int ScanExperimentalPeaks { get; }
         public double TotalIonCurrent { get; }
         public int ScanPrecursorCharge { get; }
-        public double ScanPrecursorMonoisotopicPeakMz { get; }
-        public double ScanPrecursorMass { get; }
+        public double ScanPrecursorMonoisotopicPeakMz { get; internal set; }
+        public double ScanPrecursorMass { get; internal set; }
         public string FullFilePath { get; private set; }
         /// <summary>
         /// This refers to the index of the Ms2ScanWithSpecificMass within

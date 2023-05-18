@@ -390,18 +390,21 @@ namespace Test
         [Test]
         public static void SpectralRecoveryHeaderTest()
         {
-            string psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader().Trim();
-            StringBuilder sb = new();
-            sb.Append(psmHeader);
-            sb.Append('\t');
-            sb.Append("Initial Search Q-Value");
-            sb.Append('\t');
-            sb.Append("Initial Search PEP");
-            sb.Append('\t');
-            sb.Append("Initial Search PEP Q-Value");
+            string[] psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader().Trim().Split('\t');
 
-            Assert.AreEqual(sb.ToString(), SpectralRecoveryPSM.TabSeparatedHeader);
+            List<string> expectedHeader = new List<string>(psmHeader[..12]);
+            expectedHeader.AddRange( new List<string>{ 
+                "Peak Apex RT",
+                "Deconvolutable Precursor",
+                "Isolation Window Center (Th)",
+                "Precursor m/z - Isolation Center Distance (Th)",
+                "Isolation Window Width (Th)",
+                "Original Psm QValue",
+                "Original Psm PEP",
+                "Original Psm PEP_QValue"});
+            expectedHeader.AddRange(psmHeader[12..]);
 
+            Assert.AreEqual(String.Join('\t', expectedHeader), SpectralRecoveryPSM.TabSeparatedHeader);
         }
 
         [OneTimeTearDown]

@@ -91,25 +91,6 @@ namespace EngineLayer.SpectralRecovery
         }
 
         /// <summary>
-        /// In cases where the precursor wasn't deconvoluted, the precursor mz and mass are 0 and 0 - z*1.008, respectively.
-        /// This updates the precursor mz and mass using the closest peak (m/z in ms1 closest to theoretical precursor mz.)
-        /// </summary>
-        /// <param name="psmDictionary"></param>
-        /// <param name="srPsm"></param>
-        private static void UpdatePrecursorInfo(Dictionary<string, string> psmDictionary,
-            SpectralRecoveryPSM srPsm)
-        {
-            if (psmDictionary[PsmTsvHeader.PrecursorMz].Equals("0") && srPsm.ClosestPrecursorPeak != null)
-            {
-                double closestMz = srPsm.ClosestPrecursorPeak.Mz;
-                double closestMass = closestMz.ToMass(srPsm.ScanPrecursorCharge);
-                psmDictionary[PsmTsvHeader.PrecursorMz] =
-                    (closestMz * -1.0).ToString(CultureInfo.InvariantCulture);
-                psmDictionary[PsmTsvHeader.PrecursorMass] = (closestMz.ToMass(srPsm.ScanPrecursorCharge)).ToString(CultureInfo.InvariantCulture);
-            }
-        }
-
-        /// <summary>
         /// Populate fields specific to RecoveredPSMs
         /// </summary>
         /// <param name="psmDictionary"></param>
@@ -118,18 +99,29 @@ namespace EngineLayer.SpectralRecovery
         private static void AddSpectralRecoveryData(Dictionary<string, string> psmDictionary,
             SpectralRecoveryPSM srPsm)
         {
+            // Chromatographic Peak Info
+            psmDictionary[PsmTsvHeader_SpectralRecovery.PeakApexRt] = srPsm?.AcceptorPeak?.Apex == null 
+                ? " " 
+                : srPsm.AcceptorPeak.Apex.IndexedPeak.RetentionTime.ToString(CultureInfo.InvariantCulture);
+
+            // Scan Isolation Window info
+            psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorDeconvoluted] = srPsm == null 
+                ? " " 
+                : srPsm.DeconvolutablePrecursor ? "Y" : "N";
             psmDictionary[PsmTsvHeader_SpectralRecovery.IsolationWindowCenter] =
-                srPsm == null ? "" : srPsm.MsDataScan.IsolationMz.NullableToString(CultureInfo.InvariantCulture);
+                srPsm == null ? " " : srPsm.MsDataScan.IsolationMz.NullableToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorOffset] =
-                srPsm == null ? "" : CalculatePrecursorOffset(srPsm).NullableToString(CultureInfo.InvariantCulture);
+                srPsm == null ? " " : CalculatePrecursorOffset(srPsm).NullableToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.IsolationWindowWidth] =
-                srPsm == null ? "" : srPsm.MsDataScan.IsolationMz.NullableToString(CultureInfo.InvariantCulture);
+                srPsm == null ? " " : srPsm.MsDataScan.IsolationWidth.NullableToString(CultureInfo.InvariantCulture);
+
+            // Original Psm Info
             psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmQ] =
-                srPsm?.OriginalSpectralMatch == null ? "" : srPsm.OriginalSpectralMatch.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture);
+                srPsm?.OriginalSpectralMatch == null ? " " : srPsm.OriginalSpectralMatch.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmPEP] =
-                srPsm?.OriginalSpectralMatch == null ? "" : srPsm.OriginalSpectralMatch.FdrInfo.PEP.ToString(CultureInfo.InvariantCulture);
+                srPsm?.OriginalSpectralMatch == null ? " " : srPsm.OriginalSpectralMatch.FdrInfo.PEP.ToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmPEP_QValue] =
-                srPsm?.OriginalSpectralMatch == null ? "" : srPsm.OriginalSpectralMatch.FdrInfo.PEP_QValue.ToString(CultureInfo.InvariantCulture);
+                srPsm?.OriginalSpectralMatch == null ? " " : srPsm.OriginalSpectralMatch.FdrInfo.PEP_QValue.ToString(CultureInfo.InvariantCulture);
         }
 
         private static double? CalculatePrecursorOffset(SpectralRecoveryPSM srPsm)

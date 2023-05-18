@@ -117,12 +117,14 @@ namespace EngineLayer
 
     public static class PsmTsvHeader_SpectralRecovery
     {
+        public const string PeakApexRt = "Peak Apex RT";
+        public const string PrecursorDeconvoluted = "Deconvolutable Precursor";
+        public const string IsolationWindowCenter = "Isolation Window Center (Th)";
+        public const string PrecursorOffset = "Precursor m/z - Isolation Center Distance (Th)";
+        public const string IsolationWindowWidth = "Isolation Window Width (Th)";
         public const string OriginalPsmQ = "Original Psm QValue";
         public const string OriginalPsmPEP = "Original Psm PEP";
         public const string OriginalPsmPEP_QValue = "Original Psm PEP_QValue";
-        public const string IsolationWindowCenter = "Isolation Window Center (Th)";
-        public const string IsolationWindowWidth = "Isolation Window With (Th)";
-        public const string PrecursorOffset = "Precursor m/z - Isolation Center Distance (Th)";
 
         public static string NullableToString<T>(this Nullable<T> value, CultureInfo cultureInfo)
             where T : struct, IConvertible
