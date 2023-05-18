@@ -286,7 +286,7 @@ namespace TaskLayer.SpectralRecovery
                     Where(p => p != null).OrderByDescending(p => p.Score);
                 foreach (SpectralRecoveryPSM match in orderedMatches)
                 {
-                    output.WriteLine(match.ToString());
+                    output.WriteLine(match.ToString(parameters.SearchParameters.ModsToWriteSelection));
                 }
             }
         }

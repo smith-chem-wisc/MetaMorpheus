@@ -30,6 +30,7 @@ namespace Test
         private static List<string> rawSlices;
         private static List<DbForTask> databaseList;
         private static string outputFolder;
+        private static string narrowWindowOutputFolder;
         private static Dictionary<string, int[]> numSpectraPerFile;
 
         [OneTimeSetUp]
@@ -67,7 +68,10 @@ namespace Test
                 proteinList.Add(protein);
             }
 
-            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput"));
+            outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
+            narrowWindowOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"smallWindowSpectralRecoveryOutput");
+            Directory.CreateDirectory(outputFolder);
+            Directory.CreateDirectory(narrowWindowOutputFolder);
 
             numSpectraPerFile = new Dictionary<string, int[]> { { "K13_02ng_1min_frac1", new int[] { 8, 8 }
                 }, { "K13_20ng_1min_frac1", new int[] { 8, 8 } } };
@@ -76,7 +80,6 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\K13_20ng_1min_frac1.mzML") };
             databaseList = new List<DbForTask>() {new DbForTask(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta"), false) };
-            outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
 
             SearchTask searchTask = new SearchTask
             {
@@ -91,6 +94,7 @@ namespace Test
                 CommonParameters = new CommonParameters()
             };
             searchTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
+            searchTaskResults = searchTask.RunTask(narrowWindowOutputFolder, databaseList, rawSlices, "name");
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {
@@ -126,15 +130,18 @@ namespace Test
             };
 
             postSearchTask.Run();
+
+            postSearchTask.Parameters.OutputFolder = narrowWindowOutputFolder;
+            postSearchTask.Parameters.SearchParameters.SpectralRecoveryWindowHalfWidth = 0.1;
+            postSearchTask.Run();
         }
 
         [Test]
         public static void SpectralRecoveryPostSearchAnalysisTest()
         {
-            List<string> warnings;
-            string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput\SpectralRecovery\RecoveredSpectra.psmtsv");
+            string mbrAnalysisPath = Path.Combine(outputFolder, @"SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
-            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
+            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out var warnings);
             // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
             List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings);
 
@@ -142,9 +149,25 @@ namespace Test
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
             List<string> expectedMatches = mbrPsms.Select(p => p.BaseSeq).Intersect(expectedMbrPsms.Select(p => p.BaseSeq).ToList()).ToList();
 
+            // These assertions were written when spectral recovery depended on successful deconvolution to 
+            // consider a recovered spectra. It has since changed to consider any scan where the isolation window
+            // contains the precursor. This results in significantly more matches.
             Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 8);
             Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
+
+            // A spectrum is recovered for this peptide with the default spectral recovery window (1 minute).
+            // The ms2 scan is collected 0.15 minutes away from the RT apex
+            string testPeptideBaseSeq = "QVEPPAK";
+            Assert.True(matches02ng
+                .Any(p => p.BaseSeq.Equals(testPeptideBaseSeq)));
+            // The narrow window test should only search for ms2 scans within 0.1 minutes of the RT apex, so the test
+            // peptide should not be reported
+            string mbrAnalysisShortWindowPath = Path.Combine(narrowWindowOutputFolder, @"SpectralRecovery\RecoveredSpectra.psmtsv");
+            mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisShortWindowPath, out warnings);
+            Assert.False(mbrPsms
+                .Where(p => p.FileNameWithoutExtension.Equals("K13_02ng_1min_frac1"))
+                .Any(p => p.BaseSeq.Equals(testPeptideBaseSeq)));
 
             //TODO: Add test for recovering fdrInfo from original. Currently, PsmTsvReader doesn't support the new columns, so it's hard to test
         }

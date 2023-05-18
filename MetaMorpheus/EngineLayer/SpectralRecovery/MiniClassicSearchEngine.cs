@@ -29,7 +29,6 @@ namespace EngineLayer.SpectralRecovery
         private readonly CommonParameters _fileSpecificParameters;
         private readonly string _fullFilePath;
 
-
         /// <summary>
         /// Every instance of MCSE is specific to one file.
         /// </summary>
@@ -266,24 +265,56 @@ namespace EngineLayer.SpectralRecovery
     {
         public MzPeak PeakClosestToDonor { get; }
         public IsotopicEnvelope EnvelopeClosestToDonor { get; }
+        /// <summary>
+        /// Contains all masses in the precursor spectrum in +- 1 Th of the isolation window
+        /// </summary>
+        public double[] PrecursorMzArray { get; private set; }
+        /// <summary>
+        /// Contains all intensities in the precursor spectrum in +- 1 Th of the isolation window
+        /// </summary>
+        public double[] PrecursorIntensityArray { get; private set; }
         public int ScanIndex { get; }
- 
+
         public RecoveredMs2ScanWithSpecificMass(
-            MsDataScan dataScan, 
+            MsDataScan dataScan,
             int scanIndex,
-            double precursorMonoisotopicPeakMz, 
-            int precursorCharge, 
+            double precursorMonoisotopicPeakMz,
+            int precursorCharge,
             string fullFilePath,
-            CommonParameters commonParam, 
+            CommonParameters commonParam,
             MzPeak peakClosestToDonor,
             IsotopicEnvelope envelopeClosestToDonor,
-            IsotopicEnvelope[] neutralExperimentalFragments = null) :
+            IsotopicEnvelope[] neutralExperimentalFragments = null,
+            MsDataScan precursorScan = null) :
             base(dataScan, precursorMonoisotopicPeakMz, precursorCharge, fullFilePath, commonParam,
                 neutralExperimentalFragments)
         {
             PeakClosestToDonor = peakClosestToDonor;
             EnvelopeClosestToDonor = envelopeClosestToDonor;
             ScanIndex = scanIndex;
+            GetPrecursorSpectrumSnippet(precursorScan);
+        }
+
+        public void GetPrecursorSpectrumSnippet(MsDataScan precursorScan)
+        {
+            if (precursorScan == null || TheScan.IsolationMz == null) return;
+
+            double isolationCenter = (double)TheScan.IsolationMz;
+            double isolationWidth = TheScan.IsolationWidth ?? 2.0;
+            double minMz = isolationCenter - (isolationWidth / 2.0) - 1.0;
+            double maxMz = isolationCenter + (isolationWidth / 2.0) + 1.0;
+
+            int minIndx = precursorScan.MassSpectrum.GetClosestPeakIndex(minMz);
+            int maxIndx = precursorScan.MassSpectrum.GetClosestPeakIndex(maxMz);
+
+            int precursorArrayLength = maxIndx - minIndx + 1;
+            PrecursorMzArray = new double[precursorArrayLength];
+            PrecursorIntensityArray = new double[precursorArrayLength];
+            for (int i = minIndx; i <= maxIndx; i++)
+            {
+                PrecursorMzArray[i] = precursorScan.MassSpectrum.XArray[i];
+                PrecursorIntensityArray[i] = precursorScan.MassSpectrum.YArray[i];
+            }
         }
     }
 

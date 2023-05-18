@@ -170,7 +170,7 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned)
+        public virtual string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned)
         {
             return string.Join("\t", DataDictionary(this, ModstoWritePruned).Values);
         }
