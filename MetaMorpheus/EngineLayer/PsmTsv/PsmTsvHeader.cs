@@ -117,8 +117,10 @@ namespace EngineLayer
 
     public static class PsmTsvHeader_SpectralRecovery
     {
-        public const string PeakApexRt = "Peak Apex RT";
-        public const string PrecursorDeconvoluted = "Deconvolutable Precursor";
+        public const string PeakApexRt = "Peak Apex RT (min)";
+        public const string PeakShift = "RT Shift"; // Acceptor peak apex RT - predicted RT
+        public const string PrecursorDeconvolutedBool = "Deconvolutable Precursor";
+        public const string PrecursorIsotopicEnvelopeAngle = "Precursor Isotopic Envelope Score"; // Spectral Contrast angle exp vs theoretical
         public const string IsolationWindowCenter = "Isolation Window Center (Th)";
         public const string PrecursorOffset = "Precursor m/z - Isolation Center Distance (Th)";
         public const string IsolationWindowWidth = "Isolation Window Width (Th)";

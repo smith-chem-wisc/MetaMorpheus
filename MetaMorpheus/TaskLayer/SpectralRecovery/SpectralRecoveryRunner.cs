@@ -31,7 +31,6 @@ namespace TaskLayer.SpectralRecovery
             CommonParameters commonParameters,
             List<(string FileName, CommonParameters Parameters)> fileSpecificParameters)
         {
-
             if (!parameters.SearchParameters.DoSpectralRecovery | !parameters.SearchParameters.MatchBetweenRuns)
             {
                 return null;

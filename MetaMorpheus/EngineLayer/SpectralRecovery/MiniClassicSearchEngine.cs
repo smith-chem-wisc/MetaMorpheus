@@ -247,9 +247,12 @@ namespace EngineLayer.SpectralRecovery
                 }
             }
 
+            // TODO: Write more efficient method for getting precursors
+            // Also, should probably check the isotopic envelope at the apex peak.
             return new RecoveredMs2ScanWithSpecificMass(
                 ms2scan, scanIndex, closestDeconvolutedPrecursorMz, peakCharge, _fullFilePath, _fileSpecificParameters,
-                closestPrecursorPeak, closestPrecursorEnvelope, neutralExperimentalFragments: null); // neutralFragments are generated in constructor
+                closestPrecursorPeak, closestPrecursorEnvelope, neutralExperimentalFragments: null, // neutralFragments are generated in constructor
+                InstanceSpecificMsDataFile.GetOneBasedScan((int)ms2scan.OneBasedPrecursorScanNumber)); 
         }
 
         public void CalculateSpectralAngle(PeptideSpectralMatch psm, LibrarySpectrum donorSpectrum)
@@ -312,8 +315,8 @@ namespace EngineLayer.SpectralRecovery
             PrecursorIntensityArray = new double[precursorArrayLength];
             for (int i = minIndx; i <= maxIndx; i++)
             {
-                PrecursorMzArray[i] = precursorScan.MassSpectrum.XArray[i];
-                PrecursorIntensityArray[i] = precursorScan.MassSpectrum.YArray[i];
+                PrecursorMzArray[i - minIndx] = precursorScan.MassSpectrum.XArray[i];
+                PrecursorIntensityArray[i - minIndx] = precursorScan.MassSpectrum.YArray[i];
             }
         }
     }

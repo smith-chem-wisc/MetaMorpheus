@@ -256,7 +256,6 @@ namespace Test
             List<string> specLibs = new List<string> { targetSpectralLibrary, decoySpectralLibrary };
             SpectralLibrary sl = new(specLibs);
 
-
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
             Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
@@ -395,7 +394,9 @@ namespace Test
             List<string> expectedHeader = new List<string>(psmHeader[..12]);
             expectedHeader.AddRange( new List<string>{ 
                 "Peak Apex RT",
+                "RT Shift",
                 "Deconvolutable Precursor",
+                "Precursor Isotopic Envelope Score",
                 "Isolation Window Center (Th)",
                 "Precursor m/z - Isolation Center Distance (Th)",
                 "Isolation Window Width (Th)",
