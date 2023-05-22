@@ -41,7 +41,7 @@ namespace Test
             List<List<double>> massDifferences = new() { new List<double> { heavierArginine.MonoisotopicMass - heavyArginine.MonoisotopicMass } };
             MsDataFile myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new("PEPTIDER", "accession1");
@@ -112,7 +112,7 @@ namespace Test
 
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, largePeptideSoDoubleFirstPeakIntensityAndAddAnotherPeak: true);
             string mzmlName = @"silac.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("MPRTEINRSEQENEWITHAKANDANRANDSMSTFF", "accession1");
@@ -159,7 +159,7 @@ namespace Test
 
             myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences);
             mzmlName = @"silac.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             Directory.CreateDirectory(outputFolder);
             task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1");
@@ -190,12 +190,12 @@ namespace Test
 
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences1);
             string mzmlName = @"silac.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //create another file to test the handling is done correctly
             MsDataFile myMsDataFile2 = new TestDataFile(lightPeptide, massDifferences2);
             string mzmlName2 = @"silacPart2.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
@@ -247,7 +247,7 @@ namespace Test
             List<PeptideWithSetModifications> heavyPeptide = new List<PeptideWithSetModifications> { new PeptideWithSetModifications("PEPTIDEa", new Dictionary<string, Modification>()) }; //has the additional, but not the original
             massDifferences1 = new List<List<double>> { new List<double> { (lightLysine.MonoisotopicMass - heavyLysine.MonoisotopicMass) } }; //have to reset because it gets modified
             myMsDataFile1 = new TestDataFile(heavyPeptide, massDifferences1);
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //make an ambiguous database
             Protein theProtein2 = new Protein("PEPTLDEKPEPTIDEK", "accession2");
@@ -310,7 +310,7 @@ namespace Test
 
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
@@ -356,12 +356,12 @@ namespace Test
             string directoryName = "testDirectory";
             Directory.CreateDirectory(directoryName);
             string mzmlName = Path.Combine(directoryName, "silac.mzML");
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             //create another file to test the handling is done correctly
             MsDataFile myMsDataFile2 = new TestDataFile(mixedPeptide, massDifferences);
             string mzmlName2 = @"silacPart2.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPEPEPTKIDEKPEPTKIDEKA", "accession1");
@@ -404,7 +404,7 @@ namespace Test
             massDifferences = new List<List<double>> { new List<double> { massShift, massShift * -1 } }; // -6, +6
 
             myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
             task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -444,7 +444,7 @@ namespace Test
                 new List<double>{7,3} //implies the Ph is AT LEAST 0.7, which conflicts with 0.5 (H/L)
             };
             myMsDataFile1 = new TestDataFile(peptides, massDifferences, intensities);
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
             task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
@@ -497,7 +497,7 @@ namespace Test
             List<List<double>> massDifferences = new List<List<double>> { new List<double>() };
             MsDataFile myMsDataFile1 = new TestDataFile(mixedPeptide, massDifferences);
             string mzmlName = @"silac.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTKIDEK", "accession1");
@@ -554,7 +554,7 @@ namespace Test
             PeptideWithSetModifications sixPeptide = new PeptideWithSetModifications("PKEaPaTKIKDa", new Dictionary<string, Modification>());
             MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { zeroPeptide, onePeptide, sixPeptide, fivePeptide });
             string mzmlName = @"silac.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDERPEPTIDEKPKEKPKTKIKDKEK", "accession1");
@@ -599,7 +599,7 @@ namespace Test
             List<List<double>> precursorIntensities = new List<List<double>> { new List<double> { 5, 1.5, 4, 2, 3, 1.5, 2, 2, 0, 3 } };
             MsDataFile myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, precursorIntensities);
             string mzmlName = @"silac.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "SilacDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
@@ -615,7 +615,7 @@ namespace Test
             //TEST for blips, where two peaks are found for a single identification
             massDifferences = new List<List<double>> { new List<double> { (heavyLysine.MonoisotopicMass - lightLysine.MonoisotopicMass) } }; //must be reset, since the method below edits it
             myMsDataFile1 = new TestDataFile(lightPeptide, massDifferences, precursorIntensities, 2);
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
             task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("\t24500000\t12250000\t")); //intensities will be twice as large as before, but still the same ratio
