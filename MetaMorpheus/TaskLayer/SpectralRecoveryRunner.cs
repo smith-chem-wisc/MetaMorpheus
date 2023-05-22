@@ -11,8 +11,9 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Microsoft.ML;
 using Microsoft.ML.Data;
+using EngineLayer.SpectralRecovery;
 
-namespace TaskLayer.SpectralRecovery
+namespace TaskLayer
 {
     public static class SpectralRecoveryRunner
     {
@@ -185,7 +186,7 @@ namespace TaskLayer.SpectralRecovery
                 if (match != null)
                 {
                     int myIndex = 0;
-                    while (myIndex < (allScores.Length - 1) && allScores[myIndex] >= match.Score)
+                    while (myIndex < allScores.Length - 1 && allScores[myIndex] >= match.Score)
                     {
                         myIndex++;
                     }
@@ -247,7 +248,7 @@ namespace TaskLayer.SpectralRecovery
 
         private static void AssignEstimatedPsmPepQValue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
         {
-            List<double> pepValues = bestMbrMatches. 
+            List<double> pepValues = bestMbrMatches.
                 Select(p => p.Value).
                 Where(p => p != null).
                 OrderBy(p => p.FdrInfo.PEP).
@@ -259,7 +260,7 @@ namespace TaskLayer.SpectralRecovery
                 if (match == null) continue;
 
                 int myIndex = 0;
-                while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= match.FdrInfo.PEP)
+                while (myIndex < pepValues.Count - 1 && pepValues[myIndex] <= match.FdrInfo.PEP)
                 {
                     myIndex++;
                 }

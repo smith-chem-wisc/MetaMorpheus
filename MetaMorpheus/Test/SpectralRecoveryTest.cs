@@ -14,7 +14,7 @@ using System.Text;
 using Easy.Common.Extensions;
 using FlashLFQ;
 using TaskLayer;
-using TaskLayer.SpectralRecovery;
+
 
 namespace Test
 {
@@ -393,7 +393,7 @@ namespace Test
 
             List<string> expectedHeader = new List<string>(psmHeader[..12]);
             expectedHeader.AddRange( new List<string>{ 
-                "Peak Apex RT",
+                "Peak Apex RT (min)",
                 "RT Shift",
                 "Deconvolutable Precursor",
                 "Precursor Isotopic Envelope Score",

@@ -4,11 +4,14 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using Chemistry;
+using Easy.Common.Extensions;
 using FlashLFQ;
 using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using ThermoFisher.CommonCore.Data.Business;
+using Peptide = Proteomics.AminoAcidPolymer.Peptide;
 
 namespace EngineLayer.SpectralRecovery
 {
@@ -17,6 +20,7 @@ namespace EngineLayer.SpectralRecovery
         public ChromatographicPeak AcceptorPeak { get; set; }
 
         public PeptideSpectralMatch OriginalSpectralMatch { get; private set; }
+
         /// <summary>
         /// In spectral recovery, we see situations where a mass was selected for fragmentation
         /// but could not be deconvoluted. As a result, base.ScanPrecursorMass == 0. However, the
@@ -24,6 +28,7 @@ namespace EngineLayer.SpectralRecovery
         /// to the theoretical precursor m/z. ClosestPrecursorPeak stores that info
         /// </summary>
         public MzPeak ClosestPrecursorPeak { get; }
+
         public bool DeconvolutablePrecursor { get; }
         public PeptideWithSetModifications DonorPeptide { get; }
         public double? RetentionTimeShift { get; private set; }
@@ -45,8 +50,7 @@ namespace EngineLayer.SpectralRecovery
             DonorPeptide = peptide;
             ClosestPrecursorPeak = scan.PeakClosestToDonor;
             RetentionTimeShift = SetRetentionTimeShift(acceptorPeak);
-            PrecursorIsotpicEnvelopeAngle = GetIsotopeCorrelation(peptide, acceptorPeak.Apex.ChargeState,
-                scan.PrecursorMzArray, scan.PrecursorIntensityArray);
+            PrecursorIsotpicEnvelopeAngle = GetIsotopeCorrelation(peptide, acceptorPeak);
             DeconvolutablePrecursor = true;
 
             //In cases where the precursor wasn't deconvoluted, the precursor mz and mass are set to 0 and 0 - z*1.008, respectively.
@@ -67,7 +71,7 @@ namespace EngineLayer.SpectralRecovery
         /// </summary>
         public static double? SetRetentionTimeShift(ChromatographicPeak acceptorPeak)
         {
-            return (acceptorPeak.RtHypothesis == null || acceptorPeak.Apex == null) 
+            return (acceptorPeak?.RtHypothesis == null || acceptorPeak.Apex == null)
                 ? null
                 : acceptorPeak.Apex.IndexedPeak.RetentionTime - (double)acceptorPeak.RtHypothesis;
         }
@@ -75,10 +79,10 @@ namespace EngineLayer.SpectralRecovery
         public void FindOriginalPsm(List<PeptideSpectralMatch> originalSearchPsms)
         {
             OriginalSpectralMatch = originalSearchPsms.FirstOrDefault(
-                    p => p.FullFilePath.Equals(FullFilePath) &&
-                    p.MsDataScan.OneBasedScanNumber == MsDataScan.OneBasedScanNumber &&
-                    (FullSequence.Equals(p.FullSequence) ||
-                    p.FullSequence.Split('|').Any(seq => seq.Equals(FullSequence))));
+                p => p.FullFilePath.Equals(FullFilePath) &&
+                     p.MsDataScan.OneBasedScanNumber == MsDataScan.OneBasedScanNumber &&
+                     (FullSequence.Equals(p.FullSequence) ||
+                      p.FullSequence.Split('|').Any(seq => seq.Equals(FullSequence))));
         }
 
         public static string TabSeparatedHeader => string.Join('\t', SpectralRecoveryDataDictionary(null, null).Keys);
@@ -118,39 +122,48 @@ namespace EngineLayer.SpectralRecovery
             SpectralRecoveryPSM srPsm)
         {
             // Chromatographic Peak Info
-            psmDictionary[PsmTsvHeader_SpectralRecovery.PeakApexRt] = 
-                srPsm?.AcceptorPeak?.Apex == null ? " " 
+            psmDictionary[PsmTsvHeader_SpectralRecovery.PeakApexRt] =
+                srPsm?.AcceptorPeak?.Apex == null
+                    ? " "
                     : srPsm.AcceptorPeak.Apex.IndexedPeak.RetentionTime.ToString(CultureInfo.InvariantCulture);
-            psmDictionary[PsmTsvHeader_SpectralRecovery.PeakShift] = 
-                srPsm?.RetentionTimeShift == null ? " "
+            psmDictionary[PsmTsvHeader_SpectralRecovery.PeakShift] =
+                srPsm?.RetentionTimeShift == null
+                    ? " "
                     : srPsm.RetentionTimeShift.NullableToString(CultureInfo.InvariantCulture);
 
             // Scan Isolation Window info
-            psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorDeconvolutedBool] = 
-                srPsm == null ? " " 
-                    : srPsm.DeconvolutablePrecursor ? "Y" : "N";
-            psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorIsotopicEnvelopeAngle] =
+            psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorDeconvolutedBool] =
                 srPsm == null ? " "
+                : srPsm.DeconvolutablePrecursor ? "Y" : "N";
+            psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorIsotopicEnvelopeAngle] =
+                srPsm == null
+                    ? " "
                     : srPsm.PrecursorIsotpicEnvelopeAngle.NullableToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.IsolationWindowCenter] =
-                srPsm == null ? " " 
+                srPsm == null
+                    ? " "
                     : srPsm.MsDataScan.IsolationMz.NullableToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorOffset] =
-                srPsm == null ? " " 
+                srPsm == null
+                    ? " "
                     : CalculatePrecursorOffset(srPsm).NullableToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.IsolationWindowWidth] =
-                srPsm == null ? " " 
+                srPsm == null
+                    ? " "
                     : srPsm.MsDataScan.IsolationWidth.NullableToString(CultureInfo.InvariantCulture);
 
             // Original Psm Info
             psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmQ] =
-                srPsm?.OriginalSpectralMatch == null ? " " 
+                srPsm?.OriginalSpectralMatch == null
+                    ? " "
                     : srPsm.OriginalSpectralMatch.FdrInfo.QValue.ToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmPEP] =
-                srPsm?.OriginalSpectralMatch == null ? " " 
+                srPsm?.OriginalSpectralMatch == null
+                    ? " "
                     : srPsm.OriginalSpectralMatch.FdrInfo.PEP.ToString(CultureInfo.InvariantCulture);
             psmDictionary[PsmTsvHeader_SpectralRecovery.OriginalPsmPEP_QValue] =
-                srPsm?.OriginalSpectralMatch == null ? " " 
+                srPsm?.OriginalSpectralMatch == null
+                    ? " "
                     : srPsm.OriginalSpectralMatch.FdrInfo.PEP_QValue.ToString(CultureInfo.InvariantCulture);
         }
 
@@ -163,11 +176,12 @@ namespace EngineLayer.SpectralRecovery
             return precursorMz - srPsm.MsDataScan.IsolationMz;
         }
 
+
         private static double? AveragineMass { get; set; }
 
-        public static double? GetIsotopeCorrelation(PeptideWithSetModifications selectedPeptide, int precursorCharge,
-            double[] precursorMzArray, double[] precursorIntensityArray)
+        public static double? GetIsotopeCorrelation(PeptideWithSetModifications selectedPeptide, ChromatographicPeak peak)
         {
+            if (peak == null) return null;
             double? isotopeAngle = null;
             double fineResolution = 0.01;
             double minimumProbability = 0.005;
@@ -193,12 +207,12 @@ namespace EngineLayer.SpectralRecovery
                 // If averagine mass hasn't been calculated yet, it's stored
                 // as private field _averagine mass
                 double averagineMass = AveragineMass ??
-                    PeriodicTable.GetElement("C").AverageMass * averageC +
-                    PeriodicTable.GetElement("H").AverageMass * averageH +
-                    PeriodicTable.GetElement("O").AverageMass * averageO +
-                    PeriodicTable.GetElement("N").AverageMass * averageN +
-                    PeriodicTable.GetElement("S").AverageMass * averageS;
-                AveragineMass ??= averagineMass; 
+                                       PeriodicTable.GetElement("C").AverageMass * averageC +
+                                       PeriodicTable.GetElement("H").AverageMass * averageH +
+                                       PeriodicTable.GetElement("O").AverageMass * averageO +
+                                       PeriodicTable.GetElement("N").AverageMass * averageN +
+                                       PeriodicTable.GetElement("S").AverageMass * averageS;
+                AveragineMass ??= averagineMass;
 
                 if (!String.IsNullOrEmpty(selectedPeptide.BaseSequence))
                 {
@@ -221,19 +235,27 @@ namespace EngineLayer.SpectralRecovery
                 }
             }
 
-            if (peptideFormula != null & precursorMzArray != null & precursorIntensityArray != null)
+
+            List<IndexedMassSpectralPeak> imsPeaksOrderedByMz = peak.IsotopicEnvelopes
+                .Select(e => e.IndexedPeak)
+                .Where(p => Math.Abs(p.RetentionTime - peak.Apex.IndexedPeak.RetentionTime) < 0.0001)
+                .OrderBy(p => p.Mz)
+                .ToList();
+            int z = peak.Apex.ChargeState;
+
+            if (peptideFormula != null & imsPeaksOrderedByMz.IsNotNullOrEmpty())
             {
                 IsotopicDistribution peptideDistribution = IsotopicDistribution
                     .GetDistribution(peptideFormula, fineResolution, minimumProbability);
                 SpectralSimilarity isotopeSimilarity = new(
-                    precursorMzArray,
-                    precursorIntensityArray,
-                    peptideDistribution.Masses.Select(m => m.ToMz(precursorCharge)).ToArray(),
+                    imsPeaksOrderedByMz.Select(p => p.Mz).ToArray(),
+                    imsPeaksOrderedByMz.Select(p => p.Intensity).ToArray(),
+                    peptideDistribution.Masses.Select(m => m.ToMz(z)).ToArray(),
                     peptideDistribution.Intensities.ToArray(),
                     SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum,
                     toleranceInPpm: 10.0,
                     allPeaks: true,
-                    filterOutBelowThisMz: 200);
+                    filterOutBelowThisMz: 0);
                 isotopeAngle = isotopeSimilarity.SpectralContrastAngle();
             }
 
