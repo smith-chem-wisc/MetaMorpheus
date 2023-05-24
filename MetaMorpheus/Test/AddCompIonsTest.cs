@@ -154,6 +154,7 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
             Assert.IsTrue(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 3);
+            ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
         [Test]
         public static void TestCompIons_ETHCD_ModernSearch()
@@ -229,6 +230,7 @@ namespace Test
 
             Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
             Assert.That(allPsmsArray2[0].Score, Is.EqualTo(7.007).Within(0.001));
+            ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
         public static void TestCompIons_MatchIonsScore()
         {
