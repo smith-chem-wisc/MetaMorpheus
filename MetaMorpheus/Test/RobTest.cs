@@ -6,9 +6,16 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Proteomics.AminoAcidPolymer;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using EngineLayer.SpectralRecovery;
+using FlashLFQ;
+using IsotopicEnvelope = MassSpectrometry.IsotopicEnvelope;
+using ProteinGroup = EngineLayer.ProteinGroup;
 
 namespace Test
 {

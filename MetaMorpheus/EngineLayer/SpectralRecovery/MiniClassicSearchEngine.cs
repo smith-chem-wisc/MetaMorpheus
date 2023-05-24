@@ -15,12 +15,12 @@ namespace EngineLayer.SpectralRecovery
 {
     public class MiniClassicSearchEngine
     {
-        public MsDataFile InstanceSpecificMsDataFile { get; }
-        public SpectralLibrary SpectralLibrary { get;  }
         /// <summary>
         /// PeakRtApex +/- RetentionTimeWindowHalfWidth sets the retention time range for recovered spectra.
         /// </summary>
         public double RetentionTimeWindowHalfWidth { get; }
+        public MsDataFile InstanceSpecificMsDataFile { get; }
+        public SpectralLibrary SpectralLibrary { get;  }
 
         // no locks are implemented, because it's assumed that the the MsDataScans will not be modified in any way
         // violate this assumption at your own peril!!!
@@ -224,7 +224,6 @@ namespace EngineLayer.SpectralRecovery
                 ms2scan.ComputeMonoisotopicPeakIntensity(precursorSpectrum.MassSpectrum);
             }
 
-            IsotopicEnvelope closestPrecursorEnvelope = null;
             double closestDeconvolutedPrecursorMz = 0;
             double minMzDistance = ms2scan.IsolationRange.Maximum - donorPeptideMz;
 
@@ -243,7 +242,6 @@ namespace EngineLayer.SpectralRecovery
                 {
                     minMzDistance = thisMzDistance;
                     closestDeconvolutedPrecursorMz = monoPeakMz;
-                    closestPrecursorEnvelope = envelope;
                 }
             }
 
@@ -251,8 +249,7 @@ namespace EngineLayer.SpectralRecovery
             // Also, should probably check the isotopic envelope at the apex peak.
             return new RecoveredMs2ScanWithSpecificMass(
                 ms2scan, scanIndex, closestDeconvolutedPrecursorMz, peakCharge, _fullFilePath, _fileSpecificParameters,
-                closestPrecursorPeak, closestPrecursorEnvelope, neutralExperimentalFragments: null, // neutralFragments are generated in constructor
-                InstanceSpecificMsDataFile.GetOneBasedScan((int)ms2scan.OneBasedPrecursorScanNumber)); 
+                closestPrecursorPeak, neutralExperimentalFragments: null); // neutralFragments are generated in constructor
         }
 
         public void CalculateSpectralAngle(PeptideSpectralMatch psm, LibrarySpectrum donorSpectrum)
@@ -267,16 +264,6 @@ namespace EngineLayer.SpectralRecovery
     public class RecoveredMs2ScanWithSpecificMass : Ms2ScanWithSpecificMass
     {
         public MzPeak PeakClosestToDonor { get; }
-        public IsotopicEnvelope EnvelopeClosestToDonor { get; }
-        /// <summary>
-        /// Contains all masses in the precursor spectrum in +- 1 Th of the isolation window
-        /// </summary>
-        public double[] PrecursorMzArray { get; private set; }
-        /// <summary>
-        /// Contains all intensities in the precursor spectrum in +- 1 Th of the isolation window
-        /// </summary>
-        public double[] PrecursorIntensityArray { get; private set; }
-        public int ScanIndex { get; }
 
         public RecoveredMs2ScanWithSpecificMass(
             MsDataScan dataScan,
@@ -286,38 +273,11 @@ namespace EngineLayer.SpectralRecovery
             string fullFilePath,
             CommonParameters commonParam,
             MzPeak peakClosestToDonor,
-            IsotopicEnvelope envelopeClosestToDonor,
-            IsotopicEnvelope[] neutralExperimentalFragments = null,
-            MsDataScan precursorScan = null) :
+            IsotopicEnvelope[] neutralExperimentalFragments = null) :
             base(dataScan, precursorMonoisotopicPeakMz, precursorCharge, fullFilePath, commonParam,
                 neutralExperimentalFragments)
         {
             PeakClosestToDonor = peakClosestToDonor;
-            EnvelopeClosestToDonor = envelopeClosestToDonor;
-            ScanIndex = scanIndex;
-            GetPrecursorSpectrumSnippet(precursorScan);
-        }
-
-        public void GetPrecursorSpectrumSnippet(MsDataScan precursorScan)
-        {
-            if (precursorScan == null || TheScan.IsolationMz == null) return;
-
-            double isolationCenter = (double)TheScan.IsolationMz;
-            double isolationWidth = TheScan.IsolationWidth ?? 2.0;
-            double minMz = isolationCenter - (isolationWidth / 2.0) - 1.0;
-            double maxMz = isolationCenter + (isolationWidth / 2.0) + 1.0;
-
-            int minIndx = precursorScan.MassSpectrum.GetClosestPeakIndex(minMz);
-            int maxIndx = precursorScan.MassSpectrum.GetClosestPeakIndex(maxMz);
-
-            int precursorArrayLength = maxIndx - minIndx + 1;
-            PrecursorMzArray = new double[precursorArrayLength];
-            PrecursorIntensityArray = new double[precursorArrayLength];
-            for (int i = minIndx; i <= maxIndx; i++)
-            {
-                PrecursorMzArray[i - minIndx] = precursorScan.MassSpectrum.XArray[i];
-                PrecursorIntensityArray[i - minIndx] = precursorScan.MassSpectrum.YArray[i];
-            }
         }
     }
 

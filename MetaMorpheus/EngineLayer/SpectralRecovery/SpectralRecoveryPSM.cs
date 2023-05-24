@@ -8,6 +8,7 @@ using Easy.Common.Extensions;
 using FlashLFQ;
 using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
+using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using ThermoFisher.CommonCore.Data.Business;
@@ -18,9 +19,7 @@ namespace EngineLayer.SpectralRecovery
     public class SpectralRecoveryPSM : PeptideSpectralMatch
     {
         public ChromatographicPeak AcceptorPeak { get; set; }
-
         public PeptideSpectralMatch OriginalSpectralMatch { get; private set; }
-
         /// <summary>
         /// In spectral recovery, we see situations where a mass was selected for fragmentation
         /// but could not be deconvoluted. As a result, base.ScanPrecursorMass == 0. However, the
@@ -185,16 +184,20 @@ namespace EngineLayer.SpectralRecovery
             double? isotopeAngle = null;
             double fineResolution = 0.01;
             double minimumProbability = 0.005;
-            ChemicalFormula peptideFormula = null;
+            double massCorrection = 0; // Accounts for mass differences caused by mods with unknown chemical formulas.
+            
+            ChemicalFormula peptideFormula;
             try
             {
                 peptideFormula = selectedPeptide.FullChemicalFormula;
             }
-            //XL data throws a nullReferenceException when you try to access the FullChemicalFormula
+            // If the full chemical formula field is null, it returns a null reference exception. i.e.,
+            // you can't check to see if the field is null w/o getting an exception. This should be fixed at some point
             catch (NullReferenceException e)
             {
-                return null;
+                peptideFormula = null;
             }
+
             if (peptideFormula == null || peptideFormula.AtomCount > 0)
             {
                 // calculate averagine (used for isotopic distributions for unknown modifications)
@@ -216,25 +219,41 @@ namespace EngineLayer.SpectralRecovery
 
                 if (!String.IsNullOrEmpty(selectedPeptide.BaseSequence))
                 {
-                    Proteomics.AminoAcidPolymer.Peptide baseSequence = new Proteomics.AminoAcidPolymer.Peptide(selectedPeptide.BaseSequence);
+                    Peptide baseSequence = new Peptide(selectedPeptide.BaseSequence);
                     peptideFormula = baseSequence.GetChemicalFormula();
-                    // add averagine for any unknown mass difference (i.e., a modification)
-                    double massDiff = selectedPeptide.MonoisotopicMass - baseSequence.MonoisotopicMass;
-
-                    // Magic numbers are bad practice, but I pulled this directly from flashLfq
-                    if (Math.Abs(massDiff) >= 20)
+                    var modifications = selectedPeptide.AllModsOneIsNterminus.Values;
+                    foreach (Modification mod in modifications)
                     {
-                        double averagines = massDiff / averagineMass;
+                        if (mod.ChemicalFormula != null)
+                        {
+                            peptideFormula.Add(mod.ChemicalFormula);
+                        }
+                        else if(mod.MonoisotopicMass != null)
+                        {
+                            massCorrection += (double)mod.MonoisotopicMass;
+                        }
+                    }
 
-                        peptideFormula.Add("C", (int)Math.Round(averagines * averageC, 0));
-                        peptideFormula.Add("H", (int)Math.Round(averagines * averageH, 0));
-                        peptideFormula.Add("O", (int)Math.Round(averagines * averageO, 0));
-                        peptideFormula.Add("N", (int)Math.Round(averagines * averageN, 0));
-                        peptideFormula.Add("S", (int)Math.Round(averagines * averageS, 0));
+                    // add averagine for any unknown mass difference (i.e., modification w/o Chemical Formula)
+                    massCorrection = Math.Max(peptideFormula.MonoisotopicMass - baseSequence.MonoisotopicMass, massCorrection);
+                    if (Math.Abs(massCorrection) >= 20) // 20 Da difference is pulled directly from FlashLfq
+                    {
+                        double averagines = massCorrection / averagineMass;
+                        ChemicalFormula unknownMod = new ChemicalFormula();
+
+                        unknownMod.Add("C", (int)Math.Round(averagines * averageC, 0));
+                        unknownMod.Add("H", (int)Math.Round(averagines * averageH, 0));
+                        unknownMod.Add("O", (int)Math.Round(averagines * averageO, 0));
+                        unknownMod.Add("N", (int)Math.Round(averagines * averageN, 0));
+                        unknownMod.Add("S", (int)Math.Round(averagines * averageS, 0));
+
+                        // Because averagines can't perfectly represent every modification mass,
+                        // an additional correction factor is needed.
+                        peptideFormula.Add(unknownMod);
+                        massCorrection -= unknownMod.MonoisotopicMass;
                     }
                 }
             }
-
 
             List<IndexedMassSpectralPeak> imsPeaksOrderedByMz = peak.IsotopicEnvelopes
                 .Select(e => e.IndexedPeak)
@@ -250,10 +269,10 @@ namespace EngineLayer.SpectralRecovery
                 SpectralSimilarity isotopeSimilarity = new(
                     imsPeaksOrderedByMz.Select(p => p.Mz).ToArray(),
                     imsPeaksOrderedByMz.Select(p => p.Intensity).ToArray(),
-                    peptideDistribution.Masses.Select(m => m.ToMz(z)).ToArray(),
+                    peptideDistribution.Masses.Select(m => (m + massCorrection).ToMz(z)).ToArray(),
                     peptideDistribution.Intensities.ToArray(),
                     SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum,
-                    toleranceInPpm: 10.0,
+                    toleranceInPpm: 20.0,
                     allPeaks: true,
                     filterOutBelowThisMz: 0);
                 isotopeAngle = isotopeSimilarity.SpectralContrastAngle();

@@ -10,7 +10,9 @@ using System.Collections.Generic;
 using System.DirectoryServices;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using Chemistry;
 using Easy.Common.Extensions;
 using FlashLFQ;
 using TaskLayer;
@@ -19,7 +21,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
-    public class
+    public static class
     SpectralRecoveryTest
     {
         private static MyTaskResults searchTaskResults;
@@ -34,7 +36,7 @@ namespace Test
         private static Dictionary<string, int[]> numSpectraPerFile;
 
         [OneTimeSetUp]
-        public void SpectralRecoveryTestSetup()
+        public static void SpectralRecoveryTestSetup()
         {
             // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\MSMSids.psmtsv");
@@ -45,6 +47,7 @@ namespace Test
 
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
+                
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                     "TestData", "SpectralRecoveryTest", readPsm.FileNameWithoutExtension + ".mzML");
                 MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
@@ -289,8 +292,80 @@ namespace Test
                     mcse.SearchAroundPeak(pwsm, null, allPsmsArray[5].ScanRetentionTime, allPsmsArray[5].ScanPrecursorCharge).ToArray();
 
                 Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);
+                // Same assertion as above, just used ToString method. For spectralMatchPSMs, we insert 10 additional
+                // scores before the peptide info is given.
+                Assert.AreEqual(allPsmsArray[5].ToString().Split('\t')[12], peptideSpectralMatches[0].ToString().Split('\t')[22]);
                 Assert.That(peptideSpectralMatches[0].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
             }
+
+            PeptideWithSetModifications fakePeptide = new PeptideWithSetModifications(
+                "ABCDEFG", null, p: new("ABCDEFG", "FAKEPROT"), digestionParams: new DigestionParams(),
+                oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 7);
+            var exceptionAssertion = Assert.Throws<MetaMorpheusException>(() =>
+                mcse.SearchAroundPeak(fakePeptide, peakRetentionTime: 31.2, peakCharge: 2));
+            Assert.That(exceptionAssertion.Message, Is.EqualTo("Donor spectrum not found"));
+        }
+
+        [Test]
+        public static void TestPrecursorIsotopeCorrelation()
+        {
+            ModificationMotif.TryGetMotif("G", out var modMotif);
+            Dictionary<string, Modification> modDict =
+                new()
+                {
+                    { "Carbamidomethyl on C", GlobalVariables.AllModsKnownDictionary["Carbamidomethyl on C"] },
+                    { "BS on G" , new Modification(_originalId: "BS on G", _modificationType: "BS", _target: modMotif, _monoisotopicMass: 96.0875)}
+                };
+            PeptideWithSetModifications pwsm_Mods = new PeptideWithSetModifications(
+                "ENQGDETQG[Speculative:BS on G]C[Common Fixed:Carbamidomethyl on C]PPQR", modDict, p: new Protein("ENQGDETQGCPPQR", "FakeProtein"), digestionParams: new DigestionParams(),
+                oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 14);
+
+            // this pwsm has an equivalent mass to the pwsm with mods, but a different chemical formula.
+            PeptideWithSetModifications pwsm_EqualMass = new PeptideWithSetModifications(
+                "ENQGDETQGQQPPQR", null, p: new Protein("ENQGDETQGQQPPQR", "FakeProtein2"), digestionParams: new DigestionParams(),
+                oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 14);
+
+            // Create the ChromatographicPeak
+            SpectraFileInfo fakeFileInfo =
+                new SpectraFileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, "DoesNotExist.raw"), "A", 1, 1, 1);
+            Identification id = new Identification(fakeFileInfo, pwsm_Mods.BaseSequence, pwsm_Mods.FullSequence,
+                pwsm_Mods.MonoisotopicMass, ms2RetentionTimeInMinutes: 1.01, 1, new List<FlashLFQ.ProteinGroup>());
+            ChromatographicPeak peak = new ChromatographicPeak(id, false, fakeFileInfo);
+
+            // Get theoretical isotopic distribution from equal mass peptide
+            ChemicalFormula equalMassFormula = new Proteomics.AminoAcidPolymer.Peptide(pwsm_EqualMass.BaseSequence).GetChemicalFormula();
+            IsotopicDistribution peptideDistribution = IsotopicDistribution
+                .GetDistribution(equalMassFormula, fineResolution: 0.01, minProbability: 0.005);
+            double[] theoreticalMasses = peptideDistribution.Masses;
+            double[] theoreticalIntensities = peptideDistribution.Intensities;
+            List<FlashLFQ.IsotopicEnvelope> lfqEnvelopes = new List<FlashLFQ.IsotopicEnvelope>();
+
+            // Create IndexedPeaks and IsotopicEnvelopes
+            for (int i = 0; i < peptideDistribution.Masses.Length; i++)
+            {
+                lfqEnvelopes.Add(
+                    new FlashLFQ.IsotopicEnvelope(
+                        new IndexedMassSpectralPeak(mz: theoreticalMasses[i].ToMz(1), intensity: theoreticalIntensities[i], 0, 1.00),
+                        chargeState: 1,
+                        intensity: theoreticalIntensities[i]));
+            }
+
+            // Set private properties for the ChromatographicPeak
+            peak.IsotopicEnvelopes = lfqEnvelopes;
+            peak.SetChromatographicPeakProperties("Apex", lfqEnvelopes.MaxBy(i => i.Intensity));
+
+            double? equalMassCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_EqualMass, peak);
+            double? modsCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_Mods, peak);
+
+            Assert.That(equalMassCorrelation, Is.EqualTo(1).Within(0.001));
+            Assert.That(modsCorrelation != null && modsCorrelation >= 0.9);
+        }
+
+        public static void SetChromatographicPeakProperties(this ChromatographicPeak peak, string propName, Object newValue)
+        {
+            PropertyInfo propertyInfo = typeof(ChromatographicPeak).GetProperty(propName);
+            if (propertyInfo == null || propertyInfo.PropertyType != newValue.GetType()) return;
+            propertyInfo.SetValue(peak, newValue);
         }
 
         [Test]
