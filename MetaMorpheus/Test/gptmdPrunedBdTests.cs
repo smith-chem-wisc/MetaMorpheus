@@ -160,7 +160,7 @@ namespace Test
             Assert.AreEqual("PEP[ConnorModType:ConnorMod on P]TID", pepWithSetMods1.FullSequence);//this might be base sequence
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             //run!
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedDatabase");
@@ -293,7 +293,7 @@ namespace Test
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
             { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
             string mzmlName = @"newMzml.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             //make sure this runs correctly
             //run!
@@ -382,7 +382,7 @@ namespace Test
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
                         
             modList.Add("test", Hash);
             
@@ -487,7 +487,7 @@ namespace Test
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             modList.Add("test", Hash);
 
