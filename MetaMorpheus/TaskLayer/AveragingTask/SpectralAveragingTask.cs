@@ -51,21 +51,24 @@ namespace TaskLayer
             {
                 if (GlobalVariables.StopLoops) { break; }
 
+
+                ReportProgress(new ProgressEventArgs((int)((spectraFileIndex / (double)currentRawFileList.Count) * 100), $"Averaging File {spectraFileIndex + 1}/{currentRawFileList.Count} ", new List<string> { taskId, "Individual Spectra Files" }));
+
                 // get filename stuff
                 var originalUnaveragedFilepath = currentRawFileList[spectraFileIndex];
                 var originalUnaveragedFilepathWithoutExtenstion = Path.GetFileNameWithoutExtension(originalUnaveragedFilepath);
                 var averagedFilepath = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML");
 
                 // mark file as in progress
-                StartingDataFile(originalUnaveragedFilepath, new List<string>() {taskId, "Individual Spectra Files", originalUnaveragedFilepath});
+                StartingDataFile(originalUnaveragedFilepath, new List<string>() {taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
 
                 // load the file
-                Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
+                Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                 MsDataFile myMsdataFile = myFileManager.LoadFile(originalUnaveragedFilepath, CommonParameters);
                 List<MsDataScan> scanList = myMsdataFile.GetAllScansList();
 
                 // Average the spectra
-                Status("Averaging spectra file...", new List<string> { taskId, "Individual Spectra Files" });
+                Status("Averaging spectra file...", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                 var averagedScans = SpectraFileAveraging.AverageSpectraFile(scanList, Parameters);
 
                 // Output the spectra
@@ -76,7 +79,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    Status("Writing spectra file...", new List<string> { taskId, "Individual Spectra Files" });
+                    Status("Writing spectra file...", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                     SourceFile sourceFile = myMsdataFile.GetSourceFile();
                     MsDataFile dataFile = new GenericMsDataFile(averagedScans, sourceFile);
                     dataFile.ExportAsMzML(averagedFilepath, true);
@@ -85,7 +88,7 @@ namespace TaskLayer
                 myFileManager.DoneWithFile(originalUnaveragedFilepath);
                 
 
-                // carry over file-specific parameters from the uncalibrated file to the calibrated one
+                // carry over file-specific parameters from the unaveraged file to the averaged one
                 var fileSpecificParams = new FileSpecificParameters();
                 if (fileSettingsList[spectraFileIndex] != null)
                 {
@@ -96,7 +99,7 @@ namespace TaskLayer
                 var newTomlFileName = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
                 FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
-
+                
                 // finished averaging this file
                 FinishedWritingFile(averagedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                 MyTaskResults.NewSpectra.Add(averagedFilepath);

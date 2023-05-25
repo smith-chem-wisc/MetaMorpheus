@@ -716,7 +716,7 @@ namespace MetaMorpheusGUI
         }
 
         /// <summary>
-        /// Event fires when the "Add Task" button is clicked.
+        /// Event fires when the "Add Task" button is clicked on the RunPage
         /// </summary>
         private void AddTask_Click(object sender, RoutedEventArgs e)
         {
