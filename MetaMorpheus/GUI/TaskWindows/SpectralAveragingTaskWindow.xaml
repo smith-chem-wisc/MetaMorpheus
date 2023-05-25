@@ -69,7 +69,7 @@
                             <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 
                                 <!-- Defaults -->
-                                <GroupBox Header ="Default Parameters" Style="{StaticResource GroupBoxStyle}" Padding="4">
+                                <GroupBox Header="Preset Parameters" Style="{StaticResource GroupBoxStyle}" Padding="4">
                                     <Grid>
 
                                         <Grid.ColumnDefinitions>
@@ -138,6 +138,11 @@
                                             
                                         </StackPanel>
                                     </ListBox>
+                                </GroupBox>
+
+                                <!-- Normalization -->
+                                <GroupBox Header="Normalization" Style="{StaticResource GroupBoxStyle}">
+                                    <CheckBox IsChecked="{Binding PerformNormalization}" Content="Perform Normalization" />
                                 </GroupBox>
                             </StackPanel>
 
@@ -225,11 +230,6 @@
                                             </DataTemplate>
                                         </ListBox.ItemTemplate>
                                     </ListBox>
-                                </GroupBox>
-
-                                <!-- Normalization -->
-                                <GroupBox Header="Normalization" Style="{StaticResource GroupBoxStyle}">
-                                    <CheckBox IsChecked="{Binding PerformNormalization}" Content="Perform Normalization" />
                                 </GroupBox>
                             </StackPanel>
                         </Grid>

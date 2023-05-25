@@ -29,10 +29,24 @@ namespace MetaMorpheusGUI
         public SpectralAveragingTaskWindow(SpectralAveragingTask task)
         {
             InitializeComponent();
-            TheTask = task ?? new SpectralAveragingTask(new SpectralAveragingParameters());
-            var parameters = new SpectralAveragingParametersViewModel(TheTask.Parameters);
-            parameters.SetOtherParametersCommand = new DelegateCommand(parameters.SetOtherParameters);
-            DataContext = parameters;
+
+            SpectralAveragingParametersViewModel parametersViewModel;
+            // Task will be null if no default was saved
+            // In this case, load DDA as the default
+            if (task is null) 
+            {
+                TheTask = new SpectralAveragingTask(new SpectralAveragingParameters());
+                parametersViewModel = new(TheTask.Parameters);
+                parametersViewModel.SetOtherParameters("GeneralDDA");
+            }
+            else
+            {
+                TheTask = task;
+                parametersViewModel = new(TheTask.Parameters);
+            }
+
+            parametersViewModel.SetOtherParametersCommand = new DelegateCommand(parametersViewModel.SetOtherParameters);
+            DataContext = parametersViewModel;
         }
 
         private void CancelButton_OnClick(object sender, RoutedEventArgs e)
