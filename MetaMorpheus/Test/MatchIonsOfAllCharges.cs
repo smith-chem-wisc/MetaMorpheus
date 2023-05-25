@@ -366,7 +366,7 @@ namespace Test
             MassSpectraFile.Run();
             System.IO.File.Delete(rawCopy);
             var list = Directory.GetFiles(thisTaskOutputFolder, "*.*", SearchOption.AllDirectories);
-            string matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
+            string matchingvalue = list.First(p => Path.GetFileName(p).Contains("SpectralLibrary")).ToString();
             var lib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
             var libPath = Path.Combine(thisTaskOutputFolder, matchingvalue);
            

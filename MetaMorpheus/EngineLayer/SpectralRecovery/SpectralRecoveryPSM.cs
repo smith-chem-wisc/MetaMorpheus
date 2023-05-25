@@ -77,11 +77,18 @@ namespace EngineLayer.SpectralRecovery
 
         public void FindOriginalPsm(List<PeptideSpectralMatch> originalSearchPsms)
         {
-            OriginalSpectralMatch = originalSearchPsms.FirstOrDefault(
-                p => p.FullFilePath.Equals(FullFilePath) &&
-                     p.MsDataScan.OneBasedScanNumber == MsDataScan.OneBasedScanNumber &&
-                     (FullSequence.Equals(p.FullSequence) ||
-                      p.FullSequence.Split('|').Any(seq => seq.Equals(FullSequence))));
+            if (MsDataScan == null || DonorPeptide == null)
+            {
+                OriginalSpectralMatch = null;
+                return;
+            }
+
+            OriginalSpectralMatch = originalSearchPsms
+                .Where(p => p?.MsDataScan != null)
+                .FirstOrDefault(p => 
+                p.FullFilePath.Equals(FullFilePath)
+                && p.MsDataScan.OneBasedScanNumber == MsDataScan.OneBasedScanNumber
+                && p.FullSequence.Equals(DonorPeptide.FullSequence));
         }
 
         public static string TabSeparatedHeader => string.Join('\t', SpectralRecoveryDataDictionary(null, null).Keys);
