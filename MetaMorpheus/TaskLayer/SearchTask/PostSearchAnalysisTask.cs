@@ -687,37 +687,35 @@ namespace TaskLayer
             List<PeptideSpectralMatch> filteredPsmList = new();
             if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
             {
-                filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.5).ToList();
-                filteredPsmList.RemoveAll(b => b.IsDecoy);
-                filteredPsmList.RemoveAll(b => b.IsContaminant);
+                filteredPsmList = Parameters.AllPsms.Where(p => 
+                    (p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.01)
+                    && !p.IsDecoy
+                    && !p.IsContaminant).ToList();
             }
             else
             {
-                filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
-                filteredPsmList.RemoveAll(b => b.IsDecoy);
-                filteredPsmList.RemoveAll(b => b.IsContaminant);
+                filteredPsmList = Parameters.AllPsms.Where(p => 
+                    p.FdrInfo.QValue <= 0.01 
+                    && !p.IsDecoy
+                    && !p.IsContaminant).ToList();
             }
 
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
-            Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
-            foreach (var x in filteredPsmList)
+            var fullSeqChargeGrouping = filteredPsmList.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
+            List<LibrarySpectrum> spectraLibrary = new();
+            foreach (var matchGroup in fullSeqChargeGrouping)
             {
-                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = filteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
-                (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
-
-                if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
-                {
-                    PsmsGroupByPeptideAndCharge.Add(peptideWithChargeState, psmsWithSamePeptideAndSameCharge);
-                }
+                PeptideSpectralMatch bestPsm = matchGroup.MaxBy(p => p.Score);
+                if (bestPsm == null) continue;
+                spectraLibrary.Add(new LibrarySpectrum(
+                    bestPsm.FullSequence,
+                    bestPsm.ScanPrecursorMonoisotopicPeakMz,
+                    bestPsm.ScanPrecursorCharge,
+                    bestPsm.MatchedFragmentIons,
+                    bestPsm.ScanRetentionTime));
             }
-            var spectraLibrary = new List<LibrarySpectrum>();
-            foreach (var psm in PsmsGroupByPeptideAndCharge)
-            {
-                var standardSpectrum = new LibrarySpectrum(psm.Value[0].FullSequence, psm.Value[0].ScanPrecursorMonoisotopicPeakMz, psm.Value[0].ScanPrecursorCharge, psm.Value[0].MatchedFragmentIons, psm.Value[0].ScanRetentionTime);
-                spectraLibrary.Add(standardSpectrum);
-            }
+            
             WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
-
         }
         private void WriteProteinResults()
         {
