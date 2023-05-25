@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
-        MinWidth="800" Height="550" Width="950"
+        MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded">
 
     <Window.Resources>
@@ -501,23 +501,26 @@
                     <!--Button to add tasks-->
                     <Grid Grid.Row="2" Background="{StaticResource BackgroundColor}" Margin="0,0,10,0" HorizontalAlignment="Right">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
                         </Grid.ColumnDefinitions>
 
                         <Button Name="AddCalibTaskButton" Grid.Column="0" Content="+ADD CALIBRATION" HorizontalAlignment="Right" Click="AddCalibrateTaskButton_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
-                        <Button Name="AddGptmdTaskButton" Grid.Column="1" Content="+ADD PTM DISCOVERY" HorizontalAlignment="Right" Click="AddGPTMDTaskButton_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
-                        <Button Name="AddSearchTaskButton" Grid.Column="2" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
-                        <Button Name="AddXlTaskButton" Grid.Column="3" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
-                        <Button Name="AddGlycoTaskButton" Grid.Column="4" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="150"/>
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddAveragingTaskButton" Grid.Column="1" Content="+AVERAGE SPECTRA" HorizontalAlignment="Right" Click="AddAveragingTaskButton_OnClick" 
+                                Style="{StaticResource ImportantButtonStyle}" Margin="0, 0, 1, 0" Width="140" FontSize="11" />
+                        <Button Name="AddGptmdTaskButton" Grid.Column="2" Content="+ADD PTM DISCOVERY" HorizontalAlignment="Right" Click="AddGPTMDTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddSearchTaskButton" Grid.Column="3" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddXlTaskButton" Grid.Column="4" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddGlycoTaskButton" Grid.Column="5" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="140"/>
                     </Grid>
 
                     <!--List of tasks-->
