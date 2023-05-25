@@ -301,9 +301,7 @@ namespace Test
             PeptideWithSetModifications fakePeptide = new PeptideWithSetModifications(
                 "ABCDEFG", null, p: new("ABCDEFG", "FAKEPROT"), digestionParams: new DigestionParams(),
                 oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 7);
-            var exceptionAssertion = Assert.Throws<MetaMorpheusException>(() =>
-                mcse.SearchAroundPeak(fakePeptide, peakRetentionTime: 31.2, peakCharge: 2));
-            Assert.That(exceptionAssertion.Message, Is.EqualTo("Donor spectrum not found"));
+            Assert.Null(mcse.SearchAroundPeak(fakePeptide, peakRetentionTime: 31.2, peakCharge: 2));
         }
 
         [Test]

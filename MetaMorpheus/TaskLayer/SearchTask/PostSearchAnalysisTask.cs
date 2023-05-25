@@ -80,7 +80,9 @@ namespace TaskLayer
                 SpectralLibraryGeneration();
                 if (Parameters.SearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
                 {
+                    Status("Performing spectral recovery...", Parameters.SearchTaskId);
                     SpectralRecoveryResults = SpectralRecoveryRunner.RunSpectralRecoveryAlgorithm(Parameters, CommonParameters, FileSpecificParameters);
+                    Status("Spectral recovery complete!", Parameters.SearchTaskId);
                 }      
             }
 
@@ -681,8 +683,19 @@ namespace TaskLayer
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
+            Status("Writing spectral library...", Parameters.SearchTaskId);
             List<PeptideSpectralMatch> filteredPsmList = new();
-            if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
+            if (Parameters.SearchParameters.DoSpectralRecovery)
+            {
+                //This is the same filtering that's used when passing PSMs into FlashLfq
+                filteredPsmList = Parameters.AllPsms.Where(p =>
+                    p.FdrInfo.QValue <= 0.01
+                    && p.FdrInfo.QValueNotch <= 0.01
+                    && !p.IsDecoy
+                    && p.FullSequence != null).ToList();
+
+            }
+            else if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
             {
                 filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.5).ToList();
                 filteredPsmList.RemoveAll(b => b.IsDecoy);
@@ -714,7 +727,7 @@ namespace TaskLayer
                 spectraLibrary.Add(standardSpectrum);
             }
             WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
-
+            Status("Finished writing spectral library!", Parameters.SearchTaskId);
         }
         private void WriteProteinResults()
         {

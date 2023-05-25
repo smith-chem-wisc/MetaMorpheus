@@ -29,6 +29,7 @@ namespace EngineLayer.SpectralRecovery
         private readonly CommonParameters _fileSpecificParameters;
         private readonly string _fullFilePath;
 
+
         /// <summary>
         /// Every instance of MCSE is specific to one file.
         /// </summary>
@@ -87,7 +88,7 @@ namespace EngineLayer.SpectralRecovery
             if (!SpectralLibrary.TryGetSpectrum(donorPwsm.FullSequence, peakCharge,
                     out LibrarySpectrum donorSpectrum))
             {
-                throw new MetaMorpheusException("Donor spectrum not found");
+                return null;
             }
 
             Dictionary<DissociationType, List<Product>> targetFragmentsForEachDissociationType = CreateFragmentDictionary();

@@ -175,7 +175,6 @@ namespace EngineLayer.SpectralRecovery
             return precursorMz - srPsm.MsDataScan.IsolationMz;
         }
 
-
         private static double? AveragineMass { get; set; }
 
         public static double? GetIsotopeCorrelation(PeptideWithSetModifications selectedPeptide, ChromatographicPeak peak)
