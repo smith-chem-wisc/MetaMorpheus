@@ -366,7 +366,7 @@ namespace Test
             MassSpectraFile.Run();
             System.IO.File.Delete(rawCopy);
             var list = Directory.GetFiles(thisTaskOutputFolder, "*.*", SearchOption.AllDirectories);
-            string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
+            string matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
             var lib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
             var libPath = Path.Combine(thisTaskOutputFolder, matchingvalue);
            
@@ -416,7 +416,7 @@ namespace Test
 
             string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
-            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibrary.msp");
+            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibrary.msp");
 
 
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary\rawCopy.mzML");
@@ -482,7 +482,7 @@ namespace Test
    
             string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
-            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\spectralLibrary.msp");
+            string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibrary.msp");
             
             GptmdTask GptmdTask = new();
             MyTaskResults afterGPTMD = GptmdTask.RunTask(thisTaskOutputFolder, new List<DbForTask> { new DbForTask(db, false), new DbForTask(lib, false) }, new List<string> { raw }, "test");

@@ -55,7 +55,7 @@ namespace TaskLayer
 
                 string spectralLibraryFile = Directory
                     .GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories)
-                    .First(p => p.Contains("spectralLibrary"))
+                    .First(p => p.Contains("SpectralLibrary"))
                     .ToString();
                 string spectralLibraryPath = Path.Combine(parameters.OutputFolder, spectralLibraryFile);
                 SpectralLibrary library = new(new List<string>() { spectralLibraryPath });

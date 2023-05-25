@@ -655,7 +655,7 @@ namespace TaskLayer
         protected static void WriteSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\spectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
+            string spectrumFilePath = outputFolder + "\\SpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
             using (StreamWriter output = new StreamWriter(spectrumFilePath))
             {
                 foreach (var x in spectrumLibrary)
