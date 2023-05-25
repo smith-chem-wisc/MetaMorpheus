@@ -297,7 +297,7 @@ namespace Test
 
             var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
             var list = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
-            string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
+            string matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
             var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
 
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("IAGQVAAANK", 2, out var spectrum));
