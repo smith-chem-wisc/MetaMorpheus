@@ -14,7 +14,7 @@ using SpectralAveraging;
 
 namespace GuiFunctions
 {
-    public class SpectralAveragingParametersViewModel : BaseViewModel
+    public class SpectralAveragingParametersViewModel : BaseViewModel, IEquatable<SpectralAveragingParametersViewModel>
     {
         #region Private Members
 
@@ -26,10 +26,17 @@ namespace GuiFunctions
 
         #region Public Properties
 
+        enum PresetAveragingParameters
+        {
+            Dda1,
+            Dda2,
+            DirectInjection
+        }
+
         public SpectralAveragingParameters SpectralAveragingParameters
         {
             get => spectralAveragingParameters;
-            set { spectralAveragingParameters = value; OnPropertyChanged(nameof(SpectralAveragingParameters)); }
+            set { spectralAveragingParameters = value; OnPropertyChanged(nameof(SpectralAveragingParameters)); UpdateVisualRepresentation(); }
         }
 
         public OutlierRejectionType RejectionType
@@ -66,10 +73,10 @@ namespace GuiFunctions
             set { spectralAveragingParameters.Percentile = value; OnPropertyChanged(nameof(Percentile)); }
         }
 
-        public double MinSigmaVale
+        public double MinSigmaValue
         {
             get => spectralAveragingParameters.MinSigmaValue;
-            set { spectralAveragingParameters.MinSigmaValue = value; OnPropertyChanged(nameof(MinSigmaVale)); }
+            set { spectralAveragingParameters.MinSigmaValue = value; OnPropertyChanged(nameof(MinSigmaValue)); }
         }
 
         public double MaxSigmaValue
@@ -90,23 +97,8 @@ namespace GuiFunctions
             set 
             { 
                 spectralAveragingParameters.NumberOfScansToAverage = value;
-                ScanOverlap = value - 1;
+                spectralAveragingParameters.ScanOverlap = value - 1;
                 OnPropertyChanged(nameof(NumberOfScansToAverage));
-            }
-        }
-
-        public int ScanOverlap
-        {
-            get => spectralAveragingParameters.ScanOverlap;
-            set
-            {
-                if (value >= NumberOfScansToAverage)
-                    MessageBox.Show("Overlap cannot be greater than or equal to the number of spectra averaged");
-                else
-                {
-                    spectralAveragingParameters.ScanOverlap = value;
-                    OnPropertyChanged(nameof(ScanOverlap));
-                }
             }
         }
 
@@ -157,33 +149,31 @@ namespace GuiFunctions
                 NormalizationType = NormalizationType.RelativeToTics,
                 SpectralWeightingType = SpectraWeightingType.WeightEvenly,
                 BinSize = 0.01,
-            };
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
+        };
 
-            switch (settingsNameToSet.ToString())
+            switch (Enum.Parse<PresetAveragingParameters>(settingsNameToSet.ToString() ?? "Dda1"))
             {
-                case ("HighResolutionDDA"):
+                case (PresetAveragingParameters.Dda1):
                     parameters.NumberOfScansToAverage = 5;
                     parameters.ScanOverlap = 4;
                     parameters.MaxSigmaValue = 3;
                     parameters.MinSigmaValue = 0.5;
                     parameters.OutlierRejectionType = OutlierRejectionType.SigmaClipping;
-                    parameters.SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap;
                     break;
 
-                case ("GeneralDDA"):
+                case (PresetAveragingParameters.Dda2):
                     parameters.NumberOfScansToAverage = 5;
                     parameters.ScanOverlap = 4;
                     parameters.MaxSigmaValue = 3;
                     parameters.MinSigmaValue = 0.5;
                     parameters.OutlierRejectionType = OutlierRejectionType.AveragedSigmaClipping;
-                    parameters.SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap;
                     break;
 
-                case ("DirectInjection"):
+                case (PresetAveragingParameters.DirectInjection):
                     parameters.NumberOfScansToAverage = 15;
                     parameters.ScanOverlap = 14;
                     parameters.OutlierRejectionType = OutlierRejectionType.MinMaxClipping;
-                    parameters.SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap;
                     break;
 
                 default:
@@ -212,7 +202,7 @@ namespace GuiFunctions
             OnPropertyChanged(nameof(SpectraFileAveragingType));
             OnPropertyChanged(nameof(PerformNormalization));
             OnPropertyChanged(nameof(Percentile));
-            OnPropertyChanged(nameof(MinSigmaVale));
+            OnPropertyChanged(nameof(MinSigmaValue));
             OnPropertyChanged(nameof(MaxSigmaValue));
             OnPropertyChanged(nameof(BinSize));
             OnPropertyChanged((nameof(NumberOfScansToAverage)));
@@ -220,6 +210,40 @@ namespace GuiFunctions
         }
 
         #endregion
+
+        public bool Equals(SpectralAveragingParametersViewModel other)
+        {
+            if (other is null) return false;
+
+            // check view model
+            if (RejectionType != other.RejectionType) return false;
+            if (WeightingType != other.WeightingType) return false;
+            if (SpectraFileAveragingType != other.SpectraFileAveragingType) return false;
+            if (PerformNormalization != other.PerformNormalization) return false;
+            if (Math.Abs(Percentile - other.Percentile) > 0.001) return false;
+            if (Math.Abs(MinSigmaValue - other.MinSigmaValue) > 0.001) return false;
+            if (Math.Abs(MaxSigmaValue - other.MaxSigmaValue) > 0.001) return false;
+            if (Math.Abs(BinSize - other.BinSize) > 0.001) return false;
+            if (NumberOfScansToAverage != other.NumberOfScansToAverage) return false;
+            if (MaxThreads != other.MaxThreads) return false;
+
+
+            // check internal parameters
+            if (SpectralAveragingParameters.OutlierRejectionType != other.SpectralAveragingParameters.OutlierRejectionType) return false;
+            if (SpectralAveragingParameters.SpectralWeightingType != other.SpectralAveragingParameters.SpectralWeightingType) return false;
+            if (SpectralAveragingParameters.NormalizationType != other.SpectralAveragingParameters.NormalizationType) return false;
+            if (SpectralAveragingParameters.SpectralAveragingType != other.SpectralAveragingParameters.SpectralAveragingType) return false;
+            if (SpectralAveragingParameters.SpectraFileAveragingType != other.SpectralAveragingParameters.SpectraFileAveragingType) return false;
+            if (SpectralAveragingParameters.OutputType != other.SpectralAveragingParameters.OutputType) return false;
+            if (Math.Abs(SpectralAveragingParameters.Percentile - other.SpectralAveragingParameters.Percentile) > 0.001) return false;
+            if (Math.Abs(SpectralAveragingParameters.MinSigmaValue - other.SpectralAveragingParameters.MinSigmaValue) > 0.001) return false;
+            if (Math.Abs(SpectralAveragingParameters.MaxSigmaValue - other.SpectralAveragingParameters.MaxSigmaValue) > 0.001) return false;
+            if (Math.Abs(SpectralAveragingParameters.BinSize - other.SpectralAveragingParameters.BinSize) > 0.001) return false;
+            if (SpectralAveragingParameters.NumberOfScansToAverage != other.SpectralAveragingParameters.NumberOfScansToAverage) return false;
+            if (SpectralAveragingParameters.ScanOverlap != other.SpectralAveragingParameters.ScanOverlap) return false;
+            if (SpectralAveragingParameters.MaxThreadsToUsePerFile != other.SpectralAveragingParameters.MaxThreadsToUsePerFile) return false;
+            return true;
+        }
     }
 
     /// <summary>

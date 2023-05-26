@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
             {
                 TheTask = new SpectralAveragingTask(new SpectralAveragingParameters());
                 parametersViewModel = new(TheTask.Parameters);
-                parametersViewModel.SetOtherParameters("GeneralDDA");
+                parametersViewModel.SetOtherParameters(null);
             }
             else
             {

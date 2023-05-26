@@ -78,10 +78,10 @@
                                             <ColumnDefinition Width="2*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <Button Grid.Column="0" Content=" General DDA" Command="{Binding SetOtherParametersCommand}"
-                                                CommandParameter="GeneralDDA" Width="90"/>
+                                        <Button Grid.Column="0" Content="General DDA" Command="{Binding SetOtherParametersCommand}"
+                                                CommandParameter="Dda1" Width="90"/>
                                         <Button Grid.Column="1" Content="High Resolution DDA" Command="{Binding SetOtherParametersCommand}"
-                                                CommandParameter="HighResolutionDDA" Width="130"/>
+                                                CommandParameter="Dda2" Width="130"/>
                                         <Button Grid.Column="2" Content="Direct Injection" Command="{Binding SetOtherParametersCommand}"
                                                 CommandParameter="DirectInjection" Width="90"/>
                                     </Grid>
@@ -182,7 +182,7 @@
                                                         Opacity="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaOpacityConverter}}">
                                             <Label Content="Minimum Sigma Value" Width="220"
                                                        ToolTip="Minimum distance in standard deviation units allowed before the point is rejected as an outlier"/>
-                                            <local:DoubleTextBoxControl Text="{Binding MinSigmaVale}" Style="{StaticResource TextBoxStyle}"
+                                            <local:DoubleTextBoxControl Text="{Binding MinSigmaValue}" Style="{StaticResource TextBoxStyle}"
                                                                             IsReadOnly="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaReadOnlyConverter}}"/>
                                         </StackPanel>
 
