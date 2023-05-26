@@ -79,11 +79,14 @@
                                         </Grid.ColumnDefinitions>
 
                                         <Button Grid.Column="0" Content="General DDA" Command="{Binding SetOtherParametersCommand}"
-                                                CommandParameter="Dda1" Width="90"/>
+                                                CommandParameter="Dda1" Width="90" 
+                                                ToolTip="Use for DDA of 120k or lower, Sigma Clipping performs well for general applications"/>
                                         <Button Grid.Column="1" Content="High Resolution DDA" Command="{Binding SetOtherParametersCommand}"
-                                                CommandParameter="Dda2" Width="130"/>
+                                                CommandParameter="Dda2" Width="130" 
+                                                ToolTip="Use for DDA of 120k or higher, Averaged Sigma Clipping performs well with highly reproducible, highly resolved, data"/>
                                         <Button Grid.Column="2" Content="Direct Injection" Command="{Binding SetOtherParametersCommand}"
-                                                CommandParameter="DirectInjection" Width="90"/>
+                                                CommandParameter="DirectInjection" Width="90"
+                                                ToolTip="User for spectra files containing scans of a single sample or species, Min Max Clipping removes the highest and lowest intensity value per bin"/>
                                     </Grid>
                                 </GroupBox>
 
