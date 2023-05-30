@@ -10,6 +10,7 @@
         Title="Spectral Averaging Task Window" 
         KeyDown="SpectralAveragingTaskWindow_OnKeyDown"
         Width="750" Height="750"  
+        MinWidth="750"
         WindowStartupLocation="CenterScreen"
         d:DataContext="{x:Static guiFunctions:SpectralAveragingParametersModel.Instance}">
     <Grid>
@@ -118,29 +119,27 @@
                                 </GroupBox>
 
                                 <!-- File Averaging Specific Options -->
-                                <GroupBox Header="File Type Specific Options" Style="{StaticResource GroupBoxStyle}" >
-                                    <ListBox>
-                                        <StackPanel>
+                                <GroupBox Header="Binning Parameters" Style="{StaticResource GroupBoxStyle}" >
+                                    <StackPanel HorizontalAlignment="Left">
 
-                                            <!-- Bin Size -->
-                                            <StackPanel Style="{StaticResource ValueEnteringStackPanel}">
-                                                <Label Content="Bin Size" Width="220" 
+                                        <!-- Bin Size -->
+                                        <StackPanel Style="{StaticResource ValueEnteringStackPanel}">
+                                            <Label Content="Bin Size" Width="280" 
                                                        ToolTip="Size of each bin in Thompson units"/>
-                                                <local:DoubleTextBoxControl Text="{Binding BinSize}" Style="{StaticResource TextBoxStyle}"/>
-                                            </StackPanel>
-
-                                            <!-- Number of scans to average -->
-                                            <StackPanel Style="{StaticResource ValueEnteringStackPanel}" Margin="1"
-                                                        Opacity="{Binding SpectraFileAveragingType, Converter={local:SpectraFileAveragingTypeToNumberOpacityConverter}}">
-                                                <Label Content="Number of Scans To Average" Width="220"
-                                                       ToolTip="How many scans from the file should be averaged at a time" />
-                                                <local:IntegerTexBoxControl Text="{Binding NumberOfScansToAverage}" Style="{StaticResource TextBoxStyle}"
-                                                                            IsReadOnly="{Binding SpectraFileAveragingType, Converter={local:SpectraFileAveragingTypeToNumberToAverageReadOnlyConverter}}"/>
-                                            </StackPanel>
-
-                                            
+                                            <local:DoubleTextBoxControl Text="{Binding BinSize}" Style="{StaticResource TextBoxStyle}"/>
                                         </StackPanel>
-                                    </ListBox>
+
+                                        <!-- Number of scans to average -->
+                                        <StackPanel Style="{StaticResource ValueEnteringStackPanel}" Margin="1"
+                                                        Opacity="{Binding SpectraFileAveragingType, Converter={local:SpectraFileAveragingTypeToNumberOpacityConverter}}">
+                                            <Label Content="Number of Scans To Average" Width="280"
+                                                       ToolTip="How many scans from the file should be averaged at a time" />
+                                            <local:IntegerTexBoxControl Text="{Binding NumberOfScansToAverage}" Style="{StaticResource TextBoxStyle}"
+                                                                            IsReadOnly="{Binding SpectraFileAveragingType, Converter={local:SpectraFileAveragingTypeToNumberToAverageReadOnlyConverter}}"/>
+                                        </StackPanel>
+
+
+                                    </StackPanel>
                                 </GroupBox>
 
                                 <!-- Normalization -->
@@ -183,7 +182,7 @@
                                         <!-- Min Sigma Value -->
                                         <StackPanel Style="{StaticResource ValueEnteringStackPanel}" HorizontalAlignment="Left"
                                                         Opacity="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaOpacityConverter}}">
-                                            <Label Content="Minimum Sigma Value" Width="220"
+                                            <Label Content="Minimum Sigma Value" Width="280"
                                                        ToolTip="Minimum distance in standard deviation units allowed before the point is rejected as an outlier"/>
                                             <local:DoubleTextBoxControl Text="{Binding MinSigmaValue}" Style="{StaticResource TextBoxStyle}"
                                                                             IsReadOnly="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaReadOnlyConverter}}"/>
@@ -192,7 +191,7 @@
                                         <!-- Max Sigma Value -->
                                         <StackPanel Style="{StaticResource ValueEnteringStackPanel}" HorizontalAlignment="Left"
                                                         Opacity="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaOpacityConverter}}">
-                                            <Label Content="Maximum Sigma Value" Width="220" 
+                                            <Label Content="Maximum Sigma Value" Width="280" 
                                                        ToolTip="Maximum distance in standard deviation units allowed before the point is rejected as an outlier"/>
                                             <local:DoubleTextBoxControl Text="{Binding MaxSigmaValue}" Style="{StaticResource TextBoxStyle}"
                                                                             IsReadOnly="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaReadOnlyConverter}}"/>
@@ -201,7 +200,7 @@
                                         <!-- Percentile -->
                                         <StackPanel Style="{StaticResource ValueEnteringStackPanel}" HorizontalAlignment="Left"
                                                         Opacity="{Binding RejectionType, Converter={local:OutlierRejectionTypeToPercentileOpacityConverter}}">
-                                            <Label Content="Percentile" Width="220"
+                                            <Label Content="Percentile" Width="280"
                                                        ToolTip="Distance away from the mean in percentile units before the point is rejected as an outlier in Percentile Clipping"/>
                                             <local:DoubleTextBoxControl Text="{Binding Percentile}" Style="{StaticResource TextBoxStyle}" 
                                                                         IsReadOnly="{Binding RejectionType, Converter={local:OutlierRejectionTypeToPercentileReadOnlyConverter}}"/>

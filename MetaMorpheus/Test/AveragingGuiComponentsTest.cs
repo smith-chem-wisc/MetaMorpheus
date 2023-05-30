@@ -193,5 +193,28 @@ namespace Test
 
             Assert.Throws<ArgumentException> (() => defaultParamsVm.SetOtherParameters("-1"));
         }
+
+
+        [Test]
+        public static void TestViewModelEqualityAllProperties()
+        {
+            var viewModel = new SpectralAveragingParametersViewModel(new SpectralAveragingParameters());
+
+            foreach (var property in viewModel.GetType().GetProperties())
+            {
+                var propertyType = property.PropertyType;
+                var numericalTypes = new[] { typeof(int), typeof(double), typeof(float), typeof(OutputType),
+                    typeof(OutlierRejectionType), typeof(SpectraWeightingType), typeof(SpectraFileAveragingType), 
+                    typeof(NormalizationType), typeof(SpectralAveragingType), };
+                var testViewModel = new SpectralAveragingParametersViewModel(new SpectralAveragingParameters());
+
+                Assert.That(viewModel.Equals(testViewModel));
+                if (numericalTypes.Any(p => p == propertyType))
+                {
+                    property.SetValue(testViewModel, -1, null);
+                    Assert.That(!viewModel.Equals(testViewModel));
+                }
+            }
+        }
     }
 }
