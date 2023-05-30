@@ -1,17 +1,9 @@
 ﻿using GuiFunctions.Databases;
 using NUnit.Framework;
-using MetaMorpheusGUI.Properties;
-using System.Net.Http;
 using System;
-using System.Drawing.Printing;
-using System.Threading.Tasks;
-using Microsoft.ML.Data;
 using System.IO;
-using System.Net;
-using System.Security.Cryptography;
-using System.Windows.Documents;
-using System.Windows.Media.Animation;
-using pepXML.Generated;
+using System.Net.Http;
+using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
 namespace Test
@@ -75,7 +67,7 @@ namespace Test
         [TestCase("UP000000280", true, false, false, false, "9.fasta")]
         [TestCase("UP000000280", false, false, true, false, "10.xml")]
         [TestCase("UP000000280", false, false, false, false, "11.fasta")]
-        public static async Task  UniprotHtmlQueryTest(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed,
+        public static async Task UniprotHtmlQueryTest(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed,
            string testName)
         {
             var proteomeURL = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed,
