@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Linq;
+using System.Text;
 
 namespace GuiFunctions.Databases
 {
@@ -13,30 +14,17 @@ namespace GuiFunctions.Databases
             StringBuilder htmlQueryString = new StringBuilder();
             htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/stream?");
 
-            if (!xmlFormat) //fasta
-            {
-                htmlQueryString.Append("format=fasta");
-            }
-            else
-            {
-                htmlQueryString.Append("format=xml");
-            }
+            string[] queryArray = new string[4];
 
-            if (isoforms && !xmlFormat) //Only the .fasta file can be isoforms
-            {
-                htmlQueryString.Append("&includeIsoform=true");
-            }
+            queryArray[0] = compressed ? "compressed=true" : "";
+            queryArray[1] = xmlFormat ? "format=xml" : "format=fasta";
+            queryArray[2] = isoforms && !xmlFormat ? "includeIsoform=true" : "";
+            queryArray[3] = reviewed ? $"query=reviewed:true&proteome:{proteomeID}" : $"query=proteome:{proteomeID}";
 
-            if (reviewed)
-            {
-                htmlQueryString.Append("&reviewed=true");
-            }
+            string[] queryArrayReduced = queryArray.Where(x => x != "").ToArray() ;
 
-            if (compressed)
-            {
-                htmlQueryString.Append("&compressed=true");
-            }
-            htmlQueryString.Append("&query=%28%28proteome%3A" + proteomeID + "%29%29");
+            htmlQueryString.Append(string.Join("&", queryArrayReduced));
+
             return htmlQueryString.ToString();
         }
 
@@ -75,3 +63,60 @@ namespace GuiFunctions.Databases
         }
     }
 }
+
+//if (compressed)
+//{
+//    htmlQueryString.Append("compressed=true");
+
+//    if (!xmlFormat && reviewed && isoforms)
+//    {
+//        htmlQueryString.Append("&format=fasta&reviewed=true&includeIsoform=true");
+//    }
+//    else if (xmlFormat && reviewed && isoforms)
+//    {
+//        htmlQueryString.Append("&format=xml&reviewed=true");
+//    }
+//    else if (!xmlFormat && !reviewed && isoforms)
+//    {
+
+//    }
+//}
+
+
+//if (compressed)
+//{
+//    htmlQueryString.Append("compressed=true");
+//}
+
+//if (!xmlFormat && compressed) //fasta
+//{
+//    htmlQueryString.Append("&format=fasta");
+//}
+//else if (!xmlFormat && !compressed)
+//{
+//    htmlQueryString.Append("format=fasta");
+//}
+//else if (xmlFormat && compressed)
+//{
+//    htmlQueryString.Append("&format=xml");
+//}
+//else
+//{
+//    htmlQueryString.Append("format=xml");
+//}
+
+//if (isoforms && !xmlFormat) //Only the .fasta file can be isoforms
+//{
+//    htmlQueryString.Append("&includeIsoform=true");
+//}
+
+//// Query 
+
+//htmlQueryString.Append("&query=");
+
+//if (reviewed)
+//{
+//    htmlQueryString.Append("reviewed:true&");
+//}
+
+//htmlQueryString.Append("proteome:" + proteomeID);
