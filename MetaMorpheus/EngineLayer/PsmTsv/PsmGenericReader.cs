@@ -233,8 +233,8 @@ namespace EngineLayer.PsmTsv
 
 
         /// <summary>
-        /// Reads a MaxQuant Evidence.txt file and returns all MBR identifications as a list of
-        /// ChromatographicPeaks
+        /// Reads a MaxQuant Evidence.txt file and returns a dictionary where keys are full sequences
+        /// and the values are a list of the corresponding MBR hits
         /// </summary>
         /// <param name="filepath"></param>
         /// <param name="silent"></param>

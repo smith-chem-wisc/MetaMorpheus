@@ -12,6 +12,8 @@ using System.Collections.Concurrent;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using EngineLayer.SpectralRecovery;
+using EngineLayer.PsmTsv;
+using MassSpectrometry;
 
 namespace TaskLayer
 {
@@ -125,6 +127,89 @@ namespace TaskLayer
             WriteSpectralRecoveryPsmResults(bestMbrMatches, parameters);
 
             return new SpectralRecoveryResults(bestMbrMatches, parameters.FlashLfqResults);
+        }
+
+        /// <summary>
+        /// Performs secondary analysis of MBR results by searching acceptor files for candidate spectra,
+        /// and comparing those spectra to a spectral library. Results (PEP model and .psmtsv) are written to
+        /// unique MbrAnalysis folder.
+        ///
+        /// This function is designed to be used within a test. More work is needed to integrate it into MetaMorpheus
+        /// </summary>
+        /// <param name="parameters"></param>
+        /// <param name="commonParameters"></param>
+        /// <param name="fileSpecificParameters"></param>
+        /// <param name ="calibratedFilePaths"> Optional param to link spectraFileInfo objects to the file path of a calibrated version of the same file</param>
+        public static SpectralRecoveryResults RunSpectralRecoveryFromMaxQuant(
+            List<SpectraFileInfo> spectraFiles,
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaksDict,
+            Dictionary<string, PsmFromTsv> donorPsmDict,
+            string spectralLibraryPath,
+            string outputFolder,
+            CommonParameters commonParameters,
+            double retentionTimeWindowHalfWidth = 1,
+            Dictionary<SpectraFileInfo, string> calibratedFilePaths = null)
+        {
+
+            int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+
+            ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches = new();
+
+            foreach (SpectraFileInfo spectraFile in spectraFiles)
+            {
+                MyFileManager myFileManager = new(true);
+                SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
+
+                MiniClassicSearchEngine mcse = new(
+                    dataFile: myFileManager.LoadFile(spectraFile.FullFilePathWithExtension, commonParameters),
+                    spectralLibrary: library,
+                    commonParameters,
+                    fileSpecificParameters: null,
+                    spectraFile.FullFilePathWithExtension,
+                    retentionTimeWindowHalfWidth,
+                    maxQuantAnalysis: true);
+
+                // This transforms a <FullSeq, List<mbrPeak>> dictionary 
+                var fileSpecificMbrPeaks = mbrPeaksDict
+                    .ToDictionary(
+                        kvp => kvp.Key,
+                        kvp => kvp.Value.FirstOrDefault(p => p.SpectraFileInfo == spectraFile))
+                    .Where(kvp => kvp.Value != null).ToList();
+
+                Parallel.ForEach(threads, (i) =>
+                {
+                    // Stop loop if canceled
+                    if (GlobalVariables.StopLoops) { return; }
+                    for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
+                    {
+                        ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i].Value;
+                        string maxQuantFullSeq = fileSpecificMbrPeaks[i].Key;
+
+                        if (donorPsmDict.TryGetValue(maxQuantFullSeq, out PsmFromTsv donorPsm))
+                        {
+                            List<SpectralRecoveryPSM> peptideSpectralMatches =
+                                mcse.SearchAroundPeak(donorPsm.PeptideWithSetModifications, mbrPeak);
+
+                            if (peptideSpectralMatches == null || !peptideSpectralMatches.Any())
+                            {
+                                bestMbrMatches.TryAdd(mbrPeak, null);
+                            }
+                            else
+                            {
+                                bestMbrMatches.TryAdd(mbrPeak, BestPsmForMbrPeak(peptideSpectralMatches));
+                            }
+                        }
+                    }
+                });
+
+                library.CloseConnections();
+            }
+
+            Directory.CreateDirectory(Path.Join(outputFolder, SpectralRecoveryFolder));
+            WriteSpectralRecoveryPsmResults(bestMbrMatches, null, outputFolder);
+
+            return new SpectralRecoveryResults(bestMbrMatches, null);
         }
 
         private static List<PeptideSpectralMatch> GetAllPeptides(
@@ -276,17 +361,29 @@ namespace TaskLayer
             }
         }
 
-        private static void WriteSpectralRecoveryPsmResults(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, PostSearchAnalysisParameters parameters)
+        private static void WriteSpectralRecoveryPsmResults(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches,
+            PostSearchAnalysisParameters parameters, string outputFolder = null)
+
         {
-            string mbrOutputPath = Path.Combine(Path.Join(parameters.OutputFolder, SpectralRecoveryFolder), @"RecoveredSpectra.psmtsv");
+            if (parameters == null && outputFolder == null) throw new ArgumentException();
+
+            string mbrOutputPath = Path.Combine(Path.Join(outputFolder ?? parameters.OutputFolder, SpectralRecoveryFolder), @"RecoveredSpectra.psmtsv");
             using (var output = new StreamWriter(mbrOutputPath))
             {
                 output.WriteLine(SpectralRecoveryPSM.TabSeparatedHeader);
                 IEnumerable<SpectralRecoveryPSM> orderedMatches = bestMbrMatches.Select(p => p.Value).
                     Where(p => p != null).OrderByDescending(p => p.Score);
+
                 foreach (SpectralRecoveryPSM match in orderedMatches)
                 {
-                    output.WriteLine(match.ToString(parameters.SearchParameters.ModsToWriteSelection));
+                    if (parameters == null)
+                    {
+                        output.WriteLine(match.ToString());
+                    }
+                    else
+                    {
+                        output.WriteLine(match.ToString(parameters.SearchParameters.ModsToWriteSelection));
+                    }
                 }
             }
         }

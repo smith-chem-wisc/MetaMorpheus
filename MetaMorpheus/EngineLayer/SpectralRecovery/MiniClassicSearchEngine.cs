@@ -9,6 +9,8 @@ using System.Linq;
 using Chemistry;
 using FlashLFQ;
 using IsotopicEnvelope = MassSpectrometry.IsotopicEnvelope;
+using Easy.Common.Extensions;
+using ThermoFisher.CommonCore.Data;
 
 
 namespace EngineLayer.SpectralRecovery
@@ -28,6 +30,7 @@ namespace EngineLayer.SpectralRecovery
         private readonly double[] _arrayOfMs2RTs; 
         private readonly CommonParameters _fileSpecificParameters;
         private readonly string _fullFilePath;
+        private readonly bool _maxQuantAnalysis;
 
 
         /// <summary>
@@ -47,7 +50,8 @@ namespace EngineLayer.SpectralRecovery
             CommonParameters commonParameters,
             CommonParameters fileSpecificParameters,
             string fullFilePath,
-            double retentionTimeWindowHalfWidth = 1.0)
+            double retentionTimeWindowHalfWidth = 1.0,
+            bool maxQuantAnalysis = false)
         {
             InstanceSpecificMsDataFile = dataFile;
             SpectralLibrary = spectralLibrary;
@@ -55,6 +59,7 @@ namespace EngineLayer.SpectralRecovery
             _fileSpecificParameters = fileSpecificParameters ?? commonParameters;
             _fullFilePath = fullFilePath;
             RetentionTimeWindowHalfWidth = retentionTimeWindowHalfWidth;
+            _maxQuantAnalysis = maxQuantAnalysis;
 
             _ms2DataScansByRetentionTime = InstanceSpecificMsDataFile
                 .GetAllScansList()
@@ -80,11 +85,19 @@ namespace EngineLayer.SpectralRecovery
             {
                 peakRetentionTime = peak.Apex.IndexedPeak.RetentionTime;
                 peakCharge = peak.Apex.ChargeState;
+            } 
+            // This is used for peaks read from MaxQuant
+            else if(peak != null && peak.IsotopicEnvelopes.IsNotNullOrEmpty())
+            {
+                peakRetentionTime = peak.IsotopicEnvelopes[0].IndexedPeak.RetentionTime;
+                peakCharge = peak.IsotopicEnvelopes[0].ChargeState;
             }
+
             if (peakRetentionTime < 0 | peakCharge < 0)
             {
                 throw new ArgumentException("Peak can not be null!");
             }
+
             if (!SpectralLibrary.TryGetSpectrum(donorPwsm.FullSequence, peakCharge,
                     out LibrarySpectrum donorSpectrum))
             {
@@ -126,11 +139,14 @@ namespace EngineLayer.SpectralRecovery
                 acceptablePsms.Add(psm);
             }
 
-            foreach (var psm in acceptablePsms)
+            if (!_maxQuantAnalysis)
             {
-                psm.ResolveAllAmbiguities();
+                foreach (var psm in acceptablePsms)
+                {
+                    psm.ResolveAllAmbiguities();
+                }
             }
-
+            
             return acceptablePsms;
         }
 

@@ -18,7 +18,7 @@ using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
-using TaskLayer.MbrAnalysis;
+using EngineLayer.SpectralRecovery;
 using static iText.IO.Image.Jpeg2000ImageData;
 
 namespace Test
@@ -33,7 +33,6 @@ namespace Test
 
 
         [Test]
-        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReaderHeLa()
         {
             string experimentalDesignFilepath = @"D:\HelaSingleCellQCmzML\rawFiles\ExperimentalDesign.tsv";
@@ -98,15 +97,15 @@ namespace Test
             string resultsPath = @"D:\SingleCellDataSets\MSV000087524\RtFromMaxQuant";
             Directory.CreateDirectory(resultsPath);
 
-            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+            var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
                 spectraFiles,
                 mbrPeaks,
                 maxQuantPsms,
                 spectrumFilePath,
-                resultsPath + @"\",
+                resultsPath,
                 commonParams);
 
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath + @"\", "PeakQuant_NoArtifact");
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath, "PeakQuant_NoArtifact");
         }
 
 
@@ -169,7 +168,7 @@ namespace Test
             string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
-            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+            var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
                 spectraFiles,
                 mbrPeaks,
                 maxQuantPsms,
@@ -254,7 +253,7 @@ namespace Test
             string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
-            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+            var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
                 spectraFiles,
                 mbrPeaks,
                 maxQuantPsms,
@@ -327,7 +326,7 @@ namespace Test
             string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
-            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+            var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
                 spectraFiles,
                 mbrPeaks,
                 maxQuantPsms,
@@ -414,7 +413,7 @@ namespace Test
             string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
-            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+            var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
                 spectraFiles,
                 mbrPeaks,
                 maxQuantPsms,
@@ -499,7 +498,7 @@ namespace Test
             string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
-            var mbrAnalysisResults = MbrAnalysisRunner.RunMbrAnalysisFromMaxQuant(
+            var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
                 spectraFiles,
                 mbrPeaks,
                 maxQuantPsms,
