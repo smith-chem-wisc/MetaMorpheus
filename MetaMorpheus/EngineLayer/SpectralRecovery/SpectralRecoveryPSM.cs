@@ -11,6 +11,7 @@ using MassSpectrometry.MzSpectra;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using ThermoFisher.CommonCore.Data;
 using ThermoFisher.CommonCore.Data.Business;
 using Peptide = Proteomics.AminoAcidPolymer.Peptide;
 
@@ -77,14 +78,14 @@ namespace EngineLayer.SpectralRecovery
 
         public void FindOriginalPsm(List<PeptideSpectralMatch> originalSearchPsms)
         {
-            if (MsDataScan == null || DonorPeptide == null)
+            if (MsDataScan == null || DonorPeptide?.FullSequence == null || originalSearchPsms.IsNullOrEmpty())
             {
                 OriginalSpectralMatch = null;
                 return;
             }
 
             OriginalSpectralMatch = originalSearchPsms
-                .Where(p => p?.MsDataScan != null)
+                .Where(p => p?.FullSequence != null && p.MsDataScan != null)
                 .FirstOrDefault(p => 
                 p.FullFilePath.Equals(FullFilePath)
                 && p.MsDataScan.OneBasedScanNumber == MsDataScan.OneBasedScanNumber
@@ -234,14 +235,10 @@ namespace EngineLayer.SpectralRecovery
                         {
                             peptideFormula.Add(mod.ChemicalFormula);
                         }
-                        else if(mod.MonoisotopicMass != null)
-                        {
-                            massCorrection += (double)mod.MonoisotopicMass;
-                        }
                     }
 
                     // add averagine for any unknown mass difference (i.e., modification w/o Chemical Formula)
-                    massCorrection = Math.Max(peptideFormula.MonoisotopicMass - baseSequence.MonoisotopicMass, massCorrection);
+                    massCorrection = selectedPeptide.MonoisotopicMass - peptideFormula.MonoisotopicMass;
                     if (Math.Abs(massCorrection) >= 20) // 20 Da difference is pulled directly from FlashLfq
                     {
                         double averagines = massCorrection / averagineMass;

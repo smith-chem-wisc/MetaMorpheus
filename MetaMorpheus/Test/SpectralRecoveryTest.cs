@@ -357,6 +357,36 @@ namespace Test
 
             Assert.That(equalMassCorrelation, Is.EqualTo(1).Within(0.001));
             Assert.That(modsCorrelation != null && modsCorrelation >= 0.9);
+
+            // Now, testing one mod (Carbamidomethyl on C)
+            modDict.Remove("BS on G");
+            PeptideWithSetModifications pwsm_OneMod = new PeptideWithSetModifications(
+                "ENQGDETQGC[Common Fixed:Carbamidomethyl on C]PPQR", modDict, p: new Protein("ENQGDETQGCPPQR", "FakeProtein"), digestionParams: new DigestionParams(),
+                oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 14);
+            // Get theoretical isotopic distribution from equal mass peptide
+            equalMassFormula = pwsm_OneMod.FullChemicalFormula;
+            peptideDistribution = IsotopicDistribution
+                .GetDistribution(equalMassFormula, fineResolution: 0.01, minProbability: 0.005);
+            theoreticalMasses = peptideDistribution.Masses;
+            theoreticalIntensities = peptideDistribution.Intensities;
+            lfqEnvelopes = new List<FlashLFQ.IsotopicEnvelope>();
+
+            // Create IndexedPeaks and IsotopicEnvelopes
+            for (int i = 0; i < peptideDistribution.Masses.Length; i++)
+            {
+                lfqEnvelopes.Add(
+                    new FlashLFQ.IsotopicEnvelope(
+                        new IndexedMassSpectralPeak(mz: theoreticalMasses[i].ToMz(1), intensity: theoreticalIntensities[i], 0, 1.00),
+                        chargeState: 1,
+                        intensity: theoreticalIntensities[i]));
+            }
+
+            // Set private properties for the ChromatographicPeak
+            peak.IsotopicEnvelopes = lfqEnvelopes;
+            peak.SetChromatographicPeakProperties("Apex", lfqEnvelopes.MaxBy(i => i.Intensity));
+            double? oneModCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_OneMod, peak);
+
+            Assert.That(oneModCorrelation, Is.EqualTo(1).Within(0.001));
         }
 
         public static void SetChromatographicPeakProperties(this ChromatographicPeak peak, string propName, Object newValue)
