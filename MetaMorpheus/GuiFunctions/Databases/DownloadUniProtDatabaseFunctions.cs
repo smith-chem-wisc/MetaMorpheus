@@ -12,7 +12,7 @@ namespace GuiFunctions.Databases
         public static string GetUniProtHtmlQueryString(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed)
         {
             StringBuilder htmlQueryString = new StringBuilder();
-            htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/stream?");
+            htmlQueryString.Append("https://rest.uniprot.org/uniprotkb/search?");
 
             string[] queryArray = new string[4];
 

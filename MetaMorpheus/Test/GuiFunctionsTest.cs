@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.ML.Data;
 using System.IO;
 using System.Net;
+using System.Security.Cryptography;
 using System.Windows.Documents;
 using System.Windows.Media.Animation;
 using pepXML.Generated;
@@ -90,6 +91,8 @@ namespace Test
             {
                 using (var client = new WebClient())
                 {
+                    ServicePointManager.DefaultConnectionLimit = 15;
+                    client.Proxy = null;
                     client.DownloadFile(proteomeURL, filePath);
                 }
 
@@ -113,45 +116,71 @@ namespace Test
                 Console.WriteLine(proteomeURL);
                 Assert.Fail();
             }
-
-
-            //// Makes the API request
-            //using (var client = new HttpClient())
-            //{
-            //    client.DefaultRequestHeaders.Clear();
-            //    var requestResponse = await client.GetAsync((proteomeURL));
-
-            //    if ((int)requestResponse.StatusCode == 200)
-            //    {
-            //        client.GetAsync(proteomeURL);
-            //    }
-            //    else
-            //    {
-            //        Console.WriteLine(requestResponse.StatusCode);
-            //        Assert.Fail();
-            //    }
-                //HttpWebResponse serverStatus = (HttpWebResponse) proteomeURL.
-                //if () { }
-                //client.DownloadFile(proteomeURL, filePath);
-            
-
-
-
-            //FileInfo proteomeCheck = new FileInfo(filePath);
-
-            //bool passed = false;
-
-            //if (proteomeCheck.Length > 2000) // fies that were not correctly downloaded have a size less than 1Kb
-            //{
-            //    passed = true;
-            //}
-
-            // todo: Code to delete file after test
-            
-
-
             Assert.Pass();
             
+        }
+
+        [Test]
+        //[TestCase("UP000325672", true, true, false, true, "1")]
+        //[TestCase("UP000325672", true, true, false, false, "2")]
+        //[TestCase("UP000325672", true, false, true, true, "3")]
+        //[TestCase("UP000325672", true, false, true, false, "4")]
+        [Parallelizable(ParallelScope.All)]
+        [TestCase("UP000000280", true, true, true, true, "1.fasta.gz")]
+        [TestCase("UP000000280", true, true, true, false, "2.fasta")]
+        [TestCase("UP000000280", true, true, false, true, "3.fasta.gz")]
+        [TestCase("UP000000280", true, false, true, true, "4.xml.gz")]
+        [TestCase("UP000000280", false, true, true, true, "5.fasta.gz")]
+        [TestCase("UP000000280", true, true, false, false, "6.fasta")]
+        [TestCase("UP000000280", true, false, true, false, "7.xml")]
+        [TestCase("UP000000280", false, true, true, false, "8.fasta")]
+        [TestCase("UP000000280", true, false, false, false, "9.fasta")]
+        [TestCase("UP000000280", false, false, true, false, "10.xml")]
+        [TestCase("UP000000280", false, false, false, false, "11.fasta")]
+        public static async Task  UniprotHtmlQueryTest2(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed,
+           string testName)
+        {
+            var proteomeURL = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed,
+                isoforms, xmlFormat, compressed);
+
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, $@"DatabaseTests\{testName}");
+
+            try
+            {
+                HttpClientHandler handler = new HttpClientHandler();
+                handler.Proxy = null;
+                handler.UseProxy = false;
+
+                var client = new HttpClient(handler);
+                var response = await client.GetAsync(proteomeURL);
+                using (var file = File.Create(filePath))
+                {
+                    var content = await response.Content.ReadAsStreamAsync();
+                    await content.CopyToAsync(file);
+                }
+
+                if (xmlFormat)
+                {
+                    ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                        allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod);
+                }
+                else
+                {
+                    ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                        isContaminant: false, out var unknownMod);
+                }
+
+                //File.Delete(filePath);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+                Console.WriteLine(proteomeURL);
+                Assert.Fail();
+            }
+            Assert.Pass();
+
         }
     }
 }
