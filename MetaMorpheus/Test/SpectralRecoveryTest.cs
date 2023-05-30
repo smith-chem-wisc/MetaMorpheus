@@ -345,8 +345,18 @@ namespace Test
 
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
-            testLibraryWithoutDecoy.CloseConnections();
-           
+            // Test spectral library update
+            postSearchTask.Parameters.SearchParameters.UpdateSpectralLibrary = true;
+            postSearchTask.Parameters.SpectralLibrary = testLibraryWithoutDecoy;
+            postSearchTask.Run();
+
+            var libraryList = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            string updateLibraryPath = libraryList.First(p => p.Contains("SpectralLibrary") && !p.Contains(matchingvalue)).ToString();
+            var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
+            Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
+
+            testLibraryWithoutDecoy.CloseConnections(); 
+            updatedLibraryWithoutDecoy.CloseConnections();
         }
 
         [Test]
