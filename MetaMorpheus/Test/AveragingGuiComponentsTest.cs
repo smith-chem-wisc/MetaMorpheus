@@ -200,12 +200,14 @@ namespace Test
         {
             var viewModel = new SpectralAveragingParametersViewModel(new SpectralAveragingParameters());
 
+            var numericalTypes = new[] { typeof(int), typeof(double), typeof(float), typeof(OutputType),
+                typeof(OutlierRejectionType), typeof(SpectraWeightingType), typeof(SpectraFileAveragingType),
+                typeof(NormalizationType), typeof(SpectralAveragingType), };
+
+            // check properties in view model
             foreach (var property in viewModel.GetType().GetProperties())
             {
                 var propertyType = property.PropertyType;
-                var numericalTypes = new[] { typeof(int), typeof(double), typeof(float), typeof(OutputType),
-                    typeof(OutlierRejectionType), typeof(SpectraWeightingType), typeof(SpectraFileAveragingType), 
-                    typeof(NormalizationType), typeof(SpectralAveragingType), };
                 var testViewModel = new SpectralAveragingParametersViewModel(new SpectralAveragingParameters());
 
                 Assert.That(viewModel.Equals(testViewModel));
@@ -215,6 +217,22 @@ namespace Test
                     Assert.That(!viewModel.Equals(testViewModel));
                 }
             }
+
+            // check properties in the parameters the view model wraps
+            foreach (var property in viewModel.SpectralAveragingParameters.GetType().GetProperties())
+            {
+                var propertyType = property.PropertyType;
+                var testViewModel = new SpectralAveragingParametersViewModel(new SpectralAveragingParameters());
+
+                Assert.That(viewModel.Equals(testViewModel));
+                if (numericalTypes.Any(p => p == propertyType))
+                {
+                    property.SetValue(testViewModel.SpectralAveragingParameters, -1, null);
+                    Assert.That(!viewModel.Equals(testViewModel));
+                }
+            }
         }
+
+        
     }
 }
