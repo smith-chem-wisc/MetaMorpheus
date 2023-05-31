@@ -1,14 +1,12 @@
 ﻿using GuiFunctions.Databases;
 using NUnit.Framework;
+using Proteomics;
 using System;
-using System.Drawing.Printing;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Proteomics;
 using UsefulProteomicsDatabases;
-using System.Collections.Generic;
-using Microsoft.ML.Transforms.Text;
 
 namespace Test
 {
@@ -81,8 +79,8 @@ namespace Test
                 }
                 else
                 {
-                     reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                        isContaminant: false, out var unknownMod);
+                    reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                       isContaminant: false, out var unknownMod);
                 }
 
                 Console.WriteLine(reader.Count);
