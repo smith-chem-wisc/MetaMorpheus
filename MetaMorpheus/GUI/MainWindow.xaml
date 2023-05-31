@@ -299,9 +299,20 @@
                         
                         task performs mass calibration; 
                         
+                        <!-- TODO: Change link to averaging paper once published -->
                         <LineBreak />
+
+                        ● The 
+
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Averaging-Task" RequestNavigate="Hyperlink_RequestNavigate">
+                            averaging
+                        </Hyperlink>
                         
-                        ● the
+                        task averages spectra to refine isotopic distributions
+
+                        <LineBreak />
+
+                        ● The
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034" RequestNavigate="Hyperlink_RequestNavigate">
                             GPTMD
                         </Hyperlink>
@@ -310,7 +321,7 @@
                         
                         <LineBreak />
                         
-                        ● the search task performs a proteomics database search, with 
+                        ● The search task performs a proteomics database search, with 
                         
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608" RequestNavigate="Hyperlink_RequestNavigate">
                             quantification
@@ -329,7 +340,7 @@
                         
                         <LineBreak />
                         
-                        ● the 
+                        ● The 
                         
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141" RequestNavigate="Hyperlink_RequestNavigate">
                             XL search
@@ -339,7 +350,7 @@
                         
                         <LineBreak />
                         
-                        ● the 
+                        ● The 
                         
                         <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract" RequestNavigate="Hyperlink_RequestNavigate">
                             glycopeptide

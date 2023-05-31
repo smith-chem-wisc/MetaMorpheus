@@ -16,6 +16,7 @@ using SpectralAveraging;
 using Nett;
 using TaskLayer;
 using System.IO;
+using System.Windows.Navigation;
 using MassSpectrometry;
 
 namespace MetaMorpheusGUI
@@ -83,6 +84,11 @@ namespace MetaMorpheusGUI
             {
                 CancelButton_OnClick(sender, e);
             }
+        }
+
+        private void Hyperlink_OnRequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            GlobalVariables.StartProcess(e.Uri.ToString());
         }
     }
 }

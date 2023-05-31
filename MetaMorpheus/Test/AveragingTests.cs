@@ -6,11 +6,12 @@ using System.Linq;
 using EngineLayer;
 using FlashLFQ;
 using GuiFunctions;
-using IO.MzML;
 using MassSpectrometry;
 using NUnit.Framework;
+using Readers;
 using SpectralAveraging;
 using TaskLayer;
+using Mzml = IO.MzML.Mzml;
 
 namespace Test
 {
@@ -364,6 +365,38 @@ namespace Test
             {
                 Assert.That(calibratedMs2Scans[i].MassSpectrum.Equals(averagedMs2Scans[i].MassSpectrum));
             }
+
+            Directory.Delete(testPath, true);
+        }
+
+        [Test]
+        public static void TestAveragingFailure()
+        {
+            var filepath = Path.Combine(TestContext.CurrentContext.TestDirectory, "sliced-raw.mzML");
+            string testPath = Path.Combine(TestFolder, "TestAveragingFailure");
+            Directory.CreateDirectory(testPath);
+
+            // file only contaisn 100 spectra
+            SpectralAveragingParameters parameters = new SpectralAveragingParameters()
+            {
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
+                NumberOfScansToAverage = 120
+            };
+            SpectralAveragingTask averagingTask = new(parameters) { CommonParameters = commonParameters };
+
+            SpectraFileInfo fileInfo = new SpectraFileInfo(filepath, "condition", 0, 0, 0);
+            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+
+            // run the tasks
+            EverythingRunnerEngine everythingRunnerEngine = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)>
+                {
+                    ("Task1-Average", averagingTask)
+                },
+                new List<string> { filepath },
+                new List<DbForTask>() , testPath);
+            everythingRunnerEngine.Run();
 
             Directory.Delete(testPath, true);
         }

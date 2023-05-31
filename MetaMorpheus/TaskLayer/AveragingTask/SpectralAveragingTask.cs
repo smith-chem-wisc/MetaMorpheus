@@ -95,7 +95,7 @@ namespace TaskLayer
                     fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
                 }
 
-                // write toml settings for the calibrated file
+                // write toml settings for the averaged file
                 var newTomlFileName = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
                 Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
                 FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });

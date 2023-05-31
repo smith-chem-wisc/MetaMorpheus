@@ -228,21 +228,11 @@ namespace GuiFunctions
             if (MaxThreads != other.MaxThreads) return false;
 
 
-            // check internal parameters
-            if (SpectralAveragingParameters.OutlierRejectionType != other.SpectralAveragingParameters.OutlierRejectionType) return false;
-            if (SpectralAveragingParameters.SpectralWeightingType != other.SpectralAveragingParameters.SpectralWeightingType) return false;
-            if (SpectralAveragingParameters.NormalizationType != other.SpectralAveragingParameters.NormalizationType) return false;
+            // check internal parameters not attached to view model directly
             if (SpectralAveragingParameters.SpectralAveragingType != other.SpectralAveragingParameters.SpectralAveragingType) return false;
-            if (SpectralAveragingParameters.SpectraFileAveragingType != other.SpectralAveragingParameters.SpectraFileAveragingType) return false;
             if (SpectralAveragingParameters.OutputType != other.SpectralAveragingParameters.OutputType) return false;
-            if (Math.Abs(SpectralAveragingParameters.Percentile - other.SpectralAveragingParameters.Percentile) > 0.001) return false;
-            if (Math.Abs(SpectralAveragingParameters.MinSigmaValue - other.SpectralAveragingParameters.MinSigmaValue) > 0.001) return false;
-            if (Math.Abs(SpectralAveragingParameters.MaxSigmaValue - other.SpectralAveragingParameters.MaxSigmaValue) > 0.001) return false;
-            if (Math.Abs(SpectralAveragingParameters.BinSize - other.SpectralAveragingParameters.BinSize) > 0.001) return false;
-            if (SpectralAveragingParameters.NumberOfScansToAverage != other.SpectralAveragingParameters.NumberOfScansToAverage) return false;
             if (SpectralAveragingParameters.ScanOverlap != other.SpectralAveragingParameters.ScanOverlap) return false;
-            if (SpectralAveragingParameters.MaxThreadsToUsePerFile != other.SpectralAveragingParameters.MaxThreadsToUsePerFile) return false;
-            return true;
+             return true;
         }
     }
 

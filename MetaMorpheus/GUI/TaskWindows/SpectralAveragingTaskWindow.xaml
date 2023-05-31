@@ -9,8 +9,9 @@
         mc:Ignorable="d"
         Title="Spectral Averaging Task Window" 
         KeyDown="SpectralAveragingTaskWindow_OnKeyDown"
-        Width="750" Height="750"  
+        Width="750" Height="Auto"  
         MinWidth="750"
+        MinHeight="200"
         WindowStartupLocation="CenterScreen"
         d:DataContext="{x:Static guiFunctions:SpectralAveragingParametersModel.Instance}">
     <Grid>
@@ -23,37 +24,57 @@
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
 
-                <!-- Upper region with name -->
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
-                    <Label Content="Task Name" />
-                    <TextBox x:Name="OutputFileNameTextBox" Width="150">
-                        <TextBox.Style>
-                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
-                                <Style.Resources>
-                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
-                                        <VisualBrush.Visual>
-                                            <Label Content="AveragingTask" Foreground="Gray" />
-                                        </VisualBrush.Visual>
-                                    </VisualBrush>
-                                </Style.Resources>
-                                <Style.Triggers>
-                                    <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
-                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                    </Trigger>
-                                    <Trigger Property="Text" Value="{x:Null}">
-                                        <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
-                                    </Trigger>
-                                    <Trigger Property="IsKeyboardFocused" Value="True">
-                                        <Setter Property="Background" Value="White" />
-                                    </Trigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBox.Style>
-                    </TextBox>
-                </StackPanel>
+                <!-- Upper region with name and wiki link -->
+                <Grid DockPanel.Dock="Top">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Name -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Label Content="Task Name" />
+                        <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                    <Style.Resources>
+                                        <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                            <VisualBrush.Visual>
+                                                <Label Content="AveragingTask" Foreground="Gray" />
+                                            </VisualBrush.Visual>
+                                        </VisualBrush>
+                                    </Style.Resources>
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="Text" Value="{x:Null}">
+                                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                            <Setter Property="Background" Value="White" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </StackPanel>
+
+                    <!-- Wiki Link -->
+                    <TextBlock Grid.Column="1" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"
+                               FontWeight="Bold">
+                        About the 
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Averaging-Task"
+                                   RequestNavigate="Hyperlink_OnRequestNavigate">
+                            Averaging Task   
+                        </Hyperlink>
+                    </TextBlock>
+                </Grid>
                 
                 <!-- Averaging Parameters -->
-                <GroupBox Header="Averaging Parameters" DockPanel.Dock="Top">
+                <GroupBox DockPanel.Dock="Top">
                     <StackPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
@@ -69,7 +90,7 @@
                             <!-- Averaging Type, Type Specific Options, and Normalization -->
                             <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
 
-                                <!-- Defaults -->
+                                <!-- Preset Parameters -->
                                 <GroupBox Header="Preset Parameters" Style="{StaticResource GroupBoxStyle}" Padding="4">
                                     <Grid>
 
@@ -90,7 +111,6 @@
                                                 ToolTip="User for spectra files containing scans of a single sample or species, Min Max Clipping removes the highest and lowest intensity value per bin"/>
                                     </Grid>
                                 </GroupBox>
-
 
                                 <!-- File Averaging Type -->
                                 <GroupBox Header="File Averaging Type" Style="{StaticResource GroupBoxStyle}" >
