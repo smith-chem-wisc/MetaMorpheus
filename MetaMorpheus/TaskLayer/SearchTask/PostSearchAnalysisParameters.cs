@@ -14,6 +14,7 @@ namespace TaskLayer
         public List<Protein> ProteinList { get; set; }
         public List<Modification> VariableModifications { get; set; }
         public List<Modification> FixedModifications { get; set; }
+        public Modification MultiplexModification { get; set; }
         public HashSet<DigestionParams> ListOfDigestionParams { get; set; }
         public List<PeptideSpectralMatch> AllPsms { get; set; }
         public FlashLfqResults FlashLfqResults { get; set; }

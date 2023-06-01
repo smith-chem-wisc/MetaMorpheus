@@ -259,11 +259,6 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
-                                        <TreeView.ItemContainerStyle>
-                                            <Style TargetType="TreeViewItem">
-                                                <Setter Property="IsExpanded" Value="{Binding Expanded}" />
-                                            </Style>
-                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="5 0 3 0">
@@ -293,11 +288,6 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
-                                        <TreeView.ItemContainerStyle>
-                                            <Style TargetType="TreeViewItem">
-                                                <Setter Property="IsExpanded" Value="{Binding Expanded}" />
-                                            </Style>
-                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
                                 <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
@@ -375,6 +365,7 @@
 
                     <!-- Quantification options -->
                     <GroupBox Header="Quantification" DockPanel.Dock="Top">
+                        <!-- Radio Buttons for Quant Method -->
                         <StackPanel Margin="5">
                             <RadioButton x:Name="CheckBoxNoQuant" Content="No quantification" GroupName="QuantType">
                                 <ToolTipService.ToolTip>
@@ -391,12 +382,19 @@
                                     <ToolTip Content="SILAC quantification is performed using FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
+                            <RadioButton x:Name="CheckBoxMultiplex" Content="Multiplex Quantification: Quantify peptides labeled with isobaric tags" GroupName="QuantType" Unchecked="MultiplexUpdate" Checked="MultiplexUpdate">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Intensity of reporter ions are reported as additional columns in AllPeptides.psmtsv and AllPSMs.psmtsv" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                </ToolTipService.ToolTip>
+                            </RadioButton>
                             <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery finds misidentified MS/MS spectra common in single-cell proteomics data" 
                                          GroupName="QuantType" Click="SpectralRecoveryUpdate">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Match between runs analysis via spectral library search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
+
+                            <!-- SILAC Options -->
                             <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" 
                                       Content="Quantify unlabeled peptides/proteins" 
                                       IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}"
@@ -424,6 +422,8 @@
                                     <Button x:Name="ClearSilac" Content="Clear" Click="ClearSilac_Click" IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}"/>
                                 </StackPanel>
                             </Grid>
+
+                            <!-- LFQ Options -->
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Name="PeakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20">
                                     <TextBox.IsEnabled>
@@ -487,6 +487,25 @@
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+
+                            <!-- Multiplex Options -->
+                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
+                                <Label x:Name="MultiplexTag" Content="Label Type:" Width="75" 
+                                       Visibility="{Binding IsChecked, ElementName=CheckBoxMultiplex, Converter={StaticResource bool2VisConverter}}"/>
+                                <ComboBox x:Name="MultiplexComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" 
+                                          SelectionChanged="MultiplexUpdate"
+                                          IsEnabled="{Binding IsChecked, ElementName=CheckBoxMultiplex}"
+                                          Visibility="{Binding IsChecked, ElementName=CheckBoxMultiplex, Converter={StaticResource bool2VisConverter}}">
+                                    <ComboBox.ToolTip>
+                                        <TextBlock>
+                                            Isobaric label used for multiplexing
+                                            <LineBreak />
+                                            Labels can be added/modified by the user at "Data -> Open folder with mods/data files -> Mods -> tmt.txt"
+                                        </TextBlock>
+                                    </ComboBox.ToolTip>
+                                </ComboBox>
+                            </StackPanel>
+
                         </StackPanel>
                     </GroupBox>
 
