@@ -465,6 +465,21 @@
     <None Update="TestVariantPep.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TMT_test\DiLeu-12plex-Task1-SearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\DiLeu-4plex-Task1-SearchTaskconfig.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\DiLeu-Task1-SearchTaskconfig.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\DiLeuSlice.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\DiLeu_Slice_PXD029269.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TMT_test\mouseTmt.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
