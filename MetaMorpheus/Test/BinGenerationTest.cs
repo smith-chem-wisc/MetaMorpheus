@@ -28,7 +28,7 @@ namespace Test
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                     DecoyType = DecoyType.None,
                     DoParsimony = true,
-                    DoQuantification = true
+                    DoLabelFreeQuantification = true
                 },
             };
 
@@ -92,7 +92,7 @@ namespace Test
                     DoHistogramAnalysis = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                     MatchBetweenRuns = true,
-                    DoQuantification = true
+                    DoLabelFreeQuantification = true
                 },
             };
 

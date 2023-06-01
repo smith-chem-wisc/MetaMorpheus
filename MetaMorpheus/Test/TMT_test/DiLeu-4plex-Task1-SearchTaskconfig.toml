@@ -2,7 +2,7 @@ TaskType = "Search"
 
 [SearchParameters]
 DisposeOfFileWhenDone = true
-DoParsimony = false
+DoParsimony = true
 ModPeptidesAreDifferent = false
 NoOneHitWonders = false
 MatchBetweenRuns = false
@@ -16,20 +16,20 @@ WritePrunedDatabase = false
 KeepAllUniprotMods = true
 DoLocalizationAnalysis = true
 DoLabelFreeQuantification = false
-DoSpectralRecovery = false
 DoMultiplexQuantification = true
-MultiplexModId = "TMT11"
+MultiplexModId = "DiLeu-12plex"
+DoSpectralRecovery = false
 SearchType = "Classic"
 LocalFdrCategories = ["FullySpecific"]
 MaxFragmentSize = 30000.0
 MinAllowedInternalFragmentLength = 0
 HistogramBinTolInDaltons = 0.003
 MaximumMassThatFragmentIonScoreIsDoubled = 0.0
-WriteMzId = false
+WriteMzId = true
 WritePepXml = false
-WriteDecoys = false
+WriteDecoys = true
 WriteContaminants = true
-WriteIndividualFiles = false
+WriteIndividualFiles = true
 WriteSpectralLibrary = false
 UpdateSpectralLibrary = false
 CompressIndividualFiles = false
@@ -49,8 +49,8 @@ UniProt = 2
 
 [CommonParameters]
 TaskDescriptor = "SearchTask"
-MaxThreadsToUsePerFile = 7
-ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C\t\tCommon Fixed\tCarbamidomethyl on U\t\tMultiplex Label\tTMT11 on K\t\tMultiplex Label\tTMT11 on X"
+MaxThreadsToUsePerFile = 23
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C\t\tCommon Fixed\tCarbamidomethyl on U\t\tMultiplex Label\tDiLeu-4plex on K\t\tMultiplex Label\tDiLeu-4plex on X"
 ListOfModsVariable = "Common Variable\tOxidation on M"
 DoPrecursorDeconvolution = true
 UseProvidedPrecursorInfo = true
