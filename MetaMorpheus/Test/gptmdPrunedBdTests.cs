@@ -366,7 +366,7 @@ namespace Test
             testPostTaskParameters.AllPsms = new List<PeptideSpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
-            testPostTaskParameters.SearchParameters.DoQuantification = false;
+            testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;
             testPostTaskParameters.SearchParameters.WriteMzId = false;
             testPostTaskParameters.DatabaseFilenameList = new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) };
             testPostTaskParameters.OutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest");
@@ -471,7 +471,7 @@ namespace Test
             testPostTaskParameters.AllPsms = new List<PeptideSpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
-            testPostTaskParameters.SearchParameters.DoQuantification = false;
+            testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;
             testPostTaskParameters.SearchParameters.WriteMzId = false;
             testPostTaskParameters.DatabaseFilenameList = new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) };
             testPostTaskParameters.OutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest");

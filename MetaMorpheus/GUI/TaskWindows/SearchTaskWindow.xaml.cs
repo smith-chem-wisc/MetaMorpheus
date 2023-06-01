@@ -17,6 +17,8 @@ using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using GuiFunctions;
+using Proteomics;
+using System.Threading.Tasks;
 
 namespace MetaMorpheusGUI
 {
@@ -34,6 +36,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private string _defaultMultiplexType = "TMT10";
 
         internal SearchTask TheTask { get; private set; }
 
@@ -145,6 +148,13 @@ namespace MetaMorpheusGUI
             {
                 LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             }
+
+            foreach (string labelModType in GlobalVariables.AllModsKnown.Where(m => m.ModificationType.Equals("Multiplex Label"))
+                         .Select(m => m.OriginalId).Distinct())
+            {
+                MultiplexComboBox.Items.Add(labelModType);
+            }
+            MultiplexComboBox.SelectedItem = _defaultMultiplexType;
         }
 
         /// <summary>
@@ -175,8 +185,10 @@ namespace MetaMorpheusGUI
             }
             CheckBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
-            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
-            CheckBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
+            MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
             // If Spectral Recovery is enabled
             if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
             {
@@ -596,8 +608,10 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.MinAllowedInternalFragmentLength = InternalIonsCheckBox.IsChecked.Value ? Convert.ToInt32(MinInternalFragmentLengthTextBox.Text) : 0;
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
-            TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask.SearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
+            TheTask.SearchParameters.DoMultiplexQuantification = CheckBoxMultiplex.IsChecked.Value;
+            TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
@@ -810,6 +824,25 @@ namespace MetaMorpheusGUI
                 NTerminalIons.IsChecked = true;
                 CTerminalIons.IsChecked = true;
             }
+        }
+
+        /// <summary>
+        /// When a new multiplex label is selected from the drop-down menu (MultiplexComboBox),
+        /// the fixed mod tree view is updated so that only those mods are selected. 
+        /// </summary>
+        private void MultiplexUpdate(object sender, RoutedEventArgs routedEventArgs)
+        {
+            ModTypeForTreeViewModel multiplexModType = FixedModTypeForTreeViewObservableCollection
+                .FirstOrDefault(b => b.DisplayName.Equals("Multiplex Label"));
+            string selectedModId = CheckBoxMultiplex.IsChecked.Value
+                ? (string)MultiplexComboBox.SelectedItem
+                : "NoMatchingMod";
+
+            foreach (ModForTreeViewModel mod in multiplexModType.Children)
+            {
+                mod.Use = mod.DisplayName.Contains(selectedModId);
+            }
+            UpdateModSelectionGrid();
         }
 
         //this one is used by the GUI
@@ -1266,6 +1299,11 @@ namespace MetaMorpheusGUI
         private void CheckBoxSILAC_Checked(object sender, RoutedEventArgs e)
         {
             CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
+        }
+
+        private void CheckBoxMultiplex_Checked(object sender, RoutedEventArgs e)
+        {
+
         }
 
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
