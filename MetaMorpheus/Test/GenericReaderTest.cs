@@ -19,7 +19,6 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
 using EngineLayer.SpectralRecovery;
-using static iText.IO.Image.Jpeg2000ImageData;
 
 namespace Test
 {
@@ -158,7 +157,7 @@ namespace Test
             CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect, 
                 productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
 
-            string resultsPath = @"D:\SingleCellDataSets\MSV000087524\RtFromMaxQuant";
+            string resultsPath = @"D:\SingleCellDataSets\MSV000087524\SpectralRecoveryMaxQuant";
             Directory.CreateDirectory(resultsPath);
 
             var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
@@ -174,7 +173,6 @@ namespace Test
 
 
         [Test]
-        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader955()
         {
             string folderPath = @"D:\SingleCellDataSets\PXD031955";
@@ -229,7 +227,7 @@ namespace Test
             CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
                 productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
 
-            string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
+            string resultsPath = Path.Combine(folderPath, "SpectralRecoveryMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
             var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
@@ -245,7 +243,6 @@ namespace Test
 
 
         [Test]
-        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader24017()
         {
             string folderPath = @"D:\SingleCellDataSets\PXD024017";
@@ -314,7 +311,7 @@ namespace Test
             CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
                 productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
 
-            string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
+            string resultsPath = Path.Combine(folderPath, "SpectralRecoveryMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
             var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
@@ -325,11 +322,10 @@ namespace Test
                 resultsPath + @"\",
                 commonParams);
 
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath + @"\", "PeakQuant_NoArtifact");
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath, "PeakQuant_NoArtifact");
         }
 
         [Test]
-        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader19515()
         {
             string folderPath = @"D:\SingleCellDataSets\PXD019515";
@@ -387,7 +383,7 @@ namespace Test
             CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
                 productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
 
-            string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
+            string resultsPath = Path.Combine(folderPath, "SpectralRecoveryMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
             var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
@@ -398,11 +394,10 @@ namespace Test
                 resultsPath + @"\",
                 commonParams);
 
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath + @"\", "PeakQuant_NoArtifact");
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath, "PeakQuant_NoArtifact");
         }
 
         [Test]
-        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader85937_HeLa()
         {
             string folderPath = @"D:\SingleCellDataSets\MSV000085937\HeLa_SingleCellProteomics";
@@ -474,7 +469,7 @@ namespace Test
             //    calibFileDictionary.Add(spectraFile, calibFilePath);
             //}
 
-            string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
+            string resultsPath = Path.Combine(folderPath, "SpectralRecoveryMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
             var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
@@ -485,11 +480,10 @@ namespace Test
                 resultsPath + @"\",
                 commonParams);
 
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath + @"\", "PeakQuant_NoArtifact");
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath, "PeakQuant_NoArtifact");
         }
 
         [Test]
-        [Ignore("References Local Files")]
         public static void TestMaxQuantEvidenceReader85937_Lung()
         {
             string folderPath = @"D:\SingleCellDataSets\MSV000085937\NonDepleted_Lung_SingleCellProteomics";
@@ -559,7 +553,7 @@ namespace Test
             CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
                 productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
 
-            string resultsPath = Path.Combine(folderPath, "RtFromMaxQuant");
+            string resultsPath = Path.Combine(folderPath, "SpectralRecoveryMaxQuant");
             Directory.CreateDirectory(resultsPath);
 
             var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
@@ -570,7 +564,7 @@ namespace Test
                 resultsPath + @"\",
                 commonParams);
 
-            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath + @"\", "PeakQuant_NoArtifact");
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath, "PeakQuant_NoArtifact");
         }
 
         [Test]

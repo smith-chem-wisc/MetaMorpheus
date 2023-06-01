@@ -139,7 +139,7 @@ namespace EngineLayer.SpectralRecovery
                 if (_maxQuantAnalysis)
                 {
                     double retentionTime = peak.IsotopicEnvelopes.First().IndexedPeak.RetentionTime;
-                    int oneBasedScanNumber = InstanceSpecificMsDataFile.GetClosestOneBasedSpectrumNumber(retentionTime);
+                    int oneBasedScanNumber = FindOneBasedScanNumber(retentionTime) + 1;
                     while (oneBasedScanNumber > 0)
                     {
                         MsDataScan precursorScan = InstanceSpecificMsDataFile.GetOneBasedScan(oneBasedScanNumber);
@@ -151,7 +151,6 @@ namespace EngineLayer.SpectralRecovery
 
                         oneBasedScanNumber--;
                     }
-
                 }
 
                 SpectralRecoveryPSM psm = new SpectralRecoveryPSM(peak, donorPwsm, thisScore, scan,
@@ -227,6 +226,12 @@ namespace EngineLayer.SpectralRecovery
                 endIndex = ~endIndex;
 
             return (startIndex, endIndex);
+        }
+
+        private int FindOneBasedScanNumber(double retentionTime)
+        {
+            int index = Array.BinarySearch(_arrayOfAllScanRTs, retentionTime);
+            return index < 0 ? ~index : index;
         }
 
         /// <summary>
