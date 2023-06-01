@@ -30,8 +30,8 @@ namespace EngineLayer.SpectralRecovery
         private readonly double[] _arrayOfMs2RTs; 
         private readonly CommonParameters _fileSpecificParameters;
         private readonly string _fullFilePath;
+        private readonly double[] _arrayOfAllScanRTs;
         private readonly bool _maxQuantAnalysis;
-
 
         /// <summary>
         /// Every instance of MCSE is specific to one file.
@@ -69,6 +69,7 @@ namespace EngineLayer.SpectralRecovery
                 .ToArray();
 
             _arrayOfMs2RTs = _ms2DataScansByRetentionTime.Select(s => s.RetentionTime).ToArray();
+            _arrayOfAllScanRTs = dataFile.GetAllScansList().Select(s => s.RetentionTime).ToArray();
         }
 
         /// <summary>
@@ -132,7 +133,29 @@ namespace EngineLayer.SpectralRecovery
                 // calculate the peptide's score
                 double thisScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan, matchedIons);
 
-                SpectralRecoveryPSM psm = new SpectralRecoveryPSM(peak, donorPwsm, thisScore, scan, _fileSpecificParameters, matchedIons);
+                // For MaxQuant analysis, the peak doesn't contain the isotopic envelope. So, the precursor spectrum is scored
+                // TODO: Refactor so this isn't spaghetti
+                MzSpectrum precursorSpectrum = null;
+                if (_maxQuantAnalysis)
+                {
+                    double retentionTime = peak.IsotopicEnvelopes.First().IndexedPeak.RetentionTime;
+                    int oneBasedScanNumber = InstanceSpecificMsDataFile.GetClosestOneBasedSpectrumNumber(retentionTime);
+                    while (oneBasedScanNumber > 0)
+                    {
+                        MsDataScan precursorScan = InstanceSpecificMsDataFile.GetOneBasedScan(oneBasedScanNumber);
+                        if (precursorScan.MsnOrder == 1)
+                        {
+                            precursorSpectrum = precursorScan.MassSpectrum;
+                            break;
+                        }
+
+                        oneBasedScanNumber--;
+                    }
+
+                }
+
+                SpectralRecoveryPSM psm = new SpectralRecoveryPSM(peak, donorPwsm, thisScore, scan,
+                    _fileSpecificParameters, matchedIons, precursorSpectrum);
 
                 CalculateSpectralAngle(psm, donorSpectrum);
                 

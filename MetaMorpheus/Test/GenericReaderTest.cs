@@ -31,6 +31,70 @@ namespace Test
         public Dictionary<string, List<ChromatographicPeak>> MbrPeaks;
         public List<SpectraFileInfo> SpectraFiles;
 
+        [Test]
+        public static void TestHeLaSlice()
+        {
+            List<string> rawSlices = new List<string> {
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\K13_02ng_1min_frac1.mzML"),
+                Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\K13_20ng_1min_frac1.mzML") };
+            string experimentalDesignFilepath = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                "TestData", @"SpectralRecoveryTest\ExperimentalDesign.tsv");
+
+            List<SpectraFileInfo> spectraFiles = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilepath, rawSlices, out var errors);
+
+            Assert.That(spectraFiles.Count, Is.EqualTo(2));
+
+            string maxQuantEvidencePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\K13_slice_evidence.txt");
+            Dictionary<string, List<ChromatographicPeak>> mbrPeaks = PsmGenericReader.ReadInMbrPeaks(
+                maxQuantEvidencePath, silent: false, spectraFiles);
+
+            string maxQuantMsmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\K13_slice_msms.txt");
+            Dictionary<string, PsmFromTsv> maxQuantPsms = PsmGenericReader.GetDonorPsms(
+                maxQuantMsmsPath, spectraFiles, mbrPeaks, ignoreArtifactIons: false);
+
+            Assert.That(mbrPeaks.Count == 22);
+            Assert.That(maxQuantPsms.Count == 14);
+
+            PpmTolerance testTolerance = new PpmTolerance(5);
+            // Check that the PeptideMonoMass (derived from msms.txt mass columns) and the pwsm mass (derived from converted full sequence)
+            // matches for every psm
+            Assert.IsFalse(maxQuantPsms.Values.Any(p =>
+                !testTolerance.Within(double.Parse(p.PeptideMonoMass), p.PeptideWithSetModifications.MonoisotopicMass)));
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
+            Directory.CreateDirectory(outputFolder);
+            // Writing a spectral library
+            var spectraForSpectraLibrary = new List<LibrarySpectrum>();
+            foreach (var psm in maxQuantPsms.Values)
+            {
+                var standardSpectrum = new LibrarySpectrum(psm.FullSequence, psm.PrecursorMz, psm.PrecursorCharge, psm.MatchedIons, psm.RetentionTime ?? 0);
+                spectraForSpectraLibrary.Add(standardSpectrum);
+            }
+            string spectrumFilePath =Path.Combine(outputFolder, "SpectralLibrary.msp");
+            if (File.Exists(spectrumFilePath)) File.Delete(spectrumFilePath);
+            using (StreamWriter output = new StreamWriter(spectrumFilePath))
+            {
+                foreach (var librarySpectrum in spectraForSpectraLibrary)
+                {
+                    output.WriteLine(librarySpectrum.ToString());
+                }
+            }
+
+            // Tolerances taken from MaxQuant defaults
+            CommonParameters commonParams = new CommonParameters(dissociationType: DissociationType.Autodetect,
+                productMassTolerance: new PpmTolerance(20), deconvolutionMassTolerance: new PpmTolerance(7));
+
+            var mbrAnalysisResults = SpectralRecoveryRunner.RunSpectralRecoveryFromMaxQuant(
+                spectraFiles,
+                mbrPeaks,
+                maxQuantPsms,
+                spectrumFilePath,
+                outputFolder,
+                commonParams);
+
+            mbrAnalysisResults.WritePeakQuantificationResultsToTsv(outputFolder, "PeakQuant_NoArtifact");
+        }
 
         [Test]
         public static void TestMaxQuantEvidenceReaderHeLa()

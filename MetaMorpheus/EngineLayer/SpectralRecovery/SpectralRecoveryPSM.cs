@@ -5,9 +5,11 @@ using System.Linq;
 using System.Text;
 using Chemistry;
 using Easy.Common.Extensions;
+using EngineLayer.PsmTsv;
 using FlashLFQ;
 using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
+using MzLibUtil;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -28,9 +30,9 @@ namespace EngineLayer.SpectralRecovery
         /// to the theoretical precursor m/z. ClosestPrecursorPeak stores that info
         /// </summary>
         public MzPeak ClosestPrecursorPeak { get; }
-
         public bool DeconvolutablePrecursor { get; }
         public PeptideWithSetModifications DonorPeptide { get; }
+        public int PrecursorCharge { get; }
         public double? RetentionTimeShift { get; private set; }
         public double? PrecursorIsotpicEnvelopeAngle { get; private set; }
 
@@ -41,6 +43,7 @@ namespace EngineLayer.SpectralRecovery
             RecoveredMs2ScanWithSpecificMass scan,
             CommonParameters commonParameters,
             List<MatchedFragmentIon> matchedFragmentIons,
+            MzSpectrum precursorSpectrum = null,
             int notch = -1,
             int scanIndex = -1,
             double xcorr = 0) :
@@ -50,9 +53,10 @@ namespace EngineLayer.SpectralRecovery
             DonorPeptide = peptide;
             ClosestPrecursorPeak = scan.PeakClosestToDonor;
             RetentionTimeShift = SetRetentionTimeShift(acceptorPeak);
-            PrecursorIsotpicEnvelopeAngle = GetIsotopeCorrelation(peptide, acceptorPeak);
+            PrecursorCharge = acceptorPeak.Apex?.ChargeState ?? acceptorPeak.Identifications.First().PrecursorChargeState;
+            PrecursorIsotpicEnvelopeAngle = GetIsotopeCorrelation(DonorPeptide, AcceptorPeak, PrecursorCharge, precursorSpectrum);
             DeconvolutablePrecursor = true;
-
+            
             //In cases where the precursor wasn't deconvoluted, the precursor mz and mass are set to 0 and 0 - z*1.008, respectively.
             // This updates the precursor mz and mass using the ClosestPrecursorPeak mz
             if (Math.Abs(ScanPrecursorMonoisotopicPeakMz) < 0.1)
@@ -60,7 +64,7 @@ namespace EngineLayer.SpectralRecovery
                 DeconvolutablePrecursor = false;
 
                 ScanPrecursorMonoisotopicPeakMz = ClosestPrecursorPeak.Mz;
-                ScanPrecursorMass = ScanPrecursorMonoisotopicPeakMz.ToMass(AcceptorPeak.Apex.ChargeState);
+                ScanPrecursorMass = ScanPrecursorMonoisotopicPeakMz.ToMass(PrecursorCharge);
             }
         }
 
@@ -129,14 +133,36 @@ namespace EngineLayer.SpectralRecovery
             SpectralRecoveryPSM srPsm)
         {
             // Chromatographic Peak Info
-            psmDictionary[PsmTsvHeader_SpectralRecovery.PeakApexRt] =
-                srPsm?.AcceptorPeak?.Apex == null
+            if (srPsm != null && srPsm.AcceptorPeak is MaxQuantChromatographicPeak)
+            {
+                MaxQuantChromatographicPeak acceptorPeak = (MaxQuantChromatographicPeak)srPsm.AcceptorPeak;
+                psmDictionary[PsmTsvHeader_SpectralRecovery.PeakApexRt] = acceptorPeak.PeakApexRt == null
                     ? " "
-                    : srPsm.AcceptorPeak.Apex.IndexedPeak.RetentionTime.ToString(CultureInfo.InvariantCulture);
-            psmDictionary[PsmTsvHeader_SpectralRecovery.PeakShift] =
-                srPsm?.RetentionTimeShift == null
-                    ? " "
-                    : srPsm.RetentionTimeShift.NullableToString(CultureInfo.InvariantCulture);
+                    : acceptorPeak.PeakApexRt.NullableToString(CultureInfo.InvariantCulture);
+                psmDictionary[PsmTsvHeader_SpectralRecovery.PeakShift] =
+                    acceptorPeak.RtShift == null
+                        ? " "
+                        : acceptorPeak.RtShift.NullableToString(CultureInfo.InvariantCulture);
+                psmDictionary[PsmTsvHeader_SpectralRecovery.PeakWidth] =
+                    acceptorPeak.RetentionWidth == null
+                        ? " "
+                        : acceptorPeak.RetentionWidth.NullableToString(CultureInfo.InvariantCulture);
+            }
+            else
+            {
+                psmDictionary[PsmTsvHeader_SpectralRecovery.PeakApexRt] =
+                    srPsm?.AcceptorPeak?.Apex == null
+                        ? " "
+                        : srPsm.AcceptorPeak.Apex.IndexedPeak.RetentionTime.ToString(CultureInfo.InvariantCulture);
+                psmDictionary[PsmTsvHeader_SpectralRecovery.PeakShift] =
+                    srPsm?.RetentionTimeShift == null
+                        ? " "
+                        : srPsm.RetentionTimeShift.NullableToString(CultureInfo.InvariantCulture);
+                psmDictionary[PsmTsvHeader_SpectralRecovery.PeakWidth] =
+                    srPsm?.AcceptorPeak == null
+                        ? " "
+                        : FindPeakWidth(srPsm.AcceptorPeak).ToString(CultureInfo.InvariantCulture);
+            }
 
             // Scan Isolation Window info
             psmDictionary[PsmTsvHeader_SpectralRecovery.PrecursorDeconvolutedBool] =
@@ -183,9 +209,16 @@ namespace EngineLayer.SpectralRecovery
             return precursorMz - srPsm.MsDataScan.IsolationMz;
         }
 
+        private static double FindPeakWidth(ChromatographicPeak peak)
+        {
+            List<double> retentionTimes = peak.IsotopicEnvelopes.Select(i => i.IndexedPeak.RetentionTime).ToList();
+            return retentionTimes.Max() - retentionTimes.Min();
+        }
+
         private static double? AveragineMass { get; set; }
 
-        public static double? GetIsotopeCorrelation(PeptideWithSetModifications selectedPeptide, ChromatographicPeak peak)
+        public static double? GetIsotopeCorrelation(PeptideWithSetModifications selectedPeptide, ChromatographicPeak peak,
+            int precursorCharge, MzSpectrum precursorSpectrum = null)
         {
             if (peak == null) return null;
             double? isotopeAngle = null;
@@ -258,23 +291,53 @@ namespace EngineLayer.SpectralRecovery
                 }
             }
 
-            List<IndexedMassSpectralPeak> imsPeaksOrderedByMz = peak.IsotopicEnvelopes
-                .Select(e => e.IndexedPeak)
-                .Where(p => Math.Abs(p.RetentionTime - peak.Apex.IndexedPeak.RetentionTime) < 0.0001)
-                .OrderBy(p => p.Mz)
-                .ToList();
-            int z = peak.Apex.ChargeState;
+            IEnumerable<double> mzList = null;
+            IEnumerable<double> intensityList = null;
 
-            if (peptideFormula != null & imsPeaksOrderedByMz.IsNotNullOrEmpty())
+            // Selecting only the isotopic peaks is necessary for normalization. If you pass in the full
+            // Spectrum, the 
+            if (precursorSpectrum != null)
+            {
+                PpmTolerance tolerance = new PpmTolerance(10);
+                List<int> experimentalIsotopeIndices = new();
+                for (int i = 0; i < 6; i++)
+                {
+                    double expectedMz = (selectedPeptide.MonoisotopicMass + i).ToMz(precursorCharge);
+                    int possibleIndex = precursorSpectrum.GetClosestPeakIndex(expectedMz);
+                    if (tolerance.Within(expectedMz, precursorSpectrum.XArray[possibleIndex]))
+                    {
+                        experimentalIsotopeIndices.Add(possibleIndex);
+                    }
+                    else
+                    {
+                        break; // Break on first missing isotope peak
+                    }
+                }
+
+                mzList = experimentalIsotopeIndices.Select(i => precursorSpectrum.XArray[i]);
+                intensityList = experimentalIsotopeIndices.Select(i => precursorSpectrum.YArray[i]);
+            }
+            else if(peak.Apex != null)
+            {
+                List<IndexedMassSpectralPeak> imsPeaksOrderedByMz = peak.IsotopicEnvelopes
+                    .Select(e => e.IndexedPeak)
+                    .Where(p => Math.Abs(p.RetentionTime - peak.Apex.IndexedPeak.RetentionTime) < 0.0001)
+                    .OrderBy(p => p.Mz)
+                    .ToList();
+                mzList = imsPeaksOrderedByMz.Select(p => p.Mz);
+                intensityList = imsPeaksOrderedByMz.Select(p => p.Intensity);
+            }
+
+            if (peptideFormula != null & mzList.IsNotNullOrEmpty() & intensityList.IsNotNullOrEmpty())
             {
                 IsotopicDistribution peptideDistribution = IsotopicDistribution
                     .GetDistribution(peptideFormula, fineResolution, minimumProbability);
                 SpectralSimilarity isotopeSimilarity = new(
-                    imsPeaksOrderedByMz.Select(p => p.Mz).ToArray(),
-                    imsPeaksOrderedByMz.Select(p => p.Intensity).ToArray(),
-                    peptideDistribution.Masses.Select(m => (m + massCorrection).ToMz(z)).ToArray(),
+                    mzList.ToArray(),
+                    intensityList.ToArray(),
+                    peptideDistribution.Masses.Select(m => (m + massCorrection).ToMz(precursorCharge)).ToArray(),
                     peptideDistribution.Intensities.ToArray(),
-                    SpectralSimilarity.SpectrumNormalizationScheme.spectrumSum,
+                    SpectralSimilarity.SpectrumNormalizationScheme.mostAbundantPeak,
                     toleranceInPpm: 20.0,
                     allPeaks: true,
                     filterOutBelowThisMz: 0);

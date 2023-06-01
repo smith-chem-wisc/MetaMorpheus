@@ -313,6 +313,8 @@ namespace EngineLayer.PsmTsv
             mbrPeak.Intensity = msPeak.Intensity;
             mbrPeak.RtShift = double.TryParse(psmSplit[_matchRtDeltaCol], out var rtDelta) ? rtDelta : null;
             mbrPeak.PpmError = double.TryParse(psmSplit[_ppmErrorCol], out var ppmError) ? ppmError : null;
+            mbrPeak.PeakApexRt = Double.Parse(psmSplit[_retTimeCol]);
+            mbrPeak.RetentionWidth = Double.Parse(psmSplit[_retentionLengthCol]);
             return mbrPeak;
         }
 
@@ -360,7 +362,7 @@ namespace EngineLayer.PsmTsv
             {
                 if (kvp.Value.IsNotNullOrEmpty())
                 {
-                    donorPsms.Add(kvp.Key, kvp.Value.OrderByDescending(p => p.Score).First());
+                    donorPsms.Add(kvp.Key, kvp.Value.MinBy(p => p.Score));
                 }
             }
 
@@ -1364,6 +1366,8 @@ namespace EngineLayer.PsmTsv
         }
 
         public double? RtShift { get; set; }
+        public double? PeakApexRt { get; set; }
+        public double? RetentionWidth { get; set; }
         public double? SpectralContrastAngle { get; set; }
         public double? PpmError { get; set; }
     }

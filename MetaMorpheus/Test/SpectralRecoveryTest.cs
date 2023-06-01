@@ -352,8 +352,8 @@ namespace Test
             peak.IsotopicEnvelopes = lfqEnvelopes;
             peak.SetChromatographicPeakProperties("Apex", lfqEnvelopes.MaxBy(i => i.Intensity));
 
-            double? equalMassCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_EqualMass, peak);
-            double? modsCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_Mods, peak);
+            double? equalMassCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_EqualMass, peak, 1);
+            double? modsCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_Mods, peak, 1);
 
             Assert.That(equalMassCorrelation, Is.EqualTo(1).Within(0.001));
             Assert.That(modsCorrelation != null && modsCorrelation >= 0.9);
@@ -384,7 +384,7 @@ namespace Test
             // Set private properties for the ChromatographicPeak
             peak.IsotopicEnvelopes = lfqEnvelopes;
             peak.SetChromatographicPeakProperties("Apex", lfqEnvelopes.MaxBy(i => i.Intensity));
-            double? oneModCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_OneMod, peak);
+            double? oneModCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_OneMod, peak, 1);
 
             Assert.That(oneModCorrelation, Is.EqualTo(1).Within(0.001));
         }
@@ -508,6 +508,7 @@ namespace Test
             expectedHeader.AddRange( new List<string>{ 
                 "Peak Apex RT (min)",
                 "RT Shift",
+                "Peak Width (min)",
                 "Deconvolutable Precursor",
                 "Precursor Isotopic Envelope Score",
                 "Isolation Window Center (Th)",

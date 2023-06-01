@@ -209,7 +209,7 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Used for creating PSMs from the outputs of different search engines. Currently only support MaxQuant
+        /// Used for creating PSMs from the outputs of different search engines. Currently only supports MaxQuant
         /// </summary>
         /// <param name="line"></param>
         /// <param name="split"></param>
@@ -294,7 +294,9 @@ namespace EngineLayer
                 Protein protein = new Protein(sequence: BaseSeq, accession: ProteinAccession,
                     geneNames: new List<Tuple<string, string>> { new Tuple<string, string>("Unknown", GeneName) },
                     isDecoy: DecoyContamTarget == "D");
-                PeptideWithSetModifications = new PeptideWithSetModifications(FullSequence, allKnownMods, numFixedMods, p: protein);
+                PeptideWithSetModifications = new PeptideWithSetModifications(FullSequence, allKnownMods, numFixedMods, p: protein, 
+                    oneBasedEndResidueInProtein: 1, oneBasedStartResidueInProtein: 1);   
+                //Previous and next amino acid aren't reported by MaxQuant, so they're both set to 1 here to prevent index out of range errors.
             }
         }
 

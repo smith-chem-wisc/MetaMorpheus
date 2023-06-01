@@ -12,6 +12,7 @@ using MassSpectrometry.MzSpectra;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Globalization;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer.SpectralRecovery
 {
@@ -19,6 +20,7 @@ namespace EngineLayer.SpectralRecovery
     {
         public readonly ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> BestMbrMatches;
         public readonly FlashLfqResults FlashLfqResults;
+        public readonly IEnumerable<ChromatographicPeak> MbrPeaks; 
         private Dictionary<string, List<string>> PeptideScoreDict;
 
         /// <summary>
@@ -69,6 +71,14 @@ namespace EngineLayer.SpectralRecovery
         {
             BestMbrMatches = bestMbrMatches;
             FlashLfqResults = flashLfqResults;
+            MbrPeaks = FlashLfqResults != null
+                ? FlashLfqResults.Peaks
+                    .SelectMany(p => p.Value)
+                    .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
+                    .ThenByDescending(p => p.Intensity)
+                : bestMbrMatches.Keys
+                    .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
+                    .ThenByDescending(p => p.Intensity);
             PopulatePeptideScoreDict();
         }
 
@@ -78,6 +88,8 @@ namespace EngineLayer.SpectralRecovery
         /// </summary>
         private void PopulatePeptideScoreDict()
         {
+            if (FlashLfqResults == null) return; //TODO: Make this work with MaxQuantResults
+
             PeptideScoreDict = FlashLfqResults
                 .PeptideModifiedSequences
                 .Select(p => p.Key)
@@ -130,23 +142,15 @@ namespace EngineLayer.SpectralRecovery
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            IEnumerable<ChromatographicPeak> orderedPeaks = FlashLfqResults
-                .Peaks
-                .SelectMany(p => p.Value)
-                .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
-                .ThenByDescending(p => p.Intensity);
-
-
             using StreamWriter output = new StreamWriter(fullSeqPath);
             output.WriteLine(PeaksTabSeparatedHeader);
 
-            foreach (var peak in orderedPeaks)
+            foreach (var peak in MbrPeaks)
             {
                 string spectralContrastAngle = 
                     BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch) && mbrSpectralMatch != null && mbrSpectralMatch.SpectralAngle > -1
                     ? mbrSpectralMatch.SpectralAngle.ToString()
                     : "Spectrum Not Found";
-                
 
                 string[] peakStringSplit = peak.ToString().Split('\t');
                 StringBuilder sb = new();
