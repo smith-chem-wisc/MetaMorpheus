@@ -17,6 +17,7 @@ namespace EngineLayer
     {
         protected static readonly Dictionary<DissociationType, List<double>> complementaryIonConversionDictionary = new Dictionary<DissociationType, List<double>>
         {
+            { DissociationType.LowCID, new List<double>(){ Constants.ProtonMass } },
             { DissociationType.HCD, new List<double>(){ Constants.ProtonMass } },
             { DissociationType.ETD,new List<double>() {2 * Constants.ProtonMass } }, //presence of zplusone (zdot) makes this two instead of one
             { DissociationType.CID,new List<double>() {Constants.ProtonMass } },
