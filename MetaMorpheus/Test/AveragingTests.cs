@@ -227,6 +227,7 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(testPath, "Task2-Search", "SmallCalibratible_Yeast-averaged.mzID")));
             Assert.That(File.Exists(Path.Combine(testPath, "Task2-Search", "ExperimentalDesign.tsv")));
 
+            File.Delete(experimentalDesignFilePath);
             Directory.Delete(testPath, true);
         }
 
@@ -289,6 +290,7 @@ namespace Test
             Assert.That(File.Exists(Path.Combine(testPath, "Task2-Search", "AllQuantifiedProteinGroups.tsv")));
             Assert.That(File.Exists(Path.Combine(testPath, "Task2-Search", "SmallCalibratible_Yeast-averaged.mzID")));
 
+            File.Delete(experimentalDesignFilePath);
             Directory.Delete(testPath, true);
         }
 
@@ -398,6 +400,7 @@ namespace Test
                 new List<DbForTask>() , testPath);
             everythingRunnerEngine.Run();
 
+            File.Delete(experimentalDesignFilePath);
             Directory.Delete(testPath, true);
         }
     }
