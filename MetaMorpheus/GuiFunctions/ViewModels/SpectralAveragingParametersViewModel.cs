@@ -151,8 +151,8 @@ namespace GuiFunctions
                 BinSize = 0.01,
                 SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
         };
-
-            switch (Enum.Parse<PresetAveragingParameters>(settingsNameToSet.ToString() ?? "Dda1"))
+            settingsNameToSet = settingsNameToSet is null ? "Dda1" : settingsNameToSet;
+            switch (Enum.Parse<PresetAveragingParameters>(settingsNameToSet.ToString()!))
             {
                 case (PresetAveragingParameters.Dda1):
                     parameters.NumberOfScansToAverage = 5;
