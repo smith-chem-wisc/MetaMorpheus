@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace GuiFunctions.Databases
@@ -16,12 +17,12 @@ namespace GuiFunctions.Databases
 
             string[] queryArray = new string[4];
 
-            queryArray[0] = compressed ? "compressed=true" : "";
+            queryArray[0] = compressed ? "compressed=true" : null;
             queryArray[1] = xmlFormat ? "format=xml" : "format=fasta";
-            queryArray[2] = isoforms && !xmlFormat ? "includeIsoform=true" : "";
+            queryArray[2] = isoforms && !xmlFormat ? "includeIsoform=true" : null;
             queryArray[3] = reviewed ? $"query=reviewed:true&proteome:{proteomeID}" : $"query=proteome:{proteomeID}";
 
-            string[] queryArrayReduced = queryArray.Where(x => x != "").ToArray() ;
+            IEnumerable<string> queryArrayReduced = queryArray.Where(x => x != null);
 
             htmlQueryString.Append(string.Join("&", queryArrayReduced));
 

@@ -1,7 +1,6 @@
 ﻿using GuiFunctions.Databases;
 using NUnit.Framework;
 using Proteomics;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
@@ -56,44 +55,34 @@ namespace Test
             List<Protein> reader = new List<Protein>();
 
 
-            try
+
+            HttpClientHandler handler = new HttpClientHandler(); // without this, the download is very slow
+            handler.Proxy = null;
+            handler.UseProxy = false;
+
+            var client = new HttpClient(handler); // client for using the REST Api
+            var response = await client.GetAsync(proteomeURL);
+
+            using (var file = File.Create(filePath)) // saves the file 
             {
-                HttpClientHandler handler = new HttpClientHandler(); // without this, the download is very slow
-                handler.Proxy = null;
-                handler.UseProxy = false;
-
-                var client = new HttpClient(handler); // client for using the REST Api
-                var response = await client.GetAsync(proteomeURL);
-
-                using (var file = File.Create(filePath)) // saves the file 
-                {
-                    var content = await response.Content.ReadAsStreamAsync();
-                    await content.CopyToAsync(file);
-                }
-
-
-                if (xmlFormat)
-                {
-                    reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                        allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod);
-                }
-                else
-                {
-                    reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
-                       isContaminant: false, out var unknownMod);
-                }
-
-                Console.WriteLine(reader.Count);
-
-                File.Delete(filePath);
-
+                var content = await response.Content.ReadAsStreamAsync();
+                await content.CopyToAsync(file);
             }
-            catch (Exception ex)
+
+
+            if (xmlFormat)
             {
-                Console.WriteLine(ex);
-                Console.WriteLine(proteomeURL);
-                Assert.Fail();
+                reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod);
             }
+            else
+            {
+                reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                    isContaminant: false, out var unknownMod);
+            }
+
+            File.Delete(filePath);
+
 
             Assert.That(reader.Count == listCount);
 
