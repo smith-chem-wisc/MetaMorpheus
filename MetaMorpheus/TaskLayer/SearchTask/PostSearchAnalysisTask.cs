@@ -25,6 +25,7 @@ using EngineLayer.Gptmd;
 using System.Threading.Tasks;
 using Chemistry;
 using MzLibUtil;
+using ThermoFisher.CommonCore.Data;
 using ThermoFisher.CommonCore.Data.Business;
 
 namespace TaskLayer
@@ -35,6 +36,7 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
+        private List<PeptideSpectralMatch> _filteredPsms;
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -113,6 +115,30 @@ namespace TaskLayer
         {
             MyTaskResults = new MyTaskResults(this);
             return null;
+        }
+
+        /// <summary>
+        /// Sets the private field _filteredPsms by removing all psms with Q, Q_Notch, and PEP_QValues greater
+        /// than the user defined threshold. In cases where PEP was selected for thresholding and fewer than 100
+        /// psms were found, no psms are removed.
+        /// </summary>
+        private void FilterPsms()
+        {
+            _filteredPsms = Parameters.AllPsms.Where(p =>
+                                    p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
+                                    && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
+                                    && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter ||
+                                        double.IsNaN(p.FdrInfo.PEP_QValue)))
+                                .ToList();
+        }
+
+        public IEnumerable<PeptideSpectralMatch> GetFilteredPsms(bool includeDecoys, bool includeContaminants,
+            bool includeAmbiguous)
+        {
+            return _filteredPsms.Where(p =>
+                (includeDecoys || !p.IsDecoy)
+                && (includeContaminants || !p.IsContaminant)
+                && (includeAmbiguous || p.FullSequence != null));
         }
 
         /// <summary>
@@ -268,11 +294,10 @@ namespace TaskLayer
             }
 
             // get PSMs to pass to FlashLFQ
-            var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                p.FdrInfo.QValue <= 0.01
-                && p.FdrInfo.QValueNotch <= 0.01
-                && !p.IsDecoy
-                && p.FullSequence != null).ToList();
+            var unambiguousPsmsBelowOnePercentFdr = GetFilteredPsms(
+                includeDecoys: false, 
+                includeContaminants: true,
+                includeAmbiguous: false);
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -540,8 +565,11 @@ namespace TaskLayer
         {
             if (Parameters.SearchParameters.DoHistogramAnalysis)
             {
-                var limitedpsms_with_fdr = Parameters.AllPsms.Where(b => (b.FdrInfo.QValue <= 0.01)).ToList();
-                if (limitedpsms_with_fdr.Any(b => !b.IsDecoy))
+                var limitedpsms_with_fdr = GetFilteredPsms(
+                    includeDecoys: false,
+                    includeContaminants: true,
+                    includeAmbiguous: true).ToList();
+                if (limitedpsms_with_fdr.Any())
                 {
                     Status("Running histogram analysis...", new List<string> { Parameters.SearchTaskId });
                     var myTreeStructure = new BinTreeStructure();
@@ -578,42 +606,30 @@ namespace TaskLayer
         private void WritePsmResults()
         {
             Status("Writing PSM results...", Parameters.SearchTaskId);
-            var FilteredPsmListForOutput = Parameters.AllPsms
-                .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
-                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
-                && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
-
-            if (!Parameters.SearchParameters.WriteDecoys)
-            {
-                FilteredPsmListForOutput.RemoveAll(b => b.IsDecoy);
-            }
-            if (!Parameters.SearchParameters.WriteContaminants)
-            {
-                FilteredPsmListForOutput.RemoveAll(b => b.IsContaminant);
-            }
+            var filteredPsmListForOutput = GetFilteredPsms(
+                includeDecoys: Parameters.SearchParameters.WriteDecoys,
+                includeContaminants: Parameters.SearchParameters.WriteContaminants,
+                includeAmbiguous: true).ToList();
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(FilteredPsmListForOutput, writtenFile);
+            WritePsmsToTsv(filteredPsmListForOutput, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
             // percolator native read format is .tab
             writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs_FormattedForPercolator.tab");
-            WritePsmsForPercolator(FilteredPsmListForOutput, writtenFile);
+            WritePsmsForPercolator(filteredPsmListForOutput, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             bool qValueUsedAsFilter = !CommonParameters.QValueOutputFilter.IsLarger(CommonParameters.PepQValueOutputFilter, 3);
             string filterType = qValueUsedAsFilter ? "s with q-value = " : "s with pep q-value = ";
-            double filterCutoffForResultsCounts = qValueUsedAsFilter ? Math.Min(0.01, CommonParameters.QValueOutputFilter) : Math.Min(0.01, CommonParameters.PepQValueOutputFilter);
+            double filterCutoffForResultsCounts = qValueUsedAsFilter 
+                ? CommonParameters.QValueOutputFilter
+                : CommonParameters.PepQValueOutputFilter;
 
-            int psmOrPeptideCountForResults = qValueUsedAsFilter ? Parameters.AllPsms.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= filterCutoffForResultsCounts
-                && p.FdrInfo.QValueNotch <= filterCutoffForResultsCounts).Count() : Parameters.AllPsms.Where(p => !p.IsDecoy && p.FdrInfo.PEP_QValue <= filterCutoffForResultsCounts
-                || double.IsNaN(p.FdrInfo.PEP_QValue)).Count();
-
-            var filteredPSMsForOutput = Parameters.AllPsms.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
-                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
-                && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
+            int psmOrPeptideCountForResults = filteredPsmListForOutput
+                .Count(p => !p.IsDecoy);
 
             // write summary text
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSM" + filterType + Math.Round(filterCutoffForResultsCounts,2) + ": " + psmOrPeptideCountForResults  + Environment.NewLine);
@@ -623,21 +639,15 @@ namespace TaskLayer
                     + Environment.NewLine);
             }
 
-            PsmsGroupedByFile = FilteredPsmListForOutput.GroupBy(p => p.FullFilePath);
+            PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
 
-            foreach (var file in PsmsGroupedByFile)
+            foreach (var psmFileGroup in PsmsGroupedByFile)
             {
                 // write summary text
-                var psmsForThisFile = file.ToList();
-                string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
+                var psmsForThisFile = psmFileGroup.ToList();
+                string strippedFileName = Path.GetFileNameWithoutExtension(psmFileGroup.Key);
 
-                psmOrPeptideCountForResults = qValueUsedAsFilter ? psmsForThisFile.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= filterCutoffForResultsCounts
-                && p.FdrInfo.QValueNotch <= filterCutoffForResultsCounts).Count() : psmsForThisFile.Where(p => !p.IsDecoy && p.FdrInfo.PEP_QValue <= filterCutoffForResultsCounts
-                || double.IsNaN(p.FdrInfo.PEP_QValue)).Count();
-
-                filteredPSMsForOutput = psmsForThisFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
-                    && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
-                    && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
+                psmOrPeptideCountForResults = psmsForThisFile.Count(p => !p.IsDecoy);
 
                 Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
                 Parameters.SearchTaskResults.AddTaskSummaryText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
@@ -651,13 +661,13 @@ namespace TaskLayer
 
                     // write PSMs
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
-                    WritePsmsToTsv(filteredPSMsForOutput, writtenFile);
-                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
+                    WritePsmsToTsv(psmsForThisFile, writtenFile);
+                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                     // write PSMs for percolator
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tab");
-                    WritePsmsForPercolator(filteredPSMsForOutput, writtenFile);
-                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
+                    WritePsmsForPercolator(psmsForThisFile, writtenFile);
+                    FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
                 }
             }
         }
