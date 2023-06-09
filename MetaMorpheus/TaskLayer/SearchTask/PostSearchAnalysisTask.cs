@@ -674,16 +674,16 @@ namespace TaskLayer
 
         private void UpdateSpectralLibrary()
         {
-            var FilteredPsmList = Parameters.AllPsms
-               .Where(p => p.FdrInfo.PEP_QValue <= 0.01 && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter).ToList();
-            FilteredPsmList.RemoveAll(b => b.IsDecoy);
-            FilteredPsmList.RemoveAll(b => b.IsContaminant);
+            var filteredPsmList = GetFilteredPsms(
+                includeDecoys: false,
+                includeContaminants: false,
+                includeAmbiguous: false);
 
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
             Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
-            foreach (var x in FilteredPsmList)
+            foreach (var x in filteredPsmList)
             {
-                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = FilteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
+                List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = filteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
                 (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
 
                 if (!PsmsGroupByPeptideAndCharge.ContainsKey(peptideWithChargeState))
@@ -730,19 +730,10 @@ namespace TaskLayer
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
-            List<PeptideSpectralMatch> filteredPsmList = new();
-            if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
-            {
-                filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.5).ToList();
-                filteredPsmList.RemoveAll(b => b.IsDecoy);
-                filteredPsmList.RemoveAll(b => b.IsContaminant);
-            }
-            else
-            {
-                filteredPsmList = Parameters.AllPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
-                filteredPsmList.RemoveAll(b => b.IsDecoy);
-                filteredPsmList.RemoveAll(b => b.IsContaminant);
-            }
+            var filteredPsmList = GetFilteredPsms(
+                includeDecoys: false,
+                includeContaminants: false,
+                includeAmbiguous: false);
 
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
             Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
@@ -935,7 +926,12 @@ namespace TaskLayer
                 HashSet<Modification> modificationsToWriteIfInDatabase = new HashSet<Modification>();
                 HashSet<Modification> modificationsToWriteIfObserved = new HashSet<Modification>();
 
-                var confidentPsms = Parameters.AllPsms.Where(b => b.FdrInfo.QValueNotch <= 0.01 && b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.BaseSequence != null).ToList();
+                var confidentPsms = GetFilteredPsms(
+                        includeDecoys: false,
+                        includeContaminants: true,
+                        includeAmbiguous: true)
+                    .Where(p => p.BaseSequence != null)
+                    .ToList();
                 var proteinToConfidentBaseSequences = new Dictionary<Protein, List<PeptideWithSetModifications>>();
 
                 // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
@@ -977,10 +973,13 @@ namespace TaskLayer
                 }
 
                 //generates dictionary of proteins with only localized modifications
-                var ModPsms = Parameters.AllPsms.Where(b => b.FdrInfo.QValueNotch <= 0.01 && b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.FullSequence != null).ToList();
+                var modPsms = GetFilteredPsms(
+                    includeDecoys: false,
+                    includeContaminants: true,
+                    includeAmbiguous: false);
                 var proteinToConfidentModifiedSequences = new Dictionary<Protein, List<PeptideWithSetModifications>>();
 
-                foreach (PeptideSpectralMatch psm in ModPsms)
+                foreach (PeptideSpectralMatch psm in modPsms)
                 {
                     var myPepsWithSetMods = psm.BestMatchingPeptides.Select(p => p.Peptide);
 
@@ -1374,10 +1373,14 @@ namespace TaskLayer
 
             string filename = "Variant" + GlobalVariables.AnalyteType + "s.psmtsv";
             string variantPeptideFile = Path.Combine(Parameters.OutputFolder, filename);
-            List<PeptideSpectralMatch> FDRPsms = Parameters.AllPsms
-                .Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
-                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter && p.BaseSequence != null).ToList();
-            var possibleVariantPsms = FDRPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).OrderByDescending(pep => pep.Score).ToList();
+            var fdrPsms = GetFilteredPsms(
+                    includeDecoys: true,
+                    includeContaminants: true,
+                    includeAmbiguous: true)
+                .Where(p => p.BaseSequence != null)
+                .ToList();
+
+            var possibleVariantPsms = fdrPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).OrderByDescending(pep => pep.Score).ToList();
 
             if (!Parameters.SearchParameters.WriteDecoys)
             {
