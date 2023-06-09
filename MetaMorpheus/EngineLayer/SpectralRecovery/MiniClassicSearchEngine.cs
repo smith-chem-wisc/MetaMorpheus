@@ -299,6 +299,11 @@ namespace EngineLayer.SpectralRecovery
 
         public void CalculateSpectralAngle(PeptideSpectralMatch psm, LibrarySpectrum donorSpectrum)
         {
+            if (psm.MsDataScan.MassSpectrum.Size == 0)
+            {
+                psm.SpectralAngle = -1;
+                return; 
+            }
             SpectralSimilarity s = new SpectralSimilarity(psm.MsDataScan.MassSpectrum, donorSpectrum.XArray, donorSpectrum.YArray,
                     SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, _fileSpecificParameters.ProductMassTolerance.Value, false);
             psm.SpectralAngle = s.SpectralContrastAngle() ?? -1;

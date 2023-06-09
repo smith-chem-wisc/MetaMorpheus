@@ -291,8 +291,8 @@ namespace EngineLayer.SpectralRecovery
                 }
             }
 
-            IEnumerable<double> mzList = null;
-            IEnumerable<double> intensityList = null;
+            List<double> mzList = null;
+            List<double> intensityList = null;
 
             // Selecting only the isotopic peaks is necessary for normalization. If you pass in the full
             // Spectrum, the 
@@ -314,8 +314,8 @@ namespace EngineLayer.SpectralRecovery
                     }
                 }
 
-                mzList = experimentalIsotopeIndices.Select(i => precursorSpectrum.XArray[i]);
-                intensityList = experimentalIsotopeIndices.Select(i => precursorSpectrum.YArray[i]);
+                mzList = experimentalIsotopeIndices.Select(i => precursorSpectrum.XArray[i]).ToList();
+                intensityList = experimentalIsotopeIndices.Select(i => precursorSpectrum.YArray[i]).ToList();
             }
             else if(peak.Apex != null)
             {
@@ -324,8 +324,8 @@ namespace EngineLayer.SpectralRecovery
                     .Where(p => Math.Abs(p.RetentionTime - peak.Apex.IndexedPeak.RetentionTime) < 0.0001)
                     .OrderBy(p => p.Mz)
                     .ToList();
-                mzList = imsPeaksOrderedByMz.Select(p => p.Mz);
-                intensityList = imsPeaksOrderedByMz.Select(p => p.Intensity);
+                mzList = imsPeaksOrderedByMz.Select(p => p.Mz).ToList();
+                intensityList = imsPeaksOrderedByMz.Select(p => p.Intensity).ToList();
             }
 
             if (peptideFormula != null & mzList.IsNotNullOrEmpty() & intensityList.IsNotNullOrEmpty())

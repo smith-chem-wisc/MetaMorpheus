@@ -391,7 +391,7 @@ namespace Test
                 mbrPeaks,
                 maxQuantPsms,
                 spectrumFilePath,
-                resultsPath + @"\",
+                resultsPath,
                 commonParams);
 
             mbrAnalysisResults.WritePeakQuantificationResultsToTsv(resultsPath, "PeakQuant_NoArtifact");
