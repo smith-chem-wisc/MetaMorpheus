@@ -37,6 +37,12 @@ namespace TaskLayer
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
         private List<PeptideSpectralMatch> _filteredPsms;
+        private Dictionary<string, string> _filteringResultsDictionary = new Dictionary<string, string>()
+        {
+            {"PEP Disclaimer", null},
+            {"Filter Type", null},
+            {"Filter Threshold", null}
+        };
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -119,15 +125,42 @@ namespace TaskLayer
 
         /// <summary>
         /// Sets the private field _filteredPsms by removing all psms with Q, Q_Notch, and PEP_QValues greater
-        /// than the user defined threshold. In cases where PEP was selected for thresholding and fewer than 100
-        /// psms were found, no psms are removed.
+        /// than a user defined threshold. In cases where thresholds aren't defined (i.e., equal to default value
+        /// of 1.0) or PEP filtering was selected but PEP wasn't performed due to insufficient PSMs, then
+        /// filtering defaults to Q and Q_Notch less than or equal to 0.01
         /// </summary>
         private void FilterPsms()
         {
+            double qValueFilter = CommonParameters.QValueOutputFilter;
+            double pepFilter = CommonParameters.PepQValueOutputFilter;
+            _filteringResultsDictionary["Filter Type"] = "q-value";
+
+            if (Math.Min(qValueFilter, pepFilter) >= 1.0)
+            {
+                qValueFilter = 0.01;
+            }
+            if (pepFilter < qValueFilter)
+            {
+                if (Parameters.AllPsms.Count < 100)
+                {
+                    qValueFilter = pepFilter;
+                    pepFilter = 1.0;
+                    _filteringResultsDictionary["PEP Disclaimer"] =
+                        "PEP could not be calculated due to an insufficient number of PSMs. PSMs were filtered by q-value.";
+                }
+                else
+                {
+                    _filteringResultsDictionary["Filter Type"] = "pep q-value";
+                }
+            }
+
+            _filteringResultsDictionary["Filter Threshold"] = Math.Round(Math.Min(qValueFilter, pepFilter), 2)
+                .ToString(CultureInfo.InvariantCulture);
+
             _filteredPsms = Parameters.AllPsms.Where(p =>
-                                    p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
-                                    && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
-                                    && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter ||
+                                    p.FdrInfo.QValue <= qValueFilter
+                                    && p.FdrInfo.QValueNotch <= qValueFilter
+                                    && (p.FdrInfo.PEP_QValue <= pepFilter ||
                                         double.IsNaN(p.FdrInfo.PEP_QValue)))
                                 .ToList();
         }
@@ -622,17 +655,14 @@ namespace TaskLayer
             WritePsmsForPercolator(filteredPsmListForOutput, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
-            bool qValueUsedAsFilter = !CommonParameters.QValueOutputFilter.IsLarger(CommonParameters.PepQValueOutputFilter, 3);
-            string filterType = qValueUsedAsFilter ? "s with q-value = " : "s with pep q-value = ";
-            double filterCutoffForResultsCounts = qValueUsedAsFilter 
-                ? CommonParameters.QValueOutputFilter
-                : CommonParameters.PepQValueOutputFilter;
-
+            string filterType = _filteringResultsDictionary["Filter Type"] ?? "q-value";
+            string filterCutoffForResultsCounts = _filteringResultsDictionary["Filter Threshold"] ?? (0.01).ToString(CultureInfo.InvariantCulture);
             int psmOrPeptideCountForResults = filteredPsmListForOutput
                 .Count(p => !p.IsDecoy);
 
             // write summary text
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target PSM" + filterType + Math.Round(filterCutoffForResultsCounts,2) + ": " + psmOrPeptideCountForResults  + Environment.NewLine);
+            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
+                "All target PSMs with " + filterType + " = " + filterCutoffForResultsCounts + ": " + psmOrPeptideCountForResults + Environment.NewLine);
             if (Parameters.SearchParameters.DoParsimony)
             {
                 Parameters.SearchTaskResults.AddTaskSummaryText("All target protein groups with q-value = 0.01 (1% FDR): " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy)
@@ -651,7 +681,7 @@ namespace TaskLayer
 
                 Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
                 Parameters.SearchTaskResults.AddTaskSummaryText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
-                Parameters.SearchTaskResults.AddTaskSummaryText(strippedFileName +  " target PSM" + filterType + Math.Round(filterCutoffForResultsCounts, 2) + ": " + psmOrPeptideCountForResults + Environment.NewLine);
+                Parameters.SearchTaskResults.AddTaskSummaryText(strippedFileName +  " target PSMs with " + filterType + " = " + filterCutoffForResultsCounts + ": " + psmOrPeptideCountForResults + Environment.NewLine);
 
                 // writes all individual spectra file search results to subdirectory
                 if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
@@ -976,8 +1006,14 @@ namespace TaskLayer
                 var modPsms = GetFilteredPsms(
                     includeDecoys: false,
                     includeContaminants: true,
-                    includeAmbiguous: false);
+                    includeAmbiguous: false).ToList();
+
+                var originalModPsms = Parameters.AllPsms.Where(b => b.FdrInfo.QValueNotch <= 0.01 && b.FdrInfo.QValue <= 0.01 && !b.IsDecoy && b.FullSequence != null).ToList();
                 var proteinToConfidentModifiedSequences = new Dictionary<Protein, List<PeptideWithSetModifications>>();
+
+                HashSet<string> modPsmsFullSeq = modPsms.Select(p => p.FullSequence).ToHashSet();
+                HashSet<string> originalModPsmsFullSeq = originalModPsms.Select(p => p.FullSequence).ToHashSet();
+                modPsmsFullSeq.ExceptWith(originalModPsmsFullSeq);
 
                 foreach (PeptideSpectralMatch psm in modPsms)
                 {
