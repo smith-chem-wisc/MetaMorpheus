@@ -157,6 +157,13 @@ namespace TaskLayer
             _filteringResultsDictionary["Filter Threshold"] = Math.Round(Math.Min(qValueFilter, pepFilter), 2)
                 .ToString(CultureInfo.InvariantCulture);
 
+            // Only for testing
+            if (Parameters.SearchParameters.DoNotFilterPsms)
+            {
+                _filteredPsms = Parameters.AllPsms;
+                return;
+            }
+
             _filteredPsms = Parameters.AllPsms.Where(p =>
                                     p.FdrInfo.QValue <= qValueFilter
                                     && p.FdrInfo.QValueNotch <= qValueFilter

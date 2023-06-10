@@ -70,7 +70,11 @@ namespace Test
                 CommonParameters = new CommonParameters
                 (
                     qValueOutputFilter: 1
-                )
+                ),
+                SearchParameters = new SearchParameters()
+                {
+                    DoNotFilterPsms = true // Filtering defaults to a 0.01 q value threshold when the output filter is 0
+                }
             };
 
             SearchTask searchTask2 = new SearchTask()
@@ -148,7 +152,10 @@ namespace Test
             //Filter decoys
             SearchTask searchTaskDecoy = new SearchTask
             {
-                CommonParameters = new CommonParameters(qValueOutputFilter: 0.99)
+                SearchParameters = new SearchParameters()
+                {
+                    DoNotFilterPsms = true
+                }
             };
 
             searchTaskDecoy.SearchParameters.WriteDecoys = false;
@@ -163,7 +170,10 @@ namespace Test
             //Filter contaminants
             SearchTask searchTaskContaminant = new SearchTask
             {
-                CommonParameters = new CommonParameters(qValueOutputFilter: 0.99)
+                SearchParameters = new SearchParameters()
+                {
+                   DoNotFilterPsms  = true
+                }
             };
 
             searchTaskContaminant.SearchParameters.WriteContaminants = false;
@@ -213,7 +223,10 @@ namespace Test
             //No filter
             SearchTask searchTask = new SearchTask
             {
-                CommonParameters = new CommonParameters(qValueOutputFilter: 0.99)
+                SearchParameters = new SearchParameters()
+                {
+                    DoNotFilterPsms = true
+                }
             };
 
             var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoFilterTest", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, true) }, outputFolder);
