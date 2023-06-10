@@ -146,7 +146,10 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
 
             //Filter decoys
-            SearchTask searchTaskDecoy = new SearchTask();
+            SearchTask searchTaskDecoy = new SearchTask
+            {
+                CommonParameters = new CommonParameters(qValueOutputFilter: 0.99)
+            };
 
             searchTaskDecoy.SearchParameters.WriteDecoys = false;
 
@@ -158,7 +161,10 @@ namespace Test
             Assert.That(linesDecoy.Length == 8);
 
             //Filter contaminants
-            SearchTask searchTaskContaminant = new SearchTask();
+            SearchTask searchTaskContaminant = new SearchTask
+            {
+                CommonParameters = new CommonParameters(qValueOutputFilter: 0.99)
+            };
 
             searchTaskContaminant.SearchParameters.WriteContaminants = false;
 
@@ -167,6 +173,7 @@ namespace Test
 
             string psmFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllPSMs.psmtsv");
             var linesContaminant = File.ReadAllLines(psmFileContaminant);
+            var lineSplit = linesContaminant.Select(l => l.Split('\t')).ToList();
             Assert.That(linesContaminant.Length == 11);
 
             string proteinFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllQuantifiedProteinGroups.tsv");
@@ -204,7 +211,10 @@ namespace Test
             Assert.That(linesContaminant2.Length == 1);
 
             //No filter
-            SearchTask searchTask = new SearchTask();
+            SearchTask searchTask = new SearchTask
+            {
+                CommonParameters = new CommonParameters(qValueOutputFilter: 0.99)
+            };
 
             var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoFilterTest", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, true) }, outputFolder);
             engine.Run();
