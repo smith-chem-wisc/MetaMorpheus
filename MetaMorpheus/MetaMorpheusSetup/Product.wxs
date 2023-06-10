@@ -193,9 +193,6 @@
       <Component Id="src_MzLibUtil.dll" Guid="9475fcb2-63bd-490c-8441-17a1760869ac">
         <File Id="src_MzLibUtil.dll" Name="MzLibUtil.dll" Source="$(var.GUI_TargetDir)MzLibUtil.dll" />
       </Component>
-      <Component Id="src_MzML.dll" Guid="40c12490-638a-41b9-9e0c-05e949236a5a">
-        <File Id="src_MzML.dll" Name="MzML.dll" Source="$(var.GUI_TargetDir)MzML.dll" />
-      </Component>
       <Component Id="src_NetSerializer.dll" Guid="9eddc340-0dcb-415a-85f4-322f0eaeee4b">
         <File Id="src_NetSerializer.dll" Name="NetSerializer.dll" Source="$(var.GUI_TargetDir)NetSerializer.dll" />
       </Component>
@@ -235,9 +232,6 @@
       <Component Id="src_SharpLearning.RandomForest.dll" Guid="f86fdc0c-6a23-4e4f-803b-0012aaa418e7">
         <File Id="src_SharpLearning.RandomForest.dll" Name="SharpLearning.RandomForest.dll" Source="$(var.GUI_TargetDir)SharpLearning.RandomForest.dll" />
       </Component>
-      <Component Id="src_Mgf.dll" Guid="B4EB5CEA-CFCA-40C7-A915-DB3B9EF53775">
-        <File Id="src_Mgf.dll" Name="Mgf.dll" Source="$(var.GUI_TargetDir)Mgf.dll" />
-      </Component>
       <Component Id="src_OxyPlot.dll" Guid="1B25D408-13DB-4A9E-A49E-B0A7FC8C05A6">
         <File Id="src_OxyPlot.dll" Name="OxyPlot.dll" Source="$(var.GUI_TargetDir)OxyPlot.dll" />
       </Component>
@@ -271,6 +265,9 @@
       <Component Id="src_itext.svg.dll" Guid="C49A6ADB-94DD-4223-B97E-884D60EABF82">
         <File Id="src_itext.svg.dll" Name="itext.svg.dll" Source="$(var.GUI_TargetDir)itext.svg.dll" />
       </Component>
+      <Component Id="src_Readers.dll" Guid="07FD5A1B-E8CC-4270-9DB9-C7DEFC7BFE44">
+	    <File Id="src_Readers.dll" Name="Readers.dll" Source="$(var.GUI_TargetDir)Readers.dll" />
+      </Component>
       <Component Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Guid="F3DA60DB-CF5F-4671-9F3C-1033780261DD">
         <File Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Name="ThermoFisher.CommonCore.BackgroundSubtraction.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.BackgroundSubtraction.dll" />
       </Component>
@@ -282,9 +279,6 @@
       </Component>
       <Component Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Guid="F5EDAA70-06CD-49E7-932F-016C679B07C7">
         <File Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Name="ThermoFisher.CommonCore.RawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.RawFileReader.dll" />
-      </Component>
-      <Component Id="src_ThermoRawFileReader.dll" Guid="4BE9A662-4CD1-4E5B-8234-0734036A007E">
-        <File Id="src_ThermoRawFileReader.dll" Name="ThermoRawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoRawFileReader.dll" />
       </Component>
       <Component Id="src_BayesianEstimation.dll" Guid="100F4A2E-F4FE-4D25-8C5F-66A7092A2622">
         <File Id="src_BayesianEstimation.dll" Name="BayesianEstimation.dll" Source="$(var.GUI_TargetDir)BayesianEstimation.dll" />
