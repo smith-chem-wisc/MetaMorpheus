@@ -79,6 +79,7 @@ namespace TaskLayer
                 CalculatePsmFdr();
             }
 
+            PsmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
             FilterPsms();
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
@@ -131,14 +132,10 @@ namespace TaskLayer
         /// </summary>
         private void FilterPsms()
         {
-            double qValueFilter = CommonParameters.QValueOutputFilter;
-            double pepFilter = CommonParameters.PepQValueOutputFilter;
+            double qValueFilter = CommonParameters.QValueThreshold;
+            double pepFilter = CommonParameters.PepQValueThreshold;
             _filteringResultsDictionary["Filter Type"] = "q-value";
 
-            if (Math.Min(qValueFilter, pepFilter) >= 1.0)
-            {
-                qValueFilter = 0.01;
-            }
             if (pepFilter < qValueFilter)
             {
                 if (Parameters.AllPsms.Count < 100)
@@ -156,13 +153,6 @@ namespace TaskLayer
 
             _filteringResultsDictionary["Filter Threshold"] = Math.Round(Math.Min(qValueFilter, pepFilter), 2)
                 .ToString(CultureInfo.InvariantCulture);
-
-            // Only for testing
-            if (Parameters.SearchParameters.DoNotFilterPsms)
-            {
-                _filteredPsms = Parameters.AllPsms;
-                return;
-            }
 
             _filteredPsms = Parameters.AllPsms.Where(p =>
                                     p.FdrInfo.QValue <= qValueFilter
@@ -646,10 +636,17 @@ namespace TaskLayer
         private void WritePsmResults()
         {
             Status("Writing PSM results...", Parameters.SearchTaskId);
-            var filteredPsmListForOutput = GetFilteredPsms(
+
+            var thresholdPsmList = GetFilteredPsms(
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: true).ToList();
+            List<PeptideSpectralMatch> filteredPsmListForOutput = CommonParameters.FilterOutput
+                ? thresholdPsmList
+                : Parameters.AllPsms.Where(p =>
+                    (Parameters.SearchParameters.WriteDecoys || !p.IsDecoy)
+                    && (Parameters.SearchParameters.WriteContaminants || !p.IsContaminant))
+                    .ToList();
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
@@ -663,8 +660,9 @@ namespace TaskLayer
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             string filterType = _filteringResultsDictionary["Filter Type"] ?? "q-value";
-            string filterCutoffForResultsCounts = _filteringResultsDictionary["Filter Threshold"] ?? (0.01).ToString(CultureInfo.InvariantCulture);
-            int psmOrPeptideCountForResults = filteredPsmListForOutput
+            string filterCutoffForResultsCounts = 
+                _filteringResultsDictionary["Filter Threshold"] ?? (0.01).ToString(CultureInfo.InvariantCulture);
+            int psmOrPeptideCountForResults = thresholdPsmList
                 .Count(p => !p.IsDecoy);
 
             // write summary text
@@ -676,15 +674,19 @@ namespace TaskLayer
                     + Environment.NewLine);
             }
 
-            PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
+            var filteredPsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
+            Dictionary<string, int> psmCountByFile = thresholdPsmList
+                .GroupBy(p => p.FullFilePath)
+                .ToDictionary(
+                    g => Path.GetFileNameWithoutExtension(g.Key),
+                    g => g.Count(p => !p.IsDecoy));
 
-            foreach (var psmFileGroup in PsmsGroupedByFile)
+            foreach (var psmFileGroup in filteredPsmsGroupedByFile)
             {
                 // write summary text
                 var psmsForThisFile = psmFileGroup.ToList();
                 string strippedFileName = Path.GetFileNameWithoutExtension(psmFileGroup.Key);
-
-                psmOrPeptideCountForResults = psmsForThisFile.Count(p => !p.IsDecoy);
+                psmOrPeptideCountForResults = psmCountByFile[strippedFileName];
 
                 Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
                 Parameters.SearchTaskResults.AddTaskSummaryText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
@@ -916,7 +918,6 @@ namespace TaskLayer
                 }
             }
         }
-
         private void WriteFlashLFQResults()
         {
             if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
@@ -1243,9 +1244,13 @@ namespace TaskLayer
             // write best (highest-scoring) PSM per peptide
             string filename = "All" + GlobalVariables.AnalyteType + "s.psmtsv";
             string writtenFile = Path.Combine(Parameters.OutputFolder, filename);
-            List<PeptideSpectralMatch> peptides = Parameters.AllPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            List<PeptideSpectralMatch> peptides = Parameters.AllPsms
+                .GroupBy(b => b.FullSequence)
+                .Select(b => b.FirstOrDefault()).ToList();
 
-            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
+            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters,
+                FileSpecificParameters, new List<string> { Parameters.SearchTaskId },
+                "Peptide").Run();
 
             if (!Parameters.SearchParameters.WriteDecoys)
             {
@@ -1255,39 +1260,76 @@ namespace TaskLayer
             {
                 peptides.RemoveAll(b => b.IsContaminant);
             }
-            bool qValueUsedAsFilter = !CommonParameters.QValueOutputFilter.IsLarger(CommonParameters.PepQValueOutputFilter, 3);
-            string filterType = qValueUsedAsFilter ? "s with q-value = " : "s with pep q-value = ";
-            double filterCutoffForResultsCounts = qValueUsedAsFilter ? Math.Min(0.01, CommonParameters.QValueOutputFilter) : Math.Min(0.01, CommonParameters.PepQValueOutputFilter);
 
-            int psmOrPeptideCountForResults = qValueUsedAsFilter ? peptides.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= filterCutoffForResultsCounts
-                && p.FdrInfo.QValueNotch <= filterCutoffForResultsCounts).Count() : peptides.Where(p => !p.IsDecoy && p.FdrInfo.PEP_QValue <= filterCutoffForResultsCounts
-                || double.IsNaN(p.FdrInfo.PEP_QValue)).Count();
+            string filterType = _filteringResultsDictionary["Filter Type"] ?? "q-value";
+            double filterCutoffForResultsCounts = Math.Min(CommonParameters.QValueThreshold, CommonParameters.PepQValueThreshold);
 
-            var filteredPeptidesForOutput = peptides.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
-                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
-                && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
+            int psmOrPeptideCountForResults = filterType.Equals("q-value")
+                ? peptides
+                    .Count(p => 
+                        !p.IsDecoy 
+                        && p.FdrInfo.QValue <= filterCutoffForResultsCounts
+                        && p.FdrInfo.QValueNotch <= filterCutoffForResultsCounts) 
+                : peptides
+                    .Count(p => 
+                        !p.IsDecoy 
+                        && p.FdrInfo.PEP_QValue <= filterCutoffForResultsCounts
+                        || double.IsNaN(p.FdrInfo.PEP_QValue));
+
+            var filteredPeptidesForOutput = CommonParameters.FilterOutput
+                ? peptides
+                    .Where(p =>
+                        p.FdrInfo.QValue <= CommonParameters.QValueThreshold
+                        && p.FdrInfo.QValueNotch <= CommonParameters.QValueThreshold
+                        && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueThreshold
+                            || double.IsNaN(p.FdrInfo.PEP_QValue)))
+                    .ToList()
+                : peptides;
 
             WritePsmsToTsv(filteredPeptidesForOutput, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText("All target " + GlobalVariables.AnalyteType.ToLower() + filterType + Math.Round(filterCutoffForResultsCounts,2).ToString() + " : " + psmOrPeptideCountForResults);
+            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
+                "All target " + GlobalVariables.AnalyteType.ToLower() + "s with " + filterType + 
+                " = " + Math.Round(filterCutoffForResultsCounts,2).ToString() + " : " + psmOrPeptideCountForResults);
 
             foreach (var file in PsmsGroupedByFile)
             {
                 // write summary text
                 var psmsForThisFile = file.ToList();
                 string strippedFileName = Path.GetFileNameWithoutExtension(file.First().FullFilePath);
-                var peptidesForFile = psmsForThisFile.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b => b.Score).ToList();
-                new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
+                var peptidesForFile = psmsForThisFile
+                    .GroupBy(b => b.FullSequence)
+                    .Select(b => b.FirstOrDefault())
+                    .OrderByDescending(b => b.Score)
+                    .ToList();
+                new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
+                    new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
                 
-                psmOrPeptideCountForResults = qValueUsedAsFilter ? peptidesForFile.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= filterCutoffForResultsCounts
-                    && p.FdrInfo.QValueNotch <= filterCutoffForResultsCounts).Count() : peptidesForFile.Where(p => !p.IsDecoy && p.FdrInfo.PEP_QValue <= filterCutoffForResultsCounts
-                    || double.IsNaN(p.FdrInfo.PEP_QValue)).Count();
-                var filteredPeptidesForFile = peptidesForFile.Where(p => p.FdrInfo.QValue <= CommonParameters.QValueOutputFilter
-                && p.FdrInfo.QValueNotch <= CommonParameters.QValueOutputFilter
-                && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueOutputFilter || double.IsNaN(p.FdrInfo.PEP_QValue))).ToList();
+                psmOrPeptideCountForResults = filterType.Equals("q-value")
+                    ? peptidesForFile.Count(p => 
+                        !p.IsDecoy 
+                        && p.FdrInfo.QValue <= filterCutoffForResultsCounts
+                        && p.FdrInfo.QValueNotch <= filterCutoffForResultsCounts) 
+                    : peptidesForFile.Count(p => 
+                        !p.IsDecoy 
+                        && p.FdrInfo.PEP_QValue <= filterCutoffForResultsCounts
+                        || double.IsNaN(p.FdrInfo.PEP_QValue));
 
-                Parameters.SearchTaskResults.AddTaskSummaryText(strippedFileName + " Target " + GlobalVariables.AnalyteType.ToLower() + filterType + Math.Round(filterCutoffForResultsCounts, 2).ToString() + " : " + psmOrPeptideCountForResults + Environment.NewLine);
+                var filteredPeptidesForFile = CommonParameters.FilterOutput
+                        ? peptidesForFile.Where(p => 
+                                (!CommonParameters.FilterOutput || // If output is not filtered, then every peptide is included
+                                (p.FdrInfo.QValue <= CommonParameters.QValueThreshold
+                                && p.FdrInfo.QValueNotch <= CommonParameters.QValueThreshold
+                                && (p.FdrInfo.PEP_QValue <= CommonParameters.PepQValueThreshold 
+                                    || double.IsNaN(p.FdrInfo.PEP_QValue)))))
+                            .ToList()
+                        : peptidesForFile;
+
+                Parameters.SearchTaskResults.AddTaskSummaryText(
+                    strippedFileName + " Target " + GlobalVariables.AnalyteType.ToLower() + "s with " 
+                    + filterType + " = " + Math.Round(filterCutoffForResultsCounts, 2)
+                    + " : " + psmOrPeptideCountForResults + Environment.NewLine);
 
                 // writes all individual spectra file search results to subdirectory
                 if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
@@ -1413,37 +1455,46 @@ namespace TaskLayer
         {
             Status("Writing variant peptide results...", Parameters.SearchTaskId);
             string variantPsmFile = Path.Combine(Parameters.OutputFolder, "VariantPSMs.psmtsv");
-
             string filename = "Variant" + GlobalVariables.AnalyteType + "s.psmtsv";
             string variantPeptideFile = Path.Combine(Parameters.OutputFolder, filename);
-            var fdrPsms = GetFilteredPsms(
+
+            var fdrPsms = CommonParameters.FilterOutput
+                ? GetFilteredPsms(
                     includeDecoys: true,
                     includeContaminants: true,
                     includeAmbiguous: true)
-                .Where(p => p.BaseSequence != null)
+                    .Where(p => p.BaseSequence != null)
+                    .ToList()
+                : Parameters.AllPsms.Where(p =>
+                    (Parameters.SearchParameters.WriteDecoys || !p.IsDecoy)
+                    && (Parameters.SearchParameters.WriteContaminants || !p.IsContaminant))
+                    .ToList();
+
+            var possibleVariantPsms = fdrPsms.Where(p => 
+                    p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide()))
+                .OrderByDescending(pep => pep.Score)
                 .ToList();
 
-            var possibleVariantPsms = fdrPsms.Where(p => p.BestMatchingPeptides.Any(pep => pep.Peptide.IsVariantPeptide())).OrderByDescending(pep => pep.Score).ToList();
+            new FdrAnalysisEngine(possibleVariantPsms, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
+                new List<string> { Parameters.SearchTaskId }, "variant_PSMs").Run();
 
-            if (!Parameters.SearchParameters.WriteDecoys)
-            {
-                possibleVariantPsms.RemoveAll(b => b.IsDecoy);
-            }
-            if (!Parameters.SearchParameters.WriteContaminants)
-            {
-                possibleVariantPsms.RemoveAll(b => b.IsContaminant);
-            }
-
-            new FdrAnalysisEngine(possibleVariantPsms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "variant_PSMs").Run();
-
-            possibleVariantPsms.OrderBy(p => p.FdrInfo.QValue).ThenByDescending(p => p.Score).ThenBy(p => p.FdrInfo.CumulativeTarget).ToList();
+            possibleVariantPsms
+                .OrderBy(p => p.FdrInfo.QValue)
+                .ThenByDescending(p => p.Score)
+                .ThenBy(p => p.FdrInfo.CumulativeTarget)
+                .ToList();
 
             WritePsmsToTsv(possibleVariantPsms, variantPsmFile);
 
-            List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms.GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).OrderByDescending(b => b.Score).ToList();
+            List<PeptideSpectralMatch> variantPeptides = possibleVariantPsms
+                .GroupBy(b => b.FullSequence)
+                .Select(b => b.FirstOrDefault())
+                .OrderByDescending(b => b.Score)
+                .ToList();
             List<PeptideSpectralMatch> confidentVariantPeps = new List<PeptideSpectralMatch>();
 
-            new FdrAnalysisEngine(variantPeptides, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }, "variant_Peptides").Run();
+            new FdrAnalysisEngine(variantPeptides, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
+                new List<string> { Parameters.SearchTaskId }, "variant_Peptides").Run();
 
             WritePsmsToTsv(variantPeptides, variantPeptideFile);
 

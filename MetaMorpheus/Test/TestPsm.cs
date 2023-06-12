@@ -65,17 +65,7 @@ namespace Test
         [Test]
         public static void TestQValueFilter()
         {
-            SearchTask searchTask = new SearchTask()
-            {
-                CommonParameters = new CommonParameters
-                (
-                    qValueOutputFilter: 1
-                ),
-                SearchParameters = new SearchParameters()
-                {
-                    DoNotFilterPsms = true // Filtering defaults to a 0.01 q value threshold when the output filter is 0
-                }
-            };
+            SearchTask searchTask = new SearchTask();
 
             SearchTask searchTask2 = new SearchTask()
             {
@@ -150,14 +140,7 @@ namespace Test
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
 
             //Filter decoys
-            SearchTask searchTaskDecoy = new SearchTask
-            {
-                SearchParameters = new SearchParameters()
-                {
-                    DoNotFilterPsms = true
-                }
-            };
-
+            SearchTask searchTaskDecoy = new SearchTask();
             searchTaskDecoy.SearchParameters.WriteDecoys = false;
 
             var engineDecoy = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("DecoyTest", searchTaskDecoy) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
@@ -168,13 +151,7 @@ namespace Test
             Assert.That(linesDecoy.Length == 8);
 
             //Filter contaminants
-            SearchTask searchTaskContaminant = new SearchTask
-            {
-                SearchParameters = new SearchParameters()
-                {
-                   DoNotFilterPsms  = true
-                }
-            };
+            SearchTask searchTaskContaminant = new SearchTask();
 
             searchTaskContaminant.SearchParameters.WriteContaminants = false;
 
@@ -221,13 +198,7 @@ namespace Test
             Assert.That(linesContaminant2.Length == 1);
 
             //No filter
-            SearchTask searchTask = new SearchTask
-            {
-                SearchParameters = new SearchParameters()
-                {
-                    DoNotFilterPsms = true
-                }
-            };
+            SearchTask searchTask = new SearchTask();
 
             var engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("NoFilterTest", searchTask) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, true) }, outputFolder);
             engine.Run();

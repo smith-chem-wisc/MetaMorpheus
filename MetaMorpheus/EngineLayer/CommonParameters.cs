@@ -30,6 +30,8 @@ namespace EngineLayer
             bool reportAllAmbiguity = true,
             bool addCompIons = false, 
             int totalPartitions = 1, 
+            double qValueThreshold = 0.01,
+            double pepQValueThreshold = 1.0,
             double scoreCutoff = 5, 
             int? numberOfPeaksToKeepPerWindow = 200, 
             double? minimumAllowedIntensityRatioToBasePeak = 0.01, 
@@ -46,6 +48,7 @@ namespace EngineLayer
             DigestionParams digestionParams = null, 
             IEnumerable<(string, string)> listOfModsVariable = null, 
             IEnumerable<(string, string)> listOfModsFixed = null, 
+            bool filterOutput = false,
             double qValueOutputFilter = 1.0, 
             double pepQValueOutputFilter = 1.0,
             bool assumeOrphanPeaksAreZ1Fragments = true, 
@@ -62,6 +65,8 @@ namespace EngineLayer
             ReportAllAmbiguity = reportAllAmbiguity;
             AddCompIons = addCompIons;
             TotalPartitions = totalPartitions;
+            QValueThreshold = qValueThreshold;
+            PepQValueThreshold = pepQValueThreshold;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
             MinimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatioToBasePeak;
@@ -88,6 +93,7 @@ namespace EngineLayer
             // reset custom fragmentation product types to default empty list
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
 
+            FilterOutput = filterOutput;
             QValueOutputFilter = qValueOutputFilter;
             PepQValueOutputFilter = pepQValueOutputFilter;
 
@@ -119,6 +125,8 @@ namespace EngineLayer
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; private set; }
+        public double QValueThreshold { get; private set; }
+        public double PepQValueThreshold { get; private set; }
         public double ScoreCutoff { get; private set; }
         public DigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
@@ -130,13 +138,13 @@ namespace EngineLayer
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
+        public bool FilterOutput { get; private set; }
         public double QValueOutputFilter { get; private set; }
         public double PepQValueOutputFilter { get; private set; }
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
-
         public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
@@ -189,6 +197,8 @@ namespace EngineLayer
                                 addCompIons.Value,//possibly changed
                                 TotalPartitions,
                                 ScoreCutoff,
+                                QValueThreshold,
+                                PepQValueThreshold,
                                 NumberOfPeaksToKeepPerWindow,
                                 MinimumAllowedIntensityRatioToBasePeak,
                                 WindowWidthThomsons,
@@ -214,6 +224,7 @@ namespace EngineLayer
                                 ),
                                 ListOfModsVariable,
                                 ListOfModsFixed,
+                                FilterOutput,
                                 QValueOutputFilter,
                                 PepQValueOutputFilter,
                                 AssumeOrphanPeaksAreZ1Fragments,

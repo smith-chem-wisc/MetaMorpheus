@@ -89,11 +89,6 @@ namespace TaskLayer
         public bool WritePepXml { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
-        /// <summary>
-        /// FOR TESTING ONLY. Setting this to false disables any PSM filtering, i.e., PSMs with q-value of 1
-        /// are retained.
-        /// </summary>
-        public bool DoNotFilterPsms { get; set; }
         public bool WriteIndividualFiles { get; set; }
         public bool WriteSpectralLibrary { get; set; }
         public bool UpdateSpectralLibrary { get; set; }
