@@ -36,6 +36,7 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId,
             FileSpecificParameters[] fileSettingsList)
         {
+            // comment to force new checks on github
 
             //Start Averaging Task
             Status("Averaging...", new List<string>() { taskId });
