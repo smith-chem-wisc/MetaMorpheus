@@ -162,7 +162,6 @@ namespace Test
 
             string psmFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllPSMs.psmtsv");
             var linesContaminant = File.ReadAllLines(psmFileContaminant);
-            var lineSplit = linesContaminant.Select(l => l.Split('\t')).ToList();
             Assert.That(linesContaminant.Length == 11);
 
             string proteinFileContaminant = Path.Combine(outputFolder, @"ContaminantTest\AllQuantifiedProteinGroups.tsv");
