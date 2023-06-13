@@ -196,9 +196,9 @@ namespace EngineLayer
                                 ReportAllAmbiguity,
                                 addCompIons.Value,//possibly changed
                                 TotalPartitions,
-                                ScoreCutoff,
                                 QValueThreshold,
                                 PepQValueThreshold,
+                                ScoreCutoff,
                                 NumberOfPeaksToKeepPerWindow,
                                 MinimumAllowedIntensityRatioToBasePeak,
                                 WindowWidthThomsons,

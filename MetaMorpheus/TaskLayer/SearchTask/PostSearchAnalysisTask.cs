@@ -79,7 +79,6 @@ namespace TaskLayer
                 CalculatePsmFdr();
             }
 
-            PsmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
             FilterPsms();
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
@@ -207,6 +206,11 @@ namespace TaskLayer
             if (Parameters.SearchParameters.SilacLabels != null)
             {
                 Parameters.AllPsms = SilacConversions.UpdateProteinSequencesToLight(Parameters.AllPsms, Parameters.SearchParameters.SilacLabels);
+                foreach (PeptideSpectralMatch psm in Parameters.AllPsms)
+                {
+                    psm.ResolveAllAmbiguities();
+                }
+                FilterPsms();
             }
 
             List<PeptideSpectralMatch> psmsForProteinParsimony = Parameters.AllPsms;
@@ -219,11 +223,6 @@ namespace TaskLayer
                 Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent, true, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId }).Run();
 
             ProteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
-
-            foreach (PeptideSpectralMatch psm in Parameters.AllPsms)
-            {
-                psm.ResolveAllAmbiguities();
-            }
 
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
         }
@@ -674,7 +673,9 @@ namespace TaskLayer
                     + Environment.NewLine);
             }
 
-            // Previously, PsmsGroupedByFile property was written here.
+            // TODO: Refactor this! PsmsGroupedByFile should be written before filtering! Not after!
+            // This produces inaccurate results for file specific proteins/peptides. It will be fixed
+            // in a separate PR, becaue it will affect multiple tests
             PsmsGroupedByFile = filteredPsmListForOutput.GroupBy(p => p.FullFilePath);
             Dictionary<string, int> psmCountByFile = thresholdPsmList
                 .GroupBy(p => p.FullFilePath)

@@ -65,13 +65,15 @@ namespace Test
         [Test]
         public static void TestQValueFilter()
         {
+            // Output filtering is not performed using default settings for CommonParameters
             SearchTask searchTask = new SearchTask();
 
             SearchTask searchTask2 = new SearchTask()
             {
                 CommonParameters = new CommonParameters
                 (
-                    qValueOutputFilter: 0
+                    qValueThreshold: 0,
+                    filterOutput: true
                 )
             };
 
