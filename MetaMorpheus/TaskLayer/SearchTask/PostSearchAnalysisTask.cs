@@ -698,8 +698,8 @@ namespace TaskLayer
             // write summary text
             if (_pepFilteringNotPerformed)
             {
-                Parameters.SearchTaskResults.AddTaskSummaryText(
-                    "PEP could not be calculated due to an insufficient number of PSMs. PSMs were filtered by q-value." +
+                Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
+                    "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." +
                     Environment.NewLine);
             }
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
@@ -1296,12 +1296,6 @@ namespace TaskLayer
             WritePsmsToTsv(peptides, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
-            if (_pepFilteringNotPerformed)
-            {
-                Parameters.SearchTaskResults.AddTaskSummaryText(
-                    "PEP could not be calculated due to an insufficient number of PSMs. Peptides were filtered by q-value." +
-                    Environment.NewLine);
-            }
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
                 "All target " + GlobalVariables.AnalyteType.ToLower() + "s with " + _filterType + 
                 " = " + Math.Round(_filterThreshold,2) + " : " + psmOrPeptideCountForResults);

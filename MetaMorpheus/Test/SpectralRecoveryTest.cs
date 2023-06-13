@@ -346,7 +346,7 @@ namespace Test
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
             testLibraryWithoutDecoy.CloseConnections();
-           
+
         }
 
         [Test]
