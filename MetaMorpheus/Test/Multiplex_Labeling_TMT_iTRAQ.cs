@@ -110,7 +110,10 @@ namespace Test
                 mz: (new double[] { 1, 2, 3, 4, 5 }).Select(d => d.ToMz(1)).ToArray(),
                 intensities: new double[] { 2, 4, 6, 8, 10 },
                 shouldCopy: false);
-            MultiplexMod fakeMod = new MultiplexMod(new Modification(_diagnosticIons: ionMzs));
+            MultiplexMod fakeMod = new MultiplexMod(new Modification(
+                _diagnosticIons: ionMzs,
+                _modificationType: "Multiplex Label",
+                _originalId: "TMT10 on Y"));
             var test = fakeMod.GetMultiplexIonIntensities(fakeSpectrum).ToArray();
             Assert.AreEqual(
                 fakeMod.GetMultiplexIonIntensities(fakeSpectrum).ToArray(),
