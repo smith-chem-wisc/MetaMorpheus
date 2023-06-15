@@ -9,37 +9,40 @@ using MzLibUtil;
 
 namespace EngineLayer
 {
-    public enum MultiplexLabel
-    {
-        TMT6,
-        TMT10,
-        TMT11,
-        TMT18,
-        iTRAQ4,
-        iTRAQ8,
-        DiLeu4,
-        DiLeu12
-    }
-    
     public class MultiplexMod
     {
         public Modification Label { get; }
-        public MultiplexLabel LabelType { get; }
-        public MultiplexMod(Modification label, MultiplexLabel labelType)
-        {
-            LabelType = labelType;
-            Label = label;
-        }
+        public List<string> DiagnosticIonLabels { get; }
+        public double[] DiagnosticIonMzs { get; }
 
-        public List<string> MultiplexLabels()
+        /// <summary>
+        /// Functions for finding and writing the diagnostic ions associated with a specific multiplex label.
+        /// </summary>
+        /// <param name="label">Modification of type "Multiplex Label"</param>
+        public MultiplexMod(Modification label)
+        {
+            if(label == null || !label.ModificationType.Equals("Multiplex Label"))
+            {
+                throw new ArgumentException(
+                    "MultiplexMod can only be initialized with a Multiplex Label type modification");
+            }
+            Label = label;
+            DiagnosticIonLabels = GetMultiplexLabels(label);
+            DiagnosticIonMzs = Label.DiagnosticIons.First().Value
+                .Select(x => x.ToMz(1))
+                .OrderBy(x => x)
+                .ToArray();
+        }
+        
+        public static List<string> GetMultiplexLabels(Modification label)
         {
             List<string> ionLabels = new();
-            var labelGroups = Label.DiagnosticIons.First().Value
+            var labelGroups = label.DiagnosticIons.First().Value
                 .Select(x => x.ToMz(1))
                 .OrderBy(x => x)
                 .GroupBy(x => (int)Math.Floor(x));
 
-            if (Label.IdWithMotif.Contains("TMT"))
+            if (label.IdWithMotif.Contains("TMT"))
             {
                 // TMT 126 contains no heavy isotopes. TMT 127N has one N15, TMT127C has one C15.
                 // The "N" labels are slightly lighter than the "C" labels. 
@@ -77,18 +80,14 @@ namespace EngineLayer
         public double[] GetMultiplexIonIntensities(MzSpectrum scan, double ppmTolerance = 10)
         {
             Tolerance tolerance = new PpmTolerance(ppmTolerance);
-            double[] theoreticalIonMzs = Label.DiagnosticIons.First().Value
-                .Select(x => x.ToMz(1))
-                .OrderBy(x => x)
-                .ToArray();
-            int peakIndex = scan.GetClosestPeakIndex(theoreticalIonMzs[0]);
-            int lastPeakIndex = Math.Min(scan.GetClosestPeakIndex(theoreticalIonMzs.Last()) + 1, scan.XArray.Length - 1);
-            double[] ionIntensities = new double[theoreticalIonMzs.Length];
+            int peakIndex = scan.GetClosestPeakIndex(DiagnosticIonMzs[0]);
+            int lastPeakIndex = Math.Min(scan.GetClosestPeakIndex(DiagnosticIonMzs.Last()) + 1, scan.XArray.Length - 1);
+            double[] ionIntensities = new double[DiagnosticIonMzs.Length];
 
             for (int ionIndex = 0; ionIndex < ionIntensities.Length; ionIndex++)
             {
                 while (peakIndex <= lastPeakIndex &&
-                       scan.XArray[peakIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[ionIndex]))
+                       scan.XArray[peakIndex] < tolerance.GetMinimumValue(DiagnosticIonMzs[ionIndex]))
                 {
                     peakIndex++;
                 }
@@ -96,7 +95,7 @@ namespace EngineLayer
                 {
                     break;
                 }
-                if (tolerance.Within(scan.XArray[peakIndex], theoreticalIonMzs[ionIndex]))
+                if (tolerance.Within(scan.XArray[peakIndex], DiagnosticIonMzs[ionIndex]))
                 {
                     ionIntensities[ionIndex] = scan.YArray[peakIndex];
                     peakIndex++;

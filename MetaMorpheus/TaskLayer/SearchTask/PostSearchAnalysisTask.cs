@@ -35,6 +35,7 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private IEnumerable<IGrouping<string, PeptideSpectralMatch>> PsmsGroupedByFile { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
+        private MultiplexMod MultiplexMod { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -199,10 +200,15 @@ namespace TaskLayer
         {
             if (Parameters.SearchParameters.DoMultiplexQuantification)
             {
-                List<Modification> multiplexMods = Parameters.FixedModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
-                if (multiplexMods.IsNotNullOrEmpty())
+                List<Modification> possibleMultiplexMods = Parameters.FixedModifications.Where(m => m.ModificationType == "Multiplex Label").ToList();
+                if (possibleMultiplexMods.IsNotNullOrEmpty())
                 {
-                    Parameters.MultiplexModification = multiplexMods.MaxBy(m => m.DiagnosticIons.Count);
+                    MultiplexMod = new(label: possibleMultiplexMods.MaxBy(m => m.DiagnosticIons.Count));
+                }
+
+                foreach(var psm in Parameters.AllPsms)
+                {
+                    psm.SetMultiplexIonIntensities(MultiplexMod);
                 }
                 return;
             }
@@ -562,16 +568,33 @@ namespace TaskLayer
         protected void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath)
         {
             if (Parameters.SearchParameters.DoMultiplexQuantification &&
-                Parameters.MultiplexModification != null &&
+                MultiplexMod != null &&
                 psms.Any(p => p.BestMatchingPeptides
                     .SelectMany(pwsm => pwsm.Peptide.AllModsOneIsNterminus.Values)
-                    .Any(mod => mod.OriginalId.Equals(Parameters.MultiplexModification.OriginalId))))
+                    .Any(mod => mod.OriginalId.Equals(MultiplexMod.Label.OriginalId))))
             {
                 WritePsmPlusMultiplexIons(psms, filePath);
             }
             else
             {
                 WritePsmsToTsv(psms, filePath, Parameters.SearchParameters.ModsToWriteSelection);
+            }
+        }
+
+        private void WritePsmPlusMultiplexIons(IEnumerable<PeptideSpectralMatch> psms, string filePath)
+        {
+            using (StreamWriter output = new StreamWriter(filePath))
+            {
+                string headerWithReporterIons = PeptideSpectralMatch.GetTabSeparatedHeader().Trim() + '\t' +
+                                          String.Join('\t', MultiplexMod.DiagnosticIonLabels);
+                output.WriteLine(headerWithReporterIons);
+
+                foreach (var psm in psms)
+                {
+                    output.Write(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection).Trim());
+                    output.Write('\t');
+                    output.WriteLine(String.Join('\t', psm.MultiplexIonIntensities));
+                }
             }
         }
 
@@ -1250,102 +1273,6 @@ namespace TaskLayer
                     FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", file.First().FullFilePath });
                 }
             }
-        }
-
-        private void WritePsmPlusMultiplexIons(IEnumerable<PeptideSpectralMatch> psms, string filePath)
-        {
-            PpmTolerance ionTolerance = new PpmTolerance(10);
-            double[] reporterIonMzs = Parameters.MultiplexModification.DiagnosticIons.First().Value
-                .Select(x => x.ToMz(1))
-                .OrderBy(x => x)
-                .ToArray();
-
-            using (StreamWriter output = new StreamWriter(filePath))
-            {
-                string headerWithReporterIons = PeptideSpectralMatch.GetTabSeparatedHeader().Trim() + '\t' +
-                                          GetMultiplexHeader();
-                output.WriteLine(headerWithReporterIons);
-                foreach (var psm in psms)
-                {
-                    IEnumerable<string> labelIonIntensities =
-                        GetMultiplexIonIntensities(psm.MsDataScan.MassSpectrum, reporterIonMzs, ionTolerance)
-                            .Select(d => d.ToString(CultureInfo.CurrentCulture));
-
-                    output.Write(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection).Trim());
-                    output.Write('\t');
-                    output.WriteLine(String.Join('\t', labelIonIntensities));
-                }
-            }
-        }
-
-        private string GetMultiplexHeader()
-        {
-            List<string> ionLabels = new();
-            var labelGroups = Parameters.MultiplexModification.DiagnosticIons.First().Value
-                .Select(x => x.ToMz(1))
-                .OrderBy(x => x)
-                .GroupBy(x => (int)Math.Floor(x));
-
-            if (Parameters.MultiplexModification.IdWithMotif.Contains("TMT"))
-            {
-                // TMT 126 contains no heavy isotopes. TMT 127N has one N15, TMT127C has one C15.
-                // The "N" labels are slightly lighter than the "C" labels. 
-                // Labels for the diagnostic ions are created accordingly
-                foreach (var group in labelGroups)
-                {
-                    if (group.Count() == 1)
-                    {
-                        ionLabels.Add(group.Key.ToString());
-                    }
-                    else if (group.Count() == 2)
-                    {
-                        ionLabels.Add(group.Key + "N");
-                        ionLabels.Add(group.Key + "C");
-                    }
-                }
-            }
-            else
-            {
-                foreach (var group in labelGroups)
-                {
-                    if (group.Count() == 1)
-                    {
-                        ionLabels.Add(group.Key.ToString());
-                    }
-                    else
-                    {
-                        ionLabels.AddRange(group.Select(mz => Math.Round(mz, 3).ToString(CultureInfo.CurrentCulture)));
-                    }
-                }
-            }
-            return String.Join('\t', ionLabels);
-        }
-
-        public static double[] GetMultiplexIonIntensities(MzSpectrum scan, double[] theoreticalIonMzs, Tolerance tolerance)
-        {
-            int peakIndex = scan.GetClosestPeakIndex(theoreticalIonMzs[0]);
-            int lastPeakIndex = Math.Min(scan.GetClosestPeakIndex(theoreticalIonMzs.Last()) + 1, scan.XArray.Length - 1);
-            double[] ionIntensities = new double[theoreticalIonMzs.Length];
-            
-            for (int ionIndex = 0; ionIndex < ionIntensities.Length; ionIndex++)
-            {
-                while (peakIndex <= lastPeakIndex && 
-                       scan.XArray[peakIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[ionIndex]))
-                {
-                    peakIndex++;
-                }
-                if (peakIndex > lastPeakIndex)
-                {
-                    break;
-                }
-                if (tolerance.Within(scan.XArray[peakIndex], theoreticalIonMzs[ionIndex]))
-                {
-                    ionIntensities[ionIndex] = scan.YArray[peakIndex];
-                    peakIndex++;
-                }
-            }
-            
-            return ionIntensities;
         }
 
         private void CompressIndividualFileResults()

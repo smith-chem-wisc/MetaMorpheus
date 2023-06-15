@@ -17,6 +17,7 @@ using Nett;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using System.Threading.Tasks;
+using System.ComponentModel;
 
 namespace Test
 {
@@ -97,38 +98,44 @@ namespace Test
         [Test]
         public static void TestMultiplexIonIntensityDetection()
         {
-            double[] ionMzs = { 1, 2, 3, 4, 5 };
+            var ionMzs =  new Dictionary<DissociationType, List<double>>
+            { 
+                { DissociationType.HCD,
+                 new List<double> { 1, 2, 3, 4, 5 } } 
+            };
             Tolerance tol = new PpmTolerance(10);
 
             // 1-to-1 concordance between theoretical and observed diagnostic ions
             MzSpectrum fakeSpectrum = new MzSpectrum(
-                mz: new double[] { 1, 2, 3, 4, 5 },
+                mz: (new double[] { 1, 2, 3, 4, 5 }).Select(d => d.ToMz(1)).ToArray(),
                 intensities: new double[] { 2, 4, 6, 8, 10 },
                 shouldCopy: false);
+            MultiplexMod fakeMod = new MultiplexMod(new Modification(_diagnosticIons: ionMzs));
+            var test = fakeMod.GetMultiplexIonIntensities(fakeSpectrum).ToArray();
             Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
+                fakeMod.GetMultiplexIonIntensities(fakeSpectrum).ToArray(),
                 fakeSpectrum.YArray);
 
             // Every other diagnostic ion is present in spectrum
             fakeSpectrum = new MzSpectrum(
-                mz: new double[] { 1, 2.5, 3, 4.5, 5 },
+                mz: (new double[] { 1, 2.5, 3, 4.5, 5 }).Select(d => d.ToMz(1)).ToArray(),
                 intensities: new double[] { 2, 4, 6, 8, 10 },
                 shouldCopy: false);
             Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
+                fakeMod.GetMultiplexIonIntensities(fakeSpectrum).ToArray(),
                 new double[] { 2, 0, 6, 0, 10 });
 
             // Last two diagnostic ions (highest m/z) are not observed
             fakeSpectrum = new MzSpectrum(
-                mz: new double[] { 1, 2, 3 },
+                mz: (new double[] { 1, 2, 3 }).Select(d => d.ToMz(1)).ToArray(),
                 intensities: new double[] { 2, 4, 6 },
                 shouldCopy: false);
             Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
+                fakeMod.GetMultiplexIonIntensities(fakeSpectrum).ToArray(),
                 new double[] { 2, 4, 6, 0, 0 });
 
             // This test uses values from a 12-plex DiLeu experiment
-            ionMzs = new double[] { 117.13147, 117.13731, 117.14363, 118.14067, 118.14699, 118.15283 };
+            // The first 5 di-leu channels and the 9th channel are empty
             fakeSpectrum = new MzSpectrum(
                 mz: new double[] { 
                     117.131741292845, // 1
@@ -158,9 +165,12 @@ namespace Test
                     0
                 },
                 shouldCopy: false);
+            Modification diLeu12 = GlobalVariables.AllModsKnown.Where(m => m.OriginalId.Equals("DiLeu-12plex")).FirstOrDefault();
+            fakeMod = new MultiplexMod(diLeu12);
+            test = fakeMod.GetMultiplexIonIntensities(fakeSpectrum);
             Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
-                new double[] { 1, 2, 3, 4, 5, 6 });
+                fakeMod.GetMultiplexIonIntensities(fakeSpectrum).ToArray(),
+                new double[] { 0, 0, 0, 0, 0, 1, 2, 3, 0, 4, 5, 6 });
         }
 
         [Test]
@@ -276,6 +286,14 @@ namespace Test
             Assert.That(ionSum, Is.EqualTo(115537).Within(1));
 
             Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMultiplexModInvalidInitialization()
+        {
+            Modification phospho = GlobalVariables.AllModsKnown.FirstOrDefault(m => m.IdWithMotif.Equals("Phosphorylation on Y"));
+            var ex = Assert.Throws<ArgumentException>(() => new MultiplexMod(phospho));
+            Assert.That(ex.Message, Is.EqualTo("MultiplexMod can only be initialized with a Multiplex Label type modification"));
         }
 
         [Test]
