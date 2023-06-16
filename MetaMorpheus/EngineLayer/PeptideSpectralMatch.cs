@@ -61,6 +61,7 @@ namespace EngineLayer
         public int PsmCount { get; internal set; }
         public Dictionary<string, int> ModsIdentified { get; private set; } // these should never be null under normal circumstances
         public List<double> LocalizedScores { get; internal set; }
+        public double[] MultiplexIonIntensities { get; private set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
         public double ScanRetentionTime { get; }
@@ -448,6 +449,11 @@ namespace EngineLayer
                 }
                 ResolveAllAmbiguities();
             }
+        }
+
+        public void SetMultiplexIonIntensities(MultiplexMod multiplexMod)
+        {
+            MultiplexIonIntensities = multiplexMod.GetMultiplexIonIntensities(MsDataScan.MassSpectrum);
         }
 
         /// <summary>
