@@ -323,12 +323,12 @@ namespace MetaMorpheusGUI
 
             if (task.CommonParameters.PepQValueThreshold < 1)
             {
-                PepQValueTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
+                PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
                 PepQValueThresholdCheckbox.IsChecked = true;
             }
             else
             {
-                PepQValueTextBox.Text = "0.01";
+                PepQValueThresholdTextBox.Text = "0.01";
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
@@ -1328,28 +1328,6 @@ namespace MetaMorpheusGUI
         {
             SaveButton_Click(sender, e);
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
-        }
-
-        /// <summary>
-        /// Event Handler for when the pepQvalue radio button is checked. Sets value to default then uncecks and clears qValue
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void PepQValueRadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-            QValueTextBox.Clear();
-            PepQValueTextBox.Text = "0.01";
-        }
-
-        /// <summary>
-        /// Event Handler for when the qvalue radio button is checked. Sets value to default then unchecks and clears pepQvalue.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void QValueRadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-            PepQValueTextBox.Clear();
-            QValueTextBox.Text = "0.01";
         }
 
         /// <summary>

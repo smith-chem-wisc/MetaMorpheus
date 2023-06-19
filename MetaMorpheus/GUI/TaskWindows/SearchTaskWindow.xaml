@@ -584,43 +584,6 @@
                             <!-- filtering options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="1">
 
-                                <!-- pep 1-value button -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="400" />
-                                        <ColumnDefinition Width="50" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <RadioButton x:Name="PepQValueRadioButton" Content="Filter results to pep q-value:" 
-                                                 IsChecked="False" GroupName="Filtering" Checked="PepQValueRadioButton_Checked">
-                                        <ToolTipService.ToolTip>
-                                            Removes PSM and protein results from the written output below the input pep q-value.
-                                            Mutually exclusive with filter results to q-value
-                                        </ToolTipService.ToolTip>
-                                    </RadioButton>
-                                    <TextBox x:Name="PepQValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
-                                             IsEnabled="{Binding IsChecked, ElementName=PepQValueRadioButton}" Width="45" Height="23" />
-                                </Grid>
-                                
-                                <!-- q value button -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="400" />
-                                        <ColumnDefinition Width="50" />
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <RadioButton x:Name="QValueRadioButton" Content="Filter results to q-value:" 
-                                                 IsChecked="False" GroupName="Filtering" Checked="QValueRadioButton_Checked">
-                                        <ToolTipService.ToolTip>
-                                            Removes PSM and protein results from the written output below the input q-value.
-                                            Mutually exclusive with filter results to pep q-value
-                                        </ToolTipService.ToolTip>
-                                    </RadioButton>
-
-                                    <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
-                                             IsEnabled="{Binding IsChecked, ElementName=QValueRadioButton}" Width="45" Height="23" />
-                                </Grid>
-                                
                                 <!-- min score allowed box -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
