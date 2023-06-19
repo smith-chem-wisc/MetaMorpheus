@@ -48,9 +48,8 @@ namespace EngineLayer
             DigestionParams digestionParams = null, 
             IEnumerable<(string, string)> listOfModsVariable = null, 
             IEnumerable<(string, string)> listOfModsFixed = null, 
-            bool filterOutput = false,
-            double qValueOutputFilter = 1.0, 
-            double pepQValueOutputFilter = 1.0,
+            //double qValueOutputFilter = 1.0, 
+            //double pepQValueOutputFilter = 1.0,
             bool assumeOrphanPeaksAreZ1Fragments = true, 
             int maxHeterozygousVariants = 4, 
             int minVariantDepth = 1, 
@@ -93,10 +92,6 @@ namespace EngineLayer
             // reset custom fragmentation product types to default empty list
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
 
-            FilterOutput = filterOutput;
-            QValueOutputFilter = qValueOutputFilter;
-            PepQValueOutputFilter = pepQValueOutputFilter;
-
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
 
             MaxHeterozygousVariants = maxHeterozygousVariants;
@@ -138,9 +133,6 @@ namespace EngineLayer
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
-        public bool FilterOutput { get; private set; }
-        public double QValueOutputFilter { get; private set; }
-        public double PepQValueOutputFilter { get; private set; }
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
@@ -224,9 +216,6 @@ namespace EngineLayer
                                 ),
                                 ListOfModsVariable,
                                 ListOfModsFixed,
-                                FilterOutput,
-                                QValueOutputFilter,
-                                PepQValueOutputFilter,
                                 AssumeOrphanPeaksAreZ1Fragments,
                                 MaxHeterozygousVariants,
                                 MinVariantDepth,

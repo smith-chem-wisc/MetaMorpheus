@@ -52,6 +52,7 @@ namespace TaskLayer
                 {"UniProt", 2},
             };
 
+            WriteHighQValuePsms = true;
             WriteDecoys = true;
             WriteContaminants = true;
             WriteIndividualFiles = true;
@@ -87,6 +88,7 @@ namespace TaskLayer
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool WriteMzId { get; set; }
         public bool WritePepXml { get; set; }
+        public bool WriteHighQValuePsms { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }

@@ -312,28 +312,28 @@ namespace MetaMorpheusGUI
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
-            if (task.CommonParameters.QValueOutputFilter < 1)
+            if (task.CommonParameters.QValueThreshold < 1)
             {
-                QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
-                QValueRadioButton.IsChecked = true;
+                QValueThresholdTextBox.Text = task.CommonParameters.QValueThreshold.ToString(CultureInfo.InvariantCulture);
             }
             else
             {
-                QValueTextBox.Text = "0.01";
+                QValueThresholdTextBox.Text = "0.01";
             }
 
-            if (task.CommonParameters.PepQValueOutputFilter < 1)
+            if (task.CommonParameters.PepQValueThreshold < 1)
             {
-                PepQValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
-                PepQValueRadioButton.IsChecked = true;
+                PepQValueTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
+                PepQValueThresholdCheckbox.IsChecked = true;
             }
             else
             {
-                PepQValueTextBox.Text = "0.01";  
+                PepQValueTextBox.Text = "0.01";
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
+            WriteHighQPsmsCheckBox.IsChecked = task.SearchParameters.WriteHighQValuePsms;
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
@@ -429,11 +429,28 @@ namespace MetaMorpheusGUI
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
             SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
 
-            if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
-                maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
-                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, 
-                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text, InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
+            if (!GlobalGuiSettings.CheckTaskSettingsValidity(
+                PrecursorMassToleranceTextBox.Text, 
+                ProductMassToleranceTextBox.Text, 
+                MissedCleavagesTextBox.Text,
+                maxModificationIsoformsTextBox.Text, 
+                MinPeptideLengthTextBox.Text, 
+                MaxPeptideLengthTextBox.Text,
+                MaxThreadsTextBox.Text, 
+                MinScoreAllowed.Text,
+                PeakFindingToleranceTextBox.Text, 
+                HistogramBinWidthTextBox.Text, 
+                DeconvolutionMaxAssumedChargeStateTextBox.Text, 
+                NumberOfPeaksToKeepPerWindowTextBox.Text,
+                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, 
+                WindowWidthThomsonsTextBox.Text, 
+                NumberOfWindowsTextBox.Text, 
+                NumberOfDatabaseSearchesTextBox.Text, 
+                MaxModNumTextBox.Text, 
+                MaxFragmentMassTextBox.Text, 
+                QValueThresholdTextBox.Text, 
+                PepQValueThresholdTextBox.Text, 
+                InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
             {
                 return;
             }
@@ -563,6 +580,8 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 doPrecursorDeconvolution: DeconvolutePrecursors.IsChecked.Value,
                 useProvidedPrecursorInfo: UseProvidedPrecursor.IsChecked.Value,
+                qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
@@ -580,8 +599,6 @@ namespace MetaMorpheusGUI
                 numberOfWindows: numberOfWindows,//maybe change this some day
                 normalizePeaksAccrossAllWindows: normalizePeaksAccrossAllWindows,//maybe change this some day
                 addCompIons: AddCompIonCheckBox.IsChecked.Value,
-                qValueOutputFilter: QValueRadioButton.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                pepQValueOutputFilter: PepQValueRadioButton.IsChecked.Value ? double.Parse(PepQValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
                 maxHeterozygousVariants: MaxHeterozygousVariants);
@@ -618,6 +635,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = CheckBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
+            TheTask.SearchParameters.WriteHighQValuePsms = WriteHighQPsmsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;

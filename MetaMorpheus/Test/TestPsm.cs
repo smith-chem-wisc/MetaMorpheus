@@ -72,9 +72,12 @@ namespace Test
             {
                 CommonParameters = new CommonParameters
                 (
-                    qValueThreshold: 0,
-                    filterOutput: true
-                )
+                    qValueThreshold: 0
+                ),
+                SearchParameters = new SearchParameters
+                {
+                    WriteHighQValuePsms = false
+                }
             };
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
