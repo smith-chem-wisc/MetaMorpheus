@@ -70,13 +70,14 @@ namespace TaskLayer
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
-                if (!CurrentXmlDbFilenameList.Any())
+                if (!CurrentXmlDbFilenameList.Any() && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
                 {
                     Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(OutputFolder);
                     return;
                 }
-                else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count== CurrentXmlDbFilenameList.Count)
+                else if (CurrentXmlDbFilenameList.Where(p => p.IsSpectralLibrary).ToList().Count == CurrentXmlDbFilenameList.Count
+                             && !(TaskList.Count == 1 && TaskList.First().Item2 is SpectralAveragingTask))
                 {
                     Warn("Cannot proceed. No protein database files selected.");
                     FinishedAllTasks(OutputFolder);
@@ -110,12 +111,14 @@ namespace TaskLayer
                     else
                     {
                         // at least one file was not successfully calibrated
-                        var successfullyCalibFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p).Replace(CalibrationTask.CalibSuffix, "")).ToList();
-                        var origFiles = CurrentRawDataFilenameList.Select(p => Path.GetFileNameWithoutExtension(p)).ToList();
-                        var unsuccessfullyCalibFiles = origFiles.Except(successfullyCalibFiles).ToList();
-                        var unsuccessfullyCalibFilePaths = CurrentRawDataFilenameList.Where(p => unsuccessfullyCalibFiles.Contains(Path.GetFileNameWithoutExtension(p))).ToList();
+                        var successfulFiles = myTaskResults.NewSpectra.Select(p => Path.GetFileNameWithoutExtension(p)
+                            .Replace(CalibrationTask.CalibSuffix, "")
+                            .Replace(SpectralAveragingTask.AveragingSuffix, "")).ToList();
+                        var origFiles = CurrentRawDataFilenameList.Select(Path.GetFileNameWithoutExtension).ToList();
+                        var unsuccessfulFiles = origFiles.Except(successfulFiles).ToList();
+                        var unsuccessfulFilePaths = CurrentRawDataFilenameList.Where(p => unsuccessfulFiles.Contains(Path.GetFileNameWithoutExtension(p))).ToList();
                         CurrentRawDataFilenameList = myTaskResults.NewSpectra;
-                        CurrentRawDataFilenameList.AddRange(unsuccessfullyCalibFilePaths);
+                        CurrentRawDataFilenameList.AddRange(unsuccessfulFilePaths);
                     }
 
                     NewSpectras(myTaskResults.NewSpectra);

@@ -27,7 +27,8 @@ namespace TaskLayer
         Gptmd,
         Calibrate,
         XLSearch,
-        GlycoSearch
+        GlycoSearch,
+        Average
     }
 
     public abstract class MetaMorpheusTask
