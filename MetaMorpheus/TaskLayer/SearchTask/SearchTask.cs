@@ -396,7 +396,7 @@ namespace TaskLayer
                 FileSettingsList = fileSettingsList,
                 NumMs2SpectraPerFile = numMs2SpectraPerFile,
                 DatabaseFilenameList = dbFilenameList,
-                spectralLibrary = spectralLibrary
+                SpectralLibrary = spectralLibrary
             };
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
             {
