@@ -116,9 +116,11 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Sets the private field _filteredPsms by removing all psms with Q, Q_Notch, and PEP_QValues greater
-        /// than a user defined threshold. In cases where PEP filtering was selected but PEP wasn't performed
-        /// due to insufficient PSMs, then filtering defaults to Q and Q_Notch.
+        /// Sets the private field _filteredPsms by removing all psms with Q and Q_Notch or PEP_QValues greater
+        /// than a user defined threshold. Q-Value and PEP Q-Value filtering are mutually exculsive.
+        /// In cases where PEP filtering was selected but PEP wasn't performed due to insufficient PSMs, 
+        /// filtering defaults to Q and Q_Notch.
+        /// _filteredPsms can be accessed through the GetFilteredPsms method.
         /// Also, sets the PsmsGroupedByFile property. This is done here because filtering is performed every time
         /// AllPsms is updated (i.e., in the Run method and during ProteinAnalysis w/ Silac labelling.)
         /// </summary>
@@ -153,8 +155,17 @@ namespace TaskLayer
             PsmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
         }
 
+        public IEnumerable<PeptideSpectralMatch> GetFilteredPsms(bool includeDecoys, bool includeContaminants,
+            bool includeAmbiguous)
+        {
+            return _filteredPsms.Where(p =>
+                (includeDecoys || !p.IsDecoy)
+                && (includeContaminants || !p.IsContaminant)
+                && (includeAmbiguous || p.FullSequence != null));
+        }
+
         /// <summary>
-        /// Modifies a list of PSMs, removing all that should not be written to a results file
+        /// Modifies a list of PSMs, removing all that should not be written to a results file.
         /// </summary>
         /// <param name="fileSpecificPsmsOrPeptides"> A list of PSMs to be modified in place </param>
         /// <param name="psmOrPeptideCountForResults"> The number of target psms scoring below threshold </param>
@@ -191,15 +202,6 @@ namespace TaskLayer
             {
                 fileSpecificPsmsOrPeptides.RemoveAll(b => b.IsContaminant);
             }
-        }
-
-        public IEnumerable<PeptideSpectralMatch> GetFilteredPsms(bool includeDecoys, bool includeContaminants,
-            bool includeAmbiguous)
-        {
-            return _filteredPsms.Where(p =>
-                (includeDecoys || !p.IsDecoy)
-                && (includeContaminants || !p.IsContaminant)
-                && (includeAmbiguous || p.FullSequence != null));
         }
 
         /// <summary>
