@@ -243,7 +243,7 @@
                                              IsEnabled="{Binding ElementName=PepQValueThresholdCheckbox, Path=IsChecked, Converter={StaticResource InvertedBooleanConverter}}">
                                         <TextBox.ToolTip>
                                             <TextBlock>
-                                                   The maximum q-value of peptides used for quantification and protein group construction.
+                                                   The maximum q-value of peptides used for quantification and spectral library generation. Protein group construction is not affected by this threshold.
                                                 <LineBreak />
                                                     If the q-value threshold is set, PEP q-value filtering will not be performed.
                                             </TextBlock>
@@ -261,7 +261,7 @@
                                              Height="23" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                         <TextBox.ToolTip>
                                             <TextBlock>
-                                                    The maximum PEP q-value of peptides used for quantification and protein group construction.
+                                                    The maximum q-value of peptides used for quantification and spectral library generation. Protein group construction is not affected by this threshold.
                                                     <LineBreak />
                                                     If the PEP q-value threshold is set, traditional q-value filtering will not be performed.
                                             </TextBlock>

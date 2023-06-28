@@ -118,7 +118,17 @@ namespace EngineLayer
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; private set; }
+        /// <summary>
+        /// Only peptides/PSMs with Q-Value and Q-Value Notch below this threshold are used for quantification and
+        /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
+        /// peptides/PSMs with Q-Value/Notch below this threshold are included in .psmtsv results files.
+        /// </summary>
         public double QValueThreshold { get; private set; }
+        /// <summary>
+        /// Only peptides/PSMs with PEP Q-Value below this threshold are used for quantification and
+        /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
+        /// peptides/PSMs with PEP Q-Value below this threshold are included in .psmtsv results files.
+        /// </summary>
         public double PepQValueThreshold { get; private set; }
         public double ScoreCutoff { get; private set; }
         public DigestionParams DigestionParams { get; private set; }
