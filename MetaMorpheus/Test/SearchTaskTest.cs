@@ -446,7 +446,7 @@ namespace Test
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
             var file = File.ReadAllLines(path);
@@ -488,7 +488,7 @@ namespace Test
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
             var file = File.ReadAllLines(path);
@@ -504,7 +504,7 @@ namespace Test
 
             // test again w/ NOT appending motifs onto mod names
             MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), 0, new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, false);
 
             file = File.ReadAllLines(path);
@@ -536,7 +536,7 @@ namespace Test
 
                 // use DissociationType.Autodetect as the dissociation type. this signals to the search that the dissociation type
                 // should be taken from the scan header on a scan-specific basis
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect)
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, pepQValueThreshold: 0.01, qValueThreshold: 1.0)
             };
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
@@ -575,6 +575,42 @@ namespace Test
             {
                 Assert.That(psmFileAutodetect[i].Equals(psmFileHcd[i]));
             }
+
+            // clean up
+            Directory.Delete(folderPath, true);
+        }
+
+        [Test]
+        public static void TestPepFilteringFewerThan100Psms()
+        {
+            SearchTask searchTask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoLabelFreeQuantification = false // quant disabled just to save some time
+                },
+
+                // Use pepQvalue filtering with fewer than 100 psms
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD, 
+                    pepQValueThreshold: 0.02, qValueThreshold: 1.0)
+            };
+
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            string folderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPepFiltering");
+
+            DbForTask db = new DbForTask(myDatabase, false);
+
+            // run the task
+            var pepTaskFolder = Path.Combine(folderPath, @"pepTest");
+            Directory.CreateDirectory(pepTaskFolder);
+            searchTask.RunTask(pepTaskFolder, new List<DbForTask> { db }, 
+                new List<string> { myFile }, "");
+
+            string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
+            string[] results = File.ReadAllLines(resultsFile);
+            Assert.AreEqual("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value.", results[7]);
+            Assert.AreEqual("All target PSMs with q-value = 0.02: 84", results[8]);
 
             // clean up
             Directory.Delete(folderPath, true);

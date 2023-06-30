@@ -64,10 +64,10 @@ namespace TaskLayer.MbrAnalysis
                     .OrderBy(b => b.RetentionTime).ToArray();
 
                 var list = Directory.GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories);
-                string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
+                string matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
                 string spectralLibraryPath = Path.Combine(parameters.OutputFolder, matchingvalue);
                 //var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
-                //string spectralLibraryPath = Path.Combine(parameters.OutputFolder, @"spectralLibrary.msp");
+                //string spectralLibraryPath = Path.Combine(parameters.OutputFolder, @"SpectralLibrary.msp");
                 SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
 
                 MiniClassicSearchEngine mcse = new(

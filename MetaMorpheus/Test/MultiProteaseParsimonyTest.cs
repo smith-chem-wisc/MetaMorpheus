@@ -741,11 +741,6 @@ namespace Test
         {
             SearchTask Task1 = new SearchTask
             {
-                CommonParameters = new CommonParameters
-                (
-                    qValueOutputFilter: 1
-                ),
-
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,

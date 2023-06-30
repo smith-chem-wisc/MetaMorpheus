@@ -103,7 +103,9 @@ namespace Test
                 {
                     SilacLabels = new List<SilacLabel> { krLabel }
                 },
-                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 2))
+                // Previously, the default q value output filtering threshold for CommonParameters was 1.0.
+                // The q-value output filtering has unintended side effects. This issue will be fix in a later PR
+                CommonParameters = new CommonParameters(qValueThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2))
             };
 
 

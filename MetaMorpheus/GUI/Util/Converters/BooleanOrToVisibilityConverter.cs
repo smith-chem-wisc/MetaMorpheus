@@ -14,7 +14,7 @@ namespace MetaMorpheusGUI
         {
             foreach (object value in values)
             {
-                if ((value is bool) && (bool)value)
+                if (value is bool && (bool)value)
                 {
                     return Visibility.Visible;
                 }

@@ -56,7 +56,7 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
-            //ensures that protein out put contins the correct number of proteins to match the folowing conditions.
+            // ensures that protein out put contains the correct number of proteins to match the following conditions.
             // all proteins in DB have baseSequence!=null (not ambiguous)
             // all proteins that belong to a protein group are written to DB
             Assert.AreEqual(18, proteins.Count);
