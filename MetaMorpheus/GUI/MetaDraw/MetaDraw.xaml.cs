@@ -1,3 +1,4 @@
+using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using Nett;
@@ -261,7 +262,10 @@ namespace MetaMorpheusGUI
             {
                 
                 int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
-                descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
+                if (psm.ProteinName.IsNotNullOrEmptyOrWhiteSpace())
+                {
+                    descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
+                }
                 if (psm.ProteinAccession.Length > 10)
                     descriptionLineCount++;
                 double verticalOffset = descriptionLineCount * 14;
