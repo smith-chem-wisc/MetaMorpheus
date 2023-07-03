@@ -10,11 +10,13 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Chemistry;
+using Easy.Common.Extensions;
 using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using MassSpectrometry;
+using MassSpectrometry.MzSpectra;
 using mzPlot;
 using OxyPlot;
 using OxyPlot.Annotations;
@@ -408,7 +410,7 @@ namespace GuiFunctions
             Model.Axes[1].LabelFormatter = DrawnSequence.YAxisLabelFormatter;
         }
 
-        protected void AnnotateProperties()
+        protected void AnnotateProperties(LibrarySpectrum librarySpectrum = null)
         {
             StringBuilder text = new StringBuilder();
             if (MetaDrawSettings.SpectrumDescription["Precursor Charge: "])
@@ -486,10 +488,11 @@ namespace GuiFunctions
                 text.Append("Spectral Angle: ");
                 if (SpectrumMatch.SpectralAngle != null)
                     text.Append(SpectrumMatch.SpectralAngle.ToString());
+                else if(librarySpectrum != null)
+                        text.Append(CalculateSpectralAngleOnTheFly(librarySpectrum));
                 else
-                {
                     text.Append("N/A");
-                }
+                
                 text.Append("\r\n");
             }
             if (MetaDrawSettings.SpectrumDescription["Score: "])
@@ -530,6 +533,33 @@ namespace GuiFunctions
             };
 
             Model.Annotations.Add(annotation);
+        }
+
+        public string CalculateSpectralAngleOnTheFly(LibrarySpectrum librarySpectrum)
+        {
+            List<MatchedFragmentIon> spectrumMatchFragments = new(SpectrumMatch.MatchedIons);
+            List<MatchedFragmentIon> libraryFragments = new(librarySpectrum.MatchedFragmentIons);
+            if(SpectrumMatch.BetaPeptideMatchedIons.IsNotNullOrEmpty() && librarySpectrum is CrosslinkLibrarySpectrum)
+            {
+                var xlLibrarySpectrum = (CrosslinkLibrarySpectrum)librarySpectrum;
+                spectrumMatchFragments.AddRange(SpectrumMatch.BetaPeptideMatchedIons);
+                if(xlLibrarySpectrum.BetaPeptideSpectrum?.MatchedFragmentIons != null)
+                    libraryFragments.AddRange(xlLibrarySpectrum.BetaPeptideSpectrum.MatchedFragmentIons);
+            }
+
+            SpectralSimilarity spectraComparison = new SpectralSimilarity(
+                spectrumMatchFragments.Select(f => f.Mz).ToArray(),
+                spectrumMatchFragments.Select(f => f.Intensity).ToArray(),
+                libraryFragments.Select(f => f.Mz).ToArray(),
+                libraryFragments.Select(f => f.Intensity).ToArray(),
+                SpectralSimilarity.SpectrumNormalizationScheme.mostAbundantPeak,
+                toleranceInPpm: 20,
+                allPeaks: true);
+            double? spectralContrastAngle = spectraComparison.SpectralContrastAngle();
+
+            return spectralContrastAngle == null
+                ? "N/A"
+                : ((double)spectralContrastAngle).ToString("F4");
         }
     }
 

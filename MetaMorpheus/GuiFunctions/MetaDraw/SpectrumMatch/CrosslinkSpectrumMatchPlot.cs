@@ -16,9 +16,16 @@ namespace GuiFunctions
     /// </summary>
     public class CrosslinkSpectrumMatchPlot : SpectrumMatchPlot
     {
-        public CrosslinkSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv csm, MsDataScan scan, Canvas stationaryCanvas)
+        public CrosslinkSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv csm, MsDataScan scan, Canvas stationaryCanvas,
+            bool annotateProperties = true, LibrarySpectrum librarySpectrum = null)
             : base(plotView, csm, scan)
         {
+
+            if (annotateProperties)
+            {
+                AnnotateProperties(librarySpectrum);
+            }
+
             // annotate beta peptide matched ions
             AnnotateMatchedIons(isBetaPeptide: true, csm.BetaPeptideMatchedIons);
 
