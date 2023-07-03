@@ -487,7 +487,9 @@ namespace GuiFunctions
                 if (SpectrumMatch.SpectralAngle != null)
                     text.Append(SpectrumMatch.SpectralAngle.ToString());
                 else
+                {
                     text.Append("N/A");
+                }
                 text.Append("\r\n");
             }
             if (MetaDrawSettings.SpectrumDescription["Score: "])
