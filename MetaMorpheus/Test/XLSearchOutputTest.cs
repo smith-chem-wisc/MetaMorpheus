@@ -89,10 +89,13 @@ namespace Test
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("GVTVDKMTELR(6)SFTFVTKTPPAAVLLK(7)", 2, out var interLinkSpectrum));
             Assert.That(interLinkSpectrum.MatchedFragmentIons.Count, Is.EqualTo(17));
             Assert.That(interLinkSpectrum is CrosslinkLibrarySpectrum);
-            CrosslinkLibrarySpectrum xlSpectrum = (CrosslinkLibrarySpectrum)interLinkSpectrum;
-            Assert.That(xlSpectrum.BetaPeptideSpectrum.MatchedFragmentIons.Count, Is.EqualTo(13));
+            CrosslinkLibrarySpectrum interSpectrum = (CrosslinkLibrarySpectrum)interLinkSpectrum;
+            Assert.That(interSpectrum.BetaPeptideSpectrum.MatchedFragmentIons.Count, Is.EqualTo(13));
             // Check intraLinks
-            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("LLDNAAADLAAISGQKPLITKAR(21)ITLNMGVGEAIADKK(14)", 5, out spectrum));
+            Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("LLDNAAADLAAISGQKPLITKAR(21)ITLNMGVGEAIADKK(14)", 5, out var intraLinkSpectrum));
+            Assert.That(intraLinkSpectrum is CrosslinkLibrarySpectrum);
+            CrosslinkLibrarySpectrum intraSpectrum = (CrosslinkLibrarySpectrum)interLinkSpectrum;
+            Assert.That(intraSpectrum.BetaPeptideSpectrum.MatchedFragmentIons.Count, Is.GreaterThan(0));
 
             testLibraryWithoutDecoy.CloseConnections();
 
