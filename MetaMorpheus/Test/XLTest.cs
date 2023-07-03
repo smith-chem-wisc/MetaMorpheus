@@ -1430,6 +1430,7 @@ namespace Test
 
             Assert.That(csm.ProteinAccession == null && csm.BetaPeptide.ProteinAccession == null);
             Assert.That(psmFromTsv.ProteinAccession == "BSA|BSA2");
+            Assert.That(psmFromTsv.UniqueSequence, Is.EqualTo(psmFromTsv.FullSequence + psmFromTsv.BetaPeptideFullSequence));
 
             File.Delete(outputFile);
         }

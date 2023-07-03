@@ -28,8 +28,18 @@ namespace GuiFunctions
 
             // annotate beta peptide matched ions
             AnnotateMatchedIons(isBetaPeptide: true, csm.BetaPeptideMatchedIons);
-
             ZoomAxes(csm.MatchedIons.Concat(csm.BetaPeptideMatchedIons), yZoom: 1.5);
+
+            if (librarySpectrum != null)
+            {
+                AnnotateLibraryIons(isBetaPeptide: false, librarySpectrum.MatchedFragmentIons);
+                var xlLibrarySpectrum = librarySpectrum as CrosslinkLibrarySpectrum;
+                if (xlLibrarySpectrum?.BetaPeptideSpectrum?.MatchedFragmentIons != null)
+                {
+                    AnnotateLibraryIons(isBetaPeptide: true, xlLibrarySpectrum.BetaPeptideSpectrum.MatchedFragmentIons);
+                }
+            }
+
             RefreshChart();
         }
 

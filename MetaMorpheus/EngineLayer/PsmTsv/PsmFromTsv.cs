@@ -78,6 +78,29 @@ namespace EngineLayer
         public List<MatchedFragmentIon> BetaPeptideMatchedIons { get; }
         public Dictionary<int, List<MatchedFragmentIon>> BetaPeptideChildScanMatchedIons { get; }
         public double? XLTotalScore { get; }
+        /// <summary>
+        /// If Crosslink, this contains the alpha and beta sequences. Otherwise, it contains the full sequence
+        /// </summary>
+        public string UniqueSequence
+        {
+            get
+            {
+                if (_uniqueSequence.IsNullOrEmpty())
+                {
+                    if (BetaPeptideFullSequence.IsNullOrEmptyOrWhiteSpace())
+                    {
+                        _uniqueSequence = FullSequence;
+                    }
+                    else
+                    {
+                        _uniqueSequence = FullSequence + BetaPeptideFullSequence;
+                    }
+                        
+                }
+                return _uniqueSequence;
+            }
+        }
+        private string _uniqueSequence;
         public string ParentIons { get; }
         public double? RetentionTime { get; }
 

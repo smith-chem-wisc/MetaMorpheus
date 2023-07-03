@@ -147,7 +147,14 @@ namespace GuiFunctions
             }
             else //crosslinked
             {
-                SpectrumAnnotation = new CrosslinkSpectrumMatchPlot(plotView, psm, scan, StationarySequence.SequenceDrawingCanvas);
+                // get the library spectrum if relevant
+                if (SpectralLibrary != null)
+                {
+                    SpectralLibrary.TryGetSpectrum(psm.UniqueSequence, psm.PrecursorCharge, out var librarySpectrum1);
+                    librarySpectrum = librarySpectrum1;
+                }
+
+                SpectrumAnnotation = new CrosslinkSpectrumMatchPlot(plotView, psm, scan, StationarySequence.SequenceDrawingCanvas, librarySpectrum: librarySpectrum);
             }
 
             CurrentlyDisplayedPlots.Add(SpectrumAnnotation);
