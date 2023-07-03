@@ -1,4 +1,5 @@
-﻿using Proteomics.Fragmentation;
+﻿using Easy.Common.Extensions;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,14 @@ namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSpectralMatch : PeptideSpectralMatch
     {
-        public CrosslinkSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
+        public CrosslinkSpectralMatch(
+            PeptideWithSetModifications theBestPeptide,
+            int notch,
+            double score,
+            int scanIndex,
+            Ms2ScanWithSpecificMass scan,
+            CommonParameters commonParameters,
+            List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
         {
             //The XLTotalScore is set here because some CSMs are not crosslinks and we need this score to be non-zero.
@@ -21,6 +29,39 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
+        public string UniqueSequence
+        {
+            get
+            {
+                if (_uniqueSequence.IsNullOrEmpty())
+                {
+                    string position = "";
+                    switch (CrossType)
+                    {
+                        case PsmCrossType.Single:
+                            break;
+
+                        case PsmCrossType.Loop:
+                            position = "(" + LinkPositions[0].ToString() + "-" + LinkPositions[1].ToString() + ")";
+                            break;
+
+                        default:
+                            position = "(" + LinkPositions[0].ToString() + ")";
+                            break;
+                    }
+                    if (BetaPeptide != null)
+                    {
+                        _uniqueSequence = FullSequence + position + BetaPeptide.FullSequence + "(" + BetaPeptide.LinkPositions[0].ToString() + ")";
+                    }
+                    else
+                    {
+                        _uniqueSequence = FullSequence + position;
+                    }
+                }
+                return _uniqueSequence;
+            }
+        }
+        private string _uniqueSequence;
 
         public List<int> LinkPositions { get; set; }
         public double XLTotalScore { get; set; }    //alpha + beta psmCross.
