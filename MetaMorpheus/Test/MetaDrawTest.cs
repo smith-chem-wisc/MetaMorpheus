@@ -1658,5 +1658,13 @@ namespace Test
 
             Directory.Delete(folderPath, true);
         }
+
+        [Test]
+        public static void TestCrosslinkSpectralLibraryReading()
+        {
+            string xlTestDataFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData");
+            var interLinkResults = File.ReadAllLines(Path.Combine(xlTestDataFolder, @"XL_Interlinks.tsv"));
+        }
+        
     }
 }

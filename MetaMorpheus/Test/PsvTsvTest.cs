@@ -34,6 +34,7 @@ namespace Test
             Assert.AreEqual(1, parsedPsms.Count);
             IEnumerable<string> expectedIons = new string[] { "y3+1", "y4+1", "b4+1", "b5+1", "b6+1", "b8+1" };
             Assert.That(6 == parsedPsms[0].MatchedIons.Select(p => p.Annotation).Intersect(expectedIons).Count());
+            Assert.That(parsedPsms[0].UniqueSequence, Is.EqualTo(parsedPsms[0].FullSequence));
         }
 
         [Test]
@@ -45,6 +46,15 @@ namespace Test
             var errors = metadrawLogic.LoadFiles(false, true);
 
             Assert.That(!errors.Any());
+        }
+
+        [Test]
+        public static void CrosslinkPsmFromTsvTest()
+        {
+            string psmFile = @"XlTestData\XL_Intralinks_MIons.tsv";
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            Assert.AreEqual(1, parsedPsms.Count);
+            Assert.That(parsedPsms[0].UniqueSequence, Is.EqualTo("EKVLTSSAR(2)SLGKVGTR(4)"));
         }
 
         [Test]
