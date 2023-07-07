@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -78,7 +79,7 @@ namespace EngineLayer.FdrAnalysis
                 double[] cumulativeTargetPerNotch = new double[MassDiffAcceptorNumNotches + 1];
                 double[] cumulativeDecoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
 
-                //Assign FDR values to PSMs
+                //Assign Decoy and Target counts to PSMs
                 for (int i = 0; i < psms.Count; i++)
                 {
                     // Stop if canceled
@@ -112,52 +113,25 @@ namespace EngineLayer.FdrAnalysis
                         cumulativeTargetPerNotch[notch]++;
                     }
 
-                    double qValue = Math.Min(1, cumulativeDecoy / cumulativeTarget);
-                    double qValueNotch = Math.Min(1, cumulativeDecoyPerNotch[notch] / cumulativeTargetPerNotch[notch]);
-
                     double pep = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP;
                     double pepQValue = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP_QValue;
 
-                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, pep, pepQValue);
+                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, 1, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], 1, pep, pepQValue);
                 }
 
-                // set q-value thresholds such that a lower scoring PSM can't have
-                // a higher confidence than a higher scoring PSM
-                //Populate min qValues
-                double qValueThreshold = 1.0;
-                double[] qValueNotchThreshold = new double[MassDiffAcceptorNumNotches + 1];
-                for (int i = 0; i < qValueNotchThreshold.Length; i++)
+
+                double runningQvalue = 1;
+                double runningQvalueNotch = 1;
+
+                for (int i = psms.Count -1; i >= 0; i--)
                 {
-                    qValueNotchThreshold[i] = 1.0;
-                }
+                    psms[i].FdrInfo.QValue = Math.Min(runningQvalue, (psms[i].FdrInfo.CumulativeDecoy + 1) / psms[i].FdrInfo.CumulativeTarget);
+                    psms[i].FdrInfo.QValueNotch = Math.Min(runningQvalueNotch, (psms[i].FdrInfo.CumulativeDecoyNotch + 1) / psms[i].FdrInfo.CumulativeTargetNotch);
 
-                for (int i = psms.Count - 1; i >= 0; i--)
-                {
-                    PeptideSpectralMatch psm = psms[i];
-
-                    // threshold q-values
-                    if (psm.FdrInfo.QValue > qValueThreshold)
-                    {
-                        psm.FdrInfo.QValue = qValueThreshold;
-                    }
-                    else if (psm.FdrInfo.QValue < qValueThreshold)
-                    {
-                        qValueThreshold = psm.FdrInfo.QValue;
-                    }
-
-                    // threshold notch q-values
-                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
-                    if (psm.FdrInfo.QValueNotch > qValueNotchThreshold[notch])
-                    {
-                        psm.FdrInfo.QValueNotch = qValueNotchThreshold[notch];
-                    }
-                    else if (psm.FdrInfo.QValueNotch < qValueNotchThreshold[notch])
-                    {
-                        qValueNotchThreshold[notch] = psm.FdrInfo.QValueNotch;
-                    }
+                    runningQvalue = psms[i].FdrInfo.QValue;
+                    runningQvalueNotch = psms[i].FdrInfo.QValueNotch;
                 }
             }
-
             Compute_PEPValue(myAnalysisResults);
         }
 
