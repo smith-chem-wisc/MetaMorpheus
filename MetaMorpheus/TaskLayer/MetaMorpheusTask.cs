@@ -27,7 +27,8 @@ namespace TaskLayer
         Gptmd,
         Calibrate,
         XLSearch,
-        GlycoSearch
+        GlycoSearch,
+        Average
     }
 
     public abstract class MetaMorpheusTask
@@ -418,6 +419,8 @@ namespace TaskLayer
                 reportAllAmbiguity: commonParams.ReportAllAmbiguity,
                 addCompIons: commonParams.AddCompIons,
                 totalPartitions: commonParams.TotalPartitions,
+                qValueThreshold: commonParams.QValueThreshold,
+                pepQValueThreshold: commonParams.PepQValueThreshold,
                 scoreCutoff: commonParams.ScoreCutoff,
                 numberOfPeaksToKeepPerWindow: commonParams.NumberOfPeaksToKeepPerWindow,
                 minimumAllowedIntensityRatioToBasePeak: commonParams.MinimumAllowedIntensityRatioToBasePeak,
@@ -430,7 +433,6 @@ namespace TaskLayer
                 maxThreadsToUsePerFile: commonParams.MaxThreadsToUsePerFile,
                 listOfModsVariable: commonParams.ListOfModsVariable,
                 listOfModsFixed: commonParams.ListOfModsFixed,
-                qValueOutputFilter: commonParams.QValueOutputFilter,
                 taskDescriptor: commonParams.TaskDescriptor,
                 assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments,
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
@@ -655,7 +657,7 @@ namespace TaskLayer
         protected static void WriteSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\spectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
+            string spectrumFilePath = outputFolder + "\\SpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
             using (StreamWriter output = new StreamWriter(spectrumFilePath))
             {
                 foreach (var x in spectrumLibrary)

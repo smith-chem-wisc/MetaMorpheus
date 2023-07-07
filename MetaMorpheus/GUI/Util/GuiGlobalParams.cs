@@ -12,7 +12,7 @@
         public bool AskAboutNonSpecificParams { get; internal set; } = true;
         public bool AskAboutSemiTrypsinParams { get; internal set; } = true;
         public bool AskAboutArgCParams { get; internal set; } = true;
-        public bool AskAboutMBRParams { get; internal set; } = true;
+        public bool AskAboutSpectralRecoveryParams { get; internal set; } = true;
 
         //Use protease-specific parameter recommendations
         public bool UseTopDownParams { get; internal set; } = true;
@@ -21,6 +21,6 @@
         public bool UseNonSpecificParams { get; internal set; } = true;
         public bool UseSemiTrypsinParams { get; internal set; } = true;
         public bool UseArgCParams { get; internal set; } = true;
-        public bool UseMBRParams { get; internal set; } = true;
+        public bool UseSpectralRecoveryParams { get; internal set; } = true;
     }
 }

@@ -5,16 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Data;
 
-namespace GuiFunctions
+namespace MetaMorpheusGUI
 {
-
     public class BooleanOrConverter : IMultiValueConverter
     {
         public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
         {
             foreach (object value in values)
             {
-                if ((value is bool) && (bool)value == true)
+                if (value is bool && (bool)value)
                 {
                     return true;
                 }

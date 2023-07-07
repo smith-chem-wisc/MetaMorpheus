@@ -9,6 +9,7 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -232,8 +233,7 @@ namespace Test
         [Test]
         public static void AddCompIonsCommonParams()
         {
-            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, DissociationType.Unknown, null, true, true, 3, 12, true, true, 1,
-                5, 200, 0.01, null, null, false, false, true, false, null, null, null, -1, null, null, null, 1, 1, true, 4, 1);
+            CommonParameters cp = new CommonParameters();
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();

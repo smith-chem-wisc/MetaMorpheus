@@ -3,7 +3,6 @@ using EngineLayer.Calibration;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using FlashLFQ;
-using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -13,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Readers;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -176,7 +176,7 @@ namespace TaskLayer
                 myMsDataFile = engine.CalibratedDataFile;
 
                 // write the calibrated mzML file
-                MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
+                myMsDataFile.ExportAsMzML(calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
                 myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                 // stats after calibration

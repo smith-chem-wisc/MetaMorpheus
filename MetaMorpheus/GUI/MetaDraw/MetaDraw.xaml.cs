@@ -1,3 +1,4 @@
+using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using Nett;
@@ -180,7 +181,7 @@ namespace MetaMorpheusGUI
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
 
             // Chimera plotter
-            if (((Grid)MetaDrawTabControl.SelectedContent).Name == "chimeraPlotGrid")
+            if (MetaDrawTabControl.SelectedContent is Grid { Name: "chimeraPlotGrid" })
             {
                 List<PsmFromTsv> chimericPsms = MetaDrawLogic.FilteredListOfPsms
                     .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
@@ -261,7 +262,10 @@ namespace MetaMorpheusGUI
             {
                 
                 int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
-                descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
+                if (psm.ProteinName.IsNotNullOrEmptyOrWhiteSpace())
+                {
+                    descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
+                }
                 if (psm.ProteinAccession.Length > 10)
                     descriptionLineCount++;
                 double verticalOffset = descriptionLineCount * 14;
