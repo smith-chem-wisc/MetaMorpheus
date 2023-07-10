@@ -58,7 +58,7 @@ namespace Test
                     SearchTarget = decoyType == DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, qValueThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
             };
 
             ModificationMotif.TryGetMotif("V", out ModificationMotif motifV);
@@ -87,7 +87,7 @@ namespace Test
             string mzmlName = $"ajgdiv{proteinIdx.ToString()}.mzML";
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep });
 
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{proteinIdx.ToString()}");
             Directory.CreateDirectory(outputFolder);
 
@@ -117,7 +117,7 @@ namespace Test
             string mzmlName = $"ajgdiv{filename}{decoyType.ToString()}.mzML";
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pep });
 
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, $"TestSearchWithVariants{filename}{decoyType.ToString()}");
             Directory.CreateDirectory(outputFolder);
 
@@ -130,7 +130,7 @@ namespace Test
                     SearchTarget = decoyType == DecoyType.None,
                     ModPeptidesAreDifferent = false
                 },
-                CommonParameters = new CommonParameters(scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
+                CommonParameters = new CommonParameters(scoreCutoff: 1, qValueThreshold: 1.0, digestionParams: new DigestionParams(minPeptideLength: 2), precursorMassTolerance: new PpmTolerance(20)),
             };
 
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");

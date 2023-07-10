@@ -13,6 +13,7 @@ using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -1172,6 +1173,77 @@ namespace Test
         }
 
         [Test]
+        public static void XLSearchTastWriteFileTest()
+        {
+            //sending zero CSMs to write doesn't error. Method Simply Returns.
+            WriteFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch>(), "", 0);
+
+            //sending the wrong writeType doesn't error. Method Simply breaks.
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\TestXLWrite");
+            Directory.CreateDirectory(outputFolder);
+            
+            Ms2ScanWithSpecificMass scan = new(new MsDataScan(
+                    new MzSpectrum(new double[] { }, new double[] { }, false),
+                    2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
+                100, 1, null, new CommonParameters(), null);
+            Dictionary<int, Modification> mod = new();
+
+            string sequence = "PEPTIDE";
+            Dictionary<string, Modification> allKnownMods = new();
+            int numFixedMods = 0;
+            DigestionParams digestionParams = null;
+            Protein protForward = new Protein("PEPTIDE", "ACCESSION", isDecoy: true);
+            int oneBasedStartResidueInProtein = int.MinValue;
+            int oneBasedEndResidueInProtein = int.MinValue;
+            int missedCleavages = int.MinValue;
+            CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full;
+            string peptideDescription = null;
+
+            PeptideWithSetModifications alpha = new(sequence: sequence, allKnownMods, numFixedMods, digestionParams, protForward, oneBasedStartResidueInProtein,
+                oneBasedEndResidueInProtein, missedCleavages, cleavageSpecificity, peptideDescription);
+            PeptideWithSetModifications beta = new(sequence: sequence, allKnownMods, numFixedMods, digestionParams, protForward, oneBasedStartResidueInProtein,
+                oneBasedEndResidueInProtein, missedCleavages, cleavageSpecificity, peptideDescription);
+
+            CrosslinkSpectralMatch csmAlpha = new(alpha, 0, 3, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            CrosslinkSpectralMatch csmBeta = new(beta, 0, 3, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            csmAlpha.ResolveAllAmbiguities();
+            csmBeta.ResolveAllAmbiguities();
+
+            csmAlpha.LinkPositions = new() { 1 };
+            csmBeta.LinkPositions = new() { 1 };
+
+            WriteFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch>() { csmAlpha}, outputFolder + "csm.psmtsv", 0);
+
+            //check decoy label
+            csmAlpha.BetaPeptide = csmBeta;
+            Crosslinker xlinker = Crosslinker.ParseCrosslinkerFromString("DSSO\tK\tK\tT\tCID|HCD\t158.0038\t54.01056\t85.982635\t176.0143\t175.0303\t279.0777");
+            double someSortOfMass = csmAlpha.ScanPrecursorMass - csmAlpha.BetaPeptide.PeptideMonisotopicMass.Value - csmAlpha.PeptideMonisotopicMass.Value - xlinker.TotalMass;
+            string someLongString = "-." + csmAlpha.FullSequence + csmAlpha.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + csmAlpha.BetaPeptide.FullSequence + csmAlpha.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-";
+            string someOtherString = csmAlpha.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                                   + "(" + (csmAlpha.XlProteinPos.HasValue ? csmAlpha.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")";
+            string lastRandomString = csmAlpha.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                                   + "(" + (csmAlpha.BetaPeptide.XlProteinPos.HasValue ? csmAlpha.BetaPeptide.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")";
+
+            Assert.AreEqual("NaN", csmAlpha.ScanRetentionTime.ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual("2", csmAlpha.ScanNumber.ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual("3", csmAlpha.XLTotalScore.ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual("3", csmAlpha.DeltaScore.ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual("1", csmAlpha.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual("98.992723533121", csmAlpha.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual(-1657.7310045328791, someSortOfMass);
+            Assert.AreEqual("7", csmAlpha.BetaPeptide.BaseSequence.Length.ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual("7", csmAlpha.BaseSequence.Length.ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual("14", (csmAlpha.BetaPeptide.BaseSequence.Length + csmAlpha.BaseSequence.Length).ToString(CultureInfo.InvariantCulture));
+            Assert.AreEqual("-.PEPTIDE1--PEPTIDE1.-", someLongString);
+            Assert.AreEqual("ACCESSION()", someOtherString);
+            Assert.AreEqual("ACCESSION()", lastRandomString);
+
+
+            WriteFile.WriteCrosslinkToTxtForPercolator(new List<CrosslinkSpectralMatch>() { csmAlpha }, outputFolder, "percolator.tsv", xlinker);
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
         public static void TestWriteToPercolator()
         {
             XLSearchTask xlst = new XLSearchTask()
@@ -1521,6 +1593,45 @@ namespace Test
                 MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
                 Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
             }
+
+            #region MsDataFile Abstract Methods
+
+            public override MsDataFile LoadAllStaticData(FilteringParams filteringParams = null, int maxThreads = 1)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override SourceFile GetSourceFile()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override MsDataScan GetOneBasedScanFromDynamicConnection(int oneBasedScanNumber, IFilteringParams filterParams = null)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void CloseDynamicConnection()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void InitiateDynamicConnection()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override MsDataScan GetOneBasedScan(int scanNumber)
+            {
+                return Scans[scanNumber - 1];
+            }
+
+            public override IEnumerable<MsDataScan> GetMS1Scans()
+            {
+                throw new NotImplementedException();
+            }
+
+            #endregion
         }
 
         internal class XLTestDataFileDiffSite : MsDataFile
@@ -1564,6 +1675,45 @@ namespace Test
                 MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
                 Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);
             }
+
+            #region MsDataFile Abstract Methods
+
+            public override MsDataFile LoadAllStaticData(FilteringParams filteringParams = null, int maxThreads = 1)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override SourceFile GetSourceFile()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override MsDataScan GetOneBasedScanFromDynamicConnection(int oneBasedScanNumber, IFilteringParams filterParams = null)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void CloseDynamicConnection()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void InitiateDynamicConnection()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override MsDataScan GetOneBasedScan(int scanNumber)
+            {
+                return Scans[scanNumber - 1];
+            }
+
+            public override IEnumerable<MsDataScan> GetMS1Scans()
+            {
+                throw new NotImplementedException();
+            }
+
+            #endregion
         }
     }
 }

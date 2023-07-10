@@ -10,7 +10,29 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         KeyDown="KeyPressed"
         Title="GlycoSearchTaskWindow" Height="750" Width="750" WindowStartupLocation="CenterScreen">
-    
+    <Window.Resources>
+        <local:BooleanInverter x:Key="InvertedBooleanConverter" />
+
+        <!-- Style GroupBoxes -->
+        <Style TargetType="GroupBox">
+            <Setter Property="BorderThickness" Value="3 1 1 1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="BorderBrush" Value="DarkSlateGray"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="Black" FontWeight="Bold"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Style TextBoxes -->
+        <Style TargetType="TextBox">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="3 0 0 0"/>
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -410,6 +432,15 @@
                     </StackPanel>
                 </GroupBox>
 
+                <!--output options-->
+                <GroupBox Header="Output Options" DockPanel.Dock="Top">
+                    <StackPanel Orientation="Vertical" Margin="5" Grid.Column="0">
+                        <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
+                        <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
+                        <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
+                    </StackPanel>
+                </GroupBox>
+                
             </DockPanel>
         </ScrollViewer>
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">

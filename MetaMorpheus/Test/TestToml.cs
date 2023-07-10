@@ -10,6 +10,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using SpectralAveraging;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -90,12 +91,21 @@ namespace Test
             var xlResults = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearch\XL_Intralinks.tsv"));
             var xlResultsToml = File.ReadAllLines(Path.Combine(outputFolder, @"XLSearchTOML\XL_Intralinks.tsv"));
 
+            SpectralAveragingTask averagingTask = new SpectralAveragingTask(new SpectralAveragingParameters()
+                { NumberOfScansToAverage = 15, BinSize = 2});
+            Toml.WriteFile(averagingTask, "averagingTask.toml", MetaMorpheusTask.tomlConfig);
+            var readInAveragingTask = Toml.ReadFile<SpectralAveragingTask>("averagingTask.toml", MetaMorpheusTask.tomlConfig);
+            Assert.That(averagingTask.Parameters.NumberOfScansToAverage, Is.EqualTo(readInAveragingTask.Parameters.NumberOfScansToAverage).And.EqualTo(15));
+            Assert.That(averagingTask.Parameters.BinSize, Is.EqualTo(readInAveragingTask.Parameters.BinSize).And.EqualTo(2));
+
+
             Assert.That(xlResults.SequenceEqual(xlResultsToml));
             Directory.Delete(outputFolder, true);
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GptmdTask.toml"));
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XLSearchTask.toml"));
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SearchTask.toml"));
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"CalibrationTask.toml"));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"averagingTask.toml"));
         }
 
         [Test]

@@ -19,6 +19,8 @@ namespace TaskLayer
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
+
+            //output options
             WriteIndividualFiles = false;
             WriteDecoys = true;
             WriteContaminants = true;
@@ -34,9 +36,9 @@ namespace TaskLayer
         public bool DoParsimony { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool ModPeptidesAreDifferent { get; set; }
-
+        
+        //output options
         public bool WriteIndividualFiles { get; set; }
-
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
     }
