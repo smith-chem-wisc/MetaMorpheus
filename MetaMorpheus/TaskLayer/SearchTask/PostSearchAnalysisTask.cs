@@ -19,8 +19,7 @@ using System.Text;
 using UsefulProteomicsDatabases;
 using Chemistry;
 using MzLibUtil;
-
-
+using Easy.Common.Extensions;
 
 namespace TaskLayer
 {
@@ -756,124 +755,15 @@ namespace TaskLayer
 
         private void UpdateSpectralLibrary()
         {
-<<<<<<< HEAD
-            List<PeptideSpectralMatch> filteredPsmList = new();
-            if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
-            {
-                filteredPsmList = Parameters.AllPsms.Where(p =>
-                    (p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.01)
-                    && !p.IsDecoy
-                    && !p.IsContaminant).ToList();
-            }
-            else
-            {
-                filteredPsmList = Parameters.AllPsms.Where(p =>
-                    p.FdrInfo.QValue <= 0.01
-                    && !p.IsDecoy
-                    && !p.IsContaminant).ToList();
-            }
-
-            //group psms by peptide and charge, then write highest scoring PSM to dictionary
-            Dictionary<(string, int), PeptideSpectralMatch> psmSeqChargeDictionary = filteredPsmList
-                .GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge))
-                .ToDictionary(
-                    // Key is a (FullSequence, Charge) tuple
-                    keySelector: g => g.Key,
-                    // Value is the highest scoring psm in the group
-                    elementSelector: g => g.MaxBy(p => p.Score)); 
-
-
-            //load the original library
-            var originalLibrarySpectra = Parameters.SpectralLibrary.GetAllLibrarySpectra();
-            List<LibrarySpectrum> updatedLibrarySpectra = new();
-
-            // Add the better spectrum (library spectrum vs. current Psm) to updatedLibrarySpectra
-            foreach (var ogLibrarySpectrum in originalLibrarySpectra)
-            {
-                if (psmSeqChargeDictionary.TryGetValue((ogLibrarySpectrum.Sequence, ogLibrarySpectrum.ChargeState),
-                        out var bestPsm))
-                {
-                    if (ogLibrarySpectrum.MatchedFragmentIons.Count > Math.Truncate(bestPsm.Score))
-                    {
-                        updatedLibrarySpectra.Add(ogLibrarySpectrum);
-                    }
-                    else
-                    {
-                        updatedLibrarySpectra.Add(new LibrarySpectrum(
-                            bestPsm.FullSequence,
-                            bestPsm.ScanPrecursorMonoisotopicPeakMz,
-                            bestPsm.ScanPrecursorCharge,
-                            bestPsm.MatchedFragmentIons,
-                            bestPsm.ScanRetentionTime));
-                    }
-                    // once the spectrum is added, it is removed from the dictionary
-                    psmSeqChargeDictionary.Remove((ogLibrarySpectrum.Sequence, ogLibrarySpectrum.ChargeState));
-                }
-            }
-
-            // if we don't a spectrum in the original library, we add it to the updated library
-            foreach (var bestPsm in psmSeqChargeDictionary.Values)
-            {
-                updatedLibrarySpectra.Add(new LibrarySpectrum(
-                    bestPsm.FullSequence,
-                    bestPsm.ScanPrecursorMonoisotopicPeakMz,
-                    bestPsm.ScanPrecursorCharge,
-                    bestPsm.MatchedFragmentIons,
-                    bestPsm.ScanRetentionTime));
-            }
-
-            string updatedSpectralLibrary = UpdateSpectralLibrary(updatedLibrarySpectra, Parameters.OutputFolder);
-
-            Parameters.SearchTaskResults.NewDatabases = new List<DbForTask>();
-            Parameters.SearchTaskResults.NewDatabases.Add(new DbForTask(updatedSpectralLibrary, false));
-
-            DbForTask originalFastaDb = Parameters.DatabaseFilenameList.Where(p => p.IsSpectralLibrary == false && p.IsContaminant == false).First();
-            Parameters.SearchTaskResults.NewDatabases.Add(originalFastaDb);
-        }
-
-        //for those spectra matching the same peptide/protein with same charge, save the one with highest score
-        private void SpectralLibraryGeneration()
-        {
-            Status("Writing spectral library...", Parameters.SearchTaskId);
-            List<PeptideSpectralMatch> filteredPsmList = new();
-            if (Parameters.SearchParameters.DoSpectralRecovery)
-            {
-                //This is the same filtering that's used when passing PSMs into FlashLfq
-                filteredPsmList = Parameters.AllPsms.Where(p =>
-                    p.FdrInfo.QValue <= 0.01
-                    && p.FdrInfo.QValueNotch <= 0.01
-                    && !p.IsDecoy
-                    && p.FullSequence != null).ToList();
-
-            }
-            else if (Parameters.AllPsms.Count > 100)//PEP is not calculated with less than 100 psms
-            {
-                filteredPsmList = Parameters.AllPsms.Where(p => 
-                    (p.FdrInfo.PEP_QValue <= 0.01 || p.FdrInfo.PEP < 0.01)
-                    && !p.IsDecoy
-                    && !p.IsContaminant).ToList();
-            }
-            else
-            {
-                filteredPsmList = Parameters.AllPsms.Where(p => 
-                    p.FdrInfo.QValue <= 0.01 
-                    && !p.IsDecoy
-                    && !p.IsContaminant).ToList();
-            }
-=======
             var filteredPsmList = GetFilteredPsms(
-                includeDecoys: false,
-                includeContaminants: false,
-                includeAmbiguous: false);
->>>>>>> upstream/master
+               includeDecoys: false,
+               includeContaminants: false,
+               includeAmbiguous: false);
 
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
-            var fullSeqChargeGrouping = filteredPsmList.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
-            List<LibrarySpectrum> spectraLibrary = new();
-            foreach (var matchGroup in fullSeqChargeGrouping)
+            Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
+            foreach (var x in filteredPsmList)
             {
-<<<<<<< HEAD
-=======
                 List<PeptideSpectralMatch> psmsWithSamePeptideAndSameCharge = filteredPsmList.Where(b => b.FullSequence == x.FullSequence && b.ScanPrecursorCharge == x.ScanPrecursorCharge).OrderByDescending(p => p.Score).ToList();
                 (String, int) peptideWithChargeState = (x.FullSequence, x.ScanPrecursorCharge);
 
@@ -954,7 +844,6 @@ namespace TaskLayer
             List<LibrarySpectrum> spectraLibrary = new();
             foreach (var matchGroup in fullSeqChargeGrouping)
             {
->>>>>>> upstream/master
                 PeptideSpectralMatch bestPsm = matchGroup.MaxBy(p => p.Score);
                 if (bestPsm == null) continue;
                 spectraLibrary.Add(new LibrarySpectrum(
@@ -966,11 +855,10 @@ namespace TaskLayer
             }
             
             WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
-<<<<<<< HEAD
+
             Status("Finished writing spectral library!", Parameters.SearchTaskId);
-=======
->>>>>>> upstream/master
         }
+
         private void WriteProteinResults()
         {
             if (Parameters.SearchParameters.DoParsimony)
