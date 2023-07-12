@@ -145,11 +145,13 @@ namespace Test
             string mbrAnalysisPath = Path.Combine(outputFolder, @"SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
             List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out var warnings);
+            string output = mbrPsms.IsNotNullOrEmpty() ? mbrPsms.First().BaseSeq : "No PSMs read in";
+            Console.WriteLine("First read PSM: " + output);
             // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
             List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings);
 
-            List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
-            List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
+            List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension.Contains("20ng")).ToList();
+            List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension.Contains("02ng")).ToList();
             List<string> expectedMatches = mbrPsms.Select(p => p.BaseSeq).Intersect(expectedMbrPsms.Select(p => p.BaseSeq).ToList()).ToList();
 
             // These assertions were written when spectral recovery depended on successful deconvolution to 
@@ -505,7 +507,7 @@ namespace Test
             var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
             Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
-            testLibraryWithoutDecoy.CloseConnections(); 
+            testLibraryWithoutDecoy.CloseConnections();
             updatedLibraryWithoutDecoy.CloseConnections();
         }
 
