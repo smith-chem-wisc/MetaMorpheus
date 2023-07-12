@@ -17,15 +17,10 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using UsefulProteomicsDatabases;
-<<<<<<< HEAD
-
-=======
-using TaskLayer.MbrAnalysis;
 using Chemistry;
 using MzLibUtil;
-using Proteomics.AminoAcidPolymer;
-using System.Text.Json.Serialization;
->>>>>>> upstream/master
+
+
 
 namespace TaskLayer
 {
