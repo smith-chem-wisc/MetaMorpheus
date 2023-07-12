@@ -311,6 +311,7 @@ namespace Test
                 "ABCDEFG", null, p: new("ABCDEFG", "FAKEPROT"), digestionParams: new DigestionParams(),
                 oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 7);
             Assert.Null(mcse.SearchAroundPeak(fakePeptide, peakRetentionTime: 31.2, peakCharge: 2));
+            sl.CloseConnections();
         }
 
         [Test]
