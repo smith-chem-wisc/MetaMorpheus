@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
 using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer.PsmTsv;
@@ -14,7 +13,6 @@ using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using ThermoFisher.CommonCore.Data;
-using ThermoFisher.CommonCore.Data.Business;
 using Peptide = Proteomics.AminoAcidPolymer.Peptide;
 
 namespace EngineLayer.SpectralRecovery
@@ -44,6 +42,7 @@ namespace EngineLayer.SpectralRecovery
             CommonParameters commonParameters,
             List<MatchedFragmentIon> matchedFragmentIons,
             MzSpectrum precursorSpectrum = null,
+            int charge = -1,
             int notch = -1,
             int scanIndex = -1,
             double xcorr = 0) :

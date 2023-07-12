@@ -47,7 +47,7 @@ namespace Test
 
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
-                
+
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                     "TestData", "SpectralRecoveryTest", readPsm.FileNameWithoutExtension + ".mzML");
                 MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
@@ -284,17 +284,26 @@ namespace Test
                 null,
                 myFile);
 
+            // Create the ChromatographicPeak
+            ChromatographicPeak peak = new ChromatographicPeak(null, false, null);
+            // Set private properties for the ChromatographicPeak
+            FlashLFQ.IsotopicEnvelope envelope = new FlashLFQ.IsotopicEnvelope(
+                new IndexedMassSpectralPeak(1, 1, 1, allPsmsArray[5].ScanRetentionTime),
+                allPsmsArray[5].ScanPrecursorCharge, 0);
+            peak.SetChromatographicPeakProperties("Apex", envelope);
+            peak.IsotopicEnvelopes = new List<FlashLFQ.IsotopicEnvelope> { envelope };
+
             foreach (PeptideSpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
                 PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
 
                 SpectralRecoveryPSM[] peptideSpectralMatches =
-                    mcse.SearchAroundPeak(pwsm, null, allPsmsArray[5].ScanRetentionTime, allPsmsArray[5].ScanPrecursorCharge).ToArray();
+                    mcse.SearchAroundPeak(pwsm, peak, allPsmsArray[5].ScanRetentionTime, allPsmsArray[5].ScanPrecursorCharge).ToArray();
 
                 Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);
                 // Same assertion as above, just used ToString method. For spectralMatchPSMs, we insert 10 additional
                 // scores before the peptide info is given.
-                Assert.AreEqual(allPsmsArray[5].ToString().Split('\t')[12], peptideSpectralMatches[0].ToString().Split('\t')[22]);
+                Assert.AreEqual(allPsmsArray[5].ToString().Split('\t')[12], peptideSpectralMatches[0].ToString().Split('\t')[23]);
                 Assert.That(peptideSpectralMatches[0].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
             }
 
