@@ -17,6 +17,8 @@ using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using GuiFunctions;
+using Proteomics;
+using System.Threading.Tasks;
 
 namespace MetaMorpheusGUI
 {
@@ -34,6 +36,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private string _defaultMultiplexType = "TMT10";
 
         internal SearchTask TheTask { get; private set; }
 
@@ -145,6 +148,13 @@ namespace MetaMorpheusGUI
             {
                 LocalizeModTypeForTreeViewObservableCollection.Add(new ModTypeForLoc(hm.Key));
             }
+
+            foreach (string labelModType in GlobalVariables.AllModsKnown.Where(m => m.ModificationType.Equals("Multiplex Label"))
+                         .Select(m => m.OriginalId).Distinct())
+            {
+                MultiplexComboBox.Items.Add(labelModType);
+            }
+            MultiplexComboBox.SelectedItem = _defaultMultiplexType;
         }
 
         /// <summary>
@@ -175,8 +185,10 @@ namespace MetaMorpheusGUI
             }
             CheckBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
-            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
-            CheckBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
+            MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
             // If Spectral Recovery is enabled
             if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
             {
@@ -301,28 +313,28 @@ namespace MetaMorpheusGUI
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
             CustomFragmentationWindow = new CustomFragmentationWindow(task.CommonParameters.CustomIons);
 
-            if (task.CommonParameters.QValueOutputFilter < 1)
+            if (task.CommonParameters.QValueThreshold < 1)
             {
-                QValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
-                QValueRadioButton.IsChecked = true;
+                QValueThresholdTextBox.Text = task.CommonParameters.QValueThreshold.ToString(CultureInfo.InvariantCulture);
             }
             else
             {
-                QValueTextBox.Text = "0.01";
+                QValueThresholdTextBox.Text = "0.01";
             }
 
-            if (task.CommonParameters.PepQValueOutputFilter < 1)
+            if (task.CommonParameters.PepQValueThreshold < 1)
             {
-                PepQValueTextBox.Text = task.CommonParameters.QValueOutputFilter.ToString(CultureInfo.InvariantCulture);
-                PepQValueRadioButton.IsChecked = true;
+                PepQValueThresholdTextBox.Text = task.CommonParameters.PepQValueThreshold.ToString(CultureInfo.InvariantCulture);
+                PepQValueThresholdCheckbox.IsChecked = true;
             }
             else
             {
-                PepQValueTextBox.Text = "0.01";  
+                PepQValueThresholdTextBox.Text = "0.01";
             }
 
             OutputFileNameTextBox.Text = task.CommonParameters.TaskDescriptor;
             CkbMzId.IsChecked = task.SearchParameters.WriteMzId;
+            WriteHighQPsmsCheckBox.IsChecked = task.SearchParameters.WriteHighQValuePsms;
             WriteDecoyCheckBox.IsChecked = task.SearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task.SearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task.SearchParameters.WriteIndividualFiles;
@@ -418,11 +430,28 @@ namespace MetaMorpheusGUI
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
             SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
 
-            if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
-                maxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                PeakFindingToleranceTextBox.Text, HistogramBinWidthTextBox.Text, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text,
-                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, WindowWidthThomsonsTextBox.Text, NumberOfWindowsTextBox.Text, NumberOfDatabaseSearchesTextBox.Text, 
-                MaxModNumTextBox.Text, MaxFragmentMassTextBox.Text, QValueTextBox.Text, PepQValueTextBox.Text, InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
+            if (!GlobalGuiSettings.CheckTaskSettingsValidity(
+                PrecursorMassToleranceTextBox.Text, 
+                ProductMassToleranceTextBox.Text, 
+                MissedCleavagesTextBox.Text,
+                maxModificationIsoformsTextBox.Text, 
+                MinPeptideLengthTextBox.Text, 
+                MaxPeptideLengthTextBox.Text,
+                MaxThreadsTextBox.Text, 
+                MinScoreAllowed.Text,
+                PeakFindingToleranceTextBox.Text, 
+                HistogramBinWidthTextBox.Text, 
+                DeconvolutionMaxAssumedChargeStateTextBox.Text, 
+                NumberOfPeaksToKeepPerWindowTextBox.Text,
+                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, 
+                WindowWidthThomsonsTextBox.Text, 
+                NumberOfWindowsTextBox.Text, 
+                NumberOfDatabaseSearchesTextBox.Text, 
+                MaxModNumTextBox.Text, 
+                MaxFragmentMassTextBox.Text, 
+                QValueThresholdTextBox.Text, 
+                PepQValueThresholdTextBox.Text, 
+                InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
             {
                 return;
             }
@@ -552,6 +581,8 @@ namespace MetaMorpheusGUI
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 doPrecursorDeconvolution: DeconvolutePrecursors.IsChecked.Value,
                 useProvidedPrecursorInfo: UseProvidedPrecursor.IsChecked.Value,
+                qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
+                pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                 listOfModsFixed: listOfModsFixed,
                 listOfModsVariable: listOfModsVariable,
@@ -569,8 +600,6 @@ namespace MetaMorpheusGUI
                 numberOfWindows: numberOfWindows,//maybe change this some day
                 normalizePeaksAccrossAllWindows: normalizePeaksAccrossAllWindows,//maybe change this some day
                 addCompIons: AddCompIonCheckBox.IsChecked.Value,
-                qValueOutputFilter: QValueRadioButton.IsChecked.Value ? double.Parse(QValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
-                pepQValueOutputFilter: PepQValueRadioButton.IsChecked.Value ? double.Parse(PepQValueTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
                 maxHeterozygousVariants: MaxHeterozygousVariants);
@@ -597,8 +626,10 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.MinAllowedInternalFragmentLength = InternalIonsCheckBox.IsChecked.Value ? Convert.ToInt32(MinInternalFragmentLengthTextBox.Text) : 0;
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
-            TheTask.SearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask.SearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
             TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
+            TheTask.SearchParameters.DoMultiplexQuantification = CheckBoxMultiplex.IsChecked.Value;
+            TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
@@ -607,6 +638,7 @@ namespace MetaMorpheusGUI
                 double.Parse(SpectralRecoveryWidthTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = CheckBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
+            TheTask.SearchParameters.WriteHighQValuePsms = WriteHighQPsmsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask.SearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
@@ -813,6 +845,25 @@ namespace MetaMorpheusGUI
                 NTerminalIons.IsChecked = true;
                 CTerminalIons.IsChecked = true;
             }
+        }
+
+        /// <summary>
+        /// When a new multiplex label is selected from the drop-down menu (MultiplexComboBox),
+        /// the fixed mod tree view is updated so that only those mods are selected. 
+        /// </summary>
+        private void MultiplexUpdate(object sender, RoutedEventArgs routedEventArgs)
+        {
+            ModTypeForTreeViewModel multiplexModType = FixedModTypeForTreeViewObservableCollection
+                .FirstOrDefault(b => b.DisplayName.Equals("Multiplex Label"));
+            string selectedModId = CheckBoxMultiplex.IsChecked.Value
+                ? (string)MultiplexComboBox.SelectedItem
+                : "NoMatchingMod";
+
+            foreach (ModForTreeViewModel mod in multiplexModType.Children)
+            {
+                mod.Use = mod.DisplayName.Contains(selectedModId);
+            }
+            UpdateModSelectionGrid();
         }
 
         //this one is used by the GUI
@@ -1271,32 +1322,15 @@ namespace MetaMorpheusGUI
             CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
         }
 
+        private void CheckBoxMultiplex_Checked(object sender, RoutedEventArgs e)
+        {
+
+        }
+
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
         {
             SaveButton_Click(sender, e);
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
-        }
-
-        /// <summary>
-        /// Event Handler for when the pepQvalue radio button is checked. Sets value to default then uncecks and clears qValue
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void PepQValueRadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-            QValueTextBox.Clear();
-            PepQValueTextBox.Text = "0.01";
-        }
-
-        /// <summary>
-        /// Event Handler for when the qvalue radio button is checked. Sets value to default then unchecks and clears pepQvalue.
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void QValueRadioButton_Checked(object sender, RoutedEventArgs e)
-        {
-            PepQValueTextBox.Clear();
-            QValueTextBox.Text = "0.01";
         }
 
         /// <summary>

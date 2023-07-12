@@ -56,7 +56,7 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
             List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
-            //ensures that protein out put contins the correct number of proteins to match the folowing conditions.
+            // ensures that protein out put contains the correct number of proteins to match the following conditions.
             // all proteins in DB have baseSequence!=null (not ambiguous)
             // all proteins that belong to a protein group are written to DB
             Assert.AreEqual(18, proteins.Count);
@@ -366,7 +366,7 @@ namespace Test
             testPostTaskParameters.AllPsms = new List<PeptideSpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
-            testPostTaskParameters.SearchParameters.DoQuantification = false;
+            testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;
             testPostTaskParameters.SearchParameters.WriteMzId = false;
             testPostTaskParameters.DatabaseFilenameList = new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) };
             testPostTaskParameters.OutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest");
@@ -471,7 +471,7 @@ namespace Test
             testPostTaskParameters.AllPsms = new List<PeptideSpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
-            testPostTaskParameters.SearchParameters.DoQuantification = false;
+            testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;
             testPostTaskParameters.SearchParameters.WriteMzId = false;
             testPostTaskParameters.DatabaseFilenameList = new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDb.xml"), false) };
             testPostTaskParameters.OutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest");

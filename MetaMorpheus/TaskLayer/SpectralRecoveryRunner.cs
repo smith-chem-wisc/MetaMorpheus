@@ -55,11 +55,19 @@ namespace TaskLayer
 
                 MyFileManager myFileManager = new(true);
 
+<<<<<<< HEAD:MetaMorpheus/TaskLayer/SpectralRecoveryRunner.cs
                 string spectralLibraryFile = Directory
                     .GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories)
                     .First(p => p.Contains("SpectralLibrary"))
                     .ToString();
                 string spectralLibraryPath = Path.Combine(parameters.OutputFolder, spectralLibraryFile);
+=======
+                var list = Directory.GetFiles(parameters.OutputFolder, "*.*", SearchOption.AllDirectories);
+                string matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
+                string spectralLibraryPath = Path.Combine(parameters.OutputFolder, matchingvalue);
+                //var updatedLib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
+                //string spectralLibraryPath = Path.Combine(parameters.OutputFolder, @"SpectralLibrary.msp");
+>>>>>>> upstream/master:MetaMorpheus/TaskLayer/MbrAnalysis/SpectralRecoveryRunner.cs
                 SpectralLibrary library = new(new List<string>() { spectralLibraryPath });
 
                 MiniClassicSearchEngine mcse = new(

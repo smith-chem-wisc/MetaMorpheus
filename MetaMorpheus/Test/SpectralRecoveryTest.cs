@@ -88,7 +88,7 @@ namespace Test
             {
                 SearchParameters = new SearchParameters()
                 {
-                    DoQuantification = false,
+                    DoLabelFreeQuantification = false,
                     WriteSpectralLibrary = false,
                     MatchBetweenRuns = false,
                     DoSpectralRecovery = false,
@@ -115,7 +115,7 @@ namespace Test
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
                     SearchParameters = new SearchParameters()
                     {
-                        DoQuantification = true,
+                        DoLabelFreeQuantification = true,
                         WriteSpectralLibrary = true,
                         MatchBetweenRuns = true,
                         DoSpectralRecovery = true,
@@ -416,7 +416,7 @@ namespace Test
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
                     SearchParameters = new SearchParameters()
                     {
-                        DoQuantification = true,
+                        DoLabelFreeQuantification = true,
                         WriteSpectralLibrary = true,
                         MatchBetweenRuns = true,
                         DoSpectralRecovery = true,
@@ -462,7 +462,7 @@ namespace Test
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
                     SearchParameters = new SearchParameters()
                     {
-                        DoQuantification = true,
+                        DoLabelFreeQuantification = true,
                         WriteSpectralLibrary = true,
                         MatchBetweenRuns = true,
                         DoSpectralRecovery = true,
