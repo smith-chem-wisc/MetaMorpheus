@@ -144,6 +144,11 @@ namespace Test
         {
             string mbrAnalysisPath = Path.Combine(outputFolder, @"SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
+            StreamReader reader = new StreamReader(mbrAnalysisPath);
+            while(!reader.EndOfStream)
+            {
+                Console.WriteLine(reader.ReadLine);
+            }
             List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out var warnings);
             string output = mbrPsms.IsNotNullOrEmpty() ? mbrPsms.First().BaseSeq : "No PSMs read in";
             Console.WriteLine("First read PSM: " + output);
