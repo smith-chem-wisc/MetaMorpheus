@@ -8,6 +8,9 @@ using System.Text.RegularExpressions;
 using EngineLayer.GlycoSearch;
 using System.IO;
 using Easy.Common.Extensions;
+using EngineLayer.PsmTsv;
+using Proteomics.ProteolyticDigestion;
+using Proteomics;
 
 namespace EngineLayer
 {
@@ -87,6 +90,7 @@ namespace EngineLayer
         public string GlycanComposition { get; set; }
         public LocalizationLevel? GlycanLocalizationLevel { get; set; }
         public string LocalizedGlycan { get; set; }
+        public PeptideWithSetModifications PeptideWithSetModifications { get; }
 
         public PsmFromTsv(string line, char[] split, Dictionary<string, int> parsedHeader)
         {
@@ -202,6 +206,98 @@ namespace EngineLayer
                     GlycanLocalizationLevel = (LocalizationLevel)Enum.Parse(typeof(LocalizationLevel), localizationLevel);
             }
             LocalizedGlycan = (parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan]];
+        }
+
+        /// <summary>
+        /// Used for creating PSMs from the outputs of different search engines. Currently only supports MaxQuant
+        /// </summary>
+        /// <param name="line"></param>
+        /// <param name="split"></param>
+        /// <param name="parsedHeader"></param>
+        /// <param name="fileType"></param>
+        public PsmFromTsv(string[] splitLine, Dictionary<string, int> parsedHeader, PsmFileType fileType, 
+            Dictionary<string, Modification> allKnownMods = null, int numFixedMods = 0, bool ignoreArtifactIons = false)
+        {
+            if (fileType != PsmFileType.MaxQuant)
+                throw new NotImplementedException("Only MaxQuant msms.txt is currently supported");
+
+            //Required properties
+            FileNameWithoutExtension = splitLine[parsedHeader[MaxQuantMsmsHeader.FileName]].Trim();
+
+            // remove file format, e.g., .raw, .mzML, .mgf
+            // this is more robust but slower than Path.GetFileNameWithoutExtension
+            if (FileNameWithoutExtension.Contains('.'))
+            {
+                foreach (var knownSpectraFileExtension in GlobalVariables.AcceptedSpectraFormats)
+                {
+                    FileNameWithoutExtension = Path.GetFileName(FileNameWithoutExtension.Replace(knownSpectraFileExtension, string.Empty, StringComparison.InvariantCultureIgnoreCase));
+                }
+            }
+
+            Ms2ScanNumber = int.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.Ms2ScanNumber]]);
+
+            // this will probably not be known in an .mgf data file
+            if (int.TryParse(splitLine[parsedHeader[MaxQuantMsmsHeader.PrecursorScanNum]].Trim(), out int result))
+            {
+                PrecursorScanNum = result;
+            }
+            else
+            {
+                PrecursorScanNum = 0;
+            }
+
+            PrecursorCharge = (int)double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorMz = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorMass = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
+            BaseSeq = RemoveParentheses(splitLine[parsedHeader[MaxQuantMsmsHeader.BaseSequence]].Trim());
+            FullSequence = splitLine[parsedHeader[MaxQuantMsmsHeader.FullSequence]];
+            Score = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.Score]].Trim(), CultureInfo.InvariantCulture);
+
+            // MaxQuant msms sometimes contains empty fragment series, which causes problems down the line
+            if (splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]].IsNullOrEmptyOrWhiteSpace())
+            {
+                Score = 0;
+                MatchedIons = null;
+            }
+            else
+            {
+                MatchedIons = ReadFragmentIonsFromList(
+                    BuildFragmentStringsFromMaxQuant(
+                        splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
+                        splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonMzRatios]]
+                    ),
+                    BuildFragmentStringsFromMaxQuant(
+                        splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonSeries]],
+                        splitLine[parsedHeader[MaxQuantMsmsHeader.MatchedIonIntensities]]
+                    ),
+                    BaseSeq,
+                    ignoreArtifactIons: ignoreArtifactIons
+                );
+            }
+            
+
+            DeltaScore = (parsedHeader[MaxQuantMsmsHeader.DeltaScore] < 0) ? null : (double?)double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.DeltaScore]].Trim(), CultureInfo.InvariantCulture);
+            MassDiffDa = (parsedHeader[MaxQuantMsmsHeader.MassDiffDa] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.MassDiffDa]].Trim();
+            MassDiffPpm = (parsedHeader[MaxQuantMsmsHeader.MassDiffPpm] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.MassDiffPpm]].Trim();
+            ProteinAccession = (parsedHeader[MaxQuantMsmsHeader.ProteinAccession] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.ProteinAccession]].Trim();
+            ProteinName = (parsedHeader[MaxQuantMsmsHeader.ProteinName] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.ProteinName]].Trim();
+            GeneName = (parsedHeader[MaxQuantMsmsHeader.GeneName] < 0) ? null : splitLine[parsedHeader[MaxQuantMsmsHeader.GeneName]].Trim();
+            RetentionTime = (parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime] < 0) ? null : (double?)double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.Ms2ScanRetentionTime]].Trim(), CultureInfo.InvariantCulture);
+            PEP = double.Parse(splitLine[parsedHeader[MaxQuantMsmsHeader.PEP]].Trim(), CultureInfo.InvariantCulture);
+            DecoyContamTarget = splitLine[parsedHeader[MaxQuantMsmsHeader.Decoy]].IsNullOrEmptyOrWhiteSpace() ? "T" : "D";
+
+            if (!MassDiffDa.Equals("NaN") && Double.TryParse(MassDiffDa, out double massDiff)) PeptideMonoMass = (PrecursorMass + massDiff).ToString();
+            else PeptideMonoMass = PrecursorMass.ToString();
+
+            if (allKnownMods != null)
+            {
+                Protein protein = new Protein(sequence: BaseSeq, accession: ProteinAccession,
+                    geneNames: new List<Tuple<string, string>> { new Tuple<string, string>("Unknown", GeneName) },
+                    isDecoy: DecoyContamTarget == "D");
+                PeptideWithSetModifications = new PeptideWithSetModifications(FullSequence, allKnownMods, numFixedMods, p: protein, 
+                    oneBasedEndResidueInProtein: 1, oneBasedStartResidueInProtein: 1);   
+                //Previous and next amino acid aren't reported by MaxQuant, so they're both set to 1 here to prevent index out of range errors.
+            }
         }
 
         /// <summary>
@@ -389,6 +485,138 @@ namespace EngineLayer
             fullSeq = regexSpecialChar.Replace(fullSeq, replacement);
         }
 
+        public static List<MatchedFragmentIon> ReadFragmentIonsFromList(List<string> peakMzs, List<string> peakIntensities,
+            string peptideBaseSequence, List<string> peakMassErrorDa = null, bool ignoreArtifactIons = false)
+        {
+            List<MatchedFragmentIon> matchedIons = new List<MatchedFragmentIon>();
+
+            for (int index = 0; index < peakMzs.Count; index++)
+            {
+                string peak = peakMzs[index];
+                string[] split = peak.Split(new char[] { '+', ':' }); //TODO: needs update for negative charges that doesn't break internal fragment ions or neutral losses
+
+                // if there is a mismatch between the number of peaks and number of intensities from the psmtsv, the intensity will be set to 1
+                double intensity = peakMzs.Count == peakIntensities.Count ? //TODO: needs update for negative charges that doesn't break internal fragment ions or neutral losses
+                    double.Parse(peakIntensities[index].Split(new char[] { '+', ':', ']' })[2], CultureInfo.InvariantCulture) :
+                    1.0;
+
+                int fragmentNumber = 0;
+                int secondaryFragmentNumber = 0;
+                ProductType productType;
+                ProductType? secondaryProductType = null;
+                FragmentationTerminus terminus = FragmentationTerminus.None; //default for internal fragments
+                int aminoAcidPosition;
+                double neutralLoss = 0;
+
+                //get theoretical fragment
+                string ionTypeAndNumber = split[0];
+
+                //if an internal fragment
+                if (ionTypeAndNumber.Contains("["))
+                {
+                    // if there is no mismatch between intensity and peak counts from the psmtsv
+                    if (!intensity.Equals(1.0))
+                    {
+                        intensity = double.Parse(peakIntensities[index].Split(new char[] { '+', ':', ']' })[3],
+                            CultureInfo.InvariantCulture);
+                    }
+                    string[] internalSplit = split[0].Split('[');
+                    string[] productSplit = internalSplit[0].Split("I");
+                    string[] positionSplit = internalSplit[1].Replace("]", "").Split('-');
+                    productType = (ProductType)Enum.Parse(typeof(ProductType), productSplit[0]);
+                    secondaryProductType = (ProductType)Enum.Parse(typeof(ProductType), productSplit[1]);
+                    fragmentNumber = int.Parse(positionSplit[0]);
+                    secondaryFragmentNumber = int.Parse(positionSplit[1]);
+                    aminoAcidPosition = secondaryFragmentNumber - fragmentNumber;
+                }
+                else //terminal fragment
+                {
+                    Match result = IonParser.Match(ionTypeAndNumber);
+                    productType = (ProductType)Enum.Parse(typeof(ProductType), result.Groups[1].Value);
+                    fragmentNumber = int.Parse(result.Groups[2].Value);
+                    // check for neutral loss  
+                    if (ionTypeAndNumber.Contains("("))
+                    {
+                        if (ignoreArtifactIons) continue;
+                        string temp = ionTypeAndNumber.Replace("(", "");
+                        temp = temp.Replace(")", "");
+                        var split2 = temp.Split('-');
+                        neutralLoss = double.Parse(split2[1], CultureInfo.InvariantCulture);
+                    }
+
+                    //get terminus
+                    if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.ContainsKey(productType))
+                    {
+                        terminus = TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus[productType];
+                    }
+
+                    //get amino acid position
+                    aminoAcidPosition = terminus == FragmentationTerminus.C ?
+                        peptideBaseSequence.Split('|')[0].Length - fragmentNumber :
+                        fragmentNumber;
+                }
+
+                //get mass error in Daltons
+                double errorDa = 0;
+                if (peakMassErrorDa.IsNotNullOrEmpty() && peakMassErrorDa[index].IsNotNullOrEmpty())
+                {
+                    string peakError = peakMassErrorDa[index];
+                    string[] errorSplit = peakError.Split(new char[] { '+', ':', ']' });
+                    errorDa = double.Parse(errorSplit[2], CultureInfo.InvariantCulture);
+                }
+
+                //get charge and mz
+                int z = int.Parse(split[1]);
+                double mz = double.Parse(split[2], CultureInfo.InvariantCulture);
+                double neutralExperimentalMass = mz.ToMass(z); //read in m/z converted to mass
+                double neutralTheoreticalMass = neutralExperimentalMass - errorDa; //theoretical mass is measured mass - measured error
+
+                //The product created here is the theoretical product, with the mass back-calculated from the measured mass and measured error
+                Product theoreticalProduct = new Product(productType,
+                  terminus,
+                  neutralTheoreticalMass,
+                  fragmentNumber,
+                  aminoAcidPosition,
+                  neutralLoss,
+                  secondaryProductType,
+                  secondaryFragmentNumber);
+
+                matchedIons.Add(new MatchedFragmentIon(ref theoreticalProduct, mz, intensity, z));
+            }
+        
+            return matchedIons;
+        }
+
+        public static List<string> BuildFragmentStringsFromMaxQuant(string fragmentString, string informationString)
+        {
+            List<string> fragments = new List<string>();
+            string[] fragmentName = fragmentString.Split(';');
+            string[] fragmentInfo = informationString.Split(';');
+            Regex fragmentRegex = new Regex(@"[^\(\-]*");
+            
+            for (int i = 0; i < fragmentName.Length; i++)
+            {
+                string charge = "1";
+                string fragment = fragmentName[i];
+                if (fragmentName[i].Contains('('))
+                {
+                    Regex chargeRegex = new Regex(@"\((\d*)\+\)");
+                    charge = chargeRegex.Match(fragmentName[i]).Groups[1].Value;
+                    fragment = fragmentRegex.Match(fragmentName[i]).Groups[0].Value;
+                } 
+                if (fragmentName[i].Contains('-'))
+                {
+                    Regex neutralLossRegex = new Regex(@"\-([A-Z\d]+)");
+                    ChemicalFormula neutralLoss = ChemicalFormula.ParseFormula(
+                        neutralLossRegex.Match(fragmentName[i]).Groups[1].Value);
+                    fragment = '(' + fragmentRegex.Match(fragmentName[i]).Groups[0].Value + 
+                               '-' + neutralLoss.MonoisotopicMass.ToString() + ')';
+                }
+                fragments.Add(fragment + '+' + charge + ':' + fragmentInfo[i]);
+            }
+
+            return fragments;
+        }
 
         private static List<MatchedFragmentIon> ReadFragmentIonsFromString(string matchedMzString, string matchedIntensityString, string peptideBaseSequence, string matchedMassErrorDaString = null)
         {

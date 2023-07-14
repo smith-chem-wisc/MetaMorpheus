@@ -1,19 +1,26 @@
 ﻿using FlashLFQ;
-using Proteomics.AminoAcidPolymer;
-using System;
+using EngineLayer.SpectralRecovery;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using EngineLayer;
+using Chemistry;
+using Easy.Common.Extensions;
+using MassSpectrometry.MzSpectra;
+using Proteomics.ProteolyticDigestion;
+using System;
+using System.Globalization;
+using ThermoFisher.CommonCore.Data.Business;
 
-namespace TaskLayer.MbrAnalysis
+namespace EngineLayer.SpectralRecovery
 {
     public class SpectralRecoveryResults
     {
         public readonly ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> BestMbrMatches;
         public readonly FlashLfqResults FlashLfqResults;
+        public readonly IEnumerable<ChromatographicPeak> MbrPeaks; 
         private Dictionary<string, List<string>> PeptideScoreDict;
 
         /// <summary>
@@ -35,7 +42,6 @@ namespace TaskLayer.MbrAnalysis
                 return header.Trim();
             }
         }
-
 
         /// <summary>
         /// A Tab Separated Header that is similar to the QuantifiedPeptides header,
@@ -65,6 +71,14 @@ namespace TaskLayer.MbrAnalysis
         {
             BestMbrMatches = bestMbrMatches;
             FlashLfqResults = flashLfqResults;
+            MbrPeaks = FlashLfqResults != null
+                ? FlashLfqResults.Peaks
+                    .SelectMany(p => p.Value)
+                    .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
+                    .ThenByDescending(p => p.Intensity)
+                : bestMbrMatches.Keys
+                    .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
+                    .ThenByDescending(p => p.Intensity);
             PopulatePeptideScoreDict();
         }
 
@@ -74,25 +88,37 @@ namespace TaskLayer.MbrAnalysis
         /// </summary>
         private void PopulatePeptideScoreDict()
         {
-            PeptideScoreDict = new();
-            var flashLfqPeptides = FlashLfqResults.PeptideModifiedSequences.
-                Select(p => p.Key).Distinct();
-            foreach (string peptide in flashLfqPeptides) PeptideScoreDict.TryAdd(peptide, new());
-            PeptideScoreDict.TryAdd("fileName", new());
+            if (FlashLfqResults == null) return; //TODO: Make this work with MaxQuantResults
+
+            PeptideScoreDict = FlashLfqResults
+                .PeptideModifiedSequences
+                .Select(p => p.Key)
+                .Distinct()
+                .ToDictionary(peptide => peptide, x => new List<string>());
+
+            // This is used for when writing the header for the AllQuantPeptidesFile
+            PeptideScoreDict.Add("fileName", new());
+
             foreach (SpectraFileInfo spectraFile in FlashLfqResults.SpectraFiles)
             {
+                // Adding filenames in this way ensures the column label & values are concordant
                 PeptideScoreDict["fileName"].Add(spectraFile.FilenameWithoutExtension);
-                var peaksForFile = BestMbrMatches.Select(kvp => kvp.Key).
-                    Where(p => p.SpectraFileInfo == spectraFile && p.Identifications.Any()).
-                    ToDictionary(p => p.Identifications.First().ModifiedSequence, p => p);
-                IEnumerable<string> peptidesNotInFile = flashLfqPeptides.Except(peaksForFile.Keys);
+                var peaksForFile = BestMbrMatches
+                    .Select(kvp => kvp.Key)
+                    .Where(p => p.SpectraFileInfo.Equals(spectraFile) && p.Identifications.Any())
+                    .ToDictionary(p => p.Identifications.First().ModifiedSequence, p => p);
+
+                IEnumerable<string> peptidesNotInFile = PeptideScoreDict.Keys.Except(peaksForFile.Keys);
 
                 foreach (var peptide in peaksForFile.Keys)
                 {
-                    PeptideScoreDict.TryGetValue(peptide, out List<string> scoreList);
-                    BestMbrMatches.TryGetValue(peaksForFile[peptide], out var mbrSpectralMatch);
-                    string score = mbrSpectralMatch.spectralLibraryMatch != null && mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
-                        ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
+                    if(!PeptideScoreDict.TryGetValue(peptide, out List<string> scoreList) 
+                       | !BestMbrMatches.TryGetValue(peaksForFile[peptide], out var mbrSpectralMatch))
+                    {
+                        continue;
+                    }
+                    string score = mbrSpectralMatch != null && mbrSpectralMatch.SpectralAngle > -1
+                        ? mbrSpectralMatch.SpectralAngle.ToString()
                         : "Spectrum Not Found";
                     scoreList.Add(score);
                 }
@@ -116,41 +142,26 @@ namespace TaskLayer.MbrAnalysis
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
 
-            IEnumerable<ChromatographicPeak> orderedPeaks = FlashLfqResults.Peaks.
-                SelectMany(p => p.Value)
-                .OrderBy(p => p.SpectraFileInfo.FilenameWithoutExtension)
-                .ThenByDescending(p => p.Intensity);
+            using StreamWriter output = new StreamWriter(fullSeqPath);
+            output.WriteLine(PeaksTabSeparatedHeader);
 
-
-            if (fullSeqPath != null)
+            foreach (var peak in MbrPeaks)
             {
-                using (StreamWriter output = new StreamWriter(fullSeqPath))
-                {
-                    output.WriteLine(PeaksTabSeparatedHeader);
+                string spectralContrastAngle = 
+                    BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch) && mbrSpectralMatch != null && mbrSpectralMatch.SpectralAngle > -1
+                    ? mbrSpectralMatch.SpectralAngle.ToString()
+                    : "Spectrum Not Found";
 
-                    foreach (var peak in orderedPeaks)
-                    {
-                        string spectralContrastAngle = "Spectrum Not Found";
-                        if (BestMbrMatches.TryGetValue(peak, out var mbrSpectralMatch))
-                        {
-                            spectralContrastAngle = mbrSpectralMatch.spectralLibraryMatch != null && mbrSpectralMatch.spectralLibraryMatch.SpectralAngle > -1
-                                ? mbrSpectralMatch.spectralLibraryMatch.SpectralAngle.ToString()
-                                : "Spectrum Not Found";
-                        }
-
-                        string[] peakStringSplit = peak.ToString().Split('\t');
-                        StringBuilder sb = new();
-                        sb.Append(string.Join('\t', peakStringSplit[0..16]));
-                        sb.Append('\t');
-                        sb.Append(spectralContrastAngle);
-                        sb.Append('\t');
-                        sb.Append(string.Join('\t', peakStringSplit[16..]));
-                        output.WriteLine(sb.ToString().Trim());
-                    }
-                }
+                string[] peakStringSplit = peak.ToString().Split('\t');
+                StringBuilder sb = new();
+                sb.Append(string.Join('\t', peakStringSplit[0..16]));
+                sb.Append('\t');
+                sb.Append(spectralContrastAngle);
+                sb.Append('\t');
+                sb.Append(string.Join('\t', peakStringSplit[16..]));
+                output.WriteLine(sb.ToString().Trim());
             }
         }
-
 
         /// <summary>
         /// Writes the peptides quantified by FlashLFQ to a .tsv file. Appends extra columns giving the spectral angle
@@ -166,8 +177,9 @@ namespace TaskLayer.MbrAnalysis
             {
                 output.WriteLine(PeptidesTabSeparatedHeader);
 
-                var stringPeptidePairs = FlashLfqResults.PeptideModifiedSequences.
-                    OrderBy(p => p.Key);
+                var stringPeptidePairs = FlashLfqResults
+                    .PeptideModifiedSequences
+                    .OrderBy(p => p.Key);
                 foreach (var peptide in stringPeptidePairs)
                 {
                     string scores = PeptideScoreDict.TryGetValue(peptide.Key, out var scoreList)

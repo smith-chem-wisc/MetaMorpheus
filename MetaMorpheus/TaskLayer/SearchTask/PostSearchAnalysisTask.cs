@@ -1,5 +1,5 @@
-﻿using Easy.Common.Extensions;
-using EngineLayer;
+﻿using EngineLayer;
+using EngineLayer.SpectralRecovery;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.HistogramAnalysis;
 using EngineLayer.Localization;
@@ -17,11 +17,9 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using UsefulProteomicsDatabases;
-using TaskLayer.MbrAnalysis;
 using Chemistry;
 using MzLibUtil;
-using Proteomics.AminoAcidPolymer;
-using System.Text.Json.Serialization;
+using Easy.Common.Extensions;
 
 namespace TaskLayer
 {
@@ -88,7 +86,9 @@ namespace TaskLayer
                 SpectralLibraryGeneration();
                 if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
                 {
+                    Status("Performing spectral recovery...", Parameters.SearchTaskId);
                     SpectralRecoveryResults = SpectralRecoveryRunner.RunSpectralRecoveryAlgorithm(Parameters, CommonParameters, FileSpecificParameters);
+                    Status("Spectral recovery complete!", Parameters.SearchTaskId);
                 }      
             }
 
@@ -756,9 +756,9 @@ namespace TaskLayer
         private void UpdateSpectralLibrary()
         {
             var filteredPsmList = GetFilteredPsms(
-                includeDecoys: false,
-                includeContaminants: false,
-                includeAmbiguous: false);
+               includeDecoys: false,
+               includeContaminants: false,
+               includeAmbiguous: false);
 
             //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
             Dictionary<(String, int), List<PeptideSpectralMatch>> PsmsGroupByPeptideAndCharge = new Dictionary<(String, int), List<PeptideSpectralMatch>>();
@@ -855,7 +855,10 @@ namespace TaskLayer
             }
             
             WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
+
+            Status("Finished writing spectral library!", Parameters.SearchTaskId);
         }
+
         private void WriteProteinResults()
         {
             if (Parameters.SearchParameters.DoParsimony)

@@ -1,5 +1,6 @@
 ﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
+using EngineLayer.SpectralRecovery;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
@@ -9,15 +10,19 @@ using System.Collections.Generic;
 using System.DirectoryServices;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using Chemistry;
 using Easy.Common.Extensions;
+using FlashLFQ;
 using TaskLayer;
-using TaskLayer.MbrAnalysis;
+using CsvHelper;
+
 
 namespace Test
 {
     [TestFixture]
-    public class
+    public static class
     SpectralRecoveryTest
     {
         private static MyTaskResults searchTaskResults;
@@ -28,10 +33,11 @@ namespace Test
         private static List<string> rawSlices;
         private static List<DbForTask> databaseList;
         private static string outputFolder;
+        private static string narrowWindowOutputFolder;
         private static Dictionary<string, int[]> numSpectraPerFile;
 
         [OneTimeSetUp]
-        public void SpectralRecoveryTestSetup()
+        public static void SpectralRecoveryTestSetup()
         {
             // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\MSMSids.psmtsv");
@@ -42,6 +48,7 @@ namespace Test
 
             foreach (PsmFromTsv readPsm in tsvPsms)
             {
+
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                     "TestData", "SpectralRecoveryTest", readPsm.FileNameWithoutExtension + ".mzML");
                 MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
@@ -65,7 +72,10 @@ namespace Test
                 proteinList.Add(protein);
             }
 
-            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput"));
+            outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
+            narrowWindowOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"smallWindowSpectralRecoveryOutput");
+            Directory.CreateDirectory(outputFolder);
+            Directory.CreateDirectory(narrowWindowOutputFolder);
 
             numSpectraPerFile = new Dictionary<string, int[]> { { "K13_02ng_1min_frac1", new int[] { 8, 8 }
                 }, { "K13_20ng_1min_frac1", new int[] { 8, 8 } } };
@@ -74,7 +84,6 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\K13_20ng_1min_frac1.mzML") };
             databaseList = new List<DbForTask>() {new DbForTask(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta"), false) };
-            outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
 
             SearchTask searchTask = new SearchTask
             {
@@ -89,7 +98,7 @@ namespace Test
                 CommonParameters = new CommonParameters()
             };
             searchTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
-
+            searchTaskResults = searchTask.RunTask(narrowWindowOutputFolder, databaseList, rawSlices, "name");
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {
@@ -126,26 +135,50 @@ namespace Test
 
             postSearchTask.Run();
 
+            postSearchTask.Parameters.OutputFolder = narrowWindowOutputFolder;
+            postSearchTask.Parameters.SearchParameters.SpectralRecoveryWindowHalfWidth = 0.1;
+            postSearchTask.Run();
         }
 
         [Test]
         public static void SpectralRecoveryPostSearchAnalysisTest()
         {
-
-            List<string> warnings;
-            string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput\SpectralRecovery\RecoveredSpectra.psmtsv");
+            string mbrAnalysisPath = Path.Combine(outputFolder, @"SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
-            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
+            StreamReader reader = new StreamReader(mbrAnalysisPath);
+            while(!reader.EndOfStream)
+            {
+                Console.WriteLine(reader.ReadLine);
+            }
+            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out var warnings);
+            string output = mbrPsms.IsNotNullOrEmpty() ? mbrPsms.First().BaseSeq : "No PSMs read in";
+            Console.WriteLine("First read PSM: " + output);
             // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
             List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings);
 
-            List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
-            List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
+            List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension.Contains("20ng")).ToList();
+            List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension.Contains("02ng")).ToList();
             List<string> expectedMatches = mbrPsms.Select(p => p.BaseSeq).Intersect(expectedMbrPsms.Select(p => p.BaseSeq).ToList()).ToList();
 
+            // These assertions were written when spectral recovery depended on successful deconvolution to 
+            // consider a recovered spectra. It has since changed to consider any scan where the isolation window
+            // contains the precursor. This results in significantly more matches.
             Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 8);
             Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
+
+            // A spectrum is recovered for this peptide with the default spectral recovery window (1 minute).
+            // The ms2 scan is collected 0.15 minutes away from the RT apex
+            string testPeptideBaseSeq = "QVEPPAK";
+            Assert.True(matches02ng
+                .Any(p => p.BaseSeq.Equals(testPeptideBaseSeq)));
+            // The narrow window test should only search for ms2 scans within 0.1 minutes of the RT apex, so the test
+            // peptide should not be reported
+            string mbrAnalysisShortWindowPath = Path.Combine(narrowWindowOutputFolder, @"SpectralRecovery\RecoveredSpectra.psmtsv");
+            mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisShortWindowPath, out warnings);
+            Assert.False(mbrPsms
+                .Where(p => p.FileNameWithoutExtension.Equals("K13_02ng_1min_frac1"))
+                .Any(p => p.BaseSeq.Equals(testPeptideBaseSeq)));
 
             //TODO: Add test for recovering fdrInfo from original. Currently, PsmTsvReader doesn't support the new columns, so it's hard to test
         }
@@ -163,9 +196,11 @@ namespace Test
                 string[] rowSplit = row.Split('\t');
                 if (rowSplit[15].Equals("MBR") && double.TryParse(rowSplit[16], out var contrastAngle))
                 {
+                    // Updated spectral recovery considers a scan that was missed in the old version,
+                    // which is why the spectral contrast angle increases.
                     if (rowSplit[1].Equals("EGERPAR"))
                     {
-                        Assert.That(contrastAngle, Is.EqualTo(0.6567).Within(0.001));
+                        Assert.That(contrastAngle, Is.EqualTo(0.7957).Within(0.001));
                         break;
                     }
                 }
@@ -184,15 +219,29 @@ namespace Test
                     if (rowSplit[7].Equals("MBR"))
                     {
                         Assert.That(rowSplit[8].Equals("MSMS"));
-                        Assert.That(double.TryParse(rowSplit[9], out var contrastAngle) &&
-                                    Math.Abs(contrastAngle - 0.6567) < 0.001);
+                        if (double.TryParse(rowSplit[9], out var contrastAngle))
+                        {
+                            Assert.That(contrastAngle, Is.EqualTo(0.7957).Within(0.001));
+                        }
+                        else
+                        {
+                            Assert.Fail();
+                        }
+                        
                         break;
                     }
                     else
                     {
                         Assert.That(rowSplit[7].Equals("MSMS"));
-                        Assert.That(double.TryParse(rowSplit[10], out var contrastAngle) &&
-                                    Math.Abs(contrastAngle - 0.6567) < 0.001);
+                        if (double.TryParse(rowSplit[10], out var contrastAngle))
+                        {
+                            Assert.That(contrastAngle, Is.EqualTo(0.7957).Within(0.001));
+                        }
+                        else
+                        {
+                            Assert.Fail();
+                        }
+
                         break;
                     }
                 }
@@ -216,7 +265,6 @@ namespace Test
             string decoySpectralLibrary = Path.Combine(testDir, @"P16858_decoy.msp");
 
             List<string> specLibs = new List<string> { targetSpectralLibrary, decoySpectralLibrary };
-
             SpectralLibrary sl = new(specLibs);
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
@@ -237,23 +285,133 @@ namespace Test
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
 
+            MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
+                myMsDataFile,
+                sl,
+                commonParameters,
+                null,
+                myFile);
+
+            // Create the ChromatographicPeak
+            ChromatographicPeak peak = new ChromatographicPeak(null, false, null);
+            // Set private properties for the ChromatographicPeak
+            FlashLFQ.IsotopicEnvelope envelope = new FlashLFQ.IsotopicEnvelope(
+                new IndexedMassSpectralPeak(1, 1, 1, allPsmsArray[5].ScanRetentionTime),
+                allPsmsArray[5].ScanPrecursorCharge, 0);
+            peak.SetChromatographicPeakProperties("Apex", envelope);
+            peak.IsotopicEnvelopes = new List<FlashLFQ.IsotopicEnvelope> { envelope };
+
             foreach (PeptideSpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
                 PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
 
-                MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
-                    listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),
-                    searchModes,
-                    commonParameters,
-                    sl,
-                    null);
-
-                PeptideSpectralMatch[] peptideSpectralMatches =
-                    mcse.SearchAroundPeak(pwsm, allPsmsArray[5].ScanRetentionTime).ToArray();
+                SpectralRecoveryPSM[] peptideSpectralMatches =
+                    mcse.SearchAroundPeak(pwsm, peak, allPsmsArray[5].ScanRetentionTime, allPsmsArray[5].ScanPrecursorCharge).ToArray();
 
                 Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);
+                // Same assertion as above, just used ToString method. For spectralMatchPSMs, we insert 10 additional
+                // scores before the peptide info is given.
+                Assert.AreEqual(allPsmsArray[5].ToString().Split('\t')[12], peptideSpectralMatches[0].ToString().Split('\t')[23]);
                 Assert.That(peptideSpectralMatches[0].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
             }
+
+            PeptideWithSetModifications fakePeptide = new PeptideWithSetModifications(
+                "ABCDEFG", null, p: new("ABCDEFG", "FAKEPROT"), digestionParams: new DigestionParams(),
+                oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 7);
+            Assert.Null(mcse.SearchAroundPeak(fakePeptide, peakRetentionTime: 31.2, peakCharge: 2));
+            sl.CloseConnections();
+        }
+
+        [Test]
+        public static void TestPrecursorIsotopeCorrelation()
+        {
+            ModificationMotif.TryGetMotif("G", out var modMotif);
+            Dictionary<string, Modification> modDict =
+                new()
+                {
+                    { "Carbamidomethyl on C", GlobalVariables.AllModsKnownDictionary["Carbamidomethyl on C"] },
+                    { "BS on G" , new Modification(_originalId: "BS on G", _modificationType: "BS", _target: modMotif, _monoisotopicMass: 96.0875)}
+                };
+            PeptideWithSetModifications pwsm_Mods = new PeptideWithSetModifications(
+                "ENQGDETQG[Speculative:BS on G]C[Common Fixed:Carbamidomethyl on C]PPQR", modDict, p: new Protein("ENQGDETQGCPPQR", "FakeProtein"), digestionParams: new DigestionParams(),
+                oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 14);
+
+            // this pwsm has an equivalent mass to the pwsm with mods, but a different chemical formula.
+            PeptideWithSetModifications pwsm_EqualMass = new PeptideWithSetModifications(
+                "ENQGDETQGQQPPQR", null, p: new Protein("ENQGDETQGQQPPQR", "FakeProtein2"), digestionParams: new DigestionParams(),
+                oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 14);
+
+            // Create the ChromatographicPeak
+            SpectraFileInfo fakeFileInfo =
+                new SpectraFileInfo(Path.Combine(TestContext.CurrentContext.TestDirectory, "DoesNotExist.raw"), "A", 1, 1, 1);
+            Identification id = new Identification(fakeFileInfo, pwsm_Mods.BaseSequence, pwsm_Mods.FullSequence,
+                pwsm_Mods.MonoisotopicMass, ms2RetentionTimeInMinutes: 1.01, 1, new List<FlashLFQ.ProteinGroup>());
+            ChromatographicPeak peak = new ChromatographicPeak(id, false, fakeFileInfo);
+
+            // Get theoretical isotopic distribution from equal mass peptide
+            ChemicalFormula equalMassFormula = new Proteomics.AminoAcidPolymer.Peptide(pwsm_EqualMass.BaseSequence).GetChemicalFormula();
+            IsotopicDistribution peptideDistribution = IsotopicDistribution
+                .GetDistribution(equalMassFormula, fineResolution: 0.01, minProbability: 0.005);
+            double[] theoreticalMasses = peptideDistribution.Masses;
+            double[] theoreticalIntensities = peptideDistribution.Intensities;
+            List<FlashLFQ.IsotopicEnvelope> lfqEnvelopes = new List<FlashLFQ.IsotopicEnvelope>();
+
+            // Create IndexedPeaks and IsotopicEnvelopes
+            for (int i = 0; i < peptideDistribution.Masses.Length; i++)
+            {
+                lfqEnvelopes.Add(
+                    new FlashLFQ.IsotopicEnvelope(
+                        new IndexedMassSpectralPeak(mz: theoreticalMasses[i].ToMz(1), intensity: theoreticalIntensities[i], 0, 1.00),
+                        chargeState: 1,
+                        intensity: theoreticalIntensities[i]));
+            }
+
+            // Set private properties for the ChromatographicPeak
+            peak.IsotopicEnvelopes = lfqEnvelopes;
+            peak.SetChromatographicPeakProperties("Apex", lfqEnvelopes.MaxBy(i => i.Intensity));
+
+            double? equalMassCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_EqualMass, peak, 1);
+            double? modsCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_Mods, peak, 1);
+
+            Assert.That(equalMassCorrelation, Is.EqualTo(1).Within(0.001));
+            Assert.That(modsCorrelation != null && modsCorrelation >= 0.9);
+
+            // Now, testing one mod (Carbamidomethyl on C)
+            modDict.Remove("BS on G");
+            PeptideWithSetModifications pwsm_OneMod = new PeptideWithSetModifications(
+                "ENQGDETQGC[Common Fixed:Carbamidomethyl on C]PPQR", modDict, p: new Protein("ENQGDETQGCPPQR", "FakeProtein"), digestionParams: new DigestionParams(),
+                oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 14);
+            // Get theoretical isotopic distribution from equal mass peptide
+            equalMassFormula = pwsm_OneMod.FullChemicalFormula;
+            peptideDistribution = IsotopicDistribution
+                .GetDistribution(equalMassFormula, fineResolution: 0.01, minProbability: 0.005);
+            theoreticalMasses = peptideDistribution.Masses;
+            theoreticalIntensities = peptideDistribution.Intensities;
+            lfqEnvelopes = new List<FlashLFQ.IsotopicEnvelope>();
+
+            // Create IndexedPeaks and IsotopicEnvelopes
+            for (int i = 0; i < peptideDistribution.Masses.Length; i++)
+            {
+                lfqEnvelopes.Add(
+                    new FlashLFQ.IsotopicEnvelope(
+                        new IndexedMassSpectralPeak(mz: theoreticalMasses[i].ToMz(1), intensity: theoreticalIntensities[i], 0, 1.00),
+                        chargeState: 1,
+                        intensity: theoreticalIntensities[i]));
+            }
+
+            // Set private properties for the ChromatographicPeak
+            peak.IsotopicEnvelopes = lfqEnvelopes;
+            peak.SetChromatographicPeakProperties("Apex", lfqEnvelopes.MaxBy(i => i.Intensity));
+            double? oneModCorrelation = SpectralRecoveryPSM.GetIsotopeCorrelation(pwsm_OneMod, peak, 1);
+
+            Assert.That(oneModCorrelation, Is.EqualTo(1).Within(0.001));
+        }
+
+        public static void SetChromatographicPeakProperties(this ChromatographicPeak peak, string propName, Object newValue)
+        {
+            PropertyInfo propertyInfo = typeof(ChromatographicPeak).GetProperty(propName);
+            if (propertyInfo == null || propertyInfo.PropertyType != newValue.GetType()) return;
+            propertyInfo.SetValue(peak, newValue);
         }
 
         [Test]
@@ -355,25 +513,31 @@ namespace Test
             var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
             Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
-            testLibraryWithoutDecoy.CloseConnections(); 
+            testLibraryWithoutDecoy.CloseConnections();
             updatedLibraryWithoutDecoy.CloseConnections();
         }
 
         [Test]
         public static void SpectralRecoveryHeaderTest()
         {
-            string psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader().Trim();
-            StringBuilder sb = new();
-            sb.Append(psmHeader);
-            sb.Append('\t');
-            sb.Append("Initial Search Q-Value");
-            sb.Append('\t');
-            sb.Append("Initial Search PEP");
-            sb.Append('\t');
-            sb.Append("Initial Search PEP Q-Value");
+            string[] psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader().Trim().Split('\t');
 
-            Assert.AreEqual(sb.ToString(), SpectralRecoveryPSM.TabSeparatedHeader);
+            List<string> expectedHeader = new List<string>(psmHeader[..12]);
+            expectedHeader.AddRange( new List<string>{ 
+                "Peak Apex RT (min)",
+                "RT Shift",
+                "Peak Width (min)",
+                "Deconvolutable Precursor",
+                "Precursor Isotopic Envelope Score",
+                "Isolation Window Center (Th)",
+                "Precursor m/z - Isolation Center Distance (Th)",
+                "Isolation Window Width (Th)",
+                "Original Psm QValue",
+                "Original Psm PEP",
+                "Original Psm PEP_QValue"});
+            expectedHeader.AddRange(psmHeader[12..]);
 
+            Assert.AreEqual(String.Join('\t', expectedHeader), SpectralRecoveryPSM.TabSeparatedHeader);
         }
 
         [OneTimeTearDown]

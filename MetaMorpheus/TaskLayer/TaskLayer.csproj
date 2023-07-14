@@ -16,12 +16,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="30.0.1" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
     <PackageReference Include="Microsoft.ML" Version="2.0.0" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="2.0.0" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="2.0.0" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.539" />
+    <PackageReference Include="mzLib" Version="5.0.543" />
     <PackageReference Include="NetSerializer" Version="4.1.1" />
     <PackageReference Include="Nett" Version="0.15.0" />
   </ItemGroup>

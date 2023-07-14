@@ -17,6 +17,7 @@ namespace TaskLayer
             DoLabelFreeQuantification = true;
             DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
+            SpectralRecoveryWindowHalfWidth = 1;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
@@ -78,6 +79,7 @@ namespace TaskLayer
         public bool DoMultiplexQuantification { get; set; }
         public string MultiplexModId { get; set; }
         public bool DoSpectralRecovery { get; set; }
+        public double SpectralRecoveryWindowHalfWidth { get; set; }
         public SearchType SearchType { get; set; }
         public List<FdrCategory> LocalFdrCategories { get; set; }
         public string CustomMdac { get; set; }

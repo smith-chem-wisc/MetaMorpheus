@@ -1,4 +1,7 @@
-﻿namespace EngineLayer
+﻿using System;
+using System.Globalization;
+
+namespace EngineLayer
 {
     public static class PsmTsvHeader
     {
@@ -110,5 +113,60 @@
         public const string GlycanStructure = "Plausible GlycanStructure";
         public const string GlycanLocalizationLevel = "GlycanLocalizationLevel";
         public const string LocalizedGlycan = "Localized Glycans with Peptide Site Specific Probability";
+    }
+
+    public static class PsmTsvHeader_SpectralRecovery
+    {
+        public const string PeakApexRt = "Peak Apex RT (min)";
+        public const string PeakShift = "RT Shift"; // Acceptor peak apex RT - predicted RT
+        public const string PeakWidth = "Peak Width (min)";
+        public const string PrecursorDeconvolutedBool = "Deconvolutable Precursor";
+        public const string PrecursorIsotopicEnvelopeAngle = "Precursor Isotopic Envelope Score"; // Spectral Contrast angle exp vs theoretical
+        public const string IsolationWindowCenter = "Isolation Window Center (Th)";
+        public const string PrecursorOffset = "Precursor m/z - Isolation Center Distance (Th)";
+        public const string IsolationWindowWidth = "Isolation Window Width (Th)";
+        public const string OriginalPsmQ = "Original Psm QValue";
+        public const string OriginalPsmPEP = "Original Psm PEP";
+        public const string OriginalPsmPEP_QValue = "Original Psm PEP_QValue";
+
+        public static string NullableToString<T>(this Nullable<T> value, CultureInfo cultureInfo)
+            where T : struct, IConvertible
+        {
+            return value == null ? "" : ((IConvertible)value).ToString(cultureInfo);
+        }
+    }
+
+    public class MaxQuantMsmsHeader
+    {
+        // File and scan information
+        public const string FileName = "Raw file";
+        public const string Ms2ScanNumber = "Scan number";
+        public const string Ms2ScanRetentionTime = "Retention time";
+        public const string PrecursorScanNum = "Precursor full scan number";
+        public const string PrecursorCharge = "Charge";
+        public const string PrecursorMz = "m/z";
+        public const string PrecursorMass = "Mass";
+        public const string Score = "Score";
+        public const string DeltaScore = "Delta score";
+
+        // Sequence information
+        public const string BaseSequence = "Sequence";
+        public const string FullSequence = "Modified sequence";
+        public const string Mods = "Modifications";
+        public const string MassDiffDa = "Mass error [Da]";
+        public const string MassDiffPpm = "Mass error [ppm]";
+        public const string ProteinAccession = "Proteins";
+        public const string ProteinName = "Protein Names";
+        public const string GeneName = "Gene Names";
+        public const string Decoy = "Reverse";
+        public const string MatchedIonSeries = "Matches";
+        public const string MatchedIonMzRatios = "Masses";
+        public const string MatchedIonMassDiffDa = "Mass deviations [Da]";
+        public const string MatchedIonMassDiffPpm = "Mass deviations [ppm]";
+        public const string MatchedIonIntensities = "Intensities";
+        public const string MatchedIonCounts = "Number of matches";
+
+        // Scoring
+        public const string PEP = "PEP";
     }
 }

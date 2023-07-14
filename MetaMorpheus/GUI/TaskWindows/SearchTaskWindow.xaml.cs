@@ -260,6 +260,7 @@ namespace MetaMorpheusGUI
 
             CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
+            SpectralRecoveryWidthTextBox.Text = task.SearchParameters.SpectralRecoveryWindowHalfWidth.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
             CheckBoxNormalize.IsChecked = task.SearchParameters.Normalize;
             ModPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
@@ -633,6 +634,8 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
+            TheTask.SearchParameters.SpectralRecoveryWindowHalfWidth =
+                double.Parse(SpectralRecoveryWidthTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = CheckBoxTarget.IsChecked.Value;
             TheTask.SearchParameters.WriteMzId = CkbMzId.IsChecked.Value;
             TheTask.SearchParameters.WriteHighQValuePsms = WriteHighQPsmsCheckBox.IsChecked.Value;
