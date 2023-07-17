@@ -80,6 +80,7 @@ namespace EngineLayer
 
                     }
                 });
+                spectralLibrary.CloseConnections();
             }
         }
 

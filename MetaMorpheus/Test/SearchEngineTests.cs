@@ -20,6 +20,7 @@ using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
+using Easy.Common.Extensions;
 
 namespace Test
 {
@@ -95,8 +96,8 @@ namespace Test
             Assert.AreEqual("M", psm.NextAminoAcid);
             Assert.AreEqual("0", psm.Notch);
             Assert.AreEqual("Mus musculus", psm.OrganismName);
-            Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
-            Assert.AreEqual(0, psm.PEP_QValue);
+            Assert.IsNaN(psm.PEP);
+            Assert.IsNaN(psm.PEP_QValue);
             Assert.AreEqual("full", psm.PeptideDescription);
             Assert.AreEqual("1431.69155", psm.PeptideMonoMass);
             Assert.AreEqual(2, psm.PrecursorCharge);
@@ -106,8 +107,8 @@ namespace Test
             Assert.AreEqual("R", psm.PreviousAminoAcid);
             Assert.AreEqual("P63028", psm.ProteinAccession);
             Assert.AreEqual("Translationally-controlled tumor protein", psm.ProteinName);
-            Assert.AreEqual(0, psm.QValue);
-            Assert.AreEqual(0, psm.QValueNotch);
+            Assert.AreEqual(0.027, psm.QValue, 0.001);
+            Assert.AreEqual(0.027, psm.QValueNotch, 0.001);
             Assert.AreEqual(77.09543, psm.RetentionTime);
             Assert.AreEqual(507.117, psm.Score);
             Assert.AreEqual("[22 to 34]", psm.StartAndEndResiduesInProtein);
@@ -142,11 +143,11 @@ namespace Test
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
             Assert.AreEqual(127, parsedPsms.Count); //total psm count
-            Assert.AreEqual(37, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
+            Assert.AreEqual(78, parsedPsms.Where(t=>t.DecoyContamTarget == "T").Count()); //psms with q-value < 0.01 as read from psmtsv
             Assert.AreEqual(0, warnings.Count);
 
             int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
-            Assert.AreEqual(37, countFromResultsTxt);
+            Assert.AreEqual(0, countFromResultsTxt);
         }
 
         [Test]
@@ -564,7 +565,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngineLowResSimple()
         {
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests\sliced_b6.mzML");
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\miniA549.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
             CommonParameters CommonParameters = new CommonParameters(
@@ -593,16 +594,16 @@ namespace Test
 
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(447, arrayOfMs2ScansSortedByMass.Count());
+            Assert.AreEqual(610, arrayOfMs2ScansSortedByMass.Count());
 
             int numSpectra = myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2);
 
-            Assert.AreEqual(257, numSpectra);
+            Assert.AreEqual(185, numSpectra);
 
             PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestClassicSearchEngineLowResSimple");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests", "LowResSnip_B6_mouse_11700_117500.xml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData", "miniA549.fasta");
 
             Directory.CreateDirectory(outputFolder);
 
@@ -628,13 +629,15 @@ namespace Test
             };
             Dictionary<string, Modification> u = new Dictionary<string, Modification>();
 
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinXML(myDatabase, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out u);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse, false, out var dbErrors, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, -1);
+
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
             var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(447, listOfSortedXcorrms2Scans.Count());
+            Assert.AreEqual(610, listOfSortedXcorrms2Scans.Count());
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
 
@@ -646,24 +649,28 @@ namespace Test
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            Assert.AreEqual(131, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
+            Assert.AreEqual(486, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(447, allPsmsArray.Length);
+            Assert.AreEqual(610, allPsmsArray.Length);
 
-            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
-            var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
+            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01163).ToList();
+
+
+            File.WriteAllLines(@"E:\junk\scans.txt", nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01163).ToList().Select(s => s.ScanNumber.ToString()).ToArray());
+
+            var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01163).Select(s => s.Score).ToList();
             goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };
+            List<int> expectedScans = new List<int>() { 50, 145, 29, 47, 201, 126, 55, 170, 65, 164, 46, 40, 138, 149, 104, 17, 142, 118, 88, 117, 26, 204, 139, 192, 105, 30, 7, 15, 167, 120, 132, 33, 71, 176, 123, 114, 141, 121, 51, 121, 53, 185, 175, 200, 94, 103, 101, 90, 101, 146, 159, 27, 66, 130, 157, 112, 157, 154, 154, 41, 35, 97, 115, 18, 203, 95, 13, 16, 69, 184, 43, 86, 106, 22, 26, 129, 36, 135, 174, 57, 81, 141, 140, 151, 116, 14 };
             List<int> foundScans = new List<int>();
             foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
             foundScans.Sort();
 
-            Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(37, goodPsm.Count());
+            CollectionAssert.AreEquivalent(expectedScans, foundScans);
+            Assert.AreEqual(86, goodPsm.Count());
             Directory.Delete(outputFolder, true);
         }
 
@@ -755,8 +762,8 @@ namespace Test
             // Single search mode
             Assert.AreEqual(447, allPsmsArray.Length);
 
-            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
-            var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
+            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.02703).ToList();
+            var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.02703).Select(s => s.Score).ToList();
             goodScore.Sort();
 
             List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };

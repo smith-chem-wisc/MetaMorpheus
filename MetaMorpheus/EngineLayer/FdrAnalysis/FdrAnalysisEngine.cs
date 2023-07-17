@@ -121,14 +121,45 @@ namespace EngineLayer.FdrAnalysis
                 double runningQvalue = 1;
                 double runningQvalueNotch = 1;
 
-                for (int i = psms.Count -1; i >= 0; i--)
+                if(psms.Count > 100) 
                 {
-                    psms[i].FdrInfo.QValue = Math.Min(runningQvalue, (psms[i].FdrInfo.CumulativeDecoy + 1) / psms[i].FdrInfo.CumulativeTarget);
-                    psms[i].FdrInfo.QValueNotch = Math.Min(runningQvalueNotch, (psms[i].FdrInfo.CumulativeDecoyNotch + 1) / psms[i].FdrInfo.CumulativeTargetNotch);
+                    for (int i = psms.Count - 1; i >= 0; i--)
+                    {
+                        psms[i].FdrInfo.QValue = Math.Min(runningQvalue, (psms[i].FdrInfo.CumulativeDecoy + 1) / psms[i].FdrInfo.CumulativeTarget);
+                        psms[i].FdrInfo.QValueNotch = Math.Min(runningQvalueNotch, (psms[i].FdrInfo.CumulativeDecoyNotch + 1) / psms[i].FdrInfo.CumulativeTargetNotch);
 
-                    runningQvalue = psms[i].FdrInfo.QValue;
-                    runningQvalueNotch = psms[i].FdrInfo.QValueNotch;
+                        runningQvalue = psms[i].FdrInfo.QValue;
+                        runningQvalueNotch = psms[i].FdrInfo.QValueNotch;
+                    }
                 }
+                else // we do something different for low psm count b/c using the traditional (decoy + 1) formuala for q-value is too hard on the few psms that are
+                {
+                    for (int i = psms.Count - 1; i >= 0; i--)
+                    {
+                        psms[i].FdrInfo.QValue = Math.Min(runningQvalue, (psms[i].FdrInfo.CumulativeDecoy) / psms[i].FdrInfo.CumulativeTarget);
+                        psms[i].FdrInfo.QValueNotch = Math.Min(runningQvalueNotch, (psms[i].FdrInfo.CumulativeDecoyNotch) / psms[i].FdrInfo.CumulativeTargetNotch);
+
+                        runningQvalue = psms[i].FdrInfo.QValue;
+                        runningQvalueNotch = psms[i].FdrInfo.QValueNotch;
+                    }
+
+
+
+
+
+
+                    //runningQvalue = 0;
+                    //runningQvalueNotch = 0;
+                    //for (int i = 0; i < psms.Count; i++)
+                    //{
+                    //    psms[i].FdrInfo.QValue = Math.Max(runningQvalue, (psms[i].FdrInfo.CumulativeDecoy) / psms[i].FdrInfo.CumulativeTarget);
+                    //    psms[i].FdrInfo.QValueNotch = Math.Max(runningQvalueNotch, (psms[i].FdrInfo.CumulativeDecoyNotch) / psms[i].FdrInfo.CumulativeTargetNotch);
+
+                    //    runningQvalue = psms[i].FdrInfo.QValue;
+                    //    runningQvalueNotch = psms[i].FdrInfo.QValueNotch;
+                    //}
+                }
+                
             }
             Compute_PEPValue(myAnalysisResults);
         }

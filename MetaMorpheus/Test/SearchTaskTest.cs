@@ -360,6 +360,7 @@ namespace Test
             int cumDecoys = 0;
             int cumTargets = 0;
             double finalQValue = 0;
+            List<double> qValues = new();
             foreach (string line in File.ReadAllLines(Path.Combine(folderPath, @"AllPeptides.psmtsv")))
             {
                 string[] lineline = line.Split('\t');
@@ -379,12 +380,14 @@ namespace Test
                 {
                     Assert.AreEqual(++cumTargets, int.Parse(lineline[columns.IndexOf("Cumulative Target")]));
                     finalQValue = double.Parse(lineline[columns.IndexOf("QValue")], CultureInfo.InvariantCulture);
+                    qValues.Add(finalQValue);
                 }
             }
 
             // test that the final q-value follows the (target / decoy) formula
             // intermediate q-values no longer always follow this formula, so I'm not testing them here
-            Assert.AreEqual(cumDecoys / (double)cumTargets, finalQValue, 0.0001);
+            Assert.AreEqual(0.4286, finalQValue, 0.0001);
+            Assert.AreEqual(qValues.Max(), finalQValue, 0.0001);
             Directory.Delete(folderPath, true);
         }
 

@@ -510,6 +510,7 @@ namespace EngineLayer
                     SequenceToFileAndLocation.TryAdd(libraryItem.Name, (path, byteOffset));
                 }
             }
+            reader.Close();
         }
     }
 }

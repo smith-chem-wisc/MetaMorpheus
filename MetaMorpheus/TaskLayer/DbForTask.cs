@@ -1,4 +1,5 @@
 ﻿using EngineLayer;
+using System.IO;
 
 namespace TaskLayer
 {
@@ -16,5 +17,13 @@ namespace TaskLayer
         public string FilePath { get; }
         public bool IsContaminant { get; }
         public string FileName { get; }
+
+        public void CloseConnections()
+        {
+            if(this.IsSpectralLibrary)
+            {
+                //this.FileName.Close();
+            }
+        }
     }
 }

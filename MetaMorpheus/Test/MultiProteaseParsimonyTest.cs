@@ -1030,16 +1030,16 @@ namespace Test
             new FdrAnalysisEngine(psms, 0, new CommonParameters(), fsp, new List<string>()).Run();
             psms = psms.OrderByDescending(p => p.Score).ToList();
 
-            Assert.AreEqual(0.00, Math.Round(psms[0].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[1].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[2].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[3].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[4].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[5].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[6].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.50, Math.Round(psms[8].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.50, Math.Round(psms[9].FdrInfo.QValue, 2));
+            Assert.AreEqual(0, Math.Round(psms[0].FdrInfo.QValue, 2) ,0.01);
+            Assert.AreEqual(0, Math.Round(psms[1].FdrInfo.QValue, 2), 0.01);
+            Assert.AreEqual(0, Math.Round(psms[2].FdrInfo.QValue, 2), 0.01);
+            Assert.AreEqual(0, Math.Round(psms[3].FdrInfo.QValue, 2), 0.01);
+            Assert.AreEqual(0.33, Math.Round(psms[4].FdrInfo.QValue, 2), 0.01);
+            Assert.AreEqual(0.33, Math.Round(psms[5].FdrInfo.QValue, 2), 0.01);
+            Assert.AreEqual(0, Math.Round(psms[6].FdrInfo.QValue, 2), 0.01);
+            Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2), 0.01);
+            Assert.AreEqual(0.5, Math.Round(psms[8].FdrInfo.QValue, 2), 0.01);
+            Assert.AreEqual(0.5, Math.Round(psms[9].FdrInfo.QValue, 2), 0.01);
         }
     }
 }
