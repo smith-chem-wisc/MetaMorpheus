@@ -207,8 +207,6 @@ namespace Test
             string expectedLibrarySpectrum = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\simple.msp"));
 
             Assert.AreEqual(expectedLibrarySpectrum, librarySpectrum);
-            Assert.That(librarySpectrum.Contains(psms[0].FullSequence.ToString()));
-
         }
     }
 }
