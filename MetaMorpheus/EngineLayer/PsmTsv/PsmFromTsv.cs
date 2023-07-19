@@ -8,6 +8,9 @@ using System.Text.RegularExpressions;
 using EngineLayer.GlycoSearch;
 using System.IO;
 using Easy.Common.Extensions;
+using System.Text;
+using System.Xml.Linq;
+using System.Runtime.CompilerServices;
 
 namespace EngineLayer
 {
@@ -594,6 +597,36 @@ namespace EngineLayer
         public override string ToString()
         {
             return FullSequence;
+        }
+        public string ToLibrarySpectrum()
+        {
+            StringBuilder librarySpectrum = new StringBuilder();
+            librarySpectrum.Append("Name: " + FullSequence);
+            librarySpectrum.Append("\nMW: " + PrecursorMz);
+            librarySpectrum.Append("\nComment: ");
+            librarySpectrum.Append("Parent=" + PrecursorMz);
+            librarySpectrum.Append(" RT=" + RetentionTime);
+            librarySpectrum.Append("\nNum peaks: " + MatchedIons.Count);
+
+            double maxIntensity = MatchedIons.Select(b => b.Intensity).Max();
+
+            foreach (MatchedFragmentIon matchedIon in MatchedIons)
+            {
+                double intensityFraction = matchedIon.Intensity / maxIntensity;
+
+                string neutralLoss = null;
+                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
+                {
+                    neutralLoss = "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss;
+                }
+
+                librarySpectrum.Append("\n" + matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
+                    matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +
+                    matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString() + "^" +
+                    matchedIon.Charge + neutralLoss + "/" + 0 + "ppm" + "\"");
+            }
+
+            return librarySpectrum.ToString();
         }
     }
 }

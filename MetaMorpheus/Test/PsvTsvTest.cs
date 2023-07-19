@@ -191,5 +191,24 @@ namespace Test
             Assert.That(psms[1].FullSequence.Equals(psms[1].ToString()));
             Assert.That(psms[2].FullSequence.Equals(psms[2].ToString()));
         }
+
+        [Test]
+        public static void TestSimpleToLibrarySpectrum() 
+        {
+            string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
+            List<string> warnings = new();
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).Take(3).ToList();
+            Assert.That(warnings.Count == 0);
+
+            string librarySpectrum = psms[0].ToLibrarySpectrum();
+
+            //File.WriteAllText(@"C:\Users\Michael Shortreed\Downloads\simple.msp", librarySpectrum);
+
+            string expectedLibrarySpectrum = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\simple.msp"));
+
+            Assert.AreEqual(expectedLibrarySpectrum, librarySpectrum);
+            Assert.That(librarySpectrum.Contains(psms[0].FullSequence.ToString()));
+
+        }
     }
 }
