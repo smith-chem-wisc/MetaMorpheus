@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using GuiFunctions;
 using NUnit.Framework;
+using Proteomics.Fragmentation;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -207,6 +208,15 @@ namespace Test
             string expectedLibrarySpectrum = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\simple.msp"));
 
             Assert.AreEqual(expectedLibrarySpectrum, librarySpectrum);
+
+            Product p = new Product(ProductType.bWaterLoss, FragmentationTerminus.N, 1, 1, 1, 18);
+
+            MatchedFragmentIon matchedIon = new(ref p, 1, 1, 1);
+
+            psms[0].MatchedIons.Add(matchedIon);
+
+            string librarySpectrumWithNeutralLoss = psms[0].ToLibrarySpectrum();
+            Assert.That(librarySpectrumWithNeutralLoss.Contains(""));
         }
     }
 }
