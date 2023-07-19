@@ -9,8 +9,6 @@ using EngineLayer.GlycoSearch;
 using System.IO;
 using Easy.Common.Extensions;
 using System.Text;
-using System.Xml.Linq;
-using System.Runtime.CompilerServices;
 
 namespace EngineLayer
 {
