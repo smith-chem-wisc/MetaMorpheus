@@ -203,20 +203,18 @@ namespace Test
 
             string librarySpectrum = psms[0].ToLibrarySpectrum();
 
-            //File.WriteAllText(@"C:\Users\Michael Shortreed\Downloads\simple.msp", librarySpectrum);
-
             string expectedLibrarySpectrum = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\simple.msp"));
 
             Assert.AreEqual(expectedLibrarySpectrum, librarySpectrum);
 
+            
+            //the code below tests the addition and correct output for neutral loss fragments
             Product p = new Product(ProductType.bWaterLoss, FragmentationTerminus.N, 1, 1, 1, 18);
-
             MatchedFragmentIon matchedIon = new(ref p, 1, 1, 1);
-
             psms[0].MatchedIons.Add(matchedIon);
-
             string librarySpectrumWithNeutralLoss = psms[0].ToLibrarySpectrum();
-            Assert.That(librarySpectrumWithNeutralLoss.Contains(""));
+
+            Assert.That(librarySpectrumWithNeutralLoss.Contains("WaterLoss"));
         }
     }
 }
