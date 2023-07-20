@@ -596,35 +596,10 @@ namespace EngineLayer
         {
             return FullSequence;
         }
-        public string ToLibrarySpectrum()
+        public LibrarySpectrum ToLibrarySpectrum()
         {
-            StringBuilder librarySpectrum = new StringBuilder();
-            librarySpectrum.Append("Name: " + FullSequence);
-            librarySpectrum.Append("\nMW: " + PrecursorMz);
-            librarySpectrum.Append("\nComment: ");
-            librarySpectrum.Append("Parent=" + PrecursorMz);
-            librarySpectrum.Append(" RT=" + RetentionTime);
-            librarySpectrum.Append("\nNum peaks: " + MatchedIons.Count);
-
-            double maxIntensity = MatchedIons.Select(b => b.Intensity).Max();
-
-            foreach (MatchedFragmentIon matchedIon in MatchedIons)
-            {
-                double intensityFraction = matchedIon.Intensity / maxIntensity;
-
-                string neutralLoss = null;
-                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0)
-                {
-                    neutralLoss = "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss;
-                }
-
-                librarySpectrum.Append("\n" + matchedIon.Mz + "\t" + intensityFraction + "\t" + "\"" +
-                    matchedIon.NeutralTheoreticalProduct.ProductType.ToString() +
-                    matchedIon.NeutralTheoreticalProduct.FragmentNumber.ToString() + "^" +
-                    matchedIon.Charge + neutralLoss + "/" + 0 + "ppm" + "\"");
-            }
-
-            return librarySpectrum.ToString();
+            bool isDecoy = this.DecoyContamTarget == "D";
+            return( new(this.FullSequence, this.PrecursorMz, this.PrecursorCharge, this.MatchedIons, this.RetentionTime.Value, isDecoy));
         }
     }
 }

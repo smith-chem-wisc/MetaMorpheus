@@ -201,7 +201,7 @@ namespace Test
             List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).Take(3).ToList();
             Assert.That(warnings.Count == 0);
 
-            string librarySpectrum = psms[0].ToLibrarySpectrum();
+            string librarySpectrum = psms[0].ToLibrarySpectrum().ToString();
 
             string expectedLibrarySpectrum = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\simple.msp"));
 
@@ -212,7 +212,7 @@ namespace Test
             Product p = new Product(ProductType.bWaterLoss, FragmentationTerminus.N, 1, 1, 1, 18);
             MatchedFragmentIon matchedIon = new(ref p, 1, 1, 1);
             psms[0].MatchedIons.Add(matchedIon);
-            string librarySpectrumWithNeutralLoss = psms[0].ToLibrarySpectrum();
+            string librarySpectrumWithNeutralLoss = psms[0].ToLibrarySpectrum().ToString();
 
             Assert.That(librarySpectrumWithNeutralLoss.Contains("WaterLoss"));
         }
