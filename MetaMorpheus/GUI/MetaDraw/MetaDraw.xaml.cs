@@ -608,7 +608,7 @@ namespace MetaMorpheusGUI
                 DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
                 "spectrumLibrary.msp");
 
-            File.WriteAllLines(directoryPath, items.Select(i => i.ToString()).ToArray());
+            File.WriteAllLines(directoryPath, items.Select(i => i.ToLibrarySpectrum().ToString()).ToArray());
 
             MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
 
