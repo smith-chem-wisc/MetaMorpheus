@@ -79,7 +79,7 @@ namespace MetaMorpheusGUI
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
 
-            ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
+            exportPdfs.Content = MetaDrawSettings.ExportType; ;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -421,7 +421,7 @@ namespace MetaMorpheusGUI
             var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
             var result = settingsWindow.ShowDialog();
 
-            ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
+            exportPdfs.Content = MetaDrawSettings.ExportType;
             // re-select selected PSM
             if (result == true)
             {
@@ -585,6 +585,33 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
             }
+        }
+
+        private void ExportSpectrumLibraryButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (dataGridScanNums.SelectedCells.Count == 0)
+            {
+                MessageBox.Show("Please select at least one scan to export");
+                return;
+            }
+
+            List<PsmFromTsv> items = new List<PsmFromTsv>();
+
+            foreach (var cell in dataGridScanNums.SelectedItems)
+            {
+                var psm = (PsmFromTsv)cell;
+                items.Add(psm);
+            }
+
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()),
+                "MetaDrawExport",    
+                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                "_spectrumLibrary.msp");
+
+            File.WriteAllLines(directoryPath, items.Select(i => i.ToString()).ToArray());
+
+            MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
+
         }
 
         private void SequenceCoverageExportButton_Click(object sender, RoutedEventArgs e)
@@ -1027,7 +1054,10 @@ namespace MetaMorpheusGUI
             resetPsmFileButton.IsEnabled = value;
             resetSpectraFileButton.IsEnabled = value;
             resetSpectraFileButton.IsEnabled = value;
-            ExportButton.IsEnabled = value;
+            exportPdfs.IsEnabled = value;
+            exportSpectrumLibrary.IsEnabled = value;
         }
+
+      
     }
 }
