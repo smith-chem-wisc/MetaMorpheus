@@ -83,12 +83,12 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
-            if (SearchParameters.DoQuantification)
+            if (SearchParameters.DoLabelFreeQuantification)
             {
                 // disable quantification if a .mgf is being used
                 if (currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
                 {
-                    SearchParameters.DoQuantification = false;
+                    SearchParameters.DoLabelFreeQuantification = false;
                 }
                 //if we're doing SILAC, assign and add the silac labels to the residue dictionary
                 else if (SearchParameters.SilacLabels != null || SearchParameters.StartTurnoverLabel != null || SearchParameters.EndTurnoverLabel != null)
@@ -129,7 +129,7 @@ namespace TaskLayer
                 }
             }
             //if no quant, remove any silac labels that may have been added, because they screw up downstream analysis
-            if (!SearchParameters.DoQuantification) //using "if" instead of "else", because DoQuantification can change if it's an mgf
+            if (!SearchParameters.DoLabelFreeQuantification) //using "if" instead of "else", because DoLabelFreeQuantification can change if it's an mgf
             {
                 SearchParameters.SilacLabels = null;
             }
@@ -396,7 +396,7 @@ namespace TaskLayer
                 FileSettingsList = fileSettingsList,
                 NumMs2SpectraPerFile = numMs2SpectraPerFile,
                 DatabaseFilenameList = dbFilenameList,
-                spectralLibrary = spectralLibrary
+                SpectralLibrary = spectralLibrary
             };
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
             {

@@ -36,5 +36,26 @@
         <Style x:Key="DataGridCenteredCellStyle" TargetType="TextBlock">
             <Setter Property="HorizontalAlignment" Value="Center"></Setter>
         </Style>
+
+        <!-- GroupBoxStyle -->
+        <Style TargetType="{x:Type GroupBox}" x:Key="GroupBoxStyle">
+            <Setter Property="BorderBrush" Value="{StaticResource ForegroundDarkBrush}"></Setter>
+            <Setter Property="BorderThickness" Value="2"></Setter>
+            <Setter Property="Margin" Value="5"></Setter>
+        </Style>
+
+        <!-- ValueEnteringStackPanel -->
+        <Style TargetType="{x:Type StackPanel}" x:Key="ValueEnteringStackPanel">
+            <Setter Property="Orientation" Value="Horizontal"></Setter>
+            <Setter Property="Margin" Value="5"></Setter>
+            <Setter Property="HorizontalAlignment" Value="Center"></Setter>
+        </Style>
+
+        <!-- TextBoxStyle -->
+        <Style TargetType="{x:Type TextBox}" x:Key="TextBoxStyle">
+            <Setter Property="HorizontalContentAlignment" Value="Center"></Setter>
+            <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
+            <Setter Property="Width" Value="40"></Setter>
+        </Style>
     </Application.Resources>
 </Application>

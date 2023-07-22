@@ -35,6 +35,10 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="3 0 0 0"/>
         </Style>
+        <Style TargetType="local:DoubleTextBoxControl">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="3 0 0 0"/>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -90,6 +94,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
@@ -229,6 +234,41 @@
                                         </TextBox.ToolTip>
                                     </TextBox>
                                 </StackPanel>
+
+                                <!-- Q-Value Filter -->
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="6">
+                                    <Label x:Name="QValueThreshold" Content="Q-Value Threshold:" Width="150" />
+                                    <local:DoubleTextBoxControl x:Name="QValueThresholdTextBox"  Width="45" 
+                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+                                             IsEnabled="{Binding ElementName=PepQValueThresholdCheckbox, Path=IsChecked, Converter={StaticResource InvertedBooleanConverter}}">
+                                        <TextBox.ToolTip>
+                                            <TextBlock>
+                                                   The maximum q-value of peptides used for quantification and spectral library generation. Protein group construction is not affected by this threshold.
+                                                <LineBreak />
+                                                    If the q-value threshold is set, PEP q-value filtering will not be performed.
+                                            </TextBlock>
+                                        </TextBox.ToolTip>
+                                    </local:DoubleTextBoxControl>
+                                </StackPanel>
+
+                                <!-- PEP Q-Value Filter -->
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="6">
+                                    <!-- pep 1-value button -->
+                                    <CheckBox x:Name="PepQValueThresholdCheckbox" Content="PEP Q-Value Threshold:" 
+                                                 IsChecked="False" Margin="5,5,5,0" />
+                                    <local:DoubleTextBoxControl x:Name="PepQValueThresholdTextBox"
+                                             IsEnabled="{Binding IsChecked, ElementName=PepQValueThresholdCheckbox}" Width="45"
+                                             Height="23" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox.ToolTip>
+                                            <TextBlock>
+                                                    The maximum q-value of peptides used for quantification and spectral library generation. Protein group construction is not affected by this threshold.
+                                                    <LineBreak />
+                                                    If the PEP q-value threshold is set, traditional q-value filtering will not be performed.
+                                            </TextBlock>
+                                        </TextBox.ToolTip>
+                                    </local:DoubleTextBoxControl>
+                                </StackPanel>
+
                             </Grid>
                         </StackPanel>
                     </GroupBox>
@@ -259,11 +299,6 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
-                                        <TreeView.ItemContainerStyle>
-                                            <Style TargetType="TreeViewItem">
-                                                <Setter Property="IsExpanded" Value="{Binding Expanded}" />
-                                            </Style>
-                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1" Margin="5 0 3 0">
@@ -293,11 +328,6 @@
                                                 </StackPanel>
                                             </DataTemplate>
                                         </TreeView.Resources>
-                                        <TreeView.ItemContainerStyle>
-                                            <Style TargetType="TreeViewItem">
-                                                <Setter Property="IsExpanded" Value="{Binding Expanded}" />
-                                            </Style>
-                                        </TreeView.ItemContainerStyle>
                                     </TreeView>
                                 </StackPanel>
                                 <TextBox x:Name="SearchFixMod" TextChanged="TextChanged_Fixed" HorizontalAlignment="Left" Margin="82,4,0,410" TextWrapping="Wrap" Width="140">
@@ -375,6 +405,7 @@
 
                     <!-- Quantification options -->
                     <GroupBox Header="Quantification" DockPanel.Dock="Top">
+                        <!-- Radio Buttons for Quant Method -->
                         <StackPanel Margin="5">
                             <RadioButton x:Name="CheckBoxNoQuant" Content="No quantification" GroupName="QuantType">
                                 <ToolTipService.ToolTip>
@@ -391,12 +422,19 @@
                                     <ToolTip Content="SILAC quantification is performed using FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
+                            <RadioButton x:Name="CheckBoxMultiplex" Content="Multiplex Quantification: Quantify peptides labeled with isobaric tags" GroupName="QuantType" Unchecked="MultiplexUpdate" Checked="MultiplexUpdate">
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Intensity of reporter ions are reported as additional columns in AllPeptides.psmtsv and AllPSMs.psmtsv" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                                </ToolTipService.ToolTip>
+                            </RadioButton>
                             <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery finds misidentified MS/MS spectra common in single-cell proteomics data" 
                                          GroupName="QuantType" Click="SpectralRecoveryUpdate">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Match between runs analysis via spectral library search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
+
+                            <!-- SILAC Options -->
                             <CheckBox x:Name="CheckBoxQuantifyUnlabeledForSilac" 
                                       Content="Quantify unlabeled peptides/proteins" 
                                       IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}"
@@ -424,6 +462,8 @@
                                     <Button x:Name="ClearSilac" Content="Clear" Click="ClearSilac_Click" IsEnabled="{Binding IsChecked, ElementName=CheckBoxSILAC}"/>
                                 </StackPanel>
                             </Grid>
+
+                            <!-- LFQ Options -->
                             <StackPanel Orientation="Horizontal">
                                 <TextBox x:Name="PeakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20">
                                     <TextBox.IsEnabled>
@@ -487,6 +527,25 @@
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+
+                            <!-- Multiplex Options -->
+                            <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
+                                <Label x:Name="MultiplexTag" Content="Label Type:" Width="75" 
+                                       Visibility="{Binding IsChecked, ElementName=CheckBoxMultiplex, Converter={StaticResource bool2VisConverter}}"/>
+                                <ComboBox x:Name="MultiplexComboBox" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" 
+                                          SelectionChanged="MultiplexUpdate"
+                                          IsEnabled="{Binding IsChecked, ElementName=CheckBoxMultiplex}"
+                                          Visibility="{Binding IsChecked, ElementName=CheckBoxMultiplex, Converter={StaticResource bool2VisConverter}}">
+                                    <ComboBox.ToolTip>
+                                        <TextBlock>
+                                            Isobaric label used for multiplexing
+                                            <LineBreak />
+                                            Labels can be added/modified by the user at "Data -> Open folder with mods/data files -> Mods -> tmt.txt"
+                                        </TextBlock>
+                                    </ComboBox.ToolTip>
+                                </ComboBox>
+                            </StackPanel>
+
                             <CheckBox x:Name="CheckBoxQuantifyAmbiguousPeptides" Content="Quantify ambiguous peptides">
                                 <CheckBox.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
@@ -531,6 +590,7 @@
                                 <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                                 <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                                 <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
+                                <CheckBox x:Name="WriteHighQPsmsCheckBox" Content="Write PSMs &amp; peptides with q-value above threshold"/>
                                 <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" IsEnabled="{Binding IsChecked, Converter={local:BooleanInverter}, ElementName=CheckBoxLFQwSpectralRecovery }"/>
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" />
@@ -541,43 +601,6 @@
                             <!-- filtering options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="1">
 
-                                <!-- pep 1-value button -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="400" />
-                                        <ColumnDefinition Width="50" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <RadioButton x:Name="PepQValueRadioButton" Content="Filter results to pep q-value:" 
-                                                 IsChecked="False" GroupName="Filtering" Checked="PepQValueRadioButton_Checked">
-                                        <ToolTipService.ToolTip>
-                                            Removes PSM and protein results from the written output below the input pep q-value.
-                                            Mutually exclusive with filter results to q-value
-                                        </ToolTipService.ToolTip>
-                                    </RadioButton>
-                                    <TextBox x:Name="PepQValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
-                                             IsEnabled="{Binding IsChecked, ElementName=PepQValueRadioButton}" Width="45" Height="23" />
-                                </Grid>
-                                
-                                <!-- q value button -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="400" />
-                                        <ColumnDefinition Width="50" />
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <RadioButton x:Name="QValueRadioButton" Content="Filter results to q-value:" 
-                                                 IsChecked="False" GroupName="Filtering" Checked="QValueRadioButton_Checked">
-                                        <ToolTipService.ToolTip>
-                                            Removes PSM and protein results from the written output below the input q-value.
-                                            Mutually exclusive with filter results to pep q-value
-                                        </ToolTipService.ToolTip>
-                                    </RadioButton>
-
-                                    <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
-                                             IsEnabled="{Binding IsChecked, ElementName=QValueRadioButton}" Width="45" Height="23" />
-                                </Grid>
-                                
                                 <!-- min score allowed box -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
