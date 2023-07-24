@@ -9,6 +9,7 @@ using EngineLayer.GlycoSearch;
 using System.IO;
 using Easy.Common.Extensions;
 using System.Text;
+using MathNet.Numerics;
 
 namespace EngineLayer
 {
@@ -599,7 +600,18 @@ namespace EngineLayer
         public LibrarySpectrum ToLibrarySpectrum()
         {
             bool isDecoy = this.DecoyContamTarget == "D";
-            return( new(this.FullSequence, this.PrecursorMz, this.PrecursorCharge, this.MatchedIons, this.RetentionTime.Value, isDecoy));
+
+            List<MatchedFragmentIon> fragments = new List<MatchedFragmentIon>();
+
+            double matchedIonIntensitySum = Math.Max(1.0, this.MatchedIons.Select(i => i.Intensity).Sum());
+
+            foreach (MatchedFragmentIon ion in this.MatchedIons)
+            {
+                Product product = new Product(ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.Terminus, ion.NeutralTheoreticalProduct.NeutralMass, ion.NeutralTheoreticalProduct.FragmentNumber, ion.NeutralTheoreticalProduct.AminoAcidPosition, ion.NeutralTheoreticalProduct.NeutralLoss);
+                fragments.Add(new MatchedFragmentIon(ref product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
+            }
+
+            return( new(this.FullSequence, this.PrecursorMz, this.PrecursorCharge, fragments, this.RetentionTime.Value, isDecoy));
         }
     }
 }

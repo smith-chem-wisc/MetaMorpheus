@@ -597,8 +597,14 @@ namespace MetaMorpheusGUI
 
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()),
                 "MetaDrawExport",    
-                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
-                "spectrumLibrary.msp");
+                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            if(!Directory.Exists(directoryPath)) 
+            { 
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            directoryPath = Path.Combine(directoryPath, "spectrumLibrary.msp");
 
             File.WriteAllLines(directoryPath, items.Select(i => i.ToLibrarySpectrum().ToString()).ToArray());
 
