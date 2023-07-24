@@ -523,14 +523,18 @@ namespace EngineLayer
         {
             var childScanMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();
 
-            foreach (var childScan in childScanMatchedMzString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)))
-            {
-                var split1 = childScan.Split(new char[] { '@' });
-                int scanNumber = int.Parse(split1[0].Trim(new char[] { '{' }));
-                string matchedIonsString = split1[1];
-                var childMatchedIons = ReadFragmentIonsFromString(matchedIonsString, childScanMatchedIntensitiesString, peptideBaseSequence);
-                childScanMatchedIons.Add(scanNumber, childMatchedIons);
-            }
+            string[] matchedMzString = childScanMatchedMzString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+            string[] matchedIntensityString = childScanMatchedIntensitiesString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+
+            string[] mzsplit = matchedMzString[0].Split(new char[] { '@' });
+            string[] intSplit = matchedIntensityString[0].Split(new char[] { '@' });
+
+            int scanNumber = int.Parse(mzsplit[0].Trim(new char[] { '{' }));
+            string matchedMzStrings = mzsplit[1];
+            string matchedIntensityStrings = intSplit[1];
+
+            var childMatchedIons = ReadFragmentIonsFromString(matchedMzStrings, matchedIntensityStrings, peptideBaseSequence);
+            childScanMatchedIons.Add(scanNumber, childMatchedIons);
 
             return childScanMatchedIons;
         }
