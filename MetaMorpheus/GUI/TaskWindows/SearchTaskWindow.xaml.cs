@@ -189,8 +189,8 @@ namespace MetaMorpheusGUI
             CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
             CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
             MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
-            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoQuantification;
-            CheckBoxLFQ.IsChecked = task.SearchParameters.DoQuantification;
+            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification && !task.SearchParameters.DoMultiplexQuantification;
+            CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
             CheckBoxQuantifyAmbiguousPeptides.IsChecked = task.SearchParameters.QuantifyAmbiguousPeptides;
             // If Spectral Recovery is enabled
             if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)

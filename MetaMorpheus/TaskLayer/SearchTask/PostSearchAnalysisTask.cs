@@ -590,9 +590,28 @@ namespace TaskLayer
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
+
             if (flashLFQIdentifications.Any())
             {
-                Parameters.FlashLfqResults = FlashLfqEngine.Run();
+                Parameters.FlashLfqResults = FlashLfqEngine.Run(out List<Exception> exceptions);
+                if(Parameters.SearchParameters.QuantifyAmbiguousPeptides)
+                {
+                    var outputFile = Path.Combine(Parameters.OutputFolder, "QuantificationErrorList.txt");
+                    using (StreamWriter writer = new StreamWriter(outputFile))
+                    {
+                        if (exceptions.IsNotNullOrEmpty())
+                        {
+                            foreach(Exception e in exceptions)
+                            {
+                                writer.WriteLine(e.StackTrace);
+                            }
+                        }
+                        else
+                        {
+                            writer.WriteLine("No errors to report. Great job!");
+                        }
+                    }
+                }
             }
 
             // get protein intensity back from FlashLFQ
