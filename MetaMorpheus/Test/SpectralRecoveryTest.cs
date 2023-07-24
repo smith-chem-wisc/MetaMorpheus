@@ -297,7 +297,7 @@ namespace Test
 
             var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
             var list = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
-            string matchingvalue = list.Where(p => p.Contains("spectralLibrary")).First().ToString();
+            string matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
             var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
 
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("IAGQVAAANK", 2, out var spectrum));
@@ -345,8 +345,18 @@ namespace Test
 
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
-            testLibraryWithoutDecoy.CloseConnections();
-           
+            // Test spectral library update
+            postSearchTask.Parameters.SearchParameters.UpdateSpectralLibrary = true;
+            postSearchTask.Parameters.SpectralLibrary = testLibraryWithoutDecoy;
+            postSearchTask.Run();
+
+            var libraryList = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            string updateLibraryPath = libraryList.First(p => p.Contains("SpectralLibrary") && !p.Contains(matchingvalue)).ToString();
+            var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
+            Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
+
+            testLibraryWithoutDecoy.CloseConnections(); 
+            updatedLibraryWithoutDecoy.CloseConnections();
         }
 
         [Test]

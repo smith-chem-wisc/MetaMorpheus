@@ -65,20 +65,19 @@ namespace Test
         [Test]
         public static void TestQValueFilter()
         {
-            SearchTask searchTask = new SearchTask()
-            {
-                CommonParameters = new CommonParameters
-                (
-                    qValueOutputFilter: 1
-                )
-            };
+            // Output filtering is not performed using default settings for CommonParameters
+            SearchTask searchTask = new SearchTask();
 
             SearchTask searchTask2 = new SearchTask()
             {
                 CommonParameters = new CommonParameters
                 (
-                    qValueOutputFilter: 0
-                )
+                    qValueThreshold: 0
+                ),
+                SearchParameters = new SearchParameters
+                {
+                    WriteHighQValuePsms = false
+                }
             };
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPSMOutput");
@@ -147,7 +146,6 @@ namespace Test
 
             //Filter decoys
             SearchTask searchTaskDecoy = new SearchTask();
-
             searchTaskDecoy.SearchParameters.WriteDecoys = false;
 
             var engineDecoy = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("DecoyTest", searchTaskDecoy) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);

@@ -66,11 +66,13 @@ namespace GuiFunctions
             }
             double canvasWidth = SequenceDrawingCanvas.Width;
             int spacing = 12;
+            int psmStartResidue = psm.StartAndEndResiduesInProtein != null
+                    ? int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""))
+                    : 0;
 
             // draw initial amino acid number
             if (stationary && MetaDrawSettings.DrawNumbersUnderStationary)
             {
-                int psmStartResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""));
                 var startAA = (MetaDrawSettings.FirstAAonScreenIndex + psmStartResidue).ToString().ToCharArray().Reverse().ToArray();
                 double x = 22;
 
@@ -108,7 +110,6 @@ namespace GuiFunctions
             // draw final amino acid number
             if (stationary && MetaDrawSettings.DrawNumbersUnderStationary)
             {
-                int psmStartResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""));
                 var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmStartResidue - 1).ToString();
                 canvasWidth += spacing;
                 double x = canvasWidth;

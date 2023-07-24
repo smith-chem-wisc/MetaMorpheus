@@ -35,6 +35,10 @@
             <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Padding" Value="3 0 0 0"/>
         </Style>
+        <Style TargetType="local:DoubleTextBoxControl">
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Padding" Value="3 0 0 0"/>
+        </Style>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
@@ -90,6 +94,7 @@
                                 </Grid.ColumnDefinitions>
 
                                 <Grid.RowDefinitions>
+                                    <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
                                     <RowDefinition Height="1*"/>
@@ -229,6 +234,41 @@
                                         </TextBox.ToolTip>
                                     </TextBox>
                                 </StackPanel>
+
+                                <!-- Q-Value Filter -->
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="6">
+                                    <Label x:Name="QValueThreshold" Content="Q-Value Threshold:" Width="150" />
+                                    <local:DoubleTextBoxControl x:Name="QValueThresholdTextBox"  Width="45" 
+                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+                                             IsEnabled="{Binding ElementName=PepQValueThresholdCheckbox, Path=IsChecked, Converter={StaticResource InvertedBooleanConverter}}">
+                                        <TextBox.ToolTip>
+                                            <TextBlock>
+                                                   The maximum q-value of peptides used for quantification and spectral library generation. Protein group construction is not affected by this threshold.
+                                                <LineBreak />
+                                                    If the q-value threshold is set, PEP q-value filtering will not be performed.
+                                            </TextBlock>
+                                        </TextBox.ToolTip>
+                                    </local:DoubleTextBoxControl>
+                                </StackPanel>
+
+                                <!-- PEP Q-Value Filter -->
+                                <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="1" Grid.Row="6">
+                                    <!-- pep 1-value button -->
+                                    <CheckBox x:Name="PepQValueThresholdCheckbox" Content="PEP Q-Value Threshold:" 
+                                                 IsChecked="False" Margin="5,5,5,0" />
+                                    <local:DoubleTextBoxControl x:Name="PepQValueThresholdTextBox"
+                                             IsEnabled="{Binding IsChecked, ElementName=PepQValueThresholdCheckbox}" Width="45"
+                                             Height="23" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <TextBox.ToolTip>
+                                            <TextBlock>
+                                                    The maximum q-value of peptides used for quantification and spectral library generation. Protein group construction is not affected by this threshold.
+                                                    <LineBreak />
+                                                    If the PEP q-value threshold is set, traditional q-value filtering will not be performed.
+                                            </TextBlock>
+                                        </TextBox.ToolTip>
+                                    </local:DoubleTextBoxControl>
+                                </StackPanel>
+
                             </Grid>
                         </StackPanel>
                     </GroupBox>
@@ -533,6 +573,7 @@
                                 <!--<CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />-->
                                 <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                                 <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
+                                <CheckBox x:Name="WriteHighQPsmsCheckBox" Content="Write PSMs &amp; peptides with q-value above threshold"/>
                                 <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" IsEnabled="{Binding IsChecked, Converter={local:BooleanInverter}, ElementName=CheckBoxLFQwSpectralRecovery }"/>
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" />
@@ -543,43 +584,6 @@
                             <!-- filtering options -->
                             <StackPanel Orientation="Vertical" Margin="5" Grid.Column="1">
 
-                                <!-- pep 1-value button -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="400" />
-                                        <ColumnDefinition Width="50" />
-                                    </Grid.ColumnDefinitions>
-
-                                    <RadioButton x:Name="PepQValueRadioButton" Content="Filter results to pep q-value:" 
-                                                 IsChecked="False" GroupName="Filtering" Checked="PepQValueRadioButton_Checked">
-                                        <ToolTipService.ToolTip>
-                                            Removes PSM and protein results from the written output below the input pep q-value.
-                                            Mutually exclusive with filter results to q-value
-                                        </ToolTipService.ToolTip>
-                                    </RadioButton>
-                                    <TextBox x:Name="PepQValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
-                                             IsEnabled="{Binding IsChecked, ElementName=PepQValueRadioButton}" Width="45" Height="23" />
-                                </Grid>
-                                
-                                <!-- q value button -->
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="400" />
-                                        <ColumnDefinition Width="50" />
-                                    </Grid.ColumnDefinitions>
-                                    
-                                    <RadioButton x:Name="QValueRadioButton" Content="Filter results to q-value:" 
-                                                 IsChecked="False" GroupName="Filtering" Checked="QValueRadioButton_Checked">
-                                        <ToolTipService.ToolTip>
-                                            Removes PSM and protein results from the written output below the input q-value.
-                                            Mutually exclusive with filter results to pep q-value
-                                        </ToolTipService.ToolTip>
-                                    </RadioButton>
-
-                                    <TextBox x:Name="QValueTextBox" PreviewTextInput="CheckIfNumber" Margin="10,0,0,0" 
-                                             IsEnabled="{Binding IsChecked, ElementName=QValueRadioButton}" Width="45" Height="23" />
-                                </Grid>
-                                
                                 <!-- min score allowed box -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
