@@ -128,9 +128,11 @@ namespace EngineLayer
             Score = double.Parse(spl[parsedHeader[PsmTsvHeader.Score]].Trim(), CultureInfo.InvariantCulture);
             DecoyContamTarget = spl[parsedHeader[PsmTsvHeader.DecoyContaminantTarget]].Trim();
             QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.QValue]].Trim(), CultureInfo.InvariantCulture);
+
             MatchedIons = (spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ?
                 ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq).First().Value : 
                 ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq, spl[parsedHeader[PsmTsvHeader.MatchedIonMassDiffDa]].Trim());
+
             AmbiguityLevel = (parsedHeader[PsmTsvHeader.AmbiguityLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.AmbiguityLevel]].Trim();
 
             //For general psms
@@ -526,15 +528,18 @@ namespace EngineLayer
             string[] matchedMzString = childScanMatchedMzString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
             string[] matchedIntensityString = childScanMatchedIntensitiesString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
 
-            string[] mzsplit = matchedMzString[0].Split(new char[] { '@' });
-            string[] intSplit = matchedIntensityString[0].Split(new char[] { '@' });
+            for (int i = 0; i < matchedMzString.Length; i++)
+            {
+                string[] mzsplit = matchedMzString[i].Split(new char[] { '@' });
+                string[] intSplit = matchedIntensityString[i].Split(new char[] { '@' });
 
-            int scanNumber = int.Parse(mzsplit[0].Trim(new char[] { '{' }));
-            string matchedMzStrings = mzsplit[1];
-            string matchedIntensityStrings = intSplit[1];
+                int scanNumber = int.Parse(mzsplit[0].Trim(new char[] { '{' }));
+                string matchedMzStrings = mzsplit[1];
+                string matchedIntensityStrings = intSplit[1];
 
-            var childMatchedIons = ReadFragmentIonsFromString(matchedMzStrings, matchedIntensityStrings, peptideBaseSequence);
-            childScanMatchedIons.Add(scanNumber, childMatchedIons);
+                var childMatchedIons = ReadFragmentIonsFromString(matchedMzStrings, matchedIntensityStrings, peptideBaseSequence);
+                childScanMatchedIons.Add(scanNumber, childMatchedIons);
+            }
 
             return childScanMatchedIons;
         }
