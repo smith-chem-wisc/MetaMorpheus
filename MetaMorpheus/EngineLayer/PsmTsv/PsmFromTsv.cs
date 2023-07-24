@@ -533,6 +533,13 @@ namespace EngineLayer
             return childScanMatchedIons;
         }
 
+        /// <summary>
+        /// This method ignores MS3 scans, reporting only the original MS2
+        /// </summary>
+        /// <param name="childScanMatchedMzString"></param>
+        /// <param name="childScanMatchedIntensitiesString"></param>
+        /// <param name="peptideBaseSequence"></param>
+        /// <returns></returns>
         private static Dictionary<int, List<MatchedFragmentIon>> ReadChildScanMatchedIons(string childScanMatchedMzString, string childScanMatchedIntensitiesString, string peptideBaseSequence)
         {
             var childScanMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();
@@ -540,26 +547,16 @@ namespace EngineLayer
             string[] matchedMzString = childScanMatchedMzString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
             string[] matchedIntensityString = childScanMatchedIntensitiesString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
 
-            for (int i = 0; i < matchedMzString.Length; i++)
-            {
-                string[] mzsplit = matchedMzString[i].Split(new char[] { '@' });
-                string[] intSplit = matchedIntensityString[i].Split(new char[] { '@' });
+            string[] mzsplit = matchedMzString[0].Split(new char[] { '@' });
+            string[] intSplit = matchedIntensityString[0].Split(new char[] { '@' });
 
-                int scanNumber = int.Parse(mzsplit[0].Trim(new char[] { '{' }));
-                string matchedMzStrings = mzsplit[1];
-                string matchedIntensityStrings = intSplit[1];
+            int scanNumber = int.Parse(mzsplit[0].Trim(new char[] { '{' }));
+            string matchedMzStrings = mzsplit[1];
+            string matchedIntensityStrings = intSplit[1];
 
-                var childMatchedIons = ReadFragmentIonsFromString(matchedMzStrings, matchedIntensityStrings, peptideBaseSequence);
-                if (childScanMatchedIons.ContainsKey(scanNumber))
-                {
-                    childScanMatchedIons[scanNumber].AddRange(childMatchedIons);
-                }
-                else
-                {
-                    childScanMatchedIons.Add(scanNumber, childMatchedIons);
-                }
-                
-            }
+            var childMatchedIons = ReadFragmentIonsFromString(matchedMzStrings, matchedIntensityStrings, peptideBaseSequence);
+            childScanMatchedIons.Add(scanNumber, childMatchedIons);
+
 
             return childScanMatchedIons;
         }
