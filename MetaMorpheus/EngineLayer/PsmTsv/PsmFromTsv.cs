@@ -517,7 +517,7 @@ namespace EngineLayer
             return ionProperty;
         }
 
-        private static Dictionary<int, List<MatchedFragmentIon>> ReadChildScanMatchedIons(string childScanMatchedMzString, string childScanMatchedIntensitiesString, string peptideBaseSequence)
+        private static Dictionary<int, List<MatchedFragmentIon>> ReadChildScanMatchedIonsBADDD(string childScanMatchedMzString, string childScanMatchedIntensitiesString, string peptideBaseSequence)
         {
             var childScanMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();
 
@@ -532,6 +532,38 @@ namespace EngineLayer
 
             return childScanMatchedIons;
         }
+
+        private static Dictionary<int, List<MatchedFragmentIon>> ReadChildScanMatchedIons(string childScanMatchedMzString, string childScanMatchedIntensitiesString, string peptideBaseSequence)
+        {
+            var childScanMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();
+
+            string[] matchedMzString = childScanMatchedMzString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+            string[] matchedIntensityString = childScanMatchedIntensitiesString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+
+            for (int i = 0; i < matchedMzString.Length; i++)
+            {
+                string[] mzsplit = matchedMzString[i].Split(new char[] { '@' });
+                string[] intSplit = matchedIntensityString[i].Split(new char[] { '@' });
+
+                int scanNumber = int.Parse(mzsplit[0].Trim(new char[] { '{' }));
+                string matchedMzStrings = mzsplit[1];
+                string matchedIntensityStrings = intSplit[1];
+
+                var childMatchedIons = ReadFragmentIonsFromString(matchedMzStrings, matchedIntensityStrings, peptideBaseSequence);
+                if (childScanMatchedIons.ContainsKey(scanNumber))
+                {
+                    childScanMatchedIons[scanNumber].AddRange(childMatchedIons);
+                }
+                else
+                {
+                    childScanMatchedIons.Add(scanNumber, childMatchedIons);
+                }
+                
+            }
+
+            return childScanMatchedIons;
+        }
+
 
         // finds the ions that contain variant residues using the position in IdentifiedSequenceVariations. When the variation spans 
         // multiple residues, if any part is contained in an ion, the ion is marked as variant crossing.
