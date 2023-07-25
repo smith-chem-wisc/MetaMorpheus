@@ -197,20 +197,23 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 double protonMassShift = massShift.ToMass(1);
                                 protonMassShift = Chemistry.ClassExtensions.ToMass(protonMassShift, 1);
                                 fragmentBin = (int)Math.Round((scan.PrecursorMass + protonMassShift - masses[i]) / 1.0005079);
-                                bin = FragmentIndex[fragmentBin];
 
-                                //score
-                                if (bin != null)
+                                if(fragmentBin >= 0) //if the fragments contain the precursor than this code would break
                                 {
-                                    for (int pep = 0; pep < bin.Count; pep++)
+                                    bin = FragmentIndex[fragmentBin];
+
+                                    //score
+                                    if (bin != null)
                                     {
-                                        scoringTable[bin[pep]]++;
+                                        for (int pep = 0; pep < bin.Count; pep++)
+                                        {
+                                            scoringTable[bin[pep]]++;
+                                        }
                                     }
                                 }
+                                
                             }
                         }
-
-                        
                     }
                 }
             }
