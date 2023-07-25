@@ -217,7 +217,6 @@ namespace Test
                 CommonParameters = new CommonParameters
                 (
                     digestionParams: new DigestionParams(minPeptideLength: 2),
-
                     scoreCutoff: 1,
                     deconvolutionIntensityRatio: 999,
                     deconvolutionMassTolerance: new PpmTolerance(50)
