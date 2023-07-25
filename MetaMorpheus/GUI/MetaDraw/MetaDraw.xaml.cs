@@ -1,10 +1,7 @@
+using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
-using Nett;
 using OxyPlot;
-using Proteomics;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -15,14 +12,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace MetaMorpheusGUI
 {
@@ -78,7 +71,7 @@ namespace MetaMorpheusGUI
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
 
-            ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
+            exportPdfs.Content = MetaDrawSettings.ExportType; ;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -261,7 +254,10 @@ namespace MetaMorpheusGUI
             {
                 
                 int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
-                descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
+                if (psm.ProteinName.IsNotNullOrEmptyOrWhiteSpace())
+                {
+                    descriptionLineCount += (int)Math.Floor((psm.ProteinName.Length - 20) / 26.0);
+                }
                 if (psm.ProteinAccession.Length > 10)
                     descriptionLineCount++;
                 double verticalOffset = descriptionLineCount * 14;
@@ -417,7 +413,7 @@ namespace MetaMorpheusGUI
             var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
             var result = settingsWindow.ShowDialog();
 
-            ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
+            exportPdfs.Content = MetaDrawSettings.ExportType;
             // re-select selected PSM
             if (result == true)
             {
@@ -581,6 +577,39 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
             }
+        }
+
+        private void ExportSpectrumLibraryButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (dataGridScanNums.SelectedCells.Count == 0)
+            {
+                MessageBox.Show("Please select at least one scan to export");
+                return;
+            }
+
+            List<PsmFromTsv> items = new List<PsmFromTsv>();
+
+            foreach (var cell in dataGridScanNums.SelectedItems)
+            {
+                var psm = (PsmFromTsv)cell;
+                items.Add(psm);
+            }
+
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()),
+                "MetaDrawExport",    
+                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            if(!Directory.Exists(directoryPath)) 
+            { 
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            directoryPath = Path.Combine(directoryPath, "spectrumLibrary.msp");
+
+            File.WriteAllLines(directoryPath, items.Select(i => i.ToLibrarySpectrum().ToString()).ToArray());
+
+            MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
+
         }
 
         private void SequenceCoverageExportButton_Click(object sender, RoutedEventArgs e)
@@ -1023,7 +1052,10 @@ namespace MetaMorpheusGUI
             resetPsmFileButton.IsEnabled = value;
             resetSpectraFileButton.IsEnabled = value;
             resetSpectraFileButton.IsEnabled = value;
-            ExportButton.IsEnabled = value;
+            exportPdfs.IsEnabled = value;
+            exportSpectrumLibrary.IsEnabled = value;
         }
+
+      
     }
 }
