@@ -603,7 +603,7 @@ namespace TaskLayer
                         {
                             foreach(Exception e in exceptions)
                             {
-                                writer.WriteLine(e.StackTrace);
+                                writer.WriteLine(e.ToString());
                             }
                         }
                         else

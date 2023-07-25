@@ -337,6 +337,9 @@ namespace EngineLayer
                 }
                 MetaMorpheusVersion = MetaMorpheusVersion.Substring(0, foundIndexes.Last());
             }
+
+            // Change this before release!!!
+            MetaMorpheusVersion = "Alpha - Multi-Run Consensus v1.0";
         }
 
         private static void SetUpDataDirectory()
