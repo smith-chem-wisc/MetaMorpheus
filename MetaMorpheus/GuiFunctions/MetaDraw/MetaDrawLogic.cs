@@ -130,6 +130,7 @@ namespace GuiFunctions
                 return;
             }
 
+            spectraFile.InitiateDynamicConnection();
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
             
             LibrarySpectrum librarySpectrum = null;
@@ -236,6 +237,7 @@ namespace GuiFunctions
 
                     CurrentlyDisplayedPlots.Add(childPlot);
                 }
+                spectraFile.CloseDynamicConnection();
             }
         }
 
@@ -551,6 +553,8 @@ namespace GuiFunctions
                     switch (type.Name)
                     {
                         case "PeptideSpectrumMatchPlot":
+                            if (!plot.SpectrumMatch.FullSequence.Contains('['))
+                                legendCanvas = null;
                             ((PeptideSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;

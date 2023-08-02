@@ -1,35 +1,17 @@
 ﻿using GuiFunctions.Databases;
 using NUnit.Framework;
+using Proteomics;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
     [TestFixture]
     public static class GuiFunctionsTest
     {
-        [Test]
-        [TestCase("UP000000625", true, false, false, true, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&reviewed=true&compressed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, true, false, true, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&includeIsoform=true&compressed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, true, false, false, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&includeIsoform=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, false, false, true, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&compressed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, false, false, false, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, false, true, true, "https://rest.uniprot.org/uniprotkb/stream?format=xml&compressed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, false, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", true, true, true, true, "https://rest.uniprot.org/uniprotkb/stream?format=xml&reviewed=true&compressed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", true, true, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&reviewed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", true, true, false, true, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&includeIsoform=true&reviewed=true&compressed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", true, false, true, true, "https://rest.uniprot.org/uniprotkb/stream?format=xml&reviewed=true&compressed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, true, true, true, "https://rest.uniprot.org/uniprotkb/stream?format=xml&compressed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", true, true, false, false, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&includeIsoform=true&reviewed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", true, false, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&reviewed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, true, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", true, false, false, false, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&reviewed=true&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, false, true, false, "https://rest.uniprot.org/uniprotkb/stream?format=xml&query=%28%28proteome%3AUP000000625%29%29")]
-        [TestCase("UP000000625", false, false, false, false, "https://rest.uniprot.org/uniprotkb/stream?format=fasta&query=%28%28proteome%3AUP000000625%29%29")]
-        public static void TestGetUniProtHtmlQueryString(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed, string expectedResult)
-        {
-            string queryString = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed, isoforms, xmlFormat, compressed);
-            Assert.AreEqual(expectedResult, queryString);
-        }
 
         [Test]
         [TestCase("UP000000625", true, true, true, true, "\\UP000000625_reviewed.xml.gz")]
@@ -47,6 +29,63 @@ namespace Test
         {
             string filename = DownloadUniProtDatabaseFunctions.GetUniprotFilename(proteomeID, reviewed, isoforms, xmlFormat, compressed);
             Assert.AreEqual(expectedResult, filename);
+        }
+
+        [Test]
+        [Parallelizable(ParallelScope.All)]
+        [TestCase("UP000000280", true, true, true, true, "1.fasta.gz", 50)]
+        [TestCase("UP000000280", true, true, true, false, "2.fasta", 50)]
+        [TestCase("UP000000280", true, true, false, true, "3.fasta.gz", 40)]
+        [TestCase("UP000000280", true, false, true, true, "4.xml.gz", 50)]
+        [TestCase("UP000000280", false, true, true, true, "5.fasta.gz", 2)]
+        [TestCase("UP000000280", true, true, false, false, "6.fasta", 50)]
+        [TestCase("UP000000280", true, false, true, false, "7.xml", 50)]
+        [TestCase("UP000000280", false, true, true, false, "8.fasta", 2)]
+        [TestCase("UP000000280", true, false, false, false, "9.fasta", 50)]
+        [TestCase("UP000000280", false, false, true, false, "10.xml", 2)]
+        [TestCase("UP000000280", false, false, false, false, "11.fasta", 2)]
+        public static async Task UniprotHtmlQueryTest(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed,
+           string testName, int listCount)
+        {
+            var proteomeURL = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed,
+                isoforms, xmlFormat, compressed);
+
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, $@"DatabaseTests\{testName}");
+
+            List<Protein> reader = new List<Protein>();
+
+
+
+            HttpClientHandler handler = new HttpClientHandler(); // without this, the download is very slow
+            handler.Proxy = null;
+            handler.UseProxy = false;
+
+            var client = new HttpClient(handler); // client for using the REST Api
+            var response = await client.GetAsync(proteomeURL);
+
+            using (var file = File.Create(filePath)) // saves the file 
+            {
+                var content = await response.Content.ReadAsStreamAsync();
+                await content.CopyToAsync(file);
+            }
+
+
+            if (xmlFormat)
+            {
+                reader = ProteinDbLoader.LoadProteinXML(proteinDbLocation: filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                    allKnownModifications: null, isContaminant: false, modTypesToExclude: null, out var unknownMod);
+            }
+            else
+            {
+                reader = ProteinDbLoader.LoadProteinFasta(filePath, generateTargets: true, decoyType: DecoyType.Reverse,
+                    isContaminant: false, out var unknownMod);
+            }
+
+            File.Delete(filePath);
+
+
+            Assert.That(reader.Count == listCount);
+
         }
     }
 }
