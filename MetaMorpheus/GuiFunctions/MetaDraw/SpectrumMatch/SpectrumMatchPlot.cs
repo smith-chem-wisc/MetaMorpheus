@@ -10,11 +10,13 @@ using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Chemistry;
+using Easy.Common.Extensions;
 using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using MassSpectrometry;
+using MassSpectrometry.MzSpectra;
 using mzPlot;
 using OxyPlot;
 using OxyPlot.Annotations;
@@ -408,7 +410,7 @@ namespace GuiFunctions
             Model.Axes[1].LabelFormatter = DrawnSequence.YAxisLabelFormatter;
         }
 
-        protected void AnnotateProperties()
+        protected void AnnotateProperties(LibrarySpectrum librarySpectrum = null)
         {
             StringBuilder text = new StringBuilder();
             if (MetaDrawSettings.SpectrumDescription["Precursor Charge: "])
@@ -483,12 +485,16 @@ namespace GuiFunctions
             }
             if (MetaDrawSettings.SpectrumDescription["Spectral Angle: "])
             {
-                text.Append("Spectral Angle: ");
+                text.Append("Original Spectral Angle: ");
                 if (SpectrumMatch.SpectralAngle != null)
-                    text.Append(SpectrumMatch.SpectralAngle.ToString());
+                    text.Append(SpectrumMatch.SpectralAngle.ToString() + "\r\n");
                 else
-                    text.Append("N/A");
-                text.Append("\r\n");
+                    text.Append("N/A" + "\r\n");
+                if (librarySpectrum != null)
+                {
+                    text.Append("This Spectral Angle: ");
+                    text.Append(CalculateSpectralAngleOnTheFly(librarySpectrum) + "\r\n");
+                }
             }
             if (MetaDrawSettings.SpectrumDescription["Score: "])
             {
@@ -528,6 +534,31 @@ namespace GuiFunctions
             };
 
             Model.Annotations.Add(annotation);
+        }
+
+        /// <summary>
+        /// This function enables the spectrum angle to be computed between an individual experimental spectrum and the loaded library spectrum within MetaDraw
+        /// </summary>
+        /// <param name="librarySpectrum"></param>
+        /// <returns></returns>
+        public string CalculateSpectralAngleOnTheFly(LibrarySpectrum librarySpectrum)
+        {
+            List<MatchedFragmentIon> spectrumMatchFragments = new(SpectrumMatch.MatchedIons);
+            List<MatchedFragmentIon> libraryFragments = new(librarySpectrum.MatchedFragmentIons);
+
+            SpectralSimilarity spectraComparison = new SpectralSimilarity(
+                spectrumMatchFragments.Select(f => f.Mz).ToArray(),
+                spectrumMatchFragments.Select(f => f.Intensity).ToArray(),
+                libraryFragments.Select(f => f.Mz).ToArray(),
+                libraryFragments.Select(f => f.Intensity).ToArray(),
+                SpectralSimilarity.SpectrumNormalizationScheme.mostAbundantPeak,
+                toleranceInPpm: 20,
+                allPeaks: true);
+            double? spectralContrastAngle = spectraComparison.SpectralContrastAngle();
+
+            return spectralContrastAngle == null
+                ? "N/A"
+                : ((double)spectralContrastAngle).ToString("F4");
         }
     }
 

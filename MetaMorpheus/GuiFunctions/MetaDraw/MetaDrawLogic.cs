@@ -131,7 +131,14 @@ namespace GuiFunctions
             }
 
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
+            
             LibrarySpectrum librarySpectrum = null;
+            if (SpectralLibrary != null)
+            {
+                SpectralLibrary.TryGetSpectrum(psm.FullSequence, psm.PrecursorCharge, out var librarySpectrum1);
+                librarySpectrum = librarySpectrum1;
+            }
+
             //if not crosslinked
             if (psm.BetaPeptideBaseSequence == null)
             {
