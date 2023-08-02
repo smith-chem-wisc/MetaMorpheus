@@ -32,6 +32,8 @@ namespace EngineLayer
             {
                 DeconvolutedMonoisotopicMasses = new double[0];
             }
+
+            Scores = new List<double>();
         }
 
         public MsDataScan TheScan { get; }
@@ -53,6 +55,52 @@ namespace EngineLayer
         public int NumPeaks => TheScan.MassSpectrum.Size;
 
         public double TotalIonCurrent => TheScan.TotalIonCurrent;
+        public List<double> Scores { get; set; }
+
+        public void AddNewScore(double score)
+        {
+            Scores.Add(score);
+        }
+
+        public double ComputeTailorDenominator()
+        {
+            if (Scores.Count() == 0)
+            {
+                return 1;
+            }
+            else
+            {
+                //sort ascending
+                Scores.Sort();
+
+                int positionOfThe100thQuantile = (int)Math.Round((double)Scores.Count / 100.0, 0) - 1;
+
+                if (positionOfThe100thQuantile > 0)
+                {
+                    return Math.Max(1, Scores.ToArray()[0..positionOfThe100thQuantile].Average());
+                }
+                return Math.Max(1, Scores[0]);
+            }
+        }
+        public double ComputeTailorScore()
+        {
+            if (Scores.Count() == 0)
+            {
+                return 1;
+            }
+            else
+            {
+                //sort ascending
+                Scores.Sort();
+
+                int positionOfThe100thQuantile = (int)Math.Round((double)Scores.Count / 100.0, 0);
+                double tailorNumerator = Scores.Max();
+
+                double tailorDenominator = Math.Max(1, Scores.ToArray()[0..positionOfThe100thQuantile].Average());
+                
+                return tailorNumerator/tailorDenominator;
+            }
+        }
 
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
