@@ -515,14 +515,15 @@ namespace GuiFunctions
 
             if (MetaDrawSettings.SpectrumDescription["Spectral Angle: "])
             {
-                text.Append("Original Spectral Angle: ");
                 if (SpectrumMatch.SpectralAngle != null)
+                {
+                    text.Append("Original Spectral Angle: ");
                     text.Append(SpectrumMatch.SpectralAngle.ToString() + "\r\n");
-                else
-                    text.Append("N/A" + "\r\n");
+                }
+
                 if (librarySpectrum != null)
                 {
-                    text.Append("This Spectral Angle: ");
+                    text.Append("Displayed Spectral Angle: ");
                     text.Append(librarySpectrum.CalculateSpectralAngleOnTheFly(this.matchedFragmentIons) + "\r\n");
                 }
             }
