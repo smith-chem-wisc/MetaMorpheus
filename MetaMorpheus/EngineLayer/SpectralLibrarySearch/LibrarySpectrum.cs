@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System;
+using MassSpectrometry.MzSpectra;
 
 namespace EngineLayer
 {
@@ -37,6 +38,29 @@ namespace EngineLayer
             XArray = peaks.Select(p => p.Mz).ToArray();
             YArray = peaks.Select(p => p.Intensity).ToArray();
             Array.Sort(XArray, YArray);
+        }
+
+        /// <summary>
+        /// This function enables the spectrum angle to be computed between an individual experimental spectrum and the loaded library spectrum within MetaDraw
+        /// </summary>
+        /// <param name="librarySpectrum"></param>
+        /// <returns></returns>
+        public string CalculateSpectralAngleOnTheFly(List<MatchedFragmentIon> spectrumMatchFragments)
+        {
+
+            SpectralSimilarity spectraComparison = new SpectralSimilarity(
+                spectrumMatchFragments.Select(f => f.Mz).ToArray(),
+                spectrumMatchFragments.Select(f => f.Intensity).ToArray(),
+                MatchedFragmentIons.Select(f => f.Mz).ToArray(),
+                MatchedFragmentIons.Select(f => f.Intensity).ToArray(),
+                SpectralSimilarity.SpectrumNormalizationScheme.mostAbundantPeak,
+                toleranceInPpm: 20,
+                allPeaks: true);
+            double? spectralContrastAngle = spectraComparison.SpectralContrastAngle();
+
+            return spectralContrastAngle == null
+                ? "N/A"
+                : ((double)spectralContrastAngle).ToString("F4");
         }
 
         public override string ToString()

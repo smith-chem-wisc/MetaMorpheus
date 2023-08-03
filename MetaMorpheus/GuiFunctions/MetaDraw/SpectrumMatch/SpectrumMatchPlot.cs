@@ -44,7 +44,7 @@ namespace GuiFunctions
         /// <param name="psm">psm to plot</param>
         /// <param name="scan">spectrum to plot</param>
         /// <param name="matchedIons">glyco ONLY child matched ions</param>
-        public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm, 
+        public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm,
             MsDataScan scan, List<MatchedFragmentIon> matchedIons = null) : base(plotView)
         {
             Model.Title = string.Empty;
@@ -117,7 +117,8 @@ namespace GuiFunctions
                 double mz = Scan.MassSpectrum.XArray[i];
                 double intensity = Scan.MassSpectrum.YArray[i];
 
-                DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessUnannotated, MetaDrawSettings.UnannotatedPeakColor, null);
+                DrawPeak(mz, intensity, MetaDrawSettings.StrokeThicknessUnannotated,
+                    MetaDrawSettings.UnannotatedPeakColor, null);
             }
         }
 
@@ -129,7 +130,8 @@ namespace GuiFunctions
         /// <param name="strokeWidth"></param>
         /// <param name="color">Color to draw peak</param>
         /// <param name="annotation">text to display above the peak</param>
-        protected void DrawPeak(double mz, double intensity, double strokeWidth, OxyColor color, TextAnnotation annotation)
+        protected void DrawPeak(double mz, double intensity, double strokeWidth, OxyColor color,
+            TextAnnotation annotation)
         {
             // peak line
             var line = new LineSeries();
@@ -152,7 +154,8 @@ namespace GuiFunctions
         /// <param name="isBetaPeptide"></param>
         /// <param name="matchedFragmentIons"></param>
         /// <param name="useLiteralPassedValues"></param>
-        protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons, bool useLiteralPassedValues = false)
+        protected void AnnotateMatchedIons(bool isBetaPeptide, List<MatchedFragmentIon> matchedFragmentIons,
+            bool useLiteralPassedValues = false)
         {
             List<MatchedFragmentIon> ionsToDisplay = !MetaDrawSettings.DisplayInternalIons
                 ? matchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.SecondaryProductType == null).ToList()
@@ -170,7 +173,8 @@ namespace GuiFunctions
         /// <param name="matchedIon">matched ion to annotate</param>
         /// <param name="isBetaPeptide">is a beta x-linked peptide</param>
         /// <param name="useLiteralPassedValues"></param>
-        protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide, bool useLiteralPassedValues = false, OxyColor? ionColorNullable = null)
+        protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide,
+            bool useLiteralPassedValues = false, OxyColor? ionColorNullable = null)
         {
             OxyColor ionColor;
             if (ionColorNullable == null)
@@ -198,7 +202,8 @@ namespace GuiFunctions
                 ionColor = (OxyColor)ionColorNullable;
             }
 
-            int i = Scan.MassSpectrum.GetClosestPeakIndex(matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge));
+            int i = Scan.MassSpectrum.GetClosestPeakIndex(
+                matchedIon.NeutralTheoreticalProduct.NeutralMass.ToMz(matchedIon.Charge));
             double mz = Scan.MassSpectrum.XArray[i];
             double intensity = Scan.MassSpectrum.YArray[i];
 
@@ -223,12 +228,14 @@ namespace GuiFunctions
                     prefix = "A-";
                 }
             }
+
             var peakAnnotation = new TextAnnotation();
             if (MetaDrawSettings.DisplayIonAnnotations)
             {
                 string peakAnnotationText = prefix + matchedIon.NeutralTheoreticalProduct.Annotation;
 
-                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 && !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
+                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
+                    !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
                 {
                     peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
                 }
@@ -258,7 +265,9 @@ namespace GuiFunctions
             {
                 peakAnnotation.Text = string.Empty;
             }
-            if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null && !MetaDrawSettings.DisplayInternalIonAnnotations) //if internal fragment
+
+            if (matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null &&
+                !MetaDrawSettings.DisplayInternalIonAnnotations) //if internal fragment
             {
                 peakAnnotation.Text = string.Empty;
             }
@@ -325,11 +334,13 @@ namespace GuiFunctions
             switch (MetaDrawSettings.ExportType)
             {
                 case "Pdf":
-                    string tempCombinedPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "tempCombined.png");
+                    string tempCombinedPath =
+                        System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "tempCombined.png");
                     combinedBitmaps.Save(tempCombinedPath, System.Drawing.Imaging.ImageFormat.Png);
 
                     PdfDocument pdfDoc = new(new PdfWriter(path));
-                    Document document = new(pdfDoc, new iText.Kernel.Geom.PageSize((float)width - 30, (float)height - 30));
+                    Document document = new(pdfDoc,
+                        new iText.Kernel.Geom.PageSize((float)width - 30, (float)height - 30));
 
                     ImageData sequenceAndLegendImageData = ImageDataFactory.Create(tempCombinedPath);
                     iText.Layout.Element.Image sequenceAndPtmLegendImage = new(sequenceAndLegendImageData);
@@ -374,7 +385,8 @@ namespace GuiFunctions
             {
                 var matchedIon = SpectrumMatch.MatchedIons.FirstOrDefault(p =>
                     p.NeutralTheoreticalProduct.ProductType == libraryIon.NeutralTheoreticalProduct.ProductType
-                    && p.NeutralTheoreticalProduct.FragmentNumber == libraryIon.NeutralTheoreticalProduct.FragmentNumber);
+                    && p.NeutralTheoreticalProduct.FragmentNumber ==
+                    libraryIon.NeutralTheoreticalProduct.FragmentNumber);
 
                 if (matchedIon == null)
                 {
@@ -393,11 +405,15 @@ namespace GuiFunctions
 
             foreach (MatchedFragmentIon libraryIon in libraryIons)
             {
-                var neutralProduct = new Product(libraryIon.NeutralTheoreticalProduct.ProductType, libraryIon.NeutralTheoreticalProduct.Terminus,
-                    libraryIon.NeutralTheoreticalProduct.NeutralMass, libraryIon.NeutralTheoreticalProduct.FragmentNumber,
-                    libraryIon.NeutralTheoreticalProduct.AminoAcidPosition, libraryIon.NeutralTheoreticalProduct.NeutralLoss);
+                var neutralProduct = new Product(libraryIon.NeutralTheoreticalProduct.ProductType,
+                    libraryIon.NeutralTheoreticalProduct.Terminus,
+                    libraryIon.NeutralTheoreticalProduct.NeutralMass,
+                    libraryIon.NeutralTheoreticalProduct.FragmentNumber,
+                    libraryIon.NeutralTheoreticalProduct.AminoAcidPosition,
+                    libraryIon.NeutralTheoreticalProduct.NeutralLoss);
 
-                mirroredLibraryIons.Add(new MatchedFragmentIon(ref neutralProduct, libraryIon.Mz, multiplier * libraryIon.Intensity, libraryIon.Charge));
+                mirroredLibraryIons.Add(new MatchedFragmentIon(ref neutralProduct, libraryIon.Mz,
+                    multiplier * libraryIon.Intensity, libraryIon.Charge));
             }
 
             AnnotateMatchedIons(isBetaPeptide, mirroredLibraryIons, useLiteralPassedValues: true);
@@ -419,18 +435,25 @@ namespace GuiFunctions
                 text.Append(SpectrumMatch.PrecursorCharge);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Precursor Mass: "])
             {
                 text.Append("Precursor Mass: ");
                 text.Append(SpectrumMatch.PrecursorMass.ToString("F3"));
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Theoretical Mass: "])
             {
                 text.Append("Theoretical Mass: ");
-                text.Append(double.TryParse(SpectrumMatch.PeptideMonoMass, NumberStyles.Any, CultureInfo.InvariantCulture, out var monoMass) ? monoMass.ToString("F3") : SpectrumMatch.PeptideMonoMass);
+                text.Append(
+                    double.TryParse(SpectrumMatch.PeptideMonoMass, NumberStyles.Any, CultureInfo.InvariantCulture,
+                        out var monoMass)
+                        ? monoMass.ToString("F3")
+                        : SpectrumMatch.PeptideMonoMass);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Protein Accession: "])
             {
                 text.Append("Protein Accession: ");
@@ -440,8 +463,10 @@ namespace GuiFunctions
                 }
                 else
                     text.Append(SpectrumMatch.ProteinAccession);
+
                 text.Append("\r\n");
             }
+
             if (SpectrumMatch.ProteinName != null && MetaDrawSettings.SpectrumDescription["Protein: "])
             {
                 text.Append("Protein: ");
@@ -463,26 +488,31 @@ namespace GuiFunctions
                 }
                 else
                     text.Append(SpectrumMatch.ProteinName);
+
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "])
             {
                 text.Append("Decoy/Contaminant/Target: ");
                 text.Append(SpectrumMatch.DecoyContamTarget);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Sequence Length: "])
             {
                 text.Append("Sequence Length: ");
                 text.Append(SpectrumMatch.BaseSeq.Length.ToString("F3").Split('.')[0]);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Ambiguity Level: "])
             {
                 text.Append("Ambiguity Level: ");
                 text.Append(SpectrumMatch.AmbiguityLevel);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Spectral Angle: "])
             {
                 text.Append("Original Spectral Angle: ");
@@ -493,27 +523,31 @@ namespace GuiFunctions
                 if (librarySpectrum != null)
                 {
                     text.Append("This Spectral Angle: ");
-                    text.Append(CalculateSpectralAngleOnTheFly(librarySpectrum) + "\r\n");
+                    text.Append(librarySpectrum.CalculateSpectralAngleOnTheFly(this.matchedFragmentIons) + "\r\n");
                 }
             }
+
             if (MetaDrawSettings.SpectrumDescription["Score: "])
             {
                 text.Append("Score: ");
                 text.Append(SpectrumMatch.Score.ToString("F3"));
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Q-Value: "])
             {
                 text.Append("Q-Value: ");
                 text.Append(SpectrumMatch.QValue.ToString("F3"));
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["PEP: "])
             {
                 text.Append("PEP: ");
                 text.Append(SpectrumMatch.PEP.ToString("F3"));
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["PEP Q-Value: "])
             {
                 text.Append("PEP Q-Value: ");
@@ -534,31 +568,6 @@ namespace GuiFunctions
             };
 
             Model.Annotations.Add(annotation);
-        }
-
-        /// <summary>
-        /// This function enables the spectrum angle to be computed between an individual experimental spectrum and the loaded library spectrum within MetaDraw
-        /// </summary>
-        /// <param name="librarySpectrum"></param>
-        /// <returns></returns>
-        public string CalculateSpectralAngleOnTheFly(LibrarySpectrum librarySpectrum)
-        {
-            List<MatchedFragmentIon> spectrumMatchFragments = new(SpectrumMatch.MatchedIons);
-            List<MatchedFragmentIon> libraryFragments = new(librarySpectrum.MatchedFragmentIons);
-
-            SpectralSimilarity spectraComparison = new SpectralSimilarity(
-                spectrumMatchFragments.Select(f => f.Mz).ToArray(),
-                spectrumMatchFragments.Select(f => f.Intensity).ToArray(),
-                libraryFragments.Select(f => f.Mz).ToArray(),
-                libraryFragments.Select(f => f.Intensity).ToArray(),
-                SpectralSimilarity.SpectrumNormalizationScheme.mostAbundantPeak,
-                toleranceInPpm: 20,
-                allPeaks: true);
-            double? spectralContrastAngle = spectraComparison.SpectralContrastAngle();
-
-            return spectralContrastAngle == null
-                ? "N/A"
-                : ((double)spectralContrastAngle).ToString("F4");
         }
     }
 
