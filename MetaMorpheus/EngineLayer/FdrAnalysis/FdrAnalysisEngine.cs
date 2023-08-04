@@ -173,6 +173,10 @@ namespace EngineLayer.FdrAnalysis
         /// and raising 10 the the power of the computed value (10^y)
         /// For high scoring spectrum matches (~the set of spectrum matches at 1% FDR), this value should be <= 0
         /// This function should not used to calculate E-Value for anything with greater than 1% FDR
+        /// I found this strategy in an asms presentation pdf from 2006
+        /// https://prospector.ucsf.edu/prospector/html/misc/publications/2006_ASMS_1.pdf
+        /// Protein Prospector and Ways Calculating Expectation Values
+        /// Aenoch J. Lynn; Robert J. Chalkley; Peter R. Baker; Mark R.Segal; and Alma L.Burlingame
         /// </summary>
         /// <param name="allPSMs"></param>
         /// <returns></returns>
@@ -189,11 +193,11 @@ namespace EngineLayer.FdrAnalysis
 
             foreach (var scoreCountPair in decoyScoreHistogram)
             {
-                survival[scoreCountPair.Key] = scoreCountPair.Count();
+                survival[scoreCountPair.Key] = scoreCountPair.Count();//the array already has a value of 0 at each index (which is the integer Morpheus score) during creation. so we only need to populate it where we have scores
             }
 
-            List<double> logScores = new List<double>();
-            List<double> logSurvivals = new List<double>();
+            List<double> logScores = new List<double>(); //x-values
+            List<double> logSurvivals = new List<double>(); //y-values
 
             double runningSum = 0;
             for (int i = survival.Length - 1; i > -1; i--)
