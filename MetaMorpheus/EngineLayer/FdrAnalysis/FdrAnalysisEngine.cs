@@ -167,8 +167,16 @@ namespace EngineLayer.FdrAnalysis
                 Compute_PEPValue(myAnalysisResults);
             }
         }
-
-        public double[] EValueByTailFittingForTopPsms(List<PeptideSpectralMatch> allPSMs)
+        /// <summary>
+        /// The method fits a line for log[survival] vs. log[(int)score] for the top 10% scoring spectrum matches
+        /// This line can be used to compute the E-value of a spectrum match by inputing the log[(int)score]
+        /// and raising 10 the the power of the computed value (10^y)
+        /// For high scoring spectrum matches (~the set of spectrum matches at 1% FDR), this value should be <= 0
+        /// This function should not used to calculate E-Value for anything with greater than 1% FDR
+        /// </summary>
+        /// <param name="allPSMs"></param>
+        /// <returns></returns>
+        public (double intercept, double slope) EValueRegressionFormulaByTailFittingForTopPsms(List<PeptideSpectralMatch> allPSMs)
         {
             int myCount = allPSMs.Count;
             var decoyScoreHistogram = allPSMs
@@ -212,10 +220,7 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
-            (double intercept,double slope) p = Fit.Line(logScores.ToArray(), logSurvivals.ToArray());
-            
-
-            return logSurvival;
+            return Fit.Line(logScores.ToArray(), logSurvivals.ToArray());
         }
 
         public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults)
