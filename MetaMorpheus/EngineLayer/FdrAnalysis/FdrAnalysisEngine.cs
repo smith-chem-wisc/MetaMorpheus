@@ -196,8 +196,8 @@ namespace EngineLayer.FdrAnalysis
                 survival[scoreCountPair.Key] = scoreCountPair.Count();//the array already has a value of 0 at each index (which is the integer Morpheus score) during creation. so we only need to populate it where we have scores
             }
 
-            List<double> logScores = new List<double>(); //x-values
-            List<double> logSurvivals = new List<double>(); //y-values
+            List<double> logScores = new(); //x-values
+            List<double> logSurvivals = new(); //y-values
 
             double runningSum = 0;
             for (int i = survival.Length - 1; i > -1; i--)
