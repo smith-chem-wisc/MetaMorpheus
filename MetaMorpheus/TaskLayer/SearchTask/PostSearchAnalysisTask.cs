@@ -671,7 +671,7 @@ namespace TaskLayer
         /// included, with each ion being reported in a separate column.
         /// </summary>
         /// <param name="psms">PSMs to be written</param>
-        /// <param name="filePath">Full file path, up to and including the filename and extensioh. </param>
+        /// <param name="filePath">Full file path, up to and including the filename and extension. </param>
         protected void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath)
         {
             if (Parameters.SearchParameters.DoMultiplexQuantification &&

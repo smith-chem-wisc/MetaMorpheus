@@ -339,7 +339,7 @@ namespace EngineLayer
             }
 
             // Change this before release!!!
-            MetaMorpheusVersion = "Alpha - Multi-Run Consensus v1.2.0";
+            MetaMorpheusVersion = "Alpha - Multi-Run Consensus v1.2.1";
         }
 
         private static void SetUpDataDirectory()
