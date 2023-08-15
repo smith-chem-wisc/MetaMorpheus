@@ -489,6 +489,9 @@
     <None Update="TMT_test\VA084TQ_6.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TopDownTestData\simple.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TopDownTestData\slicedTDYeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

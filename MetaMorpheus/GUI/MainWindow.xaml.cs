@@ -1751,6 +1751,7 @@ namespace MetaMorpheusGUI
             }
 
             // save the task to the task collection
+            dialog.Owner = this;
             if (dialog.ShowDialog() == true)
             {
                 switch (taskType)
