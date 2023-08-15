@@ -114,7 +114,9 @@ namespace TaskLayer
                 .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass))
                 .Select(b => b.First()).ToList();
 
-            new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }).Run();
+            new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP:false).Run();
+
+            allPsms = allPsms.Where(p => p.FdrInfo.QValueNotch < 0.05).ToList();
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
