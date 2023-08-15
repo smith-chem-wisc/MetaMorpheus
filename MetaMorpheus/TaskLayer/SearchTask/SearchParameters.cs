@@ -71,6 +71,7 @@ namespace TaskLayer
         public double QuantifyPpmTol { get; set; }
         public bool QuantifyAmbiguousPeptides { get; set; }
         public bool ReportQuantifiedPeptideRetentionTime { get; set; }
+        public bool ReportInSourceOxidation { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
         public DecoyType DecoyType { get; set; }

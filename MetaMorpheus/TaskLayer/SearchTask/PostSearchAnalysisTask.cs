@@ -586,6 +586,7 @@ namespace TaskLayer
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                 quantifyAmbiguousPeptides: Parameters.SearchParameters.QuantifyAmbiguousPeptides,
                 reportPeptideRetentionTimes: Parameters.SearchParameters.ReportQuantifiedPeptideRetentionTime,
+                reportInSourceOxidation: Parameters.SearchParameters.ReportInSourceOxidation,
                 matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
