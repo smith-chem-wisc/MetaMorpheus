@@ -70,7 +70,7 @@ namespace EngineLayer.Gptmd
 
             int modsAdded = 0;
 
-            // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
+            // one lock for each Protein; a Protein can only be accessed by one thread at a time
 
             string[] distinctAccessions = AllIdentifications.Select(p => p.ProteinAccession).Distinct().ToArray();
 
@@ -154,71 +154,8 @@ namespace EngineLayer.Gptmd
                                 }
                             }
                         }
-
-                        // get mods to annotate database with
-                        foreach (var pepWithSetMods in AllIdentifications[i].BestMatchingPeptides.Select(v => v.Peptide))
-                        {
-                            foreach (Modification mod in GetPossibleMods(AllIdentifications[i].ScanPrecursorMass, GptmdModifications, Combos, precursorMassTolerance, pepWithSetMods))
-                            {
-                                var isVariantProtein = pepWithSetMods.Protein != pepWithSetMods.Protein.NonVariantProtein;
-
-                                for (int k = 0; k < pepWithSetMods.Length; k++)
-                                {
-                                    int indexInProtein = pepWithSetMods.OneBasedStartResidueInProtein + k;
-
-                                    if (ModFits(mod, pepWithSetMods.Protein, k + 1, pepWithSetMods.Length, indexInProtein))
-                                    {
-                                        // if not a variant protein, index to base protein sequence
-                                        if (!isVariantProtein)
-                                        {
-                                            AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod));
-                                            modsAdded++;
-                                        }
-
-                                        // if a variant protein, index to variant protein if on variant, or to the original protein if not
-                                        else
-                                        {
-                                            bool foundSite = false;
-                                            int offset = 0;
-                                            foreach (var variant in pepWithSetMods.Protein.AppliedSequenceVariations.OrderBy(v => v.OneBasedBeginPosition))
-                                            {
-                                                bool modIsBeforeVariant = indexInProtein < variant.OneBasedBeginPosition + offset;
-                                                bool modIsOnVariant = variant.OneBasedBeginPosition + offset <= indexInProtein && indexInProtein <= variant.OneBasedEndPosition + offset;
-
-                                                // if a variant protein and the mod is on the variant, index to the variant protein sequence
-                                                if (modIsOnVariant)
-                                                {
-                                                    AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod), myLocks[lockIndex]);
-                                                    modsAdded++;
-                                                    foundSite = true;
-                                                    break;
-                                                }
-
-                                                // otherwise back calculate the index to the original protein sequence
-                                                if (modIsBeforeVariant)
-                                                {
-                                                    AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod), myLocks[lockIndex]);
-                                                    modsAdded++;
-                                                    foundSite = true;
-                                                    break;
-                                                }
-
-                                                offset += variant.VariantSequence.Length - variant.OriginalSequence.Length;
-                                            }
-                                            if (!foundSite)
-                                            {
-                                                AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod), myLocks[lockIndex]);
-                                                modsAdded++;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
                     }
                 }
-
             });
 
             return new GptmdResults(this, modDict, modsAdded);
