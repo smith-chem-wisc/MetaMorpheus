@@ -584,14 +584,36 @@ namespace TaskLayer
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
+                quantifyAmbiguousPeptides: Parameters.SearchParameters.QuantifyAmbiguousPeptides,
+                reportPeptideRetentionTimes: Parameters.SearchParameters.ReportQuantifiedPeptideRetentionTime,
+                reportInSourceOxidation: Parameters.SearchParameters.ReportInSourceOxidation,
                 matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
+
             if (flashLFQIdentifications.Any())
             {
-                Parameters.FlashLfqResults = FlashLfqEngine.Run();
+                Parameters.FlashLfqResults = FlashLfqEngine.Run(out List<Exception> exceptions);
+                if(Parameters.SearchParameters.QuantifyAmbiguousPeptides)
+                {
+                    var outputFile = Path.Combine(Parameters.OutputFolder, "QuantificationErrorList.txt");
+                    using (StreamWriter writer = new StreamWriter(outputFile))
+                    {
+                        if (exceptions.IsNotNullOrEmpty())
+                        {
+                            foreach(Exception e in exceptions)
+                            {
+                                writer.WriteLine(e.ToString());
+                            }
+                        }
+                        else
+                        {
+                            writer.WriteLine("No errors to report. Great job!");
+                        }
+                    }
+                }
             }
 
             // get protein intensity back from FlashLFQ
@@ -649,7 +671,7 @@ namespace TaskLayer
         /// included, with each ion being reported in a separate column.
         /// </summary>
         /// <param name="psms">PSMs to be written</param>
-        /// <param name="filePath">Full file path, up to and including the filename and extensioh. </param>
+        /// <param name="filePath">Full file path, up to and including the filename and extension. </param>
         protected void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath)
         {
             if (Parameters.SearchParameters.DoMultiplexQuantification &&

@@ -189,6 +189,11 @@ namespace MetaMorpheusGUI
             CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
             CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
             MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
+            CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification && !task.SearchParameters.DoMultiplexQuantification;
+            CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxQuantifyAmbiguousPeptides.IsChecked = task.SearchParameters.QuantifyAmbiguousPeptides;
+            CheckBoxReportPeptideRt.IsChecked = task.SearchParameters.ReportQuantifiedPeptideRetentionTime;
+            CheckBoxReportInSourceOxidation.IsChecked = task.SearchParameters.ReportInSourceOxidation;
             // If Spectral Recovery is enabled
             if (task.SearchParameters.WriteSpectralLibrary & task.SearchParameters.MatchBetweenRuns)
             {
@@ -630,6 +635,9 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoMultiplexQuantification = CheckBoxMultiplex.IsChecked.Value;
             TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
+            TheTask.SearchParameters.QuantifyAmbiguousPeptides = CheckBoxQuantifyAmbiguousPeptides.IsChecked.Value;
+            TheTask.SearchParameters.ReportQuantifiedPeptideRetentionTime = CheckBoxReportPeptideRt.IsChecked.Value;
+            TheTask.SearchParameters.ReportInSourceOxidation = CheckBoxReportInSourceOxidation.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
