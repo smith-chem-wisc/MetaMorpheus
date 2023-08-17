@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Easy.Common.Extensions;
-using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer.Gptmd
 {
