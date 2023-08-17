@@ -161,9 +161,10 @@ namespace EngineLayer.Gptmd
             return new GptmdResults(this, modDict, modsAdded);
         }
 
-        private static void AddIndexedMod(Dictionary<string, HashSet<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod, object myLock = null)
+        private static void AddIndexedMod(Dictionary<string, HashSet<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod, object myLock)
         {
-            if (myLock == null)
+
+            lock (myLock)
             {
                 if (modDict.TryGetValue(proteinAccession, out var hash))
                 {
@@ -174,20 +175,7 @@ namespace EngineLayer.Gptmd
                     modDict[proteinAccession] = new HashSet<Tuple<int, Modification>> { indexedMod };
                 }
             }
-            else
-            {
-                lock (myLock)
-                {
-                    if (modDict.TryGetValue(proteinAccession, out var hash))
-                    {
-                        hash.Add(indexedMod);
-                    }
-                    else
-                    {
-                        modDict[proteinAccession] = new HashSet<Tuple<int, Modification>> { indexedMod };
-                    }
-                }
-            }
+
         }
 
         private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
