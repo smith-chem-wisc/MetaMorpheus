@@ -114,58 +114,9 @@ namespace TaskLayer
                 .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass))
                 .Select(b => b.First()).ToList();
 
-
-            //debug
-            List<PeptideSpectralMatch> b = new List<PeptideSpectralMatch>();
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "KEAESCDCLQGFQLTHSLGGGTGSGMGTLLISK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "KKEEPSQNDISPK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "MAATFIGNSTAIQELFK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "DGELYCK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "SPECLISEVKEGIYK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "GSIEILK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "SVIISIK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "EMVLEIIR").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "LSALPMTADILAETGIR").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "IAEVCCTSIVYATEK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "GGGGGGGGGGGLGGGLGNVLGGLISGAGGGGGGGGGGGGGGGGGGGGTAMR").ToList());
-            //debug
-
-
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP:false).Run();
 
-            //debug
-            b.Clear();
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "KEAESCDCLQGFQLTHSLGGGTGSGMGTLLISK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "KKEEPSQNDISPK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "MAATFIGNSTAIQELFK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "DGELYCK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "SPECLISEVKEGIYK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "GSIEILK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "SVIISIK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "EMVLEIIR").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "LSALPMTADILAETGIR").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "IAEVCCTSIVYATEK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "GGGGGGGGGGGLGGGLGNVLGGLISGAGGGGGGGGGGGGGGGGGGGGTAMR").ToList());
-            //debug
-
-
             allPsms = allPsms.Where(p => p.FdrInfo.QValueNotch < 0.05).ToList();
-
-            //debug
-            b.Clear();
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "KEAESCDCLQGFQLTHSLGGGTGSGMGTLLISK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "KKEEPSQNDISPK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "MAATFIGNSTAIQELFK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "DGELYCK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "SPECLISEVKEGIYK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "GSIEILK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "SVIISIK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "EMVLEIIR").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "LSALPMTADILAETGIR").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "IAEVCCTSIVYATEK").ToList());
-            b.AddRange(allPsms.Where(s => s.BaseSequence == "GGGGGGGGGGGLGGGLGNVLGGLISGAGGGGGGGGGGGGGGGGGGGGTAMR").ToList());
-            //debug
-
 
             var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
             WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
