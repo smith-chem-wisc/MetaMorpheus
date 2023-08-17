@@ -92,10 +92,6 @@ namespace TaskLayer
 
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
-                var jj = GetAcceptableMassShifts(fixedModifications, variableModifications, gptmdModifications, combos);
-
-                File.WriteAllLines(@"E:\junk\shifts.txt",jj.Select(i=>i.ToString()).ToArray());
-
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
