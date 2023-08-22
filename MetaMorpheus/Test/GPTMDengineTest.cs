@@ -292,38 +292,7 @@ namespace Test
             searchEngine.Run();
 
 
-
-
-
-
-
-            //Add Mod to list and write XML input database
-            
-            var digestedList = testVariantProtein.GetVariantProteins()[0].Digest(new DigestionParams(minPeptideLength: 5), new List<Modification>(), new List<Modification>()).ToList();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            //MyTaskResults afterGPTMD = gptmdTask.RunTask(thisTaskOutputFolder, new List<DbForTask> { xmlDb }, new List<string> { acetylModifiedVarientPeptidMzMl }, "test");
-
-
-            //Directory.Delete(thisTaskOutputFolder, true);
-
-
-
+            Directory.Delete(thisTaskOutputFolder, true);
         }
 
         [Test]
