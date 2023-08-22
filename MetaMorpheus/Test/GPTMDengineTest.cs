@@ -3,15 +3,21 @@ using EngineLayer;
 using EngineLayer.Gptmd;
 using MassSpectrometry;
 using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
+using MathNet.Numerics;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Easy.Common;
+using iText.Forms.Xfdf;
 
 namespace Test
 {
@@ -104,15 +110,6 @@ namespace Test
             Assert.AreEqual(numModifiedResiduesNP, (hash ?? new HashSet<Tuple<int, Modification>>()).Count);
         }
 
-        //[Test]
-        //public static void LoadOriginalMismatchedModifications()
-        //{
-        //    var protein = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, "oblm.xml"), true, DecoyType.Reverse, null, false, null, out var unknownModifications);
-        //    Assert.AreEqual(0, protein[0].OneBasedPossibleLocalizedModifications.Count);
-        //    protein[0].RestoreUnfilteredModifications();
-        //    Assert.AreEqual(1, protein[0].OneBasedPossibleLocalizedModifications.Count);
-        //}
-
         [Test]
         public static void TestSearchPtmVariantDatabase()
         {
@@ -192,6 +189,141 @@ namespace Test
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
                 new List<DbForTask> { new DbForTask(xmlName, false) }, Environment.CurrentDirectory);
             engine.Run();
+        }
+
+        [Test]
+        public static void Bubba()
+        {
+            //create a directory to perform this test
+            string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\GptmdTest");
+            _ = Directory.CreateDirectory(thisTaskOutputFolder);
+
+            //prepare an xml database with a protein that has a sequence variant P->K
+            var variant = new SequenceVariation(3, "P", "K", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G|||||||||||||||||||\tGT:AD:DP\t1/1:30,30:30");
+            Protein testVariantProtein = new Protein("PEPTID", "accession1", sequenceVariations: new List<SequenceVariation> { variant });
+            string peptideVariantXml = Path.Combine(thisTaskOutputFolder, "gptmdModOnVariant.xml");
+            DbForTask xmlDb = new DbForTask(peptideVariantXml, false);
+            var modList = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
+            ProteinDbWriter.WriteXmlDatabase(modList, new List<Protein> { testVariantProtein }, peptideVariantXml);
+
+            //Load Variant form of protein
+            var variantProteins = ProteinDbLoader.LoadProteinXML(peptideVariantXml, true, DecoyType.None, null, false, null, out var unknownModifications);
+            var variantProtein = variantProteins[0];
+
+            //Create a peptide that contains the P->K variant with an acetylation on side chain of the first amino acid P
+            //We will use this peptide to create an mzML file that has MS1 and MS2 spectra for this peptide
+            PeptideWithSetModifications acetylModifiedVariantPeptide = new PeptideWithSetModifications(sequence: "PEKTID", new Dictionary<string, Modification>(), p: variantProtein, oneBasedStartResidueInProtein:1, oneBasedEndResidueInProtein:6);
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
+            acetylModifiedVariantPeptide.AllModsOneIsNterminus.Add(2, new Modification(_originalId: "acetyl on P", _modificationType: "type", _target: motifP, _monoisotopicMass: 42.0106, _locationRestriction: "Anywhere."));
+
+            //Create and mzML file with a single precursor scan having the monoiosotopic mass of P(acetyl)EKTID and a single MS2 scan with the corresponding fragments.
+            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { acetylModifiedVariantPeptide });
+            string acetylModifiedVarientPeptidMzMl = Path.Join(thisTaskOutputFolder, "acetylPEKTID.mzML");
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, acetylModifiedVarientPeptidMzMl, false);
+
+            //make sure that the generated mzML has the appropriate scan information
+            MsDataFile myFile = Readers.MsDataFileReader.GetDataFile(acetylModifiedVarientPeptidMzMl);
+            myFile.LoadAllStaticData();
+
+            var ms1scans = myFile.Scans.Where(s => s.MsnOrder == 1);
+            Assert.AreEqual(1,ms1scans.Count());
+
+            var ms2scans = myFile.Scans.Where(s => s.MsnOrder == 2);
+            Assert.AreEqual(1, ms2scans.Count());
+
+            Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, acetylModifiedVarientPeptidMzMl, new CommonParameters(maxThreadsToUsePerFile: 1)).OrderBy(b => b.PrecursorMass).ToArray();
+            string ms2peaks = string.Join(',', arrayOfMs2ScansSortedByMass[0].TheScan.MassSpectrum.XArray.Select(p=>p.Round(2)).ToList());
+            string expectedMs2peaks = "134.04,135.05,140.07,141.07,247.13,248.13,269.11,270.12,348.18,349.18,397.21,398.21,476.27,477.27,498.26,499.26,605.31,606.32,611.34,612.34";
+            Assert.AreEqual(expectedMs2peaks,ms2peaks);
+
+            //This MS2 scan (generated above) is for P(Acetyl)EKTID which is the acetylated peptide variant.
+            Ms2ScanWithSpecificMass scan = arrayOfMs2ScansSortedByMass[0];
+
+            //This is a list of modifications for GPTMD that contains acetyl on P, which it should find.
+            var gptmdModifications = new List<Modification> { new Modification(_originalId: "acetyl on P", _modificationType: "type", _target: motifP, _monoisotopicMass: 42.0106, _locationRestriction: "Anywhere.") };
+
+            //combos for gptmd engine. none are needed here
+            IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
+
+            //common parameters
+            CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5), maxThreadsToUsePerFile:1);
+
+            //psms for gptmd engine. we only need one on a peptide that has the amino acid substitution and the acetylation on a position before the variant.
+            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(acetylModifiedVariantPeptide, 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            Tolerance precursorMassTolerance = new PpmTolerance(10);
+            List<PeptideSpectralMatch> allResultingIdentifications = new List<PeptideSpectralMatch>();
+            newPsm.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+            allResultingIdentifications.Add(newPsm);
+
+            //gptmd engine should find the potential acetylation on the first AA.
+            var engine = new GptmdEngine(allResultingIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance>(){ { acetylModifiedVarientPeptidMzMl, precursorMassTolerance } }, new CommonParameters(maxThreadsToUsePerFile:1), null, new List<string>());
+            var res = (GptmdResults)engine.Run();
+            Assert.AreEqual(1, res.Mods.Count);
+            Assert.AreEqual(1, res.Mods["accession1"].Count);
+
+            //run gptmdtask
+            GptmdTask gptmdTask1 = new GptmdTask
+            {
+                GptmdParameters = new GptmdParameters()
+                {
+                    ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
+                        b.ModificationType.Equals("Common Biological")
+                    ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
+                },
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5), maxThreadsToUsePerFile:1)
+            };
+
+            //Search Task After GPTMD to ensure we see the modified peptide.
+            SearchTask searchTask1 = new SearchTask
+            {
+                SearchParameters = new SearchParameters
+                {
+                    SearchTarget = true,
+                    MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                },
+                CommonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5), maxThreadsToUsePerFile:1)
+            };
+
+            //add task to task list
+            var taskList = new List<(string, MetaMorpheusTask)> { ("task1", gptmdTask1),("task2",searchTask1) };
+            //run!
+            var searchEngine = new EverythingRunnerEngine(taskList, new List<string> { acetylModifiedVarientPeptidMzMl },
+                new List<DbForTask> { xmlDb }, thisTaskOutputFolder);
+            searchEngine.Run();
+
+
+
+
+
+
+
+            //Add Mod to list and write XML input database
+            
+            var digestedList = testVariantProtein.GetVariantProteins()[0].Digest(new DigestionParams(minPeptideLength: 5), new List<Modification>(), new List<Modification>()).ToList();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+            //MyTaskResults afterGPTMD = gptmdTask.RunTask(thisTaskOutputFolder, new List<DbForTask> { xmlDb }, new List<string> { acetylModifiedVarientPeptidMzMl }, "test");
+
+
+            //Directory.Delete(thisTaskOutputFolder, true);
+
+
+
         }
 
         [Test]
