@@ -291,6 +291,11 @@ namespace Test
                 new List<DbForTask> { xmlDb }, thisTaskOutputFolder);
             searchEngine.Run();
 
+            //read task1 results and make sure there is a new xml generated.
+
+            //read task1 results and make sure the new xml contains an acetylation mod
+
+            //read task2 results and make sure there is a variant peptide with acetylation
 
             Directory.Delete(thisTaskOutputFolder, true);
         }
