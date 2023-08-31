@@ -192,7 +192,7 @@ namespace Test
         }
 
         [Test]
-        public static void Bubba()
+        public static void TestGptmdModAddedOnVariantPeptide()
         {
             //create a directory to perform this test
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\GptmdTest");
@@ -291,11 +291,30 @@ namespace Test
                 new List<DbForTask> { xmlDb }, thisTaskOutputFolder);
             searchEngine.Run();
 
-            //read task1 results and make sure there is a new xml generated.
+            string[] allOutputFiles = Directory.GetFiles(thisTaskOutputFolder);
 
-            //read task1 results and make sure the new xml contains an acetylation mod
+            Assert.IsTrue(allOutputFiles[2].Contains("gptmdModOnVariant.xml"));
 
-            //read task2 results and make sure there is a variant peptide with acetylation
+            string[] allOutputDirectorys = Directory.GetDirectories(thisTaskOutputFolder);
+
+            Assert.IsTrue(allOutputDirectorys[1].Contains("task1"));
+            Assert.IsTrue(allOutputDirectorys[2].Contains("task2"));
+
+            string[] task1outputFiles = Directory.GetFiles(allOutputDirectorys[1]);
+
+            Assert.IsTrue(task1outputFiles[1].Contains("gptmdModOnVariantGPTMD.xml"));
+
+            string[] theNewXml = File.ReadAllLines(task1outputFiles[1]);
+
+            Assert.IsTrue(theNewXml[40].Contains("Acetylation on K"));
+
+            string[] task2outputFiles = Directory.GetFiles(allOutputDirectorys[2]);
+
+            string[] task2peptides = File.ReadAllLines(task2outputFiles[1]);
+
+            string[] theAcetylPeptideData = task2peptides[1].Split('\t');
+
+            Assert.AreEqual("[Common Biological:Acetylation on X]PEKTID", theAcetylPeptideData[13]);
 
             Directory.Delete(thisTaskOutputFolder, true);
         }
