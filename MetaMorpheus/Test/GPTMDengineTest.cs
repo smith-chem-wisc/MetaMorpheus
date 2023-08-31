@@ -293,19 +293,24 @@ namespace Test
 
             string[] allOutputFiles = Directory.GetFiles(thisTaskOutputFolder);
 
+            //This is the original input xml with no PTMs
             Assert.IsTrue(allOutputFiles[2].Contains("gptmdModOnVariant.xml"));
 
             string[] allOutputDirectorys = Directory.GetDirectories(thisTaskOutputFolder);
 
+            //Two tasks are run. One is GPTMD and one is Search. There should be an output folder for each
             Assert.IsTrue(allOutputDirectorys[1].Contains("task1"));
             Assert.IsTrue(allOutputDirectorys[2].Contains("task2"));
 
             string[] task1outputFiles = Directory.GetFiles(allOutputDirectorys[1]);
 
+            //This is the output xml with the PTM added
             Assert.IsTrue(task1outputFiles[1].Contains("gptmdModOnVariantGPTMD.xml"));
 
+            //this is the contents of the new xml
             string[] theNewXml = File.ReadAllLines(task1outputFiles[1]);
 
+            //Here we make sure that the new xml has the correct PTM added
             Assert.IsTrue(theNewXml[40].Contains("Acetylation on K"));
 
             string[] task2outputFiles = Directory.GetFiles(allOutputDirectorys[2]);
@@ -314,6 +319,7 @@ namespace Test
 
             string[] theAcetylPeptideData = task2peptides[1].Split('\t');
 
+            //Here we check that the AllPeptides.psmtsv has the acety modification on the peptide with the variant
             Assert.AreEqual("[Common Biological:Acetylation on X]PEKTID", theAcetylPeptideData[13]);
 
             Directory.Delete(thisTaskOutputFolder, true);
