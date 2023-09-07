@@ -59,7 +59,7 @@ namespace TaskLayer
                     {
                         int proteinPos = local.Item1 + gsm.OneBasedStartResidueInProtein.Value - 2;
 
-                        string proPosId = gsm.ProteinAccession + "-" + proteinPos.ToString() + "-" + local.Item2;
+                        string proPosId = gsm.ProteinAccession + "#" + proteinPos.ToString() + "#" + local.Item2;
 
                         double prob = -1;
                         if (gsm.SiteSpeciLocalProb != null && gsm.SiteSpeciLocalProb.ContainsKey(local.Item1))
