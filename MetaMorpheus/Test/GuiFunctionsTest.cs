@@ -31,11 +31,13 @@ namespace Test
             Assert.AreEqual(expectedResult, filename);
         }
 
+        // Occasionally the downloaded files will change, and thus the expected result will need to be updated.
+        // To verify, download the database and count the number of entries.
+        // The expected result will be double the number of entries, due to decoys - 9/1/23 NB
         [Test]
-        [Parallelizable(ParallelScope.All)]
         [TestCase("UP000000280", true, true, true, true, "1.fasta.gz", 50)]
         [TestCase("UP000000280", true, true, true, false, "2.fasta", 50)]
-        [TestCase("UP000000280", true, true, false, true, "3.fasta.gz", 40)]
+        [TestCase("UP000000280", true, true, false, true, "3.fasta.gz", 50)]
         [TestCase("UP000000280", true, false, true, true, "4.xml.gz", 50)]
         [TestCase("UP000000280", false, true, true, true, "5.fasta.gz", 2)]
         [TestCase("UP000000280", true, true, false, false, "6.fasta", 50)]
@@ -85,7 +87,6 @@ namespace Test
 
 
             Assert.That(reader.Count == listCount);
-
         }
     }
 }
