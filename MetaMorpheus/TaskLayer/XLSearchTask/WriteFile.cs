@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
+using Easy.Common.Extensions;
 
 namespace TaskLayer
 {
@@ -454,25 +455,34 @@ namespace TaskLayer
         //The function is to summarize localized glycan by protein site.
         public static void WriteSeenProteinGlycoLocalization(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
-            if (glycoProteinParsimony.Count == 0)
+            if (glycoProteinParsimony.Keys.Count == 0)
             { return; }
             var writtenFile = Path.Combine(outputPath);
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("Protein Accession\tModification Site\tAminoAcid\tLocalized Glycans\tLocalized\tLowest Qvalue\tBest Localization Level\tMax Site Specific Probability");
-                foreach (var item in glycoProteinParsimony.OrderBy(p=>p.Key))
+                foreach (var item in glycoProteinParsimony)
                 {
-                    var x = item.Key.Split('-');
-                    output.WriteLine(
-                        x[0] + "\t" +
-                        x[1] + "\t" +
-                        item.Value.AminoAcid + "\t" +
-                        GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
-                        item.Value.IsLocalized + "\t" +
-                        item.Value.MinQValue.ToString("0.000") + "\t" +
-                        item.Value.BestLocalizeLevel + "\t" +
-                        item.Value.MaxProbability.ToString("0.000")
-                        );
+                    if (!item.Key.IsNullOrEmpty() && item.Value != null)
+                    {
+                        var x = item.Key.Split('#');
+                        if (x.Length == 3)
+                        {
+                            output.WriteLine(
+                                x[0] + "\t" +
+                                x[1] + "\t" +
+                                item.Value.AminoAcid + "\t" +
+                                GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
+                                item.Value.IsLocalized + "\t" +
+                                item.Value.MinQValue.ToString("0.000") + "\t" +
+                                item.Value.BestLocalizeLevel + "\t" +
+                                item.Value.MaxProbability.ToString("0.000"));
+                        }
+                        else
+                        {
+                            int j = 5;
+                        }
+                    }
                 }
             }
         }
@@ -486,8 +496,8 @@ namespace TaskLayer
             Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
             foreach (var item in glycoProteinParsimony.Where(p=>p.Value.IsLocalized && p.Value.MinQValue <= 0.01))
             {
-                var x = item.Key.Split('-');
-                var key = x[0] + "-" + x[1];
+                var x = item.Key.Split('#');
+                var key = x[0] + "#" + x[1];
                 if ( localizedglycans.ContainsKey(key))
                 {
                     localizedglycans[key].Add(x[2]);
@@ -506,7 +516,7 @@ namespace TaskLayer
                 output.WriteLine("Protein Accession\tModification Site\tLocalized Glycan Number\tLocalized Glycans");
                 foreach (var local in localizedglycans.OrderBy(p => p.Key))
                 {
-                    var x = local.Key.Split('-');
+                    var x = local.Key.Split('#');
                     output.WriteLine(
                         x[0] + "\t" +
                         x[1] + "\t" +
