@@ -461,7 +461,7 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("Protein Accession\tModification Site\tAminoAcid\tLocalized Glycans\tLocalized\tLowest Qvalue\tBest Localization Level\tMax Site Specific Probability");
-                foreach (var item in glycoProteinParsimony)
+                foreach (var item in glycoProteinParsimony.OrderBy(i=>i.Key.proteinAccession))
                 {
                     if (item.Value != null)
                     {
