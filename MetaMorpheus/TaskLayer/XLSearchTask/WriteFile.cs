@@ -489,6 +489,7 @@ namespace TaskLayer
             Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
             foreach (var item in glycoProteinParsimony.Where(p=>p.Value.IsLocalized && p.Value.MinQValue <= 0.01))
             {
+
                 var key = item.Key.proteinAccession + "#" + item.Key.proteinPosition;
                 if ( localizedglycans.ContainsKey(key))
                 {
