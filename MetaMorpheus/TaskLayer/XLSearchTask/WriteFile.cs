@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
+using Easy.Common.Extensions;
 
 namespace TaskLayer
 {
@@ -452,7 +453,7 @@ namespace TaskLayer
         }
 
         //The function is to summarize localized glycan by protein site.
-        public static void WriteSeenProteinGlycoLocalization(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
+        public static void WriteSeenProteinGlycoLocalization(Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
             if (glycoProteinParsimony.Keys.Count == 0)
             { return; }
@@ -460,25 +461,27 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("Protein Accession\tModification Site\tAminoAcid\tLocalized Glycans\tLocalized\tLowest Qvalue\tBest Localization Level\tMax Site Specific Probability");
-                foreach (var item in glycoProteinParsimony.OrderBy(p=>p.Key))
+                foreach (var item in glycoProteinParsimony.OrderBy(i=>i.Key.proteinAccession))
                 {
-                    var x = item.Key.Split('#');
-                    output.WriteLine(
-                        x[0] + "\t" +
-                        x[1] + "\t" +
-                        item.Value.AminoAcid + "\t" +
-                        GlycanBox.GlobalOGlycans[int.Parse(x[2])].Composition + "\t" +
-                        item.Value.IsLocalized + "\t" +
-                        item.Value.MinQValue.ToString("0.000") + "\t" +
-                        item.Value.BestLocalizeLevel + "\t" +
-                        item.Value.MaxProbability.ToString("0.000")
-                        );
+                    if (item.Value != null)
+                    {
+                        output.WriteLine(
+                                item.Key.proteinAccession + "\t" +
+                                item.Key.proteinPosition + "\t" +
+                                item.Value.AminoAcid + "\t" +
+                                GlycanBox.GlobalOGlycans[item.Key.glycanId].Composition + "\t" +
+                                item.Value.IsLocalized + "\t" +
+                                item.Value.MinQValue.ToString("0.000") + "\t" +
+                                item.Value.BestLocalizeLevel + "\t" +
+                                item.Value.MaxProbability.ToString("0.000"));
+
+                    }
                 }
             }
         }
 
         //The function is to summarize localized glycosylation of each protein site. 
-        public static void WriteProteinGlycoLocalization(Dictionary<string, GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
+        public static void WriteProteinGlycoLocalization(Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
             if (glycoProteinParsimony.Count == 0)
             { return; }
@@ -486,16 +489,16 @@ namespace TaskLayer
             Dictionary<string, HashSet<string>> localizedglycans = new Dictionary<string, HashSet<string>>();
             foreach (var item in glycoProteinParsimony.Where(p=>p.Value.IsLocalized && p.Value.MinQValue <= 0.01))
             {
-                var x = item.Key.Split('#');
-                var key = x[0] + "#" + x[1];
+
+                var key = item.Key.proteinAccession + "#" + item.Key.proteinPosition;
                 if ( localizedglycans.ContainsKey(key))
                 {
-                    localizedglycans[key].Add(x[2]);
+                    localizedglycans[key].Add(item.Key.glycanId.ToString());
                 }
                 else
                 {
                     localizedglycans[key] = new HashSet<string>();
-                    localizedglycans[key].Add(x[2]);
+                    localizedglycans[key].Add(item.Key.glycanId.ToString());
                 }
 
             }

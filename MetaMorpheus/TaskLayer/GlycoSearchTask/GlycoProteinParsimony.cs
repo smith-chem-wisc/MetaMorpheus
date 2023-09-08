@@ -41,10 +41,10 @@ namespace TaskLayer
 
         public double MaxProbability { get; set; }
 
-        public static Dictionary<string, GlycoProteinParsimony> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
+        public static Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> ProteinLevelGlycoParsimony(List<GlycoSpectralMatch> allPsmsGly)
         {
             //key: proPosId
-            Dictionary<string, GlycoProteinParsimony> localizedGlycan = new Dictionary<string, GlycoProteinParsimony>();
+            Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> localizedGlycan = new Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony>();
 
             foreach (var gsm in allPsmsGly)
             {
@@ -59,7 +59,7 @@ namespace TaskLayer
                     {
                         int proteinPos = local.Item1 + gsm.OneBasedStartResidueInProtein.Value - 2;
 
-                        string proPosId = gsm.ProteinAccession + "#" + proteinPos.ToString() + "#" + local.Item2;
+                        (string,string,int) proPosId = new (gsm.ProteinAccession, proteinPos.ToString(), local.Item2);
 
                         double prob = -1;
                         if (gsm.SiteSpeciLocalProb != null && gsm.SiteSpeciLocalProb.ContainsKey(local.Item1))
