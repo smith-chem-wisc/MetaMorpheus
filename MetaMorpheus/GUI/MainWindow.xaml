@@ -514,7 +514,7 @@
                     <Grid Grid.Row="2" Background="{StaticResource BackgroundColor}" Margin="0,0,10,0" HorizontalAlignment="Right">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="140"/>
-                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
                             <ColumnDefinition Width="140"/>
                             <ColumnDefinition Width="140"/>
                             <ColumnDefinition Width="140"/>
@@ -524,7 +524,7 @@
                         <Button Name="AddCalibTaskButton" Grid.Column="0" Content="+ADD CALIBRATION" HorizontalAlignment="Right" Click="AddCalibrateTaskButton_Click" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddAveragingTaskButton" Grid.Column="1" Content="+AVERAGE SPECTRA" HorizontalAlignment="Right" Click="AddAveragingTaskButton_OnClick" 
-                                Style="{StaticResource ImportantButtonStyle}" Margin="0, 0, 1, 0" Width="140" FontSize="11" />
+                                Style="{StaticResource ImportantButtonStyle}" Margin="0, 0, 1, 0" Width="140" FontSize="11" Visibility="Collapsed"/>
                         <Button Name="AddGptmdTaskButton" Grid.Column="2" Content="+ADD PTM DISCOVERY" HorizontalAlignment="Right" Click="AddGPTMDTaskButton_Click" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddSearchTaskButton" Grid.Column="3" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
