@@ -81,7 +81,7 @@ namespace Test
             PeptideWithSetModifications pepWithSetMods = targetProtein.Digest(new DigestionParams(), null, null).First();
             TestDataFile msFile = new TestDataFile(pepWithSetMods);
             string mzmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PEPTIDE.mzML");
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(msFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(msFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestContaminantAmbiguityOutput");
 
             //run a full modern search using two databases (the same database) but one is called a target and the other is called a contaminant

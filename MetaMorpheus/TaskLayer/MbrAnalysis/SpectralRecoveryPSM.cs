@@ -7,7 +7,7 @@ using FlashLFQ;
 
 namespace TaskLayer.MbrAnalysis
 {
-    public class MbrSpectralMatch
+    public class SpectralRecoveryPSM
     {
         public PeptideSpectralMatch spectralLibraryMatch { get; set; }
 
@@ -17,7 +17,7 @@ namespace TaskLayer.MbrAnalysis
 
         public PeptideSpectralMatch originalSpectralMatch { get; private set; }
 
-        public MbrSpectralMatch(PeptideSpectralMatch spectralLibraryMatch, ChromatographicPeak acceptorPeak)
+        public SpectralRecoveryPSM(PeptideSpectralMatch spectralLibraryMatch, ChromatographicPeak acceptorPeak)
         {
             this.spectralLibraryMatch = spectralLibraryMatch;
             this.acceptorPeak = acceptorPeak;
@@ -70,7 +70,7 @@ namespace TaskLayer.MbrAnalysis
             string originalPsmPEP = originalSpectralMatch == null ? "" : originalSpectralMatch.FdrInfo.PEP.ToString();
             string originalPsmPEPQ = originalSpectralMatch == null ? "" : originalSpectralMatch.FdrInfo.PEP_QValue.ToString();
             var sb = new StringBuilder();
-            sb.Append(spectralLibraryMatch.ToString());
+            sb.Append(spectralLibraryMatch);
             sb.Append('\t');
             sb.Append(originalPsmQ);
             sb.Append('\t');

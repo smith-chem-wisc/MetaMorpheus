@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.ML" Version="2.0.0" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="2.0.0" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="2.0.0" />
-    <PackageReference Include="mzLib" Version="1.0.538" />
+    <PackageReference Include="mzLib" Version="1.0.541" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
@@ -131,6 +131,9 @@
     </None>
     <None Update="GlycoTestData\P02649.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\P16150withHyphenInName.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\P16150.fasta">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -348,6 +351,24 @@
     <None Update="TestData\SpectralLibrarySearch\yeast2fake_pdeep_lib.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralRecoveryTest\ExpectedMBRHits.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralRecoveryTest\ExperimentalDesign.tsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralRecoveryTest\HumanFastaSlice.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralRecoveryTest\K13_02ng_1min_frac1.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralRecoveryTest\K13_20ng_1min_frac1.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SpectralRecoveryTest\MsMsids.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -459,6 +480,21 @@
     <None Update="TestVariantPep.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TMT_test\DiLeu-12plex-Task1-SearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\DiLeu-4plex-Task1-SearchTaskconfig.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\DiLeu-Task1-SearchTaskconfig.toml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\DiLeuSlice.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TMT_test\DiLeu_Slice_PXD029269.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TMT_test\mouseTmt.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -466,6 +502,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TMT_test\VA084TQ_6.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TopDownTestData\simple.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TopDownTestData\slicedTDYeast.mzML">

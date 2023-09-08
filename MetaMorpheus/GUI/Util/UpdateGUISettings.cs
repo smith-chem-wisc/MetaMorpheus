@@ -253,15 +253,15 @@ namespace MetaMorpheusGUI
             return useRecommendedSettings;
         }
 
-        public static bool UseMBRAnalysisMandatorySettings()
+        public static bool UseSpectralRecoveryMandatorySettings()
         {
             bool useMandatorySettings = false;
             //check with the user to update params
-            if (Params.AskAboutMBRParams)
+            if (Params.AskAboutSpectralRecoveryParams)
             {
-                var results = ProteaseSpecificMsgBox.Show("Use Enhanced MBR Settings?",
-                    "The following parameters are necessary for enhanced match between runs:\n" +
-                    "\t-Check 'Match betweens runs' (Search Task Only)\n" +
+                var results = ProteaseSpecificMsgBox.Show("Use Spectral Recovery Settings?",
+                    "The following parameters are necessary for the Spectral Recovery algorithm:\n" +
+                    "\t-Check 'Match between runs' (Search Task Only)\n" +
                     "\t-Check 'Write Spectral Library' (Search Task Only)\n" +
                     "Would you like to use these settings?");
 
@@ -274,13 +274,13 @@ namespace MetaMorpheusGUI
                 //if they don't want to see this again, save the answer
                 if (!results.AskAgain)
                 {
-                    Params.AskAboutMBRParams = false;
-                    Params.UseMBRParams = results.UseSettings;
+                    Params.AskAboutSpectralRecoveryParams = false;
+                    Params.UseSpectralRecoveryParams = results.UseSettings;
 
                     Toml.WriteFile(Params, Path.Combine(GlobalVariables.DataDir, @"GUIsettings.toml"), MetaMorpheusTask.tomlConfig);
                 }
             }
-            else if (Params.UseMBRParams) //user didn't want to check in, but wanted to update last time
+            else if (Params.UseSpectralRecoveryParams) //user didn't want to check in, but wanted to update last time
             {
                 useMandatorySettings = true;
             }

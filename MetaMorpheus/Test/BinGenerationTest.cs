@@ -28,7 +28,7 @@ namespace Test
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                     DecoyType = DecoyType.None,
                     DoParsimony = true,
-                    DoQuantification = true
+                    DoLabelFreeQuantification = true
                 },
             };
 
@@ -57,7 +57,7 @@ namespace Test
 
             List<Protein> proteinList = new List<Protein> { prot1, prot2, prot3, prot4 };
 
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlFilePath, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlFilePath, false);
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, proteinDbFilePath);
 
             string output_folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestBinGeneration");
@@ -92,7 +92,7 @@ namespace Test
                     DoHistogramAnalysis = true,
                     MassDiffAcceptorType = MassDiffAcceptorType.Open,
                     MatchBetweenRuns = true,
-                    DoQuantification = true
+                    DoLabelFreeQuantification = true
                 },
             };
 
@@ -120,8 +120,8 @@ namespace Test
 
             List<Protein> proteinList = new List<Protein> { prot1 };
 
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlFilePath1, false);
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlFilePath2, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlFilePath1, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlFilePath2, false);
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), proteinList, proteinDbFilePath);
 
             string output_folder = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestProteinSplitAcrossFiles");

@@ -12,11 +12,8 @@ namespace TaskLayer
 {
     public static class PepXMLWriter
     {
-        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath, double qValueFilter)
+        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath)
         {
-            // TODO: needs a unit test
-            psms = psms.Where(p => p.FdrInfo.QValue <= qValueFilter && p.FdrInfo.QValueNotch < qValueFilter).ToList();
-
             if (!psms.Any())
             {
                 return;
@@ -49,7 +46,7 @@ namespace TaskLayer
                 para.Add(new pepXML.Generated.nameValueType { name = "Product Mass Tolerance", value = CommonParameters.ProductMassTolerance.ToString() });
                 // TODO: check this
                 para.Add(new pepXML.Generated.nameValueType { name = "Ions to search", value = string.Join(", ", DissociationTypeCollection.ProductsFromDissociationType[CommonParameters.DissociationType]) });
-                para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueOutputFilter.ToString() });
+                para.Add(new pepXML.Generated.nameValueType { name = "Q-value Filter", value = CommonParameters.QValueThreshold.ToString() });
                 foreach (var item in fixedModifications)
                 {
                     para.Add(new pepXML.Generated.nameValueType { name = "Fixed Modifications: " + item.IdWithMotif, value = item.MonoisotopicMass.ToString() });

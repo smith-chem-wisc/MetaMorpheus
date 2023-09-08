@@ -9,6 +9,7 @@ using NUnit.Framework;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Proteomics.RetentionTimePrediction;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -154,6 +155,161 @@ namespace Test
             Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
 
             Assert.IsTrue(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 3);
+            ProteaseDictionary.Dictionary.Remove(protease.Name);
+        }
+
+        [Test]
+        public static void TestCompIons_ETHCD_ModernSearch()
+        {
+            var myMsDataFile = new TestDataFile();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var localizeableModifications = new List<Modification>();
+            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
+            foreach (var mod in fixedModifications)
+            {
+                modsDictionary.Add(mod, 0);
+            }
+
+            int ii = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                SearchTarget = true,
+            };
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("singleN4", CleavageSpecificity.Full, null, null, motifs);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1);
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
+
+            CommonParameters withCompIons = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), dissociationType: DissociationType.EThcD, scoreCutoff: 1, addCompIons: true, maxThreadsToUsePerFile: 1);
+            var fspComp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fspComp.Add(("", CommonParameters));
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null,
+                 1, DecoyType.Reverse, CommonParameters, fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+
+            var indexResults = (IndexingResults)indexEngine.Run();
+
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
+            // without complementary ions
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, fsp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
+            // with complementary ions
+            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, fspComp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
+            // Single search mode
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+
+            // Single ms2 scan
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray[0] != null);
+            Assert.That(allPsmsArray2[0] != null);
+
+            Assert.IsTrue(allPsmsArray2[0].Score > 1);
+
+            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
+            Assert.That(allPsmsArray2[0].Score, Is.EqualTo(7.007).Within(0.001));
+            ProteaseDictionary.Dictionary.Remove(protease.Name);
+        }
+
+        [Test]
+        public static void TestCompIons_LowCID_ModernSearch()
+        {
+            var myMsDataFile = new TestDataFile();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var localizeableModifications = new List<Modification>();
+            Dictionary<Modification, ushort> modsDictionary = new Dictionary<Modification, ushort>();
+            foreach (var mod in fixedModifications)
+            {
+                modsDictionary.Add(mod, 0);
+            }
+
+            int ii = 1;
+            foreach (var mod in variableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+            foreach (var mod in localizeableModifications)
+            {
+                modsDictionary.Add(mod, (ushort)ii);
+                ii++;
+            }
+
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                SearchTarget = true,
+            };
+            List<DigestionMotif> motifs = new List<DigestionMotif> { new DigestionMotif("K", null, 1, null) };
+            Protease protease = new Protease("singleN4", CleavageSpecificity.Full, null, null, motifs);
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), scoreCutoff: 1, dissociationType: DissociationType.LowCID);
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("", CommonParameters));
+
+            CommonParameters withCompIons = new CommonParameters(digestionParams: new DigestionParams(protease: protease.Name, minPeptideLength: 1), dissociationType: DissociationType.LowCID, scoreCutoff: 1, addCompIons: true, maxThreadsToUsePerFile: 1);
+            var fspComp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fspComp.Add(("", CommonParameters));
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null,
+                 1, DecoyType.Reverse, CommonParameters, fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+
+            var indexResults = (IndexingResults)indexEngine.Run();
+
+            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
+            // without complementary ions
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, fsp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
+            // with complementary ions
+            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, fspComp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
+            // Single search mode
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+
+            // Single ms2 scan
+            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray[0] != null);
+            Assert.That(allPsmsArray2[0] != null);
+
+            Assert.IsTrue(allPsmsArray2[0].Score > 1);
+
+            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
+            Assert.IsTrue(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 2);
+            ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
 
         public static void TestCompIons_MatchIonsScore()
@@ -232,8 +388,7 @@ namespace Test
         [Test]
         public static void AddCompIonsCommonParams()
         {
-            CommonParameters cp = new CommonParameters(null, DissociationType.HCD, DissociationType.Unknown, DissociationType.Unknown, null, true, true, 3, 12, true, true, 1,
-                5, 200, 0.01, null, null, false, false, true, false, null, null, null, -1, null, null, null, 1, 1, true, 4, 1);
+            CommonParameters cp = new CommonParameters();
 
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();

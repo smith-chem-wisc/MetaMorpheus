@@ -186,7 +186,7 @@ namespace Test
             Assert.AreEqual("PEK[type:acetyl on K]TID", pepWithSetMods1.FullSequence);//this might be base sequence
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
             //run!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
