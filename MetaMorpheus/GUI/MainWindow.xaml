@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
         Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
-        MinWidth="800" Height="550" Width="950"
+        MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded">
 
     <Window.Resources>
@@ -122,6 +122,7 @@
             <!--Defines the context menu when "add task" button is clicked-->
             <ContextMenu x:Key="AddTaskMenu" Style="{StaticResource ContextMenuStyle}">
                 <MenuItem Header="Add new calibration task" Click="AddCalibrateTaskButton_Click" />
+                <MenuItem Header="Add new averaging task" Click="AddAveragingTaskButton_OnClick" />
                 <MenuItem Header="Add new GPTMD task" Click="AddGPTMDTaskButton_Click" />
                 <MenuItem Header="Add new search task" Click="AddSearchTaskButton_Click" />
                 <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" />
@@ -298,9 +299,20 @@
                         
                         task performs mass calibration; 
                         
+                        <!-- TODO: Change link to averaging paper once published -->
                         <LineBreak />
+
+                        ● The 
+
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Averaging-Task" RequestNavigate="Hyperlink_RequestNavigate">
+                            averaging
+                        </Hyperlink>
                         
-                        ● the
+                        task averages spectra to refine isotopic distributions
+
+                        <LineBreak />
+
+                        ● The
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034" RequestNavigate="Hyperlink_RequestNavigate">
                             GPTMD
                         </Hyperlink>
@@ -309,7 +321,7 @@
                         
                         <LineBreak />
                         
-                        ● the search task performs a proteomics database search, with 
+                        ● The search task performs a proteomics database search, with 
                         
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608" RequestNavigate="Hyperlink_RequestNavigate">
                             quantification
@@ -328,7 +340,7 @@
                         
                         <LineBreak />
                         
-                        ● the 
+                        ● The 
                         
                         <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141" RequestNavigate="Hyperlink_RequestNavigate">
                             XL search
@@ -338,7 +350,7 @@
                         
                         <LineBreak />
                         
-                        ● the 
+                        ● The 
                         
                         <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract" RequestNavigate="Hyperlink_RequestNavigate">
                             glycopeptide
@@ -501,23 +513,26 @@
                     <!--Button to add tasks-->
                     <Grid Grid.Row="2" Background="{StaticResource BackgroundColor}" Margin="0,0,10,0" HorizontalAlignment="Right">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="150"/>
-                            <ColumnDefinition Width="150"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
                         </Grid.ColumnDefinitions>
 
                         <Button Name="AddCalibTaskButton" Grid.Column="0" Content="+ADD CALIBRATION" HorizontalAlignment="Right" Click="AddCalibrateTaskButton_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
-                        <Button Name="AddGptmdTaskButton" Grid.Column="1" Content="+ADD PTM DISCOVERY" HorizontalAlignment="Right" Click="AddGPTMDTaskButton_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
-                        <Button Name="AddSearchTaskButton" Grid.Column="2" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
-                        <Button Name="AddXlTaskButton" Grid.Column="3" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="150"/>
-                        <Button Name="AddGlycoTaskButton" Grid.Column="4" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="150"/>
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddAveragingTaskButton" Grid.Column="1" Content="+AVERAGE SPECTRA" HorizontalAlignment="Right" Click="AddAveragingTaskButton_OnClick" 
+                                Style="{StaticResource ImportantButtonStyle}" Margin="0, 0, 1, 0" Width="140" FontSize="11" Visibility="Collapsed"/>
+                        <Button Name="AddGptmdTaskButton" Grid.Column="2" Content="+ADD PTM DISCOVERY" HorizontalAlignment="Right" Click="AddGPTMDTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddSearchTaskButton" Grid.Column="3" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddXlTaskButton" Grid.Column="4" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddGlycoTaskButton" Grid.Column="5" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="140"/>
                     </Grid>
 
                     <!--List of tasks-->

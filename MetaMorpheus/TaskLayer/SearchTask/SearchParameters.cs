@@ -14,8 +14,8 @@ namespace TaskLayer
             DoParsimony = true;
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
-            DoQuantification = true;
-            DoMbrAnalysis = true;
+            DoLabelFreeQuantification = true;
+            DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
@@ -52,6 +52,7 @@ namespace TaskLayer
                 {"UniProt", 2},
             };
 
+            WriteHighQValuePsms = true;
             WriteDecoys = true;
             WriteContaminants = true;
             WriteIndividualFiles = true;
@@ -73,8 +74,10 @@ namespace TaskLayer
         public bool WritePrunedDatabase { get; set; }
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
-        public bool DoQuantification { get; set; }
-        public bool DoMbrAnalysis { get; set; }
+        public bool DoLabelFreeQuantification { get; set; }
+        public bool DoMultiplexQuantification { get; set; }
+        public string MultiplexModId { get; set; }
+        public bool DoSpectralRecovery { get; set; }
         public SearchType SearchType { get; set; }
         public List<FdrCategory> LocalFdrCategories { get; set; }
         public string CustomMdac { get; set; }
@@ -85,6 +88,7 @@ namespace TaskLayer
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool WriteMzId { get; set; }
         public bool WritePepXml { get; set; }
+        public bool WriteHighQValuePsms { get; set; }
         public bool WriteDecoys { get; set; }
         public bool WriteContaminants { get; set; }
         public bool WriteIndividualFiles { get; set; }

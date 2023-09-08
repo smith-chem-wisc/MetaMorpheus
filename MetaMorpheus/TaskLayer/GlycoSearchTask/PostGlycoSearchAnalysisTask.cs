@@ -185,7 +185,7 @@ namespace TaskLayer
         {
             string fileName = "AllProteinGroups.tsv";
             string writtenFile = Path.Combine(outputFolder, individualFileFolder + "_"+ fileName);
-            WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, Math.Min(CommonParameters.QValueOutputFilter, CommonParameters.PepQValueOutputFilter));
+            WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId });
         }
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
         {
@@ -196,17 +196,12 @@ namespace TaskLayer
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
                     for (int i = 0; i < proteinGroups.Count; i++)
                     {
-                        if (Parameters.GlycoSearchParameters.WriteDecoys && proteinGroups[i].IsDecoy && proteinGroups[i].QValue <= qValueCutoff)
+                        if ((!Parameters.GlycoSearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) 
+                            || (!Parameters.GlycoSearchParameters.WriteContaminants && proteinGroups[i].IsContaminant))
                         {
-                            output.WriteLine(proteinGroups[i]);
                             continue;
                         }
-                        else if (Parameters.GlycoSearchParameters.WriteContaminants && proteinGroups[i].IsContaminant && proteinGroups[i].QValue <= qValueCutoff)
-                        {
-                            output.WriteLine(proteinGroups[i]);
-                            continue;
-                        }
-                        else if (proteinGroups[i].QValue <= qValueCutoff)
+                        else
                         {
                             output.WriteLine(proteinGroups[i]);
                         }

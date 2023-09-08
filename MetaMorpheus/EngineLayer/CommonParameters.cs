@@ -17,12 +17,41 @@ namespace EngineLayer
         {
         }
 
-        public CommonParameters(string taskDescriptor = null, DissociationType dissociationType = DissociationType.HCD, DissociationType ms2childScanDissociationType = DissociationType.Unknown, DissociationType ms3childScanDissociationType = DissociationType.Unknown, string separationType = "HPLC", bool doPrecursorDeconvolution = true,
-            bool useProvidedPrecursorInfo = true, double deconvolutionIntensityRatio = 3, int deconvolutionMaxAssumedChargeState = 12, bool reportAllAmbiguity = true,
-            bool addCompIons = false, int totalPartitions = 1, double scoreCutoff = 5, int? numberOfPeaksToKeepPerWindow = 200, double? minimumAllowedIntensityRatioToBasePeak = 0.01, double? windowWidthThomsons = null, int? numberOfWindows = null, bool normalizePeaksAccrossAllWindows = false, bool trimMs1Peaks = false,
-            bool trimMsMsPeaks = true, bool useDeltaScore = false, Tolerance productMassTolerance = null, Tolerance precursorMassTolerance = null, Tolerance deconvolutionMassTolerance = null,
-            int maxThreadsToUsePerFile = -1, DigestionParams digestionParams = null, IEnumerable<(string, string)> listOfModsVariable = null, IEnumerable<(string, string)> listOfModsFixed = null, double qValueOutputFilter = 1.0, double pepQValueOutputFilter = 1.0,
-            bool assumeOrphanPeaksAreZ1Fragments = true, int maxHeterozygousVariants = 4, int minVariantDepth = 1, bool addTruncations = false)
+        public CommonParameters(
+            string taskDescriptor = null, 
+            DissociationType dissociationType = DissociationType.HCD, 
+            DissociationType ms2childScanDissociationType = DissociationType.Unknown, 
+            DissociationType ms3childScanDissociationType = DissociationType.Unknown, 
+            string separationType = "HPLC", 
+            bool doPrecursorDeconvolution = true,
+            bool useProvidedPrecursorInfo = true, 
+            double deconvolutionIntensityRatio = 3, 
+            int deconvolutionMaxAssumedChargeState = 12, 
+            bool reportAllAmbiguity = true,
+            bool addCompIons = false, 
+            int totalPartitions = 1, 
+            double qValueThreshold = 0.01,
+            double pepQValueThreshold = 1.0,
+            double scoreCutoff = 5, 
+            int? numberOfPeaksToKeepPerWindow = 200, 
+            double? minimumAllowedIntensityRatioToBasePeak = 0.01, 
+            double? windowWidthThomsons = null, 
+            int? numberOfWindows = null, 
+            bool normalizePeaksAccrossAllWindows = false, 
+            bool trimMs1Peaks = false,
+            bool trimMsMsPeaks = true, 
+            bool useDeltaScore = false, 
+            Tolerance productMassTolerance = null, 
+            Tolerance precursorMassTolerance = null, 
+            Tolerance deconvolutionMassTolerance = null,
+            int maxThreadsToUsePerFile = -1, 
+            DigestionParams digestionParams = null, 
+            IEnumerable<(string, string)> listOfModsVariable = null, 
+            IEnumerable<(string, string)> listOfModsFixed = null,
+            bool assumeOrphanPeaksAreZ1Fragments = true, 
+            int maxHeterozygousVariants = 4, 
+            int minVariantDepth = 1, 
+            bool addTruncations = false)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -33,6 +62,8 @@ namespace EngineLayer
             ReportAllAmbiguity = reportAllAmbiguity;
             AddCompIons = addCompIons;
             TotalPartitions = totalPartitions;
+            QValueThreshold = qValueThreshold;
+            PepQValueThreshold = pepQValueThreshold;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
             MinimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatioToBasePeak;
@@ -58,9 +89,6 @@ namespace EngineLayer
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
             // reset custom fragmentation product types to default empty list
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
-
-            QValueOutputFilter = qValueOutputFilter;
-            PepQValueOutputFilter = pepQValueOutputFilter;
 
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
 
@@ -90,6 +118,18 @@ namespace EngineLayer
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; private set; }
+        /// <summary>
+        /// Only peptides/PSMs with Q-Value and Q-Value Notch below this threshold are used for quantification and
+        /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
+        /// peptides/PSMs with Q-Value/Notch below this threshold are included in .psmtsv results files.
+        /// </summary>
+        public double QValueThreshold { get; private set; }
+        /// <summary>
+        /// Only peptides/PSMs with PEP Q-Value below this threshold are used for quantification and
+        /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
+        /// peptides/PSMs with PEP Q-Value below this threshold are included in .psmtsv results files.
+        /// </summary>
+        public double PepQValueThreshold { get; private set; }
         public double ScoreCutoff { get; private set; }
         public DigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
@@ -101,13 +141,10 @@ namespace EngineLayer
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
         public bool UseDeltaScore { get; private set; }
-        public double QValueOutputFilter { get; private set; }
-        public double PepQValueOutputFilter { get; private set; }
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
         public int MinVariantDepth { get; private set; }
-
         public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
@@ -159,6 +196,8 @@ namespace EngineLayer
                                 ReportAllAmbiguity,
                                 addCompIons.Value,//possibly changed
                                 TotalPartitions,
+                                QValueThreshold,
+                                PepQValueThreshold,
                                 ScoreCutoff,
                                 NumberOfPeaksToKeepPerWindow,
                                 MinimumAllowedIntensityRatioToBasePeak,
@@ -185,8 +224,6 @@ namespace EngineLayer
                                 ),
                                 ListOfModsVariable,
                                 ListOfModsFixed,
-                                QValueOutputFilter,
-                                PepQValueOutputFilter,
                                 AssumeOrphanPeaksAreZ1Fragments,
                                 MaxHeterozygousVariants,
                                 MinVariantDepth,

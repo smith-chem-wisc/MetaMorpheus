@@ -439,6 +439,26 @@ namespace Test
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 
+        //make sure that hyphens in protein names don't produce a crash during protein inference from glycopeptides
+        [Test]
+        public static void OGlycoTest_Run4()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150withHyphenInName.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
+
+            var folders = Directory.GetDirectories(outputFolder).Select(b => Path.GetFileName(b)).ToList();
+            var folderContents = Directory.GetFiles(Path.Combine(outputFolder, folders[0])).ToList();
+            Assert.That(folderContents[6].Contains("_AllProteinGroups.tsv"));
+
+            Directory.Delete(outputFolder, true);
+        }
+
         [Test]
         public static void OGlycoTest_GetLeft()
         {

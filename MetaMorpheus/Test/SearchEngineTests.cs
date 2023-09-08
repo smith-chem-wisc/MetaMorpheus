@@ -4,7 +4,6 @@ using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
-using IO.MzML;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
@@ -17,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
@@ -972,6 +972,83 @@ namespace Test
             Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
         }
 
+
+        [Test]
+        public static void TestNonSpecificEnzymeSearchEngineSingleNLowCID()
+        {
+            SearchParameters SearchParameters = new SearchParameters
+            {
+                MassDiffAcceptorType = MassDiffAcceptorType.Exact,
+                LocalFdrCategories = new List<FdrCategory>
+                {
+                    FdrCategory.FullySpecific,
+                    FdrCategory.SemiSpecific,
+                    FdrCategory.NonSpecific
+                }
+            };
+            List<DigestionMotif> motifs = new List<DigestionMotif>
+            {
+                new DigestionMotif("K", null, 0, null),
+                new DigestionMotif("K", null, 1, null),
+                new DigestionMotif("G", null, 0, null),
+                new DigestionMotif("G", null, 1, null),
+            };
+            DigestionParams dp = new DigestionParams("singleN", minPeptideLength: 1, fragmentationTerminus: FragmentationTerminus.N, searchModeType: CleavageSpecificity.None);
+            CommonParameters CommonParameters = new CommonParameters(
+                dissociationType: DissociationType.LowCID,
+                precursorMassTolerance: new PpmTolerance(250),
+                digestionParams: dp,
+                scoreCutoff: 1,
+                addCompIons: true);
+
+            var myMsDataFile = new TestDataFile("Yes, I'd like one slightly larger please");
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+
+            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
+
+            var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
+                null, 100000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
+            var indexResults = (IndexingResults)indexEngine.Run();
+            var peptideIndex = indexResults.PeptideIndex;
+            var fragmentIndexDict = indexResults.FragmentIndex;
+
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+
+            MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
+
+            PeptideSpectralMatch[][] allPsmsArrays = new PeptideSpectralMatch[3][];
+            allPsmsArrays[0] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[1] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            allPsmsArrays[2] = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            PeptideSpectralMatch[] allPsmsArray = allPsmsArrays[2];
+
+            //coisolation index
+            List<int>[] coisolationIndex = new List<int>[listOfSortedms2Scans.Length];
+            for (int i = 0; i < listOfSortedms2Scans.Length; i++)
+            {
+                coisolationIndex[i] = new List<int> { i };
+            }
+            new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
+
+            // Single search mode
+            Assert.AreEqual(1, allPsmsArray.Length);
+
+            // Single ms2 scan
+            Assert.AreEqual(1, allPsmsArray.Length);
+
+            Assert.IsTrue(allPsmsArray[0].Score > 4);
+            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            CommonParameters = new CommonParameters(
+                 digestionParams: new DigestionParams("singleN", minPeptideLength: 1),
+                 precursorMassTolerance: new PpmTolerance(5),
+                 scoreCutoff: 1);
+
+            allPsmsArray[0].ResolveAllAmbiguities();
+            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+        }
+
+
         [Test]
         public static void TestNonSpecificEnzymeSearchEngineSingleCModifications()
         {
@@ -1810,7 +1887,7 @@ namespace Test
             var spectrum = new MzSpectrum(new double[1], new double[1], false);
             scans[0] = new MsDataScan(spectrum, 1, 1, true, Polarity.Positive, 1.0, new MzRange(0, 1), "", MZAnalyzerType.Orbitrap,
                 1, null, null, "");
-            var fileWithNoMs2Scans = new MsDataFile(scans, null);
+            var fileWithNoMs2Scans = new GenericMsDataFile(scans, null);
             var ms2Scans = MetaMorpheusTask.GetMs2Scans(fileWithNoMs2Scans, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             Assert.That(!ms2Scans.Any());
         }
@@ -1838,7 +1915,7 @@ namespace Test
 
             MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { peptide, peptide2, peptide3, peptide4, peptide5, peptide6, peptide7 });
             string mzmlName = @"test.mzML";
-            IO.MzML.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName, false);
 
             string xmlName = "testDb.xml";
             Protein theProtein = new Protein("PEPTIDEK", "accession1");

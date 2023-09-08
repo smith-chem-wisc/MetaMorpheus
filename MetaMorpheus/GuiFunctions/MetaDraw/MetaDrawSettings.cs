@@ -83,7 +83,7 @@ namespace GuiFunctions
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
         public static OxyColor InternalIonColor { get; set; } = OxyColors.Purple;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
-        public static double CanvasPdfExportDpi { get; set; } = 300;
+        public static double CanvasPdfExportDpi { get; set; } = 600;
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double AnnotatedSequenceTextSpacing { get; set; } = 22;

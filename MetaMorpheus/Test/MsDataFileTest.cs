@@ -32,7 +32,7 @@ namespace Test
                 SearchParameters = new SearchParameters
                 {
                     DoParsimony = true,
-                    DoQuantification = true
+                    DoLabelFreeQuantification = true
                 }
             };
             List<(string, MetaMorpheusTask)> taskList = new()

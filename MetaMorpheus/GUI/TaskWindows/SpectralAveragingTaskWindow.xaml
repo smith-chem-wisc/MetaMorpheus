@@ -1,0 +1,275 @@
+﻿<Window x:Class="MetaMorpheusGUI.SpectralAveragingTaskWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        mc:Ignorable="d"
+        Title="Spectral Averaging Task Window" 
+        KeyDown="SpectralAveragingTaskWindow_OnKeyDown"
+        Width="750" Height="Auto"  
+        MinWidth="750"
+        MinHeight="200"
+        WindowStartupLocation="CenterScreen"
+        d:DataContext="{x:Static guiFunctions:SpectralAveragingParametersModel.Instance}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="50" />
+        </Grid.RowDefinitions>
+
+        <!-- All Content that is not buttons -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <DockPanel>
+
+                <!-- Upper region with name and wiki link -->
+                <Grid DockPanel.Dock="Top">
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="10" />
+                    </Grid.ColumnDefinitions>
+                    
+                    <!-- Name -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal">
+                        <Label Content="Task Name" />
+                        <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                            <TextBox.Style>
+                                <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                                    <Style.Resources>
+                                        <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                            <VisualBrush.Visual>
+                                                <Label Content="AveragingTask" Foreground="Gray" />
+                                            </VisualBrush.Visual>
+                                        </VisualBrush>
+                                    </Style.Resources>
+                                    <Style.Triggers>
+                                        <Trigger Property="Text" Value="{x:Static sys:String.Empty}">
+                                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="Text" Value="{x:Null}">
+                                            <Setter Property="Background" Value="{StaticResource CueBannerBrush}" />
+                                        </Trigger>
+                                        <Trigger Property="IsKeyboardFocused" Value="True">
+                                            <Setter Property="Background" Value="White" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBox.Style>
+                        </TextBox>
+                    </StackPanel>
+
+                    <!-- Wiki Link -->
+                    <TextBlock Grid.Column="1" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"
+                               FontWeight="Bold">
+                        About the 
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Averaging-Task"
+                                   RequestNavigate="Hyperlink_OnRequestNavigate">
+                            Averaging Task   
+                        </Hyperlink>
+                    </TextBlock>
+                </Grid>
+                
+                <!-- Averaging Parameters -->
+                <GroupBox DockPanel.Dock="Top">
+                    <StackPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+
+                            <!-- Left side -->
+                            <!-- Averaging Type, Type Specific Options, and Normalization -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+
+                                <!-- Preset Parameters -->
+                                <GroupBox Header="Preset Parameters" Style="{StaticResource GroupBoxStyle}" Padding="4">
+                                    <Grid>
+
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*"/>
+                                            <ColumnDefinition Width="3*"/>
+                                            <ColumnDefinition Width="2*"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <Button Grid.Column="0" Content="General DDA" Command="{Binding SetOtherParametersCommand}"
+                                                CommandParameter="Dda1" Width="90" 
+                                                ToolTip="Use for DDA of 120k or lower, Sigma Clipping performs well for general applications"/>
+                                        <Button Grid.Column="1" Content="High Resolution DDA" Command="{Binding SetOtherParametersCommand}"
+                                                CommandParameter="Dda2" Width="130" 
+                                                ToolTip="Use for DDA of 120k or higher, Averaged Sigma Clipping performs well with highly reproducible, highly resolved, data"/>
+                                        <Button Grid.Column="2" Content="Direct Injection" Command="{Binding SetOtherParametersCommand}"
+                                                CommandParameter="DirectInjection" Width="90"
+                                                ToolTip="User for spectra files containing scans of a single sample or species, Min Max Clipping removes the highest and lowest intensity value per bin"/>
+                                    </Grid>
+                                </GroupBox>
+
+                                <!-- File Averaging Type -->
+                                <GroupBox Header="File Averaging Type" Style="{StaticResource GroupBoxStyle}" >
+                                    <ListBox ItemsSource="{Binding SpectraFileAveragingTypes}" SelectedItem="{Binding SpectraFileAveragingType}">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="{x:Type ListBoxItem}">
+                                                <Setter Property="Template" >
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                            <ContentPresenter />
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <RadioButton Content="{Binding Converter={local:DataStructureToStringConverter}}" Margin="20 0 0 0">
+                                                    <RadioButton.IsChecked>
+                                                        <Binding Path="IsSelected" RelativeSource="{RelativeSource AncestorType=ListBoxItem}" Mode="TwoWay" />
+                                                    </RadioButton.IsChecked>
+                                                </RadioButton>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </GroupBox>
+
+                                <!-- File Averaging Specific Options -->
+                                <GroupBox Header="Binning Parameters" Style="{StaticResource GroupBoxStyle}" >
+                                    <StackPanel HorizontalAlignment="Left">
+
+                                        <!-- Bin Size -->
+                                        <StackPanel Style="{StaticResource ValueEnteringStackPanel}">
+                                            <Label Content="Bin Size" Width="280" 
+                                                       ToolTip="Size of each bin in Thompson units"/>
+                                            <local:DoubleTextBoxControl Text="{Binding BinSize}" Style="{StaticResource TextBoxStyle}"/>
+                                        </StackPanel>
+
+                                        <!-- Number of scans to average -->
+                                        <StackPanel Style="{StaticResource ValueEnteringStackPanel}" Margin="1"
+                                                        Opacity="{Binding SpectraFileAveragingType, Converter={local:SpectraFileAveragingTypeToNumberOpacityConverter}}">
+                                            <Label Content="Number of Scans To Average" Width="280"
+                                                       ToolTip="How many scans from the file should be averaged at a time" />
+                                            <local:IntegerTexBoxControl Text="{Binding NumberOfScansToAverage}" Style="{StaticResource TextBoxStyle}"
+                                                                            IsReadOnly="{Binding SpectraFileAveragingType, Converter={local:SpectraFileAveragingTypeToNumberToAverageReadOnlyConverter}}"/>
+                                        </StackPanel>
+
+
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <!-- Normalization -->
+                                <GroupBox Header="Normalization" Style="{StaticResource GroupBoxStyle}">
+                                    <CheckBox IsChecked="{Binding PerformNormalization}" Content="Perform Normalization" />
+                                </GroupBox>
+                            </StackPanel>
+
+                            <!-- Right side -->
+                            <!-- Outlier Rejection and Bin Weighting -->
+                            <StackPanel Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+
+                                <!-- Outlier Rejection -->
+                                <GroupBox Header="Outlier Rejection" Style="{StaticResource GroupBoxStyle}">
+                                    <StackPanel>
+                                        <ListBox ItemsSource="{Binding RejectionTypes}" SelectedItem="{Binding RejectionType}"
+                                                 BorderThickness="0">
+                                            <ListBox.ItemContainerStyle>
+                                                <Style TargetType="{x:Type ListBoxItem}">
+                                                    <Setter Property="Template" >
+                                                        <Setter.Value>
+                                                            <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                                <ContentPresenter />
+                                                            </ControlTemplate>
+                                                        </Setter.Value>
+                                                    </Setter>
+                                                </Style>
+                                            </ListBox.ItemContainerStyle>
+                                            <ListBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <RadioButton Content="{Binding Converter={local:DataStructureToStringConverter}}" Margin="20 0 0 0">
+                                                        <RadioButton.IsChecked>
+                                                            <Binding Path="IsSelected" RelativeSource="{RelativeSource AncestorType=ListBoxItem}" Mode="TwoWay" />
+                                                        </RadioButton.IsChecked>
+                                                    </RadioButton>
+                                                </DataTemplate>
+                                            </ListBox.ItemTemplate>
+                                        </ListBox>
+
+                                        <!-- Min Sigma Value -->
+                                        <StackPanel Style="{StaticResource ValueEnteringStackPanel}" HorizontalAlignment="Left"
+                                                        Opacity="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaOpacityConverter}}">
+                                            <Label Content="Minimum Sigma Value" Width="280"
+                                                       ToolTip="Minimum distance in standard deviation units allowed before the point is rejected as an outlier"/>
+                                            <local:DoubleTextBoxControl Text="{Binding MinSigmaValue}" Style="{StaticResource TextBoxStyle}"
+                                                                            IsReadOnly="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaReadOnlyConverter}}"/>
+                                        </StackPanel>
+
+                                        <!-- Max Sigma Value -->
+                                        <StackPanel Style="{StaticResource ValueEnteringStackPanel}" HorizontalAlignment="Left"
+                                                        Opacity="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaOpacityConverter}}">
+                                            <Label Content="Maximum Sigma Value" Width="280" 
+                                                       ToolTip="Maximum distance in standard deviation units allowed before the point is rejected as an outlier"/>
+                                            <local:DoubleTextBoxControl Text="{Binding MaxSigmaValue}" Style="{StaticResource TextBoxStyle}"
+                                                                            IsReadOnly="{Binding RejectionType, Converter={local:OutlierRejectionTypeToSigmaReadOnlyConverter}}"/>
+                                        </StackPanel>
+
+                                        <!-- Percentile -->
+                                        <StackPanel Style="{StaticResource ValueEnteringStackPanel}" HorizontalAlignment="Left"
+                                                        Opacity="{Binding RejectionType, Converter={local:OutlierRejectionTypeToPercentileOpacityConverter}}">
+                                            <Label Content="Percentile" Width="280"
+                                                       ToolTip="Distance away from the mean in percentile units before the point is rejected as an outlier in Percentile Clipping"/>
+                                            <local:DoubleTextBoxControl Text="{Binding Percentile}" Style="{StaticResource TextBoxStyle}" 
+                                                                        IsReadOnly="{Binding RejectionType, Converter={local:OutlierRejectionTypeToPercentileReadOnlyConverter}}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </GroupBox>
+
+                                <!-- Bin Weighting -->
+                                <GroupBox Header="Bin Weighting" Style="{StaticResource GroupBoxStyle}">
+                                    <ListBox ItemsSource="{Binding WeightingTypes}" SelectedItem="{Binding WeightingType}">
+                                        <ListBox.ItemContainerStyle>
+                                            <Style TargetType="{x:Type ListBoxItem}">
+                                                <Setter Property="Template" >
+                                                    <Setter.Value>
+                                                        <ControlTemplate TargetType="{x:Type ListBoxItem}">
+                                                            <ContentPresenter />
+                                                        </ControlTemplate>
+                                                    </Setter.Value>
+                                                </Setter>
+                                            </Style>
+                                        </ListBox.ItemContainerStyle>
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <RadioButton Content="{Binding Converter={local:DataStructureToStringConverter}}" Margin="20 0 0 0">
+                                                    <RadioButton.IsChecked>
+                                                        <Binding Path="IsSelected" RelativeSource="{RelativeSource AncestorType=ListBoxItem}" Mode="TwoWay" />
+                                                    </RadioButton.IsChecked>
+                                                </RadioButton>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </GroupBox>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+            </DockPanel>
+        </ScrollViewer>
+
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
+            <Button x:Name="CancelButton" Content="Cancel" Click="CancelButton_OnClick" Width="100" Margin="5 0 5 0" />
+            <Button x:Name="SaveButton" Content="Save Averaging Task" Click="SaveButton_OnClick"  FontSize="24" Margin="5 0 5 0"/>
+            <Button x:Name="SetDefaultbutton" Click="SetDefaultbutton_OnClick"  Width="100" Margin="5 0 5 0">
+                <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                </ToolTipService.ToolTip>
+            </Button>
+        </StackPanel>
+
+    </Grid>
+</Window>

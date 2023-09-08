@@ -10,6 +10,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Readers;
 using TaskLayer;
 
 namespace Test
@@ -56,7 +57,7 @@ namespace Test
             double isolationMZ = selectedIonMz;
             Scans[1] = new MsDataScan(MS2, 2, 2, false, Polarity.Positive, 2.0, new MzRange(100, 1500), "second spectrum", MZAnalyzerType.Unknown, MS2.SumOfAllY, null, null, "scan=2", selectedIonMz, null, null, isolationMZ, 2.5, DissociationType.HCD, 1, null);
 
-            var myMsDataFile = new MsDataFile(Scans, null);
+            var myMsDataFile = new GenericMsDataFile(Scans, null);
             
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters(deconvolutionIntensityRatio: 50)).OrderBy(b => b.PrecursorMass).ToArray();
             
