@@ -4,18 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
-        mc:Ignorable="d"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        mc:Ignorable="d"
         KeyDown="KeyPressed"
-        Title="GlycoSearchTaskWindow" Height="750" Width="750" WindowStartupLocation="CenterScreen">
+        Title="Glyco Search Task" Height="750" Width="750" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
         <!-- used in Quantifications -->
-        <BooleanToVisibilityConverter x:Key="bool2VisConverter" />
-        <guiFunctions:BooleanOrConverter x:Key="boolOrConverter"/>
+        <local:BooleanOrConverter x:Key="boolOrConverter"/>
+        <local:BooleanOrToVisibilityConverter x:Key="boolOr2VisConverter"/>
 
         <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
