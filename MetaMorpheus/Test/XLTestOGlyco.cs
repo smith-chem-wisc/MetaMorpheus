@@ -787,7 +787,8 @@ namespace Test
 
             CollectionAssert.AreEquivalent(headerTerms, nGlycoHeaderTerms);
         }
-
+        
+        //Test oglycopeptide quant with two conditions, experimental design and normalization
         [Test]
         public static void TestGlycoQuant()
         {
@@ -795,14 +796,35 @@ namespace Test
             Directory.CreateDirectory(outputFolder);
 
             var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.Normalize = true;
 
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
             string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
             string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
+
+            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+
+            ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
+
+            string experimentalDesignFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\ExperimentalDesign.tsv");
+
+            var readIn = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilePath,
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(),
+                out var errors);
+
+            Assert.That(!errors.Any());
+            Assert.That(readIn.Count == 2);
+
+
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
             {
+                "ExperimentalDesign.tsv",
                 "_AllProteinGroups.tsv",
                 "AllPSMs.psmtsv",
                 "AllQuantifiedPeaks.tsv",
@@ -812,7 +834,6 @@ namespace Test
                 "protein_oglyco_localization.tsv",
                 "results.txt",
                 "seen_oglyco_localization.tsv"
-
             };
 
 
@@ -838,6 +859,7 @@ namespace Test
 
             Assert.AreEqual("E7EQR8|Q9GZM5", proteinGroupFields[0]);
 
+            File.Delete(experimentalDesignFilePath);
             Directory.Delete(outputFolder, true);
         }
     }
