@@ -361,9 +361,9 @@ namespace MetaMorpheusGUI
 
 
             var listOfModsVariable = new List<(string, string)>();
-            foreach (var heh in VariableModTypeForTreeViewObservableCollection)
+            foreach (var modTypeForTreeView in VariableModTypeForTreeViewObservableCollection)
             {
-                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
+                listOfModsVariable.AddRange(modTypeForTreeView.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
             var listOfModsFixed = new List<(string, string)>();
