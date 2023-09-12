@@ -1,0 +1,45 @@
+TaskType = "Search"
+
+[CommonParameters]
+MaxDegreeOfParallelism = 1
+LocalizeAll = true
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C"
+ListOfModsVariable = "Common Variable\tOxidation on M"
+ListOfModsLocalize = ""
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionIntensityRatio = 4.0
+DeconvolutionMaxAssumedChargeState = 10
+DeconvolutionMassTolerance = "±5.0000 PPM"
+InitiatorMethionineBehavior = "Variable"
+MaxMissedCleavages = 2
+MinPeptideLength = 5
+MaxModificationIsoforms = 1024
+TotalPartitions = 1
+Protease = "trypsin"
+BIons = true
+YIons = true
+ZdotIons = false
+CIons = false
+ProductMassTolerance = "±0.0100 Absolute"
+PrecursorMassTolerance = "±5.0000 PPM"
+ConserveMemory = false
+ScoreCutoff = 1.0
+
+[SearchParameters]
+DisposeOfFileWhenDone = false
+AddCompIons = false
+DoParsimony = true
+ModPeptidesAreUnique = false
+NoOneHitWonders = false
+MatchBetweenRuns = true
+QuantifyPpmTol = 5.0
+DoHistogramAnalysis = false
+SearchTarget = true
+SearchDecoy = true
+WritePrunedDatabase = false
+KeepAllUniprotMods = true
+DoLocalizationAnalysis = true
+DoQuantification = true
+SearchType = "Classic"
+MassDiffAcceptorType = "Exact"

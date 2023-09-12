@@ -1,0 +1,892 @@
+﻿<Window x:Class="MetaMorpheusGUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MetaMorpheusGUI"
+        mc:Ignorable="d"
+        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
+        MinWidth="800" Height="550" Width="1000"
+        Loaded="MyWindow_Loaded">
+
+    <Window.Resources>
+        <ResourceDictionary>
+            <!--App-wide resources (e.g., colors) can be found in App.xaml-->
+
+            <!--Allows use of "not" (i.e., inverse of true boolean) in binding properties-->
+            <local:BooleanInverter x:Key="InvertedBooleanConverter" />
+
+            <!--Styling for the tab items on the left side-->
+            <Style x:Key="TabItemStyle" TargetType="TabItem">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <Grid Height="35" Width="105" Background="{StaticResource SideBarMainColor}">
+                                <Border Name="Border" Margin="0,0,0,0" Background="Transparent"
+                                                BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" >
+                                    <ContentPresenter 
+                                                x:Name="ContentSite" 
+                                                VerticalAlignment="Center"
+                                                HorizontalAlignment="Left"
+                                                ContentSource="Header" Margin="5,2,10,2"
+                                                RecognizesAccessKey="True">
+                                    </ContentPresenter>
+                                </Border>
+                            </Grid>
+
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter Property="BorderThickness" Value="0,0,7,0"/>
+                                    <Setter Property="FontWeight" Value="Bold"/>
+                                    <!--Color of tab item text (when selected)-->
+                                    <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
+                                    <!--Color of tab item right side (when selected)-->
+                                    <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                                </Trigger>
+
+                                <Trigger Property="IsSelected" Value="False">
+                                    <!--Color of tab item text (when deselected)-->
+                                    <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Margin" Value="0,0,2,0" />
+                <Setter Property="Padding" Value="0" />
+            </Style>
+
+            <!--Styling for the grid that defines each page-->
+            <Style x:Key="PageGridStyle" TargetType="Grid">
+                <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+                <Setter Property="Margin" Value="-3,-2,-2,-2"/>
+            </Style>
+
+            <!--Styling for the "important" buttons like add task, add DB, etc.-->
+            <Style x:Key="ImportantButtonStyle" TargetType="Button">
+                <Setter Property="BorderThickness" Value="0"/>
+                <Setter Property="Width" Value="200"/>
+                <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
+                <Setter Property="FontSize" Value="12"/>
+            </Style>
+
+            <!--Styling for borders-->
+            <Style x:Key="x:BorderStyle" TargetType="Border">
+                <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+            </Style>
+
+            <!--Styling for the big text header at the top of each page-->
+            <Style x:Key="HeaderLabelStyle" TargetType="Label">
+                <Setter Property="HorizontalAlignment" Value="Left"/>
+                <Setter Property="FontSize" Value="26"/>
+                <Setter Property="FontWeight" Value="Bold"/>
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="Margin" Value="10,5,0,0"/>
+            </Style>
+
+            <!--Styling for the "main" text in the About + Help pages-->
+            <Style x:Key="TextBlockStyle" TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="FontSize" Value="13"/>
+                <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+                <Setter Property="Margin" Value="15,0,10,0"/>
+            </Style>
+
+            <!--Styling for the context menu to add tasks-->
+            <Style x:Key="ContextMenuStyle" TargetType="ContextMenu">
+                <Setter Property="Background" Value="{StaticResource BackgroundColor}"/>
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="OverridesDefaultStyle" Value="True" />
+                <Setter Property="SnapsToDevicePixels" Value="True" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type ContextMenu}">
+                            <Border BorderThickness="1" BorderBrush="{StaticResource BorderColor}" x:Name="Border" 
+                                    Background="{StaticResource BackgroundColor}">
+                                <StackPanel ClipToBounds="True" Orientation="Vertical" IsItemsHost="True" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="true">
+                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource BackgroundColor}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!--Defines the context menu when "add task" button is clicked-->
+            <ContextMenu x:Key="AddTaskMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Add new calibration task" Click="AddCalibrateTaskButton_Click" />
+                <MenuItem Header="Add new averaging task" Click="AddAveragingTaskButton_OnClick" />
+                <MenuItem Header="Add new GPTMD task" Click="AddGPTMDTaskButton_Click" />
+                <MenuItem Header="Add new search task" Click="AddSearchTaskButton_Click" />
+                <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" />
+                <MenuItem Header="Add new glycopeptide task" Click="AddGlycoSearchTask_Click" />
+                <Separator/>
+                <MenuItem Header="Load task from .toml file" Click="LoadTask_Click" />
+            </ContextMenu>
+
+            <!--Defines the context menu when a protein database is right-clicked-->
+            <ContextMenu x:Key="ProteinDatabaseContextMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Set as contaminant database" Click="SetSelectedDatabaseAsContaminant_Click"/>
+                <MenuItem Header="Set as non-contaminant database" Click="SetSelectedDatabaseAsNonContaminant_Click"/>
+                <MenuItem Header="Open file" Click="OpenFile_Click"/>
+                <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
+                <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
+            </ContextMenu>
+
+            <!--Defines the context menu when a spectra file is right-clicked-->
+            <ContextMenu x:Key="SpectraFileContextMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Set file-specific parameters" Click="SetFileSpecificParameters_Click"/>
+                <MenuItem Header="Open file" Click="OpenFile_Click"/>
+                <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
+                <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
+            </ContextMenu>
+
+            <!--Defines the context menu when a task is right-clicked-->
+            <ContextMenu x:Key="TaskContextMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Edit task" Click="EditTask_Click"/>
+                <MenuItem Header="Save as .toml" Click="SaveTaskAsToml_Click" />
+                <MenuItem Header="Move task up" Click="MoveTaskUp_Click" />
+                <MenuItem Header="Move task down" Click="MoveTaskDown_Click" />
+                <MenuItem Header="Delete" Click="Delete_Click" />
+                <MenuItem Header="Delete all" Click="DeleteAll_Click" />
+            </ContextMenu>
+
+            <!--Defines the context menu when a written file is right-clicked-->
+            <ContextMenu x:Key="WrittenFileContextMenu" Style="{StaticResource ContextMenuStyle}">
+                <MenuItem Header="Open file" Click="OpenFile_Click" />
+                <MenuItem Header="Open containing folder" Click="OpenContainingFolder_Click" />
+            </ContextMenu>
+
+            <!--Styling for the datagrids that store spectra/databases-->
+            <Style x:Key="x:DataGridStyle" TargetType="DataGrid">
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="Background" Value="{StaticResource DataGridBackgroundColor}"/>
+                <Setter Property="Height" Value="Auto"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderColor}"/>
+                <Setter Property="Margin" Value="10,0,10,10"/>
+                <Setter Property="SelectedItem" Value="{Binding SelectedRow, Mode=TwoWay}"/>
+                <Setter Property="HeadersVisibility" Value="Column"/>
+                <Setter Property="HorizontalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
+                <Setter Property="VerticalGridLinesBrush" Value="{StaticResource DataGridHeaderColor}"/>
+                <Setter Property="AutoGenerateColumns" Value="False"/>
+            </Style>
+
+            <!--Styling for the datagrid headers-->
+            <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+                <Setter Property="Background" Value="{StaticResource DataGridHeaderColor}"/>
+                <Setter Property="FontSize" Value="13" />
+            </Style>
+
+            <!--Styles the spectra file datagrid items-->
+            <Style x:Key="SpectraFileDataGridItemStyle" TargetType="DataGridRow">
+                <EventSetter Event="Selected" Handler="AddSelectedSpectra" />
+                <EventSetter Event="Unselected" Handler="RemoveSelectedSpectra" />
+                <Setter Property="ContextMenu" Value="{StaticResource SpectraFileContextMenu}" />
+            </Style>
+
+            <!--Styles the protein DB datagrid items-->
+            <Style x:Key="DatabaseDataGridItemStyle" TargetType="DataGridRow">
+                <EventSetter Event="Selected" Handler="AddSelectedDatabase" />
+                <EventSetter Event="Unselected" Handler="RemoveSelectedDatabase" />
+                <Setter Property="ContextMenu" Value="{StaticResource ProteinDatabaseContextMenu}" />
+            </Style>
+
+            <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
+                <EventSetter Event="MouseDoubleClick" Handler="DatabaseOrSpectraFile_DoubleClick"/>
+            </Style>
+
+            <Style x:Key="SpectraFileDataGridCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource DataGridCellStyle}">
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding InProgress}" Value="True">
+                        <Setter Property="Foreground" Value="Blue" />
+                        <Setter Property="FontWeight" Value="Bold" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!--Data templates for the types displayed in the treeview-->
+            <HierarchicalDataTemplate DataType="{x:Type local:InRunTask}" ItemsSource="{Binding Children}">
+                <StackPanel Orientation="Horizontal" ContextMenu="{StaticResource TaskContextMenu}">
+                    <TextBlock Text="T " />
+                    <TextBlock Text="{Binding DisplayName}" />
+                    <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
+                    <TextBlock Text="{Binding Status}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+            <HierarchicalDataTemplate DataType="{x:Type local:CollectionForTreeView}" ItemsSource="{Binding Children}">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="C " />
+                    <TextBlock Text="{Binding DisplayName}" />
+                    <ProgressBar Value="{Binding Progress}" IsIndeterminate="{Binding IsIndeterminate}" Width="100" Margin="5,0,5,0" />
+                    <TextBlock Text="{Binding Status}" />
+                </StackPanel>
+            </HierarchicalDataTemplate>
+            <DataTemplate DataType="{x:Type local:OutputFileForTreeView}">
+                <StackPanel Orientation="Horizontal" ContextMenu="{StaticResource WrittenFileContextMenu}">
+                    <TextBlock Text="F " />
+                    <TextBlock Text="{Binding DisplayName}" />
+                    <TextBlock Text="{Binding Status}" />
+                </StackPanel>
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type local:PreRunTask}">
+                <StackPanel Orientation="Horizontal" ContextMenu="{StaticResource TaskContextMenu}">
+                    <TextBlock Text="{Binding DisplayName}" />
+                </StackPanel>
+            </DataTemplate>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <!--Window content-->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="1*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--Pages-->
+        <TabControl x:Name="MainWindowTabControl" Grid.Row="0" TabStripPlacement="Left" Margin="0" SelectionChanged="TabControl_SelectionChanged" 
+                    BorderThickness="0" BorderBrush="{StaticResource BorderColor}">
+            <TabControl.Resources>
+                <Style TargetType="Grid">
+                    <!--This defines the *default* style for *all grids in the entire tab control*-->
+                    <!--This is not great but seems necessary to have a proper background on the tab items...-->
+                    <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
+                </Style>
+            </TabControl.Resources>
+
+            <!--About tab-->
+            <TabItem Name="AboutTab" Header="About" TabIndex="0" Style="{StaticResource TabItemStyle}">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <!--Header label-->
+                    <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                    <!--Text content-->
+                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
+                        MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
+                        as input,as well as spectra files in .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
+                        (.msp) can be used to improve search results.
+                        
+                        <LineBreak />
+                        <LineBreak />
+                        
+                        After adding input files, the last step is to define a workflow by adding tasks for MetaMorpheus to perform.
+                        
+                        <LineBreak />
+                        <LineBreak />
+                        ● The 
+                        
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00873" RequestNavigate="Hyperlink_RequestNavigate">
+                            calibration
+                        </Hyperlink> 
+                        
+                        task performs mass calibration; 
+                        
+                        <!-- TODO: Change link to averaging paper once published -->
+                        <LineBreak />
+
+                        ● The 
+
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Averaging-Task" RequestNavigate="Hyperlink_RequestNavigate">
+                            averaging
+                        </Hyperlink>
+                        
+                        task averages spectra to refine isotopic distributions
+
+                        <LineBreak />
+
+                        ● The
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.6b00034" RequestNavigate="Hyperlink_RequestNavigate">
+                            GPTMD
+                        </Hyperlink>
+                        
+                        task performs PTM discovery; 
+                        
+                        <LineBreak />
+                        
+                        ● The search task performs a proteomics database search, with 
+                        
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608" RequestNavigate="Hyperlink_RequestNavigate">
+                            quantification
+                        </Hyperlink>
+                        ,
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330" RequestNavigate="Hyperlink_RequestNavigate">
+                            multi-protease
+                        </Hyperlink>                       
+                        , and 
+                        
+                        <Hyperlink NavigateUri="http://dx.doi.org/10.2174/1574893615999200429123334" RequestNavigate="Hyperlink_RequestNavigate">
+                            non-specific search
+                        </Hyperlink>
+                        
+                        options;
+                        
+                        <LineBreak />
+                        
+                        ● The 
+                        
+                        <Hyperlink NavigateUri="https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141" RequestNavigate="Hyperlink_RequestNavigate">
+                            XL search
+                        </Hyperlink>
+                        
+                        performs a search for crosslinked peptides; and 
+                        
+                        <LineBreak />
+                        
+                        ● The 
+                        
+                        <Hyperlink NavigateUri="https://www.biorxiv.org/content/10.1101/2020.05.18.102327v1.abstract" RequestNavigate="Hyperlink_RequestNavigate">
+                            glycopeptide
+                        </Hyperlink> 
+                        
+                        search detects O-linked glycopeptides.
+                        
+                        <LineBreak />
+                        <LineBreak />
+                        
+                        Visit the 
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
+                            MetaMorpheus wiki
+                        </Hyperlink> 
+                        to learn more.
+                        
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        
+                        MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
+                    </TextBlock>
+                </Grid>
+            </TabItem>
+
+            <!--Databases tab-->
+            <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="60"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--Header label-->
+                    <Label Content="Protein Databases and Spectral Libraries" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4"/>
+
+                    <!--Detail text-->
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
+                        Add 
+                        
+                        <Hyperlink NavigateUri="https://www.uniprot.org/" RequestNavigate="Hyperlink_RequestNavigate">
+                            reference proteome(s)
+                        </Hyperlink> 
+                        
+                        in .xml or .fasta format. Reference proteomes in .xml format can contain post-translational modification (PTM) locations,
+                        whereas .fasta format only contains amino acid sequences.
+                       <Hyperlink NavigateUri="https://chemdata.nist.gov/dokuwiki/doku.php?id=peptidew:start" RequestNavigate="Hyperlink_RequestNavigate">
+                            Spectral libraries
+                       </Hyperlink>
+
+                       in .msp format can be added to improve search results.
+                    </TextBlock>
+
+                    <!--Buttons to add databases-->
+                    <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" 
+                        Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
+
+                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN PROTEOMES FOLDER" 
+                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left"/>
+
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD PROTEOME" 
+                        Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" HorizontalAlignment="Right"/>
+
+                    <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
+                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0" HorizontalAlignment="Right"/>
+
+                    <!--The list of databases-->
+                    <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" Grid.ColumnSpan="4" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown" >
+                        <DataGrid.RowStyle>
+                            <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" />
+                        </DataGrid.RowStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource DataGridCellStyle}" />
+                        </DataGrid.CellStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="250" />
+                            <DataGridTextColumn Header="File Path" Binding="{Binding FilePath, Mode=OneWay}" Width="200" />
+                            <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="250" />
+                            <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!--Spectra tab-->
+            <TabItem Name="SpectraTab" Header="Spectra" TabIndex="0" Style="{StaticResource TabItemStyle}">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="41*"/>
+                        <RowDefinition Height="153*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--Header label-->
+                    <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                    <!--Detail text-->
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Margin="15,0,10,0">
+                        Add spectra file(s) in .mzML, .mgf, or Thermo .raw format.
+                    </TextBlock>
+
+                    <!--Button to add spectra files-->
+                    <Button Name="AddSpectraButton" Grid.Row="2" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Left" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="634,0,0,0"/>
+
+                    <Button Name="SetFileSpecificSettingsButton" Grid.Row="2" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" 
+                            HorizontalAlignment="Left" Style="{StaticResource ImportantButtonStyle}"
+                        Margin="433,0,0,0"/>
+
+                    <Button Name="SetExperimentalDesignButton" Grid.Row="2" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
+                            HorizontalAlignment="Left" Style="{StaticResource ImportantButtonStyle}"
+                        Margin="232,0,0,0"/>
+
+                    <!--The list of spectra files-->
+                    <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="3" Style="{StaticResource x:DataGridStyle}"
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown" Margin="10,0,10,10" Grid.RowSpan="2">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
+                        </DataGrid.RowStyle>
+                        <DataGrid.CellStyle>
+                            <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource SpectraFileDataGridCellStyle}" />
+                        </DataGrid.CellStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="250" />
+                            <DataGridTextColumn Header="File Path" Binding="{Binding FilePath, Mode=OneWay}" Width="200" />
+                            <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="250" />
+                            <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </Grid>
+            </TabItem>
+
+            <!--Workflow tab-->
+            <TabItem Name="TasksTab" Header="Tasks" TabIndex="0" Style="{StaticResource TabItemStyle}" Height="35" Margin="0,0,2,0" VerticalAlignment="Bottom">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--Header label-->
+                    <Label Content="Tasks" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                    <!--Detail text-->
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
+                        Add MetaMorpheus tasks to construct a workflow. Tasks can be saved/loaded as .toml files for repeat use.
+                    </TextBlock>
+
+                    <!--Button to add tasks-->
+                    <Grid Grid.Row="2" Background="{StaticResource BackgroundColor}" Margin="0,0,10,0" HorizontalAlignment="Right">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                            <ColumnDefinition Width="140"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Name="AddCalibTaskButton" Grid.Column="0" Content="+ADD CALIBRATION" HorizontalAlignment="Right" Click="AddCalibrateTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddAveragingTaskButton" Grid.Column="1" Content="+AVERAGE SPECTRA" HorizontalAlignment="Right" Click="AddAveragingTaskButton_OnClick" 
+                                Style="{StaticResource ImportantButtonStyle}" Margin="0, 0, 1, 0" Width="140" FontSize="11" Visibility="Collapsed"/>
+                        <Button Name="AddGptmdTaskButton" Grid.Column="2" Content="+ADD PTM DISCOVERY" HorizontalAlignment="Right" Click="AddGPTMDTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddSearchTaskButton" Grid.Column="3" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddXlTaskButton" Grid.Column="4" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                        <Button Name="AddGlycoTaskButton" Grid.Column="5" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
+                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="140"/>
+                    </Grid>
+
+                    <!--List of tasks-->
+                    <TreeView x:Name="tasksTreeView" Grid.Row="3" ItemsSource="{Binding}" MouseDoubleClick="TasksTreeView_MouseDoubleClick" 
+                              Margin="10,0,10,10" BorderBrush="{StaticResource BorderColor}" PreviewKeyDown="Window_PreviewKeyDown">
+                    </TreeView>
+                </Grid>
+            </TabItem>
+
+            <!--Run tab-->
+            <TabItem Name="RunTab" Header="Run" TabIndex="0" Style="{StaticResource TabItemStyle}">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="4*" />
+                        <RowDefinition Height="20" />
+                        <RowDefinition Height="25" />
+                        <RowDefinition Height="50" />
+                        <RowDefinition Height="1*" />
+                    </Grid.RowDefinitions>
+
+                    <!--This grid holds the 3 summary datagrids at the top-->
+                    <Grid Grid.Row="0" Background="{StaticResource BackgroundColor}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="5*" />
+                            <ColumnDefinition Width="5" />
+                            <ColumnDefinition Width="4*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid Grid.Column="0" Background="{StaticResource BackgroundColor}">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="1*" />
+                                <RowDefinition Height="5" />
+                                <RowDefinition Height="1*" />
+                            </Grid.RowDefinitions>
+
+                            <!--Protein DB Summary-->
+                            <DataGrid Name="proteinDbSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="0" Margin="20,10,0,0" 
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource DatabaseDataGridItemStyle}" >
+                                        <Setter Property="FontSize" Value="11" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource DataGridCellStyle}" />
+                                </DataGrid.CellStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="230" />
+                                    <DataGridTextColumn Header="Contaminant?" Binding="{Binding Contaminant, Mode=OneWay}" Width="170" />
+                                    <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Name="MiniAddProteinDbButton" Grid.Row="0" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,1,1" Content="+" 
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddProteinDatabase_Click"/>
+
+                            <GridSplitter Grid.Row="1"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Stretch"
+                                Background="Transparent"
+                                Height="5"
+                                Margin="20,0,0,0"/>
+
+                            <!--Spectra file Summary-->
+                            <DataGrid Name="spectraFileSummaryDataGrid" ItemsSource="{Binding}" Grid.Row="2" Margin="20,0,0,10" 
+                              Style="{StaticResource x:DataGridStyle}" ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}">
+                                        <Setter Property="FontSize" Value="11" />
+                                        <Setter Property="FontWeight" Value="SemiBold" />
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.CellStyle>
+                                    <Style TargetType="{x:Type DataGridCell}" BasedOn="{StaticResource SpectraFileDataGridCellStyle}" />
+                                </DataGrid.CellStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="File" Binding="{Binding FileName, Mode=OneWay}" Width="230" />
+                                    <DataGridTextColumn Header="File-Specific Parameters" Binding="{Binding Parameters, Mode=OneWay}" Width="170" />
+                                    <DataGridCheckBoxColumn Header="Use?" Binding="{Binding Use, Mode=TwoWay}"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button Name="MiniAddSpectraButton" Grid.Row="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,1,11" Content="+" 
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddSpectraFile_Click"/>
+                        </Grid>
+
+                        <GridSplitter Grid.Column="1"
+                            VerticalAlignment="Stretch"
+                            HorizontalAlignment="Center"
+                            Background="Transparent"
+                            Width="10"
+                            Margin="0,10,0,10"/>
+
+                        <!--Task Summary-->
+                        <TreeView Name="taskSummary" ItemsSource="{Binding}" Grid.Column="2" Margin="0,10,20,10" MouseDoubleClick="TasksTreeView_MouseDoubleClick"
+                                  PreviewKeyDown="Window_PreviewKeyDown">
+                            <TreeView.ItemContainerStyle>
+                                <Style TargetType="{x:Type TreeViewItem}">
+                                    <Setter Property="FontSize" Value="13" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </Style>
+                            </TreeView.ItemContainerStyle>
+                        </TreeView>
+                        <Button Name="MiniAddTaskButton" Grid.Column="2" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,21,11" Content="+" 
+                                VerticalContentAlignment="Top" Style="{StaticResource ImportantButtonStyle}" Click="AddTask_Click"/>
+                    </Grid>
+
+                    <!--Define/open output folder-->
+                    <DockPanel Margin="5,0,10,0" Grid.Row="2" LastChildFill="True">
+                        <Button x:Name="OpenOutputFolderButton" Content="OPEN" Width="60" DockPanel.Dock="Right" 
+                                    Click="OpenOutputFolder_Click" Background="{StaticResource SecondaryButtonColor}" Foreground="White" FontSize="12" 
+                                BorderThickness="0" />
+
+                        <Label Content="Output Folder:" Foreground="{StaticResource TextColor1}" FontSize="12" />
+
+                        <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" 
+                             Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" 
+                                 FontSize="13"/>
+                    </DockPanel>
+
+                    <Grid Grid.Row="3" Background="{StaticResource BackgroundColor}">
+                        <!--Run button-->
+                        <Button x:Name="RunTasksButton" Content="RUN METAMORPHEUS" Click="RunAllTasks_Click" FontSize="14" Margin="10" Height="30"
+                                Width="200" Style="{StaticResource ImportantButtonStyle}" />
+
+                        <Button x:Name="ResetTasksButton" Content="RESET TASKS" Click="ResetTasks_Click" FontSize="14" Margin="210,10,10,10" Height="30"
+                                Width="200" Style="{StaticResource ImportantButtonStyle}" />
+
+                        <Button x:Name="CancelTasksButton" Content="CANCEL RUN" Click="CancelTasks_Click" FontSize="14" Margin="-210,10,10,10" Height="30"
+                                Width="200" Style="{StaticResource ImportantButtonStyle}" />
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!--Spacer-->
+            <TabItem Style="{StaticResource TabItemStyle}" IsHitTestVisible="False">
+                <TabItem.Header>
+                    <Separator Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" Background="{StaticResource SideBarMainColor}" />
+                </TabItem.Header>
+            </TabItem>
+
+            <!--Visualize tab-->
+            <TabItem Name="VisualizeTab" Header="Visualize" TabIndex="0" Style="{StaticResource TabItemStyle}">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--Header label-->
+                    <Label Content="Visualize" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                    <!--This tab doesn't actually have any content, it just opens MetaDraw-->
+                    <!--In the future maybe this tab could contain MetaDraw itself-->
+
+                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
+                            MetaDraw, MetaMorpheus's spectral viewer, will open in a new window.
+                    </TextBlock>
+                </Grid>
+            </TabItem>
+
+            <!--Settings tab-->
+            <TabItem Name="SettingsTab" Header="Settings" TabIndex="0" Style="{StaticResource TabItemStyle}">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--Header label-->
+                    <Label Content="Settings" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                    <Grid Grid.Row="2" Style="{StaticResource PageGridStyle}" Margin="5,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="270"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Button Grid.Row="0" Grid.Column="1" Content="Create new modification" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomMod_Click" />
+
+                        <Button Grid.Row="1" Grid.Column="1" Content="Create new amino acid" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomAminoAcid_Click" />
+
+                        <Button Grid.Row="2" Grid.Column="1" Content="Create new crosslinker" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="AddCustomCrosslinker_Click" />
+
+                        <Button Grid.Row="4" Grid.Column="1" Content="Close program and open global settings" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenSettings_Click" />
+
+                        <Button Grid.Row="5" Grid.Column="1" Content="Close program and open GUI settings" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_GuiSettings_Click" />
+
+                        <Button Grid.Row="6" Grid.Column="1" Content="Open mods/data folder" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_OpenDataDir_Click" />
+
+                        <Button Grid.Row="7" Grid.Column="1" Content="Reset to factory defaults" 
+                                HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ResetDefaults_Click"
+                                ToolTip="Reset saved tasks and MetaDraw Settings to default values"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!--Help tab-->
+            <TabItem Name="HelpTab" Header="Help" TabIndex="0" Style="{StaticResource TabItemStyle}">
+                <Grid Style="{StaticResource PageGridStyle}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="25"/>
+                        <RowDefinition Height="1*"/>
+                        <RowDefinition Height="1*"/>
+                    </Grid.RowDefinitions>
+
+                    <!--Header label-->
+                    <Label Content="Help" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+
+                    <TextBlock Grid.Row="2" Style="{StaticResource TextBlockStyle}">
+                        Please visit our 
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
+                            wiki
+                        </Hyperlink>  
+                        to find answers to commonly-asked questions.
+                        
+                        <LineBreak/>
+                        <LineBreak/>
+                        
+                        If you encounter problems or you have a suggestion, please visit  
+                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/issues/new" RequestNavigate="Hyperlink_RequestNavigate">
+                            our issues page
+                        </Hyperlink> 
+                        on GitHub and submit a new issue. 
+                        
+                        <LineBreak/>
+                        <LineBreak/>
+                        
+                        If you would prefer to keep your correspondence private, you may email us at 
+                        <Hyperlink NavigateUri="null" RequestNavigate="MenuItem_EmailHelp_Click">
+                            mm_support@chem.wisc.edu
+                        </Hyperlink>.
+                    </TextBlock>
+
+                    <Grid Grid.Row="3" Style="{StaticResource PageGridStyle}" Margin="5,0,0,0">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                            <RowDefinition Height="22"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="20"/>
+                            <ColumnDefinition Width="330"/>
+                        </Grid.ColumnDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="1" Style="{StaticResource TextBlockStyle}" Margin="0">
+                            You may also want to:
+                        </TextBlock>
+
+                        <Button Grid.Row="1" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_UpdateMetaMorpheus_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/update_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Check for MetaMorpheus updates" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="2" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Slack_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/Slack_Mark_Web.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Join the discussion on Slack" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="3" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Twitter_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/Twitter_Logo_Blue.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Follow us on Twitter" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="4" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_YouTube_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/youtube_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Watch YouTube help videos" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="5" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Proxl_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/proxl-ms.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Visualize crosslinks with proxl" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="6" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_Spritz_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="/Icons/spritz20.png" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Create sample-specific database with Spritz" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <Button Grid.Row="7" Grid.Column="1" HorizontalContentAlignment="Left" BorderThickness="0" Click="MenuItem_ProteomicsNewsBlog_Click">
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="Icons/Blogger_20.bmp" Width="20" Height="20" Margin="0,0,5,0"/>
+                                <TextBlock Text="Read News in Proteomics Research" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+
+                </Grid>
+            </TabItem>
+        </TabControl>
+
+        <!--Notifications-->
+        <Grid Grid.Row="2" Background="{StaticResource SideBarMainColor}" Margin="0,-1,0,0" >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="105" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="1" Background="{StaticResource BackgroundColor}" Margin="1,0,0,0">
+                <Expander x:Name="NotificationExpander" Background="{StaticResource BackgroundColor}" FlowDirection="RightToLeft" >
+                    <Expander.Header>
+                        <StackPanel>
+                            <TextBlock>Notifications</TextBlock>
+                        </StackPanel>
+                    </Expander.Header>
+
+                    <RichTextBox x:Name="notificationsTextBox" VerticalScrollBarVisibility="Visible" IsReadOnly="True" 
+                                 Background="Transparent" Foreground="{StaticResource TextColor1}" Height="100" BorderThickness="1" FlowDirection="LeftToRight">
+                        <RichTextBox.Resources>
+                            <Style TargetType="{x:Type Paragraph}">
+                                <Setter Property="Margin" Value="0" />
+                            </Style>
+                        </RichTextBox.Resources>
+                    </RichTextBox>
+                </Expander>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
