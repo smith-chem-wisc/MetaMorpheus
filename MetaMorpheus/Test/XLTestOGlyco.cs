@@ -839,9 +839,11 @@ namespace Test
 
             List<string> expectedIndividualFileOutput = new()
             {
+                "171025_06subset_1oglyco.psmtsv",
+                "171025_06subset_1protein_oglyco_localization.tsv",
+                "171025_06subset_1seen_oglyco_localization.tsv",
                 "171025_06subset_1_AllProteinGroups.tsv",
-                "171025_06subset_1_AllPSMs.psmtsv",
-                "171025_06subset_1oglyco.psmtsv"
+                "171025_06subset_1_AllPSMs.psmtsv"
             };
 
 
@@ -857,7 +859,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("E7EQR8|Q9GZM5", proteinGroupFields[0]);
+            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
 
             File.Delete(experimentalDesignFilePath);
             Directory.Delete(outputFolder, true);
