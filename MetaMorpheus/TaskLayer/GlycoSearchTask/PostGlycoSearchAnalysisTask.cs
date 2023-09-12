@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FlashLFQ;
+using pepXML.Generated;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer.MbrAnalysis;
+using ProteinGroup = EngineLayer.ProteinGroup;
 
 namespace TaskLayer
 {
@@ -81,6 +83,35 @@ namespace TaskLayer
             }
             else
             {
+                if (Parameters.GlycoSearchParameters.WriteIndividualFiles) //even if we don't do parsimony, we can still get individual file results
+                {
+                    string individualFileResults = Path.Combine(OutputFolder, "IndividualFileResults");
+                    if (!Directory.Exists(individualFileResults))
+                    {
+                        Directory.CreateDirectory(individualFileResults);
+                    }
+
+                    foreach (var fileSpecificGSMs in filteredGsms.GroupBy(p => p.FullFilePath))
+                    {
+                        string individualFileFolder = Path.GetFileNameWithoutExtension(fileSpecificGSMs.Key);
+                        string individualFileFolderPath = Path.Combine(individualFileResults, individualFileFolder);
+                        if (!Directory.Exists(individualFileFolderPath))
+                        {
+                            Directory.CreateDirectory(individualFileFolderPath);
+                        }
+                        var fsgList = fileSpecificGSMs.ToList();
+                        GlycoAccessionAnalysis(fsgList, individualFileFolderPath, individualFileFolder);
+                        foreach (GlycoSpectralMatch gsm in fsgList) //maybe this needs to be the filterd list???
+                        {
+                            gsm.ResolveAllAmbiguities();
+                        }
+                        var individualFilePsmsPath = Path.Combine(individualFileFolderPath, individualFileFolder + "_AllPSMs.psmtsv");
+                        WriteFile.WritePsmGlycoToTsv(fsgList, individualFilePsmsPath, 1);
+                        DividePsmsIntoGroupsWriteToTsv(glycoSearchParameters.GlycoSearchType, fsgList, commonParameters, taskId, individualFileFolderPath, individualFileFolder);
+                    }
+                }
+
+                GlycoAccessionAnalysis(filteredGsms, OutputFolder);//Do the whole group last so inference is done on the whole group
                 foreach (GlycoSpectralMatch gsm in allPSMs) //maybe this needs to be the filterd list???
                 {
                     gsm.ResolveAllAmbiguities();
@@ -97,6 +128,8 @@ namespace TaskLayer
 
             return MyTaskResults;
         }
+
+
 
         private void DividePsmsIntoGroupsWriteToTsv(GlycoSearchType glycoSearchType, List<GlycoSpectralMatch> gsms, CommonParameters commonParameters, string taskId, string individualFileFolderPath, string individualFileFolder)
         {
@@ -180,7 +213,41 @@ namespace TaskLayer
             Status("Done constructing protein groups!", Parameters.SearchTaskId);
             WriteProteinResults(outputFolder, individualFileFolder);
         }
+        private void GlycoAccessionAnalysis(List<GlycoSpectralMatch> gsms, string individualFileFolderPath, string individualFileFolder = null)
+        {
+            List<ProteinGroup> _proteinGroups = new List<ProteinGroup>();
 
+            // convert gsms to psms
+            List<PeptideSpectralMatch> psmsForProteinParsimony = gsms.Select(p => p as PeptideSpectralMatch).ToList();
+
+            foreach (var psm in psmsForProteinParsimony)
+            {
+                psm.ResolveAllAmbiguities();
+            }
+
+            //get non-ambigous psms above cutoffs that are normally used for parsimony
+            List<PeptideSpectralMatch>  _filteredPsms = psmsForProteinParsimony.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList();
+
+            // if there are no peptides observed, there are no proteins; return an empty list of protein groups
+            if (_filteredPsms.Count != 0)
+            {
+                foreach (var psm in _filteredPsms)
+                {
+                    List<Protein> proteinList = psm.BestMatchingPeptides.Select(p => p.Peptide.Protein).ToList();
+                    ProteinGroup newProteinGroup = new ProteinGroup(new HashSet<Protein>(proteinList),
+                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingPeptides.Select(p=>p.Peptide).ToList())), new HashSet<PeptideWithSetModifications>());
+
+                    if (_proteinGroups.Any(p => p.Equals(newProteinGroup)))
+                    {
+                        _proteinGroups.Where(g => g.Equals(newProteinGroup)).First().MergeProteinGroupWith(newProteinGroup);
+                    }
+                    else
+                    {
+                        _proteinGroups.Add(newProteinGroup);
+                    }   
+                }
+            }
+        }
         private void WriteProteinResults(string outputFolder, string individualFileFolder = null)
         {
             double qValueCutoff_FORDEBUGONLY = 0.01;
@@ -300,9 +367,8 @@ namespace TaskLayer
                     }
                 }
             }
-            else
+            else //we will use protein accession numbers instead of protein group names
             {
-                // if protein groups were not constructed, just use accession numbers
                 var accessionToPg = new Dictionary<string, FlashLFQ.ProteinGroup>();
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                 {
