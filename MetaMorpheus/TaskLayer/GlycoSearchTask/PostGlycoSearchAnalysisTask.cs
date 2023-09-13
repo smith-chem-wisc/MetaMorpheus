@@ -317,11 +317,6 @@ namespace TaskLayer
                     return;
                 }
             }
-            else if (Parameters.GlycoSearchParameters.Normalize)
-            {
-                Warn("Could not find experimental design file at " + assumedExperimentalDesignPath + ", which is required for normalization. Skipping quantification");
-                return;
-            }
             else
             {
                 spectraFileInfo = new List<SpectraFileInfo>();
