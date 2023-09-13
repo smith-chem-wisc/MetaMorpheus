@@ -492,17 +492,32 @@ namespace TaskLayer
                 }
 
                 // write individual results
-                if (Parameters.CurrentRawFileList.Count > 1 && Parameters.GlycoSearchParameters.WriteIndividualFiles)
+                if (Parameters.CurrentRawFileList.Count > 0 && Parameters.GlycoSearchParameters.WriteIndividualFiles)
                 {
                     foreach (var file in Parameters.FlashLfqResults.Peaks)
                     {
-                        WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.IndividualResultsOutputFolder,
+                        WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
                             file.Key.FilenameWithoutExtension + "_QuantifiedPeaks", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
+                        WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
+                            file.Key.FilenameWithoutExtension + "_QuantifiedPeptides", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
+                        if (true)
+                        {
+                            WriteProteinQuantificationResultsToTsv(Parameters.FlashLfqResults, Path.Combine(Parameters.IndividualResultsOutputFolder, file.Key.FilenameWithoutExtension),
+                                file.Key.FilenameWithoutExtension + "_QuantifiedProteins", new List<string> { Parameters.SearchTaskId, "IndividualFileResults", file.Key.FullFilePathWithExtension });
+                        }
                     }
                 }
             }
         }
 
+        private void WriteProteinQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
+        {
+            var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");
+
+            flashLFQResults.WriteResults(null, null, fullSeqPath, null, true);
+
+            FinishedWritingFile(fullSeqPath, nestedIds);
+        }
         private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");

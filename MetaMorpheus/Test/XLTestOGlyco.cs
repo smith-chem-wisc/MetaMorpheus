@@ -839,11 +839,14 @@ namespace Test
 
             List<string> expectedIndividualFileOutput = new()
             {
+                "171025_06subset_1_AllProteinGroups.tsv",
+                "171025_06subset_1_AllPSMs.psmtsv",
+                "171025_06subset_1_QuantifiedPeaks.tsv",
+                "171025_06subset_1_QuantifiedPeptides.tsv",
+                "171025_06subset_1_QuantifiedProteins.tsv",
                 "171025_06subset_1oglyco.psmtsv",
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
-                "171025_06subset_1_AllProteinGroups.tsv",
-                "171025_06subset_1_AllPSMs.psmtsv"
             };
 
 
@@ -915,9 +918,12 @@ namespace Test
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllPSMs.psmtsv",
+                "171025_06subset_1_QuantifiedPeaks.tsv",
+                "171025_06subset_1_QuantifiedPeptides.tsv",
+                "171025_06subset_1_QuantifiedProteins.tsv",
                 "171025_06subset_1oglyco.psmtsv",
                 "171025_06subset_1protein_oglyco_localization.tsv",
-                "171025_06subset_1seen_oglyco_localization.tsv"
+                "171025_06subset_1seen_oglyco_localization.tsv",
             };
 
 
