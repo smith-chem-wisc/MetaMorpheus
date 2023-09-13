@@ -228,7 +228,6 @@ namespace Test
         {
             // this unit test checks to make sure GPTMD does not annotate mods at residues on 
             // proteins where the equivalent uniprot mod already exists
-
             Modification uniProtPhospho = GlobalVariables.AllModsKnown.First(p => p.ModificationType == "UniProt" && p.IdWithMotif.Contains("Phosphoserine"));
             Modification mmPhospho = GlobalVariables.AllModsKnown.First(p => p.ModificationType == "Common Biological" && p.IdWithMotif.Contains("Phosphorylation on S"));
 
