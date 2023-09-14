@@ -1,8 +1,10 @@
-﻿using EngineLayer;
+﻿using System.Collections.Generic;
+using EngineLayer;
 using MzLibUtil;
 using Nett;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using Proteomics.Fragmentation;
 
 namespace TaskLayer
 {
@@ -59,6 +61,8 @@ namespace TaskLayer
         public DissociationType? DissociationType { get; set; }
         public string SeparationType { get; set; }
 
+        public List<ProductType> CustomIons { get; set; }
+
         // This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
         // It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.
         // The reason this method exists is to make sure toml settings are written and parsed consistently between the tasks
@@ -81,6 +85,8 @@ namespace TaskLayer
                 throw new MetaMorpheusException("Max missed cleavages variable name is inconsistent");
             if (!nameof(temp.DigestionParams.MaxModsForPeptide).Equals(nameof(MaxModsForPeptide)))
                 throw new MetaMorpheusException("Max mods per peptide variable name is inconsistent");
+            if (!nameof(temp.CustomIons).Equals(nameof(CustomIons)))
+                throw new MetaMorpheusException("Custom ions variable name is inconsistent");
 
         }
 

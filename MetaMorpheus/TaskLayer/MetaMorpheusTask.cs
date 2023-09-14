@@ -17,6 +17,7 @@ using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
+using Proteomics.Fragmentation;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -48,13 +49,13 @@ namespace TaskLayer
                     .ToToml(custom => custom.ToString())
                     .FromToml(tmlString => ProteaseDictionary.Dictionary[tmlString.Value])))
             .ConfigureType<List<string>>(type => type
-                    .WithConversionFor<TomlString>(convert => convert
-                        .ToToml(custom => string.Join("\t", custom))
-                        .FromToml(tmlString => GetModsTypesFromString(tmlString.Value))))
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t", custom))
+                    .FromToml(tmlString => GetModsTypesFromString(tmlString.Value))))
             .ConfigureType<List<(string, string)>>(type => type
-                    .WithConversionFor<TomlString>(convert => convert
-                        .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
-                        .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
+                    .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
@@ -402,6 +403,9 @@ namespace TaskLayer
             DissociationType dissociationType = fileSpecificParams.DissociationType ?? commonParams.DissociationType;
             string separationType = fileSpecificParams.SeparationType ?? commonParams.SeparationType;
 
+            // must be set in this manner as CommonParameters constructor will pull from this dictionary, then clear dictionary
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = fileSpecificParams.CustomIons ?? commonParams.CustomIons;
+
             CommonParameters returnParams = new CommonParameters(
                 dissociationType: dissociationType,
                 precursorMassTolerance: precursorMassTolerance,
@@ -740,7 +744,7 @@ namespace TaskLayer
         {
             return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => (b.Split('\t').First(), b.Split('\t').Last())).ToList();
         }
-
+        
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
         {
             MyTaskResults.AddResultText(e.ToString());
