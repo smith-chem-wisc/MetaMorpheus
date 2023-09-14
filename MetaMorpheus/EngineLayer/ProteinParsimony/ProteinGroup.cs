@@ -715,11 +715,11 @@ namespace EngineLayer
         public bool Equals(ProteinGroup grp)
         {
             //Check for null and compare run-time types.
-            if ((grp == null) || grp.GetType() == typeof(ProteinGroup))
+            if ((grp == null) || grp.GetType() != typeof(EngineLayer.ProteinGroup))
             {
                 return false;
             }
-            else if (this.ListOfProteinsOrderedByAccession != grp.ListOfProteinsOrderedByAccession)
+            else if (!this.ListOfProteinsOrderedByAccession.Select(a=>a.Accession).ToList().SequenceEqual(grp.ListOfProteinsOrderedByAccession.Select(a => a.Accession).ToList()))
             {
                 return false;
             }
