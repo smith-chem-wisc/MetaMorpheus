@@ -3,6 +3,10 @@ using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
 using Proteomics.ProteolyticDigestion;
+using MassSpectrometry;
+using Chemistry;
+using FlashLFQ;
+using ProteinGroup = EngineLayer.ProteinGroup;
 
 namespace Test
 {
@@ -32,11 +36,6 @@ namespace Test
             //two protein groups with different proteins should not be equal
             Assert.IsFalse(proteinGroup1.Equals(proteinGroup3));
 
-            object myObject = new object();
-            //an object of a different type should not be equal
-            Assert.IsFalse(proteinGroup1.Equals(myObject));
-
-
             List<Protein> proteinList4 = new List<Protein> { prot1, prot3 };
             List<Protein> proteinList5 = new List<Protein> { prot3, prot1 };
             ProteinGroup proteinGroup4 = new ProteinGroup(new HashSet<Protein>(proteinList4),
@@ -56,6 +55,10 @@ namespace Test
 
             //protein groups with the same proteins but different peptides should be equal
             Assert.IsTrue(proteinGroup6.Equals(proteinGroup7));
+
+            //a protein group that is null should not be equal to a protein group that is not null
+            ProteinGroup nullProteinGroup = null;
+            Assert.IsFalse(proteinGroup1.Equals(nullProteinGroup));
         }
 
         [Test]
@@ -118,6 +121,48 @@ namespace Test
             Assert.AreEqual(4, proteinGroup1.AllPeptides.Count);
             Assert.AreEqual(4, proteinGroup1.UniquePeptides.Count);
         }
+
+        [Test]
+        public static void ProteinGroupDisplayModsTestWithGetIdentifiedPeptidesMethod()
+        {
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motif1);
+
+            Dictionary<DissociationType, List<double>> NeutralLosses = new Dictionary<DissociationType, List<double>>();
+            NeutralLosses.Add(DissociationType.HCD, new List<double> { 0 });
+
+            Modification modFormula_C1 = new Modification(_originalId: "modC", _accession: "", _modificationType: "mt", _featureType: "", _target: motif1, _locationRestriction: "Anywhere.", _chemicalFormula: new ChemicalFormula(ChemicalFormula.ParseFormula("C1")), null, null, null, null, _neutralLosses: NeutralLosses, null, null);
+            Modification modFormula_H1 = new Modification(_originalId: "modH", _accession: "", _modificationType: "mt", _featureType: "", _target: motif1, _locationRestriction: "Anywhere.", _chemicalFormula: new ChemicalFormula(ChemicalFormula.ParseFormula("H1")), null, null, null, null, _neutralLosses: NeutralLosses, null, null);
+
+            IDictionary<int, List<Modification>> oneBasedModifications = new Dictionary<int, List<Modification>>
+            {
+                {2, new List<Modification>{ modFormula_C1, modFormula_H1 }},
+            };
+            Protein protein1 = new Protein("MNLDLDNDL", "prot1", oneBasedModifications: oneBasedModifications);
+
+            Dictionary<int, Modification> allModsOneIsNterminus1 = new Dictionary<int, Modification>
+            {
+                {2, modFormula_C1},
+            };
+
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus1, 0);
+
+            Dictionary<int, Modification> allModsOneIsNterminus2 = new Dictionary<int, Modification>
+            {
+                {2,modFormula_H1 },
+            };
+
+            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus2, 0);
+
+            List<Protein> proteinList1 = new List<Protein> { protein1 };
+
+            EngineLayer.ProteinGroup proteinGroup1 = new EngineLayer.ProteinGroup(new HashSet<Protein>(proteinList1),
+                new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 }, new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 });
+
+            proteinGroup1.DisplayModsOnPeptides = true;
+
+            //This test just gets some lines in ProteinGroup covered. There is no accessible way to get the output of this method.
+            Assert.DoesNotThrow(()=>proteinGroup1.GetIdentifiedPeptidesOutput(new List<SilacLabel>()));
         }
     }
+}
 

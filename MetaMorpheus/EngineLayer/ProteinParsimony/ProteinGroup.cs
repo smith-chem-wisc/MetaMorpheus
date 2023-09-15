@@ -1,5 +1,4 @@
-﻿using System;
-using FlashLFQ;
+﻿using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
@@ -7,9 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using ThermoFisher.CommonCore.Data;
-using System.Drawing;
-using System.Runtime.CompilerServices;
-using UsefulProteomicsDatabases.Generated;
 
 namespace EngineLayer
 {
@@ -715,7 +711,7 @@ namespace EngineLayer
         public bool Equals(ProteinGroup grp)
         {
             //Check for null and compare run-time types.
-            if ((grp == null) || grp.GetType() != typeof(EngineLayer.ProteinGroup))
+            if (grp == null) 
             {
                 return false;
             }
