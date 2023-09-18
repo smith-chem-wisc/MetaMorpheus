@@ -1023,5 +1023,13 @@ namespace Test
 
             Directory.Delete(outputFolder, true);
         }
+
+        [Test]
+        public static void TestRunSpecificPostGlycoSearchAnalysis()
+        {
+            //code coverage unit test for an unused abstract method in post search analysis
+            var task = new PostGlycoSearchAnalysisTask();
+            task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask>(), new List<string>(), "");
+        }
     }
 }
