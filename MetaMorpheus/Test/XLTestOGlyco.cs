@@ -1009,7 +1009,6 @@ namespace Test
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
 
-
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolderWithTask).ToList();
