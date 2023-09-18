@@ -472,25 +472,17 @@ namespace TaskLayer
             if (Parameters.GlycoSearchParameters.DoQuantification && Parameters.FlashLfqResults != null)
             {
                 // write peaks
-                if (SpectralRecoveryResults != null)
-                {
-                    SpectralRecoveryResults.WritePeakQuantificationResultsToTsv(Parameters.OutputFolder, "AllQuantifiedPeaks");
-                }
-                else
-                {
-                    WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
-                }
+                // once SpectralRecoveryResults is implemented, this will need to be updated with an if statement
+
+                WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
 
                 // write peptide quant results
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
-                if (SpectralRecoveryResults != null)
-                {
-                    SpectralRecoveryResults.WritePeptideQuantificationResultsToTsv(Parameters.OutputFolder, filename);
-                }
-                else
-                {
-                    WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
-                }
+
+                // write peptides
+                // once SpectralRecoveryResults is implemented, this will need to be updated with an if statement
+
+                WritePeptideQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, filename, new List<string> { Parameters.SearchTaskId });
 
                 // write individual results
                 if (Parameters.CurrentRawFileList.Count > 0 && Parameters.GlycoSearchParameters.WriteIndividualFiles)

@@ -15,6 +15,9 @@ using EngineLayer.GlycoSearch;
 using FlashLFQ;
 using NUnit.Framework.Internal;
 using SpectralAveraging;
+using Chemistry;
+using MzLibUtil;
+using Readers;
 
 namespace Test
 {
@@ -1104,7 +1107,63 @@ namespace Test
             File.Delete(experimentalDesignFilePath);
             Directory.Delete(outputFolder, true);
         }
+        [Test]
+        [TestCase(false, 2, 1, 1)]
+        [TestCase(true, 2, 3, 1)]
+        [TestCase(true, 2, 3, 2)]
+        public static void TestGlycoProteinQuantFileHeaders(bool hasDefinedExperimentalDesign, int bioreps, int fractions, int techreps)
+        {
+            string condition = hasDefinedExperimentalDesign ? "TestCondition" : "";
+            List<SpectraFileInfo> fileInfos = new();
 
+            // create the unit test directory
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            // create the .mzML files to search/quantify
+            for (int b = 0; b < bioreps; b++)
+            {
+                for (int f = 0; f < fractions; f++)
+                {
+                    for (int r = 0; r < techreps; r++)
+                    {
+                        string fileToWrite = "file_" + "b" + b + "f" + f + "r" + r + ".mzML";
+                        string fullPath = Path.Combine(outputFolder, fileToWrite);
+                        SpectraFileInfo spectraFileInfo = new(fullPath, condition, b, r, f);
+
+                        File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML"), fullPath, true);
+
+
+                        fileInfos.Add(spectraFileInfo);
+                    }
+                }
+            }
+
+            // write the experimental design for this quantification test
+            if (hasDefinedExperimentalDesign)
+            {
+                _ = ExperimentalDesign.WriteExperimentalDesignToFile(fileInfos);
+            }
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.DoParsimony = true;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+
+            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { db }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
+
+            // read in the protein quant results
+            Assert.That(File.Exists(Path.Combine(outputFolder, "AllQuantifiedPeptides.tsv")));
+            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "AllQuantifiedPeptides.tsv"));
+
+            // check the intensity column headers
+            List<string> splitHeader = lines[0].Split(new char[] { '\t' }).ToList();
+            List<string> intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity", StringComparison.OrdinalIgnoreCase)).ToList();
+
+            Assert.That(intensityColumnHeaders.Count == 1);
+
+            Directory.Delete(outputFolder, true);
+        }
         [Test]
         public static void TestRunSpecificPostGlycoSearchAnalysis()
         {
