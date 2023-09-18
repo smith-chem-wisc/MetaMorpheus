@@ -1027,6 +1027,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
+        //Test oglycopeptide quant with two conditions, experimental design and normalization
         [Test]
         public static void TestExperimentalDesignError()
         {
