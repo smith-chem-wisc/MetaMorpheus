@@ -12,6 +12,7 @@ using System.Windows.Input;
 using Easy.Common.Extensions;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using OxyPlot;
+using pepXML.Generated;
 using TaskLayer;
 
 namespace GuiFunctions
@@ -113,6 +114,24 @@ namespace GuiFunctions
                 tempDict.Add(keys[i], values[i]);
             }
             AllSettingsDict = tempDict;
+
+            //When there is no default setting, create a default called "Default(Default)"
+            string[] keysInDict = AllSettingsDict.Keys.Cast<string>().ToArray();
+            for (int j = 0; j < keysInDict.Length; j++)
+            {
+                if (keysInDict[j].Contains("(Default)"))
+                {
+                    break;
+                }
+                else
+                {
+                    if (j == keysInDict.Length - 1)
+                    {
+                        AllSettingsDict.Add("DefaultSetting(Default)", task);
+                        TomlFileFolderSerializer.Save("DefaultSetting(Default)", task);
+                    }
+                }
+            }
 
             SelectDefaultAuto();
         }
@@ -279,12 +298,26 @@ namespace GuiFunctions
         #region Helpers
         private void SelectDefaultAuto()
         {
+
             var defaultSetting = AllSettingsDict.First(p => p.Key.Contains("(Default)"));
             SelectedSettings = defaultSetting.Key;
         }
-   
 
-        #endregion
-
+        //private MetaMorpheusTask GetDefaultTask(MetaMorpheusTask taskTypeToGetDefault)
+        //{
+        //    return taskTypeToGetDefault.TaskType switch
+        //    {
+        //        MyTask.Search => new SearchTask(),
+        //        MyTask.Gptmd => new GptmdTask(),
+        //        MyTask.Calibrate => new CalibrationTask(),
+        //        MyTask.XLSearch => new XLSearchTask(),
+        //        MyTask.GlycoSearch => new GlycoSearchTask(),
+        //        _ => throw new ArgumentOutOfRangeException(nameof(taskTypeToGetDefault.TaskType), taskTypeToGetDefault.TaskType, null)
+        //    };
+        //}
     }
+       
+    #endregion
+
 }
+

@@ -38,7 +38,7 @@ namespace Test
         [Test]
         public void testSaveSettings()
         {
-            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask());
+            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel();
 
             var paramsOne = new CommonParameters(null, DissociationType.CID);
             var paramsTwo = new CommonParameters(null, DissociationType.HCD);

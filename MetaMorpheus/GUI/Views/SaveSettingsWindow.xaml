@@ -7,11 +7,7 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="SaveSettingsWindow" Height="135" Width="600">
-    <d:UserControl.DataContext>
-        <guiFunctions:TaskSettingViewModel/>
-    </d:UserControl.DataContext>
-    
-   
+
 
     <Grid >
         <Grid.RowDefinitions>

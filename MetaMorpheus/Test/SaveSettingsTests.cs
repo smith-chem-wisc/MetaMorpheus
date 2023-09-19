@@ -25,15 +25,21 @@ namespace Test
             var tomlFile1 = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory,@"TestData\customBCZ.toml"), MetaMorpheusTask.tomlConfig);
             var tomlFile2 = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBY.toml"), MetaMorpheusTask.tomlConfig);
             var tomlFile3 = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customCZ.toml"), MetaMorpheusTask.tomlConfig);
-            TomlFileFolderSerializer.Save("customBCZ.toml", tomlFile1);
-            TomlFileFolderSerializer.Save("customBY.toml", tomlFile2);
-            TomlFileFolderSerializer.Save("customCZ.toml", tomlFile3);
-        }
+            TomlFileFolderSerializer.Save("customBCZ", tomlFile1);
+            TomlFileFolderSerializer.Save("customBY", tomlFile2);
+            TomlFileFolderSerializer.Save("customCZ", tomlFile3);
+
+            // TODO: Repeat above for callibration task, without setting a default
+
+            // example code
+            var task = new CalibrationTask();
+            Toml.WriteFile<CalibrationTask>(task, "file out path.toml", MetaMorpheusTask.tomlConfig);
+        }   
 
         [OneTimeTearDown]
         public static void OneTimeTearDown()
         {
-            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "SettingsDataFiles"), true);
+            //Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, "SettingsDataFiles"), true);
         }
 
         private class FakeGuiWindow
@@ -63,11 +69,87 @@ namespace Test
             }
         }
 
+        // TODO: Test what happens when no default is set
+
+        [Test]
+        public void ConstructorTestWithoutDefaultSettings()
+        {
+            // set up directories
+
+
+
+            // test
+            var fakeTaskWindow = new FakeGuiWindow(MyTask.Search);
+            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask(), fakeTaskWindow.UpdateFieldsFromNewTask, fakeTaskWindow.GetTaskFromGui);
+            var testDictionary = testTaskSettingViewModel.AllSettingsDict;
+            Assert.That(testDictionary.ContainsKey("DefaultSetting(Default)"));
+            var testWindow = fakeTaskWindow.GetTaskFromGui();
+            var comparingWindow = testDictionary["DefaultSetting(Default)"];
+            Assert.That(testWindow.Equals(comparingWindow));
+            TomlFileFolderSerializer.Save("testFile", testWindow);
+            string pathOfTestFile = TomlFileFolderSerializer.GetFilePath(testWindow.GetType(), "testFile");
+            string pathOfComparingFile = TomlFileFolderSerializer.GetFilePath(comparingWindow.GetType(), "DefaultSetting(Default)");
+            var linesA = File.ReadAllLines(pathOfTestFile);
+            var linesB = File.ReadAllLines(pathOfComparingFile);
+
+            Assert.That(linesA.Length, Is.EqualTo(linesB.Length));
+            for (int i = 0; i < linesA.Length; i++)
+            {
+                //if (linesA[i].StartsWith("MaxMissedCleavages"))
+                //{
+                //    Assert.That(linesA[i], Is.Not.EqualTo(linesB[i]));
+                //    Assert.That(linesA[i].EndsWith('1'));
+                //    Assert.That(linesB[i].EndsWith('2'));
+                //}
+                //else
+                Assert.That(linesA[i], Is.EqualTo(linesB[i]));
+            }
+
+
+            // clean up directories
+        }
+
         [Test]
         public void ExampleTest()
         {
             var fakeTaskWindow = new FakeGuiWindow(MyTask.Search);
             TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask(), fakeTaskWindow.UpdateFieldsFromNewTask, fakeTaskWindow.GetTaskFromGui);
+
+            // test everything is loaded correctly
+            // check task fake window is correct
+            // check serialized files is correct
+            // check dictionary is correct
+
+            // run a command
+
+
+            // test everything has changed as it should
+            // check task fake window is correct
+            // check serialized files is correct
+            // check dictionary is correct
+
+
+            // example read all lines comparison
+            string pathA = "";
+            string pathB = "";
+
+            var linesA = File.ReadAllLines(pathA);
+            var linesB = File.ReadAllLines(pathB);
+
+            Assert.That(linesA.Length, Is.EqualTo(linesB.Length));
+            for (int i = 0; i < linesA.Length; i++)
+            {
+                if (linesA[i].StartsWith("MaxMissedCleavages"))
+                {
+                    Assert.That(linesA[i], Is.Not.EqualTo(linesB[i]));
+                    Assert.That(linesA[i].EndsWith('1'));
+                    Assert.That(linesB[i].EndsWith('2'));
+                }
+                else
+                    Assert.That(linesA[i], Is.EqualTo(linesB[i]));
+            }
+            
+
         }
 
         [Test]
@@ -118,6 +200,22 @@ namespace Test
             var tomlFile1 = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBCZ.toml"), MetaMorpheusTask.tomlConfig);
             string testPath = TomlFileFolderSerializer.GetFilePath(tomlFile1.GetType(), "customBCZ.toml");
             Assert.That(testPath.Contains("toml"));
+        }
+
+        [Test]
+        public void testSaveAs()
+        {
+            var fakeTaskWindow = new FakeGuiWindow(MyTask.Search);
+            TaskSettingViewModel testTaskSettingViewModel = new TaskSettingViewModel(new SearchTask(), fakeTaskWindow.UpdateFieldsFromNewTask, fakeTaskWindow.GetTaskFromGui);
+            var testDictionary = testTaskSettingViewModel.AllSettingsDict;
+
+            // TODO: Replace new search task with refernce B
+            var referenceA = TomlFileFolderSerializer.Deserialize<MetaMorpheusTask>("C:/Users/Administrator/source/repos/MetaMorpheus/Test/" +
+                "bin/Debug/net6.0-windows/TestData/SavedSettingsReferenceDirectory/a.toml");
+            testTaskSettingViewModel.UpdateFieldsInGuiWithNewTask.Invoke(referenceA as MetaMorpheusTask);
+            testTaskSettingViewModel.TypedSettingsName = "a";
+            testTaskSettingViewModel.SaveSettingsFromWindow();
+            Assert.That(false);
         }
     }
 }

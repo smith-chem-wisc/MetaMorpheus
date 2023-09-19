@@ -33,7 +33,7 @@ namespace GuiFunctions
         }
 
         /// <summary>
-        /// Return a json deserialized object
+        /// Return a toml deserialized object
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="path">The path of file that will be deserialized</param>
