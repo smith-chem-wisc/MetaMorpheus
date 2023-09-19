@@ -4,6 +4,7 @@ using Nett;
 using NUnit.Framework;
 using Proteomics.Fragmentation;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using MassSpectrometry;
@@ -12,6 +13,7 @@ using TaskLayer;
 namespace Test
 {
     [TestFixture]
+    [ExcludeFromCodeCoverage]
     public static class CustomFragmentationTest
     {
         [Test]
@@ -83,8 +85,9 @@ namespace Test
             }
             
             // run all tasks
+            List<DbForTask> database = new List<DbForTask> { new DbForTask(myDatabase, false) };
             var engine = new EverythingRunnerEngine(taskCollection, new List<string> { myFile },
-                new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
+                database, outputFolder);
             engine.Run();
 
             // assert all file specific parameters contain the correct custom ions
@@ -160,6 +163,20 @@ namespace Test
 
             // clean up
             Directory.Delete(outputFolder, true);
+
+            // extra small tests to boost code coverage
+            Assert.That(database.Count == 1);
+            Assert.That(database.First().FileName, Is.EqualTo(Path.GetFileName(myDatabase)));
+
+            loadedSearchTask.SearchParameters.CustomMdac = "Tacos";
+            Assert.That(loadedSearchTask.SearchParameters.CustomMdac, Is.EqualTo("Tacos"));
+
+            SingleTaskEventArgs args = new SingleTaskEventArgs("TaskTest");
+            Assert.That(args.DisplayName, Is.EqualTo("TaskTest"));
+
+            XmlForTaskListEventArgs xmlArgs =
+                new XmlForTaskListEventArgs(new List<DbForTask> { new DbForTask(myDatabase, false) });
+            Assert.That(xmlArgs.NewDatabases.Count == 1);
         }
     }
 }

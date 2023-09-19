@@ -38,6 +38,8 @@ namespace TaskLayer
 
                     case nameof(DissociationType):
                         DissociationType = keyValuePair.Value.Get<DissociationType>(); break;
+                    case nameof(CustomIons):
+                        CustomIons = keyValuePair.Value.Get<List<ProductType>>(); break;
 
 
                     default:
