@@ -466,6 +466,25 @@ namespace Test
         }
 
         [Test]
+        public static void GlycoTestWithContaminants()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            DbForTask dbTarget = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+            string spectraFileTarget = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+
+            DbForTask dbContaminant = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), true);
+            string spectraFileContaminant = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
+
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFileTarget, spectraFileContaminant }, new List<DbForTask> { dbTarget, dbContaminant }, outputFolder).Run();
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
         public static void OGlycoTest_GetLeft()
         {
             int[] array1 = new int[6] { 0, 0, 0, 1, 1, 2 };

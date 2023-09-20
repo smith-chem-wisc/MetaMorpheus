@@ -18,7 +18,6 @@ namespace TaskLayer
     {
         public PostGlycoSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
-        private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
         public PostGlycoSearchAnalysisTask() : base(MyTask.GlycoSearch)
         {
         }
