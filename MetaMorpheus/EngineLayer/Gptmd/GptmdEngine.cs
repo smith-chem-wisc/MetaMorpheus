@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Easy.Common.Extensions;
+using System.Collections.Concurrent;
 
 namespace EngineLayer.Gptmd
 {
@@ -65,7 +66,7 @@ namespace EngineLayer.Gptmd
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            var modDict = new Dictionary<string, HashSet<Tuple<int, Modification>>>();
+            var modDict = new ConcurrentDictionary<string, HashSet<Tuple<int, Modification>>>();
 
             int modsAdded = 0;
 
@@ -108,8 +109,11 @@ namespace EngineLayer.Gptmd
                                         // if not a variant protein, index to base protein sequence
                                         if (!isVariantProtein)
                                         {
-                                            AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod), myLocks[lockIndex]);
-                                            modsAdded++;
+                                            lock (myLocks[lockIndex])
+                                            {
+                                                AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod), myLocks[lockIndex]);
+                                                modsAdded++;
+                                            }
                                         }
 
                                         // if a variant protein, index to variant protein if on variant, or to the original protein if not
@@ -125,27 +129,36 @@ namespace EngineLayer.Gptmd
                                                 // if a variant protein and the mod is on the variant, index to the variant protein sequence
                                                 if (modIsOnVariant)
                                                 {
-                                                    AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod), myLocks[lockIndex]);
-                                                    modsAdded++;
-                                                    foundSite = true;
-                                                    break;
+                                                    lock (myLocks[lockIndex])
+                                                    {
+                                                        AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod), myLocks[lockIndex]);
+                                                        modsAdded++;
+                                                        foundSite = true;
+                                                        break;
+                                                    }
                                                 }
 
                                                 // otherwise back calculate the index to the original protein sequence
                                                 if (modIsBeforeVariant)
                                                 {
-                                                    AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod), myLocks[lockIndex]);
-                                                    modsAdded++;
-                                                    foundSite = true;
-                                                    break;
+                                                    lock (myLocks[lockIndex])
+                                                    {
+                                                        AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod), myLocks[lockIndex]);
+                                                        modsAdded++;
+                                                        foundSite = true;
+                                                        break;
+                                                    }
                                                 }
 
                                                 offset += variant.VariantSequence.Length - variant.OriginalSequence.Length;
                                             }
                                             if (!foundSite)
                                             {
-                                                AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod), myLocks[lockIndex]);
-                                                modsAdded++;
+                                                lock (myLocks[lockIndex])
+                                                {
+                                                    AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod), myLocks[lockIndex]);
+                                                    modsAdded++;
+                                                }
                                             }
                                         }
                                         
@@ -160,11 +173,10 @@ namespace EngineLayer.Gptmd
             return new GptmdResults(this, modDict, modsAdded);
         }
 
-        private static void AddIndexedMod(Dictionary<string, HashSet<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod, object myLock)
+        private static void AddIndexedMod(ConcurrentDictionary<string, HashSet<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod, object myLock)
         {
 
-            lock (myLock)
-            {
+
                 if (modDict.TryGetValue(proteinAccession, out var hash))
                 {
                     hash.Add(indexedMod);
@@ -173,7 +185,7 @@ namespace EngineLayer.Gptmd
                 {
                     modDict[proteinAccession] = new HashSet<Tuple<int, Modification>> { indexedMod };
                 }
-            }
+            
 
         }
 

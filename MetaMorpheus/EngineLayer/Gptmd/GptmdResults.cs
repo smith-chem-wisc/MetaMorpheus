@@ -1,5 +1,6 @@
 ﻿using Proteomics;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,13 +11,13 @@ namespace EngineLayer.Gptmd
     {
         private readonly int ModsAdded;
 
-        public GptmdResults(MetaMorpheusEngine s, Dictionary<string, HashSet<Tuple<int, Modification>>> mods, int modsAdded) : base(s)
+        public GptmdResults(MetaMorpheusEngine s, ConcurrentDictionary<string, HashSet<Tuple<int, Modification>>> mods, int modsAdded) : base(s)
         {
             Mods = mods;
             ModsAdded = modsAdded;
         }
 
-        public Dictionary<string, HashSet<Tuple<int, Modification>>> Mods { get; private set; }
+        public ConcurrentDictionary<string, HashSet<Tuple<int, Modification>>> Mods { get; private set; }
 
         public override string ToString()
         {
