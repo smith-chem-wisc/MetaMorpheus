@@ -22,7 +22,14 @@ namespace GuiFunctions
         {
             if (annotateProperties)
             {
-                AnnotateProperties();
+                if (librarySpectrum != null)
+                {
+                    AnnotateProperties(librarySpectrum);
+                }
+                else
+                {
+                    AnnotateProperties();
+                }
             }
 
             ZoomAxes(matchedFragmentIons);
