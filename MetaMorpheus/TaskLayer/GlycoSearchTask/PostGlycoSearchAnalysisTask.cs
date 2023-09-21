@@ -265,12 +265,9 @@ namespace TaskLayer
                     output.WriteLine(proteinGroups.First().GetTabSeparatedHeader());
                     for (int i = 0; i < proteinGroups.Count; i++)
                     {
-                        if ((!Parameters.GlycoSearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) 
-                            || (!Parameters.GlycoSearchParameters.WriteContaminants && proteinGroups[i].IsContaminant))
-                        {
-                            continue;
-                        }
-                        else
+                        if ((Parameters.GlycoSearchParameters.WriteDecoys && proteinGroups[i].IsDecoy) // write decoys if they exist and are desired
+                            || (Parameters.GlycoSearchParameters.WriteContaminants && proteinGroups[i].IsContaminant) // write contaminants if they exist and are desired
+                            || (!proteinGroups[i].IsDecoy && !proteinGroups[i].IsContaminant)) // write targets regardless
                         {
                             output.WriteLine(proteinGroups[i]);
                         }
