@@ -372,16 +372,9 @@ namespace TaskLayer
                         {
                             accessionToPg.Add(protein.Accession, new FlashLFQ.ProteinGroup(protein.Accession, string.Join("|", protein.GeneNames.Select(p => p.Item2).Distinct()), protein.Organism));
                         }
-
-                        if (psmToProteinGroups.TryGetValue(psm, out var proteinGroups))
-                        {
-                            proteinGroups.Add(accessionToPg[protein.Accession]);
-                        }
-                        else
-                        {
-                            psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { accessionToPg[protein.Accession] });
-                        }
+                        
                     }
+                    psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { accessionToPg[psm.ProteinAccession] });
                 }
             }
 
