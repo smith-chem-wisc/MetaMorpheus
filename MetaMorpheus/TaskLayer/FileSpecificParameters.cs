@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using EngineLayer;
 using MzLibUtil;
 using Nett;
@@ -65,10 +66,19 @@ namespace TaskLayer
 
         public List<ProductType> CustomIons { get; set; }
 
-        // This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
-        // It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.
-        // The reason this method exists is to make sure toml settings are written and parsed consistently between the tasks
-        // and the file-specific settings.
+        /// <summary>
+        /// 180413 RM: This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
+        /// It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.
+        /// The reason this method exists is to make sure toml settings are written and parsed consistently between the tasks
+        /// and the file-specific settings.
+        /// </summary>
+        /// <remarks>
+        /// 230925 NB: This method is excluded from code coverage as it is untestable but used to validate toml's when loaded into the GUI.
+        /// A test has been written to perform the same check and can be found at
+        /// TestToml.TestFileSpecificAndCommonParametersNameEquality
+        /// </remarks>
+        /// <exception cref="MetaMorpheusException"></exception>
+        [ExcludeFromCodeCoverage]
         public static void ValidateFileSpecificVariableNames()
         {
             CommonParameters temp = new CommonParameters();

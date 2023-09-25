@@ -230,5 +230,40 @@ namespace Test
 
             Assert.Throws<MetaMorpheusException>(() => new FileSpecificParameters(fileSpecificTomlBad));
         }
+
+        /// <summary>
+        /// This test ensures that all properties within FileSpecificParams shares both a name and a type with
+        /// a properties in CommonParameters or DigestionParameters and replaces the untestable method
+        /// ValidateFileSpecificVariableNames from FileSpecificParameters
+        /// </summary>
+        [Test]
+        public static void TestFileSpecificAndCommonParametersNameEquality()
+        {
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml");
+            var fileSpecificToml = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
+
+            FileSpecificParameters fileSpecificParameters = new(fileSpecificToml);
+            CommonParameters commonParameters = new();
+
+            // foreach property in File Specific Parameters, ensure common parameters has a property with the same name
+            foreach (var fileSpecificProperty in fileSpecificParameters.GetType().GetProperties())
+            {
+                string fileSpecificPropertyName = fileSpecificProperty.Name;
+                var commonProperty = commonParameters.GetType().GetProperty(fileSpecificPropertyName);
+                if (commonProperty is null)
+                {
+                    // if not found in common parameters, check digestion parameters
+                    commonProperty = commonParameters.DigestionParams.GetType().GetProperty(fileSpecificPropertyName);
+                    if (commonProperty is null)
+                        Assert.Fail("Common Parameters does not have a property with the name " + fileSpecificProperty);
+                }
+
+                string commonPropertyName = commonProperty.Name;
+
+                Assert.That(commonPropertyName, Is.EqualTo(fileSpecificPropertyName));
+                Assert.That(commonProperty.GetType(), Is.EqualTo(fileSpecificProperty.GetType()));
+            }
+        }
+        
     }
 }
