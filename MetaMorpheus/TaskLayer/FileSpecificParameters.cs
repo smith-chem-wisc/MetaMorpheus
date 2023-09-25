@@ -66,42 +66,6 @@ namespace TaskLayer
 
         public List<ProductType> CustomIons { get; set; }
 
-        /// <summary>
-        /// 180413 RM: This method is to make sure developers keep consistent naming between CommonParameters and FileSpecificParameters.
-        /// It's supposed to immediately crash MetaMorpheus if you rename a Common Parameter and don't rename it here.
-        /// The reason this method exists is to make sure toml settings are written and parsed consistently between the tasks
-        /// and the file-specific settings.
-        /// </summary>
-        /// <remarks>
-        /// 230925 NB: This method is excluded from code coverage as it is untestable but used to validate toml's when loaded into the GUI.
-        /// A test has been written to perform the same check and can be found at
-        /// TestToml.TestFileSpecificAndCommonParametersNameEquality
-        /// </remarks>
-        /// <exception cref="MetaMorpheusException"></exception>
-        [ExcludeFromCodeCoverage]
-        public static void ValidateFileSpecificVariableNames()
-        {
-            CommonParameters temp = new CommonParameters();
-
-            if (!nameof(temp.PrecursorMassTolerance).Equals(nameof(PrecursorMassTolerance)))
-                throw new MetaMorpheusException("Precursor tol variable name is inconsistent");
-            if (!nameof(temp.ProductMassTolerance).Equals(nameof(ProductMassTolerance)))
-                throw new MetaMorpheusException("Product tol variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.Protease).Equals(nameof(Protease)))
-                throw new MetaMorpheusException("Protease variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.MinPeptideLength).Equals(nameof(MinPeptideLength)))
-                throw new MetaMorpheusException("Min peptide length variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.MaxPeptideLength).Equals(nameof(MaxPeptideLength)))
-                throw new MetaMorpheusException("Max peptide length variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.MaxMissedCleavages).Equals(nameof(MaxMissedCleavages)))
-                throw new MetaMorpheusException("Max missed cleavages variable name is inconsistent");
-            if (!nameof(temp.DigestionParams.MaxModsForPeptide).Equals(nameof(MaxModsForPeptide)))
-                throw new MetaMorpheusException("Max mods per peptide variable name is inconsistent");
-            if (!nameof(temp.CustomIons).Equals(nameof(CustomIons)))
-                throw new MetaMorpheusException("Custom ions variable name is inconsistent");
-
-        }
-
         public FileSpecificParameters Clone()
         {
             return (FileSpecificParameters)this.MemberwiseClone();

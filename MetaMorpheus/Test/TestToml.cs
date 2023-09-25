@@ -222,8 +222,6 @@ namespace Test
             Assert.AreEqual("Asp-N", fsp.Protease.Name);
             Assert.AreEqual("HPLC", fsp.SeparationType.ToString());
 
-            FileSpecificParameters.ValidateFileSpecificVariableNames();
-
             filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams_bad.toml");
 
             var fileSpecificTomlBad = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
