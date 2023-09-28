@@ -31,6 +31,7 @@ namespace GuiFunctions
         public List<string> CoverageTypeToColorValues { get; set; }
         public string UnannotatedPeakColor { get; set; }
         public string InternalIonColor { get; set; }
+        public bool SubAndSuperScriptIons { get; set; } 
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;
