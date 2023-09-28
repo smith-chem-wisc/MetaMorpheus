@@ -1,19 +1,14 @@
-﻿using EngineLayer;
-using GuiFunctions;
-using GuiFunctions.ViewModels.Legends;
-using IO.MzML;
-using NUnit.Framework;
-using OxyPlot;
-using Proteomics.Fragmentation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Media;
-using Chemistry;
+using EngineLayer;
+using GuiFunctions;
+using GuiFunctions.ViewModels.Legends;
+using NUnit.Framework;
+using OxyPlot;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 
 namespace Test.MetaDraw
@@ -44,7 +39,7 @@ namespace Test.MetaDraw
             Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.ExportType.Equals(MetaDrawSettings.ExportType));
-            var colorValues = MetaDrawSettings.ProductTypeToColor.Values.Select(p => p.GetColorName()).ToList();
+            var colorValues = MetaDrawSettings.ProductTypeToColor.Values.Select(p => OxyColorExtensions.GetColorName(p)).ToList();
             var betaColorValues = MetaDrawSettings.BetaProductTypeToColor.Values.Select(p => p.GetColorName()).ToList();
             var modificationColorValues =
                 MetaDrawSettings.ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList();
