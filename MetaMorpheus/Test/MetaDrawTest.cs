@@ -25,7 +25,7 @@ using ThermoFisher.CommonCore.Data.Business;
 using System.Drawing;
 using pepXML.Generated;
 
-namespace Test
+namespace Test.MetaDraw
 {
     [TestFixture, Apartment(ApartmentState.STA)]
     [TestFixture]

@@ -17,10 +17,11 @@ namespace GuiFunctions
         // graphic settings
         public bool DisplayIonAnnotations { get; set; } = true;
         public bool AnnotateMzValues { get; set; } = false;
-        public bool AnnotateCharges { get; set; } = false;
+        public bool AnnotateCharges { get; set; } = true;
         public bool AnnotationBold { get; set; } = false;
         public bool DisplayInternalIons { get; set; } = true;
         public bool DisplayInternalIonAnnotations { get; set; } = true;
+        public bool SubAndSuperScriptIons { get; set; } = true;
         public bool DrawStationarySequence { get; set; } = true;
         public bool DrawNumbersUnderStationary { get; set; } = true;
         public bool ShowLegend { get; set; } = true;
@@ -31,7 +32,6 @@ namespace GuiFunctions
         public List<string> CoverageTypeToColorValues { get; set; }
         public string UnannotatedPeakColor { get; set; }
         public string InternalIonColor { get; set; }
-        public bool SubAndSuperScriptIons { get; set; } 
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;

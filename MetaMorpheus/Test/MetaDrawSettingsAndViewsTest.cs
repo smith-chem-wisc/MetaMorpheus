@@ -16,7 +16,7 @@ using System.Windows.Media;
 using Chemistry;
 using Proteomics.ProteolyticDigestion;
 
-namespace Test
+namespace Test.MetaDraw
 {
     public static class MetaDrawSettingsAndViewsTest
     {
@@ -34,6 +34,7 @@ namespace Test
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
             Assert.That(snapshot.DisplayInternalIons, Is.EqualTo(MetaDrawSettings.DisplayInternalIons));
+            Assert.That(snapshot.SubAndSuperScriptIons, Is.EqualTo(MetaDrawSettings.SubAndSuperScriptIons));
 
             MetaDrawSettings.ShowContaminants = true;
             MetaDrawSettings.AnnotateMzValues = false;
@@ -65,6 +66,7 @@ namespace Test
             snapshot.ShowDecoys = true;
             snapshot.ShowLegend = false;
             snapshot.DrawNumbersUnderStationary = false;
+            snapshot.SubAndSuperScriptIons = false;
             MetaDrawSettings.LoadSettings(snapshot);
             Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
             Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
@@ -76,6 +78,7 @@ namespace Test
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
             Assert.That(snapshot.DisplayInternalIons, Is.EqualTo(MetaDrawSettings.DisplayInternalIons));
+            Assert.That(snapshot.SubAndSuperScriptIons, Is.EqualTo(MetaDrawSettings.SubAndSuperScriptIons));
             colorValues = MetaDrawSettings.ProductTypeToColor.Values.Select(p => p.GetColorName()).ToList();
             betaColorValues = MetaDrawSettings.BetaProductTypeToColor.Values.Select(p => p.GetColorName()).ToList();
             modificationColorValues =
