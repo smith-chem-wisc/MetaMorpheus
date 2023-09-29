@@ -9,7 +9,9 @@ using System.Windows.Controls;
 using EngineLayer;
 using GuiFunctions;
 using NUnit.Framework;
+using OxyPlot;
 using OxyPlot.Annotations;
+using Proteomics.Fragmentation;
 using TaskLayer;
 
 namespace Test.MetaDraw
@@ -22,7 +24,9 @@ namespace Test.MetaDraw
     [TestFixture, Apartment(ApartmentState.STA)]
     public class SpectrumMatchPlotTests
     {
-
+        /// <summary>
+        /// Run search task and prepare everything needed to plot a simple psm
+        /// </summary>
         [OneTimeSetUp]
         public void Setup()
         {
@@ -31,9 +35,15 @@ namespace Test.MetaDraw
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
 
             Directory.CreateDirectory(outputFolder);
-
+             
             // run search task
-            var searchtask = new SearchTask();
+            var searchtask = new SearchTask()
+            {
+                SearchParameters = new SearchParameters()
+                {
+                    MinAllowedInternalFragmentLength = 4,
+                }
+            };
             searchtask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
 
             var psmFile = Path.Combine(outputFolder, @"AllPSMs.psmtsv");
@@ -52,50 +62,116 @@ namespace Test.MetaDraw
             psm = metadrawLogic.FilteredListOfPsms.First(p => p.FullSequence == "QIVHDSGR");
         }
 
-        private string outputFolder;
-        private MetaDrawLogic metadrawLogic;
-        private OxyPlot.Wpf.PlotView plotView;
-        private PsmFromTsv psm;
-        private ParentChildScanPlotsView parentChildView;
-
         [OneTimeTearDown]
         public void TearDown()
         {
             Directory.Delete(outputFolder, true);
         }
 
-        [Test]
-        [TestCase(false, false, false, false, "")]
-        [TestCase(false, true, false, false, "")]
-        [TestCase(false, false, true, false, "")]
-        [TestCase(false, false, false, true, "")]
-        [TestCase(false, true, true, false, "")]
-        [TestCase(false, true, false, true, "")]
-        [TestCase(false, false, true, true, "")]
-        [TestCase(false, true, true, true, "")]
-        [TestCase(true, false, false, false, "b1")]
-        [TestCase(true, true, false, false, "b1+1")]
-        [TestCase(true, false, true, false, "b1 (129.066)")]
-        [TestCase(true, false, false, true, "b₁")]
-        [TestCase(true, true, true, false, "b1+1 (129.066)")]
-        [TestCase(true, true, false, true, "b₁¹⁺")]
-        [TestCase(true, false, true, true, "b₁ (129.066)")]
-        [TestCase(true, true, true, true, "b₁¹⁺ (129.066)")]
-        public void TestPeakAnnotation(bool annotatePeaks, bool annotateCharges, bool annotateMass, bool subAndSuper,
-            string expected)
+        private string outputFolder;
+        private MetaDrawLogic metadrawLogic;
+        private OxyPlot.Wpf.PlotView plotView;
+        private PsmFromTsv psm;
+        private ParentChildScanPlotsView parentChildView;
+        public record PeakAnnotationTestCase(bool AnnotatePeaks, bool AnnotateCharges,
+            bool AnnotateMass, bool SubAndSuper, string ExpectedAnnotation, OxyColor ExpectedColor, int FragmentIndex);
 
+        public static IEnumerable<PeakAnnotationTestCase> GetAnnotationTestCases()
+        {
+            OxyColor unannotatedColor = OxyColor.FromArgb(0, 0, 0, 1);
+            OxyColor bColor = OxyColors.Blue;
+            OxyColor yColor = OxyColors.Red;
+            OxyColor internalColor = OxyColors.Purple;
+
+            // all parameter combinations for b ions
+            yield return new PeakAnnotationTestCase(false, false, false, false, "", unannotatedColor, 0);
+            yield return new PeakAnnotationTestCase(false, true, false, false, "", unannotatedColor, 0);
+            yield return new PeakAnnotationTestCase(false, false, true, false, "", unannotatedColor, 0);
+            yield return new PeakAnnotationTestCase(false, false, false, true, "", unannotatedColor, 0);
+            yield return new PeakAnnotationTestCase(false, true, true, false, "", unannotatedColor, 0);
+            yield return new PeakAnnotationTestCase(false, true, false, true, "", unannotatedColor, 0);
+            yield return new PeakAnnotationTestCase(false, false, true, true, "", unannotatedColor, 0);
+            yield return new PeakAnnotationTestCase(false, true, true, true, "", unannotatedColor, 0);
+            yield return new PeakAnnotationTestCase(true, false, false, false, "b1", bColor, 0);
+            yield return new PeakAnnotationTestCase(true, true, false, false, "b1+1", bColor, 0);
+            yield return new PeakAnnotationTestCase(true, false, true, false, "b1 (129.066)", bColor, 0);
+            yield return new PeakAnnotationTestCase(true, false, false, true, "b₁", bColor, 0);
+            yield return new PeakAnnotationTestCase(true, true, true, false, "b1+1 (129.066)", bColor, 0);
+            yield return new PeakAnnotationTestCase(true, true, false, true, "b₁¹⁺", bColor, 0);
+            yield return new PeakAnnotationTestCase(true, false, true, true, "b₁ (129.066)", bColor, 0);
+            yield return new PeakAnnotationTestCase(true, true, true, true, "b₁¹⁺ (129.066)", bColor, 0);
+
+            // all parameter combinations for y ions
+            yield return new PeakAnnotationTestCase(false, false, false, false, "", unannotatedColor, 9);
+            yield return new PeakAnnotationTestCase(false, true, false, false, "", unannotatedColor, 9);
+            yield return new PeakAnnotationTestCase(false, false, true, false, "", unannotatedColor, 9);
+            yield return new PeakAnnotationTestCase(false, false, false, true, "", unannotatedColor, 9);
+            yield return new PeakAnnotationTestCase(false, true, true, false, "", unannotatedColor, 9);
+            yield return new PeakAnnotationTestCase(false, true, false, true, "", unannotatedColor, 9);
+            yield return new PeakAnnotationTestCase(false, false, true, true, "", unannotatedColor, 9);
+            yield return new PeakAnnotationTestCase(false, true, true, true, "", unannotatedColor, 9);
+            yield return new PeakAnnotationTestCase(true, false, false, false, "y7", yColor, 9);
+            yield return new PeakAnnotationTestCase(true, true, false, false, "y7+1", yColor, 9);
+            yield return new PeakAnnotationTestCase(true, false, true, false, "y7 (783.411)", yColor, 9);
+            yield return new PeakAnnotationTestCase(true, false, false, true, "y₇", yColor, 9);
+            yield return new PeakAnnotationTestCase(true, true, true, false, "y7+1 (783.411)", yColor, 9);
+            yield return new PeakAnnotationTestCase(true, true, false, true, "y₇¹⁺", yColor, 9);
+            yield return new PeakAnnotationTestCase(true, false, true, true, "y₇ (783.411)", yColor, 9);
+            yield return new PeakAnnotationTestCase(true, true, true, true, "y₇¹⁺ (783.411)", yColor, 9);
+
+            // all parameter combinations for internal ions
+            yield return new PeakAnnotationTestCase(false, false, false, false, "", unannotatedColor, 12);
+            yield return new PeakAnnotationTestCase(false, true, false, false, "", unannotatedColor, 12);
+            yield return new PeakAnnotationTestCase(false, false, true, false, "", unannotatedColor, 12);
+            yield return new PeakAnnotationTestCase(false, false, false, true, "", unannotatedColor, 12);
+            yield return new PeakAnnotationTestCase(false, true, true, false, "", unannotatedColor, 12);
+            yield return new PeakAnnotationTestCase(false, true, false, true, "", unannotatedColor, 12);
+            yield return new PeakAnnotationTestCase(false, false, true, true, "", unannotatedColor, 12);
+            yield return new PeakAnnotationTestCase(false, true, true, true, "", unannotatedColor, 12);
+            yield return new PeakAnnotationTestCase(true, false, false, false, "yIb[4-7]", internalColor, 12);
+            yield return new PeakAnnotationTestCase(true, true, false, false, "yIb[4-7]+1", internalColor, 12);
+            yield return new PeakAnnotationTestCase(true, false, true, false, "yIb[4-7] (397.145)", internalColor, 12);
+            yield return new PeakAnnotationTestCase(true, false, false, true, "yIb₄₋₇", internalColor, 12);
+            yield return new PeakAnnotationTestCase(true, true, true, false, "yIb[4-7]+1 (397.145)", internalColor, 12);
+            yield return new PeakAnnotationTestCase(true, true, false, true, "yIb₄₋₇¹⁺", internalColor, 12);
+            yield return new PeakAnnotationTestCase(true, false, true, true, "yIb₄₋₇ (397.145)", internalColor, 12);
+            yield return new PeakAnnotationTestCase(true, true, true, true, "yIb₄₋₇¹⁺ (397.145)", internalColor, 12);
+        }
+
+
+        [Test]
+        [TestCaseSource(nameof(GetAnnotationTestCases))]
+        public void TestPeakAnnotation(PeakAnnotationTestCase testCase)
         {
             // set parameters for test case
-            MetaDrawSettings.DisplayIonAnnotations = annotatePeaks;
-            MetaDrawSettings.AnnotateCharges = annotateCharges;
-            MetaDrawSettings.SubAndSuperScriptIons = subAndSuper;
-            MetaDrawSettings.AnnotateMzValues = annotateMass;
+            MetaDrawSettings.DisplayIonAnnotations = testCase.AnnotatePeaks;
+            MetaDrawSettings.AnnotateCharges = testCase.AnnotateCharges;
+            MetaDrawSettings.SubAndSuperScriptIons = testCase.SubAndSuper;
+            MetaDrawSettings.AnnotateMzValues = testCase.AnnotateMass;
+
             metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out List<string> errors);
             Assert.That(errors == null || !errors.Any());
 
-            var annotation = ((TextAnnotation)plotView.Model.Annotations.First()).Text;
-            Assert.That(annotation, Is.EqualTo(expected));
+            var annotation = ((TextAnnotation)plotView.Model.Annotations[testCase.FragmentIndex]).Text;
+            Assert.That(annotation, Is.EqualTo(testCase.ExpectedAnnotation));
+        }
 
+        [Test]
+        [TestCaseSource(nameof(GetAnnotationTestCases))]
+        public void TestPeakColor(PeakAnnotationTestCase testCase)
+        {
+            MetaDrawSettings.DisplayInternalIons = true;
+            MetaDrawSettings.DisplayInternalIonAnnotations = true;
+            MetaDrawSettings.DisplayIonAnnotations = testCase.AnnotatePeaks;
+            MetaDrawSettings.AnnotateCharges = testCase.AnnotateCharges;
+            MetaDrawSettings.SubAndSuperScriptIons = testCase.SubAndSuper;
+            MetaDrawSettings.AnnotateMzValues = testCase.AnnotateMass;
+
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out List<string> errors);
+            Assert.That(errors == null || !errors.Any());
+
+            var annotation = ((TextAnnotation)plotView.Model.Annotations[testCase.FragmentIndex]);
+            Assert.That(annotation.TextColor, Is.EqualTo(testCase.ExpectedColor));
         }
     }
 }

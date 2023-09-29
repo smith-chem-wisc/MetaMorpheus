@@ -236,7 +236,22 @@ namespace GuiFunctions
 
                 if (MetaDrawSettings.SubAndSuperScriptIons)
                     foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
-                        peakAnnotationText += char.IsDigit(character) ? MetaDrawSettings.SubScriptNumbers[character - '0'] : character;
+                    {
+                        if (char.IsDigit(character))
+                            peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
+                        else switch (character)
+                        {
+                            case '-':
+                                peakAnnotationText += "\u208B"; // sub scripted Hyphen
+                                break;
+                            case '[':
+                            case ']':
+                                continue;
+                            default:
+                                peakAnnotationText += character;
+                                break;
+                        }
+                    }
                 else
                     peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
                 
