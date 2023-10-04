@@ -80,7 +80,6 @@ namespace MetaMorpheusGUI
         {
             UpdateGuiOnPreRunChange();
             UpdateOutputFolderTextbox();
-            FileSpecificParameters.ValidateFileSpecificVariableNames();
             SearchModifications.SetUpModSearchBoxes();
             PrintErrorsReadingMods();
 
