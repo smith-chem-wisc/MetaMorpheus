@@ -7,7 +7,7 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="Graphical Settings" Width="600" SizeToContent="Height" WindowStartupLocation="CenterScreen"
-        Height="400" MaxHeight="600">
+        Height="500" MaxHeight="600">
 
     
     
@@ -38,6 +38,7 @@
                     <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
                     <CheckBox Name="ShowInternalIonsCheckBox" Content="Show internal ions" Margin="5" />
                     <CheckBox Name="ShowInternalIonAnnotationsCheckBox" Content="Display internal ion annotations" Margin="5" />
+                    <CheckBox Name="SubSuperScriptedIonAnnotations" Content="Sub/superscripted ion annotations" Margin="5" />
 
                     <StackPanel Orientation="Horizontal" Margin="5">
                         <Label Content="Filter to q-value:" Width="140"/>

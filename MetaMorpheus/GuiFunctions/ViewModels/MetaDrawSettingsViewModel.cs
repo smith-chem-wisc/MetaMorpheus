@@ -19,7 +19,7 @@ namespace GuiFunctions
     /// In a perfect world, nothing would be in the MetaDrawSettings.xaml.cs file and all would be located here
     /// This would allow for more extensive testing of the GUI Elements
     /// </summary>
-    public class SettingsViewModel : BaseViewModel, IAsyncInitialization
+    public class MetaDrawSettingsViewModel : BaseViewModel, IAsyncInitialization
     {
         #region Private Properties
 
@@ -78,7 +78,7 @@ namespace GuiFunctions
         /// Constructs the instance asynchronously
         /// </summary>
         /// <param name="loadAsync"></param>
-        public SettingsViewModel(bool loadAsync = true)
+        public MetaDrawSettingsViewModel(bool loadAsync = true)
         {
             if (loadAsync)
                 Initialization = InitializeAsync();

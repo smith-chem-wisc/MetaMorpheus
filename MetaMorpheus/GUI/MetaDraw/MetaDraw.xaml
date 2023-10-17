@@ -155,7 +155,7 @@
                                 <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" 
                                         BorderThickness="0" IsEnabled="{Binding SettingsView.CanOpen}">
                                     <StackPanel Name="SettingsButton" Orientation="Horizontal">
-                                        <Image Source="Icons\icons8-settings-256.bmp" Margin="0,3,0,0" ></Image>
+                                        <Image Source="Icons\icons8-settings-480.png" Margin="0,3,0,0" ></Image>
                                         <ToolTipService.ToolTip>
                                             <ToolTip Content="Settings" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                         </ToolTipService.ToolTip>

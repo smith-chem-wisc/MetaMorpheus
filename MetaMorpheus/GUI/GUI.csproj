@@ -44,7 +44,7 @@
     <None Remove="Icons\wiki_20.bmp" />
     <None Remove="Icons\youtube-256.bmp" />
     <None Remove="Icons\youtube_20.bmp" />
-    <None Remove="MetaDraw\Icons\icons8-settings-256.bmp" />
+    <None Remove="MetaDraw\Icons\icons8-settings-480.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -55,7 +55,7 @@
     <PackageReference Include="Microsoft.ML.CpuMath" Version="2.0.0" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="2.0.0" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.539" />
+    <PackageReference Include="mzLib" Version="1.0.541" />
     <PackageReference Include="Nett" Version="0.15.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="OxyPlot.Core" Version="2.0.0" />
@@ -119,9 +119,7 @@
     <Resource Include="Icons\youtube_20.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Content Include="MetaDraw\Icons\icons8-settings-256.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Resource Include="MetaDraw\Icons\icons8-settings-480.png" />
   </ItemGroup>
 
   <ItemGroup>
