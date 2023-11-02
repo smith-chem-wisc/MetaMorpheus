@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Easy.Common.Extensions;
+using MathNet.Numerics;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -35,7 +37,7 @@ namespace EngineLayer.FdrAnalysis
 
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
-
+            
             myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
 
             return myAnalysisResults;
@@ -45,10 +47,10 @@ namespace EngineLayer.FdrAnalysis
         {
             // Stop if canceled
             if (GlobalVariables.StopLoops) { return; }
-
+            var bubba = EValueByTailFittingForTopPsms(AllPsms.ToList());
             // calculate FDR on a per-protease basis (targets and decoys for a specific protease)
             var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.Protease);
-
+            
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
                 var psms = proteasePsms.ToList();
@@ -164,6 +166,65 @@ namespace EngineLayer.FdrAnalysis
             {
                 Compute_PEPValue(myAnalysisResults);
             }
+        }
+        /// <summary>
+        /// The method fits a line for log[survival] vs. log[(int)score] for the top 10% scoring spectrum matches
+        /// This line can be used to compute the E-value of a spectrum match by inputing the log[(int)score]
+        /// and raising 10 the the power of the computed value (10^y)
+        /// For high scoring spectrum matches (~the set of spectrum matches at 1% FDR), this value should be <= 0
+        /// This function should not used to calculate E-Value for anything with greater than 1% FDR
+        /// I found this strategy in an asms presentation pdf from 2006
+        /// https://prospector.ucsf.edu/prospector/html/misc/publications/2006_ASMS_1.pdf
+        /// Protein Prospector and Ways Calculating Expectation Values
+        /// Aenoch J. Lynn; Robert J. Chalkley; Peter R. Baker; Mark R.Segal; and Alma L.Burlingame
+        /// </summary>
+        /// <param name="allPSMs"></param>
+        /// <returns></returns>
+        public (double intercept, double slope) EValueRegressionFormulaByTailFittingForTopPsms(List<PeptideSpectralMatch> allPSMs)
+        {
+            int myCount = allPSMs.Count;
+            var decoyScoreHistogram = allPSMs
+                .Where(p => p.IsDecoy) //we are fitting the tail to only decoy PSMs
+                .Select(p => (int)p.Score) //we are only interested in the integer score because the decimal portion is unrelated
+                .GroupBy(s => s).ToList(); //making a score histogram here.
+            var j = decoyScoreHistogram.Count;
+
+            double[] survival = new double[decoyScoreHistogram.Select(k=>k.Key).ToList().Max() + 1];
+
+            foreach (var scoreCountPair in decoyScoreHistogram)
+            {
+                survival[scoreCountPair.Key] = scoreCountPair.Count();//the array already has a value of 0 at each index (which is the integer Morpheus score) during creation. so we only need to populate it where we have scores
+            }
+
+            List<double> logScores = new(); //x-values
+            List<double> logSurvivals = new(); //y-values
+
+            double runningSum = 0;
+            for (int i = survival.Length - 1; i > -1; i--)
+            {
+                runningSum += survival[i];
+                survival[i] = runningSum;
+            }
+
+            double countMax = survival.Max();
+
+            for (int i = 0; i < survival.Length; i++)
+            {
+                survival[i] /= countMax;
+            }
+
+            double[] logSurvival = new double[survival.Length];
+            for (int i = 0; i < survival.Length; i++)
+            {
+                if (survival[i] > 0 && survival[i] < (0.1 * survival.Max()))
+                {
+                    logSurvival[i] = Math.Log10(survival[i]); 
+                    logScores.Add(Math.Log10(i));
+                    logSurvivals.Add(Math.Log10(survival[i]));
+                }
+            }
+
+            return Fit.Line(logScores.ToArray(), logSurvivals.ToArray());
         }
 
         public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults)
