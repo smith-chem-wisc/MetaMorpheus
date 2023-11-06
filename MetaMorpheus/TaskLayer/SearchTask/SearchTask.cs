@@ -1,11 +1,15 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
 using FlashLFQ;
 using MassSpectrometry;
+using MassSpectrometry.MzSpectra;
+using MathNet.Numerics.Statistics;
 using MzLibUtil;
+using pepXML.Generated;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
@@ -15,6 +19,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace TaskLayer
 {
@@ -83,6 +88,128 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            //load RT values
+
+
+            //string PeptidesPath = @"D:\Data\RT_HI.txt";
+            string PeptidesPath = @"D:\Data\TargetPeptides_RT.txt";
+
+            List<string[]> RT_data = new List<string[]>();
+            if (File.Exists(PeptidesPath))
+            {
+                using (StreamReader reader = new StreamReader(PeptidesPath))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        string line = reader.ReadLine();
+                        string[] columns = line.Split('\t');
+                        RT_data.Add(columns);
+                    }
+                }
+            }
+            else
+            {
+                Console.WriteLine("File not found: " + PeptidesPath);
+            }
+            //List<double> RT = new List<double> { };
+            //List<double> HI = new List<double> { };
+
+
+            //for (int i = 1; i < RT_data.Count; i++)
+            //{
+            //    RT.Add(double.Parse(RT_data[i][1]));
+
+            //    HI.Add(double.Parse(RT_data[i][0]));
+
+            //}
+            //(double[], double[]) RT_HI_table = (RT.ToArray(), HI.ToArray());
+
+            Dictionary<String, double> peptideFullSeq_RT = new Dictionary<String, double>();
+
+            for (int i = 1; i < RT_data.Count; i++)
+            {
+                peptideFullSeq_RT.Add(RT_data[i][13], double.Parse(RT_data[i][2]));
+            }
+
+            string RTPath = @"D:\Data\predictionsForNoMissedCleavage.tsv";
+            List<string[]> HI_data = new List<string[]>();
+            if (File.Exists(RTPath))
+            {
+                using (StreamReader reader = new StreamReader(RTPath))
+                {
+                    while (!reader.EndOfStream)
+                    {
+                        string line = reader.ReadLine();
+                        string[] columns = line.Split('\t');
+
+                        HI_data.Add(columns);
+                    }
+                }
+
+            }
+            else
+            {
+                Console.WriteLine("File not found: " + RTPath);
+            }
+            Dictionary<String,double> peptideFullSeq_HI= new Dictionary<String,double>();
+            for (int i = 1; i < HI_data.Count; i++)
+            {
+                if (!peptideFullSeq_HI.ContainsKey(HI_data[i][3]))
+                {
+                    peptideFullSeq_HI.Add(HI_data[i][3], double.Parse(HI_data[i][7]));
+                }
+
+            }
+            //  var pepHI = peptideFullSeq_HI["AAAYDKLEK"];
+            //  double calculatedRT = 3.6157 * pepHI + 10.4657;
+            //  List<double> RT = new List<double> { };
+            //  List<double> HI = new List<double> { };
+            //  Dictionary<double, List<double>> RT_HI_list = new Dictionary<double, List<double>>();
+
+            //  foreach (var x in peptideFullSeq_HI)
+            //  {
+            //      if(peptideFullSeq_RT.ContainsKey(x.Key))
+            //      {
+            //          var HI_round = Math.Round(x.Value, 1);
+            //          if (!RT_HI_list.ContainsKey(HI_round))
+            //          {
+            //              RT_HI_list.Add(HI_round, new List<double> { peptideFullSeq_RT[x.Key] });
+            //          }
+            //          else
+            //          {
+            //              RT_HI_list[HI_round].Add(peptideFullSeq_RT[x.Key]);
+            //          }
+            //      }
+            //  }
+            //  foreach(var x in RT_HI_list)
+            //  {
+            //      HI.Add(x.Key);
+            //      RT.Add(x.Value.Median());
+            //  }
+            (double[], double[]) RT_HI_table = new(new double[] {}, new double[] {}) { };
+            //(double[], double[]) RT_HI_table = (HI.ToArray(), RT.ToArray());
+
+            //  string Diff_Path = @"D:\Data\predictionsForNoMissedCleavage.tsv";
+            //  List<string[]> diff_peptides = new List<string[]>();
+            //  if (File.Exists(RTPath))
+            //  {
+            //      using (StreamReader reader = new StreamReader(RTPath))
+            //      {
+            //          while (!reader.EndOfStream)
+            //          {
+            //              string line = reader.ReadLine();
+            //              string[] columns = line.Split('\t');
+
+            //              diff_peptides.Add(columns);
+            //          }
+            //      }
+
+            //  }
+            //  else
+            //  {
+            //      Console.WriteLine("File not found: " + RTPath);
+            //  }
+
             if (SearchParameters.DoLabelFreeQuantification)
             {
                 // disable quantification if a .mgf is being used
@@ -211,8 +338,8 @@ namespace TaskLayer
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
-                PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
-
+                //var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                var fileSpecificPsms = new List<PeptideSpectralMatch> { };
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
@@ -236,7 +363,7 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
 
-                        new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
+                        new ModernSearchEngine(fileSpecificPsms.ToArray(), arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
                             combinedParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
@@ -333,17 +460,18 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
-                    var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary);
+                    var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms.ToArray(), arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary);                  
                     newClassicSearchEngine.Run();
-
+                    fileSpecificPsms = newClassicSearchEngine.PeptideSpectralMatches;
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
+                   
                 }
 
                 //look for internal fragments
                 if (SearchParameters.MinAllowedInternalFragmentLength != 0)
                 {
-                    MatchInternalFragmentIons(fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams, SearchParameters.MinAllowedInternalFragmentLength);
+                    MatchInternalFragmentIons(fileSpecificPsms.ToArray(), arrayOfMs2ScansSortedByMass, combinedParams, SearchParameters.MinAllowedInternalFragmentLength);
                 }
 
                 // calculate/set spectral angles if there is a spectral library being used
@@ -351,7 +479,7 @@ namespace TaskLayer
                 {
                     Status("Calculating spectral library similarity...", thisId);
                 }
-                SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
+                SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms.ToArray(), arrayOfMs2ScansSortedByMass, combinedParams);
 
                 lock (psmLock)
                 {
