@@ -11,7 +11,6 @@ using MathNet.Numerics.Statistics;
 using MzLibUtil;
 using pepXML.Generated;
 using Proteomics;
-using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
