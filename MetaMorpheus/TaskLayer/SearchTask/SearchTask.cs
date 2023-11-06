@@ -1,11 +1,15 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using EngineLayer.NonSpecificEnzymeSearch;
 using FlashLFQ;
 using MassSpectrometry;
+using MassSpectrometry.MzSpectra;
+using MathNet.Numerics.Statistics;
 using MzLibUtil;
+using pepXML.Generated;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.Fragmentation;
@@ -15,6 +19,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace TaskLayer
 {
@@ -211,8 +216,8 @@ namespace TaskLayer
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
-                PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
-
+                //var fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                var fileSpecificPsms = new List<PeptideSpectralMatch> { };
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
@@ -236,7 +241,7 @@ namespace TaskLayer
 
                         Status("Searching files...", taskId);
 
-                        new ModernSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
+                        new ModernSearchEngine(fileSpecificPsms.ToArray(), arrayOfMs2ScansSortedByMass, peptideIndex, fragmentIndex, currentPartition,
                             combinedParams, this.FileSpecificParameters, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, thisId).Run();
 
                         ReportProgress(new ProgressEventArgs(100, "Done with search " + (currentPartition + 1) + "/" + combinedParams.TotalPartitions + "!", thisId));
@@ -333,17 +338,18 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
-                    var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary);
+                    var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms.ToArray(), arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary);                  
                     newClassicSearchEngine.Run();
-
+                    fileSpecificPsms = newClassicSearchEngine.PeptideSpectralMatches;
                     ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
+                   
                 }
 
                 //look for internal fragments
                 if (SearchParameters.MinAllowedInternalFragmentLength != 0)
                 {
-                    MatchInternalFragmentIons(fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams, SearchParameters.MinAllowedInternalFragmentLength);
+                    MatchInternalFragmentIons(fileSpecificPsms.ToArray(), arrayOfMs2ScansSortedByMass, combinedParams, SearchParameters.MinAllowedInternalFragmentLength);
                 }
 
                 // calculate/set spectral angles if there is a spectral library being used
@@ -351,7 +357,7 @@ namespace TaskLayer
                 {
                     Status("Calculating spectral library similarity...", thisId);
                 }
-                SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
+                SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms.ToArray(), arrayOfMs2ScansSortedByMass, combinedParams);
 
                 lock (psmLock)
                 {
