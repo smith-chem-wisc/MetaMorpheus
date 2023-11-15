@@ -44,7 +44,7 @@
     <None Remove="Icons\wiki_20.bmp" />
     <None Remove="Icons\youtube-256.bmp" />
     <None Remove="Icons\youtube_20.bmp" />
-    <None Remove="MetaDraw\Icons\icons8-settings-256.bmp" />
+    <None Remove="MetaDraw\Icons\icons8-settings-480.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -119,9 +119,7 @@
     <Resource Include="Icons\youtube_20.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Content Include="MetaDraw\Icons\icons8-settings-256.bmp">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <Resource Include="MetaDraw\Icons\icons8-settings-480.png" />
   </ItemGroup>
 
   <ItemGroup>

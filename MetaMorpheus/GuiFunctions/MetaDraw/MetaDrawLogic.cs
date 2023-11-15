@@ -998,11 +998,11 @@ namespace GuiFunctions
                     }
                 }
 
-                foreach (var psm in AllPsms)
+                foreach (var group in AllPsms
+                             .GroupBy(p => (p.Ms2ScanNumber, p.FileNameWithoutExtension))
+                             .Where(group => group.Count() > 1))
                 {
-                    if (AllPsms.Count(p =>
-                            p.Ms2ScanNumber == psm.Ms2ScanNumber &&
-                            p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
+                    foreach (var psm in group)
                     {
                         ChimericPsms.Add(psm);
                     }
