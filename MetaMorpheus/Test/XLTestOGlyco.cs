@@ -12,6 +12,13 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using Nett;
 using EngineLayer.GlycoSearch;
+using FlashLFQ;
+using NUnit.Framework.Internal;
+using SpectralAveraging;
+using Chemistry;
+using MzLibUtil;
+using Readers;
+using System.Text;
 
 namespace Test
 {
@@ -395,9 +402,7 @@ namespace Test
             DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
-            
-            
-            
+
             Directory.Delete(outputFolder, true);
         }
 
@@ -455,6 +460,138 @@ namespace Test
             var folders = Directory.GetDirectories(outputFolder).Select(b => Path.GetFileName(b)).ToList();
             var folderContents = Directory.GetFiles(Path.Combine(outputFolder, folders[0])).ToList();
             Assert.That(folderContents[6].Contains("_AllProteinGroups.tsv"));
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void OGlycoTest_Run5()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSnip.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.WriteContaminants = false;
+
+            DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
+            DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), true);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void OGlycoTest_Run6()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSnip.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.DoParsimony = false;
+            glycoSearchTask._glycoSearchParameters.DoQuantification = true;
+
+            DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
+            DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void GlycoTestWithContaminants()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            DbForTask dbTarget = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+            string spectraFileTarget = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+
+            DbForTask dbContaminant = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), true);
+            string spectraFileContaminant = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\181217_Fusion_(LC2)_NewObj_Serum_deSA_Jacalin_HRM_4h_ETD_HCD_DDA_mz(400_1200)_21707.mgf");
+
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFileTarget, spectraFileContaminant }, new List<DbForTask> { dbTarget, dbContaminant }, outputFolder).Run();
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void GlycoTestWithBadExperimentalDesignFile()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.Normalize = true;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML"), Path.Combine(outputFolder, "171025_06subset_1.mzML"), true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML"), Path.Combine(outputFolder, "171025_06subset_2.mzML"), true);
+
+            string spectraFile1 = Path.Combine(outputFolder, "171025_06subset_1.mzML");
+            string spectraFile2 = Path.Combine(outputFolder, "171025_06subset_2.mzML");
+
+            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+
+            //These conditions are such that the experimental design file is bad.
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 9, 0));
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 5, 0, 4));
+
+            ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
+
+            //this is the crux of the unit test. no experimental design file is passed in and the search task with quant should still run.
+            string experimentalDesignFilePath = Path.Combine(outputFolder, "ExperimentalDesign.tsv");
+
+            var readIn = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilePath,
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(),
+                out var errors);
+
+            Assert.That(errors.Count == 1);
+            Assert.That(errors[0].Contains("Condition \"condition1\" biorep 1 fraction 1 techrep 1 is missing!"));
+            Assert.That(readIn.Count == 2);
+
+
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
+
+            List<string> expectedOutput = new()
+            {
+                "ExperimentalDesign.tsv",
+                "_AllProteinGroups.tsv",
+                "AllPSMs.psmtsv",
+                "AutoGeneratedManuscriptProse.txt",
+                "oglyco.psmtsv",
+                "protein_oglyco_localization.tsv",
+                "results.txt",
+                "seen_oglyco_localization.tsv"
+            };
+
+
+            List<string> expectedIndividualFileOutput = new()
+            {
+                "171025_06subset_1_AllProteinGroups.tsv",
+                "171025_06subset_1_AllPSMs.psmtsv",
+                "171025_06subset_1oglyco.psmtsv",
+                "171025_06subset_1protein_oglyco_localization.tsv",
+                "171025_06subset_1seen_oglyco_localization.tsv",
+            };
+
+            string outputFolderWithTask = Path.Combine(outputFolder, "Task");
+            List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
+            List<string> outputFolders = Directory.GetDirectories(outputFolderWithTask).ToList();
+            List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
+            List<string> individualOutputs = Directory.GetFiles(individualOutputFolders.FirstOrDefault()).Select(f => Path.GetFileName(f)).ToList();
+
+            CollectionAssert.AreEquivalent(expectedOutput, output);
+            CollectionAssert.AreEquivalent(expectedIndividualFileOutput, individualOutputs);
+
+            string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
+            string[] proteinGroupFields = allProteinGroups[1].Split('\t');
+
+            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
 
             Directory.Delete(outputFolder, true);
         }
@@ -786,6 +923,384 @@ namespace Test
             nGlycoHeaderTerms.RemoveAll(s => s == "");
 
             CollectionAssert.AreEquivalent(headerTerms, nGlycoHeaderTerms);
+        }
+        
+        //Test oglycopeptide quant with two conditions, experimental design and normalization
+        [Test]
+        public static void TestGlycoQuant()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.Normalize = true;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+            string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
+            string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
+
+            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+
+            ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
+
+            string experimentalDesignFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\ExperimentalDesign.tsv");
+
+            var readIn = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilePath,
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(),
+                out var errors);
+
+            Assert.That(!errors.Any());
+            Assert.That(readIn.Count == 2);
+
+
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
+
+            List<string> expectedOutput = new()
+            {
+                "ExperimentalDesign.tsv",
+                "_AllProteinGroups.tsv",
+                "AllPSMs.psmtsv",
+                "AllQuantifiedPeaks.tsv",
+                "AllQuantifiedPeptides.tsv",
+                "AutoGeneratedManuscriptProse.txt",
+                "oglyco.psmtsv",
+                "protein_oglyco_localization.tsv",
+                "results.txt",
+                "seen_oglyco_localization.tsv"
+            };
+
+
+            List<string> expectedIndividualFileOutput = new()
+            {
+                "171025_06subset_1_AllProteinGroups.tsv",
+                "171025_06subset_1_AllPSMs.psmtsv",
+                "171025_06subset_1_QuantifiedPeaks.tsv",
+                "171025_06subset_1_QuantifiedPeptides.tsv",
+                "171025_06subset_1_QuantifiedProteins.tsv",
+                "171025_06subset_1oglyco.psmtsv",
+                "171025_06subset_1protein_oglyco_localization.tsv",
+                "171025_06subset_1seen_oglyco_localization.tsv",
+            };
+
+
+            string outputFolderWithTask = Path.Combine(outputFolder, "Task");
+            List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
+            List<string> outputFolders = Directory.GetDirectories(outputFolderWithTask).ToList();
+            List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
+            List<string> individualOutputs = Directory.GetFiles(individualOutputFolders.FirstOrDefault()).Select(f => Path.GetFileName(f)).ToList();
+
+            CollectionAssert.AreEquivalent(expectedOutput, output);
+            CollectionAssert.AreEquivalent(expectedIndividualFileOutput, individualOutputs);
+
+            string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
+            string[] proteinGroupFields = allProteinGroups[1].Split('\t');
+
+            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+
+            File.Delete(experimentalDesignFilePath);
+            Directory.Delete(outputFolder, true);
+        }
+        //Test oglycopeptide quant with two conditions, experimental design and NO-normalization and NO protein inference
+        [Test]
+        public static void TestGlycoQuant2()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.DoParsimony = false;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+            string spectraFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML");
+            string spectraFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML");
+
+            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+
+            ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
+
+            string experimentalDesignFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\ExperimentalDesign.tsv");
+
+            var readIn = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilePath,
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(),
+                out var errors);
+
+            Assert.That(!errors.Any());
+            Assert.That(readIn.Count == 2);
+
+
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
+
+            List<string> expectedOutput = new()
+            {
+                "ExperimentalDesign.tsv",
+                "AllPSMs.psmtsv",
+                "AllQuantifiedPeaks.tsv",
+                "AllQuantifiedPeptides.tsv",
+                "AutoGeneratedManuscriptProse.txt",
+                "oglyco.psmtsv",
+                "protein_oglyco_localization.tsv",
+                "results.txt",
+                "seen_oglyco_localization.tsv"
+            };
+
+
+            List<string> expectedIndividualFileOutput = new()
+            {
+                "171025_06subset_1_AllPSMs.psmtsv",
+                "171025_06subset_1_QuantifiedPeaks.tsv",
+                "171025_06subset_1_QuantifiedPeptides.tsv",
+                "171025_06subset_1_QuantifiedProteins.tsv",
+                "171025_06subset_1oglyco.psmtsv",
+                "171025_06subset_1protein_oglyco_localization.tsv",
+                "171025_06subset_1seen_oglyco_localization.tsv",
+            };
+
+
+            string outputFolderWithTask = Path.Combine(outputFolder, "Task");
+            List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
+            List<string> outputFolders = Directory.GetDirectories(outputFolderWithTask).ToList();
+            List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
+            List<string> individualOutputs = Directory.GetFiles(individualOutputFolders.FirstOrDefault()).Select(f => Path.GetFileName(f)).ToList();
+
+            CollectionAssert.AreEquivalent(expectedOutput, output);
+            CollectionAssert.AreEquivalent(expectedIndividualFileOutput, individualOutputs);
+
+            File.Delete(experimentalDesignFilePath);
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void GlycoQuantWithNoExperimentalDesignFileTest()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.Normalize = true;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML"), Path.Combine(outputFolder,"171025_06subset_1.mzML"), true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML"), Path.Combine(outputFolder, "171025_06subset_2.mzML"), true);
+
+
+            string spectraFile1 = Path.Combine(outputFolder, "171025_06subset_1.mzML");
+            string spectraFile2 = Path.Combine(outputFolder, "171025_06subset_2.mzML");
+
+            List<FlashLFQ.SpectraFileInfo> spectraFiles = new List<FlashLFQ.SpectraFileInfo>();
+
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile1, "condition1", 0, 0, 0));
+            spectraFiles.Add(new FlashLFQ.SpectraFileInfo(spectraFile2, "condition2", 0, 0, 0));
+
+            ExperimentalDesign.WriteExperimentalDesignToFile(spectraFiles);
+
+            //this is the crux of the unit test. no experimental design file is passed in and the search task with quant should still run.
+            string experimentalDesignFilePath = null;
+
+            var readIn = ExperimentalDesign.ReadExperimentalDesign(
+                experimentalDesignFilePath,
+                spectraFiles.Select(p => p.FullFilePathWithExtension).ToList(),
+                out var errors);
+
+            Assert.That(errors.Count == 1);
+            Assert.That(errors[0].Contains("Experimental design file not found"));
+            Assert.That(readIn.Count == 0);
+
+
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
+
+            List<string> expectedOutput = new()
+            {
+                "ExperimentalDesign.tsv",
+                "_AllProteinGroups.tsv",
+                "AllPSMs.psmtsv",
+                "AllQuantifiedPeaks.tsv",
+                "AllQuantifiedPeptides.tsv",
+                "AutoGeneratedManuscriptProse.txt",
+                "oglyco.psmtsv",
+                "protein_oglyco_localization.tsv",
+                "results.txt",
+                "seen_oglyco_localization.tsv"
+            };
+
+
+            List<string> expectedIndividualFileOutput = new()
+            {
+                "171025_06subset_1_AllProteinGroups.tsv",
+                "171025_06subset_1_AllPSMs.psmtsv",
+                "171025_06subset_1_QuantifiedPeaks.tsv",
+                "171025_06subset_1_QuantifiedPeptides.tsv",
+                "171025_06subset_1_QuantifiedProteins.tsv",
+                "171025_06subset_1oglyco.psmtsv",
+                "171025_06subset_1protein_oglyco_localization.tsv",
+                "171025_06subset_1seen_oglyco_localization.tsv",
+            };
+
+            string outputFolderWithTask = Path.Combine(outputFolder, "Task");
+            List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
+            List<string> outputFolders = Directory.GetDirectories(outputFolderWithTask).ToList();
+            List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
+            List<string> individualOutputs = Directory.GetFiles(individualOutputFolders.FirstOrDefault()).Select(f => Path.GetFileName(f)).ToList();
+
+            CollectionAssert.AreEquivalent(expectedOutput, output);
+            CollectionAssert.AreEquivalent(expectedIndividualFileOutput, individualOutputs);
+
+            string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
+            string[] proteinGroupFields = allProteinGroups[1].Split('\t');
+
+            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        //Test oglycopeptide quant with two conditions, experimental design and normalization
+        [Test]
+        public static void TestExperimentalDesignError()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.Normalize = true;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML"), Path.Combine(outputFolder, "171025_06subset_1.mzML"), true);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_2.mzML"), Path.Combine(outputFolder, "171025_06subset_2.mzML"), true);
+
+
+            string spectraFile1 = Path.Combine(outputFolder, "171025_06subset_1.mzML");
+            string spectraFile2 = Path.Combine(outputFolder, "171025_06subset_2.mzML");
+
+            CommonParameters commonParameters = new CommonParameters(
+                taskDescriptor: "AveragingTask",
+                dissociationType: DissociationType.LowCID,
+                maxThreadsToUsePerFile: 2);
+
+            SpectralAveragingParameters options = new SpectralAveragingParameters()
+            {
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
+                NumberOfScansToAverage = 5,
+            };
+            SpectralAveragingTask averagingTask = new(options) { CommonParameters = commonParameters };
+
+            // run the tasks
+            EverythingRunnerEngine everythingRunnerEngine = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task1-Average", averagingTask), ("Task2-Search", glycoSearchTask) },
+                new List<string> { spectraFile1, spectraFile2 },
+                new List<DbForTask> { db },
+                outputFolder);
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo1 = new SpectraFileInfo(spectraFile1, "condition", 0, 0, 0);
+            SpectraFileInfo fileInfo2 = new SpectraFileInfo(spectraFile2, "condition", 0, 0, 0);
+
+            var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo1, fileInfo2 });
+
+            using (StreamWriter writer = new StreamWriter(File.OpenWrite(experimentalDesignFilePath)))
+            {
+                writer.WriteLine("\t2\t4\t7");
+            }
+
+            everythingRunnerEngine.Run();
+
+            // make sure everything is there
+            Assert.That(File.Exists(Path.Combine(outputFolder, "allResults.txt")));
+
+            Assert.That(Directory.Exists(Path.Combine(outputFolder, "Task Settings")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task Settings", "Task1-Averageconfig.toml")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task Settings", "Task2-Searchconfig.toml")));
+
+            Assert.That(Directory.Exists(Path.Combine(outputFolder, "Task1-Average")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task1-Average", "AutoGeneratedManuscriptProse.txt")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task1-Average", "results.txt")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task1-Average", "171025_06subset_1-averaged.mzML")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task1-Average", "171025_06subset_1-averaged.toml")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task1-Average", "171025_06subset_2-averaged.mzML")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task1-Average", "171025_06subset_2-averaged.toml")));
+
+            Assert.That(Directory.Exists(Path.Combine(outputFolder, "Task2-Search")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task2-Search", "AutoGeneratedManuscriptProse.txt")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task2-Search", "results.txt")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task2-Search", "AllPSMs.psmtsv")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task2-Search", "AllQuantifiedPeaks.tsv")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task2-Search", "AllQuantifiedPeptides.tsv")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task2-Search", "oglyco.psmtsv")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task2-Search", "seen_oglyco_localization.tsv")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, "Task2-Search", "protein_oglyco_localization.tsv")));
+
+            File.Delete(experimentalDesignFilePath);
+            Directory.Delete(outputFolder, true);
+        }
+        [Test]
+        [TestCase(false, 2, 1, 1)]
+        [TestCase(true, 2, 3, 1)]
+        [TestCase(true, 2, 3, 2)]
+        public static void TestGlycoProteinQuantFileHeaders(bool hasDefinedExperimentalDesign, int bioreps, int fractions, int techreps)
+        {
+            string condition = hasDefinedExperimentalDesign ? "TestCondition" : "";
+            List<SpectraFileInfo> fileInfos = new();
+
+            // create the unit test directory
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            // create the .mzML files to search/quantify
+            for (int b = 0; b < bioreps; b++)
+            {
+                for (int f = 0; f < fractions; f++)
+                {
+                    for (int r = 0; r < techreps; r++)
+                    {
+                        string fileToWrite = "file_" + "b" + b + "f" + f + "r" + r + ".mzML";
+                        string fullPath = Path.Combine(outputFolder, fileToWrite);
+                        SpectraFileInfo spectraFileInfo = new(fullPath, condition, b, r, f);
+
+                        File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06subset_1.mzML"), fullPath, true);
+
+
+                        fileInfos.Add(spectraFileInfo);
+                    }
+                }
+            }
+
+            // write the experimental design for this quantification test
+            if (hasDefinedExperimentalDesign)
+            {
+                _ = ExperimentalDesign.WriteExperimentalDesignToFile(fileInfos);
+            }
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\Task1-GlycoSearchTaskconfig.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.DoParsimony = true;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\QuantData\171025_06_protein.fasta"), false);
+
+            glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { db }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
+
+            // read in the protein quant results
+            Assert.That(File.Exists(Path.Combine(outputFolder, "AllQuantifiedPeptides.tsv")));
+            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "AllQuantifiedPeptides.tsv"));
+
+            // check the intensity column headers
+            List<string> splitHeader = lines[0].Split(new char[] { '\t' }).ToList();
+            List<string> intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity", StringComparison.OrdinalIgnoreCase)).ToList();
+
+            Assert.That(intensityColumnHeaders.Count == 1);
+
+            Directory.Delete(outputFolder, true);
+        }
+        [Test]
+        public static void TestRunSpecificPostGlycoSearchAnalysis()
+        {
+            //code coverage unit test for an unused abstract method in post search analysis
+            var task = new PostGlycoSearchAnalysisTask();
+            task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask>(), new List<string>(), "");
         }
     }
 }

@@ -232,8 +232,29 @@ namespace GuiFunctions
             var peakAnnotation = new TextAnnotation();
             if (MetaDrawSettings.DisplayIonAnnotations)
             {
-                string peakAnnotationText = prefix + matchedIon.NeutralTheoreticalProduct.Annotation;
+                string peakAnnotationText = prefix;
 
+                if (MetaDrawSettings.SubAndSuperScriptIons)
+                    foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
+                    {
+                        if (char.IsDigit(character))
+                            peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
+                        else switch (character)
+                        {
+                            case '-':
+                                peakAnnotationText += "\u208B"; // sub scripted Hyphen
+                                break;
+                            case '[':
+                            case ']':
+                                continue;
+                            default:
+                                peakAnnotationText += character;
+                                break;
+                        }
+                    }
+                else
+                    peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
+                
                 if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
                     !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
                 {
@@ -242,7 +263,21 @@ namespace GuiFunctions
 
                 if (MetaDrawSettings.AnnotateCharges)
                 {
-                    peakAnnotationText += "+" + matchedIon.Charge;
+                    char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
+                    if (MetaDrawSettings.SubAndSuperScriptIons)
+                    {
+                        var superScript = new string(Math.Abs(matchedIon.Charge).ToString()
+                            .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
+                            .ToArray());
+
+                        peakAnnotationText += superScript;
+                        if (chargeAnnotation == '+')
+                            peakAnnotationText += (char)(chargeAnnotation + 8271);
+                        else
+                            peakAnnotationText += (char)(chargeAnnotation + 8270);
+                    }
+                    else
+                        peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
                 }
 
                 if (MetaDrawSettings.AnnotateMzValues)

@@ -35,7 +35,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
-        private SettingsViewModel SettingsView;
+        private MetaDrawSettingsViewModel SettingsView;
 
         public MetaDraw()
         {
@@ -920,7 +920,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private async void InitializeColorSettingsView()
         {
-            SettingsViewModel view = new SettingsViewModel();
+            MetaDrawSettingsViewModel view = new MetaDrawSettingsViewModel();
             await view.Initialization;
             SettingsView = view;
         }
