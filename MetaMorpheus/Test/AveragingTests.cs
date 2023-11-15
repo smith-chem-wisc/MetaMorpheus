@@ -161,7 +161,7 @@ namespace Test
             var originalMs2Scans = originalFiles.GetAllScansList().Where(p => p.MsnOrder == 2).ToList();
             var averagedMs2Scans = averagedFiles.GetAllScansList().Where(p => p.MsnOrder == 2).ToList();
 
-            Assert.That(originalMs1Scans.Count / 5 == averagedMs1Scans.Count);
+            Assert.That(originalMs1Scans.Count == averagedMs1Scans.Count);
             for (var i = 0; i < averagedMs2Scans.Count; i++)
             {
                 Assert.That(originalMs2Scans[i].MassSpectrum.Equals(averagedMs2Scans[i].MassSpectrum));
@@ -362,7 +362,7 @@ namespace Test
             var calibratedMs2Scans = calibratedFiles.GetAllScansList().Where(p => p.MsnOrder == 2).ToList();
             var averagedMs2Scans = averagedFiles.GetAllScansList().Where(p => p.MsnOrder == 2).ToList();
 
-            Assert.That(calibratedMs1Scans.Count / 5 == averagedMs1Scans.Count);
+            Assert.That(calibratedMs1Scans.Count == averagedMs1Scans.Count);
             for (var i = 0; i < averagedMs2Scans.Count; i++)
             {
                 Assert.That(calibratedMs2Scans[i].MassSpectrum.Equals(averagedMs2Scans[i].MassSpectrum));
