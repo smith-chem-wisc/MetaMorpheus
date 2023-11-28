@@ -10,10 +10,14 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Easy.Common.Extensions;
+using EngineLayer;
+using Nett;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using OxyPlot;
 using pepXML.Generated;
 using TaskLayer;
+using ThermoFisher.CommonCore.Data;
+using TopDownProteomics.Chemistry;
 
 namespace GuiFunctions
 {
@@ -30,10 +34,7 @@ namespace GuiFunctions
 
         #region Public Properties
 
-        public ObservableCollection<string> AllSettings
-        {
-            get => allSettings;
-        }
+        public ObservableCollection<string> AllSettings => allSettings;
 
         public string TypedSettingsName
         {
@@ -73,17 +74,17 @@ namespace GuiFunctions
         public ICommand SaveAsDefaultSettingsCommand { get; set; }
 
         /// <summary>
-        /// 
+        /// The task that is currently working on
         /// </summary>
         public MetaMorpheusTask TheTask => AllSettingsDict[SelectedSettings];
 
         /// <summary>
-        /// 
+        /// Task from gui
         /// </summary>
         public Func<MetaMorpheusTask> GetTaskFromGui { get; set; }
 
         /// <summary>
-        /// 
+        /// update the gui from the task
         /// </summary>
         public Action<MetaMorpheusTask> UpdateFieldsInGuiWithNewTask { get; set; }
 
@@ -93,6 +94,49 @@ namespace GuiFunctions
 
         public TaskSettingViewModel(MetaMorpheusTask task, Action<MetaMorpheusTask> updateFieldsInGuiEventHandler, Func<MetaMorpheusTask> getTaskFromGui)
         {
+            // if directory does not exist, create new directory and default settings
+            if (!Directory.Exists(TomlFileFolderSerializer.PathToCheck))
+            {
+                Directory.CreateDirectory(Path.Combine(TomlFileFolderSerializer.PathToCheck));
+            }
+
+            // check if default is saved in previous location, if so, move to new location and rename
+            if (Directory.Exists(TomlFileFolderSerializer.PathToCheck))
+            {
+                string oldDefaultPathToCheck = task switch
+                {
+                    SearchTask search => "SearchTaskDefault.toml",
+                    CalibrationTask calibration => "CalibrationTaskDefault.toml",
+                    GptmdTask gptmd => "GptmdTaskDefault.toml",
+                    XLSearchTask xLSearch => "XLSearchTaskDefault.toml",
+                    GlycoSearchTask glycoSearch => "GlycoSearchTaskDefault.toml",
+                    SpectralAveragingTask spectralAverage => "SpectralAverageTaskDefault.toml",
+                    _ => "",
+                };
+
+                String finalPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", oldDefaultPathToCheck);
+                if (File.Exists(finalPath))
+                {
+                    // load in
+                    MetaMorpheusTask previouslySavedDefaultTask = task switch
+                    {
+                        SearchTask search => Toml.ReadFile<SearchTask>(finalPath, MetaMorpheusTask.tomlConfig),
+                        CalibrationTask calibration => Toml.ReadFile<CalibrationTask>(finalPath, MetaMorpheusTask.tomlConfig),
+                        GptmdTask gptmd => Toml.ReadFile<GptmdTask>(finalPath, MetaMorpheusTask.tomlConfig),
+                        XLSearchTask xLSearch => Toml.ReadFile<XLSearchTask>(finalPath, MetaMorpheusTask.tomlConfig),
+                        GlycoSearchTask glycoSearch => Toml.ReadFile<GlycoSearchTask>(finalPath, MetaMorpheusTask.tomlConfig),
+                        SpectralAveragingTask spectralAverage => Toml.ReadFile<SpectralAveragingTask>(finalPath, MetaMorpheusTask.tomlConfig),
+                        _ => Toml.ReadFile<MetaMorpheusTask>(finalPath, MetaMorpheusTask.tomlConfig),
+                    };
+
+
+                    String s = oldDefaultPathToCheck.Substring(0, oldDefaultPathToCheck.Length - 5) + "(Default)";
+                    TomlFileFolderSerializer.Save(oldDefaultPathToCheck.Substring(0, oldDefaultPathToCheck.Length - 5) + "(Default)", previouslySavedDefaultTask);
+                    TomlFileFolderSerializer.Delete(previouslySavedDefaultTask.GetType(), oldDefaultPathToCheck);
+                    File.Delete(finalPath);
+                }
+            }
+
             // initial construction
             var type = task.GetType();
             UpdateFieldsInGuiWithNewTask = updateFieldsInGuiEventHandler;
@@ -104,49 +148,9 @@ namespace GuiFunctions
             // load in all settings from directory of specific object type
             MethodInfo method = typeof(TomlFileFolderSerializer).GetMethod("LoadAllOfTypeT");
             MethodInfo genericMethod = method.MakeGenericMethod(type);
-            System.Collections.IDictionary result = ((System.Collections.IDictionary)genericMethod.Invoke(null, new object[] {task}));
+            System.Collections.IDictionary result = ((System.Collections.IDictionary)genericMethod.Invoke(null, new object[] { task }));
 
-            var keys = result.Keys.Cast<string>().ToList();
-            var values = result.Values.Cast<MetaMorpheusTask>().ToList();
-            Dictionary<string, MetaMorpheusTask> tempDict = new();
-            for(int i = 0; i < keys.Count; i++)
-            {
-                tempDict.Add(keys[i], values[i]);
-            }
-            AllSettingsDict = tempDict;
-
-            //When there is no default setting, create a default called "Default(Default)"
-            string[] keysInDict = AllSettingsDict.Keys.Cast<string>().ToArray();
-            for (int j = 0; j < keysInDict.Length; j++)
-            {
-                if (keysInDict[j].Contains("(Default)"))
-                {
-                    break;
-                }
-                else
-                {
-                    if (j == keysInDict.Length - 1)
-                    {
-                        AllSettingsDict.Add("DefaultSetting(Default)", task);
-                        TomlFileFolderSerializer.Save("DefaultSetting(Default)", task);
-                    }
-                }
-            }
-
-            SelectDefaultAuto();
-        }
-
-        /// <summary>
-        /// ONLY USED FOR TESTING
-        /// </summary>
-        /// <param name="task"></param>
-        internal TaskSettingViewModel(MetaMorpheusTask task = null)
-        {
-            var type = task.GetType() ?? typeof(SearchTask);
-            MethodInfo method = typeof(TomlFileFolderSerializer).GetMethod("LoadAllOfTypeT");
-            MethodInfo genericMethod = method.MakeGenericMethod(type);
-            System.Collections.IDictionary result = ((System.Collections.IDictionary)genericMethod.Invoke(null, new object[] { task ?? new SearchTask() }));
-
+            // parse directory to get object type and MMTask from toml files
             var keys = result.Keys.Cast<string>().ToList();
             var values = result.Values.Cast<MetaMorpheusTask>().ToList();
             Dictionary<string, MetaMorpheusTask> tempDict = new();
@@ -155,12 +159,21 @@ namespace GuiFunctions
                 tempDict.Add(keys[i], values[i]);
             }
             AllSettingsDict = tempDict;
+            
+            if (!AllSettingsDict.Any())
+            {
+                string name = "DefaultSetting(Default)";
+                TomlFileFolderSerializer.Save("DefaultSetting(Default)", task);
+                AllSettingsDict.Add(name, task);
+                SelectedSettings = AllSettingsDict.First(p => p.Key.Contains("(Default)")).Key;
+            }
 
-            SaveSettingsCommand = new RelayCommand(SaveSettings);
-            DeleteSettingsCommand = new RelayCommand(DeleteSettings);
-            SaveAsDefaultSettingsCommand = new RelayCommand(SaveAsDefaultSettings);
-            SelectDefaultAuto();
+            if (AllSettingsDict.Any(p => p.Key.Contains("(Default)")))
+            {
+                SelectedSettings = AllSettingsDict.First(p => p.Key.Contains("(Default)")).Key;
+            }
         }
+
         
         #endregion
 
@@ -168,6 +181,9 @@ namespace GuiFunctions
 
         #region Command Methods
 
+        /// <summary>
+        /// Modify a saved task
+        /// </summary>
         public void SaveSettings()
         {
             if (SelectedSettings == null)
@@ -177,7 +193,12 @@ namespace GuiFunctions
 
             if (SelectedSettings.Contains("(Default)"))
             {
-                MessageBox.Show("Default Setting cannot be modified. Please use \"Save as Default\" button", "Modifying Default Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (!GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+                {
+                    MessageBox.Show("Default Setting cannot be modified. Please use \"Save as\" button",
+                        "Modifying Default Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
                 return;
             }
 
@@ -188,16 +209,24 @@ namespace GuiFunctions
             AllSettingsDict.Add(SelectedSettings, taskFromGUI);
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
-            SelectDefaultAuto();
+            SelectedSettings = this.SelectedSettings;
         }
 
-    public void SaveSettingsFromWindow()
-    {
+        /// <summary>
+        /// Save a new task with a window popped up
+        /// </summary>
+        public void SaveSettingsFromWindow()
+        {
 
             if (TypedSettingsName is null || TypedSettingsName.IsNullOrEmptyOrWhiteSpace())
             {
-                MessageBox.Show("The name cannot be empty", "Empty Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                TypedSettingsName = "";
+                if (!GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+                {
+                    MessageBox.Show("The name cannot be empty", "Empty Settings Error", MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    TypedSettingsName = "";
+                }
+
                 return;
             }
 
@@ -205,8 +234,13 @@ namespace GuiFunctions
 
             if (AllSettingsDict.ContainsKey(settingsName))
             {
-                MessageBox.Show("The name already exists", "Repeated Name Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                TypedSettingsName = "";
+                if (!GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+                {
+                    MessageBox.Show("The name already exists", "Repeated Name Error", MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    TypedSettingsName = "";
+                }
+
                 return;
             }
 
@@ -230,9 +264,12 @@ namespace GuiFunctions
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
             TypedSettingsName = "";
-            SelectDefaultAuto();
+            //SelectDefaultAuto();
         }
 
+        /// <summary>
+        /// Delete the selected task
+        /// </summary>
         public void DeleteSettings()
         {
             if(SelectedSettings == null)
@@ -242,7 +279,11 @@ namespace GuiFunctions
 
             if (SelectedSettings.Contains("(Default)"))
             {
-                MessageBox.Show("Default Setting cannot be deleted", "Deleting Default Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if(!GlobalVariables.MetaMorpheusVersion.Contains("DEBUG")){
+                    MessageBox.Show("Default Setting cannot be deleted", "Deleting Default Settings Error",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
                 return;
             }
 
@@ -250,9 +291,12 @@ namespace GuiFunctions
             AllSettingsDict.Remove(SelectedSettings);
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
-            SelectDefaultAuto();
+            //SelectDefaultAuto();
         }
 
+        /// <summary>
+        /// Set a saved set as a default setting
+        /// </summary>
         public void SaveAsDefaultSettings()
         {
             if (SelectedSettings == null)
@@ -262,7 +306,12 @@ namespace GuiFunctions
 
             if (SelectedSettings.Contains("(Default)"))
             {
-                MessageBox.Show("It's already a default setting", "Repeatted Setting Default Settings Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                if (!GlobalVariables.MetaMorpheusVersion.Contains("DEBUG"))
+                {
+                    MessageBox.Show("It's already a default setting", "Repeatted Setting Default Settings Error",
+                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
                 return;
             }
 
@@ -273,7 +322,7 @@ namespace GuiFunctions
             if (AllSettingsDict.Any(p => p.Key.Contains("(Default)")))
             {
                 var oldDefault = AllSettingsDict.First(p => p.Key.Contains("(Default)"));
-                string newOldDefaultName = oldDefault.Key.Remove(oldDefault.Key.Length - 9); // TODO
+                string newOldDefaultName = oldDefault.Key.Remove(oldDefault.Key.Length - 9);
                 TomlFileFolderSerializer.Delete(oldDefault.Value.GetType(), oldDefault.Key);
                 AllSettingsDict.Remove(oldDefault.Key);
                 TomlFileFolderSerializer.Save(newOldDefaultName, oldDefault.Value);
@@ -288,7 +337,7 @@ namespace GuiFunctions
 
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
-            SelectDefaultAuto();
+            //SelectDefaultAuto();
         }
 
         
@@ -296,27 +345,9 @@ namespace GuiFunctions
     #endregion
 
         #region Helpers
-        private void SelectDefaultAuto()
-        {
-
-            var defaultSetting = AllSettingsDict.First(p => p.Key.Contains("(Default)"));
-            SelectedSettings = defaultSetting.Key;
-        }
-
-        //private MetaMorpheusTask GetDefaultTask(MetaMorpheusTask taskTypeToGetDefault)
-        //{
-        //    return taskTypeToGetDefault.TaskType switch
-        //    {
-        //        MyTask.Search => new SearchTask(),
-        //        MyTask.Gptmd => new GptmdTask(),
-        //        MyTask.Calibrate => new CalibrationTask(),
-        //        MyTask.XLSearch => new XLSearchTask(),
-        //        MyTask.GlycoSearch => new GlycoSearchTask(),
-        //        _ => throw new ArgumentOutOfRangeException(nameof(taskTypeToGetDefault.TaskType), taskTypeToGetDefault.TaskType, null)
-        //    };
-        //}
+        
     }
-       
+
     #endregion
 
 }

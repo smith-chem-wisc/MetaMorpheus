@@ -38,7 +38,7 @@ namespace MetaMorpheusGUI
 
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as CalibrationTask);
             TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
-            //TaskSettingsCtrl.DataContext = TaskSettingViewModel;
+            TaskSettingsCtrl.DataContext = TaskSettingViewModel;
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
@@ -371,7 +371,7 @@ namespace MetaMorpheusGUI
             // remove event handler from timer
             // keeping it will trigger an exception because the closed window stops existing
 
-            CustomFragmentationWindow.Close();
+            CustomFragmentationWindow?.Close();
         }
 
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)

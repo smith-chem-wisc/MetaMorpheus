@@ -1,0 +1,28 @@
+﻿<UserControl x:Class="MetaMorpheusGUI.SaveSettingsControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+        xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+             mc:Ignorable="d" 
+             d:DataContext="{x:Type guiFunctions:TaskSettingViewModel}"
+             d:DesignHeight="30" d:DesignWidth="800">
+    <Grid>
+        <StackPanel   Height="Auto" DataContext="{Binding}"
+             Background="{StaticResource BackgroundColor}" Orientation="Horizontal" HorizontalAlignment="Right">
+
+            <ComboBox Name="TaskSettingsComboBox" Width="200" Height="20" VerticalAlignment="Center" 
+              HorizontalAlignment="Left" IsSynchronizedWithCurrentItem="True"
+              ItemsSource="{Binding Path=AllSettings}" 
+              SelectedItem="{Binding Path=SelectedSettings}">
+            </ComboBox>
+            <Button x:Name="Save" Content="Save" FontSize="10" 
+            Width="60" Margin="5,5,2.5,5" Command="{Binding SaveSettingsCommand}" />
+         <Button x:Name="SaveAs" Content="Save as" FontSize="10" 
+            Width="60" Margin="5,5,2.5,5" Click="SaveAs_Click"/>
+         <Button x:Name="Delete"  Content="Delete" FontSize="10" Width="60" Margin="5,5,2.5,5"
+            Command="{Binding DeleteSettingsCommand}" />
+        </StackPanel>
+    </Grid>
+</UserControl>

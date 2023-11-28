@@ -45,6 +45,13 @@
                         </TextBox.Style>
                     </TextBox>
                 </StackPanel>
+
+                <StackPanel DockPanel.Dock="Top" Margin="10">
+                    <!-- save settings -->
+                    <local:SaveSettingsControl x:Name="TaskSettingsCtrl" 
+                        DataContext="{Binding TaskSettingViewModel}"/>
+                </StackPanel>
+                
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">
                         <StackPanel>

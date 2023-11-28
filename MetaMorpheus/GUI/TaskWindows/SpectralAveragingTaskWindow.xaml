@@ -61,6 +61,8 @@
                             </TextBox.Style>
                         </TextBox>
                     </StackPanel>
+                    
+                    
 
                     <!-- Wiki Link -->
                     <TextBlock Grid.Column="1" FontSize="13" HorizontalAlignment="Right" VerticalAlignment="Center"
@@ -72,7 +74,7 @@
                         </Hyperlink>
                     </TextBlock>
                 </Grid>
-                
+
                 <!-- Averaging Parameters -->
                 <GroupBox DockPanel.Dock="Top">
                     <StackPanel>

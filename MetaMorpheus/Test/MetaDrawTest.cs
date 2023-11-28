@@ -990,6 +990,7 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestMetaDrawLoadingWithWeirdFileNames()
         {
             // test loading when the file has a periods, commas, spaces in the name

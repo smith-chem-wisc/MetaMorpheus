@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using Proteomics;
 using Nett;
 using TaskLayer;
+using EngineLayer;
 
 namespace GuiFunctions
 
@@ -20,7 +21,7 @@ namespace GuiFunctions
     /// 
     public static class TomlFileFolderSerializer
     {
-        public static string PathToCheck = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "SettingsDataFiles");
+        public static string PathToCheck = Path.Combine(GlobalVariables.DataDir, "DefaultParameters");
         /// <summary>
         /// Create a file that contains the serialized object. 
         /// </summary>
@@ -138,6 +139,8 @@ namespace GuiFunctions
             var folders = Directory.GetFiles(path)
                 .Select(p => Path.GetFileNameWithoutExtension(p)).ToArray();
             return folders;
-        }        
+        }     
+        
+       
     }
 }

@@ -39,7 +39,7 @@ namespace MetaMorpheusGUI
 
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as GptmdTask);
             TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
-            //TaskSettingsCtrl.DataContext = TaskSettingViewModel;
+            TaskSettingsCtrl.DataContext = TaskSettingViewModel;
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
@@ -564,13 +564,18 @@ namespace MetaMorpheusGUI
             // remove event handler from timer
             // keeping it will trigger an exception because the closed window stops existing
 
-            CustomFragmentationWindow.Close();
+            CustomFragmentationWindow?.Close();
         }
 
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
         {
             SaveButton_Click(sender, e);
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"GptmdTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+        }
+
+        private void TaskSettingsCtrl_Loaded(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }

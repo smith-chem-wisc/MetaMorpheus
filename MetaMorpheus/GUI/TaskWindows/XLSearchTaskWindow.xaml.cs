@@ -38,7 +38,7 @@ namespace MetaMorpheusGUI
 
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as XLSearchTask);
             TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
-            //TaskSettingsCtrl.DataContext = TaskSettingViewModel;
+            TaskSettingsCtrl.DataContext = TaskSettingViewModel;
 
             if (task == null)
             {
@@ -441,7 +441,7 @@ namespace MetaMorpheusGUI
             // remove event handler from timer
             // keeping it will trigger an exception because the closed window stops existing
 
-            CustomFragmentationWindow.Close();
+            CustomFragmentationWindow?.Close();
         }
 
         private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
@@ -486,6 +486,11 @@ namespace MetaMorpheusGUI
                     //if not an entry, don't update the other box.
                 }
             }
+        }
+
+        private void OutputFileNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+
         }
     }
 }
