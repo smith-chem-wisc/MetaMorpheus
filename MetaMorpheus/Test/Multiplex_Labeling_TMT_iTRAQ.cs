@@ -232,6 +232,18 @@ namespace Test
         }
 
         [Test]
+        public static void TestTMT10vs11()
+        {
+            var tmt10 = GlobalVariables.AllModsKnown
+                .First(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT10"));
+            var tmt11 = GlobalVariables.AllModsKnown
+                .First(m => m.ModificationType == "Multiplex Label" && m.IdWithMotif.Contains("TMT11"));
+
+            Assert.That(tmt10.DiagnosticIons[DissociationType.HCD].Count, Is.EqualTo(10));
+            Assert.That(tmt10.DiagnosticIons[DissociationType.HCD].Max(), Is.LessThan(tmt11.DiagnosticIons[DissociationType.HCD].Max()));
+        }
+
+        [Test]
         public static void TestDiLeuQuantificationOutput()
         {
             var searchTask = Toml.ReadFile<SearchTask>(
