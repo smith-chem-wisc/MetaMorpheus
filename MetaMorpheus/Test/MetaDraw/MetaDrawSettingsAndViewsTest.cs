@@ -1,22 +1,17 @@
-﻿using EngineLayer;
-using GuiFunctions;
-using GuiFunctions.ViewModels.Legends;
-using IO.MzML;
-using NUnit.Framework;
-using OxyPlot;
-using Proteomics.Fragmentation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 using System.Windows.Media;
-using Chemistry;
+using EngineLayer;
+using GuiFunctions;
+using GuiFunctions.ViewModels.Legends;
+using NUnit.Framework;
+using OxyPlot;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 
-namespace Test
+namespace Test.MetaDraw
 {
     public static class MetaDrawSettingsAndViewsTest
     {
@@ -34,7 +29,8 @@ namespace Test
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
             Assert.That(snapshot.DisplayInternalIons, Is.EqualTo(MetaDrawSettings.DisplayInternalIons));
-            
+            Assert.That(snapshot.SubAndSuperScriptIons, Is.EqualTo(MetaDrawSettings.SubAndSuperScriptIons));
+
             MetaDrawSettings.ShowContaminants = true;
             MetaDrawSettings.AnnotateMzValues = false;
             snapshot = MetaDrawSettings.MakeSnapShot();
@@ -43,10 +39,12 @@ namespace Test
             Assert.That(snapshot.QValueFilter.Equals(MetaDrawSettings.QValueFilter));
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.ExportType.Equals(MetaDrawSettings.ExportType));
-            var colorValues = MetaDrawSettings.ProductTypeToColor.Values.Select(p => p.GetColorName()).ToList();
+            var colorValues = MetaDrawSettings.ProductTypeToColor.Values.Select(p => OxyColorExtensions.GetColorName(p)).ToList();
             var betaColorValues = MetaDrawSettings.BetaProductTypeToColor.Values.Select(p => p.GetColorName()).ToList();
-            var modificationColorValues = MetaDrawSettings.ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList();
-            var coverageColorValues = MetaDrawSettings.CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList();
+            var modificationColorValues =
+                MetaDrawSettings.ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList();
+            var coverageColorValues =
+                MetaDrawSettings.CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList();
             var spectrumDescriptionValues = MetaDrawSettings.SpectrumDescription.Values.ToList();
             Assert.That(snapshot.ProductTypeToColorValues.Except(colorValues).Count() == 0);
             Assert.That(snapshot.BetaProductTypeToColorValues.Except(betaColorValues).Count() == 0);
@@ -63,6 +61,7 @@ namespace Test
             snapshot.ShowDecoys = true;
             snapshot.ShowLegend = false;
             snapshot.DrawNumbersUnderStationary = false;
+            snapshot.SubAndSuperScriptIons = false;
             MetaDrawSettings.LoadSettings(snapshot);
             Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
             Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
@@ -74,9 +73,11 @@ namespace Test
             Assert.That(snapshot.LocalizationLevelStart.Equals(MetaDrawSettings.LocalizationLevelStart));
             Assert.That(snapshot.LocalizationLevelEnd.Equals(MetaDrawSettings.LocalizationLevelEnd));
             Assert.That(snapshot.DisplayInternalIons, Is.EqualTo(MetaDrawSettings.DisplayInternalIons));
+            Assert.That(snapshot.SubAndSuperScriptIons, Is.EqualTo(MetaDrawSettings.SubAndSuperScriptIons));
             colorValues = MetaDrawSettings.ProductTypeToColor.Values.Select(p => p.GetColorName()).ToList();
             betaColorValues = MetaDrawSettings.BetaProductTypeToColor.Values.Select(p => p.GetColorName()).ToList();
-            modificationColorValues = MetaDrawSettings.ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList();
+            modificationColorValues =
+                MetaDrawSettings.ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList();
             coverageColorValues = MetaDrawSettings.CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList();
             spectrumDescriptionValues = MetaDrawSettings.SpectrumDescription.Values.ToList();
             Assert.That(snapshot.ProductTypeToColorValues.Except(colorValues).Count() == 0);
@@ -89,12 +90,13 @@ namespace Test
         [Test]
         public static void TestSaveAndLoadDefaultSettings()
         {
-            SettingsViewModel model = new SettingsViewModel(false);
+            MetaDrawSettingsViewModel model = new MetaDrawSettingsViewModel(false);
 
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
+            string outputFolder =
+                Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
             Assert.That(!Directory.Exists(outputFolder));
 
-            SettingsViewModel.SettingsPath = Path.Combine(outputFolder, @"MetaDrawSettingsDefault.xml");
+            MetaDrawSettingsViewModel.SettingsPath = Path.Combine(outputFolder, @"MetaDrawSettingsDefault.xml");
             Assert.That(model.HasDefaultSaved == false);
             try
             {
@@ -113,10 +115,10 @@ namespace Test
             Assert.That(model.HasDefaultSaved == true);
             model.LoadSettings();
 
-            SettingsViewModel model2 = new();
+            MetaDrawSettingsViewModel model2 = new();
             Assert.That(model2.Modifications.First().Children.First().SelectedColor == "Blue");
 
-            SettingsViewModel model3 = new(false);
+            MetaDrawSettingsViewModel model3 = new(false);
             Assert.That(model3.Modifications.First().Children.First().SelectedColor == "Blue");
 
             Directory.Delete(outputFolder, true);
@@ -125,11 +127,11 @@ namespace Test
         [Test]
         public static void TestSettingsViewLoading()
         {
-            SettingsViewModel BlankSettingsView = new SettingsViewModel(false);
+            MetaDrawSettingsViewModel BlankSettingsView = new MetaDrawSettingsViewModel(false);
             BlankSettingsView.Modifications = new();
             BlankSettingsView.IonGroups = new();
             BlankSettingsView.CoverageColors = new();
-        
+
             Assert.That(BlankSettingsView.IonGroups.Count == 0);
             Assert.That(BlankSettingsView.CoverageColors.Count == 0);
             Assert.That(BlankSettingsView.Modifications.Count == 0);
@@ -149,42 +151,49 @@ namespace Test
         [Test]
         public static void TestSettingsViewSaveAndChildSelectionChanged()
         {
-            SettingsViewModel view = new SettingsViewModel(false);
+            MetaDrawSettingsViewModel view = new MetaDrawSettingsViewModel(false);
             Assert.That(!view.IonGroups.First().Ions.First().HasChanged);
             view.IonGroups.First().Ions.First().SelectionChanged("Blue");
             Assert.That(view.IonGroups.First().Ions.First().HasChanged);
             Assert.That(view.IonGroups.First().Ions.First().SelectedColor == "Blue");
-            Assert.That(view.IonGroups.First().Ions.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+            Assert.That(view.IonGroups.First().Ions.First().ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
             Assert.That(!view.Modifications.First().Children.First().HasChanged);
             view.Modifications.First().Children.First().SelectionChanged("Blue");
             Assert.That(view.Modifications.First().Children.First().HasChanged);
             Assert.That(view.Modifications.First().Children.First().SelectedColor == "Blue");
-            Assert.That(view.Modifications.First().Children.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+            Assert.That(view.Modifications.First().Children.First().ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
             Assert.That(!view.CoverageColors.First().HasChanged);
             view.CoverageColors.First().SelectionChanged("Blue");
             Assert.That(view.CoverageColors.First().HasChanged);
             Assert.That(view.CoverageColors.First().SelectedColor == "Blue");
-            Assert.That(view.CoverageColors.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+            Assert.That(view.CoverageColors.First().ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
             var internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Internal Ion");
             Assert.That(!internalIonIonTypeForTreeView.HasChanged);
             internalIonIonTypeForTreeView.SelectionChanged("Blue");
             Assert.That(internalIonIonTypeForTreeView.HasChanged);
             Assert.That(internalIonIonTypeForTreeView.SelectedColor == "Blue");
-            Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+            Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
             internalIonIonTypeForTreeView = view.IonGroups.First().Ions.First(p => p.IonName == "Unannotated Peak");
             Assert.That(!internalIonIonTypeForTreeView.HasChanged);
             internalIonIonTypeForTreeView.SelectionChanged("Blue");
             Assert.That(internalIonIonTypeForTreeView.HasChanged);
             Assert.That(internalIonIonTypeForTreeView.SelectedColor == "Blue");
-            Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromName("Blue").Color);
+            Assert.That(internalIonIonTypeForTreeView.ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromName("Blue").Color);
 
             view.Save();
-            Assert.That(MetaDrawSettings.ProductTypeToColor[view.IonGroups.First().Ions.First().IonType] == OxyColors.Blue);
-            Assert.That(MetaDrawSettings.ModificationTypeToColor[view.Modifications.First().Children.First().ModName] == OxyColors.Blue);
+            Assert.That(MetaDrawSettings.ProductTypeToColor[view.IonGroups.First().Ions.First().IonType] ==
+                        OxyColors.Blue);
+            Assert.That(MetaDrawSettings.ModificationTypeToColor[view.Modifications.First().Children.First().ModName] ==
+                        OxyColors.Blue);
             Assert.That(MetaDrawSettings.CoverageTypeToColor[view.CoverageColors.First().Name] == OxyColors.Blue);
             Assert.That(MetaDrawSettings.InternalIonColor == OxyColors.Blue);
             Assert.That(MetaDrawSettings.UnannotatedPeakColor == OxyColors.Blue);
@@ -197,7 +206,8 @@ namespace Test
             Assert.That(coverageTypeForTreeView.Name == "N-Terminal Color");
             var color = MetaDrawSettings.CoverageTypeToColor["N-Terminal Color"];
             Assert.That(coverageTypeForTreeView.SelectedColor == color.GetColorName());
-            Assert.That(coverageTypeForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
+            Assert.That(coverageTypeForTreeView.ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
         }
 
         [Test]
@@ -208,11 +218,13 @@ namespace Test
             ModTypeForTreeViewModel modTypeForTreeView = new(key, false);
             Assert.That(!modTypeForTreeView.Expanded);
             Assert.That(modTypeForTreeView.DisplayName == key);
-            Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color == new SolidColorBrush(Colors.Transparent).Color);
+            Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color ==
+                        new SolidColorBrush(Colors.Transparent).Color);
             Assert.That(modTypeForTreeView.Children != null);
 
             modTypeForTreeView = new(modGroups.First().Key, true);
-            Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color == new SolidColorBrush(Colors.Red).Color);
+            Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color ==
+                        new SolidColorBrush(Colors.Red).Color);
         }
 
         [Test]
@@ -237,7 +249,8 @@ namespace Test
             var ions = (ProductType[])Enum.GetValues(typeof(ProductType));
             IonTypeForTreeViewModel ionForTreeViews = new("Common Ions", ions, false);
             Assert.That(ionForTreeViews.GroupName == "Common Ions");
-            Assert.That(ionForTreeViews.Ions.Count == ions.Length + 2); // magic number +2 is for the internal ion color and background peak color
+            Assert.That(ionForTreeViews.Ions.Count ==
+                        ions.Length + 2); // magic number +2 is for the internal ion color and background peak color
             Assert.That(!ionForTreeViews.Ions.Any(p => p.IsBeta));
             ionForTreeViews = new("Common Ions", ions, true);
             Assert.That(ionForTreeViews.Ions.Any(p => p.IsBeta));
@@ -266,13 +279,14 @@ namespace Test
         {
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings)
+                .Where(p => p.AmbiguityLevel == "1").ToList();
             PsmFromTsv psm = psms.First(p =>
                 new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)
                     .AllModsOneIsNterminus.Values.Distinct().Count() == 2);
             PeptideWithSetModifications pepWithSetMods = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
             var twoMods = pepWithSetMods.AllModsOneIsNterminus.Values.ToList();
-            
+
             PtmLegendViewModel PtmLegendView = new PtmLegendViewModel(psm, 100);
             PtmLegendView.Visibility = false;
             Assert.That(PtmLegendView.Header == "Legend");
@@ -280,12 +294,15 @@ namespace Test
             Assert.That(PtmLegendView.TopOffset == 100);
             Assert.That(PtmLegendView.LegendItemViewModels.Count == 2);
             Assert.That(PtmLegendView.LegendItemViewModels.First().Name == twoMods.First().IdWithMotif);
-            Assert.That(PtmLegendView.LegendItemViewModels.First().ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif]).Color);
+            Assert.That(PtmLegendView.LegendItemViewModels.First().ColorBrush.Color == DrawnSequence
+                .ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[twoMods.First().IdWithMotif])
+                .Color);
             Assert.That(PtmLegendView.LegendItemViewModels.First().Name == twoMods.First().IdWithMotif);
             var mod = twoMods.First();
             PtmLegendItemViewModel ptmLegendItemView = new(mod.IdWithMotif);
             Assert.That(ptmLegendItemView.Name == mod.IdWithMotif);
-            Assert.That(ptmLegendItemView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.IdWithMotif]).Color);
+            Assert.That(ptmLegendItemView.ColorBrush.Color == DrawnSequence
+                .ParseColorBrushFromOxyColor(MetaDrawSettings.ModificationTypeToColor[mod.IdWithMotif]).Color);
 
             // test that residue per segment incrementation works and cannot be less than 1
             int residuesPerSegment = PtmLegendView.ResiduesPerSegment;
@@ -338,7 +355,8 @@ namespace Test
                 @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
             List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings);
             Assert.That(warnings.Count, Is.EqualTo(0));
-            List<PsmFromTsv> filteredChimeras = psms.Where(p => p.QValue <= 0.01 && p.PEP <= 0.5 && p.PrecursorScanNum == 1557).ToList();
+            List<PsmFromTsv> filteredChimeras =
+                psms.Where(p => p.QValue <= 0.01 && p.PEP <= 0.5 && p.PrecursorScanNum == 1557).ToList();
             Assert.That(filteredChimeras.Count, Is.EqualTo(3));
 
             // test chimera legend basic functionality
@@ -351,7 +369,7 @@ namespace Test
             Assert.That(chimeraLegend.ChimeraLegendItems.Values.ToList()[1].Count == 1);
 
             // test chimera legend overflow colors
-                // more unique proteins than colored
+            // more unique proteins than colored
             List<PsmFromTsv> overflowInducingProteins = psms.DistinctBy(p => p.BaseSeq)
                 .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.Keys.Count + 1).ToList();
             chimeraLegend = new(overflowInducingProteins);
@@ -368,7 +386,8 @@ namespace Test
                 .Select(p => p = new(p, overflowInducingProteins.First().FullSequence, 0,
                     overflowInducingProteins.First().BaseSeq)).ToList();
             Assert.That(overflowInducingProteins.All(p => p.BaseSeq == overflowInducingProteins.First().BaseSeq));
-            Assert.That(overflowInducingProteins.All(p => p.FullSequence == overflowInducingProteins.First().FullSequence));
+            Assert.That(overflowInducingProteins.All(p =>
+                p.FullSequence == overflowInducingProteins.First().FullSequence));
             chimeraLegend = new(overflowInducingProteins);
             Assert.AreEqual(overflowInducingProteins.Count() + 1,
                 chimeraLegend.ChimeraLegendItems.First().Value.DistinctBy(p => p.ColorBrush.Color).Count());
@@ -379,7 +398,8 @@ namespace Test
             // test chimera legend item
             ChimeraLegendItemViewModel chimeraLegendItem = new("tacos", OxyColors.Chocolate);
             Assert.That(chimeraLegendItem.Name == "tacos");
-            Assert.That(chimeraLegendItem.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(OxyColors.Chocolate).Color);
+            Assert.That(chimeraLegendItem.ColorBrush.Color ==
+                        DrawnSequence.ParseColorBrushFromOxyColor(OxyColors.Chocolate).Color);
             chimeraLegendItem = new("", OxyColors.Chocolate);
             Assert.That(chimeraLegendItem.Name == "No Modifications");
             chimeraLegendItem = new(null, OxyColors.Chocolate);
@@ -411,3 +431,4 @@ namespace Test
         }
     }
 }
+  

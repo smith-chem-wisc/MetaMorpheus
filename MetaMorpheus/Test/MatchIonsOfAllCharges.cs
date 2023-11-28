@@ -544,6 +544,27 @@ namespace Test
 
             Directory.Delete(thisTaskOutputFolder, true);
         }
-       
+
+        [Test]
+        public static void TestLibrarySpectrumCalculateSpectralAngleOnTheFly()
+        {
+
+            var librarySpectrumPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SLSNVIAHEISHSWTGNLVTNK.msp");
+            var testLibrary = new SpectralLibrary(new List<string> { librarySpectrumPath });
+            testLibrary.TryGetSpectrum("SLSNVIAHEISHSWTGNLVTNK", 3, out var spectrum);
+
+
+            string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SLSNVIAHEISHSWTGNLVTNK.psmtsv");
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
+
+            var computedSpectralSimilarity = spectrum.CalculateSpectralAngleOnTheFly(psms[0].MatchedIons);
+
+            Assert.AreEqual(1,Convert.ToDouble(computedSpectralSimilarity),0.01);
+
+
+            Assert.AreEqual("N/A", spectrum.CalculateSpectralAngleOnTheFly(new List<MatchedFragmentIon>()));
+        }
+
+
     }
 }

@@ -15,6 +15,19 @@ namespace GuiFunctions
 {
     public static class MetaDrawSettings
     {
+        #region Constants 
+
+        public static char[] SubScriptNumbers = {
+            '\u2080', '\u2081', '\u2082', '\u2083', '\u2084',
+            '\u2085', '\u2086', '\u2087', '\u2088', '\u2089'
+        };
+
+        public static char[] SuperScriptNumbers = {
+            '\u2070', '\u00b9', '\u00b2', '\u00b3', '\u2074',
+            '\u2075', '\u2076', '\u2077', '\u2078', '\u2079'
+        }; 
+        
+        #endregion
 
         #region Customizable Settings
 
@@ -22,7 +35,7 @@ namespace GuiFunctions
         public static Dictionary<string, bool> SpectrumDescription { get; set; }
         public static bool DisplayIonAnnotations { get; set; } = true;
         public static bool AnnotateMzValues { get; set; } = false;
-        public static bool AnnotateCharges { get; set; } = false;
+        public static bool AnnotateCharges { get; set; } = true;
         public static bool AnnotationBold { get; set; } = false;
         public static bool DisplayInternalIons { get; set; } = true;
         public static bool DisplayInternalIonAnnotations { get; set; }= true;
@@ -34,6 +47,8 @@ namespace GuiFunctions
         public static bool DrawStationarySequence { get; set; } = true;
         public static bool DrawNumbersUnderStationary { get; set; } = true;
         public static bool ShowLegend { get; set; } = true;
+
+        public static bool SubAndSuperScriptIons = true;
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -83,11 +98,11 @@ namespace GuiFunctions
         public static OxyColor UnannotatedPeakColor { get; set; } = OxyColors.LightGray;
         public static OxyColor InternalIonColor { get; set; } = OxyColors.Purple;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
-        public static double CanvasPdfExportDpi { get; set; } = 300;
+        public static double CanvasPdfExportDpi { get; set; } = 600;
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double AnnotatedSequenceTextSpacing { get; set; } = 22;
-        public static int AnnotatedFontSize { get; set; } = 12;
+        public static int AnnotatedFontSize { get; set; } = 14;
         public static int NumberOfAAOnScreen { get; set; }
         public static int FirstAAonScreenIndex { get; set; }
         public static bool DrawMatchedIons { get; set; } = true;
@@ -200,7 +215,7 @@ namespace GuiFunctions
 
                 // lines to be written on the spectrum
                 SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
-                SpectrumDescription["Spectral Angle: "] = false;
+                SpectrumDescription["Spectral Angle: "] = true;
             }
             
             // offset for annotation on base sequence
@@ -230,6 +245,7 @@ namespace GuiFunctions
                 ShowContaminants = ShowContaminants,
                 DisplayInternalIons = DisplayInternalIons,
                 DisplayInternalIonAnnotations = DisplayInternalIonAnnotations,
+                SubAndSuperScriptIons = SubAndSuperScriptIons,
                 QValueFilter = QValueFilter,
                 AmbiguityFilter = AmbiguityFilter,
                 DrawStationarySequence = DrawStationarySequence,
@@ -261,6 +277,7 @@ namespace GuiFunctions
             ShowContaminants = settings.ShowContaminants;
             DisplayInternalIons = settings.DisplayInternalIons;
             DisplayInternalIonAnnotations = settings.DisplayInternalIonAnnotations;
+            SubAndSuperScriptIons = settings.SubAndSuperScriptIons;
             QValueFilter = settings.QValueFilter;
             AmbiguityFilter = settings.AmbiguityFilter;
             DrawStationarySequence = settings.DrawStationarySequence;
@@ -292,6 +309,7 @@ namespace GuiFunctions
             AnnotationBold = false;
             DisplayInternalIons = true;
             DisplayInternalIonAnnotations = true;
+            SubAndSuperScriptIons = true;
             DrawStationarySequence = true;
             DrawNumbersUnderStationary = true;
             ShowLegend = true;

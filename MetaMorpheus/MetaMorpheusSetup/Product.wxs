@@ -181,6 +181,9 @@
       <Component Id="src_MassSpectrometry.dll" Guid="d6241678-3d48-4c7a-becf-9c1160fbe06b">
         <File Id="src_MassSpectrometry.dll" Name="MassSpectrometry.dll" Source="$(var.GUI_TargetDir)MassSpectrometry.dll" />
       </Component>
+      <Component Id="src_SpectralAveraging.dll" Guid="{1B9EB148-6FC3-4DA1-82D0-935EDE76E8D7}">
+        <File Id="src_SpectralAveraging.dll" Name="SpectralAveraging.dll" Source="$(var.GUI_TargetDir)SpectralAveraging.dll" />
+      </Component>
       <Component Id="src_MathNet.Numerics.dll" Guid="dea92905-719e-48e1-8a64-e845dca06dac">
         <File Id="src_MathNet.Numerics.dll" Name="MathNet.Numerics.dll" Source="$(var.GUI_TargetDir)MathNet.Numerics.dll" />
       </Component>

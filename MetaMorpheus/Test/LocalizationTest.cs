@@ -24,7 +24,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(protease: p.Name, maxMissedCleavages: 8, minPeptideLength: 1, maxPeptideLength: 9, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var peps = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-             Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9, peps.Count);
+            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9, peps.Count);
         }
 
         [Test]

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -12,9 +13,10 @@ namespace EngineLayer.FdrAnalysis
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models
+        private readonly bool DoPEP;
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
-            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
+            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms;
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
@@ -22,6 +24,7 @@ namespace EngineLayer.FdrAnalysis
             ScoreCutoff = commonParameters.ScoreCutoff;
             AnalysisType = analysisType;
             this.OutputFolder = outputFolder;
+            this.DoPEP = doPEP;
             if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
         }
 

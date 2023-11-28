@@ -25,9 +25,9 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<IonTypeForTreeViewModel> IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
         private readonly ObservableCollection<CoverageTypeForTreeViewModel> CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
 
-        private SettingsViewModel SettingsView;
+        private MetaDrawSettingsViewModel SettingsView;
 
-        public MetaDrawSettingsWindow(SettingsViewModel view)
+        public MetaDrawSettingsWindow(MetaDrawSettingsViewModel view)
         {
             InitializeComponent();
             SettingsView = view;
@@ -52,6 +52,7 @@ namespace MetaMorpheusGUI
             ShowInternalIonAnnotationsCheckBox.IsChecked = MetaDrawSettings.DisplayInternalIonAnnotations;
             PrecursorChargeCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Charge: "];
             ShowInternalIonsCheckBox.IsChecked = MetaDrawSettings.DisplayInternalIons;
+            SubSuperScriptedIonAnnotations.IsChecked = MetaDrawSettings.SubAndSuperScriptIons;
             PrecursorMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Mass: "];
             TheoreticalMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Theoretical Mass: "];
             ScoreCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Score: "];
@@ -95,6 +96,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.ShowDecoys = DecoysCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowContaminants = ContaminantsCheckBox.IsChecked.Value;
             MetaDrawSettings.DisplayInternalIons = ShowInternalIonsCheckBox.IsChecked.Value;
+            MetaDrawSettings.SubAndSuperScriptIons = SubSuperScriptedIonAnnotations.IsChecked.Value;
             MetaDrawSettings.DisplayInternalIonAnnotations = ShowInternalIonAnnotationsCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Charge: "] = PrecursorChargeCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Mass: "] = PrecursorMassCheckBox.IsChecked.Value;
@@ -141,9 +143,9 @@ namespace MetaMorpheusGUI
             {
                 if (int.TryParse(TextSizeBox.Text, out int fontSize))
                 {
-                    if (fontSize > 15)
+                    if (fontSize > 18)
                     {
-                        MessageBox.Show("Font size must be <= 15");
+                        MessageBox.Show("Font size must be <= 18");
                         return;
                     }
 
@@ -208,10 +210,10 @@ namespace MetaMorpheusGUI
         {
             if (MessageBox.Show("Reset to default values?", "", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
             {
-                if (File.Exists(SettingsViewModel.SettingsPath))
-                    File.Delete(SettingsViewModel.SettingsPath);
+                if (File.Exists(MetaDrawSettingsViewModel.SettingsPath))
+                    File.Delete(MetaDrawSettingsViewModel.SettingsPath);
                 MetaDrawSettings.ResetSettings();
-                SettingsViewModel settingsViewModel = new SettingsViewModel();
+                MetaDrawSettingsViewModel settingsViewModel = new MetaDrawSettingsViewModel();
                 SettingsView = settingsViewModel;
                 DataContext = SettingsView;
                 PopulateChoices();
