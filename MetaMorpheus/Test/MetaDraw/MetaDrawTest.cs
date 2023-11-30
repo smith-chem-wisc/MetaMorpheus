@@ -1,16 +1,7 @@
-using Chemistry;
-using EngineLayer;
-using GuiFunctions;
-using MassSpectrometry;
-using NUnit.Framework;
-using OxyPlot;
-using OxyPlot.Series;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -18,14 +9,18 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
+using Chemistry;
 using Easy.Common.Extensions;
-using IO.MzML;
+using EngineLayer;
+using GuiFunctions;
+using MassSpectrometry;
+using NUnit.Framework;
+using OxyPlot.Series;
+using Proteomics.Fragmentation;
+using Proteomics.ProteolyticDigestion;
 using TaskLayer;
-using ThermoFisher.CommonCore.Data.Business;
-using System.Drawing;
-using pepXML.Generated;
 
-namespace Test
+namespace Test.MetaDraw
 {
     [TestFixture, Apartment(ApartmentState.STA)]
     [TestFixture]

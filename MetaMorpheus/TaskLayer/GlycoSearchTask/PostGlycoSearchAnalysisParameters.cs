@@ -11,6 +11,7 @@ namespace TaskLayer
     {
         public MyTaskResults GlycoSearchTaskResults { get; set; }
         public string SearchTaskId { get; set; }
+        public HashSet<DigestionParams> ListOfDigestionParams { get; set; }
         public GlycoSearchParameters GlycoSearchParameters { get; set; }
         public List<Protein> ProteinList { get; set; }
         public List<Modification> VariableModifications { get; set; }
@@ -20,5 +21,7 @@ namespace TaskLayer
         public FileSpecificParameters[] FileSettingsList { get; set; }
         public List<DbForTask> DatabaseFilenameList { get; set; }
         public List<string> CurrentRawFileList { get; set; }
+        public FlashLfqResults FlashLfqResults { get; set; }
+        public string IndividualResultsOutputFolder { get; set; }
     }
 }

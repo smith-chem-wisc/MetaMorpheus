@@ -4,14 +4,16 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
-        mc:Ignorable="d"
-        xmlns:sys="clr-namespace:System;assembly=mscorlib"
-        xmlns:mzl="clr-namespace:MassSpectrometry;assembly=MassSpectrometry"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        mc:Ignorable="d"
         KeyDown="KeyPressed"
-        Title="GlycoSearchTaskWindow" Height="750" Width="750" WindowStartupLocation="CenterScreen">
+        Title="Glyco Search Task" Height="750" Width="750" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
+
+        <!-- used in Quantifications -->
+        <local:BooleanOrConverter x:Key="boolOrConverter"/>
+        <local:BooleanOrToVisibilityConverter x:Key="boolOr2VisConverter"/>
 
         <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
@@ -427,6 +429,61 @@
                         <CheckBox x:Name="ModPepsAreUnique" Content="Treat modified peptides as different peptides" IsEnabled="{Binding IsChecked, ElementName=CheckBoxParsimony}">
                             <ToolTipService.ToolTip>
                                 <ToolTip Content="Modified forms of a peptide base sequence are treated as different for the purposes of parsimony, protein group displays, peptide counts, etc"  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                            </ToolTipService.ToolTip>
+                        </CheckBox>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- Quantification options -->
+                <GroupBox Header="Quantification" DockPanel.Dock="Top">
+                    <StackPanel Margin="5">
+                        <RadioButton x:Name="CheckBoxNoQuant" Content="No quantification" GroupName="QuantType">
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="Saves a little time if PSM counting is good enough" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+                            </ToolTipService.ToolTip>
+                        </RadioButton>
+                        <RadioButton x:Name="CheckBoxLFQ" Content="LFQ: Quantify peptides/proteins with FlashLFQ" GroupName="QuantType">
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                            </ToolTipService.ToolTip>
+                        </RadioButton>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBox x:Name="PeakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20">
+                                <TextBox.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource boolOrConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </TextBox.IsEnabled>
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                </ToolTipService.ToolTip>
+                            </TextBox>
+                            <Label x:Name="peakFindingLabel" Content=" ppm peakfinding tolerance">
+                                <Label.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource boolOrConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </Label.IsEnabled>
+                            </Label>
+                        </StackPanel>
+                        <CheckBox x:Name="CheckBoxMatchBetweenRuns" Content="Match between runs" >
+                            <CheckBox.IsEnabled>
+                                <MultiBinding Converter="{StaticResource boolOrConverter}">
+                                    <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                </MultiBinding>
+                            </CheckBox.IsEnabled>
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified&#x0a;Selecting &quot;Write Spectral Library&quot; in the Output Options below will enable additional MBR analysis" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                            </ToolTipService.ToolTip>
+                        </CheckBox>
+                        <CheckBox x:Name="CheckBoxNormalize" Content="Normalize quantification results">
+                            <CheckBox.IsEnabled>
+                                <MultiBinding Converter="{StaticResource boolOrConverter}">
+                                    <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                </MultiBinding>
+                            </CheckBox.IsEnabled>
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                             </ToolTipService.ToolTip>
                         </CheckBox>
                     </StackPanel>

@@ -1,11 +1,7 @@
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
-using Nett;
 using OxyPlot;
-using Proteomics;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -16,14 +12,10 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 
 namespace MetaMorpheusGUI
 {
@@ -43,7 +35,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
-        private SettingsViewModel SettingsView;
+        private MetaDrawSettingsViewModel SettingsView;
 
         public MetaDraw()
         {
@@ -79,7 +71,7 @@ namespace MetaMorpheusGUI
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
 
-            ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
+            exportPdfs.Content = MetaDrawSettings.ExportType; ;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -421,7 +413,7 @@ namespace MetaMorpheusGUI
             var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
             var result = settingsWindow.ShowDialog();
 
-            ExportButton.Content = "Export As " + MetaDrawSettings.ExportType;
+            exportPdfs.Content = MetaDrawSettings.ExportType;
             // re-select selected PSM
             if (result == true)
             {
@@ -585,6 +577,39 @@ namespace MetaMorpheusGUI
             {
                 MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
             }
+        }
+
+        private void ExportSpectrumLibraryButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (dataGridScanNums.SelectedCells.Count == 0)
+            {
+                MessageBox.Show("Please select at least one scan to export");
+                return;
+            }
+
+            List<PsmFromTsv> items = new List<PsmFromTsv>();
+
+            foreach (var cell in dataGridScanNums.SelectedItems)
+            {
+                var psm = (PsmFromTsv)cell;
+                items.Add(psm);
+            }
+
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()),
+                "MetaDrawExport",    
+                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+
+            if(!Directory.Exists(directoryPath)) 
+            { 
+                Directory.CreateDirectory(directoryPath);
+            }
+
+            directoryPath = Path.Combine(directoryPath, "spectrumLibrary.msp");
+
+            File.WriteAllLines(directoryPath, items.Select(i => i.ToLibrarySpectrum().ToString()).ToArray());
+
+            MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
+
         }
 
         private void SequenceCoverageExportButton_Click(object sender, RoutedEventArgs e)
@@ -895,7 +920,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private async void InitializeColorSettingsView()
         {
-            SettingsViewModel view = new SettingsViewModel();
+            MetaDrawSettingsViewModel view = new MetaDrawSettingsViewModel();
             await view.Initialization;
             SettingsView = view;
         }
@@ -1027,7 +1052,10 @@ namespace MetaMorpheusGUI
             resetPsmFileButton.IsEnabled = value;
             resetSpectraFileButton.IsEnabled = value;
             resetSpectraFileButton.IsEnabled = value;
-            ExportButton.IsEnabled = value;
+            exportPdfs.IsEnabled = value;
+            exportSpectrumLibrary.IsEnabled = value;
         }
+
+      
     }
 }

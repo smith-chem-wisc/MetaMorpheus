@@ -8,6 +8,8 @@ using System.Text.RegularExpressions;
 using EngineLayer.GlycoSearch;
 using System.IO;
 using Easy.Common.Extensions;
+using System.Text;
+using MathNet.Numerics;
 
 namespace EngineLayer
 {
@@ -149,9 +151,12 @@ namespace EngineLayer
             Score = double.Parse(spl[parsedHeader[PsmTsvHeader.Score]].Trim(), CultureInfo.InvariantCulture);
             DecoyContamTarget = spl[parsedHeader[PsmTsvHeader.DecoyContaminantTarget]].Trim();
             QValue = double.Parse(spl[parsedHeader[PsmTsvHeader.QValue]].Trim(), CultureInfo.InvariantCulture);
+
+            //we are reading in all primary and child ions here only to delete the child scans later. This should be done better.
             MatchedIons = (spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ?
                 ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq).First().Value : 
                 ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq, spl[parsedHeader[PsmTsvHeader.MatchedIonMassDiffDa]].Trim());
+
             AmbiguityLevel = (parsedHeader[PsmTsvHeader.AmbiguityLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.AmbiguityLevel]].Trim();
 
             //For general psms
@@ -197,7 +202,7 @@ namespace EngineLayer
             XLTotalScore = (parsedHeader[PsmTsvHeader.XLTotalScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.XLTotalScoreLabel]].Trim(), CultureInfo.InvariantCulture);
             ParentIons = (parsedHeader[PsmTsvHeader.ParentIonsLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ParentIonsLabel]].Trim();
 
-            // child scan matched ions (only for crosslinks for now, but in the future this will change) 
+            // child scan matched ions for xlink and glyco. we are getting them all above and then deleting primary scan ions here.
             ChildScanMatchedIons = (!spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq);
             if (ChildScanMatchedIons != null && ChildScanMatchedIons.ContainsKey(Ms2ScanNumber))
             {
@@ -544,12 +549,19 @@ namespace EngineLayer
         {
             var childScanMatchedIons = new Dictionary<int, List<MatchedFragmentIon>>();
 
-            foreach (var childScan in childScanMatchedMzString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)))
+            string[] matchedMzString = childScanMatchedMzString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+            string[] matchedIntensityString = childScanMatchedIntensitiesString.Split(new char[] { '}' }).Where(p => !string.IsNullOrWhiteSpace(p)).ToArray();
+
+            for (int i = 0; i < matchedMzString.Length; i++)
             {
-                var split1 = childScan.Split(new char[] { '@' });
-                int scanNumber = int.Parse(split1[0].Trim(new char[] { '{' }));
-                string matchedIonsString = split1[1];
-                var childMatchedIons = ReadFragmentIonsFromString(matchedIonsString, childScanMatchedIntensitiesString, peptideBaseSequence);
+                string[] mzsplit = matchedMzString[i].Split(new char[] { '@' });
+                string[] intSplit = matchedIntensityString[i].Split(new char[] { '@' });
+
+                int scanNumber = int.Parse(mzsplit[0].Trim(new char[] { '{' }));
+                string matchedMzStrings = mzsplit[1];
+                string matchedIntensityStrings = intSplit[1];
+
+                var childMatchedIons = ReadFragmentIonsFromString(matchedMzStrings, matchedIntensityStrings, peptideBaseSequence);
                 childScanMatchedIons.Add(scanNumber, childMatchedIons);
             }
 
@@ -617,6 +629,22 @@ namespace EngineLayer
         public override string ToString()
         {
             return FullSequence;
+        }
+        public LibrarySpectrum ToLibrarySpectrum()
+        {
+            bool isDecoy = this.DecoyContamTarget == "D";
+
+            List<MatchedFragmentIon> fragments = new List<MatchedFragmentIon>();
+
+            double matchedIonIntensitySum = Math.Max(1.0, this.MatchedIons.Select(i => i.Intensity).Sum());
+
+            foreach (MatchedFragmentIon ion in this.MatchedIons)
+            {
+                Product product = new Product(ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.Terminus, ion.NeutralTheoreticalProduct.NeutralMass, ion.NeutralTheoreticalProduct.FragmentNumber, ion.NeutralTheoreticalProduct.AminoAcidPosition, ion.NeutralTheoreticalProduct.NeutralLoss);
+                fragments.Add(new MatchedFragmentIon(ref product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
+            }
+
+            return( new(this.FullSequence, this.PrecursorMz, this.PrecursorCharge, fragments, this.RetentionTime.Value, isDecoy));
         }
     }
 }
