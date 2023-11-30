@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer.ClassicSearch
 {
@@ -115,6 +116,10 @@ namespace EngineLayer.ClassicSearch
                                 decoyFragmentsForEachDissociationType[fragmentSet.Key].Clear();
                             }
 
+
+                            double maxScore = 0;
+                            ScanWithIndexAndNotchInfo bestScan = null;
+                            List<MatchedFragmentIon> bestMatchedFragmentIons = null;
                             // score each scan that has an acceptable precursor mass
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
@@ -140,13 +145,21 @@ namespace EngineLayer.ClassicSearch
                                 // calculate the peptide's score
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
 
-                                AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
-
-                                if (SpectralLibrary != null)
+                                if (thisScore > maxScore)
                                 {
-                                    DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
+                                    maxScore = thisScore;
+                                    bestScan = scan;
+                                    bestMatchedFragmentIons = matchedIons;
                                 }
+
+
+
+                                //if (SpectralLibrary != null)
+                                //{
+                                //    DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
+                                //}
                             }
+                            AddPeptideCandidateToPsm(bestScan, myLocks, maxScore, peptide, bestMatchedFragmentIons);
                         }
 
                         // report search progress (proteins searched so far out of total proteins in database)
