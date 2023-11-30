@@ -73,9 +73,7 @@ namespace TaskLayer
                 try
                 {
                     var averagedScans = SpectraFileAveraging.AverageSpectraFile(scanList, Parameters);
-                    if (averagedScans == null || !averagedScans.Any())
-                        throw new Exception();
-                    
+
                     Status("Writing spectra file...", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                     SourceFile sourceFile = myMsdataFile.GetSourceFile();
                     MsDataFile dataFile = new GenericMsDataFile(averagedScans, sourceFile);
