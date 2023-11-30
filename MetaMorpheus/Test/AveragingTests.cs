@@ -374,7 +374,7 @@ namespace Test
         [Test]
         public static void TestAveragingFailure()
         {
-            var filepath = Path.Combine(TestContext.CurrentContext.TestDirectory, "sliced-raw.mzML");
+            var filepath = Path.Combine(TestContext.CurrentContext.TestDirectory, "tinySemiBroken.mgf");
             string testPath = Path.Combine(TestFolder, "TestAveragingFailure");
             Directory.CreateDirectory(testPath);
 
@@ -382,13 +382,16 @@ namespace Test
             SpectralAveragingParameters parameters = new SpectralAveragingParameters()
             {
                 SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
-                NumberOfScansToAverage = 120
+                NumberOfScansToAverage = 100,
+                SpectralAveragingType = (SpectralAveragingType)(-1),
+                NormalizationType = (NormalizationType)(-1),
+                BinSize = 0,
+                MaxThreadsToUsePerFile = 0
             };
             SpectralAveragingTask averagingTask = new(parameters) { CommonParameters = commonParameters };
 
             SpectraFileInfo fileInfo = new SpectraFileInfo(filepath, "condition", 0, 0, 0);
             var experimentalDesignFilePath = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
-
 
             // run the tasks
             EverythingRunnerEngine everythingRunnerEngine = new EverythingRunnerEngine(

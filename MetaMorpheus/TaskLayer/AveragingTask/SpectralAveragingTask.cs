@@ -70,24 +70,22 @@ namespace TaskLayer
 
                 // Average the spectra
                 Status("Averaging spectra file...", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
-                var averagedScans = SpectraFileAveraging.AverageSpectraFile(scanList, Parameters);
-
-                // Output the spectra
-                if (averagedScans == null || !averagedScans.Any())
+                try
                 {
-                    Warn($"Averaging Failure! Could not average spectra for file {originalUnaveragedFilepathWithoutExtenstion}");
-                    unsuccessfulyAveragedFilePaths.Add(Path.GetFileNameWithoutExtension(currentRawFileList[spectraFileIndex]));
-                }
-                else
-                {
+                    var averagedScans = SpectraFileAveraging.AverageSpectraFile(scanList, Parameters);
+                    if (averagedScans == null || !averagedScans.Any())
+                        throw new Exception();
+                    
                     Status("Writing spectra file...", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                     SourceFile sourceFile = myMsdataFile.GetSourceFile();
                     MsDataFile dataFile = new GenericMsDataFile(averagedScans, sourceFile);
                     dataFile.ExportAsMzML(averagedFilepath, true);
                 }
-
+                catch (Exception e)
+                {
+                    Warn($"Averaging Failure! Could not average spectra for file {originalUnaveragedFilepathWithoutExtenstion}");
+                }
                 myFileManager.DoneWithFile(originalUnaveragedFilepath);
-                
 
                 // carry over file-specific parameters from the unaveraged file to the averaged one
                 var fileSpecificParams = new FileSpecificParameters();
