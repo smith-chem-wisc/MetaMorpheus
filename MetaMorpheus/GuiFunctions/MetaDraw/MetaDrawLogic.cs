@@ -22,6 +22,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using Readers;
+using System.Threading;
 
 namespace GuiFunctions
 {
@@ -795,6 +796,7 @@ namespace GuiFunctions
                 {
                     connection.Value.CloseDynamicConnection();
                 }
+                Thread.Sleep(1000);
                 MsDataFiles.Clear();
             }
         }

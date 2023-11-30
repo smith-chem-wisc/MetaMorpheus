@@ -23,7 +23,7 @@
     <PackageReference Include="Microsoft.ML" Version="2.0.0" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="2.0.0" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="2.0.0" />
-    <PackageReference Include="mzLib" Version="5.0.602" />
+    <PackageReference Include="mzLib" Version="1.0.542" />
     <PackageReference Include="NUnit" Version="3.13.3" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
