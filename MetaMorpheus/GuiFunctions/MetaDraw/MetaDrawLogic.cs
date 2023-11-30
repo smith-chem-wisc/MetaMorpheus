@@ -20,6 +20,8 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using Easy.Common.Extensions;
+using EngineLayer.CrosslinkSearch;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using Readers;
 
@@ -132,7 +134,7 @@ namespace GuiFunctions
 
             spectraFile.InitiateDynamicConnection();
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
-            
+
             LibrarySpectrum librarySpectrum = null;
             if (SpectralLibrary != null)
             {
@@ -534,10 +536,12 @@ namespace GuiFunctions
 
                 if (errors != null)
                 {
-                    errors.AddRange(errors);
+                    errors.AddRange(errors); 
                 }
 
-                string sequence = illegalInFileName.Replace(psm.FullSequence, string.Empty);
+                string sequence = !psm.UniqueSequence.IsNullOrEmptyOrWhiteSpace()
+                    ? illegalInFileName.Replace(psm.UniqueSequence, string.Empty)
+                    : illegalInFileName.Replace(psm.FullSequence, string.Empty);
 
                 if (sequence.Length > 30)
                 {

@@ -315,6 +315,9 @@
     <None Update="TestData\SpectralLibrarySearch\1-81.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralLibrarySearch\CrosslinkSpectralLibrary.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\EPAVFGR.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
