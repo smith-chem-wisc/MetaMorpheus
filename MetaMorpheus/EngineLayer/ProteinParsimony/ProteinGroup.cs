@@ -404,7 +404,6 @@ namespace EngineLayer
                     psm.GetAminoAcidCoverage();
                     var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
                     peptides = peptides.DistinctBy(p => p.FullSequence).ToList();
-                    //peptides.RemoveAll(b => b.FullSequence.IsNullOrEmpty());
 
                     if (peptides.Any())
                     {
