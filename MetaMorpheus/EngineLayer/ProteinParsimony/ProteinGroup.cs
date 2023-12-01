@@ -402,26 +402,22 @@ namespace EngineLayer
                 if (psm.BaseSequence != null)
                 {
                     psm.GetAminoAcidCoverage();
-                    var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
-                    peptides = peptides.DistinctBy(p => p.FullSequence).ToList();
 
-                    if (peptides.Any())
+                    foreach (var peptide in psm.BestMatchingPeptides.Select(psm => psm.Peptide).DistinctBy(pep => pep.FullSequence))
                     {
-                        foreach (var peptide in peptides)
+                        // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
+                        if (Proteins.Contains(peptide.Protein))
                         {
-                            // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
-                            if (Proteins.Contains(peptide.Protein))
-                            {
-                                proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
+                            proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
 
-                                // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
-                                if (peptide.FullSequence != null)
-                                {
-                                    proteinsWithPsmsWithLocalizedMods[peptide.Protein].Add(peptide);
-                                }
+                            // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
+                            if (peptide.FullSequence != null)
+                            {
+                                proteinsWithPsmsWithLocalizedMods[peptide.Protein].Add(peptide);
                             }
                         }
                     }
+                    
                 }
             }
 
