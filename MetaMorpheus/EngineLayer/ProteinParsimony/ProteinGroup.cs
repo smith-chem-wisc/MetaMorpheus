@@ -402,19 +402,24 @@ namespace EngineLayer
                 if (psm.BaseSequence != null)
                 {
                     psm.GetAminoAcidCoverage();
-                    var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide);
-                    foreach (var peptide in peptides)
-                    {
-                        // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
-                        if (Proteins.Contains(peptide.Protein))
-                        {
-                            proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
-                            //proteinsWithUnambigSeqPsmsCoverage[peptide.Protein].Add((peptide, psm.FragmentCoveragePositionInPeptide));
+                    var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
+                    peptides = peptides.DistinctBy(p => p.FullSequence).ToList();
+                    //peptides.RemoveAll(b => b.FullSequence.IsNullOrEmpty());
 
-                            // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
-                            if (psm.FullSequence != null)
+                    if (peptides.Any())
+                    {
+                        foreach (var peptide in peptides)
+                        {
+                            // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
+                            if (Proteins.Contains(peptide.Protein))
                             {
-                                proteinsWithPsmsWithLocalizedMods[peptide.Protein].Add(peptide);
+                                proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
+
+                                // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
+                                if (peptide.FullSequence != null)
+                                {
+                                    proteinsWithPsmsWithLocalizedMods[peptide.Protein].Add(peptide);
+                                }
                             }
                         }
                     }
