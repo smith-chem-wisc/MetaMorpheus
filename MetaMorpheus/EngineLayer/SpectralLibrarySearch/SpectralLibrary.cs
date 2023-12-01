@@ -483,7 +483,7 @@ namespace EngineLayer
             return new LibrarySpectrum(sequence, precursorMz, z, matchedFragmentIons, rt);
         }
 
-        private CrosslinkLibrarySpectrum ReadLibrarySpectrum_Crosslink(StreamReader reader, string nameLine, bool onlyReadHeader)
+        internal CrosslinkLibrarySpectrum ReadLibrarySpectrum_Crosslink(StreamReader reader, string nameLine, bool onlyReadHeader)
         {
             char[] nameSplit = new char[] { '/' };
             char[] mwSplit = new char[] { ':' };

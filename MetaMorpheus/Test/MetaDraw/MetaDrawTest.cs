@@ -650,7 +650,7 @@ namespace Test.MetaDraw
 
             // test that library peaks were drawn in the mirror plot (these peaks have negative intensities)
             var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
-            Assert.That(mirrorPlotPeaks.Count == 58);
+            Assert.AreEqual(mirrorPlotPeaks.Count, 59);
 
             var plotAxes = plotView.Model.Axes;
             Assert.That(plotAxes.Count == 2);

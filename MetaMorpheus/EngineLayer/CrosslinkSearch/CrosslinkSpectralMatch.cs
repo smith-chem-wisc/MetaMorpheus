@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using MathNet.Numerics.Distributions;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -36,6 +37,11 @@ namespace EngineLayer.CrosslinkSearch
                 if (_uniqueSequence.IsNullOrEmpty())
                 {
                     string position = "";
+                    if (!LinkPositions.IsNotNullOrEmpty())
+                    {
+                        _uniqueSequence = FullSequence;
+                        return _uniqueSequence;
+                    }
                     switch (CrossType)
                     {
                         case PsmCrossType.Single:
@@ -49,7 +55,7 @@ namespace EngineLayer.CrosslinkSearch
                             position = "(" + LinkPositions[0].ToString() + ")";
                             break;
                     }
-                    if (BetaPeptide != null)
+                    if (BetaPeptide != null && BetaPeptide.LinkPositions.IsNotNullOrEmpty())
                     {
                         _uniqueSequence = FullSequence + position + BetaPeptide.FullSequence + "(" + BetaPeptide.LinkPositions[0].ToString() + ")";
                     }
@@ -68,7 +74,6 @@ namespace EngineLayer.CrosslinkSearch
 
         public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
         public int XlRank { get; set; }   //Rank after indexing score. Could be used for PEP
-        public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
         public double MS3ChildScore { get; set; }

@@ -321,8 +321,8 @@ namespace Test
             CrosslinkSpectralMatch oneCsmBetaA = new CrosslinkSpectralMatch(mswpVbetaA, 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             CrosslinkSpectralMatch threeCsmBetaV = new CrosslinkSpectralMatch(mswpLbetaV, 0, 40, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
 
-            twoCsm.BetaPeptide = twoCsmBetaL;
             oneCsm.BetaPeptide = oneCsmBetaA;
+            twoCsm.BetaPeptide = twoCsmBetaL;
             threeCsm.BetaPeptide = threeCsmBetaV;
 
             twoCsm.XLTotalScore = 22;
@@ -336,6 +336,15 @@ namespace Test
             twoCsm.BetaPeptide.ResolveAllAmbiguities();
             oneCsm.BetaPeptide.ResolveAllAmbiguities();
             threeCsm.BetaPeptide.ResolveAllAmbiguities();
+
+            Assert.AreEqual(oneCsm.UniqueSequence, oneCsm.FullSequence);
+            twoCsm.LinkPositions = new List<int> { 1 };
+            twoCsm.BetaPeptide.LinkPositions = new List<int> { 2 };
+            twoCsm.CrossType = PsmCrossType.Cross;
+            Assert.AreEqual(twoCsm.UniqueSequence, twoCsm.FullSequence + "(1)" + twoCsm.BetaPeptide.FullSequence + "(2)");
+            threeCsm.CrossType = PsmCrossType.Loop;
+            threeCsm.LinkPositions = new List<int> { 1, 3 };
+            Assert.AreEqual(threeCsm.UniqueSequence, threeCsm.FullSequence + "(1-3)"); //Because the beta peptide link positions wasn't set, the csm unique sequence is a loop link sequence, not a crosslink sequence
 
             List<CrosslinkSpectralMatch> reverse = new List<CrosslinkSpectralMatch> { twoCsm, oneCsm, threeCsm };
 
