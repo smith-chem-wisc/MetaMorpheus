@@ -1,24 +1,23 @@
 Name	Sequences Inducing Cleavage	Sequences Preventing Cleavage	Cleavage Terminus	Cleavage Specificity	PSI-MS Accession Number	PSI-MS Name	Site Regular Expression	Cleavage Mass Shifts	Notes
 Arg-C	R|			full	MS:1001303	Arg-C	(?<=R)(?!P)		
 Asp-N	|D			full	MS:1001304	Asp-N	(?=[BD])		
-chymotrypsin (don't cleave before proline)	F[P]|,W[P]|,Y[P]|			full	MS:1001306	Chymotrypsin	(?<=[FYWL])(?!P)		
-chymotrypsin (cleave before proline)	F|,W|,Y|			full	MS:1001306	Chymotrypsin	(?<=[FYWL])		
-CNBr	M|			full	MS:1001307	CNBr	(?<=M)	Homoserine lactone on M	
-elastase(don't cleave before proline 15mc)	I[P]|,S[P]|,L[P]|,V[P]|,N[P]|,T[P]|,K[P]|,A[P]|,G[P]|,Y[P]|,Q[P]|,R[P]|,F[P]|,D[P]|			full		Elastase/P	(?<=[IPSPLPVPNPTPKPAPGPYPQPRPFD])(?!P)		
+chymotrypsin (don't cleave before proline)	"F[P]|,W[P]|,Y[P]|"			full	MS:1001306	Chymotrypsin	(?<=[FYWL])(?!P)		
+chymotrypsin (cleave before proline)	"F|,W|,Y|"			full	MS:1001306	Chymotrypsin	(?<=[FYWL])		
+CNBr	M|			full	MS:1001307	CNBr	(?<=M)	Homoserine lactone on M
+elastase	"A|,V|,S|,G|,L|,I|"			full		Elastase	(?<=[AVSGLI])		
 Glu-C	E|			full					
-Glu-C (with asp)	E|,D|			full					
+Glu-C (with asp)	"E|,D|"			full					
 Lys-C (don't cleave before proline)	K[P]|			full	MS:1001309	Lys-C	(?<=K)(?!P)		
 Lys-C (cleave before proline)	K|			full	MS:1001310	Lys-C/P	(?<=K)		
 Lys-N	|K			full					
-semi-trypsin	K|,R|			semi	MS:1001313	Trypsin/P	(?<=[KR])		
-trypsin	K|,R|			full	MS:1001313	Trypsin/P	(?<=[KR])		
+semi-trypsin	"K|,R|"			semi	MS:1001313	Trypsin/P	(?<=[KR])		
+trypsin	"K|,R|"			full	MS:1001313	Trypsin/P	(?<=[KR])		
 tryptophan oxidation	W|			full					
 non-specific	X|			full	MS:1001956	unspecific cleavage			
-top-down				none	MS:1001955	no cleavage			
+top-down				none	MS:1001955	no cleavage						
 singleN				SingleN	MS:1001957	single cleavage			
 singleC				SingleC	MS:1001958	single cleavage			
 peptidomics				none		no cleavage			
 collagenase	GPX|GPX			full					
-StcE-trypsin	TX|T,TX|S,SX|T,SX|S,K|,R|			full		StcE/Trpsin			
-ProAlanase	P|,A|			full					
-subtilisin(don't cleave before proline 15mc)	N[P]|,S[P]|,L[P]|,K[P]|,I[P]|,D[P]|,Y[P]|,V[P]|,G[P]|,F[P]|,T[P]|,E[P]|,Q[P]|,A[P]|,R[P]|			full		Subtilisin/P	(?<=[NSLKIDYVGFTEQAR])(?!P)		
+StcE-trypsin	"TX|T,TX|S,SX|T,SX|S,K|,R|"			full		StcE/Trpsin			
+ProAlanase	"P|,A|"			full					
