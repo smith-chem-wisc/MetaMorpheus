@@ -89,18 +89,17 @@ namespace TaskLayer
                 var fileSpecificParams = new FileSpecificParameters();
                 if (fileSettingsList[spectraFileIndex] != null)
                 {
-                    fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
+                    fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();// write toml settings for the averaged file if there are file specific parameters
+                    var newTomlFileName = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
+                    Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
+                    FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
+                    MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 }
 
-                // write toml settings for the averaged file
-                var newTomlFileName = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
-                Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
-                FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
-                
+
                 // finished averaging this file
                 FinishedWritingFile(averagedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                 MyTaskResults.NewSpectra.Add(averagedFilepath);
-                MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUnaveragedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion }));
             }

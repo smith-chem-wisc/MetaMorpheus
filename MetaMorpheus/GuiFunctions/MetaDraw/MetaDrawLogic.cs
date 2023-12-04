@@ -796,7 +796,7 @@ namespace GuiFunctions
                 {
                     connection.Value.CloseDynamicConnection();
                 }
-                Thread.Sleep(1000);
+                Thread.Sleep(1000); // sleep for one second to allow for test methods ran asychronously in parallel to finish, otherwise the tests will fail
                 MsDataFiles.Clear();
             }
         }
