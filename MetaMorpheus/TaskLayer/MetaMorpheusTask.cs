@@ -18,6 +18,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using Proteomics.Fragmentation;
+using SpectralAveraging;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -55,7 +56,16 @@ namespace TaskLayer
             .ConfigureType<List<(string, string)>>(type => type
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => string.Join("\t\t", custom.Select(b => b.Item1 + "\t" + b.Item2)))
-                    .FromToml(tmlString => GetModsFromString(tmlString.Value)))));
+                    .FromToml(tmlString => GetModsFromString(tmlString.Value))))
+            .ConfigureType<SpectraFileAveragingType>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ToString())
+                    .FromToml(tmlString =>
+                        tmlString.Value == "AverageDdaScansWithOverlap"
+                            ? SpectraFileAveragingType.AverageDdaScans
+                            : Enum.Parse<SpectraFileAveragingType>(tmlString.Value))))
+        );
+       
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
