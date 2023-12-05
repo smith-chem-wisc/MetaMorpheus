@@ -46,17 +46,15 @@ namespace MetaMorpheusGUI
         public SearchTaskWindow(SearchTask task)
         {
             InitializeComponent();
-            
             TheTask = task ?? new SearchTask();
 
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
+            PopulateChoices();
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as SearchTask);
             TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
             TaskSettingsCtrl.DataContext = TaskSettingViewModel;
             setDefaultbutton.DataContext = TaskSettingViewModel;
-
-            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
-            PopulateChoices();
 
             if (task == null)
             {

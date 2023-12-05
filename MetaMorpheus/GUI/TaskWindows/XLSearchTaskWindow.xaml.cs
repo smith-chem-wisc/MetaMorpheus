@@ -39,6 +39,7 @@ namespace MetaMorpheusGUI
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as XLSearchTask);
             TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
             TaskSettingsCtrl.DataContext = TaskSettingViewModel;
+            setDefaultbutton.DataContext = TaskSettingViewModel;
 
             if (task == null)
             {

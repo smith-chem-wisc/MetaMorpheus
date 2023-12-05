@@ -385,7 +385,8 @@
         <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Grid.Column="1">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
-            <Button x:Name="setDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
+            <Button x:Name="setDefaultbutton" 
+                    Command="{Binding SaveAsDefaultSettingsCommand}"  Width="100" >
                 <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
                 <ToolTipService.ToolTip>
                     <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />

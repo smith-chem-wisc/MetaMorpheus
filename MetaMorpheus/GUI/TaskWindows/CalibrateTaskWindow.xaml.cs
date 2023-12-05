@@ -35,13 +35,14 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             TheTask = myCalibrateTask ?? new CalibrationTask();
 
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
+            PopulateChoices();
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as CalibrationTask);
             TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
             TaskSettingsCtrl.DataContext = TaskSettingViewModel;
-
-            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
+            setDefaultbutton.DataContext = TaskSettingViewModel;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
-            PopulateChoices();
+            
 
             if (myCalibrateTask == null)
             {

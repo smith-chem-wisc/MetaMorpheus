@@ -36,11 +36,12 @@ namespace MetaMorpheusGUI
             InitializeComponent();
             TheTask = myGPTMDtask ?? new GptmdTask();
 
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
+            PopulateChoices();
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as GptmdTask);
             TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
             TaskSettingsCtrl.DataContext = TaskSettingViewModel;
-
-            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
+            setDefaultbutton.DataContext = TaskSettingViewModel;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
             PopulateChoices();
 

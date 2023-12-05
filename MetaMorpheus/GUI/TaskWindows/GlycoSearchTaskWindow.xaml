@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
         Title="Glyco Search Task" Height="750" Width="750" WindowStartupLocation="CenterScreen">
@@ -512,9 +513,16 @@
                 
             </DockPanel>
         </ScrollViewer>
-        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="188.333,5,261,5" Grid.Column="1">
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1"  Margin="5" Grid.Column="1">
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save GlycoSearch Task" Click="SaveButton_Click" FontSize="24" />
+            <Button x:Name="setDefaultbutton" 
+                    Command="{Binding SaveAsDefaultSettingsCommand}"  Width="100" >
+                <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
+                <ToolTipService.ToolTip>
+                    <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                </ToolTipService.ToolTip>
+            </Button>
         </StackPanel>
     </Grid>
 </Window>
