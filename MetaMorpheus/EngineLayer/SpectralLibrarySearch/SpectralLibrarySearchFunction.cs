@@ -42,30 +42,38 @@ namespace EngineLayer
                                 List<double> pwsmSpectralAngles = new();
                                 foreach (var (Notch, Peptide) in psms[i].BestMatchingPeptides)
                                 {
-                                    //if peptide is target, directly look for the target's spectrum in the spectral library
-                                    if (!Peptide.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                                    try
                                     {
-                                        SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray, SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
-                                        if (s.SpectralContrastAngle().HasValue)
+                                        //if peptide is target, directly look for the target's spectrum in the spectral library
+                                        if (!Peptide.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                         {
-                                            pwsms.Add((Notch, Peptide));
-                                            pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
+                                            SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray, SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
+                                            if (s.SpectralContrastAngle().HasValue)
+                                            {
+                                                pwsms.Add((Notch, Peptide));
+                                                pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
+                                            }
                                         }
-                                    }
 
-                                    //if peptide is decoy, look for the decoy's corresponding target's spectrum in the spectral library and generate decoy spectrum by function GetDecoyLibrarySpectrumFromTargetByRevers
-                                    else if (Peptide.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.PeptideDescription, scan.PrecursorCharge, out var targetlibrarySpectrum))
-                                    {
-                                        var decoyPeptideTheorProducts = new List<Product>();
-                                        Peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
-                                        var decoylibrarySpectrum = GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
-                                        SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, decoylibrarySpectrum.Select(x => x.Mz).ToArray(),decoylibrarySpectrum.Select(x => x.Intensity).ToArray(), SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
-                                        if (s.SpectralContrastAngle().HasValue)
+                                        //if peptide is decoy, look for the decoy's corresponding target's spectrum in the spectral library and generate decoy spectrum by function GetDecoyLibrarySpectrumFromTargetByRevers
+                                        else if (Peptide.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.PeptideDescription, scan.PrecursorCharge, out var targetlibrarySpectrum))
                                         {
-                                            pwsms.Add((Notch, Peptide));
-                                            pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
+                                            var decoyPeptideTheorProducts = new List<Product>();
+                                            Peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
+                                            var decoylibrarySpectrum = GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
+                                            SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, decoylibrarySpectrum.Select(x => x.Mz).ToArray(), decoylibrarySpectrum.Select(x => x.Intensity).ToArray(), SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
+                                            if (s.SpectralContrastAngle().HasValue)
+                                            {
+                                                pwsms.Add((Notch, Peptide));
+                                                pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
+                                            }
                                         }
                                     }
+                                    catch
+                                    {
+
+                                    }
+                                    
                                 }
                                 if (pwsmSpectralAngles.Count > 0 && !pwsmSpectralAngles.Max().Equals(null))
                                 {

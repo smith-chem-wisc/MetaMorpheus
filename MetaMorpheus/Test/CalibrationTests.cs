@@ -76,7 +76,6 @@ namespace Test
             Directory.Delete(unitTestFolder, true);
         }
 
-
         [Test]
         public static void CalibrationTestLowRes()
         {
