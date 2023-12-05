@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using EngineLayer.CrosslinkSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using Proteomics.ProteolyticDigestion;
@@ -154,6 +153,13 @@ namespace MetaMorpheusGUI
             CheckBoxNoOneHitWonders.IsChecked = task._glycoSearchParameters.NoOneHitWonders;
             ModPepsAreUnique.IsChecked = task._glycoSearchParameters.ModPeptidesAreDifferent;
 
+            //quantification
+            CheckBoxNoQuant.IsChecked = !task._glycoSearchParameters.DoQuantification;
+            CheckBoxLFQ.IsChecked = task._glycoSearchParameters.DoQuantification;
+            PeakFindingToleranceTextBox.Text = task._glycoSearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
+            CheckBoxMatchBetweenRuns.IsChecked = task._glycoSearchParameters.DoMbrAnalysis;
+            CheckBoxNormalize.IsChecked = task._glycoSearchParameters.Normalize;
+
             //output options
             WriteDecoyCheckBox.IsChecked = task._glycoSearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task._glycoSearchParameters.WriteContaminants;
@@ -300,6 +306,17 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
 
+            //Protien Inference
+            TheTask._glycoSearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
+            TheTask._glycoSearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
+            TheTask._glycoSearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
+
+            //Quantification Options
+            TheTask._glycoSearchParameters.DoQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask._glycoSearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
+            TheTask._glycoSearchParameters.DoMbrAnalysis = CheckBoxMatchBetweenRuns.IsChecked.Value;
+            TheTask._glycoSearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
+
             //Output Options
             TheTask._glycoSearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask._glycoSearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
@@ -359,9 +376,9 @@ namespace MetaMorpheusGUI
 
 
             var listOfModsVariable = new List<(string, string)>();
-            foreach (var heh in VariableModTypeForTreeViewObservableCollection)
+            foreach (var modTypeForTreeView in VariableModTypeForTreeViewObservableCollection)
             {
-                listOfModsVariable.AddRange(heh.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
+                listOfModsVariable.AddRange(modTypeForTreeView.Children.Where(b => b.Use).Select(b => (b.Parent.DisplayName, b.ModName)));
             }
 
             var listOfModsFixed = new List<(string, string)>();

@@ -22,6 +22,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using Readers;
+using System.Threading;
 
 namespace GuiFunctions
 {
@@ -132,7 +133,14 @@ namespace GuiFunctions
 
             spectraFile.InitiateDynamicConnection();
             MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(psm.Ms2ScanNumber);
+            
             LibrarySpectrum librarySpectrum = null;
+            if (SpectralLibrary != null)
+            {
+                SpectralLibrary.TryGetSpectrum(psm.FullSequence, psm.PrecursorCharge, out var librarySpectrum1);
+                librarySpectrum = librarySpectrum1;
+            }
+
             //if not crosslinked
             if (psm.BetaPeptideBaseSequence == null)
             {
@@ -788,6 +796,7 @@ namespace GuiFunctions
                 {
                     connection.Value.CloseDynamicConnection();
                 }
+                Thread.Sleep(1000); // sleep for one second to allow for test methods ran asychronously in parallel to finish, otherwise the tests will fail
                 MsDataFiles.Clear();
             }
         }
@@ -991,11 +1000,11 @@ namespace GuiFunctions
                     }
                 }
 
-                foreach (var psm in AllPsms)
+                foreach (var group in AllPsms
+                             .GroupBy(p => (p.Ms2ScanNumber, p.FileNameWithoutExtension))
+                             .Where(group => group.Count() > 1))
                 {
-                    if (AllPsms.Count(p =>
-                            p.Ms2ScanNumber == psm.Ms2ScanNumber &&
-                            p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
+                    foreach (var psm in group)
                     {
                         ChimericPsms.Add(psm);
                     }
