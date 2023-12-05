@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
-        private TaskSettingViewModel TaskSettingViewModel;
+        public TaskSettingViewModel TaskSettingViewModel { get; init; }
         private string _defaultMultiplexType = "TMT10";
 
 
@@ -49,14 +49,14 @@ namespace MetaMorpheusGUI
             
             TheTask = task ?? new SearchTask();
 
-            PopulateChoices();//
-
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as SearchTask);
             TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
             TaskSettingsCtrl.DataContext = TaskSettingViewModel;
+            setDefaultbutton.DataContext = TaskSettingViewModel;
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            PopulateChoices();
 
             if (task == null)
             {
@@ -193,8 +193,6 @@ namespace MetaMorpheusGUI
             {
                 SemiSpecificSearchRadioButton.IsChecked = true;
             }
-            CheckBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
-            CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             CheckBoxParsimony.IsChecked = task.SearchParameters.DoParsimony;
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification;
@@ -1342,12 +1340,6 @@ namespace MetaMorpheusGUI
             CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
         }
 
-        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
-        {
-           // SaveButton_Click(sender, e);
-            //Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
-            TaskSettingViewModel.SaveAsDefaultSettings();
-        }
 
         /// <summary>
         /// Retained/Lost Methionine is best handled through truncation search when truncation search is selected.
@@ -1371,16 +1363,7 @@ namespace MetaMorpheusGUI
         {
             MinInternalFragmentLengthTextBox.Text = "4";
         }
-
-        private void TaskSettingsCtrl_Loaded(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        //private void TaskSettingsCtrl_Loaded(object sender, RoutedEventArgs e)
-        //{
-
-        //}
+        
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged

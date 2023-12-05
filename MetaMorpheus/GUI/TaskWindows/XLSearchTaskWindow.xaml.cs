@@ -487,10 +487,5 @@ namespace MetaMorpheusGUI
                 }
             }
         }
-
-        private void OutputFileNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
     }
 }

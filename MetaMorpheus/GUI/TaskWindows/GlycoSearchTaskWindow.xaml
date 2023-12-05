@@ -40,13 +40,19 @@
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.ColumnSpan="2">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+                <Grid DockPanel.Dock="Top" Margin="5,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
                     <Label Content="Task Name" />
-                    <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                    <TextBox x:Name="OutputFileNameTextBox" Width="150" Grid.Column="1">
                         <TextBox.Style>
-                            <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
+                            <Style TargetType="TextBox">
                                 <Style.Resources>
-                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center"
+                                                 Stretch="None">
                                         <VisualBrush.Visual>
                                             <Label Content="SearchTask" Foreground="Gray" />
                                         </VisualBrush.Visual>
@@ -66,14 +72,12 @@
                             </Style>
                         </TextBox.Style>
                     </TextBox>
-                </StackPanel>
-
-                <StackPanel DockPanel.Dock="Top" Margin="10">
 
                     <!-- save settings -->
-                    <local:SaveSettingsControl x:Name="TaskSettingsCtrl" 
-             DataContext="{Binding TaskSettingViewModel}" />
-                </StackPanel>
+                    <local:SaveSettingsControl x:Name="TaskSettingsCtrl" Grid.Column="2" HorizontalAlignment="Right"
+                                               DataContext="{Binding TaskSettingViewModel}" />
+
+                </Grid>
 
                 <StackPanel DockPanel.Dock="Top">
                     <Grid>

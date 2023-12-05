@@ -33,7 +33,6 @@ namespace MetaMorpheusGUI
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
         {
             InitializeComponent();
-            PopulateChoices();
             TheTask = myCalibrateTask ?? new CalibrationTask();
 
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as CalibrationTask);
@@ -42,6 +41,7 @@ namespace MetaMorpheusGUI
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            PopulateChoices();
 
             if (myCalibrateTask == null)
             {

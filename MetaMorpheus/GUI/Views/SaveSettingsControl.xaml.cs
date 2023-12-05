@@ -34,7 +34,7 @@ namespace MetaMorpheusGUI
         private void SaveAs_Click(object sender, RoutedEventArgs e)
         {
             var taskSettingsViewModel = DataContext as TaskSettingViewModel 
-                ?? throw new ArgumentException($"DataContext is of type {DataContext.GetType()}, TaskSettingsViewModel is reaquired.");
+                ?? throw new ArgumentException($"DataContext is of type {DataContext.GetType()}, TaskSettingsViewModel is required.");
 
 
             SaveSettingsWindow newWindow = new SaveSettingsWindow(taskSettingsViewModel);

@@ -47,15 +47,22 @@
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <DockPanel>
-                <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="5,0,0,0">
-                    <Label Content="Enter Task Name:" />
-                    <TextBox x:Name="OutputFileNameTextBox" Width="150">
+                <Grid DockPanel.Dock="Top" Margin="5,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Label Content="Enter Task Name:" Grid.Column="0" />
+                    <TextBox x:Name="OutputFileNameTextBox" Width="150" Grid.Column="1">
                         <TextBox.Style>
                             <Style TargetType="TextBox" xmlns:sys="clr-namespace:System;assembly=mscorlib">
                                 <Style.Resources>
-                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center" Stretch="None">
+                                    <VisualBrush x:Key="CueBannerBrush" AlignmentX="Left" AlignmentY="Center"
+                                                 Stretch="None">
                                         <VisualBrush.Visual>
-                                            <Label Content="SearchTask" Foreground="Gray" Padding="5 0 0 0"/>
+                                            <Label Content="SearchTask" Foreground="Gray" Padding="5 0 0 0" />
                                         </VisualBrush.Visual>
                                     </VisualBrush>
                                 </Style.Resources>
@@ -68,25 +75,26 @@
                                     </Trigger>
                                     <Trigger Property="IsKeyboardFocused" Value="True">
                                         <Setter Property="Background" Value="White" />
-                                        <Setter Property="Padding" Value="5 0 0 0"/>
-                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        <Setter Property="Padding" Value="5 0 0 0" />
+                                        <Setter Property="VerticalContentAlignment" Value="Center" />
                                     </Trigger>
                                     <Trigger Property="IsKeyboardFocused" Value="False">
-                                        <Setter Property="Padding" Value="5 0 0 0"/>
-                                        <Setter Property="VerticalContentAlignment" Value="Center"/>
+                                        <Setter Property="Padding" Value="5 0 0 0" />
+                                        <Setter Property="VerticalContentAlignment" Value="Center" />
                                     </Trigger>
                                 </Style.Triggers>
                             </Style>
                         </TextBox.Style>
                     </TextBox>
-                </StackPanel>
+
+                    <!-- save settings -->
+                    <local:SaveSettingsControl x:Name="TaskSettingsCtrl" Grid.Column="2" HorizontalAlignment="Right"
+                                               DataContext="{Binding TaskSettingViewModel}" />
+                </Grid>
 
                 <!-- BASIC SETTINGS -->
                 <StackPanel DockPanel.Dock="Top" Margin="10">
 
-                    <!-- save settings -->
-                    <local:SaveSettingsControl x:Name="TaskSettingsCtrl" 
-                                               DataContext="{Binding TaskSettingViewModel}" />
 
                     <!-- Search Parameters -->
                     <GroupBox Header="Search Parameters" DockPanel.Dock="Top" >
@@ -582,7 +590,6 @@
                                 <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library" IsEnabled="{Binding IsChecked, Converter={local:BooleanInverter}, ElementName=CheckBoxLFQwSpectralRecovery }"/>
                                 <CheckBox x:Name="UpdateSpectralLibraryCheckBox" Content="Update spectral library" />
                                 <CheckBox x:Name="CompressIndividualResultsCheckBox" Content="Compress individual file results" IsEnabled="{Binding IsChecked, ElementName=WriteIndividualResultsCheckBox}"/>
-
                             </StackPanel>
 
                             <!-- filtering options -->
@@ -1222,10 +1229,11 @@
 
             </DockPanel>
         </ScrollViewer>
-        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5">
+        <StackPanel  Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="1" Margin="5" >
             <Button x:Name="cancelButton" Content="Cancel" Click="CancelButton_Click" />
             <Button x:Name="saveButton" Content="Save Search Task" Click="SaveButton_Click" FontSize="24" />
-            <Button x:Name="setDefaultbutton" Click="SaveAsDefault_Click" Width="100" >
+            <Button x:Name="setDefaultbutton" 
+                    Command="{Binding SaveAsDefaultSettingsCommand}"  Width="100" >
                 <TextBlock Text="Save As Default" TextWrapping="Wrap" TextAlignment="Center"/>
                 <ToolTipService.ToolTip>
                     <ToolTip Content="Save these parameters as the default. MetaMorpheus can return to original defaults by deleting the folder 'DefaultParameters'" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />

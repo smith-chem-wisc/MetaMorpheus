@@ -37,10 +37,5 @@ namespace MetaMorpheusGUI
             DialogResult = false;
             this.Close();
         }
-
-        private void Save_Click_1(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 }

@@ -33,9 +33,14 @@ namespace GuiFunctions
         #endregion
 
         #region Public Properties
-
+        /// <summary>
+        /// All the settings that are saved
+        /// </summary>
         public ObservableCollection<string> AllSettings => allSettings;
 
+        /// <summary>
+        /// The name typed in the text box
+        /// </summary>
         public string TypedSettingsName
         {
             get => typedSettingsName;
@@ -46,6 +51,9 @@ namespace GuiFunctions
             }
         }
 
+        /// <summary>
+        /// The setting that is selected
+        /// </summary>
         public string SelectedSettings
         {
             get => selectedSettings;
@@ -58,6 +66,9 @@ namespace GuiFunctions
             }
         }
 
+        /// <summary>
+        /// The dictionary that saves all the settings that are saved
+        /// </summary>
         public Dictionary<string, MetaMorpheusTask> AllSettingsDict
         {
             get => allSettingsDict;
@@ -264,7 +275,6 @@ namespace GuiFunctions
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
             TypedSettingsName = "";
-            //SelectDefaultAuto();
         }
 
         /// <summary>
@@ -291,7 +301,6 @@ namespace GuiFunctions
             AllSettingsDict.Remove(SelectedSettings);
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
-            //SelectDefaultAuto();
         }
 
         /// <summary>
@@ -334,21 +343,11 @@ namespace GuiFunctions
             AllSettingsDict.Remove(SelectedSettings);
             TomlFileFolderSerializer.Save(currentName + "(Default)", temp);
             AllSettingsDict.Add(currentName + "(Default)", temp);
-
+            SelectedSettings = currentName + "(Default)";
             OnPropertyChanged(nameof(AllSettings));
             OnPropertyChanged(nameof(AllSettingsDict));
-            //SelectDefaultAuto();
         }
-
-        
-
-    #endregion
-
-        #region Helpers
-        
     }
-
     #endregion
-
 }
 

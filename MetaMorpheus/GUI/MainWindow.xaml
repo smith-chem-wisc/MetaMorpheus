@@ -450,33 +450,32 @@
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="25"/>
-                        <RowDefinition Height="41*"/>
-                        <RowDefinition Height="153*"/>
+                        <RowDefinition Height="1*"/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
                     <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <!--Detail text-->
-                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Margin="15,0,10,0">
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
                         Add spectra file(s) in .mzML, .mgf, or Thermo .raw format.
                     </TextBlock>
 
                     <!--Button to add spectra files-->
-                    <Button Name="AddSpectraButton" Grid.Row="2" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Left" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="634,0,0,0"/>
+                    <Button Name="AddSpectraButton" Grid.Row="2" Content="+ADD SPECTRA" Click="AddSpectraFile_Click" HorizontalAlignment="Right" 
+                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0"/>
 
                     <Button Name="SetFileSpecificSettingsButton" Grid.Row="2" Content="SET FILE-SPECIFIC SETTINGS" Click="SetFileSpecificParameters_Click" 
-                            HorizontalAlignment="Left" Style="{StaticResource ImportantButtonStyle}"
-                        Margin="433,0,0,0"/>
+                            HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
+                            Margin="0,0,211,0"/>
 
                     <Button Name="SetExperimentalDesignButton" Grid.Row="2" Content="SET EXPERIMENTAL DESIGN" Click="SetExperimentalDesign_Click" 
-                            HorizontalAlignment="Left" Style="{StaticResource ImportantButtonStyle}"
-                        Margin="232,0,0,0"/>
+                            HorizontalAlignment="Right" Style="{StaticResource ImportantButtonStyle}"
+                            Margin="0,0,412,0"/>
 
                     <!--The list of spectra files-->
                     <DataGrid Name="dataGridSpectraFiles" ItemsSource="{Binding}" Grid.Row="3" Style="{StaticResource x:DataGridStyle}"
-                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown" Margin="10,0,10,10" Grid.RowSpan="2">
+                              ColumnHeaderStyle="{StaticResource DataGridColumnHeaderStyle}" PreviewKeyDown="Window_PreviewKeyDown">
                         <DataGrid.RowStyle>
                             <Style TargetType="{x:Type DataGridRow}" BasedOn="{StaticResource SpectraFileDataGridItemStyle}" />
                         </DataGrid.RowStyle>
@@ -494,7 +493,7 @@
             </TabItem>
 
             <!--Workflow tab-->
-            <TabItem Name="TasksTab" Header="Tasks" TabIndex="0" Style="{StaticResource TabItemStyle}" Height="35" Margin="0,0,2,0" VerticalAlignment="Bottom">
+            <TabItem Name="TasksTab" Header="Tasks" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="50"/>

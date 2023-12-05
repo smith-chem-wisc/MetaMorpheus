@@ -34,7 +34,6 @@ namespace MetaMorpheusGUI
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
         {
             InitializeComponent();
-            PopulateChoices();
             TheTask = myGPTMDtask ?? new GptmdTask();
 
             var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as GptmdTask);
@@ -43,6 +42,7 @@ namespace MetaMorpheusGUI
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            PopulateChoices();
 
             if (myGPTMDtask == null)
             {
@@ -573,9 +573,5 @@ namespace MetaMorpheusGUI
             Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"GptmdTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
         }
 
-        private void TaskSettingsCtrl_Loaded(object sender, RoutedEventArgs e)
-        {
-
-        }
     }
 }
