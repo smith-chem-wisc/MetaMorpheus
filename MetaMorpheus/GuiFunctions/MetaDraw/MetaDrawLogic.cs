@@ -24,6 +24,7 @@ using Easy.Common.Extensions;
 using EngineLayer.CrosslinkSearch;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using Readers;
+using System.Threading;
 
 namespace GuiFunctions
 {
@@ -806,6 +807,7 @@ namespace GuiFunctions
                 {
                     connection.Value.CloseDynamicConnection();
                 }
+                Thread.Sleep(1000); // sleep for one second to allow for test methods ran asychronously in parallel to finish, otherwise the tests will fail
                 MsDataFiles.Clear();
             }
         }
