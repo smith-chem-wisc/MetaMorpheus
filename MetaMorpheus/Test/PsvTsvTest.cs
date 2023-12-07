@@ -36,7 +36,7 @@ namespace Test
             Assert.AreEqual(1, parsedPsms.Count);
             IEnumerable<string> expectedIons = new string[] { "y3+1", "y4+1", "b4+1", "b5+1", "b6+1", "b8+1" };
             Assert.That(6 == parsedPsms[0].MatchedIons.Select(p => p.Annotation).Intersect(expectedIons).Count());
-            Assert.That(parsedPsms[0].UniqueSequence, Is.EqualTo(parsedPsms[0].FullSequence));
+            Assert.That("TADDYTWEGDVGNDNAYQKFVK", Is.EqualTo(parsedPsms[0].FullSequence));
         }
 
         [Test]

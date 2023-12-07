@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using Easy.Common.Extensions;
 using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer
@@ -327,42 +328,7 @@ namespace EngineLayer
                 }
                 else if (readingPeaks)
                 {
-                    split = line.Split(fragmentSplit, StringSplitOptions.RemoveEmptyEntries);
-
-                    // read fragment m/z
-                    var experMz = double.Parse(split[0], CultureInfo.InvariantCulture);
-
-                    // read fragment intensity
-                    var experIntensity = double.Parse(split[1], CultureInfo.InvariantCulture);
-
-                    // read fragment type, number
-                    Match regexMatchResult = IonParserRegex.Match(split[2]);
-
-                    double neutralLoss = 0;
-                    if (split[2].Contains("-"))
-                    {
-                        String[] neutralLossInformation = split[2].Split(neutralLossSplit, StringSplitOptions.RemoveEmptyEntries).ToArray();
-                        neutralLoss = double.Parse(neutralLossInformation[1]);
-                    }
-
-                    string fragmentType = regexMatchResult.Groups[1].Value;
-                    int fragmentNumber = int.Parse(regexMatchResult.Groups[2].Value);
-                    int fragmentCharge = 1;
-
-                    if (regexMatchResult.Groups.Count > 3 && !string.IsNullOrWhiteSpace(regexMatchResult.Groups[3].Value))
-                    {
-                        fragmentCharge = int.Parse(regexMatchResult.Groups[3].Value);
-                    }
-
-                    ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), fragmentType, true);
-
-                    //TODO: figure out terminus
-                    FragmentationTerminus terminus = (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), "None", true);
-
-                    //TODO: figure out amino acid position
-                    var product = new Product(peakProductType, terminus, experMz.ToMass(fragmentCharge), fragmentNumber, 0, neutralLoss);
-
-                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, experMz, experIntensity, fragmentCharge));
+                    matchedFragmentIons.Add(ReadFragmentIon(line, fragmentSplit, neutralLossSplit, sequence));
                 }
             }
 
@@ -557,65 +523,73 @@ namespace EngineLayer
                 }
                 else if (readingPeaks)
                 {
-                    split = line.Split(fragmentSplit, StringSplitOptions.RemoveEmptyEntries);
-
-                    // read fragment m/z
-                    var experMz = double.Parse(split[0], CultureInfo.InvariantCulture);
-
-                    // read fragment intensity
-                    var experIntensity = double.Parse(split[1], CultureInfo.InvariantCulture);
-
-                    // read fragment type, number
-                    Match regexMatchResult = IonParserRegex.Match(split[2]);
-
-                    double neutralLoss = 0;
-                    if (split[2].Contains("-"))
-                    {
-                        String[] neutralLossInformation = split[2].Split(neutralLossSplit, StringSplitOptions.RemoveEmptyEntries).ToArray();
-                        neutralLoss = double.Parse(neutralLossInformation[1]);
-                    }
-
-                    string fragmentType = regexMatchResult.Groups[1].Value;
-                    int fragmentNumber = int.Parse(regexMatchResult.Groups[2].Value);
-                    int fragmentCharge = 1;
-
-                    if (regexMatchResult.Groups.Count > 3 && !string.IsNullOrWhiteSpace(regexMatchResult.Groups[3].Value))
-                    {
-                        fragmentCharge = int.Parse(regexMatchResult.Groups[3].Value);
-                    }
-
                     bool isBetaPeptideIon = line.Contains("BetaPeptide");
-
-                    ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), fragmentType, true);
-                    // Default product for productTypes not contained in the ProductTypeToFragmentationTerminus dictionary (e.g., "M" type ions)
-                    Product product = new Product(peakProductType, (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus),
-                        "None", true), experMz, fragmentNumber, 0, 0);
-
-                    if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.TryGetValue(peakProductType,
-                            out var terminus))
-                    {
-                        int peptideLength = isBetaPeptideIon
-                            ? !betaSequence.Equals("") ? betaSequence.Length : 25 // Arbitrary default length
-                            : !alphaSequence.Equals("") ? alphaSequence.Length : 25; // Arbitrary default length
-                        product = new Product(peakProductType, terminus, experMz.ToMass(fragmentCharge), fragmentNumber,
-                            aminoAcidPosition: terminus == FragmentationTerminus.N ? fragmentNumber : peptideLength - fragmentNumber,
-                            neutralLoss);
-                    }
-
-                    MatchedFragmentIon ion = new MatchedFragmentIon(ref product, experMz, experIntensity, fragmentCharge);
+                    string peptideSequence = isBetaPeptideIon ? betaSequence : alphaSequence;
+                    MatchedFragmentIon fragmentIon =
+                        ReadFragmentIon(line, fragmentSplit, neutralLossSplit, peptideSequence);
                     if (isBetaPeptideIon)
                     {
-                        betaPeptideIons.Add(ion);
+                        betaPeptideIons.Add(fragmentIon);
                     }
                     else
                     {
-                        alphaPeptideIons.Add(ion);
+                        alphaPeptideIons.Add(fragmentIon);
                     }
                 }
             }
 
             CrosslinkLibrarySpectrum betaPeptideSpectrum = new CrosslinkLibrarySpectrum(uniqueSequence, precursorMz, z, betaPeptideIons, rt);
             return new CrosslinkLibrarySpectrum(uniqueSequence, precursorMz, z, alphaPeptideIons, rt, betaPeptideSpectrum);
+        }
+
+        /// <summary>
+        /// Creates a matched fragment ion from a line in a spectral library. Does not work with P-Deep libraries.
+        /// </summary>
+        public static MatchedFragmentIon ReadFragmentIon(string fragmentIonLine, char[] fragmentSplit, 
+            char[] neutralLossSplit, string peptideSequence)
+        {
+            string[] split = fragmentIonLine.Split(fragmentSplit, StringSplitOptions.RemoveEmptyEntries);
+
+            // read fragment m/z
+            var experMz = double.Parse(split[0], CultureInfo.InvariantCulture);
+
+            // read fragment intensity
+            var experIntensity = double.Parse(split[1], CultureInfo.InvariantCulture);
+
+            // read fragment type, number
+            Match regexMatchResult = IonParserRegex.Match(split[2]);
+
+            double neutralLoss = 0;
+            if (split[2].Contains("-"))
+            {
+                String[] neutralLossInformation = split[2].Split(neutralLossSplit, StringSplitOptions.RemoveEmptyEntries).ToArray();
+                neutralLoss = double.Parse(neutralLossInformation[1]);
+            }
+
+            string fragmentType = regexMatchResult.Groups[1].Value;
+            int fragmentNumber = int.Parse(regexMatchResult.Groups[2].Value);
+            int fragmentCharge = 1;
+
+            if (regexMatchResult.Groups.Count > 3 && !string.IsNullOrWhiteSpace(regexMatchResult.Groups[3].Value))
+            {
+                fragmentCharge = int.Parse(regexMatchResult.Groups[3].Value);
+            }
+
+            ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), fragmentType, true);
+            // Default product for productTypes not contained in the ProductTypeToFragmentationTerminus dictionary (e.g., "M" type ions)
+            Product product = new Product(peakProductType, (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus),
+                "None", true), experMz, fragmentNumber, 0, 0);
+
+            if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.TryGetValue(peakProductType,
+                    out var terminus))
+            {
+                int peptideLength = peptideSequence.IsNotNullOrEmptyOrWhiteSpace() ? peptideSequence.Length : 25; // Arbitrary default peptide length
+                product = new Product(peakProductType, terminus, experMz.ToMass(fragmentCharge), fragmentNumber,
+                    aminoAcidPosition: terminus == FragmentationTerminus.N ? fragmentNumber : peptideLength - fragmentNumber,
+                    neutralLoss);
+            }
+
+            return new MatchedFragmentIon(ref product, experMz, experIntensity, fragmentCharge);
         }
 
         private void IndexSpectralLibrary(string path)
