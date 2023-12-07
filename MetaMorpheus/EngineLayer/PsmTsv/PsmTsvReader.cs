@@ -104,6 +104,7 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.PEP, Array.IndexOf(spl, PsmTsvHeader.PEP));
             parsedHeader.Add(PsmTsvHeader.PEP_QValue, Array.IndexOf(spl, PsmTsvHeader.PEP_QValue));
 
+            parsedHeader.Add(PsmTsvHeader.UniqueSequence, Array.IndexOf(spl, PsmTsvHeader.UniqueSequence));
             parsedHeader.Add(PsmTsvHeader.CrossTypeLabel, Array.IndexOf(spl, PsmTsvHeader.CrossTypeLabel));
             parsedHeader.Add(PsmTsvHeader.LinkResiduesLabel, Array.IndexOf(spl, PsmTsvHeader.LinkResiduesLabel));
             parsedHeader.Add(PsmTsvHeader.ProteinLinkSiteLabel, Array.IndexOf(spl, PsmTsvHeader.ProteinLinkSiteLabel));

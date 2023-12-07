@@ -24,22 +24,15 @@ namespace EngineLayer
             List<MatchedFragmentIon> peaks,
             double rt,
             CrosslinkSpectralMatch betaPeptide,
-            bool isDecoy = false) : base(sequence, precursorMz, precursorCharge, peaks, rt, isDecoy)
-        {
-            if (betaPeptide == null)
-            {
-                IsBetaPeptide = true;
-            }
-            else
-            {
-                BetaPeptideSpectrum = new CrosslinkLibrarySpectrum(
-                sequence,
-                precursorMz,
+            bool isDecoy = false) : this(
+                sequence, 
+                precursorMz, 
                 precursorCharge,
-                betaPeptide.MatchedFragmentIons,
-                rt);
-            }
-            SetAlphaBetaSequence();
+                peaks, 
+                rt, 
+                new CrosslinkLibrarySpectrum(sequence, precursorMz, precursorCharge, betaPeptide.MatchedFragmentIons, rt), 
+                isDecoy)
+        {
         }
 
         public CrosslinkLibrarySpectrum(

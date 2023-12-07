@@ -83,26 +83,7 @@ namespace EngineLayer
         /// <summary>
         /// If Crosslink, this contains the alpha and beta sequences. Otherwise, it contains the full sequence
         /// </summary>
-        public string UniqueSequence
-        {
-            get
-            {
-                if (_uniqueSequence.IsNullOrEmpty())
-                {
-                    if (BetaPeptideFullSequence.IsNullOrEmptyOrWhiteSpace())
-                    {
-                        _uniqueSequence = FullSequence;
-                    }
-                    else
-                    {
-                        _uniqueSequence = FullSequence + BetaPeptideFullSequence;
-                    }
-                        
-                }
-                return _uniqueSequence;
-            }
-        }
-        private string _uniqueSequence;
+        public string UniqueSequence { get; }
         public string ParentIons { get; }
         public double? RetentionTime { get; }
 
@@ -187,6 +168,7 @@ namespace EngineLayer
 
             //For crosslinks
             CrossType = (parsedHeader[PsmTsvHeader.CrossTypeLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.CrossTypeLabel]].Trim();
+            UniqueSequence = (parsedHeader[PsmTsvHeader.UniqueSequence] < 0) ? null : spl[parsedHeader[PsmTsvHeader.UniqueSequence]].Trim();
             LinkResidues = (parsedHeader[PsmTsvHeader.LinkResiduesLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.LinkResiduesLabel]].Trim();
             ProteinLinkSite = (parsedHeader[PsmTsvHeader.ProteinLinkSiteLabel] < 0) ? null : (spl[parsedHeader[PsmTsvHeader.ProteinLinkSiteLabel]] == "" ? null : (int?)int.Parse(spl[parsedHeader[PsmTsvHeader.ProteinLinkSiteLabel]].Trim()));
             Rank = (parsedHeader[PsmTsvHeader.RankLabel] < 0) ? null : (int?)int.Parse(spl[parsedHeader[PsmTsvHeader.RankLabel]].Trim());

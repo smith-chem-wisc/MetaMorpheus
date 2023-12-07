@@ -30,6 +30,12 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
+        /// <summary>
+        /// UniqueSequence uniquely identifies crosslinked peptides to enable library lookup.
+        /// For crosslinks, the unique sequence is identical to the spectral library name ( PEPTIDEK(8)EDITPEPK(8) ),
+        /// where the numbers in parentheses represent the one-based residue where the crosslink occurs on each peptide.
+        /// For non crosslinked peptides, UniqueSequence is identical to the full sequence.
+        /// </summary>
         public string UniqueSequence
         {
             get
@@ -229,6 +235,7 @@ namespace EngineLayer.CrosslinkSearch
         {
             var sb = new StringBuilder();
             sb.Append(PsmTsvHeader.FileName + '\t');
+            sb.Append(PsmTsvHeader.UniqueSequence + '\t');
             sb.Append(PsmTsvHeader.Ms2ScanNumber + '\t');
             sb.Append(PsmTsvHeader.PrecursorScanNum + '\t');
             sb.Append(PsmTsvHeader.PrecursorMz + '\t');
@@ -287,6 +294,7 @@ namespace EngineLayer.CrosslinkSearch
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
+            sb.Append(PsmTsvHeader.UniqueSequence + '\t');
             sb.Append("Scan Number" + '\t');
             sb.Append("Precursor Scan Number" + '\t');
             sb.Append("Precursor MZ" + '\t');
@@ -336,6 +344,7 @@ namespace EngineLayer.CrosslinkSearch
 
             var sb = new StringBuilder();
             sb.Append(FullFilePath + "\t");
+            sb.Append(UniqueSequence + "\t");
             sb.Append(ScanNumber + "\t");
             sb.Append(PrecursorScanNumber + "\t");
             sb.Append(ScanPrecursorMonoisotopicPeakMz + "\t");

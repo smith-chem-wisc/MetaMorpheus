@@ -493,6 +493,17 @@ namespace EngineLayer
 
             string[] splitNameLine = nameLine.Split(nameSplit);
             string uniqueSequence = splitNameLine[0].Replace("Name:", string.Empty).Trim();
+            string alphaSequence = "";
+            string betaSequence = "";
+            string[] splitAlphaBetaSequence = new Regex(pattern: @"\(\d+\)").Split(uniqueSequence);
+            if (splitAlphaBetaSequence.Length >= 2)
+            {
+                alphaSequence = splitAlphaBetaSequence[0];
+                betaSequence = splitAlphaBetaSequence[1];
+            } else if (splitAlphaBetaSequence.Length == 1)
+            {
+                alphaSequence = splitAlphaBetaSequence[0];
+            }
             int z = int.Parse(splitNameLine[1].Trim());
             double precursorMz = 0;
             double rt = 0;
@@ -573,16 +584,26 @@ namespace EngineLayer
                         fragmentCharge = int.Parse(regexMatchResult.Groups[3].Value);
                     }
 
+                    bool isBetaPeptideIon = line.Contains("BetaPeptide");
+
                     ProductType peakProductType = (ProductType)Enum.Parse(typeof(ProductType), fragmentType, true);
+                    // Default product for productTypes not contained in the ProductTypeToFragmentationTerminus dictionary (e.g., "M" type ions)
+                    Product product = new Product(peakProductType, (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus),
+                        "None", true), experMz, fragmentNumber, 0, 0);
 
-                    //TODO: figure out terminus
-                    FragmentationTerminus terminus = (FragmentationTerminus)Enum.Parse(typeof(FragmentationTerminus), "None", true);
-
-                    //TODO: figure out amino acid position
-                    var product = new Product(peakProductType, terminus, experMz.ToMass(fragmentCharge), fragmentNumber, 0, neutralLoss);
+                    if (TerminusSpecificProductTypes.ProductTypeToFragmentationTerminus.TryGetValue(peakProductType,
+                            out var terminus))
+                    {
+                        int peptideLength = isBetaPeptideIon
+                            ? !betaSequence.Equals("") ? betaSequence.Length : 25 // Arbitrary default length
+                            : !alphaSequence.Equals("") ? alphaSequence.Length : 25; // Arbitrary default length
+                        product = new Product(peakProductType, terminus, experMz.ToMass(fragmentCharge), fragmentNumber,
+                            aminoAcidPosition: terminus == FragmentationTerminus.N ? fragmentNumber : peptideLength - fragmentNumber,
+                            neutralLoss);
+                    }
 
                     MatchedFragmentIon ion = new MatchedFragmentIon(ref product, experMz, experIntensity, fragmentCharge);
-                    if (line.Contains("BetaPeptide"))
+                    if (isBetaPeptideIon)
                     {
                         betaPeptideIons.Add(ion);
                     }
