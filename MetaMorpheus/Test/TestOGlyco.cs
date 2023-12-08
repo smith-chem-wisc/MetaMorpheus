@@ -23,7 +23,7 @@ using System.Text;
 namespace Test
 {
     [TestFixture]
-    public class XLTestOGlyco
+    public class TestOGlyco
     {
         private static GlycanBox[] OGlycanBoxes { get; set; }
 

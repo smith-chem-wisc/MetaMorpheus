@@ -251,7 +251,7 @@ namespace EngineLayer.GlycoSearch
 
             sb.Append("0" + "\t"); //This is space for PEP
 
-            sb.Append("0" + "\t"); //This is space for PEP Q-value
+            sb.Append("0"); //This is space for PEP Q-value
 
             return sb.ToString();
         }

@@ -20,7 +20,7 @@ using Nett;
 namespace Test
 {
     [TestFixture]
-    public class XLTestNGlyco
+    public class TestNGlyco
     {
         [Test]
         public static void TestNGlycoPsmsHeader()
