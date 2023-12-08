@@ -430,7 +430,7 @@ namespace TaskLayer
             string header = GlycoSpectralMatch.GetTabSepHeaderSingle();
             if (writeGlycoPsms)
             {
-                header += ("\t" + GlycoSpectralMatch.GetTabSeperatedHeaderGlyco());
+                header += (GlycoSpectralMatch.GetTabSeperatedHeaderGlyco());
             }
 
             using (StreamWriter output = new StreamWriter(filePath))

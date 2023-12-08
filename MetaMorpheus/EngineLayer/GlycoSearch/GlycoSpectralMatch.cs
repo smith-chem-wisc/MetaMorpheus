@@ -153,7 +153,7 @@ namespace EngineLayer.GlycoSearch
         public static string GetTabSeperatedHeaderGlyco()
         {
             var sb = new StringBuilder();
-            
+            sb.Append("\t");//provides the separation needed from GetTabSepHeaderSingle()
             sb.Append("Localization Score" + '\t');
             sb.Append("Yion Score" + '\t');
             sb.Append("DiagonosticIon Score" + '\t');
@@ -168,7 +168,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append("Localized Glycans with Peptide Site Specific Probability" + '\t');
             sb.Append("Localized Glycans with Protein Site Specific Probability" + '\t');
             sb.Append("All potential glycan localizations" + '\t');//Not used for N-Glyco
-            sb.Append("AllSiteSpecificLocalizationProbability" + '\t');//Not used for N-Glyco
+            sb.Append("AllSiteSpecificLocalizationProbability");//Not used for N-Glyco
 
             return sb.ToString();
         }
