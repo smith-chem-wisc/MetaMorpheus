@@ -13,7 +13,7 @@ using Easy.Common.Extensions;
 
 namespace TaskLayer
 {
-    public static class WriteFile
+    public static class WriteXlFile
     {
         public static void WritePsmCrossToTsv(List<CrosslinkSpectralMatch> items, string filePath, int writeType)
         {
@@ -420,35 +420,37 @@ namespace TaskLayer
             writer.Close();
         }
 
-        public static void WritePsmGlycoToTsv(List<GlycoSpectralMatch> items, string filePath, int writeType)
+        public static void WritePsmGlycoToTsv(List<GlycoSpectralMatch> items, string filePath, bool writeGlycoPsms)
         {
             if (items.Count == 0)
             {
                 return;
             }
 
+            string header = GlycoSpectralMatch.GetTabSepHeaderSingle();
+            if (writeGlycoPsms)
+            {
+                header += ("\t" + GlycoSpectralMatch.GetTabSeperatedHeaderGlyco());
+            }
+
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                string header = "";
-                switch (writeType)
-                {
-                    case 1:
-                        header = GlycoSpectralMatch.GetTabSepHeaderSingle();
-                        break;
-                    case 2:
-                        header = GlycoSpectralMatch.GetTabSepHeaderOGlyco();
-                        break;
-                    case 3:
-                        header = GlycoSpectralMatch.GetTabSepHeaderNGlyco();
-                        break;
-                    default:
-                        break;
-                }
                 output.WriteLine(header);
-                foreach (var heh in items)
+                if (writeGlycoPsms)
                 {
-                    output.WriteLine(heh.ToString());
+                    foreach (var heh in items)
+                    {
+                        output.WriteLine(heh.SingleToString() + "\t" + heh.GlycoToString());
+                    }
                 }
+                else
+                {
+                    foreach (var heh in items)
+                    {
+                        output.WriteLine(heh.SingleToString());
+                    }
+                }
+
             }
         }
 

@@ -61,7 +61,7 @@ namespace TaskLayer
                 foreach (var fullFilePath in currentRawFileList)
                 {
                     string fileNameNoExtension = Path.GetFileNameWithoutExtension(fullFilePath);
-                    WriteFile.WritePepXML_xl(writeToXml.Where(p => p.FullFilePath == fullFilePath).ToList(), proteinList, dbFilenameList[0].FilePath, variableModifications, fixedModifications, localizeableModificationTypes, outputFolder, fileNameNoExtension, commonParameters, xlSearchParameters);
+                    WriteGlycoFile.WritePepXML_xl(writeToXml.Where(p => p.FullFilePath == fullFilePath).ToList(), proteinList, dbFilenameList[0].FilePath, variableModifications, fixedModifications, localizeableModificationTypes, outputFolder, fileNameNoExtension, commonParameters, xlSearchParameters);
                     FinishedWritingFile(Path.Combine(outputFolder, fileNameNoExtension + ".pep.XML"), new List<string> { taskId });
                 }
             }
@@ -115,14 +115,14 @@ namespace TaskLayer
             if (interCsms.Any())
             {
                 string file = Path.Combine(outputFolder, "XL_Interlinks.tsv");
-                WriteFile.WritePsmCrossToTsv(interCsms, file, 2);
+                WriteGlycoFile.WritePsmCrossToTsv(interCsms, file, 2);
                 FinishedWritingFile(file, new List<string> { taskId });
             }
             
             if (xlSearchParameters.WriteOutputForPercolator)
             {
                 var interPsmsXLPercolator = interCsms.Where(p => p.Score >= 2 && p.BetaPeptide.Score >= 2).OrderBy(p => p.ScanNumber).ToList();
-                WriteFile.WriteCrosslinkToTxtForPercolator(interPsmsXLPercolator, outputFolder, "XL_Interlinks_Percolator", xlSearchParameters.Crosslinker);
+                WriteGlycoFile.WriteCrosslinkToTxtForPercolator(interPsmsXLPercolator, outputFolder, "XL_Interlinks_Percolator", xlSearchParameters.Crosslinker);
                 FinishedWritingFile(Path.Combine(outputFolder, "XL_Interlinks_Percolator.txt"), new List<string> { taskId });
             }
 
@@ -130,14 +130,14 @@ namespace TaskLayer
             if (intraCsms.Any())
             {
                 string file = Path.Combine(outputFolder, "XL_Intralinks.tsv");
-                WriteFile.WritePsmCrossToTsv(intraCsms, file, 2);
+                WriteGlycoFile.WritePsmCrossToTsv(intraCsms, file, 2);
                 FinishedWritingFile(file, new List<string> { taskId });
             }
 
             if (xlSearchParameters.WriteOutputForPercolator)
             {
                 var intraPsmsXLPercolator = intraCsms.Where(p => p.Score >= 2 && p.BetaPeptide.Score >= 2).OrderBy(p => p.ScanNumber).ToList();
-                WriteFile.WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, outputFolder, "XL_Intralinks_Percolator", xlSearchParameters.Crosslinker);
+                WriteGlycoFile.WriteCrosslinkToTxtForPercolator(intraPsmsXLPercolator, outputFolder, "XL_Intralinks_Percolator", xlSearchParameters.Crosslinker);
                 FinishedWritingFile(Path.Combine(outputFolder, "XL_Intralinks_Percolator.txt"), new List<string> { taskId });
             }
 
@@ -146,7 +146,7 @@ namespace TaskLayer
             if (singlePsms.Any())
             {
                 string writtenFileSingle = Path.Combine(outputFolder, "SinglePeptides" + ".tsv");
-                WriteFile.WritePsmCrossToTsv(singlePsms, writtenFileSingle, 1);
+                WriteGlycoFile.WritePsmCrossToTsv(singlePsms, writtenFileSingle, 1);
                 FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
             }
 
@@ -154,7 +154,7 @@ namespace TaskLayer
             if (loopPsms.Any())
             {
                 string writtenFileLoop = Path.Combine(outputFolder, "Looplinks" + ".tsv");
-                WriteFile.WritePsmCrossToTsv(loopPsms, writtenFileLoop, 1);
+                WriteGlycoFile.WritePsmCrossToTsv(loopPsms, writtenFileLoop, 1);
                 FinishedWritingFile(writtenFileLoop, new List<string> { taskId });
             }
 
@@ -162,7 +162,7 @@ namespace TaskLayer
             if (deadendPsms.Any())
             {
                 string writtenFileDeadend = Path.Combine(outputFolder, "Deadends" + ".tsv");
-                WriteFile.WritePsmCrossToTsv(deadendPsms, writtenFileDeadend, 1);
+                WriteGlycoFile.WritePsmCrossToTsv(deadendPsms, writtenFileDeadend, 1);
                 FinishedWritingFile(writtenFileDeadend, new List<string> { taskId });
             }
         }

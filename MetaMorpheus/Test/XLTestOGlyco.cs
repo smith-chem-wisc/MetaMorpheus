@@ -918,7 +918,7 @@ namespace Test
                 "Localized Glycans with Protein Site Specific Probability"
             };
 
-            string nglycoHeaderString = GlycoSpectralMatch.GetTabSepHeaderNGlyco();
+            string nglycoHeaderString = GlycoSpectralMatch.GetTabSepHeaderSingle() + "\t" + GlycoSpectralMatch.GetTabSeperatedHeaderGlyco();
             List<string> nGlycoHeaderTerms = nglycoHeaderString.Split('\t').ToList();
             nGlycoHeaderTerms.RemoveAll(s => s == "");
 
