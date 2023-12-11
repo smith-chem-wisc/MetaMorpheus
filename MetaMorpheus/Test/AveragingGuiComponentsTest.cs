@@ -43,7 +43,7 @@ namespace Test
             {
                 RejectionType = OutlierRejectionType.AveragedSigmaClipping,
                 WeightingType = SpectraWeightingType.MrsNoiseEstimation,
-                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
                 PerformNormalization = false,
                 Percentile = 14,
                 MinSigmaValue = 20,
@@ -57,7 +57,7 @@ namespace Test
             Assert.That(Math.Abs(alteredParamsVm.Percentile - 14) < 0.0001);
             Assert.That(alteredParamsVm.RejectionType == OutlierRejectionType.AveragedSigmaClipping);
             Assert.That(alteredParamsVm.WeightingType == SpectraWeightingType.MrsNoiseEstimation);
-            Assert.That(alteredParamsVm.SpectraFileAveragingType == SpectraFileAveragingType.AverageDdaScansWithOverlap);
+            Assert.That(alteredParamsVm.SpectraFileAveragingType == SpectraFileAveragingType.AverageDdaScans);
             Assert.That(!alteredParamsVm.PerformNormalization);
             Assert.That(alteredParamsVm.NumberOfScansToAverage == 20);
             Assert.That(Math.Abs(alteredParamsVm.BinSize - 4) < 0.0001);
@@ -135,7 +135,7 @@ namespace Test
                 NormalizationType = NormalizationType.RelativeToTics,
                 SpectralWeightingType = SpectraWeightingType.WeightEvenly,
                 BinSize = 0.01,
-                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
                 NumberOfScansToAverage = 5,
                 ScanOverlap = 4,
                 MaxSigmaValue = 3,
@@ -156,7 +156,7 @@ namespace Test
                 NormalizationType = NormalizationType.RelativeToTics,
                 SpectralWeightingType = SpectraWeightingType.WeightEvenly,
                 BinSize = 0.01,
-                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
                 NumberOfScansToAverage = 5,
                 ScanOverlap = 4,
                 MaxSigmaValue = 3,
@@ -177,7 +177,7 @@ namespace Test
                 NormalizationType = NormalizationType.RelativeToTics,
                 SpectralWeightingType = SpectraWeightingType.WeightEvenly,
                 BinSize = 0.01,
-                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
                 NumberOfScansToAverage = 15,
                 ScanOverlap = 14,
                 OutlierRejectionType = OutlierRejectionType.MinMaxClipping
