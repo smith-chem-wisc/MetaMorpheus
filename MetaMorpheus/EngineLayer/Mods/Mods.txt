@@ -114,7 +114,7 @@ TG   P
 PP   Anywhere.
 MT   Common Biological
 CF   O1
-DI   HCD:170.060123533
+DI   HCD:170.07642
 DR   Unimod; 35.
 //
 ID   Nitrosylation
