@@ -1,24 +1,17 @@
-﻿using EngineLayer.CrosslinkSearch;
-using EngineLayer.GlycoSearch;
+﻿using EngineLayer.GlycoSearch;
 using EngineLayer;
-using Proteomics.Fragmentation;
-using Proteomics;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Serialization;
 
 namespace TaskLayer
 {
     public static class WriteGlycoFile
     {
-        public static void WritePsmGlycoToTsv(List<GlycoSpectralMatch> items, string filePath, bool writeGlycoPsms)
+        public static void WritePsmGlycoToTsv(List<GlycoSpectralMatch> gsms, string filePath, bool writeGlycoPsms)
         {
-            if (items.Count == 0)
+            if (gsms.Count == 0)
             {
                 return;
             }
@@ -34,16 +27,18 @@ namespace TaskLayer
                 output.WriteLine(header);
                 if (writeGlycoPsms)
                 {
-                    foreach (var heh in items)
+                    foreach (var gsm in gsms)
                     {
-                        output.WriteLine(heh.SingleToString() + "\t" + heh.GlycoToString());
+                        gsm.ResolveAllAmbiguities();
+                        output.WriteLine(gsm.SingleToString() + "\t" + gsm.GlycoToString());
                     }
                 }
                 else
                 {
-                    foreach (var heh in items)
+                    foreach (var gsm in gsms)
                     {
-                        output.WriteLine(heh.SingleToString());
+                        gsm.ResolveAllAmbiguities();
+                        output.WriteLine(gsm.SingleToString());
                     }
                 }
 
@@ -59,19 +54,19 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFile))
             {
                 output.WriteLine("Protein Accession\tModification Site\tAminoAcid\tLocalized Glycans\tLocalized\tLowest Qvalue\tBest Localization Level\tMax Site Specific Probability");
-                foreach (var item in glycoProteinParsimony.OrderBy(i => i.Key.proteinAccession))
+                foreach (var protein in glycoProteinParsimony.OrderBy(i => i.Key.proteinAccession))
                 {
-                    if (item.Value != null)
+                    if (protein.Value != null)
                     {
                         output.WriteLine(
-                                item.Key.proteinAccession + "\t" +
-                                item.Key.proteinPosition + "\t" +
-                                item.Value.AminoAcid + "\t" +
-                                GlycanBox.GlobalOGlycans[item.Key.glycanId].Composition + "\t" +
-                                item.Value.IsLocalized + "\t" +
-                                item.Value.MinQValue.ToString("0.000") + "\t" +
-                                item.Value.BestLocalizeLevel + "\t" +
-                                item.Value.MaxProbability.ToString("0.000"));
+                                protein.Key.proteinAccession + "\t" +
+                                protein.Key.proteinPosition + "\t" +
+                                protein.Value.AminoAcid + "\t" +
+                                GlycanBox.GlobalOGlycans[protein.Key.glycanId].Composition + "\t" +
+                                protein.Value.IsLocalized + "\t" +
+                                protein.Value.MinQValue.ToString("0.000") + "\t" +
+                                protein.Value.BestLocalizeLevel + "\t" +
+                                protein.Value.MaxProbability.ToString("0.000"));
 
                     }
                 }
