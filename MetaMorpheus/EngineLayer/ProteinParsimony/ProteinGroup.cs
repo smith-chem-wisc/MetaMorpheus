@@ -402,22 +402,22 @@ namespace EngineLayer
                 if (psm.BaseSequence != null)
                 {
                     psm.GetAminoAcidCoverage();
-                    var peptides = psm.BestMatchingPeptides.Select(p => p.Peptide);
-                    foreach (var peptide in peptides)
+
+                    foreach (var peptide in psm.BestMatchingPeptides.Select(psm => psm.Peptide).DistinctBy(pep => pep.FullSequence))
                     {
                         // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
                         if (Proteins.Contains(peptide.Protein))
                         {
                             proteinsWithUnambigSeqPsms[peptide.Protein].Add(peptide);
-                            //proteinsWithUnambigSeqPsmsCoverage[peptide.Protein].Add((peptide, psm.FragmentCoveragePositionInPeptide));
 
                             // null FullSequence means that mods were not successfully localized; do not display them on the sequence coverage mods info
-                            if (psm.FullSequence != null)
+                            if (peptide.FullSequence != null)
                             {
                                 proteinsWithPsmsWithLocalizedMods[peptide.Protein].Add(peptide);
                             }
                         }
                     }
+                    
                 }
             }
 
