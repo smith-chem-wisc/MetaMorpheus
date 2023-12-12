@@ -74,7 +74,6 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
         private string _uniqueSequence;
-
         public List<int> LinkPositions { get; set; }
         public double XLTotalScore { get; set; }    //alpha + beta psmCross.
 

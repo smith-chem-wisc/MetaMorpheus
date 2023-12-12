@@ -14,36 +14,55 @@ namespace EngineLayer
         public CrosslinkLibrarySpectrum BetaPeptideSpectrum { get; }
         public string AlphaPeptideSequence { get; private set; }
         public string BetaPeptideSequence { get; private set; }
+        public string UniqueSequence { get; private set; }
         public bool IsBetaPeptide { get; }
         public static Regex CrosslinkRegex = new Regex(@"\(\d+\)");
+        public override string Name => UniqueSequence + "/" + ChargeState; 
 
         public CrosslinkLibrarySpectrum(
-            string sequence,
+            string uniqueSequence,
             double precursorMz,
             int precursorCharge,
             List<MatchedFragmentIon> peaks,
             double rt,
             CrosslinkSpectralMatch betaPeptide,
             bool isDecoy = false) : this(
-                sequence, 
+                uniqueSequence,
                 precursorMz, 
                 precursorCharge,
                 peaks, 
                 rt, 
-                new CrosslinkLibrarySpectrum(sequence, precursorMz, precursorCharge, betaPeptide.MatchedFragmentIons, rt), 
-                isDecoy)
-        {
-        }
+                new CrosslinkLibrarySpectrum(uniqueSequence, precursorMz, precursorCharge, betaPeptide.MatchedFragmentIons, rt), 
+                isDecoy) 
+        { }
 
         public CrosslinkLibrarySpectrum(
-            string sequence,
+            string uniqueSequence,
+            double precursorMz,
+            int precursorCharge,
+            List<MatchedFragmentIon> peaks,
+            double rt,
+            List<MatchedFragmentIon> betaPeaks,
+            bool isDecoy = false) : this(
+                uniqueSequence,
+                precursorMz,
+                precursorCharge,
+                peaks,
+                rt,
+                new CrosslinkLibrarySpectrum(uniqueSequence, precursorMz, precursorCharge, betaPeaks, rt),
+                isDecoy)   
+        { }
+
+        public CrosslinkLibrarySpectrum(
+            string uniqueSequence,
             double precursorMz,
             int precursorCharge,
             List<MatchedFragmentIon> peaks,
             double rt,
             CrosslinkLibrarySpectrum betaSpectrum = null,
-            bool isDecoy = false) : base(sequence, precursorMz, precursorCharge, peaks, rt, isDecoy)
+            bool isDecoy = false) : base(uniqueSequence, precursorMz, precursorCharge, peaks, rt, isDecoy)
         {
+            UniqueSequence = uniqueSequence;
             if (betaSpectrum == null)
             {
                 IsBetaPeptide = true;
@@ -57,9 +76,17 @@ namespace EngineLayer
 
         private void SetAlphaBetaSequence()
         {
-            string[] peptideSequences = CrosslinkRegex.Split(Sequence);
-            AlphaPeptideSequence = peptideSequences[0];
-            BetaPeptideSequence = peptideSequences[1];
+            string[] uniqueSequenceSplit = CrosslinkRegex.Split(UniqueSequence);
+            if (uniqueSequenceSplit.Length >= 2)
+            {
+                AlphaPeptideSequence = uniqueSequenceSplit[0];
+                BetaPeptideSequence = uniqueSequenceSplit[1];
+            }
+            else
+            {
+                AlphaPeptideSequence = null;
+                BetaPeptideSequence = null;
+            }
         }
 
         public override string ToString()

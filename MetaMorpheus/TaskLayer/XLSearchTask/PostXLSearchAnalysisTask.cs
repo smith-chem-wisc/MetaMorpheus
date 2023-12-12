@@ -251,7 +251,7 @@ namespace TaskLayer
                 CrosslinkSpectralMatch bestCsm = csmGroups.MaxBy(c => c.XLTotalScore);
                 if (bestCsm == null) continue;
                 librarySpectra.Add(new CrosslinkLibrarySpectrum(
-                    sequence: bestCsm.UniqueSequence,
+                    uniqueSequence: bestCsm.UniqueSequence,
                     precursorMz: bestCsm.ScanPrecursorMonoisotopicPeakMz,
                     precursorCharge: bestCsm.ScanPrecursorCharge,
                     peaks: bestCsm.MatchedFragmentIons,

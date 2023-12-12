@@ -625,8 +625,21 @@ namespace EngineLayer
                 Product product = new Product(ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.Terminus, ion.NeutralTheoreticalProduct.NeutralMass, ion.NeutralTheoreticalProduct.FragmentNumber, ion.NeutralTheoreticalProduct.AminoAcidPosition, ion.NeutralTheoreticalProduct.NeutralLoss);
                 fragments.Add(new MatchedFragmentIon(ref product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
             }
+            double retentionTime = RetentionTime ?? -1;
 
-            return( new(this.FullSequence, this.PrecursorMz, this.PrecursorCharge, fragments, this.RetentionTime.Value, isDecoy));
+            if (BetaPeptideMatchedIons.IsNotNullOrEmpty())
+            {
+                List<MatchedFragmentIon> betaFragments = new();
+                foreach(var ion in BetaPeptideMatchedIons)
+                {
+                    Product product = new Product(ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.Terminus, ion.NeutralTheoreticalProduct.NeutralMass, ion.NeutralTheoreticalProduct.FragmentNumber, ion.NeutralTheoreticalProduct.AminoAcidPosition, ion.NeutralTheoreticalProduct.NeutralLoss);
+                    betaFragments.Add(new MatchedFragmentIon(ref product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
+                }
+                string uniqueSequence = UniqueSequence ?? FullSequence + BetaPeptideFullSequence;
+                return new CrosslinkLibrarySpectrum(uniqueSequence, PrecursorMz, PrecursorCharge, fragments, retentionTime, betaFragments);
+            }
+
+            return ( new(this.FullSequence, this.PrecursorMz, this.PrecursorCharge, fragments, retentionTime, isDecoy));
         }
     }
 }

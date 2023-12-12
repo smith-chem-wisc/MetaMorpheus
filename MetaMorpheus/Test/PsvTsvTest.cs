@@ -60,6 +60,23 @@ namespace Test
         }
 
         [Test]
+        public static void CrosslinkPsmFromTsvToLibrarySpectrumTest()
+        {
+            string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\XL_Intralinks_MIons.tsv");
+            List<string> warnings = new();
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).ToList();
+            Assert.That(warnings.Count == 0);
+
+            CrosslinkLibrarySpectrum librarySpectrum = psms[0].ToLibrarySpectrum() as CrosslinkLibrarySpectrum;
+            Assert.IsNotNull(librarySpectrum);
+            Assert.AreEqual("Name: EKVLTSSAR(2)SLGKVGTR(4)/4", librarySpectrum.ToString().Split('\n')[0].Trim());
+
+            // This test would be better if MatchedIon.equals method worked, but it breaks because the mz comparison is implemented incorrectly.
+            CollectionAssert.AreEquivalent(librarySpectrum.MatchedFragmentIons.Select(ion => ion.Annotation), psms[0].MatchedIons.Select(ion => ion.Annotation));
+            CollectionAssert.AreEquivalent(librarySpectrum.BetaPeptideSpectrum.MatchedFragmentIons.Select(ion => ion.Annotation), psms[0].BetaPeptideMatchedIons.Select(ion => ion.Annotation));
+        }
+
+        [Test]
         public static void TestPsmFromTsvDisambiguatingConstructor()
         {
             // initialize values
