@@ -192,7 +192,7 @@ namespace EngineLayer
 
                 if (line.StartsWith("Name", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (CrosslinkLibrarySpectrum.CrosslinkRegex.Match(line).Success && !onlyReadHeader)
+                    if (CrosslinkLibrarySpectrum.CrosslinkRegex.Match(line).Success)
                     {
                         return ReadLibrarySpectrum_Crosslink(reader, line, onlyReadHeader);
                     }
@@ -518,6 +518,11 @@ namespace EngineLayer
                 }
                 else if (line.StartsWith("Num alpha peaks", StringComparison.InvariantCultureIgnoreCase))
                 {
+                    if(onlyReadHeader)
+                    {
+                        CrosslinkLibrarySpectrum betaPeptideSpectrumHeaderOnly = new CrosslinkLibrarySpectrum(uniqueSequence, precursorMz, z, betaPeptideIons, rt);
+                        return new CrosslinkLibrarySpectrum(uniqueSequence, precursorMz, z, alphaPeptideIons, rt, betaPeptideSpectrumHeaderOnly);
+                    }
                     // this assumes that the peaks are listed after the "Num peaks" line
                     readingPeaks = true;
                 }
