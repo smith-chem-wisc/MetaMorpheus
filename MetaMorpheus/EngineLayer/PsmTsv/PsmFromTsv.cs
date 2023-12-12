@@ -183,6 +183,12 @@ namespace EngineLayer
                 ((spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].StartsWith("{")) ? ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonIntensitiesLabel]].Trim(), BetaPeptideBaseSequence).First().Value : ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonIntensitiesLabel]].Trim(), BetaPeptideBaseSequence));
             XLTotalScore = (parsedHeader[PsmTsvHeader.XLTotalScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.XLTotalScoreLabel]].Trim(), CultureInfo.InvariantCulture);
             ParentIons = (parsedHeader[PsmTsvHeader.ParentIonsLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ParentIonsLabel]].Trim();
+            // This ensures backwards compatibility with old Crosslink Search Results
+            // This works because the alpha and beta peptide full sequences are written to tsv with their crosslink site included (e.g., PEPTIDEK(4))
+            if(UniqueSequence == null && BetaPeptideFullSequence != null)
+            {
+                UniqueSequence = FullSequence + BetaPeptideFullSequence;
+            }
 
             // child scan matched ions for xlink and glyco. we are getting them all above and then deleting primary scan ions here.
             ChildScanMatchedIons = (!spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq);
