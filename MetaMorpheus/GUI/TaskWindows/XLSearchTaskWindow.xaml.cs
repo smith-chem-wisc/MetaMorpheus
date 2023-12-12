@@ -445,12 +445,6 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow?.Close();
         }
 
-        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
-        {
-            SaveButton_Click(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"XLSearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
-        }
-
         private void NonSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             const int maxLength = 25;

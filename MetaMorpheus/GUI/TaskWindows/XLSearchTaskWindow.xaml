@@ -23,7 +23,7 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Label Content="Task Name" />
+                    <Label Content="Task Name" Grid.Column="0"/>
                     <TextBox x:Name="OutputFileNameTextBox" Width="150" Grid.Column="1">
                         <TextBox.Style>
                             <Style TargetType="TextBox">

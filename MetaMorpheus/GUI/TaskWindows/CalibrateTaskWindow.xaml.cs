@@ -375,12 +375,6 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow?.Close();
         }
 
-        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
-        {
-            SaveButton_Click(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"CalibrationTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
-        }
-
         private void ProteaseSpecificUpdate(object sender, SelectionChangedEventArgs e)
         {
             string proteaseName = ((Protease)ProteaseComboBox.SelectedItem).Name;
