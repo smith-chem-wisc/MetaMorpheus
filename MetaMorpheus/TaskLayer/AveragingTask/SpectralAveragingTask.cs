@@ -70,41 +70,36 @@ namespace TaskLayer
 
                 // Average the spectra
                 Status("Averaging spectra file...", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
-                var averagedScans = SpectraFileAveraging.AverageSpectraFile(scanList, Parameters);
+                try
+                {
+                    var averagedScans = SpectraFileAveraging.AverageSpectraFile(scanList, Parameters);
 
-                // Output the spectra
-                if (averagedScans == null || !averagedScans.Any())
-                {
-                    Warn($"Averaging Failure! Could not average spectra for file {originalUnaveragedFilepathWithoutExtenstion}");
-                    unsuccessfulyAveragedFilePaths.Add(Path.GetFileNameWithoutExtension(currentRawFileList[spectraFileIndex]));
-                }
-                else
-                {
                     Status("Writing spectra file...", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                     SourceFile sourceFile = myMsdataFile.GetSourceFile();
                     MsDataFile dataFile = new GenericMsDataFile(averagedScans, sourceFile);
                     dataFile.ExportAsMzML(averagedFilepath, true);
                 }
-
+                catch (Exception e)
+                {
+                    Warn($"Averaging Failure! Could not average spectra for file {originalUnaveragedFilepathWithoutExtenstion}");
+                }
                 myFileManager.DoneWithFile(originalUnaveragedFilepath);
-                
 
                 // carry over file-specific parameters from the unaveraged file to the averaged one
                 var fileSpecificParams = new FileSpecificParameters();
                 if (fileSettingsList[spectraFileIndex] != null)
                 {
-                    fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
+                    fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();// write toml settings for the averaged file if there are file specific parameters
+                    var newTomlFileName = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
+                    Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
+                    FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
+                    MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 }
 
-                // write toml settings for the averaged file
-                var newTomlFileName = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
-                Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
-                FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
-                
+
                 // finished averaging this file
                 FinishedWritingFile(averagedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
                 MyTaskResults.NewSpectra.Add(averagedFilepath);
-                MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                 FinishedDataFile(originalUnaveragedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepath });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion }));
             }
