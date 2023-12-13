@@ -261,7 +261,7 @@ namespace EngineLayer.GlycoSearch
         {
             var sb = new StringBuilder();
 
-            if (Routes != null)
+            if (Routes != null)//this gets the o-glyco
             {
                 sb.Append(LocalizationGraphs.First().TotalScore + "\t");
 
@@ -310,7 +310,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
             }
-            else if (GlycanScore > 0)
+            else if (GlycanScore > 0)//this gets the N-glcyo that remain
             {
                 sb.Append("\t"); //Localization score
 
