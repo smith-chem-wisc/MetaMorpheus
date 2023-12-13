@@ -113,11 +113,35 @@ namespace TaskLayer
                         WriteGlycoFile.WritePsmGlycoToTsv(allPsmsNgly, writtenFileNGlyco, true); //we write this last so localization can be attempted
                     }
                     break;
+                case GlycoSearchType.N_O_GlycanSearch:
                 default:
+                    var allPsmsgly = filteredGsms.Where(p => p.GlycanScore > 0).ToList();
+                    if (allPsmsgly.Any())
+                    {
+                        SingleFDRAnalysis(allPsmsgly, commonParameters, new List<string> { taskId });
+
+                        var writtenFileNOGlyco = Path.Combine(OutputFolder + "\\no_glyco" + ".psmtsv");
+
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsgly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                        var seen_no_glyco_localization_file = Path.Combine(OutputFolder + "\\seen_no_glyco_localization" + ".tsv");
+                        WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_no_glyco_localization_file);
+
+                        var protein_no_glyco_localization_file = Path.Combine(OutputFolder + "\\protein_no_glyco_localization" + ".tsv");
+                        WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_no_glyco_localization_file);
+                        WriteGlycoFile.WritePsmGlycoToTsv(allPsmsgly, writtenFileNOGlyco, true); //we write this last so localization can be attempted
+                    }
                     break;
             }
 
-            GlycoAccessionAnalysis(filteredGsms, OutputFolder);//Do the whole group last so inference is done on the whole group
+            if (glycoSearchParameters.DoParsimony)
+            {
+                GlycoProteinAnalysis(filteredGsms, OutputFolder);//Do the whole group last so inference is done on the whole group
+            }
+            else
+            {
+                GlycoAccessionAnalysis(filteredGsms, OutputFolder);//Do the whole group last so inference is done on the whole group
+            }
+            
 
             QuantificationAnalysis();
             WriteQuantificationResults();
