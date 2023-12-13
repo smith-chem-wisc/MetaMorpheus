@@ -1,15 +1,24 @@
-﻿using Proteomics.Fragmentation;
+﻿using Easy.Common.Extensions;
+using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using MathNet.Numerics.Distributions;
 
 namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSpectralMatch : PeptideSpectralMatch
     {
-        public CrosslinkSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
+        public CrosslinkSpectralMatch(
+            PeptideWithSetModifications theBestPeptide,
+            int notch,
+            double score,
+            int scanIndex,
+            Ms2ScanWithSpecificMass scan,
+            CommonParameters commonParameters,
+            List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
         {
             //The XLTotalScore is set here because some CSMs are not crosslinks and we need this score to be non-zero.
@@ -21,13 +30,55 @@ namespace EngineLayer.CrosslinkSearch
         }
 
         public CrosslinkSpectralMatch BetaPeptide { get; set; }
+        /// <summary>
+        /// UniqueSequence uniquely identifies crosslinked peptides to enable library lookup.
+        /// For crosslinks, the unique sequence is identical to the spectral library name ( PEPTIDEK(8)EDITPEPK(8) ),
+        /// where the numbers in parentheses represent the one-based residue where the crosslink occurs on each peptide.
+        /// For non crosslinked peptides, UniqueSequence is identical to the full sequence.
+        /// </summary>
+        public string UniqueSequence
+        {
+            get
+            {
+                if (_uniqueSequence.IsNullOrEmpty())
+                {
+                    string position = "";
+                    if (!LinkPositions.IsNotNullOrEmpty())
+                    {
+                        _uniqueSequence = FullSequence;
+                        return _uniqueSequence;
+                    }
+                    switch (CrossType)
+                    {
+                        case PsmCrossType.Single:
+                            break;
 
+                        case PsmCrossType.Loop:
+                            position = "(" + LinkPositions[0].ToString() + "-" + LinkPositions[1].ToString() + ")";
+                            break;
+
+                        default:
+                            position = "(" + LinkPositions[0].ToString() + ")";
+                            break;
+                    }
+                    if (BetaPeptide != null && BetaPeptide.LinkPositions.IsNotNullOrEmpty())
+                    {
+                        _uniqueSequence = FullSequence + position + BetaPeptide.FullSequence + "(" + BetaPeptide.LinkPositions[0].ToString() + ")";
+                    }
+                    else
+                    {
+                        _uniqueSequence = FullSequence + position;
+                    }
+                }
+                return _uniqueSequence;
+            }
+        }
+        private string _uniqueSequence;
         public List<int> LinkPositions { get; set; }
         public double XLTotalScore { get; set; }    //alpha + beta psmCross.
 
         public double SecondBestXlScore { get; set; } // score of the second-best CSM; this is used to calculate delta score
         public int XlRank { get; set; }   //Rank after indexing score. Could be used for PEP
-        public int ParentIonExistNum { get; set; }
         public List<int> ParentIonMaxIntensityRanks { get; set; }
         public PsmCrossType CrossType { get; set; }
         public double MS3ChildScore { get; set; }
@@ -183,6 +234,7 @@ namespace EngineLayer.CrosslinkSearch
         {
             var sb = new StringBuilder();
             sb.Append(PsmTsvHeader.FileName + '\t');
+            sb.Append(PsmTsvHeader.UniqueSequence + '\t');
             sb.Append(PsmTsvHeader.Ms2ScanNumber + '\t');
             sb.Append(PsmTsvHeader.PrecursorScanNum + '\t');
             sb.Append(PsmTsvHeader.PrecursorMz + '\t');
@@ -241,6 +293,7 @@ namespace EngineLayer.CrosslinkSearch
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
+            sb.Append(PsmTsvHeader.UniqueSequence + '\t');
             sb.Append("Scan Number" + '\t');
             sb.Append("Precursor Scan Number" + '\t');
             sb.Append("Precursor MZ" + '\t');
@@ -290,6 +343,7 @@ namespace EngineLayer.CrosslinkSearch
 
             var sb = new StringBuilder();
             sb.Append(FullFilePath + "\t");
+            sb.Append(UniqueSequence + "\t");
             sb.Append(ScanNumber + "\t");
             sb.Append(PrecursorScanNumber + "\t");
             sb.Append(ScanPrecursorMonoisotopicPeakMz + "\t");

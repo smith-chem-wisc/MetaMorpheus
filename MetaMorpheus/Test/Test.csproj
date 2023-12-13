@@ -318,6 +318,9 @@
     <None Update="TestData\SpectralLibrarySearch\1-81.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralLibrarySearch\CrosslinkSpectralLibrary.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\EPAVFGR.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -558,6 +561,9 @@
     <None Update="XlTestData\BSA_DSSO_ETchD6010.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="XlTestData\BSA_DSSO_SpectralLibrary.msp">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\BSA_DSS_23747.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -576,8 +582,17 @@
     <None Update="XlTestData\RibosomeGO.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="XlTestData\SinglePeptides.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="XlTestData\XLSearchTaskconfig_BSA_DSS_23747.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\XL_Interlinks.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="XlTestData\XL_Intralinks.tsv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="XlTestData\XL_Intralinks_MIons.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
