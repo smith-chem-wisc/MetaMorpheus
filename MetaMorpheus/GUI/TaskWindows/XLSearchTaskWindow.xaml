@@ -377,6 +377,7 @@
                     <Expander x:Name="OutputExpander">
                         <StackPanel Orientation="Vertical">
                             <CheckBox x:Name="ckbPepXML" Content="Write .pep.XML" />
+                            <CheckBox x:Name="WriteSpectralLibraryCheckBox" Content="Write spectral library"/>
                         </StackPanel>
                     </Expander>
                 </GroupBox>
