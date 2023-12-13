@@ -2,11 +2,16 @@
 using NUnit.Framework;
 using Proteomics;
 using System.Collections.Generic;
+using System.Linq;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using Chemistry;
+using EngineLayer.ClassicSearch;
 using FlashLFQ;
+using TaskLayer;
 using ProteinGroup = EngineLayer.ProteinGroup;
+using System.IO;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -162,6 +167,62 @@ namespace Test
 
             //This test just gets some lines in ProteinGroup covered. There is no accessible way to get the output of this method.
             Assert.DoesNotThrow(()=>proteinGroup1.GetIdentifiedPeptidesOutput(new List<SilacLabel>()));
+        }
+
+        [Test]
+        public static void TestModificationInfoListInProteinGroupsOutput()
+        {
+            //Create GPTMD Task
+            //Create Search Task
+            GptmdTask task1 = new GptmdTask
+            {
+                CommonParameters = new CommonParameters(),
+                GptmdParameters = new GptmdParameters
+                {
+                    ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
+                        b.ModificationType.Equals("Common Artifact")
+                        || b.ModificationType.Equals("Common Biological")
+                        || b.ModificationType.Equals("Metal")
+                        || b.ModificationType.Equals("Less Common")
+                        ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
+                }
+            };
+
+            SearchTask task2 = new SearchTask
+            {
+                CommonParameters = new CommonParameters(),
+
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = true,
+                    SearchTarget = true,
+                    WritePrunedDatabase = true,
+                    SearchType = SearchType.Classic
+                }
+            };
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1), ("task2", task2) };
+            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+            string fastaName = @"TestData\DbForPrunedDb.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGeneration");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
+            engine.Run();
+            string final = Path.Combine(MySetUpClass.outputFolder, "task2", "DbForPrunedDbGPTMDproteinPruned.xml");
+            List<Protein> proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out var ok);
+            // ensures that protein out put contains the correct number of proteins to match the following conditions.
+            // all proteins in DB have baseSequence!=null (not ambiguous)
+            // all proteins that belong to a protein group are written to DB
+            Assert.AreEqual(18, proteins.Count);
+            int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count + p.SequenceVariations.Sum(sv => sv.OneBasedModifications.Count));
+
+            //tests that modifications are being done correctly
+            Assert.AreEqual(0, totalNumberOfMods);
+
+            List<string> proteinGroupsOutput = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllQuantifiedProteinGroups.tsv")).ToList();
+            string firstDataLine = proteinGroupsOutput[2];
+            string modInfoListProteinTwo = firstDataLine.Split('\t')[14];
+            Assert.AreEqual("#aa66[Hydroxylation on K,info:occupancy=0.33(1/3)];#aa71[Oxidation on S,info:occupancy=0.67(2/3)]", modInfoListProteinTwo);
+
+            Directory.Delete(outputFolder, true);
         }
     }
 }

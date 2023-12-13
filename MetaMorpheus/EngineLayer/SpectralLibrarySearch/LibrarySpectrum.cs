@@ -19,12 +19,12 @@ namespace EngineLayer
         public double RetentionTime { get; set; }
         public double PrecursorMz { get; set; }
         public int ChargeState { get; set; }
-        public List<MatchedFragmentIon> MatchedFragmentIons { get; set; }
+        public virtual List<MatchedFragmentIon> MatchedFragmentIons { get; set; }
         public bool IsDecoy { get; set; }
 
         public double[] XArray { get; private set; }
         public double[] YArray { get; private set; }
-        public string Name
+        public virtual string Name
         {
             get { return Sequence + "/" + ChargeState; }
         }

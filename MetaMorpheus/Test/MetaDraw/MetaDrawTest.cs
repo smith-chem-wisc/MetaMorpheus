@@ -18,6 +18,7 @@ using NUnit.Framework;
 using OxyPlot.Series;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using TaskLayer;
 
 namespace Test.MetaDraw
@@ -582,14 +583,102 @@ namespace Test.MetaDraw
                 parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
 
             // test that pdf exists
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"2_SLGKVGTR(4).pdf"))); // parent scan
-            Assert.That(File.Exists(Path.Combine(outputFolder, @"3_SLGKVGTR(4).pdf"))); // child scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"2_SLGKVGTR(4)EKVLTSSAR(2).pdf"))); // parent scan
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"3_SLGKVGTR(4)EKVLTSSAR(2).pdf"))); // child scan
 
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
             Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
             Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void TestMetaDrawXlSpectralLibrary()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlOutputTestFile");
+            string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\RibosomeGO.fasta");
+            string library1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\CrosslinkSpectralLibrary.msp");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML");
+
+            Directory.CreateDirectory(outputFolder);
+
+            XLSearchTask xLSearch = new XLSearchTask
+            {
+                XlSearchParameters = new XlSearchParameters
+                {
+                    WriteSpectralLibrary = true,
+                    CrosslinkAtCleavageSite = true
+                }
+            };
+            xLSearch.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) },
+                new List<string> { spectraFile }, "test");
+
+            var psmFile = Path.Combine(outputFolder, @"XL_Intralinks.tsv");
+
+            // load results into metadraw
+            var metadrawLogic = new MetaDrawLogic();
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
+            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralLibraryPaths.Add(library1);
+            var errors = metadrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+
+            // draw PSM
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metadrawLogic.FilteredListOfPsms.First();
+
+            MsDataFile file = new Mzml(spectraFile);
+
+            MetaDrawSettings.FirstAAonScreenIndex = 0;
+            MetaDrawSettings.NumberOfAAOnScreen = metadrawLogic.FilteredListOfPsms.First().BaseSeq.Length;
+            metadrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            metadrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(errors == null || !errors.Any());
+
+            // test that plot was drawn
+            var plotSeries = plotView.Model.Series;
+
+            // test that library peaks were drawn in the mirror plot (these peaks have negative intensities)
+            var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
+            Assert.AreEqual(mirrorPlotPeaks.Count, 59);
+
+            var plotAxes = plotView.Model.Axes;
+            Assert.That(plotAxes.Count == 2);
+
+            // write pdf
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.UniqueSequence == "LLDNAAADLAAISGQKPLITKAR(21)ITLNMGVGEAIADKK(14)").Take(1).ToList();
+            metadrawLogic.ExportPlot(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
+
+
+            // write pdf with legend
+            Canvas ptmLegend = new();
+            System.Windows.Size legendSize = new(100, 100);
+            ptmLegend.Measure(legendSize);
+            ptmLegend.Arrange(new Rect(legendSize));
+            ptmLegend.UpdateLayout();
+            Vector ptmLegendVector = new(10, 10);
+            metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport,
+                parentChildView, outputFolder, out errors, ptmLegend, ptmLegendVector);
+
+            // test that pdf exists
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"13_LLDNAAADLAAISGQKPLITKAR(21)ITL.pdf"))); // Name can only be 30  characters long
+
+            // clean up resources
+            metadrawLogic.CleanUpResources();
+            Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectraFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
 
             // delete output
             Directory.Delete(outputFolder, true);
@@ -985,6 +1074,7 @@ namespace Test.MetaDraw
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestMetaDrawLoadingWithWeirdFileNames()
         {
             // test loading when the file has a periods, commas, spaces in the name
@@ -1653,5 +1743,13 @@ namespace Test.MetaDraw
 
             Directory.Delete(folderPath, true);
         }
+
+        [Test]
+        public static void TestCrosslinkSpectralLibraryReading()
+        {
+            string xlTestDataFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData");
+            var interLinkResults = File.ReadAllLines(Path.Combine(xlTestDataFolder, @"XL_Interlinks.tsv"));
+        }
+        
     }
 }
