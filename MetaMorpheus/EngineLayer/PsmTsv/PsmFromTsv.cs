@@ -80,6 +80,10 @@ namespace EngineLayer
         public List<MatchedFragmentIon> BetaPeptideMatchedIons { get; }
         public Dictionary<int, List<MatchedFragmentIon>> BetaPeptideChildScanMatchedIons { get; }
         public double? XLTotalScore { get; }
+        /// <summary>
+        /// If Crosslink, this contains the alpha and beta sequences. Otherwise, it contains the full sequence
+        /// </summary>
+        public string UniqueSequence { get; }
         public string ParentIons { get; }
         public double? RetentionTime { get; }
 
@@ -164,6 +168,7 @@ namespace EngineLayer
 
             //For crosslinks
             CrossType = (parsedHeader[PsmTsvHeader.CrossTypeLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.CrossTypeLabel]].Trim();
+            UniqueSequence = (parsedHeader[PsmTsvHeader.UniqueSequence] < 0) ? null : spl[parsedHeader[PsmTsvHeader.UniqueSequence]].Trim();
             LinkResidues = (parsedHeader[PsmTsvHeader.LinkResiduesLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.LinkResiduesLabel]].Trim();
             ProteinLinkSite = (parsedHeader[PsmTsvHeader.ProteinLinkSiteLabel] < 0) ? null : (spl[parsedHeader[PsmTsvHeader.ProteinLinkSiteLabel]] == "" ? null : (int?)int.Parse(spl[parsedHeader[PsmTsvHeader.ProteinLinkSiteLabel]].Trim()));
             Rank = (parsedHeader[PsmTsvHeader.RankLabel] < 0) ? null : (int?)int.Parse(spl[parsedHeader[PsmTsvHeader.RankLabel]].Trim());
@@ -178,6 +183,12 @@ namespace EngineLayer
                 ((spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].StartsWith("{")) ? ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonIntensitiesLabel]].Trim(), BetaPeptideBaseSequence).First().Value : ReadFragmentIonsFromString(spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonsLabel]].Trim(), spl[parsedHeader[PsmTsvHeader.BetaPeptideMatchedIonIntensitiesLabel]].Trim(), BetaPeptideBaseSequence));
             XLTotalScore = (parsedHeader[PsmTsvHeader.XLTotalScoreLabel] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader.XLTotalScoreLabel]].Trim(), CultureInfo.InvariantCulture);
             ParentIons = (parsedHeader[PsmTsvHeader.ParentIonsLabel] < 0) ? null : spl[parsedHeader[PsmTsvHeader.ParentIonsLabel]].Trim();
+            // This ensures backwards compatibility with old Crosslink Search Results
+            // This works because the alpha and beta peptide full sequences are written to tsv with their crosslink site included (e.g., PEPTIDEK(4))
+            if(UniqueSequence == null && BetaPeptideFullSequence != null)
+            {
+                UniqueSequence = FullSequence + BetaPeptideFullSequence;
+            }
 
             // child scan matched ions for xlink and glyco. we are getting them all above and then deleting primary scan ions here.
             ChildScanMatchedIons = (!spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].StartsWith("{")) ? null : ReadChildScanMatchedIons(spl[parsedHeader[PsmTsvHeader.MatchedIonMzRatios]].Trim(), spl[parsedHeader[PsmTsvHeader.MatchedIonIntensities]].Trim(), BaseSeq);
@@ -620,8 +631,21 @@ namespace EngineLayer
                 Product product = new Product(ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.Terminus, ion.NeutralTheoreticalProduct.NeutralMass, ion.NeutralTheoreticalProduct.FragmentNumber, ion.NeutralTheoreticalProduct.AminoAcidPosition, ion.NeutralTheoreticalProduct.NeutralLoss);
                 fragments.Add(new MatchedFragmentIon(ref product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
             }
+            double retentionTime = RetentionTime ?? -1;
 
-            return( new(this.FullSequence, this.PrecursorMz, this.PrecursorCharge, fragments, this.RetentionTime.Value, isDecoy));
+            if (BetaPeptideMatchedIons.IsNotNullOrEmpty())
+            {
+                List<MatchedFragmentIon> betaFragments = new();
+                foreach(var ion in BetaPeptideMatchedIons)
+                {
+                    Product product = new Product(ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.Terminus, ion.NeutralTheoreticalProduct.NeutralMass, ion.NeutralTheoreticalProduct.FragmentNumber, ion.NeutralTheoreticalProduct.AminoAcidPosition, ion.NeutralTheoreticalProduct.NeutralLoss);
+                    betaFragments.Add(new MatchedFragmentIon(ref product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
+                }
+                string uniqueSequence = UniqueSequence ?? FullSequence + BetaPeptideFullSequence;
+                return new CrosslinkLibrarySpectrum(uniqueSequence, PrecursorMz, PrecursorCharge, fragments, retentionTime, betaFragments);
+            }
+
+            return ( new(this.FullSequence, this.PrecursorMz, this.PrecursorCharge, fragments, retentionTime, isDecoy));
         }
     }
 }
