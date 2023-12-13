@@ -29,7 +29,6 @@ namespace TaskLayer
                 {
                     foreach (var gsm in gsms)
                     {
-                        gsm.ResolveAllAmbiguities();
                         output.WriteLine(gsm.SingleToString() + "\t" + gsm.GlycoToString());
                     }
                 }
@@ -37,7 +36,6 @@ namespace TaskLayer
                 {
                     foreach (var gsm in gsms)
                     {
-                        gsm.ResolveAllAmbiguities();
                         output.WriteLine(gsm.SingleToString());
                     }
                 }

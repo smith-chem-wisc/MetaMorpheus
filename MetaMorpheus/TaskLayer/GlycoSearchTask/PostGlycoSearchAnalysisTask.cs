@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using FlashLFQ;
 using Proteomics.ProteolyticDigestion;
+using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
 
 namespace TaskLayer
@@ -95,6 +96,23 @@ namespace TaskLayer
                         WriteGlycoFile.WritePsmGlycoToTsv(allPsmsOgly, writtenFileOGlyco, true); //we write this last so localization can be attempted
                     }
                     break;
+                case GlycoSearchType.NGlycanSearch:
+                    var allPsmsNgly = filteredGsms.Where(p => p.GlycanScore > 0 && p.Routes == null).ToList();
+                    if (allPsmsNgly.Any())
+                    {
+                        SingleFDRAnalysis(allPsmsNgly, commonParameters, new List<string> { taskId });
+
+                        var writtenFileNGlyco = Path.Combine(OutputFolder + "\\nglyco" + ".psmtsv");
+
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsNgly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                        var seen_nglyco_localization_file = Path.Combine(OutputFolder + "\\seen_nglyco_localization" + ".tsv");
+                        WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_nglyco_localization_file);
+
+                        var protein_nglyco_localization_file = Path.Combine(OutputFolder + "\\protein_nglyco_localization" + ".tsv");
+                        WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_nglyco_localization_file);
+                        WriteGlycoFile.WritePsmGlycoToTsv(allPsmsNgly, writtenFileNGlyco, true); //we write this last so localization can be attempted
+                    }
+                    break;
                 default:
                     break;
             }
@@ -134,7 +152,7 @@ namespace TaskLayer
                     }
                     break;
                 case GlycoSearchType.NGlycanSearch:
-                    var allPsmsNgly = gsms.Where(p => p.NGlycan != null).OrderByDescending(p => p.Score).ToList();
+                    var allPsmsNgly = gsms.Where(p => p.GlycanScore > 0 && p.Routes == null).OrderByDescending(p => p.Score).ToList();
                     if (allPsmsNgly.Any())
                     {
                         SingleFDRAnalysis(allPsmsNgly, commonParameters, new List<string> { taskId });
@@ -150,19 +168,19 @@ namespace TaskLayer
                     }
                     break;
                 default: //both N and O glycan search combined
-                    var allPsmsGly = gsms.Where(p => p.NGlycan != null || p.Routes != null).OrderByDescending(p => p.Score).ToList();
+                    var allPsmsGly = gsms.Where(p => p.GlycanScore > 0).OrderByDescending(p => p.Score).ToList();
                     if (allPsmsGly.Any())
                     {
                         SingleFDRAnalysis(allPsmsGly, commonParameters, new List<string> { taskId });
-                        var writtenFileOGlyco = Path.Combine(individualFileFolderPath, individualFileFolder + "nglyco" + ".psmtsv");
-                        WriteGlycoFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileOGlyco, true);
+                        var writtenFileNOGlyco = Path.Combine(individualFileFolderPath, individualFileFolder + "no_glyco" + ".psmtsv");
+                        WriteGlycoFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileNOGlyco, true);
 
                         var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
-                        var seen_oglyco_localization_file = Path.Combine(individualFileFolderPath, individualFileFolder + "seen_nglyco_localization" + ".tsv");
-                        WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_oglyco_localization_file);
+                        var seen_no_glyco_localization_file = Path.Combine(individualFileFolderPath, individualFileFolder + "seen_no_glyco_localization" + ".tsv");
+                        WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_no_glyco_localization_file);
 
-                        var protein_oglyco_localization_file = Path.Combine(individualFileFolderPath, individualFileFolder + "protein_nglyco_localization" + ".tsv");
-                        WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_oglyco_localization_file);
+                        var protein_noglyco_localization_file = Path.Combine(individualFileFolderPath, individualFileFolder + "protein_no_glyco_localization" + ".tsv");
+                        WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_noglyco_localization_file);
                     }
                     break;
             }

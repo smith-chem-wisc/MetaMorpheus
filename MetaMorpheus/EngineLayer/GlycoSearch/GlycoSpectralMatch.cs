@@ -260,19 +260,6 @@ namespace EngineLayer.GlycoSearch
         public string GlycoToString()
         {
             var sb = new StringBuilder();
-            if (NGlycan != null)
-            {
-                sb.Append(PeptideScore + "\t");
-                sb.Append(GlycanScore + "\t");
-                sb.Append(DiagnosticIonScore + "\t");
-                sb.Append((double)NGlycan.First().Mass / 1E5); sb.Append("\t");
-                sb.Append(Glycan.GetKindString(NGlycan.First().Kind)); sb.Append("\t");
-                sb.Append(R138vs144.ToString()); sb.Append("\t");
-                if (NGlycan.First().Struc != null)
-                {
-                    sb.Append(NGlycan.First().Struc); sb.Append("\t");
-                }
-            }
 
             if (Routes != null)
             {
@@ -313,8 +300,6 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizationGraphs.First(), Routes.First(), LocalizedGlycan, LocalizationLevel)); sb.Append("\t");
 
-                //string localizedGlycan = LocalizedGlycan.Where(p=>p.Item3).Count() > 0 ? "[" + string.Join(",", LocalizedGlycan.Where(p => p.Item3).Select(p => p.Item1.ToString() + "-" + p.Item2.ToString())) + "]" : "";
-                //sb.Append(localizedGlycan); sb.Append("\t");
                 string local_peptide = "";
                 string local_protein = "";
                 LocalizedSiteSpeciLocalInfo(SiteSpeciLocalProb, LocalizedGlycan, OneBasedStartResidueInProtein, ref local_peptide, ref local_protein);
@@ -322,6 +307,43 @@ namespace EngineLayer.GlycoSearch
                 sb.Append(local_protein); sb.Append("\t");
 
                 sb.Append(AllLocalizationInfo(Routes)); sb.Append("\t");
+
+                sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
+            }
+            else if (GlycanScore > 0)
+            {
+                sb.Append("\t"); //Localization score
+
+                sb.Append(GlycanScore + "\t");
+
+                sb.Append(DiagnosticIonScore + "\t");
+
+                sb.Append("\t"); //number of mods
+
+                sb.Append( "\t"); //mod pos length
+
+                sb.Append((double)NGlycan.First().Mass / 1E5 + "\t");
+
+                sb.Append(Glycan.GetKindString(NGlycan.First().Kind) + "\t");
+
+                var NSiteExist = MotifExist(BaseSequence, new string[] { "Nxt", "Nxs" });
+
+                sb.Append(NSiteExist); sb.Append("\t");
+
+                sb.Append(R138vs144.ToString()); sb.Append("\t");
+
+                if (NGlycan.First().Struc != null)
+                {
+                    sb.Append(NGlycan.First().Struc);
+                }
+                sb.Append("\t");
+
+                sb.Append("\t");
+
+                sb.Append("\t");
+                sb.Append("\t");
+
+                 sb.Append("\t");
 
                 sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
             }
