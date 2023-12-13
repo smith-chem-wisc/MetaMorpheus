@@ -66,6 +66,11 @@ namespace TaskLayer
                 }
             }
 
+            if(xlSearchParameters.WriteSpectralLibrary)
+            {
+                WriteXlSpectralLibrary(interCsms, intraCsms, singlePsms, outputFolder);
+            }
+
             return MyTaskResults;
         }
 
@@ -226,6 +231,50 @@ namespace TaskLayer
 
                 csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, qValueNotch, pep, pepQValue);
             }
+        }
+
+        //for those spectra matching the same peptide/protein with same charge, save the one with highest score
+        private void WriteXlSpectralLibrary(
+            List<CrosslinkSpectralMatch> interCsms, 
+            List<CrosslinkSpectralMatch> intraCsms, 
+            List<CrosslinkSpectralMatch> singlePsms,
+            string outputFolder)
+        {
+            IEnumerable<CrosslinkSpectralMatch> linkedCsms = interCsms.Concat(intraCsms);
+            List<LibrarySpectrum> librarySpectra = new();
+
+            foreach (var csmGroups in linkedCsms.Where(c => 
+                    !c.IsDecoy
+                    && c.FdrInfo.QValueNotch < 0.05)
+                .GroupBy(c => (c.UniqueSequence, c.ScanPrecursorCharge)))
+            {
+                CrosslinkSpectralMatch bestCsm = csmGroups.MaxBy(c => c.XLTotalScore);
+                if (bestCsm == null) continue;
+                librarySpectra.Add(new CrosslinkLibrarySpectrum(
+                    uniqueSequence: bestCsm.UniqueSequence,
+                    precursorMz: bestCsm.ScanPrecursorMonoisotopicPeakMz,
+                    precursorCharge: bestCsm.ScanPrecursorCharge,
+                    peaks: bestCsm.MatchedFragmentIons,
+                    rt: bestCsm.ScanRetentionTime,
+                    betaPeptide: bestCsm.BetaPeptide));
+            }
+
+            foreach (var singlePsmGroup in singlePsms.Where(c =>
+                    !c.IsDecoy
+                    && c.FdrInfo.QValueNotch < 0.05)
+                .GroupBy(c => (c.FullSequence, c.ScanPrecursorCharge)))
+            {
+                CrosslinkSpectralMatch bestPsm = singlePsmGroup.MaxBy(c => c.Score);
+                if (bestPsm == null) continue;
+                librarySpectra.Add(new LibrarySpectrum(
+                    sequence: bestPsm.FullSequence,
+                    precursorMz: bestPsm.ScanPrecursorMonoisotopicPeakMz,
+                    chargeState: bestPsm.ScanPrecursorCharge,
+                    peaks: bestPsm.MatchedFragmentIons,
+                    rt: bestPsm.ScanRetentionTime));
+            }
+
+            WriteSpectralLibrary(librarySpectra, outputFolder);
         }
     }
 }

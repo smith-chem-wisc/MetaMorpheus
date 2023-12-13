@@ -126,7 +126,7 @@ namespace GuiFunctions
             spectralAveragingParameters = parameters;
             RejectionTypes = (OutlierRejectionType[])Enum.GetValues(typeof(OutlierRejectionType));
             WeightingTypes = new [] { SpectraWeightingType.WeightEvenly, SpectraWeightingType.TicValue};
-            SpectraFileAveragingTypes = new[] { SpectraFileAveragingType.AverageAll, SpectraFileAveragingType.AverageDdaScansWithOverlap, SpectraFileAveragingType.AverageEverynScansWithOverlap};
+            SpectraFileAveragingTypes = new[] { SpectraFileAveragingType.AverageAll, SpectraFileAveragingType.AverageDdaScans, SpectraFileAveragingType.AverageEverynScansWithOverlap};
             UpdateVisualRepresentation();
         }
 
@@ -149,7 +149,7 @@ namespace GuiFunctions
                 NormalizationType = NormalizationType.RelativeToTics,
                 SpectralWeightingType = SpectraWeightingType.WeightEvenly,
                 BinSize = 0.01,
-                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScansWithOverlap,
+                SpectraFileAveragingType = SpectraFileAveragingType.AverageDdaScans,
         };
             settingsNameToSet = settingsNameToSet is null ? "Dda1" : settingsNameToSet;
             switch (Enum.Parse<PresetAveragingParameters>(settingsNameToSet.ToString()!))

@@ -8,8 +8,6 @@ using System.Threading.Tasks;
 
 namespace MetaMorpheusGUI
 {
-    
-
     public class SpectraFileAveragingTypeToOpacityConverter : BaseValueConverter<SpectraFileAveragingTypeToOpacityConverter>
     {
         private double doNotDisplay = 0.5;
@@ -22,17 +20,9 @@ namespace MetaMorpheusGUI
                 {
                     case SpectraFileAveragingType.AverageAll:
                         return doNotDisplay;
-
                     case SpectraFileAveragingType.AverageEverynScans:
-                        return 1;
-
                     case SpectraFileAveragingType.AverageEverynScansWithOverlap:
-                        return 1;
-
                     case SpectraFileAveragingType.AverageDdaScans:
-                        return 1;
-
-                    case SpectraFileAveragingType.AverageDdaScansWithOverlap:
                         return 1;
                 }
             }
@@ -56,17 +46,9 @@ namespace MetaMorpheusGUI
                 {
                     case SpectraFileAveragingType.AverageAll:
                         return true;
-
                     case SpectraFileAveragingType.AverageEverynScans:
-                        return false;
-
                     case SpectraFileAveragingType.AverageEverynScansWithOverlap:
-                        return false;
-
                     case SpectraFileAveragingType.AverageDdaScans:
-                        return false;
-
-                    case SpectraFileAveragingType.AverageDdaScansWithOverlap:
                         return false;
                 }
             }
@@ -91,17 +73,9 @@ namespace MetaMorpheusGUI
                 {
                     case SpectraFileAveragingType.AverageAll:
                         return doNotDisplay;
-
-                    case SpectraFileAveragingType.AverageEverynScans:
-                        return 1;
-
+                    case SpectraFileAveragingType.AverageEverynScans: 
                     case SpectraFileAveragingType.AverageEverynScansWithOverlap:
-                        return 1;
-
                     case SpectraFileAveragingType.AverageDdaScans:
-                        return 1;
-
-                    case SpectraFileAveragingType.AverageDdaScansWithOverlap:
                         return 1;
                 }
             }
