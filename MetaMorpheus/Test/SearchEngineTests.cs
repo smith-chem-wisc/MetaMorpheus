@@ -131,8 +131,8 @@ namespace Test
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Search.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
@@ -141,12 +141,13 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(127, parsedPsms.Count); //total psm count
-            Assert.AreEqual(37, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
+            Assert.AreEqual(385, parsedPsms.Count); //total psm count
+            //int j = parsedPsms.Count(p => p.QValue < 0.01);
+            Assert.AreEqual(215, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
             Assert.AreEqual(0, warnings.Count);
 
             int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
-            Assert.AreEqual(37, countFromResultsTxt);
+            Assert.AreEqual(214, countFromResultsTxt);
         }
 
         [Test]
