@@ -36,6 +36,7 @@ namespace Test
             Assert.AreEqual(1, parsedPsms.Count);
             IEnumerable<string> expectedIons = new string[] { "y3+1", "y4+1", "b4+1", "b5+1", "b6+1", "b8+1" };
             Assert.That(6 == parsedPsms[0].MatchedIons.Select(p => p.Annotation).Intersect(expectedIons).Count());
+            Assert.That("TADDYTWEGDVGNDNAYQKFVK", Is.EqualTo(parsedPsms[0].FullSequence));
         }
 
         [Test]
@@ -47,6 +48,32 @@ namespace Test
             var errors = metadrawLogic.LoadFiles(false, true);
 
             Assert.That(!errors.Any());
+        }
+
+        [Test]
+        public static void CrosslinkPsmFromTsvTest()
+        {
+            string psmFile = @"XlTestData\XL_Intralinks_MIons.tsv";
+            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            Assert.AreEqual(1, parsedPsms.Count);
+            Assert.That(parsedPsms[0].UniqueSequence, Is.EqualTo("EKVLTSSAR(2)SLGKVGTR(4)"));
+        }
+
+        [Test]
+        public static void CrosslinkPsmFromTsvToLibrarySpectrumTest()
+        {
+            string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\XL_Intralinks_MIons.tsv");
+            List<string> warnings = new();
+            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).ToList();
+            Assert.That(warnings.Count == 0);
+
+            CrosslinkLibrarySpectrum librarySpectrum = psms[0].ToLibrarySpectrum() as CrosslinkLibrarySpectrum;
+            Assert.IsNotNull(librarySpectrum);
+            Assert.AreEqual("Name: EKVLTSSAR(2)SLGKVGTR(4)/4", librarySpectrum.ToString().Split('\n')[0].Trim());
+
+            // This test would be better if MatchedIon.equals method worked, but it breaks because the mz comparison is implemented incorrectly.
+            CollectionAssert.AreEquivalent(librarySpectrum.MatchedFragmentIons.Select(ion => ion.Annotation), psms[0].MatchedIons.Select(ion => ion.Annotation));
+            CollectionAssert.AreEquivalent(librarySpectrum.BetaPeptideSpectrum.MatchedFragmentIons.Select(ion => ion.Annotation), psms[0].BetaPeptideMatchedIons.Select(ion => ion.Annotation));
         }
 
         [Test]
