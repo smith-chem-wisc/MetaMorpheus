@@ -646,7 +646,7 @@ namespace Test
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            Assert.AreEqual(131, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
+            Assert.AreEqual(111, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
