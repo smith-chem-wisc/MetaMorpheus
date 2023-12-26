@@ -1,7 +1,9 @@
 ﻿using EngineLayer.CrosslinkSearch;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 
 namespace EngineLayer.FdrAnalysis
@@ -75,6 +77,10 @@ namespace EngineLayer.FdrAnalysis
                 }
 
                 QValueTraditional(psms);
+                if (psms.Count > 100)
+                {
+                    QValueInverted(psms);
+                }
 
                 // set q-value thresholds such that a lower scoring PSM can't have
                 // a higher confidence than a higher scoring PSM
@@ -116,6 +122,47 @@ namespace EngineLayer.FdrAnalysis
             {
                 Compute_PEPValue(myAnalysisResults);
             }
+        }
+
+        private void QValueInverted(List<PeptideSpectralMatch> psms)
+        {
+            psms.Reverse();
+            bool first = true;
+            double previousQValue = 1.0;
+            double previousQvalueNotch = 1.0;
+            foreach (PeptideSpectralMatch psm in psms)
+            {
+                double cumulativeTarget = psm.FdrInfo.CumulativeTarget;
+                double cumulativeDecoy = psm.FdrInfo.CumulativeDecoy;
+
+                //set up arrays for local FDRs
+                double cumulativeTargetPerNotch = psm.FdrInfo.CumulativeTargetNotch;
+                double cumulativeDecoyPerNotch = psm.FdrInfo.CumulativeDecoyNotch;
+
+                double localQvalue = (psm.FdrInfo.CumulativeDecoy + 1) / psm.FdrInfo.CumulativeTarget;
+                double localQvalueNotch = (psm.FdrInfo.CumulativeDecoyNotch + 1)/psm.FdrInfo.CumulativeTargetNotch;
+                if (first)
+                {
+                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, localQvalue, psm.FdrInfo.CumulativeTargetNotch, psm.FdrInfo.CumulativeDecoyNotch, localQvalueNotch, psm.FdrInfo.PEP, psm.FdrInfo.PEP_QValue);
+                    previousQValue = localQvalue;
+                    previousQvalueNotch = localQvalueNotch;
+                    first = false;
+                }
+                else
+                {
+                    if (localQvalue > previousQValue) // q-value can't increase moving toward higher score, therefore, we keep the same q-value as the lower scoring item. this will continue until we get one fewer decoy
+                    {
+                        psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, previousQValue, psm.FdrInfo.CumulativeTargetNotch, psm.FdrInfo.CumulativeDecoyNotch, previousQvalueNotch, psm.FdrInfo.PEP, psm.FdrInfo.PEP_QValue);
+                    }
+                    else
+                    {
+                        psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, localQvalue, psm.FdrInfo.CumulativeTargetNotch, psm.FdrInfo.CumulativeDecoyNotch, localQvalueNotch, psm.FdrInfo.PEP, psm.FdrInfo.PEP_QValue);
+                        previousQValue = localQvalue;
+                        previousQvalueNotch = localQvalueNotch;
+                    }
+                }
+            }
+            psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
         private void QValueTraditional(List<PeptideSpectralMatch> psms)
