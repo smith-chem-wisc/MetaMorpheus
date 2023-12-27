@@ -410,16 +410,19 @@ namespace Test
 
             //update library
             task.SearchParameters.UpdateSpectralLibrary = true;
+            task.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
 
-            string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            string db1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
+            string db2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
+            string raw1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibrary.msp");
 
 
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary\rawCopy.mzML");
-            System.IO.File.Copy(raw, rawCopy);
+            System.IO.File.Copy(raw1, rawCopy);
 
-            EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw, rawCopy }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db,false) }, thisTaskOutputFolder);
+            EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw1, raw2 }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db1,false), new DbForTask(db2, false) }, thisTaskOutputFolder);
 
             UpdateLibrary.Run();
 
