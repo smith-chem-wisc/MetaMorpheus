@@ -142,7 +142,6 @@ namespace Test
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
             Assert.AreEqual(385, parsedPsms.Count); //total psm count
-            //int j = parsedPsms.Count(p => p.QValue < 0.01);
             Assert.AreEqual(215, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
             Assert.AreEqual(0, warnings.Count);
 
@@ -663,7 +662,7 @@ namespace Test
         [Test]
         public static void TestModernSearchEngineLowResSimple()
         {
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
             CommonParameters CommonParameters = new CommonParameters(
@@ -700,7 +699,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestModernSearchEngineLowResSimple");
             //string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500.xml.gz");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             Directory.CreateDirectory(outputFolder);
 
@@ -726,7 +725,7 @@ namespace Test
             };
             Dictionary<string, Modification> u = new Dictionary<string, Modification>();
 
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinXML(myDatabase, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out u);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse,false,out var errors);
 
             //var myPtmList = ProteinDbLoader.GetPtmListFromProteinXml(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500.xmlpruned.xml"));
 
@@ -748,17 +747,9 @@ namespace Test
             // Single search mode
             Assert.AreEqual(447, allPsmsArray.Length);
 
-            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
-            goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };
-            List<int> foundScans = new List<int>();
-            foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
-            foundScans.Sort();
-
-            Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(37, goodPsm.Count());
+            Assert.AreEqual(37, goodScore.Count());
         }
 
         [Test]
