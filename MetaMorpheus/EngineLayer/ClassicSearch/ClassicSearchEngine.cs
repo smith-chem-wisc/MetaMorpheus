@@ -139,8 +139,11 @@ namespace EngineLayer.ClassicSearch
 
                                 // calculate the peptide's score
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+                                
+                                double numberOfPeaksPer100Thomsons = scan.TheScan.NumPeaks / ((scan.TheScan.TheScan.ScanWindowRange.Maximum- scan.TheScan.TheScan.ScanWindowRange.Minimum)/100.0);
+                                double andromedaScore = AndromedaScore(peptideTheorProducts.Count, matchedIons.Count, numberOfPeaksPer100Thomsons);
 
-                                AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
+                                AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons, andromedaScore);
 
                                 if (SpectralLibrary != null)
                                 {
@@ -186,10 +189,10 @@ namespace EngineLayer.ClassicSearch
             // calculate decoy's score
             var decoyScore = CalculatePeptideScore(scan.TheScan.TheScan, decoyMatchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
 
-            AddPeptideCandidateToPsm(scan, myLocks, decoyScore, reversedOnTheFlyDecoy, decoyMatchedIons);
+            AddPeptideCandidateToPsm(scan, myLocks, decoyScore, reversedOnTheFlyDecoy, decoyMatchedIons,0);
         }
 
-        private void AddPeptideCandidateToPsm(ScanWithIndexAndNotchInfo scan, object[] myLocks, double thisScore, PeptideWithSetModifications peptide, List<MatchedFragmentIon> matchedIons)
+        private void AddPeptideCandidateToPsm(ScanWithIndexAndNotchInfo scan, object[] myLocks, double thisScore, PeptideWithSetModifications peptide, List<MatchedFragmentIon> matchedIons, double andromedaScore)
         {
             bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
 
@@ -206,11 +209,11 @@ namespace EngineLayer.ClassicSearch
                     {
                         if (PeptideSpectralMatches[scan.ScanIndex] == null)
                         {
-                            PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0);
+                            PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0, andromedaScore);
                         }
                         else
                         {
-                            PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                            PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0, andromedaScore);
                         }
                     }
                 }
