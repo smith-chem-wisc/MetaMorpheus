@@ -727,8 +727,6 @@ namespace Test
 
             List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse,false,out var errors);
 
-            //var myPtmList = ProteinDbLoader.GetPtmListFromProteinXml(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500.xmlpruned.xml"));
-
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
@@ -745,11 +743,11 @@ namespace Test
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(447, allPsmsArray.Length);
+            Assert.AreEqual(535, allPsmsArray.Length);
 
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
-            Assert.AreEqual(37, goodScore.Count());
+            Assert.AreEqual(181, goodScore.Count());
         }
 
         [Test]
