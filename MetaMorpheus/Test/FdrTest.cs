@@ -8,12 +8,14 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics.Digestion;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -378,7 +380,7 @@ namespace Test
             PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
 
             Product prod = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
-            List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(ref prod, 1, 1.0, 1) };
+            List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(prod, 1, 1.0, 1) };
 
             PeptideSpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new CommonParameters(), mfi);
 

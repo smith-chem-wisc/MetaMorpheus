@@ -16,7 +16,7 @@ using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using TaskLayer;

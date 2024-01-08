@@ -1,4 +1,4 @@
-﻿using Proteomics.Fragmentation;
+﻿using Omics.Fragmentation;
 using System.Collections.Generic;
 using System.Windows;
 using System.ComponentModel;
@@ -6,6 +6,7 @@ using MassSpectrometry;
 using System.Linq;
 using System.Collections.ObjectModel;
 using System;
+using Omics.Fragmentation.Peptide;
 
 namespace MetaMorpheusGUI
 {

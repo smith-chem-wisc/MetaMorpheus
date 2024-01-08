@@ -17,7 +17,9 @@ using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
 

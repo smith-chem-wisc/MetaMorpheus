@@ -3,11 +3,13 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Omics.Digestion;
+using Omics.Fragmentation.Peptide;
 using TaskLayer;
 
 namespace Test

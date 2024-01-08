@@ -12,6 +12,7 @@ using System.Linq;
 using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
 using System.Globalization;
+using Omics.Modifications;
 
 namespace TaskLayer
 {

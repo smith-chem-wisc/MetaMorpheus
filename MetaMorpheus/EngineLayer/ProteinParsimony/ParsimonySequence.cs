@@ -7,7 +7,7 @@ namespace EngineLayer.ProteinParsimony
         public ParsimonySequence(PeptideWithSetModifications pwsm, bool TreatModPeptidesAsDifferentPeptides)
         {
             Sequence = TreatModPeptidesAsDifferentPeptides ? pwsm.FullSequence : pwsm.BaseSequence;
-            Protease = pwsm.DigestionParams.Protease;
+            Protease = pwsm.DigestionParams.DigestionAgent as Protease ?? throw new MetaMorpheusException("Digestion agent is not of type protease");
         }
 
         public string Sequence { get; }

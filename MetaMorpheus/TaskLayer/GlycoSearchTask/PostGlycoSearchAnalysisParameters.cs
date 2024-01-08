@@ -4,6 +4,7 @@ using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using Omics.Modifications;
 
 namespace TaskLayer
 {

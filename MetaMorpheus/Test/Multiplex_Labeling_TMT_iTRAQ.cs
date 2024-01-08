@@ -4,7 +4,7 @@ using IO.MzML;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -17,6 +17,7 @@ using Nett;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using System.Threading.Tasks;
+using Omics.Modifications;
 
 namespace Test
 {
