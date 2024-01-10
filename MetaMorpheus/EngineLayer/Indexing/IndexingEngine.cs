@@ -260,9 +260,19 @@ namespace EngineLayer.Indexing
             foreach (KeyValuePair<int, List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
             {
                 int fragmentNumber = relevantDatabaseMod.Key;
-                Product fragmentAtIndex = fragmentMasses.Where(x => x.FragmentNumber == fragmentNumber).FirstOrDefault();
-                double basePrecursorMass = fragmentAtIndex.NeutralMass == default(Product).NeutralMass ? 
-                    peptide.MonoisotopicMass : fragmentAtIndex.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) + WaterMonoisotopicMass;
+                Product fragmentAtIndex = fragmentMasses.FirstOrDefault(x => x.FragmentNumber == fragmentNumber);
+
+                double basePrecursorMass;
+                if (fragmentAtIndex.NeutralMass == 0.0)
+                {
+                    basePrecursorMass = peptide.MonoisotopicMass;
+                }
+                else
+                {
+                    basePrecursorMass = fragmentAtIndex.NeutralMass -
+                                        DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) +
+                                        WaterMonoisotopicMass;
+                }
 
                 foreach (Modification mod in relevantDatabaseMod.Value)
                 {
