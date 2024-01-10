@@ -263,7 +263,7 @@ namespace EngineLayer.Indexing
                 Product fragmentAtIndex = fragmentMasses.FirstOrDefault(x => x.FragmentNumber == fragmentNumber);
 
                 double basePrecursorMass;
-                if (fragmentAtIndex.NeutralMass == 0.0)
+                if (fragmentAtIndex is null)
                 {
                     basePrecursorMass = peptide.MonoisotopicMass;
                 }
