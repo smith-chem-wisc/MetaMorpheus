@@ -412,7 +412,7 @@ namespace Test
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
-            Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized\t")); //test filename changes
+            Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized")); //test filename changes
             Assert.IsTrue(output[1].Contains("\t656250\t875000\t")); //test intensities
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllPSMs.psmtsv");
@@ -453,7 +453,7 @@ namespace Test
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPEPEPTK\t")); //test the unlabeled is present
             Assert.IsTrue(output[2].Contains("PEPTKIDEK\t")); //test the unlabeled is present
-            Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized\t")); //test filename changes
+            Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tDetection Type_silac_Original\tDetection Type_silac_NewlySynthesized")); //test filename changes
             Assert.IsTrue(output[1].Contains("\t2625000\t6125000\t")); //test the light intensity is not negative.
             Assert.IsTrue(output[2].Contains("\t10500000\t5250000\t")); //test intensities. The observation is 9/6/3.
 

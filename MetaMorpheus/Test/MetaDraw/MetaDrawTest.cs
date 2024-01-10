@@ -1125,6 +1125,8 @@ namespace Test.MetaDraw
             metadrawLogic.CleanUpResources();
 
             // delete output
+           
+
             File.Delete(pathWithPeriodInIt);
             Directory.Delete(outputFolder, true);
         }
