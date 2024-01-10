@@ -377,7 +377,7 @@ namespace Test
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeptides.tsv");
             Assert.IsTrue(output[1].Contains("PEPTKIDEK\t")); //test the unlabeled is present
             Assert.IsTrue(output[0].Contains("\tIntensity_silac_Original\tIntensity_silac_NewlySynthesized\tIntensity_silacPart2_Original\tIntensity_silacPart2_NewlySynthesized\t" +
-                "Detection Type_silac_Original\tDetection Type_silac_NewlySynthesized\tDetection Type_silacPart2_Original\tDetection Type_silacPart2_NewlySynthesized\t")); //test filename changes
+                "Detection Type_silac_Original\tDetection Type_silac_NewlySynthesized\tDetection Type_silacPart2_Original\tDetection Type_silacPart2_NewlySynthesized")); //test filename changes
             Assert.IsTrue(output[1].Contains("\t1093750\t437500\t")); //test intensities
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedPeaks.tsv");
