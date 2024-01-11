@@ -69,16 +69,9 @@ namespace TaskLayer
                             : Enum.Parse<SpectraFileAveragingType>(tmlString.Value))))
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.MaxModsForPeptide)
-                .IgnoreProperty(p => p.MaxPeptideLength)
-                .IgnoreProperty(p => p.MinPeptideLength)
-                //.Map("MaxMods").ToKey("MaxModsForPeptide")
-                //.Map("MaxLength").ToKey("MaxPeptideLength")
-                //.Map("MinLength").ToKey("MinPeptideLength")
-            
-
-            )
-
+                .IgnoreProperty(p => p.MaxMods)
+                .IgnoreProperty(p => p.MaxLength)
+                .IgnoreProperty(p => p.MinLength))
         );
        
 
