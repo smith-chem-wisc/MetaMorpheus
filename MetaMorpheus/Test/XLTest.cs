@@ -585,10 +585,10 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(56, inter);
+            Assert.AreEqual(55, inter);
             Assert.AreEqual(83, intra);
-            Assert.AreEqual(230, single);
-            Assert.AreEqual(9, loop);
+            Assert.AreEqual(229, single);
+            Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(62, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
@@ -727,7 +727,7 @@ namespace Test
             deadendNH2 = 0;
             deadendTris = 0;
 
-            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms.Where(c => c.FdrInfo.PEP_QValue <= 0.01).ToList())
+            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms.Where(c => c.FdrInfo.QValue <= 0.01).ToList())
             {
                 switch (csm.CrossType)
                 {
@@ -770,12 +770,12 @@ namespace Test
             }
 
             Assert.AreEqual(0, unnasignedCrossType);
-            Assert.AreEqual(76, inter);
-            Assert.AreEqual(101, intra);
-            Assert.AreEqual(241, single);
-            Assert.AreEqual(10, loop);
+            Assert.AreEqual(40, inter);
+            Assert.AreEqual(49, intra);
+            Assert.AreEqual(231, single);
+            Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(67, deadendH2O);
+            Assert.AreEqual(61, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
