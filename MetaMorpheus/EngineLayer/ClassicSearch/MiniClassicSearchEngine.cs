@@ -1,6 +1,7 @@
 ﻿using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
 using MzLibUtil;
+using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -42,7 +43,7 @@ namespace EngineLayer.ClassicSearch
         /// <param name="donorPwsm"> Ms2 scans in window are searched for matches to this donor peptide</param>
         /// <param name="peakApexRT"> The center of the 2 minute window where the search occurs</param>
         /// <returns></returns>
-        public IEnumerable<PeptideSpectralMatch> SearchAroundPeak(PeptideWithSetModifications donorPwsm, double peakApexRT)
+        public IEnumerable<SpectralMatch> SearchAroundPeak(IBioPolymerWithSetMods donorPwsm, double peakApexRT)
         {
             var targetFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
 
@@ -66,7 +67,7 @@ namespace EngineLayer.ClassicSearch
                 return null;
             }
 
-            List<PeptideSpectralMatch> acceptablePsms = new();
+            List<SpectralMatch> acceptablePsms = new();
             foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
             {
                 var dissociationType = FileSpecificParameters.DissociationType == DissociationType.Autodetect ?
@@ -95,8 +96,8 @@ namespace EngineLayer.ClassicSearch
                 acceptablePsms.Add(new PeptideSpectralMatch(donorPwsm, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, FileSpecificParameters, matchedIons, 0));
             }
 
-            IEnumerable<PeptideSpectralMatch> matchedSpectra = acceptablePsms.Where(p => p != null);
-            foreach (PeptideSpectralMatch psm in matchedSpectra)
+            IEnumerable<SpectralMatch> matchedSpectra = acceptablePsms.Where(p => p != null);
+            foreach (SpectralMatch psm in matchedSpectra)
             {
                 psm.ResolveAllAmbiguities();
             }
@@ -106,7 +107,7 @@ namespace EngineLayer.ClassicSearch
             return matchedSpectra;
         }
 
-        public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, PeptideSpectralMatch[] psms,
+        public static void CalculateSpectralAngles(SpectralLibrary spectralLibrary, SpectralMatch[] psms,
             Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans, CommonParameters commonParameters, CommonParameters fileSpecificParameters)
         {
             if (spectralLibrary != null)
@@ -128,12 +129,12 @@ namespace EngineLayer.ClassicSearch
                         if (psms[i] != null)
                         {
                             Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
-                            List<(int, PeptideWithSetModifications)> pwsms = new();
+                            List<(int, IBioPolymerWithSetMods)> pwsms = new();
                             List<double> pwsmSpectralAngles = new();
-                            foreach (var (Notch, Peptide) in psms[i].BestMatchingPeptides)
+                            foreach (var (Notch, Peptide) in psms[i].BestMatchingBioPolymersWithSetMods)
                             {
                                 //if peptide is target, directly look for the target's spectrum in the spectral library
-                                if (!Peptide.Protein.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                                if (!Peptide.Parent.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                 {
                                     SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
                                         SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, fileSpecificParameters.ProductMassTolerance.Value, false);

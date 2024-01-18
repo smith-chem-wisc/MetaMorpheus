@@ -51,10 +51,10 @@ namespace Test
             var theoreticalProducts = new List<Product>();
             ps.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalProducts);
             var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalProducts, new CommonParameters());
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, commonParameters, matchedIons);
+            SpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, commonParameters, matchedIons);
             newPsm.ResolveAllAmbiguities();
 
-            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, myMsDataFile, commonParameters, fsp, new List<string>());
+            LocalizationEngine f = new LocalizationEngine(new List<SpectralMatch> { newPsm }, myMsDataFile, commonParameters, fsp, new List<string>());
             f.Run();
 
             // single peak matches

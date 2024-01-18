@@ -48,7 +48,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //search by new method of looking for all charges 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
@@ -62,7 +62,7 @@ namespace Test
             Assert.That(psm[4].MatchedFragmentIons.Count == 16);
 
             //search by old method of looking for only one charge 
-            PeptideSpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray_oneCharge, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), false).Run();
             var psm_oneCharge = allPsmsArray_oneCharge.Where(p => p != null).ToList();
@@ -76,7 +76,7 @@ namespace Test
             var peptideTheorProducts = new List<Product>();
             Assert.That(psm_oneCharge[1].MatchedFragmentIons.Count == 12);
             var differences = psm[1].MatchedFragmentIons.Except(psm_oneCharge[1].MatchedFragmentIons);
-            psm[1].BestMatchingPeptides.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm[1].BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -111,7 +111,7 @@ namespace Test
                 addCompIons: false);
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
-            PeptideSpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             bool writeSpectralLibrary = true;
             new ClassicSearchEngine(allPsmsArray1, listOfSortedms2Scans1, variableModifications1, fixedModifications1, null, null, null,
@@ -150,7 +150,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //search by new method of looking for all charges 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
 
@@ -159,7 +159,7 @@ namespace Test
 
 
             //search by old method of looking for only one charge 
-            PeptideSpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray_oneCharge, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), false).Run();
 
@@ -174,7 +174,7 @@ namespace Test
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
             var differences = psm.MatchedFragmentIons.Except(psm_oneCharge.MatchedFragmentIons);
-            psm.BestMatchingPeptides.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm.BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -273,7 +273,7 @@ namespace Test
 
 
             //test when doing spectral library search without generating library
-            PeptideSpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray1, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, testLibrary, new List<string>(), false).Run();
             var psm1 = allPsmsArray1.Where(p => p != null).ToList();
@@ -288,7 +288,7 @@ namespace Test
 
             proteinList.Add(new Protein("LSISNVAK", "", isDecoy: true));
             //test when doing spectral library search with generating library; non spectral search won't generate decoy by "decoy on the fly" , so proteinlist used by non spectral library search would contain decoys
-            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, testLibrary, new List<string>(), true).Run();
             var psm2 = allPsmsArray2.Where(p => p != null).ToList();
@@ -301,7 +301,7 @@ namespace Test
             Assert.That(psm2[6].IsDecoy == false && psm2[6].FullSequence == "EKAEAEAEK");
 
             //test when doing non spectral library search without generating library
-            PeptideSpectralMatch[] allPsmsArray3 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray3 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray3, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), false).Run();
             var psm3 = allPsmsArray3.Where(p => p != null).ToList();
@@ -315,7 +315,7 @@ namespace Test
 
 
             //test when doing non spectral library search with generating library
-            PeptideSpectralMatch[] allPsmsArray4 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray4 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray4, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
             var psm4 = allPsmsArray4.Where(p => p != null).ToList();

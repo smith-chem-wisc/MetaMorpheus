@@ -12,13 +12,13 @@ namespace EngineLayer.HistogramAnalysis
     {
         public string AA = "-";
         public Dictionary<char, int> ResidueCount;
-        public Dictionary<string, Tuple<string, string, PeptideSpectralMatch>> UniquePSMs;
+        public Dictionary<string, Tuple<string, string, SpectralMatch>> UniquePSMs;
         public Dictionary<string, int> ModsInCommon;
 
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            UniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
+            UniquePSMs = new Dictionary<string, Tuple<string, string, SpectralMatch>>();
         }
 
         public int PepNlocCount { get; private set; }
@@ -87,13 +87,13 @@ namespace EngineLayer.HistogramAnalysis
                     if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores[0] < 0.5)
                     {
                         PepNlocCount++;
-                        if (hehe.Item3.OneBasedStartResidueInProtein.HasValue && hehe.Item3.OneBasedStartResidueInProtein.Value <= 2)
+                        if (hehe.Item3.OneBasedStartResidue.HasValue && hehe.Item3.OneBasedStartResidue.Value <= 2)
                             ProtNlocCount++;
                     }
                     if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores.Last() < 0.5)
                     {
                         PepClocCount++;
-                        if (hehe.Item3.OneBasedEndResidueInProtein.HasValue && hehe.Item3.ProteinLength.HasValue && hehe.Item3.OneBasedEndResidueInProtein.Value == hehe.Item3.ProteinLength.Value)
+                        if (hehe.Item3.OneBasedEndResidue.HasValue && hehe.Item3.ParentLength.HasValue && hehe.Item3.OneBasedEndResidue.Value == hehe.Item3.ParentLength.Value)
                             ProtClocCount++;
                     }
                 }
@@ -173,7 +173,7 @@ namespace EngineLayer.HistogramAnalysis
             UnimodDiffs = string.Join("|", okDiff);
         }
 
-        internal void Add(PeptideSpectralMatch ok)
+        internal void Add(SpectralMatch ok)
         {
             if (ok.FullSequence != null)
             {
@@ -181,10 +181,10 @@ namespace EngineLayer.HistogramAnalysis
                 {
                     var current = UniquePSMs[ok.FullSequence];
                     if (current.Item3.Score < ok.Score)
-                        UniquePSMs[ok.FullSequence] = new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok);
+                        UniquePSMs[ok.FullSequence] = new Tuple<string, string, SpectralMatch>(ok.BaseSequence, ok.FullSequence, ok);
                 }
                 else
-                    UniquePSMs.Add(ok.FullSequence, new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
+                    UniquePSMs.Add(ok.FullSequence, new Tuple<string, string, SpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
             }
         }
     }

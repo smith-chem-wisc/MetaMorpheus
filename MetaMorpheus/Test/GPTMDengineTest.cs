@@ -24,13 +24,13 @@ namespace Test
         [TestCase("NNNNN", "accession", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 4)]
         public static void TestGptmdEngine(string proteinSequence, string accession, string sequenceVariantDescription, int numModifiedResidues)
         {
-            List<PeptideSpectralMatch> allResultingIdentifications = null;
+            List<SpectralMatch> allResultingIdentifications = null;
             ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
             var gptmdModifications = new List<Modification> { new Modification(_originalId: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
             IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>>();
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
-            allResultingIdentifications = new List<PeptideSpectralMatch>();
+            allResultingIdentifications = new List<SpectralMatch>();
 
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", new CommonParameters()));
@@ -50,7 +50,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null), (new Proteomics.AminoAcidPolymer.Peptide(modPep.BaseSequence).MonoisotopicMass + 21.981943).ToMz(1), 1, "filepath", new CommonParameters());
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch newPsm = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
@@ -69,7 +69,7 @@ namespace Test
         [TestCase("NNNPPP", "accession", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 2, 5, 2, 3, 1)]
         public static void TestCombos(string proteinSequence, string accession, string variantAA, string sequenceVariantDescription, int numModHashes, int numModifiedResidues, int numModifiedResiduesN, int numModifiedResiduesP, int numModifiedResiduesNP)
         {
-            List<PeptideSpectralMatch> allIdentifications = null;
+            List<SpectralMatch> allIdentifications = null;
             ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
             ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
             var gptmdModifications = new List<Modification> { new Modification(_originalId: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943),
@@ -88,12 +88,12 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (new Proteomics.AminoAcidPolymer.Peptide(modPep.BaseSequence).MonoisotopicMass + 21.981943 + 15.994915).ToMz(1), 1, "filepath", new CommonParameters());
 
             var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
-            PeptideSpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
 
             Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
 
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
-            allIdentifications = new List<PeptideSpectralMatch> { match };
+            allIdentifications = new List<SpectralMatch> { match };
 
             var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
             var res = (GptmdResults)engine.Run();
@@ -240,7 +240,7 @@ namespace Test
             // mod should not fit anywhere on the protein
             for (int i = 0; i < pep.Length; i++)
             {
-                bool modFits = GptmdEngine.ModFits(mmPhospho, protein, i + 1, pep.Length, pep.OneBasedStartResidueInProtein + i);
+                bool modFits = GptmdEngine.ModFits(mmPhospho, protein, i + 1, pep.Length, pep.OneBasedStartResidue + i);
 
                 Assert.That(!modFits);
             }
@@ -257,7 +257,7 @@ namespace Test
             // mod should fit at position 8
             for (int i = 0; i < pep.Length; i++)
             {
-                bool modFits = GptmdEngine.ModFits(mmPhospho, protein, i + 1, pep.Length, pep.OneBasedStartResidueInProtein + i);
+                bool modFits = GptmdEngine.ModFits(mmPhospho, protein, i + 1, pep.Length, pep.OneBasedStartResidue + i);
 
                 if (i + 1 == 8)
                 {
