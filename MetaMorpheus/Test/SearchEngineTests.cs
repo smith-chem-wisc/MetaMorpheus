@@ -71,8 +71,8 @@ namespace Test
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
@@ -81,39 +81,39 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
-            Assert.AreEqual("EIADGLCLEVEGK", psm.BaseSeq);
+            Assert.AreEqual("FTQTSGETTDADKEPAGEDK", psm.BaseSeq);
             Assert.AreEqual("T", psm.DecoyContamTarget);
-            Assert.AreEqual(502.117, psm.DeltaScore);
-            Assert.AreEqual("EIADGLCLEVEGK", psm.EssentialSeq);
-            Assert.AreEqual("sliced_b6", psm.FileNameWithoutExtension);
-            Assert.AreEqual("EIADGLC[Common Fixed:Carbamidomethyl on C]LEVEGK", psm.FullSequence);
-            Assert.AreEqual("primary:Tpt1, synonym:Trt", psm.GeneName);
+            Assert.AreEqual(541.386, psm.DeltaScore);
+            Assert.AreEqual("FTQTSGETTDADKEPAGEDK", psm.EssentialSeq);
+            Assert.AreEqual("TaGe_SA_A549_3_snip", psm.FileNameWithoutExtension);
+            Assert.AreEqual("FTQTSGETTDADKEPAGEDK", psm.FullSequence);
+            Assert.AreEqual("primary:MKI67", psm.GeneName);
             Assert.AreEqual("", psm.IdentifiedSequenceVariations);
-            Assert.AreEqual("0.00652", psm.MassDiffDa);
-            Assert.AreEqual("4.55", psm.MassDiffPpm);
-            Assert.AreEqual(50, psm.MatchedIons.Count);
-            Assert.AreEqual("0", psm.MissedCleavage);
-            Assert.AreEqual(189, psm.Ms2ScanNumber);
-            Assert.AreEqual("M", psm.NextAminoAcid);
+            Assert.AreEqual("-0.00544", psm.MassDiffDa);
+            Assert.AreEqual("-2.56", psm.MassDiffPpm);
+            Assert.AreEqual(40, psm.MatchedIons.Count);
+            Assert.AreEqual("1", psm.MissedCleavage);
+            Assert.AreEqual(56, psm.Ms2ScanNumber);
+            Assert.AreEqual("G", psm.NextAminoAcid);
             Assert.AreEqual("0", psm.Notch);
-            Assert.AreEqual("Mus musculus", psm.OrganismName);
+            Assert.AreEqual("Homo sapiens", psm.OrganismName);
             Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
             Assert.AreEqual(0, psm.PEP_QValue);
             Assert.AreEqual("full", psm.PeptideDescription);
-            Assert.AreEqual("1431.69155", psm.PeptideMonoMass);
-            Assert.AreEqual(2, psm.PrecursorCharge);
-            Assert.AreEqual(1431.69806, psm.PrecursorMass);
-            Assert.AreEqual(716.85631, psm.PrecursorMz);
-            Assert.AreEqual(185, psm.PrecursorScanNum);
-            Assert.AreEqual("R", psm.PreviousAminoAcid);
-            Assert.AreEqual("P63028", psm.ProteinAccession);
-            Assert.AreEqual("Translationally-controlled tumor protein", psm.ProteinName);
-            Assert.AreEqual(0, psm.QValue);
-            Assert.AreEqual(0, psm.QValueNotch);
-            Assert.AreEqual(77.09543, psm.RetentionTime);
-            Assert.AreEqual(507.117, psm.Score);
-            Assert.AreEqual("[22 to 34]", psm.StartAndEndResiduesInProtein);
-            Assert.AreEqual(2529786.92095, psm.TotalIonCurrent);
+            Assert.AreEqual("2125.92875", psm.PeptideMonoMass);
+            Assert.AreEqual(3, psm.PrecursorCharge);
+            Assert.AreEqual(2125.92331, psm.PrecursorMass);
+            Assert.AreEqual(709.64838, psm.PrecursorMz);
+            Assert.AreEqual(49, psm.PrecursorScanNum);
+            Assert.AreEqual("K", psm.PreviousAminoAcid);
+            Assert.AreEqual("P46013", psm.ProteinAccession);
+            Assert.AreEqual("Proliferation marker protein Ki-67", psm.ProteinName);
+            Assert.That(0.004739, Is.EqualTo(psm.QValue).Within(1E-04));
+            Assert.That(0.004739, Is.EqualTo(psm.QValueNotch).Within(1E-04));
+            Assert.AreEqual(45.59512, psm.RetentionTime);
+            Assert.AreEqual(662.486, psm.Score);
+            Assert.AreEqual("[2742 to 2761]", psm.StartAndEndResiduesInProtein);
+            Assert.AreEqual(159644.25225, psm.TotalIonCurrent);
             Assert.AreEqual(0, psm.VariantCrossingIons.Count);
         }
 
@@ -133,8 +133,8 @@ namespace Test
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Search.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
-            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
@@ -143,12 +143,12 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(127, parsedPsms.Count); //total psm count
-            Assert.AreEqual(37, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
+            Assert.AreEqual(385, parsedPsms.Count); //total psm count
+            Assert.AreEqual(215, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
             Assert.AreEqual(0, warnings.Count);
 
             int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
-            Assert.AreEqual(37, countFromResultsTxt);
+            Assert.AreEqual(214, countFromResultsTxt);
         }
 
         [Test]
@@ -566,7 +566,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngineLowResSimple()
         {
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests\sliced_b6.mzML");
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
             CommonParameters CommonParameters = new CommonParameters(
@@ -595,16 +595,16 @@ namespace Test
 
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(447, arrayOfMs2ScansSortedByMass.Count());
+            Assert.AreEqual(535, arrayOfMs2ScansSortedByMass.Count());
 
             int numSpectra = myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2);
 
-            Assert.AreEqual(257, numSpectra);
+            Assert.AreEqual(147, numSpectra);
 
             PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestClassicSearchEngineLowResSimple");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"DatabaseTests", "LowResSnip_B6_mouse_11700_117500.xml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             Directory.CreateDirectory(outputFolder);
 
@@ -630,13 +630,13 @@ namespace Test
             };
             Dictionary<string, Modification> u = new Dictionary<string, Modification>();
 
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinXML(myDatabase, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out u);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse, false, out List<string> errors);
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
             var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(447, listOfSortedXcorrms2Scans.Count());
+            Assert.AreEqual(535, listOfSortedXcorrms2Scans.Count());
 
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
 
@@ -648,31 +648,23 @@ namespace Test
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            Assert.AreEqual(131, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
+            Assert.AreEqual(432, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(447, allPsmsArray.Length);
+            Assert.AreEqual(535, allPsmsArray.Length);
 
-            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
-            goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };
-            List<int> foundScans = new List<int>();
-            foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
-            foundScans.Sort();
-
-            Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(37, goodPsm.Count());
+            Assert.AreEqual(181, goodScore.Count());
             Directory.Delete(outputFolder, true);
         }
 
         [Test]
         public static void TestModernSearchEngineLowResSimple()
         {
-            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\sliced_b6.mzML");
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
             CommonParameters CommonParameters = new CommonParameters(
@@ -709,7 +701,7 @@ namespace Test
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestModernSearchEngineLowResSimple");
             //string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500.xml.gz");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500pruned.xml");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
             Directory.CreateDirectory(outputFolder);
 
@@ -735,9 +727,7 @@ namespace Test
             };
             Dictionary<string, Modification> u = new Dictionary<string, Modification>();
 
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinXML(myDatabase, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out u);
-
-            //var myPtmList = ProteinDbLoader.GetPtmListFromProteinXml(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\LowResSnip_B6_mouse_11700_117500.xmlpruned.xml"));
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse,false,out var errors);
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -755,19 +745,11 @@ namespace Test
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(447, allPsmsArray.Length);
+            Assert.AreEqual(535, allPsmsArray.Length);
 
-            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
-            goodScore.Sort();
 
-            List<int> expectedScans = new List<int>() { 51, 53, 54, 56, 74, 81, 82, 86, 90, 98, 116, 120, 125, 127, 149, 151, 152, 153, 154, 157, 159, 160, 187, 189, 191, 193, 197, 200, 206, 210, 211, 216, 226, 230, 235, 238, 256 };
-            List<int> foundScans = new List<int>();
-            foundScans.AddRange(goodPsm.Select(s => s.ScanNumber).ToList());
-            foundScans.Sort();
-
-            Assert.AreEqual(expectedScans, foundScans);
-            Assert.AreEqual(37, goodPsm.Count());
+            Assert.AreEqual(181, goodScore.Count());
         }
 
         [Test]

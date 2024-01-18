@@ -393,6 +393,15 @@
     <None Update="TestData\SpectralRecoveryTest\MsMsids.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\TaGe_SA_A549_3_snip_2.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TaGe_SA_A549_3_snip.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\TaGe_SA_A549_3_snip.mzML">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
