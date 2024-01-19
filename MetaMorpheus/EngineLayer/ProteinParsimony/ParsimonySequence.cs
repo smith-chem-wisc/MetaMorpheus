@@ -1,29 +1,30 @@
-﻿using Proteomics.ProteolyticDigestion;
+﻿using Omics;
+using Omics.Digestion;
 
 namespace EngineLayer.ProteinParsimony
 {
     internal class ParsimonySequence
     {
-        public ParsimonySequence(PeptideWithSetModifications pwsm, bool TreatModPeptidesAsDifferentPeptides)
+        public ParsimonySequence(IBioPolymerWithSetMods pwsm, bool TreatModPeptidesAsDifferentPeptides)
         {
             Sequence = TreatModPeptidesAsDifferentPeptides ? pwsm.FullSequence : pwsm.BaseSequence;
-            Protease = pwsm.DigestionParams.DigestionAgent as Protease ?? throw new MetaMorpheusException("Digestion agent is not of type protease");
+            DigestionAgent = pwsm.DigestionParams.DigestionAgent;
         }
 
         public string Sequence { get; }
-        public Protease Protease { get; }
+        public DigestionAgent DigestionAgent { get; }
 
         public override bool Equals(object obj)
         {
             ParsimonySequence other = (ParsimonySequence)obj;
             return other != null
                 && (Sequence == null && other.Sequence == null || Sequence.Equals(other.Sequence))
-                && (Protease == null && other.Protease == null || Protease.Equals(other.Protease));
+                && (DigestionAgent == null && other.DigestionAgent == null || DigestionAgent.Equals(other.DigestionAgent));
         }
 
         public override int GetHashCode()
         {
-            return Sequence.GetHashCode() ^ Protease.GetHashCode();
+            return Sequence.GetHashCode() ^ DigestionAgent.GetHashCode();
         }
     }
 }
