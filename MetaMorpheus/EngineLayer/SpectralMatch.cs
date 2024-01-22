@@ -187,7 +187,7 @@ namespace EngineLayer
                         // remove the decoys with this sequence
                         var pwsmToRemove = _BestMatchingBioPolymersWithSetMods.Where(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Parent.IsDecoy).ToList();
                         _BestMatchingBioPolymersWithSetMods.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Parent.IsDecoy);
-                        foreach ((int, PeptideWithSetModifications) pwsm in pwsmToRemove)
+                        foreach ((int, IBioPolymerWithSetMods) pwsm in pwsmToRemove)
                         {
                             BioPolymersWithSetModsToMatchingFragments.Remove(pwsm.Item2);
                         }
