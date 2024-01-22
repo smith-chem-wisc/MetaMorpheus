@@ -400,7 +400,7 @@ namespace EngineLayer.CrosslinkSearch
                             }
                         }
                     }
-                    else if (pre.Item1 - PrecursorMassTable[id] >= (CommonParameters.DigestionParams.MinPeptideLength * 50))
+                    else if (pre.Item1 - PrecursorMassTable[id] >= (CommonParameters.DigestionParams.MinLength * 50))
                     {
                         if (possibleCrosslinkLocations == null)
                         {

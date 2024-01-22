@@ -281,8 +281,8 @@ namespace Test
             Assert.That(searchTask.CommonParameters.DigestionParams.InitiatorMethionineBehavior, Is.EqualTo(digestionParams.InitiatorMethionineBehavior));
             Assert.That(searchTask.CommonParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(digestionParams.MaxMissedCleavages));
             Assert.That(searchTask.CommonParameters.DigestionParams.MaxModificationIsoforms, Is.EqualTo(digestionParams.MaxModificationIsoforms));
-            Assert.That(searchTask.CommonParameters.DigestionParams.MinPeptideLength, Is.EqualTo(digestionParams.MinPeptideLength));
-            Assert.That(searchTask.CommonParameters.DigestionParams.MaxPeptideLength, Is.EqualTo(digestionParams.MaxPeptideLength));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MinLength, Is.EqualTo(digestionParams.MinLength));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
             Assert.That(searchTask.CommonParameters.DigestionParams.Protease.Name, Is.EqualTo(digestionParams.Protease.Name));
             Assert.That(searchTask.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac, Is.EqualTo(digestionParams.GeneratehUnlabeledProteinsForSilac));
             Assert.That(searchTask.CommonParameters.DigestionParams.KeepNGlycopeptide, Is.EqualTo(digestionParams.KeepNGlycopeptide));
@@ -299,8 +299,8 @@ namespace Test
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.InitiatorMethionineBehavior, Is.EqualTo(digestionParams.InitiatorMethionineBehavior));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(digestionParams.MaxMissedCleavages));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxModificationIsoforms, Is.EqualTo(digestionParams.MaxModificationIsoforms));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MinPeptideLength, Is.EqualTo(digestionParams.MinPeptideLength));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxPeptideLength, Is.EqualTo(digestionParams.MaxPeptideLength));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MinLength, Is.EqualTo(digestionParams.MinLength));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.Protease.Name, Is.EqualTo(digestionParams.Protease.Name));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac, Is.EqualTo(digestionParams.GeneratehUnlabeledProteinsForSilac));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.KeepNGlycopeptide, Is.EqualTo(digestionParams.KeepNGlycopeptide));

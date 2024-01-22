@@ -71,11 +71,11 @@ namespace EngineLayer.Indexing
             sb.AppendLine("protease: " + CommonParameters.DigestionParams.Protease);
             sb.AppendLine("initiatorMethionineBehavior: " + CommonParameters.DigestionParams.InitiatorMethionineBehavior);
             sb.AppendLine("maximumMissedCleavages: " + CommonParameters.DigestionParams.MaxMissedCleavages);
-            sb.AppendLine("minPeptideLength: " + CommonParameters.DigestionParams.MinPeptideLength);
-            sb.AppendLine("maxPeptideLength: " + CommonParameters.DigestionParams.MaxPeptideLength);
+            sb.AppendLine("minPeptideLength: " + CommonParameters.DigestionParams.MinLength);
+            sb.AppendLine("maxPeptideLength: " + CommonParameters.DigestionParams.MaxLength);
             sb.AppendLine("maximumVariableModificationIsoforms: " + CommonParameters.DigestionParams.MaxModificationIsoforms);
             sb.AppendLine("digestionTerminus: " + CommonParameters.DigestionParams.FragmentationTerminus);
-            sb.AppendLine("maxModsForEachPeptide: " + CommonParameters.DigestionParams.MaxModsForPeptide);
+            sb.AppendLine("maxModsForEachPeptide: " + CommonParameters.DigestionParams.MaxMods);
             sb.AppendLine("cleavageSpecificity: " + CommonParameters.DigestionParams.SearchModeType);
             sb.AppendLine("specificProtease: " + CommonParameters.DigestionParams.SpecificProtease);
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));

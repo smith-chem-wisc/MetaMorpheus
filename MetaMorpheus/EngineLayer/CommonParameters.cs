@@ -215,11 +215,11 @@ namespace EngineLayer
                                 new DigestionParams(
                                     DigestionParams.Protease.Name,
                                     DigestionParams.MaxMissedCleavages,
-                                    DigestionParams.MinPeptideLength,
-                                    DigestionParams.MaxPeptideLength,
+                                    DigestionParams.MinLength,
+                                    DigestionParams.MaxLength,
                                     DigestionParams.MaxModificationIsoforms,
                                     DigestionParams.InitiatorMethionineBehavior,
-                                    DigestionParams.MaxModsForPeptide,
+                                    DigestionParams.MaxMods,
                                     DigestionParams.SearchModeType,
                                     terminus.Value //possibly changed
                                 ),

@@ -208,10 +208,10 @@ namespace MetaMorpheusGUI
             // use default settings to populate
             var defaultParams = new CommonParameters();
             Protease tempProtease = defaultParams.DigestionParams.Protease;
-            int tempMinPeptideLength = defaultParams.DigestionParams.MinPeptideLength;
-            int tempMaxPeptideLength = defaultParams.DigestionParams.MaxPeptideLength;
+            int tempMinPeptideLength = defaultParams.DigestionParams.MinLength;
+            int tempMaxPeptideLength = defaultParams.DigestionParams.MaxLength;
             int tempMaxMissedCleavages = defaultParams.DigestionParams.MaxMissedCleavages;
-            int tempMaxModsForPeptide = defaultParams.DigestionParams.MaxModsForPeptide;
+            int tempMaxModsForPeptide = defaultParams.DigestionParams.MaxMods;
             var tempPrecursorMassTolerance = defaultParams.PrecursorMassTolerance;
             var tempProductMassTolerance = defaultParams.ProductMassTolerance;
             DissociationType tempDissociationType = defaultParams.DissociationType; 

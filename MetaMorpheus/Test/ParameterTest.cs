@@ -146,10 +146,10 @@ namespace Test
             Assert.AreEqual(updatedParameters.DissociationType, basicFileSpecificParameters.DissociationType);
             Assert.AreEqual(updatedParameters.ProductMassTolerance, basicFileSpecificParameters.ProductMassTolerance);
             Assert.AreEqual(updatedParameters.PrecursorMassTolerance, basicFileSpecificParameters.PrecursorMassTolerance);
-            Assert.AreEqual(updatedParameters.DigestionParams.MaxModsForPeptide, basicFileSpecificParameters.MaxModsForPeptide);
+            Assert.AreEqual(updatedParameters.DigestionParams.MaxMods, basicFileSpecificParameters.MaxModsForPeptide);
             Assert.AreEqual(updatedParameters.DigestionParams.MaxMissedCleavages, basicFileSpecificParameters.MaxMissedCleavages);
-            Assert.AreEqual(updatedParameters.DigestionParams.MinPeptideLength, basicFileSpecificParameters.MinPeptideLength);
-            Assert.AreEqual(updatedParameters.DigestionParams.MaxPeptideLength, basicFileSpecificParameters.MaxPeptideLength);
+            Assert.AreEqual(updatedParameters.DigestionParams.MinLength, basicFileSpecificParameters.MinPeptideLength);
+            Assert.AreEqual(updatedParameters.DigestionParams.MaxLength, basicFileSpecificParameters.MaxPeptideLength);
             Assert.AreEqual(updatedParameters.DigestionParams.Protease, basicFileSpecificParameters.Protease);
             Assert.AreEqual(updatedParameters.CustomIons, basicFileSpecificParameters.CustomIons);
 
