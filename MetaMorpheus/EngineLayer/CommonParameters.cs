@@ -212,17 +212,7 @@ namespace EngineLayer
                                 PrecursorMassTolerance,
                                 DeconvolutionMassTolerance,
                                 MaxThreadsToUsePerFile,
-                                new DigestionParams(
-                                    DigestionParams.Protease.Name,
-                                    DigestionParams.MaxMissedCleavages,
-                                    DigestionParams.MinLength,
-                                    DigestionParams.MaxLength,
-                                    DigestionParams.MaxModificationIsoforms,
-                                    DigestionParams.InitiatorMethionineBehavior,
-                                    DigestionParams.MaxMods,
-                                    DigestionParams.SearchModeType,
-                                    terminus.Value //possibly changed
-                                ),
+                                (DigestionParams)DigestionParams.Clone(terminus),
                                 ListOfModsVariable,
                                 ListOfModsFixed,
                                 AssumeOrphanPeaksAreZ1Fragments,
