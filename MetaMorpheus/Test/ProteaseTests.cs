@@ -32,7 +32,7 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
-            Assert.AreEqual("FTQTSGETTDADKEPAGEDK", psm.BaseSeq);
+            Assert.AreEqual("TTQNQKSQDVELWEGEVVKEL", psm.BaseSeq); //base sequence ends in leucine as expected
             Directory.Delete(outputFolder,true);
         }
     }
