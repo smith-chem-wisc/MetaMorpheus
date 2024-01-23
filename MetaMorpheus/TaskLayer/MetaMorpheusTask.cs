@@ -74,11 +74,12 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
-
             .ConfigureType<IDigestionParams>(type => type
                 .WithConversionFor<TomlTable>(c => c
-                    .FromToml(tmlTable => tmlTable.ContainsKey("Protease") ? tmlTable.Get<DigestionParams>() : throw new NotImplementedException("Placeholder for Rna Digestion Params"))))
-
+                    .FromToml(tmlTable =>
+                         tmlTable.ContainsKey("Protease") 
+                            ? tmlTable.Get<DigestionParams>()
+                            : throw new NotImplementedException("Placeholder for Rna Digestion Params"))))
         );
 
        
