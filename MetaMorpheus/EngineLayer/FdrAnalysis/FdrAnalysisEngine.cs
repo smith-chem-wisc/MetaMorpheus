@@ -49,7 +49,7 @@ namespace EngineLayer.FdrAnalysis
             if (GlobalVariables.StopLoops) { return; }
 
             // calculate FDR on a per-protease basis (targets and decoys for a specific protease)
-            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.Protease);
+            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.DigestionAgent);
 
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
@@ -227,7 +227,7 @@ namespace EngineLayer.FdrAnalysis
                 if (AllPsms.Count > 100)
                 {
                     string searchType = "standard";
-                    if (AllPsms[0].DigestionParams.Protease.Name == "top-down")
+                    if (AllPsms[0].DigestionParams.DigestionAgent.Name == "top-down")
                     {
                         searchType = "top-down";
                     }

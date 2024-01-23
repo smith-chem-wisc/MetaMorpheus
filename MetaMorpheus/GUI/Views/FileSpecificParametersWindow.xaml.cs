@@ -12,6 +12,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Globalization;
 using System.Windows.Media;
 using MassSpectrometry;
+using Omics.Digestion;
 
 namespace MetaMorpheusGUI
 {
@@ -207,7 +208,7 @@ namespace MetaMorpheusGUI
         {
             // use default settings to populate
             var defaultParams = new CommonParameters();
-            Protease tempProtease = defaultParams.DigestionParams.Protease;
+            DigestionAgent tempProtease = defaultParams.DigestionParams.DigestionAgent;
             int tempMinPeptideLength = defaultParams.DigestionParams.MinLength;
             int tempMaxPeptideLength = defaultParams.DigestionParams.MaxLength;
             int tempMaxMissedCleavages = defaultParams.DigestionParams.MaxMissedCleavages;

@@ -150,7 +150,7 @@ namespace Test
             Assert.AreEqual(updatedParameters.DigestionParams.MaxMissedCleavages, basicFileSpecificParameters.MaxMissedCleavages);
             Assert.AreEqual(updatedParameters.DigestionParams.MinLength, basicFileSpecificParameters.MinPeptideLength);
             Assert.AreEqual(updatedParameters.DigestionParams.MaxLength, basicFileSpecificParameters.MaxPeptideLength);
-            Assert.AreEqual(updatedParameters.DigestionParams.Protease, basicFileSpecificParameters.Protease);
+            Assert.AreEqual(updatedParameters.DigestionParams.DigestionAgent, basicFileSpecificParameters.Protease);
             Assert.AreEqual(updatedParameters.CustomIons, basicFileSpecificParameters.CustomIons);
 
             Assert.AreEqual(updatedParameters.DoPrecursorDeconvolution, notDefaultParameters.DoPrecursorDeconvolution);
@@ -168,7 +168,7 @@ namespace Test
             Assert.AreEqual(updatedParameters.UseDeltaScore, notDefaultParameters.UseDeltaScore);
             Assert.AreEqual(updatedParameters.DeconvolutionMassTolerance, notDefaultParameters.DeconvolutionMassTolerance);
             Assert.AreEqual(updatedParameters.MaxThreadsToUsePerFile, notDefaultParameters.MaxThreadsToUsePerFile);
-            Assert.AreEqual(updatedParameters.DigestionParams.InitiatorMethionineBehavior, notDefaultParameters.DigestionParams.InitiatorMethionineBehavior);
+            Assert.AreEqual(((DigestionParams)updatedParameters.DigestionParams).InitiatorMethionineBehavior, ((DigestionParams)notDefaultParameters.DigestionParams).InitiatorMethionineBehavior);
             Assert.AreEqual(updatedParameters.ListOfModsVariable, notDefaultParameters.ListOfModsVariable);
             Assert.AreEqual(updatedParameters.ListOfModsFixed, notDefaultParameters.ListOfModsFixed);
 

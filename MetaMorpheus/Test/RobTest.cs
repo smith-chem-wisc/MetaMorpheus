@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
+using Omics;
 
 namespace Test
 {
@@ -178,28 +179,28 @@ namespace Test
 
             int idx = 0;
 
-            var pep1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep1 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.AreEqual("MNNNSK", pep1.Single().FullSequence);//this might be base
 
-            var pep1mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep1mod = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.AreEqual("MNNNS[HaHa:resMod on S]K", pep1mod.Single().FullSequence);//this might be base
 
-            var pep3 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep3 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.AreEqual("NNNSK", pep3.Single().FullSequence);//this might be base
 
-            var pep3mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep3mod = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.AreEqual("NNNS[HaHa:resMod on S]K", pep3mod.Single().FullSequence);//this might be base
 
-            var pep4 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.AreEqual("QQQI", pep4.Single().FullSequence);//this might be base
 
-            var pep4mod1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4mod1 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.AreEqual("QQQI[HaHa:iModOne on I]", pep4mod1.Single().FullSequence);//this might be base
 
-            var pep4mod2 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4mod2 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.AreEqual("QQQI[HaHa:iModTwo on I]", pep4mod2.Single().FullSequence);//this might be base
 
-            var peptideList = new HashSet<PeptideWithSetModifications>();
+            var peptideList = new HashSet<IBioPolymerWithSetMods>();
             foreach (var peptide in proteinList.SelectMany(protein => protein.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications)))
             {               
                 peptideList.Add(peptide);

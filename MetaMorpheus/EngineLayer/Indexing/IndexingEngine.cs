@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Omics;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
@@ -68,8 +69,9 @@ namespace EngineLayer.Indexing
             sb.AppendLine("Dissociation Type: " + CommonParameters.DissociationType);
             sb.AppendLine("Contaminant Handling: " + TcAmbiguity);
 
-            sb.AppendLine("protease: " + CommonParameters.DigestionParams.Protease);
-            sb.AppendLine("initiatorMethionineBehavior: " + CommonParameters.DigestionParams.InitiatorMethionineBehavior);
+            sb.AppendLine("protease: " + CommonParameters.DigestionParams.DigestionAgent);
+            if (CommonParameters.DigestionParams is DigestionParams digestionParams)
+                sb.AppendLine("initiatorMethionineBehavior: " + digestionParams.InitiatorMethionineBehavior);
             sb.AppendLine("maximumMissedCleavages: " + CommonParameters.DigestionParams.MaxMissedCleavages);
             sb.AppendLine("minPeptideLength: " + CommonParameters.DigestionParams.MinLength);
             sb.AppendLine("maxPeptideLength: " + CommonParameters.DigestionParams.MaxLength);
@@ -77,7 +79,8 @@ namespace EngineLayer.Indexing
             sb.AppendLine("digestionTerminus: " + CommonParameters.DigestionParams.FragmentationTerminus);
             sb.AppendLine("maxModsForEachPeptide: " + CommonParameters.DigestionParams.MaxMods);
             sb.AppendLine("cleavageSpecificity: " + CommonParameters.DigestionParams.SearchModeType);
-            sb.AppendLine("specificProtease: " + CommonParameters.DigestionParams.SpecificProtease);
+            if (CommonParameters.DigestionParams is DigestionParams digestionParam)
+                sb.AppendLine("specificProtease: " + digestionParam.SpecificProtease);
             sb.AppendLine("maximumFragmentSize" + (int)Math.Round(MaxFragmentSize));
 
             sb.Append("Localizeable mods: " + ProteinList.Select(b => b.OneBasedPossibleLocalizedModifications.Count).Sum());
@@ -92,6 +95,9 @@ namespace EngineLayer.Indexing
             // digest database
             List<PeptideWithSetModifications> peptides = new List<PeptideWithSetModifications>();
 
+            if (CommonParameters.DigestionParams is not DigestionParams digestionParams)
+                throw new MetaMorpheusException("Digestion parameters must be of type DigestionParams. Not yet implemented for Rna Digestion");
+            
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (i) =>
@@ -103,7 +109,7 @@ namespace EngineLayer.Indexing
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
 
-                    localPeptides.AddRange(ProteinList[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels));
+                    localPeptides.AddRange(ProteinList[i].Digest(digestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels));
 
                     progress++;
                     var percentProgress = (int)((progress / ProteinList.Count) * 100);
@@ -130,7 +136,7 @@ namespace EngineLayer.Indexing
             {
                 precursorIndex = CreateNewPrecursorIndex(peptides);
             }
-            bool addInteriorTerminalModsToPrecursorIndex = GeneratePrecursorIndex && CommonParameters.DigestionParams.Protease.Name.Contains("single");
+            bool addInteriorTerminalModsToPrecursorIndex = GeneratePrecursorIndex && CommonParameters.DigestionParams.DigestionAgent.Name.Contains("single");
             List<Modification> terminalModifications = addInteriorTerminalModsToPrecursorIndex ?
                 NonSpecificEnzymeSearchEngine.GetVariableTerminalMods(CommonParameters.DigestionParams.FragmentationTerminus, VariableModifications) :
                 null;

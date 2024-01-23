@@ -22,6 +22,7 @@ using Chemistry;
 using MzLibUtil;
 using Proteomics.AminoAcidPolymer;
 using System.Text.Json.Serialization;
+using Omics.Digestion;
 using Omics.Modifications;
 
 namespace TaskLayer
@@ -420,7 +421,7 @@ namespace TaskLayer
             List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
             SilacLabel startLabel = Parameters.SearchParameters.StartTurnoverLabel;
             SilacLabel endLabel = Parameters.SearchParameters.EndTurnoverLabel;
-            bool quantifyUnlabeledPeptides = Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac);
+            bool quantifyUnlabeledPeptides = Parameters.ListOfDigestionParams.Any(x => x is DigestionParams { GeneratehUnlabeledProteinsForSilac: true });
             if (Parameters.SearchParameters.SilacLabels != null)
             {
                 bool turnoverWithMultipleLabels = startLabel != null && endLabel != null; //used to check multiple labels
@@ -547,8 +548,8 @@ namespace TaskLayer
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
             //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-            Dictionary<Protease, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<SpectralMatch>>();
-            Dictionary<Protease, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<Protease, FlashLfqResults>();
+            Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
+            Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
 
             foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
             {
@@ -564,7 +565,7 @@ namespace TaskLayer
                     psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
 
-                proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
+                proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
             }
 
             // pass PSM info to FlashLFQ
@@ -957,7 +958,7 @@ namespace TaskLayer
                             Parameters.VariableModifications, 
                             Parameters.FixedModifications, 
                             Parameters.SearchParameters.SilacLabels,
-                            new List<Protease> { CommonParameters.DigestionParams.Protease },
+                            new List<Protease> { ((DigestionParams)CommonParameters.DigestionParams).Protease },
                             CommonParameters.ProductMassTolerance,
                             CommonParameters.PrecursorMassTolerance,
                             CommonParameters.DigestionParams.MaxMissedCleavages,
@@ -1849,7 +1850,7 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
                 string searchType;
-                if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
+                if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.DigestionAgent.Name != null && psmList[0].DigestionParams.DigestionAgent.Name == "top-down")
                 {
                     searchType = "top-down";
                 }

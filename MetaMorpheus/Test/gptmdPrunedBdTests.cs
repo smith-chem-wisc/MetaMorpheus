@@ -10,6 +10,7 @@ using System.Linq;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -155,11 +156,11 @@ namespace Test
             Assert.AreEqual(4, digestedList.Count);
 
             //Set Peptide with 1 mod at position 3
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
+            var pepWithSetMods1 = digestedList[1];
 
             //Finally Write MZML file
             Assert.AreEqual("PEP[ConnorModType:ConnorMod on P]TID", pepWithSetMods1.FullSequence);//this might be base sequence
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
@@ -284,14 +285,14 @@ namespace Test
             var digestedList = protein[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
             //Set Peptide with 1 mod at position 3
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
-            PeptideWithSetModifications pepWithSetMods2 = digestedList[1];
-            PeptideWithSetModifications pepWithSetMods3 = digestedList[2];
-            PeptideWithSetModifications pepWithSetMods4 = digestedList[3];
-            PeptideWithSetModifications pepWithSetMods5 = digestedList[4];
+            var pepWithSetMods1 = digestedList[0];
+            var pepWithSetMods2 = digestedList[1];
+            var pepWithSetMods3 = digestedList[2];
+            var pepWithSetMods4 = digestedList[3];
+            var pepWithSetMods5 = digestedList[4];
 
             //CUSTOM PEP
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -380,7 +381,7 @@ namespace Test
             numSpectraPerFile.Add("", stuffForSpectraFile);
             testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -485,7 +486,7 @@ namespace Test
             numSpectraPerFile.Add("", stuffForSpectraFile);
             testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);

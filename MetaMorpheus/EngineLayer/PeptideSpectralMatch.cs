@@ -21,6 +21,8 @@ namespace EngineLayer
 
         }
 
+        public new DigestionParams DigestionParams => base.DigestionParams as DigestionParams;
+
         #region Silac
 
         /// <summary>

@@ -18,6 +18,8 @@ using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
+using Omics;
+using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
@@ -72,7 +74,13 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
+
+            .ConfigureType<IDigestionParams>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable => tmlTable.ContainsKey("Protease") ? tmlTable.Get<DigestionParams>() : throw new NotImplementedException("Placeholder for Rna Digestion Params"))))
+
         );
+
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
@@ -396,24 +404,36 @@ namespace TaskLayer
             }
 
             // set file-specific digestion parameters
-            Protease protease = fileSpecificParams.Protease ?? commonParams.DigestionParams.SpecificProtease; //set to specific for nonspecific searches to update
             int minPeptideLength = fileSpecificParams.MinPeptideLength ?? commonParams.DigestionParams.MinLength;
             int maxPeptideLength = fileSpecificParams.MaxPeptideLength ?? commonParams.DigestionParams.MaxLength;
             int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
             int maxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
-            DigestionParams fileSpecificDigestionParams = new DigestionParams(
-                protease: protease.Name,
-                maxMissedCleavages: maxMissedCleavages,
-                minPeptideLength: minPeptideLength,
-                maxPeptideLength: maxPeptideLength,
-                maxModsForPeptides: maxModsForPeptide,
 
-                //NEED THESE OR THEY'LL BE OVERWRITTEN
-                maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
-                initiatorMethionineBehavior: commonParams.DigestionParams.InitiatorMethionineBehavior,
-                fragmentationTerminus: commonParams.DigestionParams.FragmentationTerminus,
-                searchModeType: commonParams.DigestionParams.SearchModeType
+            IDigestionParams fileSpecificDigestionParams;
+            if (commonParams.DigestionParams is DigestionParams digestionParams)
+            {
+                DigestionAgent
+                    protease = fileSpecificParams.Protease ??
+                               digestionParams.SpecificProtease; //set to specific for nonspecific searches to update
+                fileSpecificDigestionParams = new DigestionParams(
+                    protease: protease.Name,
+                    maxMissedCleavages: maxMissedCleavages,
+                    minPeptideLength: minPeptideLength,
+                    maxPeptideLength: maxPeptideLength,
+                    maxModsForPeptides: maxModsForPeptide,
+
+                    //NEED THESE OR THEY'LL BE OVERWRITTEN
+                    maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
+                    initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
+                    fragmentationTerminus: digestionParams.FragmentationTerminus,
+                    searchModeType: digestionParams.SearchModeType
                 );
+            }
+            else // Placeholder for when we add RNA digestion
+                throw new NotImplementedException();
+
+
+            
 
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
@@ -1077,8 +1097,8 @@ namespace TaskLayer
 
             if (commonParameters != null
                 && commonParameters.DigestionParams != null
-                && commonParameters.DigestionParams.Protease != null
-                && commonParameters.DigestionParams.Protease.Name == "top-down")
+                && commonParameters.DigestionParams is DigestionParams { Protease: not null } 
+                && commonParameters.DigestionParams.DigestionAgent.Name == "top-down")
             {
                 GlobalVariables.AnalyteType = "Proteoform";
             }

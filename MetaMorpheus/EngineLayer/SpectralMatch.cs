@@ -11,6 +11,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Easy.Common.Extensions;
 using Omics;
+using Omics.Digestion;
 using Omics.Modifications;
 using Proteomics.AminoAcidPolymer;
 using ThermoFisher.CommonCore.Data;
@@ -93,7 +94,7 @@ namespace EngineLayer
 
 
         #region Search
-        public DigestionParams DigestionParams { get; }
+        public IDigestionParams DigestionParams { get; }
         public Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> BioPolymersWithSetModsToMatchingFragments { get; private set; }
 
         protected List<(int Notch, IBioPolymerWithSetMods Pwsm)> _BestMatchingBioPolymersWithSetMods;

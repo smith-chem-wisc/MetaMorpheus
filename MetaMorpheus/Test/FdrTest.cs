@@ -57,12 +57,12 @@ namespace Test
 
             var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0];
-            PeptideWithSetModifications pep2 = digested[1];
-            PeptideWithSetModifications pep3 = digested[2];
-            PeptideWithSetModifications pep4 = digested[3];
+            var pep1 = digested[0];
+            var pep2 = digested[1];
+            var pep3 = digested[2];
+            var pep4 = digested[3];
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep1, pep2, pep3 });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
@@ -117,12 +117,12 @@ namespace Test
 
             var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0];
-            PeptideWithSetModifications pep2 = digested[1];
-            PeptideWithSetModifications pep3 = digested[2];
-            PeptideWithSetModifications pep4 = digested[3];
+            var pep1 = digested[0];
+            var pep2 = digested[1];
+            var pep3 = digested[2];
+            var pep4 = digested[3];
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep1, pep2, pep3 });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
@@ -168,7 +168,7 @@ namespace Test
             Protein TargetProteinLost = new Protein("PEPTIDEANTHE", "accession4");
             Protein DecoyProteinFound = new Protein("PETPLEDQGTHE", "accessiond", isDecoy: true);
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             {
                 TargetProtein1.Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[0],
                 TargetProtein2.Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[0],
@@ -217,7 +217,7 @@ namespace Test
             Protein DecoyProtein3 = new Protein("TLEDNIE", "accession3d", isDecoy: true);
             Protein DecoyProteinShiny = new Protein("GGGGGG", "accessionShinyd", isDecoy: true);
 
-            myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             {
                 TargetProtein1.Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[0],
                 TargetProtein2.Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[0],
@@ -378,7 +378,7 @@ namespace Test
             var anMzSpectrum = new MzSpectrum(new double[] { 1, 1 }, new double[] { 2, 2 }, true);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(anMzSpectrum, 1, 1, true, Polarity.Negative, 2, null, "", MZAnalyzerType.Orbitrap, 2, null, null, null), 1, 1, "path", new CommonParameters());
             Protein variantProtein = new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
-            PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
+            IBioPolymerWithSetMods varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
 
             Product prod = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
             List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(prod, 1, 1.0, 1) };
