@@ -186,6 +186,24 @@ namespace EngineLayer
                 PEP_QValue = pepQValue
             };
         }
+        public void SetFdrTargetAndDecoyCounts(double cumulativeTarget, double cumulativeDecoy, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch)
+        {
+            FdrInfo = new FdrInfo
+            {
+                CumulativeTarget = cumulativeTarget,
+                CumulativeDecoy = cumulativeDecoy,
+                CumulativeTargetNotch = cumulativeTargetNotch,
+                CumulativeDecoyNotch = cumulativeDecoyNotch,
+            };
+        }
+
+        public void SetQandPEPvalues(double qValue, double qValueNotch, double pep, double pepQValue)
+        {
+            FdrInfo.QValue = qValue;
+            FdrInfo.QValueNotch = qValueNotch;
+            FdrInfo.PEP = pep;
+            FdrInfo.PEP_QValue = pepQValue;
+        }
 
         /// <summary>
         /// This method saves properties of this PSM for internal use. It is NOT used for any output.
