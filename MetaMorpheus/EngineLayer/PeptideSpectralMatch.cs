@@ -186,7 +186,7 @@ namespace EngineLayer
                 PEP_QValue = pepQValue
             };
         }
-        public void SetFdrTargetAndDecoyCounts(double cumulativeTarget, double cumulativeDecoy, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch)
+        public void SetFdrTargetAndDecoyCounts(double cumulativeTarget, double cumulativeDecoy, double cumulativeTargetNotch, double cumulativeDecoyNotch)
         {
             FdrInfo = new FdrInfo
             {
