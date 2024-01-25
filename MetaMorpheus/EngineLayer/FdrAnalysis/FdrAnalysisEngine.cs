@@ -128,11 +128,11 @@ namespace EngineLayer.FdrAnalysis
 
         private void ComputeTargetAndDecoyCounts(List<PeptideSpectralMatch> psms)
         {
-            double cumulativeTarget = 0;
-            double cumulativeDecoy = 0;
+            double cumulativeTarget = 0; // total for all psms regardless of notch
+            double cumulativeDecoy = 0; // total for all psms regardless of notch
 
-            double[] cumulativeTargetPerNotch = new double[MassDiffAcceptorNumNotches + 1];
-            double[] cumulativeDecoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
+            double[] cumulativeTargetPerNotch = new double[MassDiffAcceptorNumNotches + 1]; // running total for all psms for each notch separately
+            double[] cumulativeDecoyPerNotch = new double[MassDiffAcceptorNumNotches + 1]; // running total for all psms for each notch separately
 
             //Assign FDR values to PSMs
             for (int i = 0; i < psms.Count; i++)
@@ -144,12 +144,12 @@ namespace EngineLayer.FdrAnalysis
                 // in that case, count it as the fraction of decoy hits
                 // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
 
-                double[] targetPerNotch = new double[MassDiffAcceptorNumNotches + 1];
-                double[] decoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
+                double[] targetPerNotch = new double[MassDiffAcceptorNumNotches + 1]; // target counts per notch for psm.bestmatchingpeptides
+                double[] decoyPerNotch = new double[MassDiffAcceptorNumNotches + 1]; // target counts per notch for psm.bestmatchingpeptides
 
                 foreach (var bestMatchingPeptide in psms[i].BestMatchingPeptides)
                 {
-                    if (bestMatchingPeptide.Peptide == null)
+                    if (bestMatchingPeptide.Peptide == null) //can't remember why but some peptides are null, we ignore these and move on.
                     {
                         continue;
                     }
@@ -164,11 +164,16 @@ namespace EngineLayer.FdrAnalysis
                     }
                 }
 
+                //here we increment the global target and decoy counts fractionally based on the ratio
+                //of all best matching targets and decoys respectively divided by the total
+                //count of best matching peptides
                 cumulativeTarget += targetPerNotch.Sum() / (targetPerNotch.Sum() + decoyPerNotch.Sum());
                 cumulativeDecoy += decoyPerNotch.Sum() / (targetPerNotch.Sum() + decoyPerNotch.Sum());
 
-                List<(double, int)> myPairs = new List<(double, int)>();
-
+                //until we can get output of qvalues for each notch separately, we will find and report
+                //the highest qValue notch. The loop below computes qValue for each notch and adds
+                //that to a list tuple with each notch.
+                List<(double qValue, int notch)> qValueNotchPairs = new List<(double, int)>();
                 for (int j = 0; j < MassDiffAcceptorNumNotches; j++)
                 {
                     double denominator = targetPerNotch[j] + decoyPerNotch[j];
@@ -176,13 +181,14 @@ namespace EngineLayer.FdrAnalysis
                     {
                         cumulativeTargetPerNotch[j] += (targetPerNotch[j]) / denominator;
                         cumulativeDecoyPerNotch[j] += (decoyPerNotch[j]) / denominator;
-                        myPairs.Add((cumulativeTargetPerNotch[j],j));
+                        qValueNotchPairs.Add((cumulativeDecoyPerNotch[j] / cumulativeTargetPerNotch[j],j));
                     }
                 }
 
-                double worstQvalue = myPairs.Select(k => k.Item1).Max();
-                int worstNotch = myPairs.Where(k => k.Item1 == worstQvalue).Select(k => k.Item2).First();
-
+                //here we are finding the worst qValue notch pair and then reporting the corresponding total number of targets and decoys
+                //for that notch with the psm.
+                double worstQvalue = qValueNotchPairs.Select(k => k.qValue).Max();
+                int worstNotch = qValueNotchPairs.Where(k => k.qValue.Equals(worstQvalue)).Select(k => k.notch).First();
                 psms[i].SetFdrTargetAndDecoyCounts(cumulativeTarget,cumulativeDecoy, cumulativeTargetPerNotch[worstNotch], cumulativeDecoyPerNotch[worstNotch]);
             }
         }
@@ -190,8 +196,10 @@ namespace EngineLayer.FdrAnalysis
         private void QValueInverted(List<PeptideSpectralMatch> psms)
         {
             psms.Reverse();
-            double qValue = 0;
-            double qValueNotch = 0;
+            //this calculation is performed from bottom up. So, we begin the loop by computing qValue
+            //and qValueNotch for the last/lowest scoring psm in the bunch
+            double qValue = (psms[0].FdrInfo.CumulativeDecoy + 1) / psms[0].FdrInfo.CumulativeTarget;
+            double qValueNotch = (psms[0].FdrInfo.CumulativeDecoyNotch + 1) / psms[0].FdrInfo.CumulativeTargetNotch;
 
             //Assign FDR values to PSMs
             for (int i = 0; i < psms.Count; i++)
