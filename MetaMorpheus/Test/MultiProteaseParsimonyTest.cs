@@ -988,7 +988,7 @@ namespace Test
         }
 
         /// <summary>
-        /// This test ensures that FDR for each psm is calculated accoriding to its protease
+        /// This test ensures that FDR for each psm is calculated according to its protease
         /// </summary>
         [Test]
         public static void MultiProteaseParsimony_TestingProteaseSpecificFDRCalculations()

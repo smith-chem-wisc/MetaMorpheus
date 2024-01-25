@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
+using Easy.Common.Extensions;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -130,7 +131,6 @@ namespace EngineLayer.FdrAnalysis
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;
 
-            //set up arrays for local FDRs
             double[] cumulativeTargetPerNotch = new double[MassDiffAcceptorNumNotches + 1];
             double[] cumulativeDecoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
 
@@ -140,31 +140,35 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                PeptideSpectralMatch psm = psms[i];
-                int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
-
                 // the PSM can be ambiguous between a target and a decoy sequence
                 // in that case, count it as the fraction of decoy hits
                 // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
-                double decoyHits = 0;
-                double totalHits = 0;
-                var hits = psm.BestMatchingPeptides.GroupBy(p => p.Peptide.FullSequence);
-                foreach (var hit in hits)
+
+                double[] targetPerNotch = new double[MassDiffAcceptorNumNotches + 1];
+                double[] decoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
+
+                foreach (var bestMatchingPeptide in psms[i].BestMatchingPeptides)
                 {
-                    if (hit.First().Peptide.Protein.IsDecoy)
+                    if (bestMatchingPeptide.Peptide == null)
                     {
-                        decoyHits++;
+                        continue;
                     }
-                    totalHits++;
+
+                    if (bestMatchingPeptide.Peptide.Protein.IsDecoy)
+                    {
+                        decoyPerNotch[bestMatchingPeptide.Notch]++;
+                    }
+                    else
+                    {
+                        targetPerNotch[bestMatchingPeptide.Notch]++;
+                    }
                 }
 
-                cumulativeDecoy += decoyHits / totalHits;
-                cumulativeDecoyPerNotch[notch] += decoyHits / totalHits;
+                cumulativeTarget += targetPerNotch.Sum() / (targetPerNotch.Sum() + decoyPerNotch.Sum());
+                cumulativeDecoy += decoyPerNotch.Sum() / (targetPerNotch.Sum() + decoyPerNotch.Sum());
 
-                cumulativeTarget += 1 - (decoyHits / totalHits);
-                cumulativeTargetPerNotch[notch] += 1 - (decoyHits / totalHits);
 
-                psm.SetFdrTargetAndDecoyCounts(cumulativeTarget, cumulativeDecoy, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch]);
+                psms[i].SetFdrTargetAndDecoyCounts(cumulativeTarget,cumulativeDecoy, cumulativeTargetPerNotch[myNotches.Last()], cumulativeDecoyPerNotch[myNotches.Last()]);
             }
         }
 
