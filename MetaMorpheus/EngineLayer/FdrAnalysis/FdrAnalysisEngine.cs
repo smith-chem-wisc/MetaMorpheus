@@ -167,8 +167,23 @@ namespace EngineLayer.FdrAnalysis
                 cumulativeTarget += targetPerNotch.Sum() / (targetPerNotch.Sum() + decoyPerNotch.Sum());
                 cumulativeDecoy += decoyPerNotch.Sum() / (targetPerNotch.Sum() + decoyPerNotch.Sum());
 
+                List<(double, int)> myPairs = new List<(double, int)>();
 
-                psms[i].SetFdrTargetAndDecoyCounts(cumulativeTarget,cumulativeDecoy, cumulativeTargetPerNotch[myNotches.Last()], cumulativeDecoyPerNotch[myNotches.Last()]);
+                for (int j = 0; j < MassDiffAcceptorNumNotches; j++)
+                {
+                    double denominator = targetPerNotch[j] + decoyPerNotch[j];
+                    if (denominator != 0)
+                    {
+                        cumulativeTargetPerNotch[j] += (targetPerNotch[j]) / denominator;
+                        cumulativeDecoyPerNotch[j] += (decoyPerNotch[j]) / denominator;
+                        myPairs.Add((cumulativeTargetPerNotch[j],j));
+                    }
+                }
+
+                double worstQvalue = myPairs.Select(k => k.Item1).Max();
+                int worstNotch = myPairs.Where(k => k.Item1 == worstQvalue).Select(k => k.Item2).First();
+
+                psms[i].SetFdrTargetAndDecoyCounts(cumulativeTarget,cumulativeDecoy, cumulativeTargetPerNotch[worstNotch], cumulativeDecoyPerNotch[worstNotch]);
             }
         }
 
