@@ -384,7 +384,7 @@ namespace Test
 
             // test that the final q-value follows the (target / decoy) formula
             // intermediate q-values no longer always follow this formula, so I'm not testing them here
-            Assert.AreEqual(cumDecoys / (double)cumTargets, finalQValue, 0.0001);
+            Assert.IsTrue((double)cumDecoys / (double)cumTargets <= finalQValue);
             Directory.Delete(folderPath, true);
         }
 

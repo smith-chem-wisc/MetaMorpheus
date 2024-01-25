@@ -174,7 +174,7 @@ namespace EngineLayer.FdrAnalysis
                 //the highest qValue notch. The loop below computes qValue for each notch and adds
                 //that to a list tuple with each notch.
                 List<(double qValue, int notch)> qValueNotchPairs = new List<(double, int)>();
-                for (int j = 0; j < MassDiffAcceptorNumNotches; j++)
+                for (int j = 0; j <= MassDiffAcceptorNumNotches; j++)
                 {
                     double denominator = targetPerNotch[j] + decoyPerNotch[j];
                     if (denominator != 0)
