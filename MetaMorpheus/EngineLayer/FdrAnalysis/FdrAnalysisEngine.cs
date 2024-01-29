@@ -221,14 +221,19 @@ namespace EngineLayer.FdrAnalysis
                 double pepQValue = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP_QValue;
 
                 psms[i].SetQandPEPvalues(qValue, qValueNotch, pep, pepQValue);
+
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
         private void QValueTraditional(List<PeptideSpectralMatch> psms)
         {
-            double qValue = 0;
-            double qValueNotch = 0;
+            double cumulativeTarget = 0;
+            double cumulativeDecoy = 0;
+
+            //set up arrays for local FDRs
+            double[] cumulativeTargetPerNotch = new double[MassDiffAcceptorNumNotches + 1];
+            double[] cumulativeDecoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
 
             //Assign FDR values to PSMs
             for (int i = 0; i < psms.Count; i++)
@@ -236,13 +241,41 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                qValue = Math.Max(qValue, psms[i].FdrInfo.CumulativeDecoy / psms[i].FdrInfo.CumulativeTarget);
-                qValueNotch = Math.Max(qValueNotch, psms[i].FdrInfo.CumulativeDecoyNotch / psms[i].FdrInfo.CumulativeTargetNotch);
+                PeptideSpectralMatch psm = psms[i];
+                int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
+                if (psm.IsDecoy)
+                {
+                    // the PSM can be ambiguous between a target and a decoy sequence
+                    // in that case, count it as the fraction of decoy hits
+                    // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
+                    double decoyHits = 0;
+                    double totalHits = 0;
+                    var hits = psm.BestMatchingPeptides.GroupBy(p => p.Peptide.FullSequence);
+                    foreach (var hit in hits)
+                    {
+                        if (hit.First().Peptide.Protein.IsDecoy)
+                        {
+                            decoyHits++;
+                        }
+                        totalHits++;
+                    }
 
-                double pep = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP;
-                double pepQValue = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP_QValue;
+                    cumulativeDecoy += decoyHits / totalHits;
+                    cumulativeDecoyPerNotch[notch] += decoyHits / totalHits;
+                }
+                else
+                {
+                    cumulativeTarget++;
+                    cumulativeTargetPerNotch[notch]++;
+                }
 
-                psms[i].SetQandPEPvalues(qValue, qValueNotch, pep, pepQValue);
+                double qValue = Math.Min(1, cumulativeDecoy / cumulativeTarget);
+                double qValueNotch = Math.Min(1, cumulativeDecoyPerNotch[notch] / cumulativeTargetPerNotch[notch]);
+
+                double pep = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP;
+                double pepQValue = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP_QValue;
+
+                psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, pep, pepQValue);
             }
         }
 
