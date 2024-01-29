@@ -78,52 +78,59 @@ namespace EngineLayer.FdrAnalysis
                 }
 
                 ComputeTargetAndDecoyCounts(psms);
-                QValueTraditional(psms);
+
                 if (psms.Count > 100)
                 {
                     QValueInverted(psms);
                 }
-
-                // set q-value thresholds such that a lower scoring PSM can't have
-                // a higher confidence than a higher scoring PSM
-                //Populate min qValues
-                double qValueThreshold = 1.0;
-                double[] qValueNotchThreshold = new double[MassDiffAcceptorNumNotches + 1];
-                for (int i = 0; i < qValueNotchThreshold.Length; i++)
+                else
                 {
-                    qValueNotchThreshold[i] = 1.0;
+                    QValueTraditional(psms);
                 }
 
-                for (int i = psms.Count - 1; i >= 0; i--)
-                {
-                    PeptideSpectralMatch psm = psms[i];
-
-                    // threshold q-values
-                    if (psm.FdrInfo.QValue > qValueThreshold)
-                    {
-                        psm.FdrInfo.QValue = qValueThreshold;
-                    }
-                    else if (psm.FdrInfo.QValue < qValueThreshold)
-                    {
-                        qValueThreshold = psm.FdrInfo.QValue;
-                    }
-
-                    // threshold notch q-values
-                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
-                    if (psm.FdrInfo.QValueNotch > qValueNotchThreshold[notch])
-                    {
-                        psm.FdrInfo.QValueNotch = qValueNotchThreshold[notch];
-                    }
-                    else if (psm.FdrInfo.QValueNotch < qValueNotchThreshold[notch])
-                    {
-                        qValueNotchThreshold[notch] = psm.FdrInfo.QValueNotch;
-                    }
-                }
             }
-            if (DoPEP)
+            if (DoPEP)//we should probably repeat the target and decoy counts and the qvalue calculations because PEP removes some bestpeptides
             {
                 Compute_PEPValue(myAnalysisResults);
             }
+            foreach (var proteasePsms in psmsGroupedByProtease)
+            {
+                var psms = proteasePsms.ToList();
+
+                //determine if Score or DeltaScore performs better
+                if (UseDeltaScore)
+                {
+                    const double qValueCutoff = 0.01; //optimize to get the most PSMs at a 1% FDR
+
+                    List<PeptideSpectralMatch> scoreSorted = psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                    int ScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
+                    scoreSorted = psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                    int DeltaScorePSMs = GetNumPSMsAtqValueCutoff(scoreSorted, qValueCutoff);
+
+                    //sort by best method
+                    myAnalysisResults.DeltaScoreImprovement = DeltaScorePSMs > ScorePSMs;
+                    psms = myAnalysisResults.DeltaScoreImprovement ?
+                        psms.OrderByDescending(b => b.DeltaScore).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList() :
+                        psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
+                }
+                else //sort by score
+                {
+                    psms = psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
+                }
+
+                ComputeTargetAndDecoyCounts(psms);
+
+                if (psms.Count > 100)
+                {
+                    QValueInverted(psms);
+                }
+                else
+                {
+                    QValueTraditional(psms);
+                }
+
+            }
+
         }
 
         private void ComputeTargetAndDecoyCounts(List<PeptideSpectralMatch> psms)
