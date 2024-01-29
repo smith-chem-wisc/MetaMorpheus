@@ -412,7 +412,7 @@
                     </TextBlock>
 
                     <!--Buttons to add databases-->
-                    <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" 
+                    <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" Visibility="Collapsed"
                         Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
 
                     <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN PROTEOMES FOLDER" 
