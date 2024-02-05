@@ -524,35 +524,35 @@ namespace EngineLayer
             }
             else if ((Math.Abs(this.DeltaScore - psm.DeltaScore) > ToleranceForScoreDifferentiation) && this.DeltaScore.CompareTo(psm.DeltaScore) != 0)
             {
-                return this.DeltaScore.CompareTo(psm.DeltaScore);
+                return this.DeltaScore.CompareTo(psm.DeltaScore); //we want the higher delta score to come first
             }
             else
             {
-                bool aPepWithModsIsNull = this == null || this.BestMatchingPeptides == null || !this.BestMatchingPeptides.Any();
-                bool bPepWithModsIsNull = psm == null || psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
-                double ppmErrorA = double.NaN;
-                double ppmErrorB = double.NaN;
+                bool thisPepWithModsIsNull = this.BestMatchingPeptides == null || !this.BestMatchingPeptides.Any();
+                bool psmPepWithModsIsNull = psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
+                double ppmErrorThis = double.NaN;
+                double ppmErrorPsm = double.NaN;
 
-                if (!aPepWithModsIsNull)
+                if (!thisPepWithModsIsNull)
                 {
                     List<PeptideWithSetModifications> pepsWithModsA = this.BestMatchingPeptides.Select(p => p.Peptide).ToList();
                     string ppmMassErrorString = PsmTsvWriter.ResolveF2(pepsWithModsA.Select(b =>
                         ((this.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
-                    ppmErrorA = Convert.ToDouble(ppmMassErrorString);
+                    ppmErrorThis = Convert.ToDouble(ppmMassErrorString);
                 }
-                if (!bPepWithModsIsNull)
+                if (!psmPepWithModsIsNull)
                 {
                     List<PeptideWithSetModifications> pepsWithModsB = psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
                     string ppmMassErrorString = PsmTsvWriter.ResolveF2(pepsWithModsB.Select(b =>
                         ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
-                    ppmErrorB = Convert.ToDouble(ppmMassErrorString);
+                    ppmErrorPsm = Convert.ToDouble(ppmMassErrorString);
                 }
 
-                if (!Double.IsNaN(ppmErrorA))
+                if (!Double.IsNaN(ppmErrorThis))
                 {
-                    if (!Double.IsNaN(ppmErrorB))
+                    if (!Double.IsNaN(ppmErrorPsm))
                     {
-                        return ppmErrorB.CompareTo(ppmErrorA); //a and b ppm error defined value
+                        return ppmErrorPsm.CompareTo(ppmErrorThis); //a and b ppm error defined value. Reverse the comparision so that lower ppm error comes first
                     }
                     else
                     {
@@ -561,14 +561,14 @@ namespace EngineLayer
                 }
                 else // a is not defined
                 {
-                    if (!Double.IsNaN(ppmErrorB)) //b is defined
+                    if (!Double.IsNaN(ppmErrorPsm)) //b is defined
                     {
                         return -1;
                     }
                 }
 
             }
-            return psm.ScanNumber.CompareTo(this.ScanNumber); //both peptide a and b have undefined ppm errors.
+            return psm.ScanNumber.CompareTo(this.ScanNumber); //reverse the comparision so that the lower scan number comes first.
         }
     }
 
