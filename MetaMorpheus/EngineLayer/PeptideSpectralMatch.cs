@@ -84,7 +84,15 @@ namespace EngineLayer
 
         //One-based positions in peptide that are covered by fragments on both sides of amino acids
         public List<int> FragmentCoveragePositionInPeptide { get; private set; }
-      
+
+        public double? PrecursorMassErrorPpm()
+        {
+            if (this.BestMatchingPeptides.Any())
+            {
+                return (this.ScanPrecursorMass - this.PeptideMonisotopicMass) / this.PeptideMonisotopicMass * 1e6;
+            }
+            return null;
+        }
 
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
@@ -533,31 +541,11 @@ namespace EngineLayer
             }
             else
             {
-                bool thisPepWithModsIsNull = this.BestMatchingPeptides == null || !this.BestMatchingPeptides.Any();
-                bool psmPepWithModsIsNull = psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
-                double ppmErrorThis = double.NaN;
-                double ppmErrorPsm = double.NaN;
-
-                if (!thisPepWithModsIsNull)
+                if (this.PrecursorMassErrorPpm() != null)
                 {
-                    List<PeptideWithSetModifications> pepsWithModsA = this.BestMatchingPeptides.Select(p => p.Peptide).ToList();
-                    string ppmMassErrorString = PsmTsvWriter.ResolveF2(pepsWithModsA.Select(b =>
-                        ((this.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
-                    ppmErrorThis = Convert.ToDouble(ppmMassErrorString);
-                }
-                if (!psmPepWithModsIsNull)
-                {
-                    List<PeptideWithSetModifications> pepsWithModsB = psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
-                    string ppmMassErrorString = PsmTsvWriter.ResolveF2(pepsWithModsB.Select(b =>
-                        ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
-                    ppmErrorPsm = Convert.ToDouble(ppmMassErrorString);
-                }
-
-                if (!Double.IsNaN(ppmErrorThis))
-                {
-                    if (!Double.IsNaN(ppmErrorPsm))
+                    if (psm.PrecursorMassErrorPpm() != null)
                     {
-                        return ppmErrorPsm.CompareTo(ppmErrorThis); //a and b ppm error defined value. Reverse the comparision so that lower ppm error comes first
+                        return psm.PrecursorMassErrorPpm().Value.CompareTo(this.PrecursorMassErrorPpm().Value); //a and b ppm error defined value. Reverse the comparision so that lower ppm error comes first
                     }
                     else
                     {
@@ -566,7 +554,7 @@ namespace EngineLayer
                 }
                 else // a is not defined
                 {
-                    if (!Double.IsNaN(ppmErrorPsm)) //b is defined
+                    if (psm.PrecursorMassErrorPpm() != null) //b is defined
                     {
                         return -1;
                     }
