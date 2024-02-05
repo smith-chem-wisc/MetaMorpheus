@@ -514,7 +514,12 @@ namespace EngineLayer
         {
             return Compare((PeptideSpectralMatch)x, (PeptideSpectralMatch)y);
         }
-
+        /// <summary>
+        /// There are a few key locations in MetaMorpheus where we want to have psms sorted in a consistent manner.
+        /// These are for q-value determination and for when we write the psms to psmtsv. 
+        /// </summary>
+        /// <param name="otherPsm"></param>
+        /// <returns></returns>
         public int CompareTo(object otherPsm)
         {
             PeptideSpectralMatch psm = (PeptideSpectralMatch)otherPsm;
