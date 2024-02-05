@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using Chemistry;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
@@ -6,16 +7,11 @@ using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using Easy.Common.Extensions;
-using Proteomics.AminoAcidPolymer;
-using ThermoFisher.CommonCore.Data;
 
 namespace EngineLayer
 {
-    public class PeptideSpectralMatch
+    public class PeptideSpectralMatch : IComparable
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
         protected List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
@@ -161,6 +157,7 @@ namespace EngineLayer
         {
             return string.Join("\t", DataDictionary(this, ModstoWritePruned).Values);
         }
+
 
         public static Dictionary<string, string> DataDictionary(PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
         {
@@ -517,5 +514,66 @@ namespace EngineLayer
             SpectralAngle = psm.SpectralAngle;
         }
 
+        public int Compare(object x, object y)
+        {
+            return Compare((PeptideSpectralMatch)x, (PeptideSpectralMatch)y);
+        }
+
+        public int CompareTo(object otherPsm)
+        {
+            PeptideSpectralMatch psm = (PeptideSpectralMatch)otherPsm;
+            if (this.Score.CompareTo(psm.Score) != 0)
+            {
+                return this.Score.CompareTo(psm.Score);
+            }
+            else if (this.DeltaScore.CompareTo(psm.DeltaScore) != 0)
+            {
+                return this.DeltaScore.CompareTo(psm.DeltaScore);
+            }
+            else
+            {
+                bool aPepWithModsIsNull = this == null || this.BestMatchingPeptides == null || !this.BestMatchingPeptides.Any();
+                bool bPepWithModsIsNull = psm == null || psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
+                double ppmErrorA = double.NaN;
+                double ppmErrorB = double.NaN;
+
+                if (!aPepWithModsIsNull)
+                {
+                    List<PeptideWithSetModifications> pepsWithModsA = this.BestMatchingPeptides.Select(p => p.Peptide).ToList();
+                    string ppmMassErrorString = PsmTsvWriter.ResolveF2(pepsWithModsA.Select(b =>
+                        ((this.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
+                    ppmErrorA = Convert.ToDouble(ppmMassErrorString);
+                }
+                if (!bPepWithModsIsNull)
+                {
+                    List<PeptideWithSetModifications> pepsWithModsB = psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
+                    string ppmMassErrorString = PsmTsvWriter.ResolveF2(pepsWithModsB.Select(b =>
+                        ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
+                    ppmErrorB = Convert.ToDouble(ppmMassErrorString);
+                }
+
+                if (!Double.IsNaN(ppmErrorA))
+                {
+                    if (!Double.IsNaN(ppmErrorB))
+                    {
+                        return ppmErrorB.CompareTo(ppmErrorA); //a and b ppm error defined value
+                    }
+                    else
+                    {
+                        return 1; //a is defined and b is not
+                    }
+                }
+                else // a is not defined
+                {
+                    if (!Double.IsNaN(ppmErrorB)) //b is defined
+                    {
+                        return -1;
+                    }
+                }
+
+            }
+            return psm.ScanNumber.CompareTo(this.ScanNumber); //both peptide a and b have undefined ppm errors.
+        }
     }
+
 }

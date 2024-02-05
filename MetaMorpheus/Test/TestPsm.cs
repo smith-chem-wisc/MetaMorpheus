@@ -342,19 +342,42 @@ namespace Test
             Assert.That(indexOfQValueInTsv >= 0);
 
             var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
-            var psmsGroupedBySequence = psmsFromTsv.GroupBy(p => p.FullSequence).ToList();
-            Assert.AreEqual(psmsGroupedBySequence.Count, peptides.Length - 1);
 
-            for (int i = 0; i < psmsGroupedBySequence.Count; i++)
+            var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
+
+            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
+                    psm.QValue<= 0.01
+                    && psm.QValueNotch <= 0.01)
+                .GroupBy(p => p.FullSequence).ToList();
+
+            Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, peptides.Length - 1);
+
+            for (int i = 0; i < unambiguousPsmsLessThanOnePercentFdr.Count(); i++)
             {
                 var peptideLine = peptides[i + 1];
                 var split = peptideLine.Split(new char[] { '\t' });
 
-                int psmCount = psmsGroupedBySequence[i].Count(p => p.QValue <= 0.01);
+                int psmCount = unambiguousPsmsLessThanOnePercentFdr[i].Count(p => p.QValue <= 0.01);
                 int psmCountWrittenToPeptidesFile = int.Parse(split[indexOfPsmCountInTsv]);
 
                 Assert.AreEqual(psmCount, psmCountWrittenToPeptidesFile);
             }
+
+
+
+
+            //Assert.AreEqual(psmsGroupedBySequence.Count, peptides.Length - 1);
+
+            //for (int i = 0; i < psmsGroupedBySequence.Count; i++)
+            //{
+            //    var peptideLine = peptides[i + 1];
+            //    var split = peptideLine.Split(new char[] { '\t' });
+
+            //    int psmCount = psmsGroupedBySequence[i].Count(p => p.QValue <= 0.01);
+            //    int psmCountWrittenToPeptidesFile = int.Parse(split[indexOfPsmCountInTsv]);
+
+            //    Assert.AreEqual(psmCount, psmCountWrittenToPeptidesFile);
+            //}
 
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
