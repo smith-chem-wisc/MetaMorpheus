@@ -518,11 +518,11 @@ namespace EngineLayer
         public int CompareTo(object otherPsm)
         {
             PeptideSpectralMatch psm = (PeptideSpectralMatch)otherPsm;
-            if ((Math.Abs(this.Score - psm.Score) > ToleranceForScoreDifferentiation) && this.Score.CompareTo(psm.Score) != 0)
+            if (Math.Abs(this.Score - psm.Score) > ToleranceForScoreDifferentiation)
             {
                 return this.Score.CompareTo(psm.Score);
             }
-            else if ((Math.Abs(this.DeltaScore - psm.DeltaScore) > ToleranceForScoreDifferentiation) && this.DeltaScore.CompareTo(psm.DeltaScore) != 0)
+            else if (Math.Abs(this.DeltaScore - psm.DeltaScore) > ToleranceForScoreDifferentiation)
             {
                 return this.DeltaScore.CompareTo(psm.DeltaScore); //we want the higher delta score to come first
             }
