@@ -192,7 +192,7 @@ namespace EngineLayer.FdrAnalysis
         public void CountPsm()
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
-            var allUnambiguousPsms = AllPsms.Where(psm => psm.FullSequence != null);
+            var allUnambiguousPsms = AllPsms.Where(psm => psm.FullSequence != null).ToList();
 
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                 psm.FdrInfo.QValue <= 0.01
@@ -208,9 +208,9 @@ namespace EngineLayer.FdrAnalysis
 
             foreach (PeptideSpectralMatch psm in allUnambiguousPsms)
             {
-                if (sequenceToPsmCount.ContainsKey(psm.FullSequence))
+                if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
                 {
-                    psm.PsmCount = sequenceToPsmCount[psm.FullSequence];
+                    psm.PsmCount = count;
                 }
             }
         }
