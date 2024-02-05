@@ -125,11 +125,7 @@ namespace EngineLayer
             else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
                 _BestMatchingPeptides.Add((notch, pwsm));
-
-                if (!PeptidesToMatchingFragments.ContainsKey(pwsm))
-                {
-                    PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
-                }
+                PeptidesToMatchingFragments.TryAdd(pwsm, matchedFragmentIons);
             }
             else if (newScore - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
@@ -522,11 +518,11 @@ namespace EngineLayer
         public int CompareTo(object otherPsm)
         {
             PeptideSpectralMatch psm = (PeptideSpectralMatch)otherPsm;
-            if (this.Score.CompareTo(psm.Score) != 0)
+            if ((Math.Abs(this.Score - psm.Score) > ToleranceForScoreDifferentiation) && this.Score.CompareTo(psm.Score) != 0)
             {
                 return this.Score.CompareTo(psm.Score);
             }
-            else if (this.DeltaScore.CompareTo(psm.DeltaScore) != 0)
+            else if ((Math.Abs(this.DeltaScore - psm.DeltaScore) > ToleranceForScoreDifferentiation) && this.DeltaScore.CompareTo(psm.DeltaScore) != 0)
             {
                 return this.DeltaScore.CompareTo(psm.DeltaScore);
             }
