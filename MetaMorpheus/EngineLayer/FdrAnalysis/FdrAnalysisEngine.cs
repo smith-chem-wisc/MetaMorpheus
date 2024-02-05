@@ -49,10 +49,6 @@ namespace EngineLayer.FdrAnalysis
             {
                 var psms = proteasePsms.ToList();
 
-                psms = psms.OrderByDescending(b => b.Score).ThenBy(b =>
-                    b.PeptideMonisotopicMass.HasValue
-                        ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value)
-                        : double.MaxValue).ToList();
                 QValueTraditional(psms);
                 if (psms.Count > 100)
                 {
@@ -207,10 +203,7 @@ namespace EngineLayer.FdrAnalysis
 
             foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
             {
-                if (!sequenceToPsmCount.ContainsKey(sequenceGroup.First().FullSequence))
-                {
-                    sequenceToPsmCount.Add(sequenceGroup.First().FullSequence, sequenceGroup.Count());
-                }
+                sequenceToPsmCount.TryAdd(sequenceGroup.First().FullSequence, sequenceGroup.Count());
             }
 
             foreach (PeptideSpectralMatch psm in allUnambiguousPsms)
