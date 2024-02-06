@@ -11,7 +11,7 @@ using System.Linq;
 
 namespace EngineLayer
 {
-    public class PeptideSpectralMatch : IComparable
+    public class PeptideSpectralMatch : IComparable<PeptideSpectralMatch>
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
         protected List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
@@ -518,17 +518,13 @@ namespace EngineLayer
             SpectralAngle = psm.SpectralAngle;
         }
 
-        public int Compare(object x, object y)
-        {
-            return Compare((PeptideSpectralMatch)x, (PeptideSpectralMatch)y);
-        }
         /// <summary>
         /// There are a few key locations in MetaMorpheus where we want to have psms sorted in a consistent manner.
         /// These are for q-value determination and for when we write the psms to psmtsv. 
         /// </summary>
         /// <param name="otherPsm"></param>
         /// <returns></returns>
-        public int CompareTo(object otherPsm)
+        public int CompareTo(PeptideSpectralMatch otherPsm)
         {
             
             PeptideSpectralMatch psm = (PeptideSpectralMatch)otherPsm ?? throw new MetaMorpheusException($"Cannot compare PeptideSpectrumMatch to {otherPsm.GetType()}"  );
