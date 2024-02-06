@@ -85,13 +85,27 @@ namespace EngineLayer
         //One-based positions in peptide that are covered by fragments on both sides of amino acids
         public List<int> FragmentCoveragePositionInPeptide { get; private set; }
 
-        public double? PrecursorMassErrorPpm()
+        public double? PrecursorMassErrorDa
         {
-            if (this.BestMatchingPeptides.Any())
+            get
             {
-                return (this.ScanPrecursorMass - this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass) / this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass * 1e6;
+                if (this.BestMatchingPeptides.Any())
+                {
+                    return (this.ScanPrecursorMass - this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass) / this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass * 1e6;
+                }
+                return null;
             }
-            return null;
+        }
+        public double? PrecursorMassErrorPpm
+        {
+            get
+            {
+                if (this.BestMatchingPeptides.Any())
+                {
+                    return (this.ScanPrecursorMass - this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass) / this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass * 1e6;
+                }
+                return null;
+            }
         }
 
         public DigestionParams DigestionParams { get; }
@@ -526,7 +540,6 @@ namespace EngineLayer
         /// <returns></returns>
         public int CompareTo(PeptideSpectralMatch otherPsm)
         {
-            
             PeptideSpectralMatch psm = (PeptideSpectralMatch)otherPsm ?? throw new MetaMorpheusException($"Cannot compare PeptideSpectrumMatch to {otherPsm.GetType()}"  );
             if (Math.Abs(this.Score - psm.Score) > ToleranceForScoreDifferentiation)
             {
@@ -538,25 +551,24 @@ namespace EngineLayer
             }
             else
             {
-                if (this.PrecursorMassErrorPpm() != null)
+                if (this.PrecursorMassErrorPpm != null)
                 {
-                    if (psm.PrecursorMassErrorPpm() != null)
+                    if (psm.PrecursorMassErrorPpm != null)
                     {
-                        return psm.PrecursorMassErrorPpm().Value.CompareTo(this.PrecursorMassErrorPpm().Value); //a and b ppm error defined value. Reverse the comparision so that lower ppm error comes first
+                        return psm.PrecursorMassErrorPpm.Value.CompareTo(this.PrecursorMassErrorPpm.Value); //precursor mass errors defined for both psms. Reverse the comparision so that lower ppm error comes first
                     }
                     else
                     {
-                        return 1; //a is defined and b is not
+                        return 1; //other psm mass error not defined
                     }
                 }
-                else // a is not defined
+                else // this precursor mass error not defined
                 {
-                    if (psm.PrecursorMassErrorPpm() != null) //b is defined
+                    if (psm.PrecursorMassErrorPpm != null) //other precursor mass error not defined.
                     {
                         return -1;
                     }
                 }
-
             }
             return psm.ScanNumber.CompareTo(this.ScanNumber); //reverse the comparision so that the lower scan number comes first.
         }
