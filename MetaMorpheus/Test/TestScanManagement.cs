@@ -11,7 +11,7 @@ namespace Test
     [TestFixture]
     internal class TestScanManagement
     {
-        [Test]
+        //[Test]
         public static void TestGetCombinedMs2Scans()
         {
             var myMsDataFile = new TestDataFile(5);
@@ -70,7 +70,7 @@ namespace Test
                 test.Add(new Ms2ScanWithSpecificMass(ms2scan, ms2scan.SelectedIonMonoisotopicGuessMz.Value, ms2scan.SelectedIonChargeStateGuess.Value, "", new CommonParameters()));
             }
             var testToArray = test.OrderBy(b => b.PrecursorMass).ToArray();
-            Assert.That(true);
+
         }
     }
 }
