@@ -10,7 +10,7 @@ namespace EngineLayer.FdrAnalysis
         private readonly int MassDiffAcceptorNumNotches;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
-        private readonly string OutputFolder; // used for storing PEP training models
+        private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
 
         public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
