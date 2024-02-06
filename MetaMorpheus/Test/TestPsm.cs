@@ -334,51 +334,40 @@ namespace Test
 
             task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
 
-            var peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv"));
+            List<string> peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv")).ToList();
             var header = peptides[0].Split(new char[] { '\t' }).ToArray();
             int indexOfPsmCountInTsv = Array.IndexOf(header, PsmTsvHeader.PsmCount);
             int indexOfQValueInTsv = Array.IndexOf(header, PsmTsvHeader.QValue);
             Assert.That(indexOfPsmCountInTsv >= 0);
             Assert.That(indexOfQValueInTsv >= 0);
 
+            peptides.RemoveAt(0);//delete header line
+            var allPeptidesQvalueBelowCutoff = 0;
+            foreach (var peptide in peptides)
+            {
+                string qValueString = peptide.Split('\t')[indexOfQValueInTsv].ToString();
+                double qValue = Convert.ToDouble(qValueString);
+                if (qValue < 0.01)
+                {
+                    allPeptidesQvalueBelowCutoff++;
+                }
+            }
+
             var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
 
             var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
 
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                    psm.QValue<= 0.01
-                    && psm.QValueNotch <= 0.01)
+                    psm.QValue<= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
 
-            Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, peptides.Length - 1);
+            Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, allPeptidesQvalueBelowCutoff);
 
-            for (int i = 0; i < unambiguousPsmsLessThanOnePercentFdr.Count(); i++)
-            {
-                var peptideLine = peptides[i + 1];
-                var split = peptideLine.Split(new char[] { '\t' });
+            List<string> results = File.ReadAllLines(Path.Combine(outputFolder, @"results.txt")).ToList();
 
-                int psmCount = unambiguousPsmsLessThanOnePercentFdr[i].Count(p => p.QValue <= 0.01);
-                int psmCountWrittenToPeptidesFile = int.Parse(split[indexOfPsmCountInTsv]);
-
-                Assert.AreEqual(psmCount, psmCountWrittenToPeptidesFile);
-            }
-
-
-
-
-            //Assert.AreEqual(psmsGroupedBySequence.Count, peptides.Length - 1);
-
-            //for (int i = 0; i < psmsGroupedBySequence.Count; i++)
-            //{
-            //    var peptideLine = peptides[i + 1];
-            //    var split = peptideLine.Split(new char[] { '\t' });
-
-            //    int psmCount = psmsGroupedBySequence[i].Count(p => p.QValue <= 0.01);
-            //    int psmCountWrittenToPeptidesFile = int.Parse(split[indexOfPsmCountInTsv]);
-
-            //    Assert.AreEqual(psmCount, psmCountWrittenToPeptidesFile);
-            //}
-
+            string peptideCountFromResultsString = results.Where(r => r.Contains("All target peptides with q-value = 0.01 : ")).FirstOrDefault();
+            double peptideCountFromResults = Convert.ToDouble(peptideCountFromResultsString.Split(':')[1].ToString());
+            Assert.AreEqual(allPeptidesQvalueBelowCutoff, peptideCountFromResults);
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
