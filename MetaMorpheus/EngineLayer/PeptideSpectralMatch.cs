@@ -89,7 +89,7 @@ namespace EngineLayer
         {
             if (this.BestMatchingPeptides.Any())
             {
-                return (this.ScanPrecursorMass - this.PeptideMonisotopicMass) / this.PeptideMonisotopicMass * 1e6;
+                return (this.ScanPrecursorMass - this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass) / this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass * 1e6;
             }
             return null;
         }
@@ -530,7 +530,8 @@ namespace EngineLayer
         /// <returns></returns>
         public int CompareTo(object otherPsm)
         {
-            PeptideSpectralMatch psm = (PeptideSpectralMatch)otherPsm;
+            
+            PeptideSpectralMatch psm = (PeptideSpectralMatch)otherPsm ?? throw new MetaMorpheusException($"Cannot compare PeptideSpectrumMatch to {otherPsm.GetType()}"  );
             if (Math.Abs(this.Score - psm.Score) > ToleranceForScoreDifferentiation)
             {
                 return this.Score.CompareTo(psm.Score);
