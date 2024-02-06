@@ -356,7 +356,7 @@ namespace Test
             var peptideObserved = protein1.Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
             .Where(p => p.BaseSequence == "PEPT" && p.AllModsOneIsNterminus.Count > 0).First();
             PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
-            CommonParameters commonParam = new CommonParameters(useDeltaScore: false);
+            CommonParameters commonParam = new CommonParameters();
             double[,] noiseData = new double[10000, 10000];
             noiseData[0,0] = 1.0; 
             List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
@@ -461,7 +461,7 @@ namespace Test
             var peptideObserved = protein1Variants.First().Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
             .Where(p => p.BaseSequence == "PEPT").First();
             PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
-            CommonParameters commonParam = new CommonParameters(useDeltaScore: false);
+            CommonParameters commonParam = new CommonParameters();
             double[,] noiseData = new double[10000, 10000];
             noiseData[0, 0] = 1.0;
             List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
