@@ -70,7 +70,6 @@ namespace Test
                 test.Add(new Ms2ScanWithSpecificMass(ms2scan, ms2scan.SelectedIonMonoisotopicGuessMz.Value, ms2scan.SelectedIonChargeStateGuess.Value, "", new CommonParameters()));
             }
             var testToArray = test.OrderBy(b => b.PrecursorMass).ToArray();
-
         }
     }
 }
