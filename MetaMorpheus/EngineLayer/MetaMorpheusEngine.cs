@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
 
 namespace EngineLayer
 {
@@ -128,9 +129,18 @@ namespace EngineLayer
             }
 
             return score;
-
         }
 
+        public static double AndromedaScore(int totalNumberOfTheoreticalIons, int totalNumberOfMatchingIons, double numberOfPeaksPer100Thomsons)
+        {
+            double localSum = 0;
+            for (int j = totalNumberOfMatchingIons; j <= totalNumberOfTheoreticalIons; j++)
+            {
+                localSum += (Math.Pow((numberOfPeaksPer100Thomsons/100),j)*Math.Pow((1-numberOfPeaksPer100Thomsons/100),totalNumberOfTheoreticalIons-j));
+            }
+
+            return -10.0 * Math.Log10(localSum);
+        }
         public static List<MatchedFragmentIon> MatchFragmentIons(Ms2ScanWithSpecificMass scan, List<Product> theoreticalProducts, CommonParameters commonParameters, bool matchAllCharges = false)
         {
             if (matchAllCharges)

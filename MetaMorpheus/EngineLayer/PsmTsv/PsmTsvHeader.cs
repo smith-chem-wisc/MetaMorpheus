@@ -13,6 +13,7 @@
         public const string PrecursorMz = "Precursor MZ";
         public const string PrecursorMass = "Precursor Mass";
         public const string Score = "Score";
+        public const string AndromedaScore = "AndromedaScore";
         public const string DeltaScore = "Delta Score";
         public const string Notch = "Notch";
 

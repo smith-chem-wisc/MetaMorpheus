@@ -20,7 +20,7 @@ namespace EngineLayer
         public const double ToleranceForScoreDifferentiation = 1e-9;
         protected List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
 
-        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
+        public PeptideSpectralMatch(PeptideWithSetModifications peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0, double andromedaScore = 0)
         {
             _BestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
             ScanIndex = scanIndex;
@@ -36,12 +36,13 @@ namespace EngineLayer
             DigestionParams = commonParameters.DigestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
+            AndromedaScore = andromedaScore;
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             MsDataScan = scan.TheScan;
             SpectralAngle = -1;
 
-            AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
+            AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr, andromedaScore);
         }
 
         public MsDataScan MsDataScan { get; set; }
@@ -77,6 +78,7 @@ namespace EngineLayer
 
         public double Score { get; private set; }
         public double Xcorr;
+        public double AndromedaScore { get; private set; }
         public double SpectralAngle { get; set; }
         public string NativeId; // this is a property of the scan. used for mzID writing
 
@@ -108,7 +110,7 @@ namespace EngineLayer
             return string.Join("\t", DataDictionary(null, null).Keys);
         }
 
-        public void AddOrReplace(PeptideWithSetModifications pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons, double newXcorr)
+        public void AddOrReplace(PeptideWithSetModifications pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons, double newXcorr, double newAndromedaScore)
         {
             if (newScore - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
@@ -122,6 +124,7 @@ namespace EngineLayer
 
                 Score = newScore;
                 Xcorr = newXcorr;
+                AndromedaScore = newAndromedaScore;
 
                 PeptidesToMatchingFragments.Clear();
                 PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
@@ -491,6 +494,7 @@ namespace EngineLayer
             FdrInfo = psm.FdrInfo;
             Score = psm.Score;
             Xcorr = psm.Xcorr;
+            AndromedaScore = psm.AndromedaScore;
             RunnerUpScore = psm.RunnerUpScore;
             IsDecoy = psm.IsDecoy;
             IsContaminant = psm.IsContaminant;
