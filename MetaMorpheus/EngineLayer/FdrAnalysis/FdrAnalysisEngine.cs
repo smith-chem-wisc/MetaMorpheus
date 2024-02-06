@@ -58,7 +58,7 @@ namespace EngineLayer.FdrAnalysis
                     }
                     QValueInverted(psms);
                 }
-                CountPsm();
+                CountPsm(psms);
             }
         }
 
@@ -189,10 +189,10 @@ namespace EngineLayer.FdrAnalysis
         /// <summary>
         /// This method gets the PSM count for each psm with q-value < 0.01 and adds that information to the individual psm.
         /// </summary>
-        public void CountPsm()
+        public void CountPsm(List<PeptideSpectralMatch> proteasePsms)
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
-            var allUnambiguousPsms = AllPsms.Where(psm => psm.FullSequence != null).ToList();
+            var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
 
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                 psm.FdrInfo.QValue <= 0.01
