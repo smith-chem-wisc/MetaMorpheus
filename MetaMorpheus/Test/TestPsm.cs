@@ -100,6 +100,42 @@ namespace Test
         }
 
         [Test]
+        public static void TestPpmAndDaMassErrors()
+        {
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters();
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add((origDataFile, CommonParameters));
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
+                ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                ProteinDbLoader.UniprotOrganismRegex, -1);
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            bool writeSpetralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes,
+                new CommonParameters(), null, null, new List<string>(), writeSpetralLibrary).Run();
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1,
+                CommonParameters, fsp, new List<string>()).Run());
+            var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
+
+            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            {
+                Assert.That(psm.PrecursorMassErrorDa, Is.EqualTo(psm.ScanPrecursorMass - psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass).Within(0.00001));
+
+                double ppmError = (psm.ScanPrecursorMass - psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass) /
+                    psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass * 1e6;
+
+                Assert.That(psm.PrecursorMassErrorPpm, Is.EqualTo(ppmError).Within(0.1));
+            }
+        }
+
+        [Test]
         public static void TestLongestFragmentIonSequence()
         {
             var variableModifications = new List<Modification>();

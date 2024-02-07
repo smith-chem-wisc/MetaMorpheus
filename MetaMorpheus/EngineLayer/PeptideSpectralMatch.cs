@@ -91,7 +91,7 @@ namespace EngineLayer
             {
                 if (this.BestMatchingPeptides.Any())
                 {
-                    return (this.ScanPrecursorMass - this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass) / this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass * 1e6;
+                    return (this.ScanPrecursorMass - this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass);
                 }
                 return null;
             }
