@@ -85,24 +85,25 @@ namespace EngineLayer
         //One-based positions in peptide that are covered by fragments on both sides of amino acids
         public List<int> FragmentCoveragePositionInPeptide { get; private set; }
 
-        public double? PrecursorMassErrorDa
+        public List<double> PrecursorMassErrorDa
         {
             get
             {
                 if (this.BestMatchingPeptides.Any())
                 {
-                    return (this.ScanPrecursorMass - this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass);
+                    return this.BestMatchingPeptides.Select(p => Math.Round(this.ScanPrecursorMass - p.Peptide.MonoisotopicMass,5))
+                        .ToList();
                 }
                 return null;
             }
         }
-        public double? PrecursorMassErrorPpm
+        public List<double> PrecursorMassErrorPpm
         {
             get
             {
                 if (this.BestMatchingPeptides.Any())
                 {
-                    return (this.ScanPrecursorMass - this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass) / this.BestMatchingPeptides.FirstOrDefault().Peptide.MonoisotopicMass * 1e6;
+                    return this.BestMatchingPeptides.Select(p => Math.Round((this.ScanPrecursorMass - p.Peptide.MonoisotopicMass) / p.Peptide.MonoisotopicMass * 1e6, 5)).ToList();
                 }
                 return null;
             }
@@ -545,7 +546,7 @@ namespace EngineLayer
                 {
                     if (psm.PrecursorMassErrorPpm != null)
                     {
-                        return psm.PrecursorMassErrorPpm.Value.CompareTo(this.PrecursorMassErrorPpm.Value); //precursor mass errors defined for both psms. Reverse the comparision so that lower ppm error comes first
+                        return psm.PrecursorMassErrorPpm.First().CompareTo(this.PrecursorMassErrorPpm.First()); //precursor mass errors defined for both psms. Reverse the comparision so that lower ppm error comes first
                     }
                     else
                     {
