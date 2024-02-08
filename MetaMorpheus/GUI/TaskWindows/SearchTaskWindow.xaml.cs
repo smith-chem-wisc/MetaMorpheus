@@ -298,7 +298,6 @@ namespace MetaMorpheusGUI
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
             DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
-            DeltaScoreCheckBox.IsChecked = task.CommonParameters.UseDeltaScore;
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
@@ -576,7 +575,6 @@ namespace MetaMorpheusGUI
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
-                useDeltaScore: DeltaScoreCheckBox.IsChecked.Value,
                 reportAllAmbiguity: AllAmbiguity.IsChecked.Value,
                 deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),

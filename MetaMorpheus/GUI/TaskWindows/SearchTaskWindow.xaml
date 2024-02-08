@@ -1080,28 +1080,6 @@
                                             </StackPanel>
                                         </Grid>
                                     </GroupBox>
-                                    <GroupBox Header="Scoring Options">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="1*" />
-                                            </Grid.ColumnDefinitions>
-                                            <StackPanel>
-                                                <StackPanel Orientation="Horizontal">
-                                                    <CheckBox x:Name="DeltaScoreCheckBox" Content="Use Delta Scores For FDR"  Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                        <CheckBox.ToolTip>
-                                                            <TextBlock>
-                                            This allows delta scores (the difference between the top two highest scoring candidates) to be considered in q-value calculations.
-                                            <LineBreak />
-                                            MetaMorpheus automatically checks that delta scores improve the number of PSMs at a 1% FDR.
-                                            <LineBreak />
-                                            If there is no improvement, then the standard score is used.
-                                                            </TextBlock>
-                                                        </CheckBox.ToolTip>
-                                                    </CheckBox>
-                                                </StackPanel>
-                                            </StackPanel>
-                                        </Grid>
-                                    </GroupBox>
                                 </StackPanel>
                             </Expander>
                         </GroupBox>

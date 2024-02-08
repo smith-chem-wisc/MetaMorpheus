@@ -60,7 +60,16 @@
     <None Update="DatabaseTests\ProteaseModTest.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="DatabaseTests\Q9UHB6.FASTA">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DatabaseTests\Q9UHB6_Chym_snip.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="DatabaseTests\sliced_b6.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="DatabaseTests\Task1-SearchTaskconfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\11901_AIETD.mgf">
