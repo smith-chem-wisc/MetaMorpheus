@@ -93,20 +93,6 @@ namespace EngineLayer
             }
         }
 
-        internal static (string ResolvedString, double? ResolvedValue) ResolveF2(IEnumerable<double> enumerable)
-        {
-            var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF2)
-            {
-                return (list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
-            }
-            else
-            {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
-                return (returnString, null);
-            }
-        }
-
         internal static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
