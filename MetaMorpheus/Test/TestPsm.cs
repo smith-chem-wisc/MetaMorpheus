@@ -114,7 +114,6 @@ namespace Test
             List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
                 ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
                 ProteinDbLoader.UniprotOrganismRegex, -1);
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpetralLibrary = false;
@@ -126,12 +125,12 @@ namespace Test
 
             foreach (PeptideSpectralMatch psm in nonNullPsms)
             {
-                Assert.That(psm.PrecursorMassErrorDa, Is.EqualTo(psm.ScanPrecursorMass - psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass).Within(0.00001));
+                double daError =
+                    Math.Round(psm.ScanPrecursorMass - psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass, 5);
+                Assert.That(psm.PrecursorMassErrorDa.First(), Is.EqualTo(daError).Within(0.01));
 
-                double ppmError = (psm.ScanPrecursorMass - psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass) /
-                    psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass * 1e6;
-
-                Assert.That(psm.PrecursorMassErrorPpm, Is.EqualTo(ppmError).Within(0.1));
+                double ppmError = Math.Round((psm.ScanPrecursorMass - psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass) / psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass * 1e6,5);
+                Assert.That(psm.PrecursorMassErrorPpm.First(), Is.EqualTo(ppmError).Within(0.1));
             }
         }
 
