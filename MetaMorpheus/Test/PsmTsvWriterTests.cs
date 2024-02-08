@@ -69,7 +69,7 @@ namespace Test
             string ppmErrorString = myPsmStringSplit[24];
 
             //The two different mods produce two separate mass errors, which are both then reported
-            Assert.AreEqual("0|11801.30469", ppmErrorString);
+            Assert.AreEqual("0.00000|11801.30469", ppmErrorString);
 
             //Make sure we see produt ion neutral losses in the output.
             string matchedIonSeries = myPsmStringSplit[39];

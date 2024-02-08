@@ -97,13 +97,14 @@ namespace EngineLayer
                 return null;
             }
         }
+
         public List<double> PrecursorMassErrorPpm
         {
             get
             {
                 if (this.BestMatchingPeptides.Any())
                 {
-                    return this.BestMatchingPeptides.Select(p => Math.Round((this.ScanPrecursorMass - p.Peptide.MonoisotopicMass) / p.Peptide.MonoisotopicMass * 1e6, 5)).ToList();
+                    return this.BestMatchingPeptides.Select(p => Math.Round((this.ScanPrecursorMass - p.Peptide.MonoisotopicMass) / p.Peptide.MonoisotopicMass * 1e6, 2)).ToList();
                 }
                 return null;
             }
