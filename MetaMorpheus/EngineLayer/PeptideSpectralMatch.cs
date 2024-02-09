@@ -89,12 +89,12 @@ namespace EngineLayer
         {
             get
             {
-                if (this.BestMatchingPeptides.Any())
-                {
+                //if (this.BestMatchingPeptides.Any())
+                //{
                     return this.BestMatchingPeptides.Select(p => Math.Round(this.ScanPrecursorMass - p.Peptide.MonoisotopicMass,5))
                         .ToList();
-                }
-                return null;
+                //}
+                //return null;
             }
         }
 
@@ -102,11 +102,11 @@ namespace EngineLayer
         {
             get
             {
-                if (this.BestMatchingPeptides.Any())
-                {
+            //    if (this.BestMatchingPeptides.Any())
+                //{
                     return this.BestMatchingPeptides.Select(p => Math.Round((this.ScanPrecursorMass - p.Peptide.MonoisotopicMass) / p.Peptide.MonoisotopicMass * 1e6, 2)).ToList();
-                }
-                return null;
+                //}
+                //return null;
             }
         }
 

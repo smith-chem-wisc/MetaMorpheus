@@ -304,6 +304,13 @@ namespace Test
         }
 
         [Test]
+        public static void TestNoBestPeptidesReturnNullPpmError()
+        {
+            PeptideSpectralMatch psm = null;
+            Assert.IsNull(psm.PrecursorMassErrorPpm);
+        }
+
+        [Test]
         public static void TestPsmCount()
         {
             Protein p1 = new Protein("PEPTIDE", null);
