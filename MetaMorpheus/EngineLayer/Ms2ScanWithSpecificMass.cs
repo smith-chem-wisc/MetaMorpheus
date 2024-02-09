@@ -56,11 +56,11 @@ namespace EngineLayer
 
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
-            int minZ = 1;
-            int maxZ = 10;
+            int maxCharge = commonParam.DeconvolutionParameters.MaxAssumedChargeState;
+            commonParam.DeconvolutionParameters.MaxAssumedChargeState = 10;
 
-            var neutralExperimentalFragmentMasses = scan.MassSpectrum.Deconvolute(scan.MassSpectrum.Range,
-                minZ, maxZ, commonParam.DeconvolutionMassTolerance.Value, commonParam.DeconvolutionIntensityRatio).ToList();
+            var neutralExperimentalFragmentMasses =
+                Deconvoluter.Deconvolute(scan, commonParam.DeconvolutionParameters, scan.MassSpectrum.Range).ToList();
 
             if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
             {
@@ -81,6 +81,7 @@ namespace EngineLayer
                 }
             }
 
+            commonParam.DeconvolutionParameters.MaxAssumedChargeState = maxCharge;
             return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
         }
 

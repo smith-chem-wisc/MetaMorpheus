@@ -58,7 +58,7 @@ namespace EngineLayer.Localization
                         for (int r = 0; r < peptide.Length; r++)
                         {
                             // create new PeptideWithSetMods with unidentified mass difference at the given residue
-                            PeptideWithSetModifications peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
+                            var peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
                             // this is the list of theoretical products for this peptide with mass-difference on this residue
                             peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, productsWithLocalizedMassDiff);
