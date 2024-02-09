@@ -539,15 +539,15 @@ namespace EngineLayer
             }
             else if (Math.Abs(this.DeltaScore - psm.DeltaScore) > ToleranceForScoreDifferentiation)
             {
-                return this.DeltaScore.CompareTo(psm.DeltaScore); //we want the higher delta score to come first
+                return this.RunnerUpScore.CompareTo(psm.RunnerUpScore);
             }
             else
             {
                 if (this.PrecursorMassErrorPpm != null)
                 {
-                    if (psm.PrecursorMassErrorPpm != null)
+                    if (psm.PrecursorMassErrorPpm != null &&(Math.Abs(psm.PrecursorMassErrorPpm.First() - this.PrecursorMassErrorPpm.First()) > 0.01))
                     {
-                        return psm.PrecursorMassErrorPpm.First().CompareTo(this.PrecursorMassErrorPpm.First()); //precursor mass errors defined for both psms. Reverse the comparision so that lower ppm error comes first
+                        return Math.Abs(psm.PrecursorMassErrorPpm.First()).CompareTo(Math.Abs(this.PrecursorMassErrorPpm.First())); //precursor mass errors defined for both psms. Reverse the comparision so that lower ppm error comes first
                     }
                     else
                     {
