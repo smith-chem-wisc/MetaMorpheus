@@ -54,7 +54,8 @@ namespace EngineLayer
             bool assumeOrphanPeaksAreZ1Fragments = true, 
             int maxHeterozygousVariants = 4, 
             int minVariantDepth = 1, 
-            bool addTruncations = false)
+            bool addTruncations = false,
+            DeconvolutionParameters deconParams = null)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -97,7 +98,19 @@ namespace EngineLayer
 
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
-            AddTruncations = addTruncations;
+
+            AddTruncations = addTruncations; if (deconParams != null)
+            {
+                DeconvolutionParameters = deconParams;
+            }
+            else
+            {
+                DeconvolutionParameters = DeconvolutionMaxAssumedChargeState < 0
+                    ? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState, -1,
+                        DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative)
+                    : new ClassicDeconvolutionParameters(1, deconvolutionMaxAssumedChargeState,
+                        DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Positive);
+            }
         }
 
         // Notes:
@@ -116,6 +129,7 @@ namespace EngineLayer
         public bool UseProvidedPrecursorInfo { get; private set; }
         public double DeconvolutionIntensityRatio { get; private set; }
         public int DeconvolutionMaxAssumedChargeState { get; private set; }
+        [TomlIgnore] public DeconvolutionParameters DeconvolutionParameters { get; private set; }
         public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
