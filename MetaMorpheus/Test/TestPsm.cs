@@ -168,7 +168,6 @@ namespace Test
                     }
                 }
             }
-
             Assert.IsTrue(longestSeriesExpected.SequenceEqual(longestSeriesObserved));
         }
 
