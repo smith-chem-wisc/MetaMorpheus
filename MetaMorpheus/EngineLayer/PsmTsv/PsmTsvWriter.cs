@@ -180,6 +180,11 @@ namespace EngineLayer
         {
             bool pepWithModsIsNull = psm == null || psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
 
+            if (!pepWithModsIsNull)
+            {
+                int j = 5;
+            }
+
             List<PeptideWithSetModifications> pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
             s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (psm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
