@@ -1,5 +1,5 @@
 ﻿using Omics;
-using Proteomics.ProteolyticDigestion;
+using Omics.Digestion;
 
 namespace EngineLayer.ProteinParsimony
 {
