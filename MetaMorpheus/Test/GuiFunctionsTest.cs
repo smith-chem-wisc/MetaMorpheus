@@ -33,6 +33,12 @@ namespace Test
                 Console.WriteLine("Beginning Uniprot database test.");
             }
             string filename = DownloadUniProtDatabaseFunctions.GetUniprotFilename(proteomeID, reviewed, isoforms, xmlFormat, compressed);
+
+            if (expectedResult.Equals("\\UP000000625_withUnreviewed.fasta")) // This should only be written once, during the first test case
+            {
+                Console.WriteLine("Finished with Uniprot database test.");
+            }
+
             Assert.AreEqual(expectedResult, filename);
         }
 
