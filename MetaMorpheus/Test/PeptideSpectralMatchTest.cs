@@ -91,7 +91,12 @@ namespace Test
             Assert.AreEqual(1, m.Count);
             psmBaseSequenceMFI.GetAminoAcidCoverage();
 
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmNoBaseSequenceNoMFI, psmBaseSequenceNoMFI, psmNoBaseSequenceMFI, psmBaseSequenceMFI };
 
+            foreach (var psm in psms)
+            {
+                psm.ToString();
+            }
         }
     }
 }
