@@ -95,6 +95,7 @@ namespace EngineLayer.FdrAnalysis
             }
             if (DoPEP)
             {
+                CountPsm();//needed for PEP
                 Compute_PEPValue(myAnalysisResults);
             }
         }
@@ -243,19 +244,18 @@ namespace EngineLayer.FdrAnalysis
             // exclude ambiguous psms and has a fdr cutoff = 0.01
             var allUnambiguousPsms = AllPsms.Where(psm => psm.FullSequence != null);
 
+            var fullSequenceGroups = allUnambiguousPsms.Where(p => p.FdrInfo.QValue < 0.01 && p.FdrInfo.QValueNotch < 0.01)
+                .Select(p => p.FullSequence).GroupBy(s => s);
+
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                 psm.FdrInfo.QValue <= 0.01
                 && psm.FdrInfo.QValueNotch <= 0.01)
                 .GroupBy(p => p.FullSequence);
 
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
-
-            foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
+            foreach (var fullSequence in fullSequenceGroups)
             {
-                if (!sequenceToPsmCount.ContainsKey(sequenceGroup.First().FullSequence))
-                {
-                    sequenceToPsmCount.Add(sequenceGroup.First().FullSequence, sequenceGroup.Count());
-                }
+                sequenceToPsmCount.Add(fullSequence.Key,fullSequence.Count());
             }
 
             foreach (PeptideSpectralMatch psm in allUnambiguousPsms)
@@ -263,6 +263,10 @@ namespace EngineLayer.FdrAnalysis
                 if (sequenceToPsmCount.ContainsKey(psm.FullSequence))
                 {
                     psm.PsmCount = sequenceToPsmCount[psm.FullSequence];
+                }
+                else
+                {
+                    psm.PsmCount = 0;
                 }
             }
         }
