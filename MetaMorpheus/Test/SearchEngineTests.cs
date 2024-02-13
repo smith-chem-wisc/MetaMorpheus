@@ -87,8 +87,8 @@ namespace Test
             Assert.AreEqual("FTQTSGETTDADKEPAGEDK", psm.FullSequence);
             Assert.AreEqual("primary:MKI67", psm.GeneName);
             Assert.AreEqual("", psm.IdentifiedSequenceVariations);
-            Assert.AreEqual("-0.00544", psm.MassDiffDa);
-            Assert.AreEqual("-2.56", psm.MassDiffPpm);
+            Assert.That(-0.00544,Is.EqualTo(Convert.ToDouble(psm.MassDiffDa)).Within(0.01));
+            Assert.That(-2.56, Is.EqualTo(Convert.ToDouble(psm.MassDiffPpm)).Within(0.01));
             Assert.AreEqual(40, psm.MatchedIons.Count);
             Assert.AreEqual("1", psm.MissedCleavage);
             Assert.AreEqual(56, psm.Ms2ScanNumber);

@@ -2,7 +2,6 @@
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -90,20 +89,6 @@ namespace EngineLayer
             else
             {
                 return (string.Join(" ", list[0].Values.Select(c => c.IdWithMotif).OrderBy(c => c)), firstDict);
-            }
-        }
-
-        internal static (string ResolvedString, double? ResolvedValue) ResolveF2(IEnumerable<double> enumerable)
-        {
-            var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF2)
-            {
-                return (list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
-            }
-            else
-            {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
-                return (returnString, null);
             }
         }
 
@@ -209,8 +194,8 @@ namespace EngineLayer
             s[PsmTsvHeader.NumVariableMods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).ResolvedString;
             s[PsmTsvHeader.MissedCleavages] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).ResolvedString;
             s[PsmTsvHeader.PeptideMonoMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
-            s[PsmTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => psm.ScanPrecursorMass - b.MonoisotopicMass)).ResolvedString;
-            s[PsmTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : ResolveF2(pepsWithMods.Select(b => ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
+            s[PsmTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(psm.PrecursorMassErrorDa).ResolvedString;
+            s[PsmTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(psm.PrecursorMassErrorPpm).ResolvedString;
             s[PsmTsvHeader.ProteinAccession] = pepWithModsIsNull ? " " : (psm.ProteinAccession != null ? psm.ProteinAccession : Resolve(pepsWithMods.Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString);
             s[PsmTsvHeader.ProteinName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), psm.FullSequence).ResolvedString;
             s[PsmTsvHeader.GeneName] = geneString;

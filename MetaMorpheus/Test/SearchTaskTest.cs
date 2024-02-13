@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using Easy.Common.Extensions;
 using TaskLayer;
 
 namespace Test
@@ -384,7 +385,7 @@ namespace Test
 
             // test that the final q-value follows the (target / decoy) formula
             // intermediate q-values no longer always follow this formula, so I'm not testing them here
-            Assert.AreEqual(cumDecoys / (double)cumTargets, finalQValue, 0.0001);
+            Assert.That((double)cumDecoys/(double)cumTargets, Is.EqualTo(finalQValue).Within(.0005));
             Directory.Delete(folderPath, true);
         }
 

@@ -169,7 +169,6 @@ namespace Test
                 CommonParameters, fsp, new List<string>()).Run());
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            var nonNullPsmsOriginalCopy = allPsmsArray.Where(p => p != null).ToList();
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
             PeptideSpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
