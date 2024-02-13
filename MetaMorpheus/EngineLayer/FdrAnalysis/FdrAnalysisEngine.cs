@@ -111,9 +111,6 @@ namespace EngineLayer.FdrAnalysis
                 double cumulativeDecoy = psm.FdrInfo.CumulativeDecoy;
 
                 //set up arrays for local FDRs
-                double cumulativeTargetPerNotch = psm.FdrInfo.CumulativeTargetNotch;
-                double cumulativeDecoyPerNotch = psm.FdrInfo.CumulativeDecoyNotch;
-
                 double localQvalue = (psm.FdrInfo.CumulativeDecoy + 1) / psm.FdrInfo.CumulativeTarget;
                 double localQvalueNotch = (psm.FdrInfo.CumulativeDecoyNotch + 1)/psm.FdrInfo.CumulativeTargetNotch;
                 if (first)
@@ -239,26 +236,6 @@ namespace EngineLayer.FdrAnalysis
                 double qValue = runningSum / (i + 1);
                 psms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
             }
-        }
-
-        private static int GetNumPSMsAtqValueCutoff(List<PeptideSpectralMatch> psms, double qValueCutoff)
-        {
-            int cumulative_target = 0;
-            int cumulative_decoy = 0;
-            foreach (PeptideSpectralMatch psm in psms)
-            {
-                if (psm.IsDecoy)
-                {
-                    cumulative_decoy++;
-                    if ((double)cumulative_decoy / cumulative_target >= qValueCutoff)
-                    {
-                        return cumulative_target;
-                    }
-                }
-                else
-                    cumulative_target++;
-            }
-            return cumulative_target;
         }
 
         public void CountPsm()

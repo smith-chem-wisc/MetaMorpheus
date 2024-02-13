@@ -30,8 +30,7 @@ namespace EngineLayer
             string[] trainingVariables = PsmData.trainingInfos[searchType];
 
             //ensure that the order is always stable.
-            psms = psms.OrderByDescending(p => p.Score).ThenBy(p => p.FdrInfo.QValue).
-                ThenBy(p => p.FullFilePath).ThenBy(x => x.ScanNumber).ThenBy(p => p.FullSequence).ThenBy(p => p.ProteinAccession).ToList();
+            psms = psms.OrderByDescending(p => p).ToList(); //uses compare function in PeptideSpectralMatch for sort.
 
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing

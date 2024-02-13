@@ -1,17 +1,11 @@
-﻿using System;
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using Proteomics;
 using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using Easy.Common.Extensions;
-using Proteomics.AminoAcidPolymer;
-using ThermoFisher.CommonCore.Data;
 
 namespace EngineLayer
 {
