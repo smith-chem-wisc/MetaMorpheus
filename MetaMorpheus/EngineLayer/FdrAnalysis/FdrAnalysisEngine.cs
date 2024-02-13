@@ -118,29 +118,8 @@ namespace EngineLayer.FdrAnalysis
                 double pep = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP;
                 double pepQValue = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP_QValue;
 
-                //set up arrays for local FDRs
-                double localQvalue = (psm.FdrInfo.CumulativeDecoy + 1) / psm.FdrInfo.CumulativeTarget;
-                double localQvalueNotch = (psm.FdrInfo.CumulativeDecoyNotch + 1)/psm.FdrInfo.CumulativeTargetNotch;
-                if (first)
-                {
-                    psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, localQvalue, psm.FdrInfo.CumulativeTargetNotch, psm.FdrInfo.CumulativeDecoyNotch, localQvalueNotch, psm.FdrInfo.PEP, psm.FdrInfo.PEP_QValue);
-                    previousQValue = localQvalue;
-                    previousQvalueNotch = localQvalueNotch;
-                    first = false;
-                }
-                else
-                {
-                    if (localQvalue > previousQValue) // q-value can't increase moving toward higher score, therefore, we keep the same q-value as the lower scoring item. this will continue until we get one fewer decoy
-                    {
-                        psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, previousQValue, psm.FdrInfo.CumulativeTargetNotch, psm.FdrInfo.CumulativeDecoyNotch, previousQvalueNotch, psm.FdrInfo.PEP, psm.FdrInfo.PEP_QValue);
-                    }
-                    else
-                    {
-                        psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, localQvalue, psm.FdrInfo.CumulativeTargetNotch, psm.FdrInfo.CumulativeDecoyNotch, localQvalueNotch, psm.FdrInfo.PEP, psm.FdrInfo.PEP_QValue);
-                        previousQValue = localQvalue;
-                        previousQvalueNotch = localQvalueNotch;
-                    }
-                }
+                psms[i].SetQandPEPvalues(qValue, qValueNotch, pep, pepQValue);
+
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
@@ -246,32 +225,32 @@ namespace EngineLayer.FdrAnalysis
 
         public void CountPsm()
         {
-            // exclude ambiguous psms and has a fdr cutoff = 0.01
-            var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
+            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.Protease);
 
-            var fullSequenceGroups = allUnambiguousPsms.Where(p => p.FdrInfo.QValue < 0.01 && p.FdrInfo.QValueNotch < 0.01)
-                .Select(p => p.FullSequence).GroupBy(s => s);
-
-            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                psm.FdrInfo.QValue <= 0.01
-                && psm.FdrInfo.QValueNotch <= 0.01)
-                .GroupBy(p => p.FullSequence);
-
-            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
-            foreach (var fullSequence in fullSequenceGroups)
+            foreach (var proteasePsms in psmsGroupedByProtease)
             {
-                sequenceToPsmCount.Add(fullSequence.Key,fullSequence.Count());
-            }
+                // exclude ambiguous psms and has a fdr cutoff = 0.01
+                var allUnambiguousProteasePsms = proteasePsms.Where(p=>p.FullSequence != null).ToList();
 
-            foreach (PeptideSpectralMatch psm in allUnambiguousPsms)
-            {
-                if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
+                var fullSequenceGroups = allUnambiguousProteasePsms.Where(p => p.FdrInfo.QValue < 0.01 && p.FdrInfo.QValueNotch < 0.01)
+                    .Select(p => p.FullSequence).GroupBy(s => s);
+
+                Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+                foreach (var fullSequence in fullSequenceGroups)
                 {
-                    psm.PsmCount = count;
+                    sequenceToPsmCount.Add(fullSequence.Key, fullSequence.Count());
                 }
-                else
+
+                foreach (PeptideSpectralMatch psm in allUnambiguousProteasePsms)
                 {
-                    psm.PsmCount = 0;
+                    if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
+                    {
+                        psm.PsmCount = count;
+                    }
+                    else
+                    {
+                        psm.PsmCount = 0;
+                    }
                 }
             }
         }
