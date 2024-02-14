@@ -378,11 +378,11 @@ namespace Test
                 OrderByDescending(f=>f.Score).ToList(), 1, CommonParameters, fsp, new List<string>(), 
                 analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
 
-            var maxScore = nonNullPsms.Select(n => n.Score).Max();
-            PeptideSpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
+            var maxScore = moreNonNullPSMs.Select(n => n.Score).Max();
+            PeptideSpectralMatch maxScorePsm = moreNonNullPSMs.Where(n => n.Score == maxScore).First();
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
             List<string> sequences = new List<string>();
-            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            foreach (PeptideSpectralMatch psm in moreNonNullPSMs)
             {
                 var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
                 sequences.Add(String.Join(" | ", ss));

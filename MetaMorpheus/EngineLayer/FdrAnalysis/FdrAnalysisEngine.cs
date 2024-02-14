@@ -91,10 +91,11 @@ namespace EngineLayer.FdrAnalysis
                     }
                 }
             }
+            CountPsm();//needed for PEP
             if (DoPEP)
             {
-                CountPsm();//needed for PEP
                 Compute_PEPValue(myAnalysisResults);
+                CountPsm();//repeat after PEP to account for any peptides eliminated by reduction in ambiguity
             }
         }
 
