@@ -159,6 +159,7 @@ namespace EngineLayer
             }
         }
 
+        //The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
         internal static void AddBasicMatchData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
             s[PsmTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
@@ -175,10 +176,10 @@ namespace EngineLayer
             s[PsmTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingPeptides.Select(p => p.Notch)).ResolvedString;
         }
 
+        //The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
         internal static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
         {
             bool pepWithModsIsNull = psm == null || psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
-
             List<PeptideWithSetModifications> pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
             s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (psm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);

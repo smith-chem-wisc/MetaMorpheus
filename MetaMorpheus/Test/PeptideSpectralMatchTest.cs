@@ -79,7 +79,6 @@ namespace Test
             Assert.AreEqual(1, m.Count);
             psmNoBaseSequenceMFI.GetAminoAcidCoverage();
 
-
             //PSM has sequence and matched fragment ions
             PeptideSpectralMatch psmBaseSequenceMFI = new(pwsmBaseSequence, 0, 10, 0, ms2ScanOneMzTen, commonParams,
                 mfiList);
