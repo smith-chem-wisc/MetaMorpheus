@@ -998,8 +998,8 @@ namespace Test
             CommonParameters commonParameters_gluC = new CommonParameters(digestionParams: new DigestionParams(protease: "Glu-C"));
 
             // target or decoy protein
-            Protein t = new Protein("P", "1");
-            Protein d = new Protein("P", "2", isDecoy: true);
+            Protein targetProtein = new Protein("P", "1");
+            Protein decoyProtein = new Protein("P", "2", isDecoy: true);
 
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[1], new double[1], false),
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap,
@@ -1011,16 +1011,16 @@ namespace Test
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
             {
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: t), 0, 20, 1, scan, commonParameters_tryp, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: t), 0, 19, 1, scan, commonParameters_gluC, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: t), 0, 18, 1, scan, commonParameters_tryp, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: t), 0, 17, 1, scan, commonParameters_gluC, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: d), 0, 16, 1, scan, commonParameters_gluC, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: t), 0, 15, 1, scan, commonParameters_gluC, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: t), 0, 14, 1, scan, commonParameters_tryp, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: d), 0, 13, 1, scan, commonParameters_tryp, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: d), 0, 12, 1, scan, commonParameters_tryp, f),
-                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: t), 0, 11, 1, scan, commonParameters_tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: targetProtein), 0, 20, 1, scan, commonParameters_tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: targetProtein), 0, 19, 1, scan, commonParameters_gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: targetProtein), 0, 18, 1, scan, commonParameters_tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: targetProtein), 0, 17, 1, scan, commonParameters_gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: decoyProtein), 0, 16, 1, scan, commonParameters_gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: targetProtein), 0, 15, 1, scan, commonParameters_gluC, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: targetProtein), 0, 14, 1, scan, commonParameters_tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: decoyProtein), 0, 13, 1, scan, commonParameters_tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: decoyProtein), 0, 12, 1, scan, commonParameters_tryp, f),
+                new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: targetProtein), 0, 11, 1, scan, commonParameters_tryp, f),
             };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
@@ -1040,13 +1040,6 @@ namespace Test
             Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
             Assert.AreEqual(0.5, Math.Round(psms[8].FdrInfo.QValue, 2));
             Assert.AreEqual(0.5, Math.Round(psms[9].FdrInfo.QValue, 2));
-
-            List<string> myOut = new List<string>();
-            foreach (var psm in psms)
-            {
-                myOut.Add(psm.ToString());
-            }
-            
         }
     }
 }
