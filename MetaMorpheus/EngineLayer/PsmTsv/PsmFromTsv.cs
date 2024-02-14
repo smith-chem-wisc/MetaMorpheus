@@ -1,5 +1,4 @@
 using Chemistry;
-using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,6 +9,8 @@ using System.IO;
 using Easy.Common.Extensions;
 using System.Text;
 using MathNet.Numerics;
+using Omics.Fragmentation;
+using Omics.Fragmentation.Peptide;
 
 namespace EngineLayer
 {
@@ -511,7 +512,7 @@ namespace EngineLayer
                       secondaryProductType,
                       secondaryFragmentNumber);
 
-                    matchedIons.Add(new MatchedFragmentIon(ref theoreticalProduct, mz, intensity, z));
+                    matchedIons.Add(new MatchedFragmentIon(theoreticalProduct, mz, intensity, z));
                 }
             }
             return matchedIons;
@@ -629,7 +630,7 @@ namespace EngineLayer
             foreach (MatchedFragmentIon ion in this.MatchedIons)
             {
                 Product product = new Product(ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.Terminus, ion.NeutralTheoreticalProduct.NeutralMass, ion.NeutralTheoreticalProduct.FragmentNumber, ion.NeutralTheoreticalProduct.AminoAcidPosition, ion.NeutralTheoreticalProduct.NeutralLoss);
-                fragments.Add(new MatchedFragmentIon(ref product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
+                fragments.Add(new MatchedFragmentIon(product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
             }
             double retentionTime = RetentionTime ?? -1;
 
@@ -639,7 +640,7 @@ namespace EngineLayer
                 foreach(var ion in BetaPeptideMatchedIons)
                 {
                     Product product = new Product(ion.NeutralTheoreticalProduct.ProductType, ion.NeutralTheoreticalProduct.Terminus, ion.NeutralTheoreticalProduct.NeutralMass, ion.NeutralTheoreticalProduct.FragmentNumber, ion.NeutralTheoreticalProduct.AminoAcidPosition, ion.NeutralTheoreticalProduct.NeutralLoss);
-                    betaFragments.Add(new MatchedFragmentIon(ref product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
+                    betaFragments.Add(new MatchedFragmentIon(product, ion.Mz, ion.Intensity / matchedIonIntensitySum, ion.Charge));
                 }
                 string uniqueSequence = UniqueSequence ?? FullSequence + BetaPeptideFullSequence;
                 return new CrosslinkLibrarySpectrum(uniqueSequence, PrecursorMz, PrecursorCharge, fragments, retentionTime, betaFragments);

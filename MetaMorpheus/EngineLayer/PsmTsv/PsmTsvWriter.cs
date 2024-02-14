@@ -1,6 +1,6 @@
 ﻿using Chemistry;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -8,6 +8,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using Omics;
+using Omics.Modifications;
 
 namespace EngineLayer
 {

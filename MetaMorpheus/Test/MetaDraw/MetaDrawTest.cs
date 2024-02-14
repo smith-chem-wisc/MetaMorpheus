@@ -16,7 +16,7 @@ using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using TaskLayer;
@@ -1125,6 +1125,8 @@ namespace Test.MetaDraw
             metadrawLogic.CleanUpResources();
 
             // delete output
+           
+
             File.Delete(pathWithPeriodInIt);
             Directory.Delete(outputFolder, true);
         }

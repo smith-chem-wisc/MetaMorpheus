@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FlashLFQ;
+using Omics.Modifications;
+using pepXML.Generated;
 using Proteomics.ProteolyticDigestion;
 using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;

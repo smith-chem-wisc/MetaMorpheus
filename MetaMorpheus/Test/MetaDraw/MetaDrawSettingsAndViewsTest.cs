@@ -8,7 +8,7 @@ using GuiFunctions;
 using GuiFunctions.ViewModels.Legends;
 using NUnit.Framework;
 using OxyPlot;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 
 namespace Test.MetaDraw
@@ -94,6 +94,8 @@ namespace Test.MetaDraw
 
             string outputFolder =
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
             Assert.That(!Directory.Exists(outputFolder));
 
             MetaDrawSettingsViewModel.SettingsPath = Path.Combine(outputFolder, @"MetaDrawSettingsDefault.xml");

@@ -2,7 +2,7 @@
 using EngineLayer;
 using MassSpectrometry;
 using OxyPlot;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;

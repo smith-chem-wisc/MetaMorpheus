@@ -1,7 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer.NonSpecificEnzymeSearch;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
 using UsefulProteomicsDatabases;
 
 namespace EngineLayer.Indexing
@@ -258,9 +260,19 @@ namespace EngineLayer.Indexing
             foreach (KeyValuePair<int, List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
             {
                 int fragmentNumber = relevantDatabaseMod.Key;
-                Product fragmentAtIndex = fragmentMasses.Where(x => x.FragmentNumber == fragmentNumber).FirstOrDefault();
-                double basePrecursorMass = fragmentAtIndex.NeutralMass == default(Product).NeutralMass ? 
-                    peptide.MonoisotopicMass : fragmentAtIndex.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) + WaterMonoisotopicMass;
+                Product fragmentAtIndex = fragmentMasses.FirstOrDefault(x => x.FragmentNumber == fragmentNumber);
+
+                double basePrecursorMass;
+                if (fragmentAtIndex is null)
+                {
+                    basePrecursorMass = peptide.MonoisotopicMass;
+                }
+                else
+                {
+                    basePrecursorMass = fragmentAtIndex.NeutralMass -
+                                        DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) +
+                                        WaterMonoisotopicMass;
+                }
 
                 foreach (Modification mod in relevantDatabaseMod.Value)
                 {

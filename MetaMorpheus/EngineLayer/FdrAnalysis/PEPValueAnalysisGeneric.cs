@@ -5,7 +5,7 @@ using MathNet.Numerics.Statistics;
 using Microsoft.ML;
 using Microsoft.ML.Data;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System;
@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Omics.Modifications;
 
 namespace EngineLayer
 {
