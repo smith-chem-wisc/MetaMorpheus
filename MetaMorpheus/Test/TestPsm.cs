@@ -6,13 +6,15 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Omics.Digestion;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using PsmFromTsv = EngineLayer.PsmFromTsv;
@@ -465,7 +467,7 @@ namespace Test
             for (int i = 0; i < myProducts.Count; i++)
             {
                 var prod = myProducts[i];
-                mfiList.Add(new MatchedFragmentIon(ref prod, 1, 1, 1));
+                mfiList.Add(new MatchedFragmentIon(prod, 1, 1, 1));
             }
 
             Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PTMF = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
@@ -524,15 +526,15 @@ namespace Test
             Product productN6 = new Product(ProductType.b, FragmentationTerminus.N, 0, 6, 6, 0);
             Product productN8 = new Product(ProductType.b, FragmentationTerminus.N, 0, 8, 8, 0);
             Product productN13 = new Product(ProductType.b, FragmentationTerminus.N, 0, 13, 13, 0);
-            MatchedFragmentIon mfiC3 = new MatchedFragmentIon(ref productC3, 0, 0, 1);
-            MatchedFragmentIon mfiC4 = new MatchedFragmentIon(ref productC4, 0, 0, 1);
-            MatchedFragmentIon mfiC7 = new MatchedFragmentIon(ref productC7, 0, 0, 1);
-            MatchedFragmentIon mfiC13 = new MatchedFragmentIon(ref productC13, 0, 0, 1);
-            MatchedFragmentIon mfiN3 = new MatchedFragmentIon(ref productN3, 0, 0, 1);
-            MatchedFragmentIon mfiN4 = new MatchedFragmentIon(ref productN4, 0, 0, 1);
-            MatchedFragmentIon mfiN6 = new MatchedFragmentIon(ref productN6, 0, 0, 1);
-            MatchedFragmentIon mfiN8 = new MatchedFragmentIon(ref productN8, 0, 0, 1);
-            MatchedFragmentIon mfiN13 = new MatchedFragmentIon(ref productN13, 0, 0, 1);
+            MatchedFragmentIon mfiC3 = new MatchedFragmentIon(productC3, 0, 0, 1);
+            MatchedFragmentIon mfiC4 = new MatchedFragmentIon(productC4, 0, 0, 1);
+            MatchedFragmentIon mfiC7 = new MatchedFragmentIon(productC7, 0, 0, 1);
+            MatchedFragmentIon mfiC13 = new MatchedFragmentIon(productC13, 0, 0, 1);
+            MatchedFragmentIon mfiN3 = new MatchedFragmentIon(productN3, 0, 0, 1);
+            MatchedFragmentIon mfiN4 = new MatchedFragmentIon(productN4, 0, 0, 1);
+            MatchedFragmentIon mfiN6 = new MatchedFragmentIon(productN6, 0, 0, 1);
+            MatchedFragmentIon mfiN8 = new MatchedFragmentIon(productN8, 0, 0, 1);
+            MatchedFragmentIon mfiN13 = new MatchedFragmentIon(productN13, 0, 0, 1);
             List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfiC3, mfiC4, mfiC7, mfiC13, mfiN3, mfiN4, mfiN6, mfiN8, mfiN13};
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, 0, 1, null, new CommonParameters());

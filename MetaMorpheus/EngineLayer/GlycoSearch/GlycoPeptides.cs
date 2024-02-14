@@ -1,11 +1,12 @@
 ﻿using MassSpectrometry;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Chemistry;
+using Omics.Modifications;
 
 namespace EngineLayer.GlycoSearch
 {

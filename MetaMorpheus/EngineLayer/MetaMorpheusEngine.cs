@@ -2,7 +2,7 @@
 using MassSpectrometry;
 using Microsoft.ML.Trainers.FastTree;
 using MzLibUtil;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Omics.Fragmentation;
 
 namespace EngineLayer
 {
@@ -162,7 +163,7 @@ namespace EngineLayer
 
                     if (commonParameters.ProductMassTolerance.Within(scan.TheScan.MassSpectrum.XArray[closestMzIndex], theoreticalFragmentMz))
                     {
-                        matchedFragmentIons.Add(new MatchedFragmentIon(ref product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
+                        matchedFragmentIons.Add(new MatchedFragmentIon(product, theoreticalFragmentMz, scan.TheScan.MassSpectrum.YArray[closestMzIndex], 1));
                     }
                 }
 
@@ -192,7 +193,7 @@ namespace EngineLayer
                 // is the mass error acceptable?
                 if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
                 {
-                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
+                    matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
                         closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
                 }
             }
@@ -222,7 +223,7 @@ namespace EngineLayer
                             //found the peak, but we don't want to save that m/z because it's the complementary of the observed ion that we "added". Need to create a fake ion instead.
                             double mz = (scan.PrecursorMass + protonMassShift - closestExperimentalMass.MonoisotopicMass).ToMz(closestExperimentalMass.Charge);
 
-                            matchedFragmentIons.Add(new MatchedFragmentIon(ref product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
+                            matchedFragmentIons.Add(new MatchedFragmentIon(product, mz, closestExperimentalMass.TotalIntensity, closestExperimentalMass.Charge));
                         }
                     }
                 }
@@ -266,7 +267,7 @@ namespace EngineLayer
                         if (x != null && !ions.Contains(ion) && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) && x.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
                         {
                             Product temProduct = product;
-                            matchedFragmentIons.Add(new MatchedFragmentIon(ref temProduct, x.MonoisotopicMass.ToMz(x.Charge),
+                            matchedFragmentIons.Add(new MatchedFragmentIon(temProduct, x.MonoisotopicMass.ToMz(x.Charge),
                                 x.Peaks.First().intensity, x.Charge));
 
                             ions.Add(ion);

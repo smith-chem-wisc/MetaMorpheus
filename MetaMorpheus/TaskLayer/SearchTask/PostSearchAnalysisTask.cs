@@ -22,6 +22,7 @@ using Chemistry;
 using MzLibUtil;
 using Proteomics.AminoAcidPolymer;
 using System.Text.Json.Serialization;
+using Omics.Modifications;
 
 namespace TaskLayer
 {

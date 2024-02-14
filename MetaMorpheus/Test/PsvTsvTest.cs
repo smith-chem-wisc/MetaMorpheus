@@ -243,7 +243,7 @@ namespace Test
             
             //the code below tests the addition and correct output for neutral loss fragments
             Product p = new Product(ProductType.bWaterLoss, FragmentationTerminus.N, 1, 1, 1, 18);
-            MatchedFragmentIon matchedIon = new(ref p, 1, 1, 1);
+            MatchedFragmentIon matchedIon = new(p, 1, 1, 1);
             psms[0].MatchedIons.Add(matchedIon);
             string librarySpectrumWithNeutralLoss = psms[0].ToLibrarySpectrum().ToString();
 
