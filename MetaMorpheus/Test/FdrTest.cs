@@ -415,7 +415,7 @@ namespace Test
             Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
-            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount * reps));
+            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
         }
