@@ -11,6 +11,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using Easy.Common.Extensions;
+using Omics.Digestion;
+using Omics.Modifications;
 using TaskLayer;
 
 namespace Test

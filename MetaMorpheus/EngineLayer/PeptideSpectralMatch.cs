@@ -7,6 +7,8 @@ using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
+using Omics;
+using Omics.Modifications;
 
 namespace EngineLayer
 {

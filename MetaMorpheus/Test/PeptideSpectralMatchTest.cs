@@ -1,12 +1,15 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
 
 namespace Test
 {
@@ -67,7 +70,7 @@ namespace Test
 
             //PSM has no sequence but does have matched fragment ions
             Product ntProduct = new Product(ProductType.y, FragmentationTerminus.N, 1, 1, 1, 0);
-            MatchedFragmentIon mfi = new(ref ntProduct,1,1,1);
+            MatchedFragmentIon mfi = new(ntProduct,1,1,1);
             List<MatchedFragmentIon> mfiList = new List<MatchedFragmentIon>(){mfi};
             PeptideSpectralMatch psmNoBaseSequenceMFI = new(pwsmNoBaseSequence, 0, 10, 0, ms2ScanOneMzTen, commonParams,
                 mfiList);
