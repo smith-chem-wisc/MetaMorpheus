@@ -214,14 +214,14 @@ namespace Test
 
             //Test Output
             var task = new XLSearchTask();
-            WriteFile.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", commonParameters, xlSearchParameters);
+            WriteXlFile.WritePepXML_xl(newPsms, proteinList, null, variableModifications, fixedModifications, null, TestContext.CurrentContext.TestDirectory, "pep.XML", commonParameters, xlSearchParameters);
 
             File.Delete(@"singlePsms.tsv");
             File.Delete(@"pep.XML.pep.xml");
             File.Delete(@"allPsms.tsv");
 
             // write percolator result
-            WriteFile.WriteCrosslinkToTxtForPercolator(newPsms.Where(q => q.CrossType == PsmCrossType.Inter || q.CrossType == PsmCrossType.Intra).ToList(), TestContext.CurrentContext.TestDirectory, "perc", new Crosslinker());
+            WriteXlFile.WriteCrosslinkToTxtForPercolator(newPsms.Where(q => q.CrossType == PsmCrossType.Inter || q.CrossType == PsmCrossType.Intra).ToList(), TestContext.CurrentContext.TestDirectory, "perc", new Crosslinker());
             var percOut = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"perc.txt"), Encoding.UTF8);
             string header = "SpecId\tLabel\tScannr\tScore\tdScore\tCharge\tMass\tPPM\tLenShort\tLenLong\tLenSum\tPeptide\tProtein";
             string dataRow = "T-2-1\t1\t2\t9.080357142857142\t9.080357142857142\t3\t1994.05\t79237.2823474838\t7\t9\t16\t-.EKVLTSSAR2--LSQKFPK4.-\tFake01(2)\tFake02(4)";
@@ -1188,7 +1188,7 @@ namespace Test
         public static void XLSearchTastWriteFileTest()
         {
             //sending zero CSMs to write doesn't error. Method Simply Returns.
-            WriteFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch>(), "", 0);
+            WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch>(), "", 0);
 
             //sending the wrong writeType doesn't error. Method Simply breaks.
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\TestXLWrite");
@@ -1224,7 +1224,7 @@ namespace Test
             csmAlpha.LinkPositions = new() { 1 };
             csmBeta.LinkPositions = new() { 1 };
 
-            WriteFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch>() { csmAlpha}, outputFolder + "csm.psmtsv", 0);
+            WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch>() { csmAlpha}, outputFolder + "csm.psmtsv", 0);
 
             //check decoy label
             csmAlpha.BetaPeptide = csmBeta;
@@ -1251,7 +1251,7 @@ namespace Test
             Assert.AreEqual("ACCESSION()", lastRandomString);
 
 
-            WriteFile.WriteCrosslinkToTxtForPercolator(new List<CrosslinkSpectralMatch>() { csmAlpha }, outputFolder, "percolator.tsv", xlinker);
+            WriteXlFile.WriteCrosslinkToTxtForPercolator(new List<CrosslinkSpectralMatch>() { csmAlpha }, outputFolder, "percolator.tsv", xlinker);
             Directory.Delete(outputFolder, true);
         }
 
@@ -1325,7 +1325,7 @@ namespace Test
             csms[0].First().ResolveAllAmbiguities();
             csms[0].First().SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0);
 
-            WriteFile.WritePepXML_xl(csms.SelectMany(p => p).ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
+            WriteXlFile.WritePepXML_xl(csms.SelectMany(p => p).ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"test.pep.XML"));
         }
 
@@ -1419,7 +1419,7 @@ namespace Test
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0);
-            WriteFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
+            WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
 
             // read results from TSV
             var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
@@ -1508,7 +1508,7 @@ namespace Test
 
             // write results to TSV
             csm.SetFdrValues(1, 0, 0, 0, 0, 0, 0, 0);
-            WriteFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
+            WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
 
             // read results from TSV
             var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();

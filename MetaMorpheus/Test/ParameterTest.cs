@@ -57,7 +57,6 @@ namespace Test
                 minimumAllowedIntensityRatioToBasePeak: 69,
                 trimMs1Peaks: true,
                 trimMsMsPeaks: false,
-                useDeltaScore: true,
                 productMassTolerance: new AbsoluteTolerance(69),
                 precursorMassTolerance: new AbsoluteTolerance(69),
                 deconvolutionMassTolerance: new AbsoluteTolerance(69),
@@ -92,7 +91,6 @@ namespace Test
             Assert.AreNotEqual(defaultParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
             Assert.AreNotEqual(defaultParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
             Assert.AreNotEqual(defaultParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
-            Assert.AreNotEqual(defaultParameters.UseDeltaScore, notDefaultParameters.UseDeltaScore);
             Assert.AreNotEqual(defaultParameters.ProductMassTolerance, notDefaultParameters.ProductMassTolerance);
             Assert.AreNotEqual(defaultParameters.PrecursorMassTolerance, notDefaultParameters.PrecursorMassTolerance);
             Assert.AreNotEqual(defaultParameters.DeconvolutionMassTolerance, notDefaultParameters.DeconvolutionMassTolerance);
@@ -119,7 +117,6 @@ namespace Test
             Assert.AreEqual(updatedParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
             Assert.AreEqual(updatedParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
             Assert.AreEqual(updatedParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
-            Assert.AreEqual(updatedParameters.UseDeltaScore, notDefaultParameters.UseDeltaScore);
             Assert.AreEqual(updatedParameters.ProductMassTolerance, notDefaultParameters.ProductMassTolerance);
             Assert.AreEqual(updatedParameters.PrecursorMassTolerance, notDefaultParameters.PrecursorMassTolerance);
             Assert.AreEqual(updatedParameters.DeconvolutionMassTolerance, notDefaultParameters.DeconvolutionMassTolerance);
@@ -165,7 +162,6 @@ namespace Test
             Assert.AreEqual(updatedParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
             Assert.AreEqual(updatedParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
             Assert.AreEqual(updatedParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
-            Assert.AreEqual(updatedParameters.UseDeltaScore, notDefaultParameters.UseDeltaScore);
             Assert.AreEqual(updatedParameters.DeconvolutionMassTolerance, notDefaultParameters.DeconvolutionMassTolerance);
             Assert.AreEqual(updatedParameters.MaxThreadsToUsePerFile, notDefaultParameters.MaxThreadsToUsePerFile);
             Assert.AreEqual(((DigestionParams)updatedParameters.DigestionParams).InitiatorMethionineBehavior, ((DigestionParams)notDefaultParameters.DigestionParams).InitiatorMethionineBehavior);
