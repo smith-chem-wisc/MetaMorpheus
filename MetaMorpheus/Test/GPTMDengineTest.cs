@@ -5,11 +5,12 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 

@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using Proteomics.Fragmentation;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -8,6 +7,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using Omics.Fragmentation;
 
 namespace GuiFunctions
 {

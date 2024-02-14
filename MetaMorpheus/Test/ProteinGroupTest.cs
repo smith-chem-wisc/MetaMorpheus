@@ -11,6 +11,8 @@ using FlashLFQ;
 using TaskLayer;
 using ProteinGroup = EngineLayer.ProteinGroup;
 using System.IO;
+using Omics.Digestion;
+using Omics.Modifications;
 using UsefulProteomicsDatabases;
 
 namespace Test

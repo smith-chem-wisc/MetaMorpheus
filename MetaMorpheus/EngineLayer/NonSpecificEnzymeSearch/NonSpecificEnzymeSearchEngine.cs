@@ -2,7 +2,7 @@
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModernSearch;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using MassSpectrometry;
@@ -10,6 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using MzLibUtil;
+using Omics.Digestion;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
 
 namespace EngineLayer.NonSpecificEnzymeSearch
 {

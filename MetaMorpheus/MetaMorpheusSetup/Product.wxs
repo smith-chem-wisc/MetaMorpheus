@@ -271,6 +271,9 @@
       <Component Id="src_Readers.dll" Guid="07FD5A1B-E8CC-4270-9DB9-C7DEFC7BFE44">
 	    <File Id="src_Readers.dll" Name="Readers.dll" Source="$(var.GUI_TargetDir)Readers.dll" />
       </Component>
+	  <Component Id="src_Omics.dll" Guid="B8F0F0A0-5F0B-4F0B-9F0B-0B0B0B0B0B0B">
+	    <File Id="src_Omics.dll" Name="Omics.dll" Source="$(var.GUI_TargetDir)Omics.dll" />
+	  </Component>
       <Component Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Guid="F3DA60DB-CF5F-4671-9F3C-1033780261DD">
         <File Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Name="ThermoFisher.CommonCore.BackgroundSubtraction.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.BackgroundSubtraction.dll" />
       </Component>

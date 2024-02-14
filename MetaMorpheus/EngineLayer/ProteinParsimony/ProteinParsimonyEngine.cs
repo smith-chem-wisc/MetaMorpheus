@@ -1,11 +1,12 @@
 ﻿using EngineLayer.ProteinParsimony;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using IDigestionParams = Omics.Digestion.IDigestionParams;
 
 namespace EngineLayer
 {
@@ -156,8 +157,8 @@ namespace EngineLayer
 
                                     // this gets the digestion info for all of the peptide-protein associations that should exist
                                     var proteinToPeptideInfo = new Dictionary<Protein,
-                                        (DigestionParams DigestParams, int OneBasedStart, int OneBasedEnd, int MissedCleavages, int Notch,
-                                        CleavageSpecificity CleavageSpecificity)>();
+                                        (IDigestionParams DigestParams, int OneBasedStart, int OneBasedEnd, int MissedCleavages, int Notch,
+                                        Omics.Digestion.CleavageSpecificity CleavageSpecificity)>();
 
                                     foreach (PeptideSpectralMatch psm in baseSequence.Value)
                                     {
@@ -218,7 +219,7 @@ namespace EngineLayer
             }
 
             // Parsimony stage 1: add proteins with unique peptides (for each protease)
-            var peptidesGroupedByProtease = _fdrFilteredPeptides.GroupBy(p => p.DigestionParams.Protease);
+            var peptidesGroupedByProtease = _fdrFilteredPeptides.GroupBy(p => p.DigestionParams.DigestionAgent);
             foreach (var peptidesForThisProtease in peptidesGroupedByProtease)
             {
                 Dictionary<string, List<Protein>> peptideSequenceToProteinsForThisProtease = new Dictionary<string, List<Protein>>();

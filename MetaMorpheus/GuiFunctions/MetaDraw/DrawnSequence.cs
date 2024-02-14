@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using OxyPlot;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;

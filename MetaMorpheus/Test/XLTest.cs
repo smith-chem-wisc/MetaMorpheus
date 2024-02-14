@@ -9,7 +9,7 @@ using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -18,6 +18,8 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Omics.Digestion;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
