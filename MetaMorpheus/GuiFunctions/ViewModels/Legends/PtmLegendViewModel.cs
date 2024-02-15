@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using EngineLayer;
+using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
 
 namespace GuiFunctions

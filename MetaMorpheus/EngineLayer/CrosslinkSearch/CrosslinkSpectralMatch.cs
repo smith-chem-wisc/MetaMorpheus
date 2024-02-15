@@ -1,5 +1,5 @@
 ﻿using Easy.Common.Extensions;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;

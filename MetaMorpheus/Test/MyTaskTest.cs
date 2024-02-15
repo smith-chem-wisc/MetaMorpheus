@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 

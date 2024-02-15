@@ -12,6 +12,7 @@ using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Nett;
+using Omics.Modifications;
 
 namespace Test
 {

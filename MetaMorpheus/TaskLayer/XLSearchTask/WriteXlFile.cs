@@ -2,7 +2,7 @@
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.GlycoSearch;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -10,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
 using Easy.Common.Extensions;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
 
 namespace TaskLayer
 {
