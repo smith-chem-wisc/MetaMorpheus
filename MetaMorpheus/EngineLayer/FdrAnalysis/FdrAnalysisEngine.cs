@@ -91,12 +91,11 @@ namespace EngineLayer.FdrAnalysis
                     }
                 }
             }
-            CountPsm();//needed for PEP
             if (DoPEP)
             {
                 Compute_PEPValue(myAnalysisResults);
-                CountPsm();//repeat after PEP to account for any peptides eliminated by reduction in ambiguity
             }
+            CountPsm();
         }
 
         private static void QValueInverted(List<PeptideSpectralMatch> psms)

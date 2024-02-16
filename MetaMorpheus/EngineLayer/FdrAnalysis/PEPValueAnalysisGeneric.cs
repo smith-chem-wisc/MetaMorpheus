@@ -694,7 +694,6 @@ namespace EngineLayer
             float intensity = 0;
             float chargeDifference = 0;
             float deltaScore = 0;
-            float psmCount = psm.PsmCount;
             int notch = 0;
             float ambiguity = 0;
             float modCount = 0;
@@ -738,11 +737,6 @@ namespace EngineLayer
                 ambiguity = Math.Min((float)(psm.PeptidesToMatchingFragments.Keys.Count - 1), 10);
                 longestSeq = (float)Math.Round(PeptideSpectralMatch.GetLongestIonSeriesBidirectional(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
                 complementaryIonCount = (float)Math.Round(PeptideSpectralMatch.GetCountComplementaryIons(psm.PeptidesToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
-
-                //grouping psm counts as follows is done for stability. you get very nice numbers at low psms to get good statistics. But you get a few peptides with high psm counts that could be either targets or decoys and the values swing between extremes. So grouping psms in bundles really adds stability.
-                List<int> psmCountList = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 75, 100, 200, 300, 400, 500 };
-                int closest = psmCountList.OrderBy(item => Math.Abs(psmCount - item)).First();
-                psmCount = closest;
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
                 spectralAngle = (float)psm.SpectralAngle;
 
@@ -835,7 +829,6 @@ namespace EngineLayer
                 PrecursorChargeDiffToMode = chargeDifference,
                 DeltaScore = deltaScore,
                 Notch = notch,
-                PsmCount = psmCount,
                 ModsCount = modCount,
                 AbsoluteAverageFragmentMassErrorFromMedian = absoluteFragmentMassError,
                 MissedCleavagesCount = missedCleavages,

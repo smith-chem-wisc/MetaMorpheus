@@ -655,7 +655,6 @@ namespace Test
             Assert.AreEqual(intraPsmData.ModsCount, 0);
             Assert.AreEqual(intraPsmData.Notch, 0);
             Assert.AreEqual(intraPsmData.PrecursorChargeDiffToMode, -1);
-            Assert.AreEqual(intraPsmData.PsmCount, 1);
             Assert.That(intraPsmData.TotalMatchingFragmentCount, Is.EqualTo(11).Within(0.1));
 
             CrosslinkSpectralMatch singleCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Single).OrderBy(c => -c.Score).First();
@@ -688,7 +687,6 @@ namespace Test
             Assert.AreEqual(singleCsmPsmData.ModsCount, 1);
             Assert.AreEqual(singleCsmPsmData.Notch, 0);
             Assert.AreEqual(singleCsmPsmData.PrecursorChargeDiffToMode, -1);
-            Assert.AreEqual(singleCsmPsmData.PsmCount, 4);
             Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(8).Within(0.1));
 
             CrosslinkSpectralMatch loopCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Loop).OrderBy(c => -c.Score).First();
@@ -714,7 +712,6 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.ModsCount, 2);
             Assert.AreEqual(loopCsmPsmData.Notch, 0);
             Assert.AreEqual(loopCsmPsmData.PrecursorChargeDiffToMode, -1);
-            Assert.AreEqual(loopCsmPsmData.PsmCount, 3);
             Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(8).Within(0.1));
 
             unnasignedCrossType = 0;
