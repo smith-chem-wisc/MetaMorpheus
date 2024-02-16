@@ -87,6 +87,8 @@ Proteogenomic database searches with Spritz: [Spritz: A Proteogenomic Database E
 
 Long-read proteogenomic characterization: [Enhanced protein isoform characterization through long-read proteogenomics, Genome Biology **2022**, _23_, 69.](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02624-y)
 
+Spectral library GPTMD search: [A Hybrid Spectral Library and Protein Sequence Database Search Strategy for Bottom-Up and Top-Down Proteomic Data Analysis, J of Proteome Res **2022**, _21_, 2609-2618](https://pubs.acs.org/doi/10.1021/acs.jproteome.2c00305)
+
 ## mzLib, an all-purpose mass spectrometry toolchest implemented by MetaMorpheus
 
 [mzLib](https://github.com/smith-chem-wisc/mzLib) is a [nuget](https://www.nuget.org/packages/mzLib/) package that we created as an all-purpose toolchest for mass-spec data analysis and many of its functions provide the tools for MetaMorpheus. mzLib is freely available for use in mass-spec applications. You do not need to download mzLib separately to run MetaMorpheus; it is already included.
