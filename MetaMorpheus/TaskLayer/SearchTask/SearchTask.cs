@@ -175,7 +175,6 @@ namespace TaskLayer
             }
 
             FlashLfqResults flashLfqResults = null;
-
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
 
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
