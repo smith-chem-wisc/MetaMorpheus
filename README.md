@@ -76,6 +76,9 @@ Quantification:
   * [Ultrafast Peptide Label-Free Quantification with FlashLFQ, J Proteome Res **2018**, _17_, 386–391.](https://pubs.acs.org/doi/10.1021/acs.jproteome.7b00608)
   * If you use SILAC quantification: [An atlas of protein turnover rates in mouse tissues, Nat Communications **2021**, _12_, 6778.](https://www.nature.com/articles/s41467-021-26842-3)
 
+Crosslinking MS (XL-MS) search: [Identification of MS-Cleavable and Noncleavable Chemically Cross-Linked Peptides with MetaMorpheus
+, J. Proteome Res. **2018**, 17, 7, 2370–2376.](https://pubs.acs.org/doi/10.1021/acs.jproteome.8b00141)
+
 Multiple protease parsimony: [Improved Protein Inference from Multiple Protease Bottom-Up Mass Spectrometry Data, J Proteome Res **2019**, _18_, 9, 3429–3438.](https://pubs.acs.org/doi/10.1021/acs.jproteome.9b00330)
 
 Glycoproteomic searches: [O-Pair Search with MetaMorpheus for O-glycopeptide characterization, Nat Methods **2020**, _17_, 1133–1138.](https://www.nature.com/articles/s41592-020-00985-5)
