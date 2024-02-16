@@ -116,6 +116,7 @@ namespace EngineLayer
             { 'Y', 2298977 },
             { 'C',  4201056 },
             { 'X', 15005282 },
+            { 'K', 25006897 },
         };
 
         //Compitable with Byonic, for loading glycan by Kind.
