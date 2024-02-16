@@ -131,7 +131,8 @@ namespace EngineLayer
             {"Sulfo", new Tuple<char, int>('S', 6) },
             {"Na", new Tuple<char, int>('Y', 7) },
             {"Ac", new Tuple<char, int>('C', 8) },
-            {"Xylose", new Tuple<char, int>('X', 9) }
+            {"Xylose", new Tuple<char, int>('X', 9) },
+            {"KDN", new Tuple<char, int>('K', 10) }
         };
 
         public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int>
