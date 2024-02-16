@@ -185,7 +185,7 @@ namespace EngineLayer
             }
             if (!isOglycan)
             {
-                glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
+                glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
             }
             glycanIons.Add(new GlycanIon(null, 0, kind, mass));
 
@@ -401,7 +401,8 @@ namespace EngineLayer
                 CharMassDic['S'] * structure.Count(p => p == 'S') +
                 CharMassDic['Y'] * structure.Count(p => p == 'Y') +
                 CharMassDic['C'] * structure.Count(p => p == 'C') +
-                CharMassDic['X'] * structure.Count(p => p == 'X')
+                CharMassDic['X'] * structure.Count(p => p == 'X') +
+                CharMassDic['K'] * structure.Count(p => p == 'K')
                 ;
             return y;
         }
@@ -417,7 +418,8 @@ namespace EngineLayer
             CharMassDic['S'] * kind[6] +
             CharMassDic['Y'] * kind[7] +
             CharMassDic['C'] * kind[8] +
-            CharMassDic['X'] * kind[9]
+            CharMassDic['X'] * kind[9] +
+            CharMassDic['K'] * kind[10]
             ;
 
             return mass;
@@ -436,6 +438,7 @@ namespace EngineLayer
                 Convert.ToByte(structure.Count(p => p == 'Y')),
                 Convert.ToByte(structure.Count(p => p == 'C')),
                 Convert.ToByte(structure.Count(p => p == 'X')),
+                Convert.ToByte(structure.Count(p => p == 'K')),
             };
             return kind;
         }
@@ -452,7 +455,8 @@ namespace EngineLayer
             string Y = Kind[7] == 0 ? "" : "Y" + Kind[7].ToString();
             string C = Kind[8] == 0 ? "" : "C" + Kind[8].ToString();
             string X = Kind[9] == 0 ? "" : "X" + Kind[9].ToString();
-            string kindString = H + N + A + G + F + P + S + Y + C + X;
+            string K = Kind[10] == 0 ? "" : "K" + Kind[10].ToString();
+            string kindString = H + N + A + G + F + P + S + Y + C + X + K;
             return kindString;
         }
 
