@@ -1,12 +1,14 @@
 ﻿using EngineLayer;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
 
 namespace TaskLayer
 {

@@ -4,7 +4,7 @@ using System.IO;
 using TaskLayer;
 using EngineLayer;
 using System.Linq;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 
 namespace Test
 {
@@ -99,9 +99,9 @@ namespace Test
             Assert.AreEqual(interSpectrum.AlphaPeptideSequence, "GVTVDKMTELR");
             Assert.AreEqual(interSpectrum.BetaPeptideSequence, "SFTFVTKTPPAAVLLK");
             Assert.True(interSpectrum.BetaPeptideSpectrum.IsBetaPeptide);
-            interLinkSpectrum.MatchedFragmentIons.Add(new MatchedFragmentIon(ref productWithNeutralLoss, 100, 100, 1));
+            interLinkSpectrum.MatchedFragmentIons.Add(new MatchedFragmentIon(productWithNeutralLoss, 100, 100, 1));
             CrosslinkLibrarySpectrum spectrumDup = (CrosslinkLibrarySpectrum)interLinkSpectrum;
-            spectrumDup.BetaPeptideSpectrum.MatchedFragmentIons.Add(new MatchedFragmentIon(ref productWithNeutralLoss20, 100, 100, 1));
+            spectrumDup.BetaPeptideSpectrum.MatchedFragmentIons.Add(new MatchedFragmentIon(productWithNeutralLoss20, 100, 100, 1));
             var spectrumString = spectrumDup.ToString();
             // Check neutral loss fragments are written correctly
             StringAssert.Contains("\"Y1^1-10/0ppm\"", spectrumString);

@@ -6,7 +6,7 @@ using EngineLayer.Indexing;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -16,6 +16,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using MzLibUtil;
 using Nett;
+using Omics.Modifications;
 
 namespace Test
 {

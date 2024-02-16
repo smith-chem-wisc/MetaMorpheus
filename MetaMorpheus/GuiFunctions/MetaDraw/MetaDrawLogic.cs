@@ -6,7 +6,6 @@ using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
 using OxyPlot.Wpf;
-using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -25,6 +24,7 @@ using EngineLayer.CrosslinkSearch;
 using Org.BouncyCastle.Asn1.X509.Qualified;
 using Readers;
 using System.Threading;
+using Omics.Fragmentation;
 
 namespace GuiFunctions
 {
