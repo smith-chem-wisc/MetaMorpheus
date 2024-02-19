@@ -1,23 +1,18 @@
-﻿using System;
-using Chemistry;
+﻿using Chemistry;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using Easy.Common.Extensions;
 using Omics;
 using Omics.Modifications;
-using Proteomics.AminoAcidPolymer;
-using ThermoFisher.CommonCore.Data;
+using System;
 
 namespace EngineLayer
 {
-    public class PeptideSpectralMatch
+    public class PeptideSpectralMatch : IComparable<PeptideSpectralMatch>
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
         protected List<(int Notch, PeptideWithSetModifications Pwsm)> _BestMatchingPeptides;
@@ -90,8 +85,23 @@ namespace EngineLayer
 
         //One-based positions in peptide that are covered by fragments on both sides of amino acids
         public List<int> FragmentCoveragePositionInPeptide { get; private set; }
-      
 
+        public List<double> PrecursorMassErrorDa
+        {
+            get
+            {
+                return this.BestMatchingPeptides.Select(p => Math.Round(this.ScanPrecursorMass - p.Peptide.MonoisotopicMass, 5))
+                    .ToList();
+            }
+        }
+
+        public List<double> PrecursorMassErrorPpm
+        {
+            get
+            {
+                return this.BestMatchingPeptides.Select(p => Math.Round((this.ScanPrecursorMass - p.Peptide.MonoisotopicMass) / p.Peptide.MonoisotopicMass * 1e6, 2)).ToList();
+            }
+        }
         public DigestionParams DigestionParams { get; }
         public Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>> PeptidesToMatchingFragments { get; private set; }
 
@@ -131,11 +141,7 @@ namespace EngineLayer
             else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
                 _BestMatchingPeptides.Add((notch, pwsm));
-
-                if (!PeptidesToMatchingFragments.ContainsKey(pwsm))
-                {
-                    PeptidesToMatchingFragments.Add(pwsm, matchedFragmentIons);
-                }
+                PeptidesToMatchingFragments.TryAdd(pwsm, matchedFragmentIons);
             }
             else if (newScore - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
@@ -187,6 +193,14 @@ namespace EngineLayer
                 PEP = pep,
                 PEP_QValue = pepQValue
             };
+        }
+
+        public void SetQandPEPvalues(double qValue, double qValueNotch, double pep, double pepQValue)
+        {
+            FdrInfo.QValue = qValue;
+            FdrInfo.QValueNotch = qValueNotch;
+            FdrInfo.PEP = pep;
+            FdrInfo.PEP_QValue = pepQValue;
         }
 
         /// <summary>
@@ -500,6 +514,27 @@ namespace EngineLayer
             PeptidesToMatchingFragments = psm.PeptidesToMatchingFragments;
             SpectralAngle = psm.SpectralAngle;
         }
-
+        /// <summary>
+        /// There are a few key locations in MetaMorpheus where we want to have psms sorted in a consistent manner.
+        /// These are for q-value determination and for when we write the psms to psmtsv. 
+        /// </summary>
+        /// <param name="otherPsm"></param>
+        /// <returns></returns>
+        public int CompareTo(PeptideSpectralMatch otherPsm)
+        {
+            if (Math.Abs(this.Score - otherPsm.Score) > ToleranceForScoreDifferentiation)
+            {
+                return this.Score.CompareTo(otherPsm.Score);
+            }
+            else if (Math.Abs(this.DeltaScore - otherPsm.DeltaScore) > ToleranceForScoreDifferentiation)
+            {
+                return this.RunnerUpScore.CompareTo(otherPsm.RunnerUpScore);
+            }
+            else if (otherPsm.PrecursorMassErrorPpm != null && (Math.Abs(otherPsm.PrecursorMassErrorPpm.First() - this.PrecursorMassErrorPpm.First()) > 0.01))
+            {
+                return Math.Abs(otherPsm.PrecursorMassErrorPpm.First()).CompareTo(Math.Abs(this.PrecursorMassErrorPpm.First())); //precursor mass errors defined for both otherPsms. Reverse the comparision so that lower ppm error comes first
+            }
+            return otherPsm.ScanNumber.CompareTo(this.ScanNumber); //reverse the comparision so that the lower scan number comes first.
+        }
     }
 }
