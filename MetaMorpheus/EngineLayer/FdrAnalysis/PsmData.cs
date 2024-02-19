@@ -87,66 +87,60 @@ namespace EngineLayer.FdrAnalysis
         public float PsmCount { get; set; }
 
         [LoadColumn(5)]
-        public float ModsCount { get; set; }
-
-        [LoadColumn(6)]
         public float AbsoluteAverageFragmentMassErrorFromMedian { get; set; }
   
-        [LoadColumn(7)]
+        [LoadColumn(6)]
         public float MissedCleavagesCount { get; set; }
 
-        [LoadColumn(8)]
+        [LoadColumn(7)]
         public float Ambiguity { get; set; }
 
-        [LoadColumn(9)]
+        [LoadColumn(8)]
         public float LongestFragmentIonSeries { get; set; }
 
-        [LoadColumn(10)]
+        [LoadColumn(9)]
         public float ComplementaryIonCount { get; set; }
 
-        [LoadColumn(11)]
+        [LoadColumn(10)]
         public float HydrophobicityZScore { get; set; }
 
-        [LoadColumn(12)]
+        [LoadColumn(11)]
         public float IsVariantPeptide { get; set; }
 
-        [LoadColumn(13)]
+        [LoadColumn(12)]
         public float TotalMatchingFragmentCount { get; set; }
 
-        [LoadColumn(14)]
+        [LoadColumn(13)]
         public float AlphaIntensity { get; set; }
 
-        [LoadColumn(15)]
+        [LoadColumn(14)]
         public float BetaIntensity { get; set; }
 
-        [LoadColumn(16)]
+        [LoadColumn(15)]
         public float LongestFragmentIonSeries_Alpha { get; set; }
 
-        [LoadColumn(17)]
+        [LoadColumn(16)]
         public float LongestFragmentIonSeries_Beta { get; set; }
 
-        [LoadColumn(18)]
+        [LoadColumn(17)]
         public float IsDeadEnd { get; set; }
 
-        [LoadColumn(19)]
+        [LoadColumn(18)]
         public float IsLoop { get; set; }
 
-        [LoadColumn(20)]
+        [LoadColumn(19)]
         public float IsInter { get; set; }
 
-        [LoadColumn(21)]
+        [LoadColumn(20)]
         public float IsIntra { get; set; }
 
-        [LoadColumn(22)]
-
+        [LoadColumn(21)]
         public bool Label { get; set; }
 
-        [LoadColumn(23)]
-
+        [LoadColumn(22)]
         public float SpectralAngle { get; set; }
 
-        [LoadColumn(24)]
-
+        [LoadColumn(23)]
         public float HasSpectralAngle { get; set; }
     }
 }
