@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
+using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
 
