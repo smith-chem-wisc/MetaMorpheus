@@ -90,7 +90,7 @@ namespace Test
             Assert.AreEqual("primary:MKI67", psm.GeneName);
             Assert.AreEqual("", psm.IdentifiedSequenceVariations);
             Assert.AreEqual("-0.00544", psm.MassDiffDa);
-            Assert.AreEqual("-2.56", psm.MassDiffPpm);
+            Assert.AreEqual("-2.56000", psm.MassDiffPpm);
             Assert.AreEqual(40, psm.MatchedIons.Count);
             Assert.AreEqual("1", psm.MissedCleavage);
             Assert.AreEqual(56, psm.Ms2ScanNumber);

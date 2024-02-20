@@ -16,7 +16,7 @@ namespace Test
         [Test]
         public static void ResolveModificationsTest()
         {
-            double mass = 12.0 + new PeptideWithSetModifications(new Protein("LNLDLDND", "prot1"),new DigestionParams(),1,8,CleavageSpecificity.Full,"",0, new Dictionary<int, Modification>(),0,null).MonoisotopicMass.ToMz(1);
+            double mass = 12.0 + new PeptideWithSetModifications(new Protein("LNLDLDND", "prot1"), new DigestionParams(), 1, 8, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0, null).MonoisotopicMass.ToMz(1);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[,] { }), 0, 0, true, Polarity.Positive,
                 0, new MzLibUtil.MzRange(0, 0), "", MZAnalyzerType.FTICR, 0, null, null, ""), mass, 1, "", new CommonParameters());
 
@@ -71,7 +71,7 @@ namespace Test
             string ppmErrorString = myPsmStringSplit[24];
 
             //The two different mods produce two separate mass errors, which are both then reported
-            Assert.AreEqual("0.00|11801.30", ppmErrorString);
+            Assert.AreEqual("0.00000|11801.30000", ppmErrorString);
 
             //Make sure we see produt ion neutral losses in the output.
             string matchedIonSeries = myPsmStringSplit[39];
@@ -94,7 +94,7 @@ namespace Test
             myPsmStringSplit = myPsmString.Split('\t');
             ppmErrorString = myPsmStringSplit[24];
 
-            Assert.AreEqual("0.00", ppmErrorString);
+            Assert.AreEqual("0.00000", ppmErrorString);
         }
     }
 }

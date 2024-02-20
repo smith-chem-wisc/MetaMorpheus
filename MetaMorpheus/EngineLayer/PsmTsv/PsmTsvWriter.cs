@@ -95,20 +95,6 @@ namespace EngineLayer
             }
         }
 
-        internal static (string ResolvedString, double? ResolvedValue) ResolveF2(IEnumerable<double> enumerable)
-        {
-            var list = enumerable.ToList();
-            if (list.Max() - list.Min() < ToleranceForDoubleResolutionF2)
-            {
-                return (list.Average().ToString("F2", CultureInfo.InvariantCulture), list.Average());
-            }
-            else
-            {
-                var returnString = GlobalVariables.CheckLengthOfOutput(string.Join("|", list.Select(b => b.ToString("F2", CultureInfo.InvariantCulture))));
-                return (returnString, null);
-            }
-        }
-
         internal static (string ResolvedString, double? ResolvedValue) Resolve(IEnumerable<double> enumerable)
         {
             var list = enumerable.ToList();
@@ -176,6 +162,7 @@ namespace EngineLayer
             }
         }
 
+        //The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
         internal static void AddBasicMatchData(Dictionary<string, string> s, PeptideSpectralMatch psm)
         {
             s[PsmTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
@@ -192,10 +179,10 @@ namespace EngineLayer
             s[PsmTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingPeptides.Select(p => p.Notch)).ResolvedString;
         }
 
+        //The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
         internal static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
         {
             bool pepWithModsIsNull = psm == null || psm.BestMatchingPeptides == null || !psm.BestMatchingPeptides.Any();
-
             List<PeptideWithSetModifications> pepsWithMods = pepWithModsIsNull ? null : psm.BestMatchingPeptides.Select(p => p.Peptide).ToList();
 
             s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (psm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
@@ -211,8 +198,8 @@ namespace EngineLayer
             s[PsmTsvHeader.NumVariableMods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).ResolvedString;
             s[PsmTsvHeader.MissedCleavages] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).ResolvedString;
             s[PsmTsvHeader.PeptideMonoMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
-            s[PsmTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => psm.ScanPrecursorMass - b.MonoisotopicMass)).ResolvedString;
-            s[PsmTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : ResolveF2(pepsWithMods.Select(b => ((psm.ScanPrecursorMass - b.MonoisotopicMass) / b.MonoisotopicMass * 1e6))).ResolvedString;
+            s[PsmTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(psm.PrecursorMassErrorDa).ResolvedString;
+            s[PsmTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(psm.PrecursorMassErrorPpm).ResolvedString;
             s[PsmTsvHeader.ProteinAccession] = pepWithModsIsNull ? " " : (psm.ProteinAccession != null ? psm.ProteinAccession : Resolve(pepsWithMods.Select(b => b.Protein.Accession), psm.FullSequence).ResolvedString);
             s[PsmTsvHeader.ProteinName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Protein.FullName), psm.FullSequence).ResolvedString;
             s[PsmTsvHeader.GeneName] = geneString;

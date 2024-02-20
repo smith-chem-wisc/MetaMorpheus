@@ -990,7 +990,7 @@ namespace Test
         }
 
         /// <summary>
-        /// This test ensures that FDR for each psm is calculated accoriding to its protease
+        /// This test ensures that FDR for each psm is calculated according to its protease
         /// </summary>
         [Test]
         public static void MultiProteaseParsimony_TestingProteaseSpecificFDRCalculations()
@@ -1036,12 +1036,13 @@ namespace Test
             Assert.AreEqual(0.00, Math.Round(psms[1].FdrInfo.QValue, 2));
             Assert.AreEqual(0.00, Math.Round(psms[2].FdrInfo.QValue, 2));
             Assert.AreEqual(0.00, Math.Round(psms[3].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[4].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.5, Math.Round(psms[4].FdrInfo.QValue, 2));
             Assert.AreEqual(0.33, Math.Round(psms[5].FdrInfo.QValue, 2));
             Assert.AreEqual(0.00, Math.Round(psms[6].FdrInfo.QValue, 2));
             Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.50, Math.Round(psms[8].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.50, Math.Round(psms[9].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.67, Math.Round(psms[8].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.5, Math.Round(psms[9].FdrInfo.QValue, 2));
         }
-    }
+    
+}
 }

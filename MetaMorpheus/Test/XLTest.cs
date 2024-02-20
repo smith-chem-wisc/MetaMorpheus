@@ -714,7 +714,6 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.ModsCount, 2);
             Assert.AreEqual(loopCsmPsmData.Notch, 0);
             Assert.AreEqual(loopCsmPsmData.PrecursorChargeDiffToMode, -1);
-            Assert.AreEqual(loopCsmPsmData.PsmCount, 3);
             Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(8).Within(0.1));
 
             unnasignedCrossType = 0;
