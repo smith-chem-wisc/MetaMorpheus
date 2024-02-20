@@ -53,18 +53,9 @@ namespace EngineLayer.FdrAnalysis
             foreach (var variable in variablesToOutput)
             {
                 var property = typeof(PsmData).GetProperty(variable).GetValue(this, null);
-                if (property is bool)
-                {
-                    var boolValue = (bool)property;
-                    sb.Append("\t");
-                    sb.Append(boolValue.ToString());
-                }
-                else if (property is float)
-                {
-                    var floatValue = (float)property;
-                    sb.Append("\t");
-                    sb.Append(floatValue.ToString());
-                }
+                var floatValue = (float)property;
+                sb.Append("\t");
+                sb.Append(floatValue.ToString());
             }
 
             return sb.ToString();
