@@ -194,7 +194,16 @@ namespace EngineLayer
                 PEP_QValue = pepQValue
             };
         }
-
+        /// <summary>
+        /// This method is used to compute qValue etc for the inverted set of psms
+        /// We neither compute nor calculated cumulativeTarget, cumulativeDecoy, etc for the inverted set.
+        /// CumulativeTarget, CumulativeDecoy, CumulativeTargetNotch, CumulativeDecoyNotch, were computed
+        /// for the non-inverted set.   We don't want to use them for the inverted set.
+        /// </summary>
+        /// <param name="qValue"></param>
+        /// <param name="qValueNotch"></param>
+        /// <param name="pep"></param>
+        /// <param name="pepQValue"></param>
         public void SetQandPEPvalues(double qValue, double qValueNotch, double pep, double pepQValue)
         {
             FdrInfo.QValue = qValue;
