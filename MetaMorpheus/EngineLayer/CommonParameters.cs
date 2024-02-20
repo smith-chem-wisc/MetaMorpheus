@@ -60,7 +60,6 @@ namespace EngineLayer
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
             UseProvidedPrecursorInfo = useProvidedPrecursorInfo;
             DeconvolutionIntensityRatio = deconvolutionIntensityRatio;
-            DeconvolutionMaxAssumedChargeState = deconvolutionMaxAssumedChargeState;
             ReportAllAmbiguity = reportAllAmbiguity;
             AddCompIons = addCompIons;
             TotalPartitions = totalPartitions;
@@ -96,13 +95,14 @@ namespace EngineLayer
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
 
-            AddTruncations = addTruncations; if (deconParams != null)
+            AddTruncations = addTruncations; 
+            if (deconParams != null)
             {
                 DeconvolutionParameters = deconParams;
             }
             else
             {
-                DeconvolutionParameters = DeconvolutionMaxAssumedChargeState < 0
+                DeconvolutionParameters = deconvolutionMaxAssumedChargeState < 0
                     ? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState, -1,
                         DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative)
                     : new ClassicDeconvolutionParameters(1, deconvolutionMaxAssumedChargeState,
@@ -125,7 +125,11 @@ namespace EngineLayer
         public bool DoPrecursorDeconvolution { get; private set; }
         public bool UseProvidedPrecursorInfo { get; private set; }
         public double DeconvolutionIntensityRatio { get; private set; }
-        public int DeconvolutionMaxAssumedChargeState { get; private set; }
+        public int DeconvolutionMaxAssumedChargeState
+        {
+            get => DeconvolutionParameters.MaxAssumedChargeState;
+            private set => DeconvolutionParameters.MaxAssumedChargeState = value;
+        }
         [TomlIgnore] public DeconvolutionParameters DeconvolutionParameters { get; private set; }
         public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
