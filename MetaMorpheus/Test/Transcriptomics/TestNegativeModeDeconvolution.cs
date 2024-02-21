@@ -48,7 +48,7 @@ namespace Test.Transcriptomics
 
             // get neutral fragments
             var deconvolutionResults2 = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(scan,
-                commonParam: new CommonParameters(deconParams: deconParams, assumeOrphanPeaksAreZ1Fragments: false)).ToList();
+                commonParam: new CommonParameters(precursorDeconParams: deconParams, productDeconParams: deconParams, assumeOrphanPeaksAreZ1Fragments: false)).ToList();
 
             resultsWithPeakOfInterest = deconvolutionResults2.FirstOrDefault(envelope =>
                 envelope.Peaks.Any(peak => tolerance.Within(peak.mz, expectedMz)));
