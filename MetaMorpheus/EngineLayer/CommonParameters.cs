@@ -125,10 +125,10 @@ namespace EngineLayer
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
         public bool DoPrecursorDeconvolution { get; private set; }
         public bool UseProvidedPrecursorInfo { get; private set; }
-        public double DeconvolutionIntensityRatio { get; private set; }
+        [TomlIgnore] public double DeconvolutionIntensityRatio { get; private set; }
         public int DeconvolutionMaxAssumedChargeState { get; private set; }
         [TomlIgnore] public DeconvolutionParameters DeconvolutionParameters { get; private set; }
-        public Tolerance DeconvolutionMassTolerance { get; private set; }
+        [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
