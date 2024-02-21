@@ -30,9 +30,9 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 * Environment:
   * 64-bit operating system
   * .NET Core 6.0:
-     * Windows: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-6.0.4-windows-x64-installer
-     * macOS, x64 Intel processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-6.0.4-macos-x64-installer
-     * macOS, ARM Apple Silicon processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/runtime-6.0.4-macos-arm64-installer
+     * Windows: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.419-windows-x64-installer
+     * macOS, x64 Intel processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.419-macos-x64-installer
+     * macOS, ARM Apple Silicon processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-6.0.419-macos-arm64-installer
      * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
 * Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
 * 8 GB RAM recommended
