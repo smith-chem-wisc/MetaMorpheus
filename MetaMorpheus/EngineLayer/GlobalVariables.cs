@@ -1,5 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
+using MzLibUtil;
 using Nett;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
@@ -78,6 +79,7 @@ namespace EngineLayer
             SetUpGlobalSettings();
             LoadDissociationTypes();
             LoadAvailableProteomes();
+            LoadCustomProtease();
         }
 
         public static void AddMods(IEnumerable<Modification> modifications, bool modsAreFromTheTopOfProteinXml)
@@ -199,6 +201,33 @@ namespace EngineLayer
             {
                 WriteAminoAcidsFile();
             }
+        }
+
+        public static void LoadCustomProtease()
+        {
+            string ProtDirectory = Path.Combine(GlobalVariables.DataDir, @"ProteolyticDigestion");
+            string customProteasePath = Path.Combine(ProtDirectory, @"CustomProtease.tsv");
+
+            //load proteases from customProtease file or the original file to Protease dictionary
+            if (File.Exists(customProteasePath))
+            {
+                string[] proteaseLines = File.ReadAllLines(customProteasePath);
+                ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(customProteasePath);
+                foreach (var protease in ProteaseDictionary.Dictionary)
+                {
+                    if (ProteaseDictionary.Dictionary.TryAdd(protease.Key, protease.Value))
+                    {
+                        throw new MzLibException(protease + "is not added to the dictionary");
+                    }
+                }
+            }
+            //else
+            //{
+            //    string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            //    string path = ((!string.IsNullOrWhiteSpace(folderPath) && AppDomain.CurrentDomain.BaseDirectory.Contains(folderPath) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins")) ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus") : AppDomain.CurrentDomain.BaseDirectory);
+            //    string path2 = System.IO.Path.Combine(path, "ProteolyticDigestion", "proteases.tsv");
+            //    ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(path2);
+            //}
         }
 
         public static void WriteAminoAcidsFile()
