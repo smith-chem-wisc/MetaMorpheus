@@ -4,6 +4,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Modifications;
 
 namespace EngineLayer.Gptmd
 {

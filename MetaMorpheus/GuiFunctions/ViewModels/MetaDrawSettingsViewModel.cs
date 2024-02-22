@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using GuiFunctions;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

@@ -3,12 +3,14 @@ using EngineLayer.Indexing;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics.Digestion;
+using Omics.Modifications;
 using UsefulProteomicsDatabases;
 
 namespace Test

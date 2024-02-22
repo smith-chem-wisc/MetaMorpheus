@@ -1,10 +1,11 @@
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using Omics.Fragmentation.Peptide;
 
 namespace EngineLayer
 {
@@ -40,7 +41,6 @@ namespace EngineLayer
             bool normalizePeaksAccrossAllWindows = false, 
             bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, 
-            bool useDeltaScore = false, 
             Tolerance productMassTolerance = null, 
             Tolerance precursorMassTolerance = null, 
             Tolerance deconvolutionMassTolerance = null,
@@ -72,7 +72,6 @@ namespace EngineLayer
             NormalizePeaksAccrossAllWindows = normalizePeaksAccrossAllWindows;
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
-            UseDeltaScore = useDeltaScore;
             MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
 
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
@@ -140,7 +139,6 @@ namespace EngineLayer
         public bool NormalizePeaksAccrossAllWindows { get; private set; }
         public bool TrimMs1Peaks { get; private set; }
         public bool TrimMsMsPeaks { get; private set; }
-        public bool UseDeltaScore { get; private set; }
         public List<ProductType> CustomIons { get; private set; }
         public bool AssumeOrphanPeaksAreZ1Fragments { get; private set; }
         public int MaxHeterozygousVariants { get; private set; }
@@ -206,7 +204,6 @@ namespace EngineLayer
                                 NormalizePeaksAccrossAllWindows,
                                 TrimMs1Peaks,
                                 TrimMsMsPeaks,
-                                UseDeltaScore,
                                 ProductMassTolerance,
                                 PrecursorMassTolerance,
                                 DeconvolutionMassTolerance,

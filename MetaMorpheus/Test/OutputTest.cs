@@ -116,8 +116,8 @@ namespace Test
             //check that the first task wrote everything fine
             HashSet<string> expectedFiles = new()
             {
-                "_AllProteinGroups.tsv",
                 "AllPSMs.psmtsv",
+                "_AllProteinGroups.tsv",
                 "oglyco.psmtsv",
                 "protein_oglyco_localization.tsv",
                 "seen_oglyco_localization.tsv",

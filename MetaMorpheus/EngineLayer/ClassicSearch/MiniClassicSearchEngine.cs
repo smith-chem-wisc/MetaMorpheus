@@ -1,7 +1,7 @@
 ﻿using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
 using MzLibUtil;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;

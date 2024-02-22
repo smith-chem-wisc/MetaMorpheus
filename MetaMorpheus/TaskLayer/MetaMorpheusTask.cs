@@ -14,10 +14,14 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
 
@@ -64,6 +68,11 @@ namespace TaskLayer
                         tmlString.Value == "AverageDdaScansWithOverlap"
                             ? SpectraFileAveragingType.AverageDdaScans
                             : Enum.Parse<SpectraFileAveragingType>(tmlString.Value))))
+            .ConfigureType<DigestionParams>(type => type
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.MaxMods)
+                .IgnoreProperty(p => p.MaxLength)
+                .IgnoreProperty(p => p.MinLength))
         );
        
 
@@ -442,7 +451,6 @@ namespace TaskLayer
                 trimMs1Peaks: commonParams.TrimMs1Peaks,
                 trimMsMsPeaks: commonParams.TrimMsMsPeaks,
                 normalizePeaksAccrossAllWindows: commonParams.NormalizePeaksAccrossAllWindows,
-                useDeltaScore: commonParams.UseDeltaScore,
                 deconvolutionMassTolerance: commonParams.DeconvolutionMassTolerance,
                 maxThreadsToUsePerFile: commonParams.MaxThreadsToUsePerFile,
                 listOfModsVariable: commonParams.ListOfModsVariable,

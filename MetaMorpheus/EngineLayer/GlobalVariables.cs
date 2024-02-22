@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using Omics.Modifications;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
 
