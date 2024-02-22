@@ -4,13 +4,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
-using EngineLayer.GlycoSearch;
 using System.IO;
 using Easy.Common.Extensions;
 using System.Text;
 using MathNet.Numerics;
 using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
+using Omics.SpectrumMatch;
+using LocalizationLevel = EngineLayer.GlycoSearch.LocalizationLevel;
 
 namespace EngineLayer
 {
