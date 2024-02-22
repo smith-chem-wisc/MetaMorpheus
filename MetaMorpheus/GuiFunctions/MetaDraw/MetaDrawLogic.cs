@@ -25,6 +25,7 @@ using Org.BouncyCastle.Asn1.X509.Qualified;
 using Readers;
 using System.Threading;
 using Omics.Fragmentation;
+using Omics.SpectrumMatch;
 
 namespace GuiFunctions
 {
