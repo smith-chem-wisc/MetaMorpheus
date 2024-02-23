@@ -417,6 +417,8 @@
                                     <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
+                            <RadioButton x:Name="CheckBoxUseSharedPeptidesForQuant" Content="Include shared peptides in protein quantification" GroupName="QuantType">
+                            </RadioButton>
                             <RadioButton x:Name="CheckBoxSILAC" Content="SILAC/SILAM: Quantify peptides/proteins with stable isotope labels" GroupName="QuantType" Click="CheckBoxSILAC_Checked">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="SILAC quantification is performed using FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
