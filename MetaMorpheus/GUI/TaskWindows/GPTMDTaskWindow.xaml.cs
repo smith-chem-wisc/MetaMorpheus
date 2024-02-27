@@ -29,6 +29,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> GptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private TaskSettingViewModel TaskSettingViewModel;
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
         {
@@ -37,8 +38,12 @@ namespace MetaMorpheusGUI
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
-            UpdateFieldsFromTask(TheTask);
+            var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as GptmdTask);
+            TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
+            TaskSettingsCtrl.DataContext = TaskSettingViewModel;
+            setDefaultbutton.DataContext = TaskSettingViewModel;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            PopulateChoices();
 
             if (myGPTMDtask == null)
             {
@@ -350,14 +355,24 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            GptmdTask task = GetTaskFromGui();
+            if (task is null)
+                return;
+
+            TheTask = task;
+            DialogResult = true;
+        }
+
+        public GptmdTask GetTaskFromGui()
+        {
             string fieldNotUsed = "1";
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                fieldNotUsed, fieldNotUsed, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text, MinimumAllowedIntensityRatioToBasePeakTexBox.Text, 
+                fieldNotUsed, fieldNotUsed, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text, MinimumAllowedIntensityRatioToBasePeakTexBox.Text,
                 null, null, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, null))
             {
-                return;
+                return null;
             }
 
             Protease protease = (Protease)ProteaseComboBox.SelectedItem;
@@ -400,7 +415,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
             {
-                return;
+                return null;
             }
 
             bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
@@ -416,7 +431,7 @@ namespace MetaMorpheusGUI
                 else
                 {
                     MessageBox.Show("The value that you entered for number of peaks to keep is not acceptable. Try again.");
-                    return;
+                    return null;
                 }
             }
 
@@ -430,7 +445,7 @@ namespace MetaMorpheusGUI
                 else
                 {
                     MessageBox.Show("The value that you entered for minimum allowed intensity ratio to keep is not acceptable. Try again.");
-                    return;
+                    return null;
                 }
             }
 
@@ -458,7 +473,7 @@ namespace MetaMorpheusGUI
                     dissociationType: dissociationType,
                     scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
                     precursorMassTolerance: precursorMassTolerance,
-                    productMassTolerance: productMassTolerance,                    
+                    productMassTolerance: productMassTolerance,
                     trimMs1Peaks: TrimMs1Peaks,
                     trimMsMsPeaks: TrimMsMsPeaks,
                     numberOfPeaksToKeepPerWindow: numPeaksToKeep,
@@ -477,8 +492,7 @@ namespace MetaMorpheusGUI
             }
 
             TheTask.CommonParameters = commonParamsToSave;
-
-            DialogResult = true;
+            return TheTask;
         }
 
         private void CheckIfNumber(object sender, TextCompositionEventArgs e)
@@ -551,13 +565,7 @@ namespace MetaMorpheusGUI
             // remove event handler from timer
             // keeping it will trigger an exception because the closed window stops existing
 
-            CustomFragmentationWindow.Close();
-        }
-
-        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
-        {
-            SaveButton_Click(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"GptmdTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
+            CustomFragmentationWindow?.Close();
         }
     }
 }

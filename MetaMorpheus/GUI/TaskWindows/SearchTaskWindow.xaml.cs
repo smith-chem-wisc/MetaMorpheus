@@ -19,6 +19,7 @@ using UsefulProteomicsDatabases;
 using GuiFunctions;
 using Proteomics;
 using System.Threading.Tasks;
+using static System.Net.WebRequestMethods;
 using Omics.Digestion;
 using Omics.Modifications;
 
@@ -38,7 +39,9 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        public TaskSettingViewModel TaskSettingViewModel { get; init; }
         private string _defaultMultiplexType = "TMT10";
+
 
         internal SearchTask TheTask { get; private set; }
 
@@ -49,7 +52,10 @@ namespace MetaMorpheusGUI
 
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
-            UpdateFieldsFromTask(TheTask);
+            var updateFieldsFromNewTaskAction = (MetaMorpheusTask task) => UpdateFieldsFromTask(task as SearchTask);
+            TaskSettingViewModel = new(TheTask, updateFieldsFromNewTaskAction, GetTaskFromGui);
+            TaskSettingsCtrl.DataContext = TaskSettingViewModel;
+            setDefaultbutton.DataContext = TaskSettingViewModel;
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
 
             if (task == null)
@@ -157,7 +163,9 @@ namespace MetaMorpheusGUI
                 MultiplexComboBox.Items.Add(labelModType);
             }
             MultiplexComboBox.SelectedItem = _defaultMultiplexType;
+
         }
+
 
         /// <summary>
         /// Initializes the fields in the search task window upon opening to the settings of the param Task
@@ -427,33 +435,43 @@ namespace MetaMorpheusGUI
 
         private void SaveButton_Click(object sender, RoutedEventArgs e)
         {
+            SearchTask task = GetTaskFromGui();
+            if (task == null)
+                return;
+
+            TheTask = task;
+            DialogResult = true;
+        }
+
+        private SearchTask GetTaskFromGui()
+        {
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
             SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(
-                PrecursorMassToleranceTextBox.Text, 
-                ProductMassToleranceTextBox.Text, 
+                PrecursorMassToleranceTextBox.Text,
+                ProductMassToleranceTextBox.Text,
                 MissedCleavagesTextBox.Text,
-                maxModificationIsoformsTextBox.Text, 
-                MinPeptideLengthTextBox.Text, 
+                maxModificationIsoformsTextBox.Text,
+                MinPeptideLengthTextBox.Text,
                 MaxPeptideLengthTextBox.Text,
-                MaxThreadsTextBox.Text, 
+                MaxThreadsTextBox.Text,
                 MinScoreAllowed.Text,
-                PeakFindingToleranceTextBox.Text, 
-                HistogramBinWidthTextBox.Text, 
-                DeconvolutionMaxAssumedChargeStateTextBox.Text, 
+                PeakFindingToleranceTextBox.Text,
+                HistogramBinWidthTextBox.Text,
+                DeconvolutionMaxAssumedChargeStateTextBox.Text,
                 NumberOfPeaksToKeepPerWindowTextBox.Text,
-                MinimumAllowedIntensityRatioToBasePeakTexBox.Text, 
-                WindowWidthThomsonsTextBox.Text, 
-                NumberOfWindowsTextBox.Text, 
-                NumberOfDatabaseSearchesTextBox.Text, 
-                MaxModNumTextBox.Text, 
-                MaxFragmentMassTextBox.Text, 
-                QValueThresholdTextBox.Text, 
-                PepQValueThresholdTextBox.Text, 
+                MinimumAllowedIntensityRatioToBasePeakTexBox.Text,
+                WindowWidthThomsonsTextBox.Text,
+                NumberOfWindowsTextBox.Text,
+                NumberOfDatabaseSearchesTextBox.Text,
+                MaxModNumTextBox.Text,
+                MaxFragmentMassTextBox.Text,
+                QValueThresholdTextBox.Text,
+                PepQValueThresholdTextBox.Text,
                 InternalIonsCheckBox.IsChecked.Value ? MinInternalFragmentLengthTextBox.Text : null))
             {
-                return;
+                return null;
             }
 
             Protease protease = (Protease)ProteaseComboBox.SelectedItem;
@@ -471,7 +489,7 @@ namespace MetaMorpheusGUI
                 if (silacError.Length != 0)
                 {
                     MessageBox.Show(silacError);
-                    return;
+                    return null;
                 }
             }
             else
@@ -537,7 +555,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.VariableModCheck(listOfModsVariable))
             {
-                return;
+                return null;
             }
 
             bool TrimMs1Peaks = TrimMs1.IsChecked.Value;
@@ -619,7 +637,7 @@ namespace MetaMorpheusGUI
             if (TheTask.SearchParameters.SearchType != SearchType.Classic && dissociationType == DissociationType.Autodetect)
             {
                 MessageBox.Show("Autodetection of dissociation type from scan headers is only available for classic search. Please choose a different dissociation type or search mode");
-                return;
+                return null;
             }
 
             TheTask.SearchParameters.MinAllowedInternalFragmentLength = InternalIonsCheckBox.IsChecked.Value ? Convert.ToInt32(MinInternalFragmentLengthTextBox.Text) : 0;
@@ -643,6 +661,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.UpdateSpectralLibrary = UpdateSpectralLibraryCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
+
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {
@@ -712,7 +731,7 @@ namespace MetaMorpheusGUI
                 catch (Exception ex)
                 {
                     MessageBox.Show("Could not parse custom mass difference acceptor: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    return null;
                 }
 
                 TheTask.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Custom;
@@ -742,7 +761,7 @@ namespace MetaMorpheusGUI
 
                 if (result == MessageBoxResult.Cancel)
                 {
-                    return;
+                    return null;
                 }
             }
 
@@ -754,9 +773,9 @@ namespace MetaMorpheusGUI
             SetModSelectionForPrunedDB();
 
             TheTask.CommonParameters = commonParamsToSave;
-
-            DialogResult = true;
+            return TheTask;
         }
+        
 
         private void ApmdExpander_Collapsed(object sender, RoutedEventArgs e)
         {
@@ -1090,7 +1109,7 @@ namespace MetaMorpheusGUI
             // remove event handler from timer
             // keeping it will trigger an exception because the closed window stops existing
 
-            CustomFragmentationWindow.Close();
+            CustomFragmentationWindow?.Close();
         }
 
         private static SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
@@ -1319,16 +1338,6 @@ namespace MetaMorpheusGUI
             CheckBoxQuantifyUnlabeledForSilac_Checked(sender, e);
         }
 
-        private void CheckBoxMultiplex_Checked(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void SaveAsDefault_Click(object sender, RoutedEventArgs e)
-        {
-            SaveButton_Click(sender, e);
-            Toml.WriteFile(TheTask, Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"SearchTaskDefault.toml"), MetaMorpheusTask.tomlConfig);
-        }
 
         /// <summary>
         /// Retained/Lost Methionine is best handled through truncation search when truncation search is selected.
@@ -1352,6 +1361,7 @@ namespace MetaMorpheusGUI
         {
             MinInternalFragmentLengthTextBox.Text = "4";
         }
+        
     }
 
     public class DataContextForSearchTaskWindow : INotifyPropertyChanged
