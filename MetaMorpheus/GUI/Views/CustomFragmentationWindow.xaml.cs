@@ -111,7 +111,7 @@ namespace MetaMorpheusGUI
             var selectedIons = TheList.Where(p => p.IsSelected).Select(p => p.Type);
             if (isRna)
                 throw new NotImplementedException("No RNA just yet");
-            //Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
+                //Omics.Fragmentation.Oligo.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
             else
                 DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = selectedIons.ToList();
             this.Visibility = Visibility.Hidden;
