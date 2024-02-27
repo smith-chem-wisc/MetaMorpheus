@@ -78,7 +78,6 @@ namespace EngineLayer
                 }
             }
 
-            commonParam.DeconvolutionParameters.MaxAssumedChargeState = maxCharge;
             return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
         }
 

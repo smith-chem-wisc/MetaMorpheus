@@ -457,7 +457,8 @@ namespace TaskLayer
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
-                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters);
+                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
+                productDeconParams: commonParams.ProductDeconvolutionParameters );
 
             return returnParams;
         }
