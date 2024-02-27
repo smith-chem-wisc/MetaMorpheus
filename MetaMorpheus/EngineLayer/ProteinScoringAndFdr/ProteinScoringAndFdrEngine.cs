@@ -91,8 +91,8 @@ namespace EngineLayer
                         // check to make sure they have the same peptides, then merge them
                         foreach (var p in pgsWithThisScore)
                         {
-                            var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
-                            var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
+                            var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent));
+                            var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent));
 
                             if (p != pg[i] && seqs1.SetEquals(seqs2))
                             {

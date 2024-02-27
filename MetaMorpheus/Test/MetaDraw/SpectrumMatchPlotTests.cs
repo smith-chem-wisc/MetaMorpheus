@@ -11,7 +11,7 @@ using GuiFunctions;
 using NUnit.Framework;
 using OxyPlot;
 using OxyPlot.Annotations;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using TaskLayer;
 
 namespace Test.MetaDraw

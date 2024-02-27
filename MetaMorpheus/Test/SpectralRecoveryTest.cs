@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Easy.Common.Extensions;
+using Omics.Modifications;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
 

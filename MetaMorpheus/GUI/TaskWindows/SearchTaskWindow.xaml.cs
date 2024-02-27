@@ -2,7 +2,7 @@
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -20,6 +20,8 @@ using GuiFunctions;
 using Proteomics;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
+using Omics.Digestion;
+using Omics.Modifications;
 
 namespace MetaMorpheusGUI
 {
@@ -213,7 +215,7 @@ namespace MetaMorpheusGUI
                     SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(startLabel, SilacModificationWindow.ExperimentType.Start);
                     if (startLabel.AdditionalLabels != null)
                     {
-                        foreach (Proteomics.SilacLabel additionalLabel in startLabel.AdditionalLabels)
+                        foreach (SilacLabel additionalLabel in startLabel.AdditionalLabels)
                         {
                             infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Start));
                         }
@@ -230,7 +232,7 @@ namespace MetaMorpheusGUI
                     SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(endLabel, SilacModificationWindow.ExperimentType.End);
                     if (endLabel.AdditionalLabels != null)
                     {
-                        foreach (Proteomics.SilacLabel additionalLabel in endLabel.AdditionalLabels)
+                        foreach (SilacLabel additionalLabel in endLabel.AdditionalLabels)
                         {
                             infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.End));
                         }
@@ -246,13 +248,13 @@ namespace MetaMorpheusGUI
             else if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
             {
                 CheckBoxSILAC.IsChecked = true;
-                List<Proteomics.SilacLabel> labels = task.SearchParameters.SilacLabels;
-                foreach (Proteomics.SilacLabel label in labels)
+                List<SilacLabel> labels = task.SearchParameters.SilacLabels;
+                foreach (SilacLabel label in labels)
                 {
                     SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label, SilacModificationWindow.ExperimentType.Multiplex);
                     if (label.AdditionalLabels != null)
                     {
-                        foreach (Proteomics.SilacLabel additionalLabel in label.AdditionalLabels)
+                        foreach (SilacLabel additionalLabel in label.AdditionalLabels)
                         {
                             infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Multiplex));
                         }
@@ -1110,7 +1112,7 @@ namespace MetaMorpheusGUI
             CustomFragmentationWindow?.Close();
         }
 
-        private static Proteomics.SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
+        private static SilacLabel ConvertSilacDataGridInfoToSilacLabel(SilacInfoForDataGrid info)
         {
             if (info == null)
             {
@@ -1118,7 +1120,7 @@ namespace MetaMorpheusGUI
             }
             else
             {
-                Proteomics.SilacLabel label = info.SilacLabel[0];
+                SilacLabel label = info.SilacLabel[0];
                 //This is needed to prevent double adding of additional labels. 
                 //A quick test is to create a silac condition with two labels, save, reopen the task, save, and reopen again. 
                 //Without this line, the second label will be doubled. Example: (K+8)&(R+10)&(R+10)
@@ -1227,7 +1229,7 @@ namespace MetaMorpheusGUI
                 //if they're all multiplex
                 if (StaticSilacLabelsObservableCollection.All(x => x.LabelType == SilacModificationWindow.ExperimentType.Multiplex))
                 {
-                    List<Proteomics.SilacLabel> labelsToSave = new List<Proteomics.SilacLabel>();
+                    List<SilacLabel> labelsToSave = new List<SilacLabel>();
                     foreach (SilacInfoForDataGrid info in StaticSilacLabelsObservableCollection)
                     {
                         labelsToSave.Add(ConvertSilacDataGridInfoToSilacLabel(info));

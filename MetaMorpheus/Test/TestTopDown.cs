@@ -8,6 +8,7 @@ using EngineLayer.ModernSearch;
 using IO.MzML;
 using MzLibUtil;
 using NUnit.Framework;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
