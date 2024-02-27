@@ -56,11 +56,8 @@ namespace EngineLayer
 
         public static IsotopicEnvelope[] GetNeutralExperimentalFragments(MsDataScan scan, CommonParameters commonParam)
         {
-            int maxCharge = commonParam.DeconvolutionParameters.MaxAssumedChargeState;
-            commonParam.DeconvolutionParameters.MaxAssumedChargeState = 10;
-
             var neutralExperimentalFragmentMasses =
-                Deconvoluter.Deconvolute(scan, commonParam.DeconvolutionParameters, scan.MassSpectrum.Range).ToList();
+                Deconvoluter.Deconvolute(scan, commonParam.ProductDeconvolutionParameters, scan.MassSpectrum.Range).ToList();
 
             if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
             {

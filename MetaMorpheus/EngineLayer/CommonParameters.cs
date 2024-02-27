@@ -53,14 +53,14 @@ namespace EngineLayer
             int maxHeterozygousVariants = 4, 
             int minVariantDepth = 1, 
             bool addTruncations = false,
-            DeconvolutionParameters deconParams = null)
+            DeconvolutionParameters precursorDeconParams = null,
+            DeconvolutionParameters productDeconParams = null)
 
         {
             TaskDescriptor = taskDescriptor;
             DoPrecursorDeconvolution = doPrecursorDeconvolution;
             UseProvidedPrecursorInfo = useProvidedPrecursorInfo;
             DeconvolutionIntensityRatio = deconvolutionIntensityRatio;
-            DeconvolutionMaxAssumedChargeState = deconvolutionMaxAssumedChargeState;
             ReportAllAmbiguity = reportAllAmbiguity;
             AddCompIons = addCompIons;
             TotalPartitions = totalPartitions;
@@ -96,17 +96,22 @@ namespace EngineLayer
             MaxHeterozygousVariants = maxHeterozygousVariants;
             MinVariantDepth = minVariantDepth;
 
-            AddTruncations = addTruncations; if (deconParams != null)
+            AddTruncations = addTruncations;
+
+            // product maximum charge state of 10 is a preexisting hard-coded value in MetaMorpheus
+            if (deconvolutionMaxAssumedChargeState > 0) // positive mode
             {
-                DeconvolutionParameters = deconParams;
+                PrecursorDeconvolutionParameters = precursorDeconParams ?? new ClassicDeconvolutionParameters(1,
+                    deconvolutionMaxAssumedChargeState, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio);
+                ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(1,
+                    10, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio);
             }
-            else
+            else // negative mode
             {
-                DeconvolutionParameters = DeconvolutionMaxAssumedChargeState < 0
-                    ? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState, -1,
-                        DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative)
-                    : new ClassicDeconvolutionParameters(1, deconvolutionMaxAssumedChargeState,
-                        DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Positive);
+                PrecursorDeconvolutionParameters = precursorDeconParams ?? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState,
+                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
+                ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
+                    -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
             }
         }
 
@@ -124,10 +129,15 @@ namespace EngineLayer
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
         public bool DoPrecursorDeconvolution { get; private set; }
         public bool UseProvidedPrecursorInfo { get; private set; }
-        public double DeconvolutionIntensityRatio { get; private set; }
-        public int DeconvolutionMaxAssumedChargeState { get; private set; }
-        [TomlIgnore] public DeconvolutionParameters DeconvolutionParameters { get; private set; }
-        public Tolerance DeconvolutionMassTolerance { get; private set; }
+        [TomlIgnore] public double DeconvolutionIntensityRatio { get; private set; }
+        public int DeconvolutionMaxAssumedChargeState
+        {
+            get => PrecursorDeconvolutionParameters.MaxAssumedChargeState;
+            private set => PrecursorDeconvolutionParameters.MaxAssumedChargeState = value;
+        }
+        [TomlIgnore] public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
+        [TomlIgnore] public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
+        [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
@@ -239,7 +249,9 @@ namespace EngineLayer
                                 AssumeOrphanPeaksAreZ1Fragments,
                                 MaxHeterozygousVariants,
                                 MinVariantDepth,
-                                AddTruncations);
+                                AddTruncations,
+                                PrecursorDeconvolutionParameters, 
+                                ProductDeconvolutionParameters);
         }
 
         public void SetCustomProductTypes()

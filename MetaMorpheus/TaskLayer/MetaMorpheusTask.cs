@@ -21,6 +21,7 @@ using System.Threading.Tasks;
 using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
+using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
 
@@ -165,7 +166,7 @@ namespace TaskLayer
                             if (commonParameters.DoPrecursorDeconvolution)
                             {
                                 foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
-                                    precursorSpectrum.MassSpectrum, commonParameters.DeconvolutionParameters))
+                                    precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
                                     precursors.Add((monoPeakMz, envelope.Charge));
@@ -456,7 +457,7 @@ namespace TaskLayer
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
-                deconParams: commonParams.DeconvolutionParameters);
+                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters);
 
             return returnParams;
         }

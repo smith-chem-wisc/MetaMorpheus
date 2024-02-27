@@ -509,7 +509,7 @@ namespace TaskLayer
                     foreach (PeptideWithSetModifications peptide in ambiguousPeptides)
                     {
                         internalFragments.Clear();
-                        peptide.FragmentInternally(combinedParams.DissociationType, minInternalFragmentLength, internalFragments);
+                        peptide.FragmentInternally(dissociationType, minInternalFragmentLength, internalFragments);
                         //TODO: currently, internal and terminal ions can match to the same observed peaks (much like how b- and y-ions can match to the same peaks). Investigate if we should change that...                        
                         matchedIonsForAllAmbiguousPeptides.Add(MetaMorpheusEngine.MatchFragmentIons(scanForThisPsm, internalFragments, combinedParams));
                     }

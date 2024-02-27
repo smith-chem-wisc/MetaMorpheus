@@ -1,6 +1,7 @@
 ﻿using GuiFunctions.Databases;
 using NUnit.Framework;
 using Proteomics;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
@@ -27,7 +28,17 @@ namespace Test
         [TestCase("UP000000625", false, false, false, false, "\\UP000000625_withUnreviewed.fasta")]
         public static void TestGetUniprotFilename(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed, string expectedResult)
         {
+            if(expectedResult.Equals("\\UP000000625_reviewed.xml.gz") && isoforms) // This should only be written once, during the first test case
+            {
+                Console.WriteLine("Beginning Uniprot database test.");
+            }
             string filename = DownloadUniProtDatabaseFunctions.GetUniprotFilename(proteomeID, reviewed, isoforms, xmlFormat, compressed);
+
+            if (expectedResult.Equals("\\UP000000625_withUnreviewed.fasta")) // This should only be written once, during the first test case
+            {
+                Console.WriteLine("Finished with Uniprot database test.");
+            }
+
             Assert.AreEqual(expectedResult, filename);
         }
 
@@ -49,6 +60,11 @@ namespace Test
         public static async Task UniprotHtmlQueryTest(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed,
            string testName, int listCount)
         {
+            if (testName.Equals("1.fasta.gz")) // This should only be written once, during the first test case
+            {
+                Console.WriteLine("Beginning Uniprot HTML query test.");
+            }
+
             var proteomeURL = DownloadUniProtDatabaseFunctions.GetUniProtHtmlQueryString(proteomeID, reviewed,
                 isoforms, xmlFormat, compressed);
 
@@ -85,6 +101,10 @@ namespace Test
 
             File.Delete(filePath);
 
+            if(testName.Equals("11.fasta")) // only triggers for last test cases
+            {
+                Console.WriteLine("Finished with Uniprot HTML query test.");
+            }
 
             Assert.That(reader.Count == listCount);
         }
