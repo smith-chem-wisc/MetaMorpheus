@@ -417,8 +417,6 @@
                                     <ToolTip Content="Label-free quantification is performed with FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <CheckBox x:Name="CheckBoxUseSharedPeptidesForQuant" Content="Use shared peptides for protein quantification" IsEnabled="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                            </CheckBox>
                             <RadioButton x:Name="CheckBoxSILAC" Content="SILAC/SILAM: Quantify peptides/proteins with stable isotope labels" GroupName="QuantType" Click="CheckBoxSILAC_Checked">
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="SILAC quantification is performed using FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
@@ -527,6 +525,23 @@
                                 </CheckBox.Visibility>
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                </ToolTipService.ToolTip>
+                            </CheckBox>
+                            <CheckBox x:Name="CheckBoxUseSharedPeptidesForQuant" Content="Use shared peptides for protein quantification" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <CheckBox.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource boolOrConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.IsEnabled>
+                                <CheckBox.Visibility>
+                                    <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.Visibility>
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Use peptide sequences shared between proteins for protein quantification" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
 
