@@ -17,6 +17,7 @@ using Nett;
 using EngineLayer.Gptmd;
 using Omics.Digestion;
 using Omics.Modifications;
+using Omics.SpectrumMatch;
 using static System.Net.WebRequestMethods;
 
 namespace Test
