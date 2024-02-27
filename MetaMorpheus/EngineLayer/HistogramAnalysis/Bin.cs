@@ -132,22 +132,18 @@ namespace EngineLayer.HistogramAnalysis
             var ok = new HashSet<string>();
             for (char c = 'A'; c <= 'Z'; c++)
             {
-                if (Residue.TryGetResidue(c, out Residue residue))
+                if (!Residue.TryGetResidue(c, out Residue residue)) continue;
+                if (Math.Abs(residue.MonoisotopicMass - MassShift) <= v)
+                    ok.Add("Add " + residue.Name);
+                if (Math.Abs(residue.MonoisotopicMass + MassShift) <= v)
+                    ok.Add("Remove " + residue.Name);
+                for (char cc = 'A'; cc <= 'Z'; cc++)
                 {
-                    if (Math.Abs(residue.MonoisotopicMass - MassShift) <= v)
-                        ok.Add("Add " + residue.Name);
-                    if (Math.Abs(residue.MonoisotopicMass + MassShift) <= v)
-                        ok.Add("Remove " + residue.Name);
-                    for (char cc = 'A'; cc <= 'Z'; cc++)
-                    {
-                        if (Residue.TryGetResidue(cc, out Residue residueCC))
-                        {
-                            if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - MassShift) <= v)
-                                ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
-                            if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + MassShift) <= v)
-                                ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
-                        }
-                    }
+                    if (!Residue.TryGetResidue(cc, out Residue residueCC)) continue;
+                    if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - MassShift) <= v)
+                        ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
+                    if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + MassShift) <= v)
+                        ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
                 }
             }
             AA = string.Join("|", ok);
