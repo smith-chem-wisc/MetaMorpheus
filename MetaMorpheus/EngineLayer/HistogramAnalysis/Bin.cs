@@ -158,15 +158,12 @@ namespace EngineLayer.HistogramAnalysis
             var ok = new HashSet<string>();
             var okformula = new HashSet<string>();
             var okDiff = new HashSet<double>();
-            foreach (var hm in GlobalVariables.UnimodDeserialized)
+            foreach (Modification theMod in GlobalVariables.UnimodDeserialized)
             {
-                var theMod = hm as Modification;
-                if (Math.Abs(theMod.MonoisotopicMass.Value - MassShift) <= v)
-                {
-                    ok.Add(hm.IdWithMotif);
-                    okformula.Add(theMod.ChemicalFormula.Formula);
-                    okDiff.Add(theMod.MonoisotopicMass.Value - MassShift);
-                }
+                if (!(Math.Abs(theMod.MonoisotopicMass.Value - MassShift) <= v)) continue;
+                ok.Add(theMod.IdWithMotif);
+                okformula.Add(theMod.ChemicalFormula.Formula);
+                okDiff.Add(theMod.MonoisotopicMass.Value - MassShift);
             }
             UnimodId = string.Join("|", ok);
             UnimodFormulas = string.Join("|", okformula);
