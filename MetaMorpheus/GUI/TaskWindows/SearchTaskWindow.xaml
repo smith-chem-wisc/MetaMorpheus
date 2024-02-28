@@ -527,6 +527,23 @@
                                     <ToolTip Content="Use the 'Experimental Design' to normalize intensity values from FlashLFQ" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+                            <CheckBox x:Name="CheckBoxUseSharedPeptidesForQuant" Content="Use shared peptides for protein quantification" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <CheckBox.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource boolOrConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.IsEnabled>
+                                <CheckBox.Visibility>
+                                    <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.Visibility>
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Use peptide sequences shared between proteins for protein quantification" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                </ToolTipService.ToolTip>
+                            </CheckBox>
 
                             <!-- Multiplex Options -->
                             <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
