@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Omics.Modifications;
+using Omics.SpectrumMatch;
 
 namespace TaskLayer
 {
@@ -275,7 +276,7 @@ namespace TaskLayer
                     rt: bestPsm.ScanRetentionTime));
             }
 
-            WriteSpectralLibrary(librarySpectra, outputFolder);
+            WriteSpectrumLibrary(librarySpectra, outputFolder);
         }
     }
 }

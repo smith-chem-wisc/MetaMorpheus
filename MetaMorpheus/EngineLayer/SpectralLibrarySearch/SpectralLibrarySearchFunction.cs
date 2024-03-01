@@ -8,6 +8,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Threading.Tasks;
 using Easy.Common.Extensions;
 using MassSpectrometry.MzSpectra;
+using Omics.SpectrumMatch;
 
 namespace EngineLayer
 {
