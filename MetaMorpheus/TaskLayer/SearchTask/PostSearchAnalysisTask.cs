@@ -857,7 +857,7 @@ namespace TaskLayer
                     bestPsm.ScanRetentionTime));
             }
             
-            WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
+            WriteSpectrumLibrary(spectraLibrary, Parameters.OutputFolder);
         }
         private void WriteProteinResults()
         {
