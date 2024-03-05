@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using EngineLayer.HistogramAnalysis;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -139,6 +140,37 @@ namespace Test
             File.Delete(mzmlFilePath1);
             File.Delete(mzmlFilePath2);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+
+
+        [Test]
+        public static void TestBin_IdentifyAA()
+        {
+            var bin = new Bin(71);
+            bin.IdentifyAA(1);
+            Assert.AreEqual("Add Alanine", bin.AA);
+
+            bin = new Bin(-56.1);
+            bin.IdentifyAA(1);
+            Assert.AreEqual("Remove Glycine", bin.AA);
+
+
+            bin = new Bin(114.102);
+            bin.IdentifyAA(1);
+            Assert.AreEqual("Add Aspartic Acid|Add (Glycine+Glycine)|Add Asparagine", bin.AA);
+
+            bin = new Bin(-142.156);
+            bin.IdentifyAA(1);
+            Assert.AreEqual("Remove (Alanine+Alanine)", bin.AA);
+        }
+
+        [Test]
+        public static void TestBin_IdentifyUnimodBins()
+        {
+            var bin = new Bin(77.987066);
+            bin.IdentifyUnimodBins(0.001);
+            Assert.AreEqual("Methylphosphonate on Y|Methylphosphonate on T|Methylphosphonate on S", bin.UnimodId);
+            Assert.AreEqual("CH3O2P", bin.UnimodFormulas);
         }
     }
 }

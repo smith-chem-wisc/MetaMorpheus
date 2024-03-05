@@ -132,22 +132,18 @@ namespace EngineLayer.HistogramAnalysis
             var ok = new HashSet<string>();
             for (char c = 'A'; c <= 'Z'; c++)
             {
-                if (Residue.TryGetResidue(c, out Residue residue))
+                if (!Residue.TryGetResidue(c, out Residue residue)) continue;
+                if (Math.Abs(residue.MonoisotopicMass - MassShift) <= v)
+                    ok.Add("Add " + residue.Name);
+                if (Math.Abs(residue.MonoisotopicMass + MassShift) <= v)
+                    ok.Add("Remove " + residue.Name);
+                for (char cc = 'A'; cc <= 'Z'; cc++)
                 {
-                    if (Math.Abs(residue.MonoisotopicMass - MassShift) <= v)
-                        ok.Add("Add " + residue.Name);
-                    if (Math.Abs(residue.MonoisotopicMass + MassShift) <= v)
-                        ok.Add("Remove " + residue.Name);
-                    for (char cc = 'A'; cc <= 'Z'; cc++)
-                    {
-                        if (Residue.TryGetResidue(cc, out Residue residueCC))
-                        {
-                            if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - MassShift) <= v)
-                                ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
-                            if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + MassShift) <= v)
-                                ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
-                        }
-                    }
+                    if (!Residue.TryGetResidue(cc, out Residue residueCC)) continue;
+                    if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - MassShift) <= v)
+                        ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
+                    if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + MassShift) <= v)
+                        ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
                 }
             }
             AA = string.Join("|", ok);
@@ -158,15 +154,12 @@ namespace EngineLayer.HistogramAnalysis
             var ok = new HashSet<string>();
             var okformula = new HashSet<string>();
             var okDiff = new HashSet<double>();
-            foreach (var hm in GlobalVariables.UnimodDeserialized)
+            foreach (Modification theMod in GlobalVariables.UnimodDeserialized)
             {
-                var theMod = hm as Modification;
-                if (Math.Abs(theMod.MonoisotopicMass.Value - MassShift) <= v)
-                {
-                    ok.Add(hm.IdWithMotif);
-                    okformula.Add(theMod.ChemicalFormula.Formula);
-                    okDiff.Add(theMod.MonoisotopicMass.Value - MassShift);
-                }
+                if (!(Math.Abs(theMod.MonoisotopicMass.Value - MassShift) <= v)) continue;
+                ok.Add(theMod.IdWithMotif);
+                okformula.Add(theMod.ChemicalFormula.Formula);
+                okDiff.Add(theMod.MonoisotopicMass.Value - MassShift);
             }
             UnimodId = string.Join("|", ok);
             UnimodFormulas = string.Join("|", okformula);

@@ -24,6 +24,7 @@ using Proteomics.AminoAcidPolymer;
 using System.Text.Json.Serialization;
 using Omics.Digestion;
 using Omics.Modifications;
+using Omics.SpectrumMatch;
 
 namespace TaskLayer
 {
