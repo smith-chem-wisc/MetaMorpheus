@@ -55,9 +55,9 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             
-            PeptideSpectralMatch[] allPsmsArray_withAmbiguity = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray_withAmbiguity = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             
-            PeptideSpectralMatch[] allPsmsArray_withOutAmbiguity = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray_withOutAmbiguity = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray_withAmbiguity, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
@@ -67,10 +67,10 @@ namespace Test
 
             Assert.AreEqual("QQQ", allPsmsArray_withAmbiguity[0].BaseSequence);
             Assert.AreEqual("QQQ", allPsmsArray_withOutAmbiguity[0].BaseSequence);
-            Assert.IsTrue(allPsmsArray_withAmbiguity[0].ProteinLength == null);
-            Assert.IsTrue(allPsmsArray_withOutAmbiguity[0].ProteinLength != null);
-            Assert.IsTrue(allPsmsArray_withAmbiguity[0].OneBasedStartResidueInProtein == null);
-            Assert.IsTrue(allPsmsArray_withOutAmbiguity[0].OneBasedStartResidueInProtein != null);
+            Assert.IsTrue(allPsmsArray_withAmbiguity[0].ParentLength == null);
+            Assert.IsTrue(allPsmsArray_withOutAmbiguity[0].ParentLength != null);
+            Assert.IsTrue(allPsmsArray_withAmbiguity[0].OneBasedStartResidue == null);
+            Assert.IsTrue(allPsmsArray_withOutAmbiguity[0].OneBasedStartResidue != null);
         }
 
         [Test]

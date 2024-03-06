@@ -16,6 +16,7 @@ using System.IO;
 using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
+using Omics;
 
 namespace TaskLayer
 {
@@ -166,14 +167,14 @@ namespace TaskLayer
 
             // start the search task
             MyTaskResults = new MyTaskResults(this);
-            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> allPsms = new List<SpectralMatch>();
 
             //generate an array to store category specific fdr values (for speedy semi/nonspecific searches)
             int numFdrCategories = (int)(Enum.GetValues(typeof(FdrCategory)).Cast<FdrCategory>().Last() + 1); //+1 because it starts at zero
-            List<PeptideSpectralMatch>[] allCategorySpecificPsms = new List<PeptideSpectralMatch>[numFdrCategories];
+            List<SpectralMatch>[] allCategorySpecificPsms = new List<SpectralMatch>[numFdrCategories];
             for (int i = 0; i < numFdrCategories; i++)
             {
-                allCategorySpecificPsms[i] = new List<PeptideSpectralMatch>();
+                allCategorySpecificPsms[i] = new List<SpectralMatch>();
             }
 
             FlashLfqResults flashLfqResults = null;
@@ -212,7 +213,7 @@ namespace TaskLayer
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
                 myFileManager.DoneWithFile(origDataFile);
 
-                PeptideSpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
@@ -247,7 +248,7 @@ namespace TaskLayer
                 // nonspecific search
                 else if (SearchParameters.SearchType == SearchType.NonSpecific)
                 {
-                    PeptideSpectralMatch[][] fileSpecificPsmsSeparatedByFdrCategory = new PeptideSpectralMatch[numFdrCategories][]; //generate an array of all possible locals
+                    SpectralMatch[][] fileSpecificPsmsSeparatedByFdrCategory = new PeptideSpectralMatch[numFdrCategories][]; //generate an array of all possible locals
                     for (int i = 0; i < numFdrCategories; i++) //only add if we're using for FDR, else ignore it as null.
                     {
                         fileSpecificPsmsSeparatedByFdrCategory[i] = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
@@ -480,13 +481,13 @@ namespace TaskLayer
             return massDiffAcceptor;
         }
 
-        public static void MatchInternalFragmentIons(PeptideSpectralMatch[] fileSpecificPsms, Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass, CommonParameters combinedParams, int minInternalFragmentLength)
+        public static void MatchInternalFragmentIons(SpectralMatch[] fileSpecificPsms, Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass, CommonParameters combinedParams, int minInternalFragmentLength)
         {
             //for each PSM with an ID
             for (int index = 0; index < fileSpecificPsms.Length; index++)
             {
-                PeptideSpectralMatch psm = fileSpecificPsms[index];
-                if (psm != null && psm.BestMatchingPeptides.Count() > 0)
+                SpectralMatch psm = fileSpecificPsms[index];
+                if (psm != null && psm.BestMatchingBioPolymersWithSetMods.Count() > 0)
                 {
                     //Get the scan
                     Ms2ScanWithSpecificMass scanForThisPsm = arrayOfMs2ScansSortedByMass[index];
@@ -494,9 +495,9 @@ namespace TaskLayer
                     scanForThisPsm.TheScan.DissociationType.Value : combinedParams.DissociationType;
 
                     //Get the theoretical peptides
-                    List<PeptideWithSetModifications> ambiguousPeptides = new List<PeptideWithSetModifications>();
+                    List<IBioPolymerWithSetMods> ambiguousPeptides = new List<IBioPolymerWithSetMods>();
                     List<int> notches = new List<int>();
-                    foreach (var (Notch, Peptide) in psm.BestMatchingPeptides)
+                    foreach (var (Notch, Peptide) in psm.BestMatchingBioPolymersWithSetMods)
                     {
                         ambiguousPeptides.Add(Peptide);
                         notches.Add(Notch);
@@ -518,7 +519,7 @@ namespace TaskLayer
 
                     //remove peptides if they have fewer than max-1 matched ions, thus requiring at least two internal ions to disambiguate an ID
                     //if not removed, then add the matched internal ions
-                    HashSet<PeptideWithSetModifications> PeptidesToMatchingInternalFragments = new HashSet<PeptideWithSetModifications>();
+                    HashSet<IBioPolymerWithSetMods> PeptidesToMatchingInternalFragments = new HashSet<IBioPolymerWithSetMods>();
                     for (int peptideIndex = 0; peptideIndex < ambiguousPeptides.Count; peptideIndex++)
                     {
                         //if we should remove the theoretical, remove it
@@ -529,12 +530,12 @@ namespace TaskLayer
                         // otherwise add the matched internal ions to the total ions
                         else
                         {
-                            PeptideWithSetModifications currentPwsm = ambiguousPeptides[peptideIndex];
+                            IBioPolymerWithSetMods currentPwsm = ambiguousPeptides[peptideIndex];
                             //check that we haven't already added the matched ions for this peptide
                             if (!PeptidesToMatchingInternalFragments.Contains(currentPwsm))
                             {
                                 PeptidesToMatchingInternalFragments.Add(currentPwsm); //record that we've seen this peptide
-                                psm.PeptidesToMatchingFragments[currentPwsm].AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
+                                psm.BioPolymersWithSetModsToMatchingFragments[currentPwsm].AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
                             }
                         }
                     }

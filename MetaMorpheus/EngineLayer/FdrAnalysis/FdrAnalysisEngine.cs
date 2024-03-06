@@ -6,14 +6,14 @@ namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
-        private List<PeptideSpectralMatch> AllPsms;
+        private List<SpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models
         private readonly bool DoPEP;
 
-        public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
+        public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms;
@@ -49,7 +49,7 @@ namespace EngineLayer.FdrAnalysis
             {
                 var psms = proteasePsms.ToList();
 
-                psms = psms.OrderByDescending(b => b.Score).ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue).ToList();
+                psms = psms.OrderByDescending(b => b.Score).ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue).ToList();
 
                 QValueTraditional(psms);
                 if (psms.Count > 100)
@@ -69,7 +69,7 @@ namespace EngineLayer.FdrAnalysis
 
                 for (int i = psms.Count - 1; i >= 0; i--)
                 {
-                    PeptideSpectralMatch psm = psms[i];
+                    SpectralMatch psm = psms[i];
 
                     // threshold q-values
                     if (psm.FdrInfo.QValue > qValueThreshold)
@@ -99,13 +99,13 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
-        private void QValueInverted(List<PeptideSpectralMatch> psms)
+        private void QValueInverted(List<SpectralMatch> psms)
         {
             psms.Reverse();
             bool first = true;
             double previousQValue = 1.0;
             double previousQvalueNotch = 1.0;
-            foreach (PeptideSpectralMatch psm in psms)
+            foreach (SpectralMatch psm in psms)
             {
                 double cumulativeTarget = psm.FdrInfo.CumulativeTarget;
                 double cumulativeDecoy = psm.FdrInfo.CumulativeDecoy;
@@ -140,7 +140,7 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
-        private void QValueTraditional(List<PeptideSpectralMatch> psms)
+        private void QValueTraditional(List<SpectralMatch> psms)
         {
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;
@@ -155,7 +155,7 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                PeptideSpectralMatch psm = psms[i];
+                SpectralMatch psm = psms[i];
                 int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
                 if (psm.IsDecoy)
                 {
@@ -164,10 +164,10 @@ namespace EngineLayer.FdrAnalysis
                     // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
                     double decoyHits = 0;
                     double totalHits = 0;
-                    var hits = psm.BestMatchingPeptides.GroupBy(p => p.Peptide.FullSequence);
+                    var hits = psm.BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Peptide.FullSequence);
                     foreach (var hit in hits)
                     {
-                        if (hit.First().Peptide.Protein.IsDecoy)
+                        if (hit.First().Peptide.Parent.IsDecoy)
                         {
                             decoyHits++;
                         }
@@ -226,7 +226,7 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
-        public static void Compute_PEPValue_Based_QValue(List<PeptideSpectralMatch> psms)
+        public static void Compute_PEPValue_Based_QValue(List<SpectralMatch> psms)
         {
             double[] allPEPValues = psms.Select(p => p.FdrInfo.PEP).ToArray();
             int[] psmsArrayIndicies = Enumerable.Range(0, psms.Count).ToArray();
@@ -241,11 +241,11 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
-        private static int GetNumPSMsAtqValueCutoff(List<PeptideSpectralMatch> psms, double qValueCutoff)
+        private static int GetNumPSMsAtqValueCutoff(List<SpectralMatch> psms, double qValueCutoff)
         {
             int cumulative_target = 0;
             int cumulative_decoy = 0;
-            foreach (PeptideSpectralMatch psm in psms)
+            foreach (SpectralMatch psm in psms)
             {
                 if (psm.IsDecoy)
                 {
@@ -281,7 +281,7 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
 
-            foreach (PeptideSpectralMatch psm in allUnambiguousPsms)
+            foreach (SpectralMatch psm in allUnambiguousPsms)
             {
                 if (sequenceToPsmCount.ContainsKey(psm.FullSequence))
                 {

@@ -177,10 +177,10 @@ namespace TaskLayer
         public void ComputeXlinkQandPValues(List<CrosslinkSpectralMatch> allPsms, List<CrosslinkSpectralMatch> intraCsms, List<CrosslinkSpectralMatch> interCsms, CommonParameters commonParameters, string taskId)
         {
             List<CrosslinkSpectralMatch> crossCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter || p.CrossType == PsmCrossType.Intra).OrderByDescending(p => p.XLTotalScore).ToList();
-            new FdrAnalysisEngine(crossCsms.ToList<PeptideSpectralMatch>(), 0, commonParameters, this.FileSpecificParameters, new List<string> { taskId }, "crosslink").Run();
+            new FdrAnalysisEngine(crossCsms.ToList<SpectralMatch>(), 0, commonParameters, this.FileSpecificParameters, new List<string> { taskId }, "crosslink").Run();
 
             List<CrosslinkSpectralMatch> singles = allPsms.Where(p => p.CrossType != PsmCrossType.Inter).Where(p => p.CrossType != PsmCrossType.Intra).OrderByDescending(p => p.Score).ToList();
-            new FdrAnalysisEngine(singles.ToList<PeptideSpectralMatch>(), 0, commonParameters, this.FileSpecificParameters, new List<string> { taskId }, "PSM").Run();
+            new FdrAnalysisEngine(singles.ToList<SpectralMatch>(), 0, commonParameters, this.FileSpecificParameters, new List<string> { taskId }, "PSM").Run();
             SingleFDRAnalysis(singles, commonParameters, new List<string> { taskId });
 
             // calculate FDR
@@ -192,18 +192,18 @@ namespace TaskLayer
         private void SingleFDRAnalysis(List<CrosslinkSpectralMatch> items, CommonParameters commonParameters, List<string> taskIds)
         {
             // calculate single PSM FDR
-            List<PeptideSpectralMatch> psms = items.Where(p => p.CrossType == PsmCrossType.Single).Select(p => p as PeptideSpectralMatch).OrderByDescending(p => p.Score).ToList();
+            List<SpectralMatch> psms = items.Where(p => p.CrossType == PsmCrossType.Single).Select(p => p as SpectralMatch).OrderByDescending(p => p.Score).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep").Run();
 
             // calculate loop PSM FDR
-            psms = items.Where(p => p.CrossType == PsmCrossType.Loop).Select(p => p as PeptideSpectralMatch).OrderByDescending(p => p.Score).ToList();
+            psms = items.Where(p => p.CrossType == PsmCrossType.Loop).Select(p => p as SpectralMatch).OrderByDescending(p => p.Score).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep").Run();
 
             // calculate deadend FDR
             psms = items.Where(p => p.CrossType == PsmCrossType.DeadEnd ||
                 p.CrossType == PsmCrossType.DeadEndH2O ||
                 p.CrossType == PsmCrossType.DeadEndNH2 ||
-                p.CrossType == PsmCrossType.DeadEndTris).Select(p => p as PeptideSpectralMatch).OrderByDescending(p => p.Score).ToList();
+                p.CrossType == PsmCrossType.DeadEndTris).Select(p => p as SpectralMatch).OrderByDescending(p => p.Score).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds, "skippep").Run();
         }
 

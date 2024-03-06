@@ -9,9 +9,9 @@
         public readonly double LogIntensity;
         public readonly double TheoreticalMz;
         public readonly double RelativeMzError;
-        public readonly PeptideSpectralMatch Identification;
+        public readonly SpectralMatch Identification;
 
-        public LabeledDataPoint(double experimentalMz, int scanNumber, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double theoreticalMz, PeptideSpectralMatch identification)
+        public LabeledDataPoint(double experimentalMz, int scanNumber, double logTotalIonCurrent, double logInjectionTime, double logIntensity, double theoreticalMz, SpectralMatch identification)
         {
             this.ExperimentalMz = experimentalMz;
             this.ScanNumber = scanNumber;
