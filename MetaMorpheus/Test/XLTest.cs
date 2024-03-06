@@ -670,7 +670,7 @@ namespace Test
                 fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError,
                 chargeStateMode, singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Peptide,
                 singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Notch,
-                singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Peptide.Parent.IsDecoy);
+                !singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Peptide.Parent.IsDecoy);
             Assert.That(singleCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(8).Within(0.1));
             Assert.AreEqual(singleCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(singleCsmPsmData.Ambiguity, 0);
