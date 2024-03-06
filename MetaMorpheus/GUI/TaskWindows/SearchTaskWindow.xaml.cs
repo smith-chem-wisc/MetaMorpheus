@@ -189,6 +189,7 @@ namespace MetaMorpheusGUI
             CheckBoxNoOneHitWonders.IsChecked = task.SearchParameters.NoOneHitWonders;
             CheckBoxNoQuant.IsChecked = !task.SearchParameters.DoLabelFreeQuantification;
             CheckBoxLFQ.IsChecked = task.SearchParameters.DoLabelFreeQuantification;
+            CheckBoxUseSharedPeptidesForQuant.IsChecked = task.SearchParameters.UseSharedPeptidesForLFQ;
             CheckBoxMultiplex.IsChecked = task.SearchParameters.DoMultiplexQuantification;
             MultiplexComboBox.SelectedItem = task.SearchParameters.MultiplexModId ?? _defaultMultiplexType;
             // If Spectral Recovery is enabled
@@ -626,6 +627,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.DoParsimony = CheckBoxParsimony.IsChecked.Value;
             TheTask.SearchParameters.NoOneHitWonders = CheckBoxNoOneHitWonders.IsChecked.Value;
             TheTask.SearchParameters.DoLabelFreeQuantification = !CheckBoxNoQuant.IsChecked.Value;
+            TheTask.SearchParameters.UseSharedPeptidesForLFQ = CheckBoxUseSharedPeptidesForQuant.IsChecked.Value;
             TheTask.SearchParameters.DoSpectralRecovery = CheckBoxLFQwSpectralRecovery.IsChecked.Value;
             TheTask.SearchParameters.DoMultiplexQuantification = CheckBoxMultiplex.IsChecked.Value;
             TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;

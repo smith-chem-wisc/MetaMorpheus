@@ -39,7 +39,7 @@ namespace TaskLayer
             // load proteins
             List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
 
-            List<PeptideSpectralMatch> allPsms = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> allPsms = new List<SpectralMatch>();
 
             var numRawFiles = currentRawFileList.Count;
 
@@ -98,7 +98,7 @@ namespace TaskLayer
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
-                PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
                 //spectral Library search and library generation have't applied to GPTMD yet
                 bool writeSpctralLibrary = false;
@@ -111,8 +111,8 @@ namespace TaskLayer
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             allPsms = allPsms.OrderByDescending(b => b.Score)
-                .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-                .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass))
+                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass))
                 .Select(b => b.First()).ToList();
 
             new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }).Run();

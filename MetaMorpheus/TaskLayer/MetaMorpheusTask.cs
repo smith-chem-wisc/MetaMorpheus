@@ -457,7 +457,8 @@ namespace TaskLayer
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
-                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters);
+                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
+                productDeconParams: commonParams.ProductDeconvolutionParameters );
 
             return returnParams;
         }
@@ -662,11 +663,11 @@ namespace TaskLayer
             }
         }
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader());
                 foreach (var psm in psms)
                 {
                     output.WriteLine(psm.ToString(modstoWritePruned));
@@ -674,7 +675,7 @@ namespace TaskLayer
             }
         }
 
-        protected static void WriteSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
+        protected static void WriteSpectrumLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
             string spectrumFilePath = outputFolder + "\\SpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";

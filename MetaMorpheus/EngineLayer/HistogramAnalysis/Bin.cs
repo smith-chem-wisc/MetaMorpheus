@@ -12,13 +12,13 @@ namespace EngineLayer.HistogramAnalysis
     {
         public string AA = "-";
         public Dictionary<char, int> ResidueCount;
-        public Dictionary<string, Tuple<string, string, PeptideSpectralMatch>> UniquePSMs;
+        public Dictionary<string, Tuple<string, string, SpectralMatch>> UniquePSMs;
         public Dictionary<string, int> ModsInCommon;
 
         public Bin(double massShift)
         {
             this.MassShift = massShift;
-            UniquePSMs = new Dictionary<string, Tuple<string, string, PeptideSpectralMatch>>();
+            UniquePSMs = new Dictionary<string, Tuple<string, string, SpectralMatch>>();
         }
 
         public int PepNlocCount { get; private set; }
@@ -87,13 +87,13 @@ namespace EngineLayer.HistogramAnalysis
                     if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores[0] < 0.5)
                     {
                         PepNlocCount++;
-                        if (hehe.Item3.OneBasedStartResidueInProtein.HasValue && hehe.Item3.OneBasedStartResidueInProtein.Value <= 2)
+                        if (hehe.Item3.OneBasedStartResidue.HasValue && hehe.Item3.OneBasedStartResidue.Value <= 2)
                             ProtNlocCount++;
                     }
                     if (hehe.Item3.LocalizedScores.Max() - hehe.Item3.LocalizedScores.Last() < 0.5)
                     {
                         PepClocCount++;
-                        if (hehe.Item3.OneBasedEndResidueInProtein.HasValue && hehe.Item3.ProteinLength.HasValue && hehe.Item3.OneBasedEndResidueInProtein.Value == hehe.Item3.ProteinLength.Value)
+                        if (hehe.Item3.OneBasedEndResidue.HasValue && hehe.Item3.ParentLength.HasValue && hehe.Item3.OneBasedEndResidue.Value == hehe.Item3.ParentLength.Value)
                             ProtClocCount++;
                     }
                 }
@@ -132,22 +132,18 @@ namespace EngineLayer.HistogramAnalysis
             var ok = new HashSet<string>();
             for (char c = 'A'; c <= 'Z'; c++)
             {
-                if (Residue.TryGetResidue(c, out Residue residue))
+                if (!Residue.TryGetResidue(c, out Residue residue)) continue;
+                if (Math.Abs(residue.MonoisotopicMass - MassShift) <= v)
+                    ok.Add("Add " + residue.Name);
+                if (Math.Abs(residue.MonoisotopicMass + MassShift) <= v)
+                    ok.Add("Remove " + residue.Name);
+                for (char cc = 'A'; cc <= 'Z'; cc++)
                 {
-                    if (Math.Abs(residue.MonoisotopicMass - MassShift) <= v)
-                        ok.Add("Add " + residue.Name);
-                    if (Math.Abs(residue.MonoisotopicMass + MassShift) <= v)
-                        ok.Add("Remove " + residue.Name);
-                    for (char cc = 'A'; cc <= 'Z'; cc++)
-                    {
-                        if (Residue.TryGetResidue(cc, out Residue residueCC))
-                        {
-                            if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - MassShift) <= v)
-                                ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
-                            if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + MassShift) <= v)
-                                ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
-                        }
-                    }
+                    if (!Residue.TryGetResidue(cc, out Residue residueCC)) continue;
+                    if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass - MassShift) <= v)
+                        ok.Add("Add (" + residue.Name + "+" + residueCC.Name + ")");
+                    if (Math.Abs(residueCC.MonoisotopicMass + residue.MonoisotopicMass + MassShift) <= v)
+                        ok.Add("Remove (" + residue.Name + "+" + residueCC.Name + ")");
                 }
             }
             AA = string.Join("|", ok);
@@ -158,22 +154,19 @@ namespace EngineLayer.HistogramAnalysis
             var ok = new HashSet<string>();
             var okformula = new HashSet<string>();
             var okDiff = new HashSet<double>();
-            foreach (var hm in GlobalVariables.UnimodDeserialized)
+            foreach (Modification theMod in GlobalVariables.UnimodDeserialized)
             {
-                var theMod = hm as Modification;
-                if (Math.Abs(theMod.MonoisotopicMass.Value - MassShift) <= v)
-                {
-                    ok.Add(hm.IdWithMotif);
-                    okformula.Add(theMod.ChemicalFormula.Formula);
-                    okDiff.Add(theMod.MonoisotopicMass.Value - MassShift);
-                }
+                if (!(Math.Abs(theMod.MonoisotopicMass.Value - MassShift) <= v)) continue;
+                ok.Add(theMod.IdWithMotif);
+                okformula.Add(theMod.ChemicalFormula.Formula);
+                okDiff.Add(theMod.MonoisotopicMass.Value - MassShift);
             }
             UnimodId = string.Join("|", ok);
             UnimodFormulas = string.Join("|", okformula);
             UnimodDiffs = string.Join("|", okDiff);
         }
 
-        internal void Add(PeptideSpectralMatch ok)
+        internal void Add(SpectralMatch ok)
         {
             if (ok.FullSequence != null)
             {
@@ -181,10 +174,10 @@ namespace EngineLayer.HistogramAnalysis
                 {
                     var current = UniquePSMs[ok.FullSequence];
                     if (current.Item3.Score < ok.Score)
-                        UniquePSMs[ok.FullSequence] = new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok);
+                        UniquePSMs[ok.FullSequence] = new Tuple<string, string, SpectralMatch>(ok.BaseSequence, ok.FullSequence, ok);
                 }
                 else
-                    UniquePSMs.Add(ok.FullSequence, new Tuple<string, string, PeptideSpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
+                    UniquePSMs.Add(ok.FullSequence, new Tuple<string, string, SpectralMatch>(ok.BaseSequence, ok.FullSequence, ok));
             }
         }
     }

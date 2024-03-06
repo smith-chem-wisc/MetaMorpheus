@@ -52,14 +52,14 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmPEPR_T = new PeptideSpectralMatch(pepA_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
+            SpectralMatch psmPEPR_T = new PeptideSpectralMatch(pepA_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
             psmPEPR_T.AddOrReplace(pepA_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
             psmPEPR_T.AddOrReplace(pepA_3T, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmPEPR_A = new PeptideSpectralMatch(pepA_2A, 0, 10, 0, scan, commonParameters_ArgC, new List<MatchedFragmentIon>());
+            SpectralMatch psmPEPR_A = new PeptideSpectralMatch(pepA_2A, 0, 10, 0, scan, commonParameters_ArgC, new List<MatchedFragmentIon>());
             psmPEPR_A.AddOrReplace(pepA_3A, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmABCK_T = new PeptideSpectralMatch(pepB_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
+            SpectralMatch psmABCK_T = new PeptideSpectralMatch(pepB_1T, 0, 10, 0, scan, commonParameters_Tryp, new List<MatchedFragmentIon>());
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmPEPR_T, psmPEPR_A, psmABCK_T };
+            List<SpectralMatch> psms = new List<SpectralMatch> { psmPEPR_T, psmPEPR_A, psmABCK_T };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
@@ -139,14 +139,14 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
             psmABC_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_1Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_1Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
             psmABC_Dp2.AddOrReplace(pepA_2Dp2, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_2Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_2Dp1, 0, 10, 0, scan, commonParameters1, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFG_Dp1 };
+            List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFG_Dp1 };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
@@ -217,14 +217,14 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepB_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmEFGABC_Dp1 = new PeptideSpectralMatch(pepC_2Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmXYZ_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepB_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFGABC_Dp1 = new PeptideSpectralMatch(pepC_2Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmXYZ_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
             psmXYZ_Dp1.AddOrReplace(pepA_2Dp1, 10, 0, true, new List<MatchedFragmentIon>(),0);
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFGABC_Dp1, psmXYZ_Dp1 };
+            List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFGABC_Dp1, psmXYZ_Dp1 };
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
@@ -320,13 +320,13 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmEFG_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFG_Dp1 = new PeptideSpectralMatch(pepB_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFG_Dp2 = new PeptideSpectralMatch(pepB_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFG_Dp1, psmEFG_Dp2 };
+            List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2, psmEFG_Dp1, psmEFG_Dp2 };
 
             psms.ForEach(h => h.ResolveAllAmbiguities());
             psms.ForEach(h => h.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
@@ -404,7 +404,7 @@ namespace Test
             };
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psms = new List<SpectralMatch>();
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
@@ -477,12 +477,12 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp1 = new PeptideSpectralMatch(pepA_1Dp1, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dp2 = new PeptideSpectralMatch(pepA_2Dp2, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
             psmABC_Dp2.AddOrReplace(pepA_3Dp2, 10, 0, true, new List<MatchedFragmentIon>(),0);
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmABC_Dp1, psmABC_Dp2 };
+            List<SpectralMatch> psms = new List<SpectralMatch>() { psmABC_Dp1, psmABC_Dp2 };
 
             psms.ForEach(h => h.ResolveAllAmbiguities());
             psms.ForEach(h => h.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
@@ -564,7 +564,7 @@ namespace Test
             }
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psms = new List<SpectralMatch>();
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
@@ -647,7 +647,7 @@ namespace Test
             }
 
             // builds psm list to match to peptides
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psms = new List<SpectralMatch>();
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
@@ -707,8 +707,8 @@ namespace Test
             psms.ElementAt(5).SetFdrValues(0, 0, goodFdr, 0, goodFdr, 0, 0, 0);
 
             //this iscopy of code that filteres psms in PostSearch Analysis Task
-            var fdrFilteredPsms = new List<PeptideSpectralMatch>();
-            foreach (PeptideSpectralMatch psm in psms)
+            var fdrFilteredPsms = new List<SpectralMatch>();
+            foreach (SpectralMatch psm in psms)
             {
                 if (psm != null && psm.FdrInfo.QValue <= 0.0100 && psm.FdrInfo.QValueNotch <= 0.0100)
                 {
@@ -812,13 +812,13 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Alpha = new PeptideSpectralMatch(pepABC_1Alpha, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
-            PeptideSpectralMatch psmABC_Beta = new PeptideSpectralMatch(pepABC_2Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Alpha = new PeptideSpectralMatch(pepABC_1Alpha, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Beta = new PeptideSpectralMatch(pepABC_2Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
             psmABC_Beta.AddOrReplace(pepABC_4Beta, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmEFG_Beta = new PeptideSpectralMatch(pepEFG_3Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmEFG_Beta = new PeptideSpectralMatch(pepEFG_3Beta, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
             psmEFG_Beta.AddOrReplace(pepEFG_4Beta, 10, 0, true, new List<MatchedFragmentIon>(),0);
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmABC_Alpha, psmABC_Beta, psmEFG_Beta };
+            List<SpectralMatch> psms = new List<SpectralMatch> { psmABC_Alpha, psmABC_Beta, psmEFG_Beta };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
@@ -882,16 +882,16 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABCK_T = new PeptideSpectralMatch(pepABCK_1T, 0, 10, 0, scan, commonParameters_tryp, new List<MatchedFragmentIon>());
+            SpectralMatch psmABCK_T = new PeptideSpectralMatch(pepABCK_1T, 0, 10, 0, scan, commonParameters_tryp, new List<MatchedFragmentIon>());
             psmABCK_T.AddOrReplace(pepABCK_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmABCK_L = new PeptideSpectralMatch(pepABCK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
+            SpectralMatch psmABCK_L = new PeptideSpectralMatch(pepABCK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
             psmABCK_L.AddOrReplace(pepABCK_2L, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmXYZK_T = new PeptideSpectralMatch(pepXYZK_1T, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
+            SpectralMatch psmXYZK_T = new PeptideSpectralMatch(pepXYZK_1T, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
             psmXYZK_T.AddOrReplace(pepXYZK_2T, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmXYZK_L = new PeptideSpectralMatch(pepXYZK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
+            SpectralMatch psmXYZK_L = new PeptideSpectralMatch(pepXYZK_1L, 0, 10, 0, scan, commonParameters_LysC, new List<MatchedFragmentIon>());
             psmXYZK_L.AddOrReplace(pepXYZK_2L, 10, 0, true, new List<MatchedFragmentIon>(),0);
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmABCK_T, psmABCK_L, psmXYZK_T, psmXYZK_L };
+            List<SpectralMatch> psms = new List<SpectralMatch> { psmABCK_T, psmABCK_L, psmXYZK_T, psmXYZK_L };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
@@ -956,12 +956,12 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psmABC_Dash = new PeptideSpectralMatch(pepABC_1Dash, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_Dash = new PeptideSpectralMatch(pepABC_1Dash, 0, 10, 0, scan, commonParameters, new List<MatchedFragmentIon>());
             psmABC_Dash.AddOrReplace(pepABC_2Dash, 10, 0, true, new List<MatchedFragmentIon>(),0);
-            PeptideSpectralMatch psmABC_G = new PeptideSpectralMatch(pepABC_2G, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
+            SpectralMatch psmABC_G = new PeptideSpectralMatch(pepABC_2G, 0, 10, 0, scan, commonParameters2, new List<MatchedFragmentIon>());
             psmABC_G.AddOrReplace(pepABC_3G, 10, 0, true, new List<MatchedFragmentIon>(),0);
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmABC_Dash, psmABC_G };
+            List<SpectralMatch> psms = new List<SpectralMatch> { psmABC_Dash, psmABC_G };
             psms.ForEach(j => j.ResolveAllAmbiguities());
             psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
 
@@ -1011,7 +1011,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
             List<MatchedFragmentIon> f = new List<MatchedFragmentIon>();
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> psms = new List<SpectralMatch>
             {
                 new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_tryp.DigestionParams, p: t), 0, 20, 1, scan, commonParameters_tryp, f),
                 new PeptideSpectralMatch(new PeptideWithSetModifications("P", null, digestionParams: commonParameters_gluC.DigestionParams, p: t), 0, 19, 1, scan, commonParameters_gluC, f),

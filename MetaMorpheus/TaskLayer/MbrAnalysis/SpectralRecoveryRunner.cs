@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using Microsoft.ML;
 using Microsoft.ML.Data;
+using Omics;
 
 namespace TaskLayer.MbrAnalysis
 {
@@ -40,7 +41,7 @@ namespace TaskLayer.MbrAnalysis
             }
 
             List<SpectraFileInfo> spectraFiles = parameters.FlashLfqResults.Peaks.Select(p => p.Key).ToList();
-            List<PeptideSpectralMatch> allPeptides = GetAllPeptides(parameters, commonParameters, fileSpecificParameters);
+            List<SpectralMatch> allPeptides = GetAllPeptides(parameters, commonParameters, fileSpecificParameters);
 
             int maxThreadsPerFile = commonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -87,15 +88,15 @@ namespace TaskLayer.MbrAnalysis
                     for (; i < fileSpecificMbrPeaks.Count; i += maxThreadsPerFile)
                     {
                         ChromatographicPeak mbrPeak = fileSpecificMbrPeaks[i];
-                        PeptideSpectralMatch bestDonorPsm = allPeptides.Where(p =>
+                        SpectralMatch bestDonorPsm = allPeptides.Where(p =>
                             p.FullSequence == mbrPeak.Identifications.First().ModifiedSequence).FirstOrDefault();
                         if (bestDonorPsm == null)
                         {
                             break;
                         }
-                        PeptideWithSetModifications bestDonorPwsm = bestDonorPsm.BestMatchingPeptides.First().Peptide;
+                        IBioPolymerWithSetMods bestDonorPwsm = bestDonorPsm.BestMatchingBioPolymersWithSetMods.First().Peptide;
 
-                        IEnumerable<PeptideSpectralMatch> peptideSpectralMatches =
+                        IEnumerable<SpectralMatch> peptideSpectralMatches =
                             mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak.Apex.IndexedPeak.RetentionTime);
 
                         if (peptideSpectralMatches == null || !peptideSpectralMatches.Any())
@@ -115,13 +116,13 @@ namespace TaskLayer.MbrAnalysis
 
             if (bestMbrMatches.Any())
             {
-                List<PeptideSpectralMatch> allPsms = parameters.AllPsms.
+                List<SpectralMatch> allPsms = parameters.AllPsms.
                     OrderByDescending(p => p.Score).
                     ThenBy(p => p.FdrInfo.QValue).
                     ThenBy(p => p.FullFilePath).
                     ThenBy(x => x.ScanNumber).
                     ThenBy(p => p.FullSequence).
-                    ThenBy(p => p.ProteinAccession).ToList();
+                    ThenBy(p => p.Accession).ToList();
 
                 AssignEstimatedPsmQvalue(bestMbrMatches, allPsms);
                 FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
@@ -135,12 +136,12 @@ namespace TaskLayer.MbrAnalysis
             return new SpectralRecoveryResults(bestMbrMatches, parameters.FlashLfqResults);
         }
 
-        private static List<PeptideSpectralMatch> GetAllPeptides(
+        private static List<SpectralMatch> GetAllPeptides(
             PostSearchAnalysisParameters parameters,
             CommonParameters commonParameters,
             List<(string, CommonParameters)> fileSpecificParameters)
         {
-            List<PeptideSpectralMatch> peptides = new();
+            List<SpectralMatch> peptides = new();
             peptides = parameters.AllPsms.Where(b => b.FullSequence != null).GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
 
             new FdrAnalysisEngine(peptides, parameters.NumNotches, commonParameters, fileSpecificParameters, new List<string> { parameters.SearchTaskId }, "Peptide").Run();
@@ -167,14 +168,14 @@ namespace TaskLayer.MbrAnalysis
             return peptides;
         }
 
-        private static PeptideSpectralMatch BestPsmForMbrPeak(IEnumerable<PeptideSpectralMatch> peptideSpectralMatches)
+        private static SpectralMatch BestPsmForMbrPeak(IEnumerable<SpectralMatch> peptideSpectralMatches)
         {
-            List<PeptideSpectralMatch> nonNullPsms = peptideSpectralMatches.Where(p => p != null).ToList();
+            List<SpectralMatch> nonNullPsms = peptideSpectralMatches.Where(p => p != null).ToList();
 
             if (nonNullPsms.Any())
             {
                 // Setting Qvalue, QValueNotch, PEP, and PEP_Qvalue equal to 0 is necessary for MetaDraw to read the .psmtsv
-                foreach (PeptideSpectralMatch psm in nonNullPsms)
+                foreach (SpectralMatch psm in nonNullPsms)
                 {
                     psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
                 }
@@ -187,7 +188,7 @@ namespace TaskLayer.MbrAnalysis
             }
             return null;
         }
-        private static void AssignEstimatedPsmQvalue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
+        private static void AssignEstimatedPsmQvalue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<SpectralMatch> allPsms)
         {
             double[] allScores = allPsms.Select(s => s.Score).OrderByDescending(s => s).ToArray();
             double[] allQValues = allPsms.OrderByDescending(s => s.Score).Select(q => q.FdrInfo.QValue).ToArray();
@@ -213,10 +214,10 @@ namespace TaskLayer.MbrAnalysis
                 }
             }
         }
-        private static void FDRAnalysisOfMbrPsms(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<PeptideSpectralMatch> allPsms,
+        private static void FDRAnalysisOfMbrPsms(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<SpectralMatch> allPsms,
             PostSearchAnalysisParameters parameters, List<(string, CommonParameters)> fileSpecificParameters)
         {
-            List<PeptideSpectralMatch> psms = bestMbrMatches.
+            List<SpectralMatch> psms = bestMbrMatches.
                 Select(p => p.Value.spectralLibraryMatch).
                 Where(v => v != null).
                 ToList();
@@ -256,7 +257,7 @@ namespace TaskLayer.MbrAnalysis
             PEP_Analysis_Cross_Validation.Compute_PSM_PEP(psms, psmGroupIndices[0], mlContext, trainedModels[0], searchType, fileSpecificParameters, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
         }
 
-        private static void AssignEstimatedPsmPepQValue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<PeptideSpectralMatch> allPsms)
+        private static void AssignEstimatedPsmPepQValue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<SpectralMatch> allPsms)
         {
             List<double> pepValues = bestMbrMatches. 
                 Select(p => p.Value.spectralLibraryMatch).

@@ -57,7 +57,7 @@ namespace Test
             //we're adding a neutral loss of 5 to the product to make sure we hit the right spot in the unit test to add that loss to the product ion string
             Product p = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 5);
             mfi.Add(new MatchedFragmentIon(p, 1, 1, 1));
-            PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), mfi);
+            SpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), mfi);
 
             myPsm.AddOrReplace(pwsm2, 10, 0, true, mfi, 10);
 

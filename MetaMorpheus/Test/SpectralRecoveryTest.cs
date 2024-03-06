@@ -14,6 +14,7 @@ using Easy.Common.Extensions;
 using Omics.Modifications;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
+using Omics;
 
 namespace Test
 {
@@ -23,7 +24,7 @@ namespace Test
     {
         private static MyTaskResults searchTaskResults;
         private static List<PsmFromTsv> tsvPsms;
-        private static List<PeptideSpectralMatch> psms;
+        private static List<SpectralMatch> psms;
         private static List<Protein> proteinList;
         private static MyFileManager myFileManager;
         private static List<string> rawSlices;
@@ -34,10 +35,10 @@ namespace Test
         [OneTimeSetUp]
         public void SpectralRecoveryTestSetup()
         {
-            // This block of code converts from PsmFromTsv to PeptideSpectralMatch objects
+            // This block of code converts from PsmFromTsv to SpectralMatch objects
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\MSMSids.psmtsv");
             tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
-            psms = new List<PeptideSpectralMatch>();
+            psms = new List<SpectralMatch>();
             proteinList = new List<Protein>();
             myFileManager = new MyFileManager(true);
 
@@ -58,7 +59,7 @@ namespace Test
                 PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
                     readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
                     oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
-                PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
+                SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
                 if (readPsm.Ms2ScanNumber == 206 && readPsm.BaseSeq.Equals("HADIVTTTTHK")) psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0.0046, 0); // Necessary for to be implemented "original pep" test
@@ -224,7 +225,7 @@ namespace Test
 
             Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, commonParameters, null, sl, new List<string>(), writeSpectralLibrary).Run();
@@ -238,9 +239,9 @@ namespace Test
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
 
-            foreach (PeptideSpectralMatch psm in allPsmsArray.Where(p => p != null))
+            foreach (SpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
-                PeptideWithSetModifications pwsm = psm.BestMatchingPeptides.First().Peptide;
+                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
 
                 MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
                     listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),
@@ -249,7 +250,7 @@ namespace Test
                     sl,
                     null);
 
-                PeptideSpectralMatch[] peptideSpectralMatches =
+                SpectralMatch[] peptideSpectralMatches =
                     mcse.SearchAroundPeak(pwsm, allPsmsArray[5].ScanRetentionTime).ToArray();
 
                 Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);
@@ -363,7 +364,7 @@ namespace Test
         [Test]
         public static void SpectralRecoveryHeaderTest()
         {
-            string psmHeader = PeptideSpectralMatch.GetTabSeparatedHeader().Trim();
+            string psmHeader = SpectralMatch.GetTabSeparatedHeader().Trim();
             StringBuilder sb = new();
             sb.Append(psmHeader);
             sb.Append('\t');
