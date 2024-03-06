@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -356,14 +357,14 @@ namespace Test
             var peptideObserved = protein1.Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
             .Where(p => p.BaseSequence == "PEPT" && p.AllModsOneIsNterminus.Count > 0).First();
             PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
-            CommonParameters commonParam = new CommonParameters(useDeltaScore: false);
+            CommonParameters commonParam = new CommonParameters();
             double[,] noiseData = new double[10000, 10000];
             noiseData[0,0] = 1.0; 
-            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
+            List<Omics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Omics.Fragmentation.MatchedFragmentIon>() { };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum , 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
             testPostTaskParameters.ProteinList = new List<Protein>() { protein1, protein2 };
-            testPostTaskParameters.AllPsms = new List<PeptideSpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
+            testPostTaskParameters.AllPsms = new List<SpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
             testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;
@@ -461,14 +462,14 @@ namespace Test
             var peptideObserved = protein1Variants.First().Digest(new DigestionParams(minPeptideLength: 1), new List<Modification>(), new List<Modification>())
             .Where(p => p.BaseSequence == "PEPT").First();
             PostSearchAnalysisParameters testPostTaskParameters = new PostSearchAnalysisParameters();
-            CommonParameters commonParam = new CommonParameters(useDeltaScore: false);
+            CommonParameters commonParam = new CommonParameters();
             double[,] noiseData = new double[10000, 10000];
             noiseData[0, 0] = 1.0;
-            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
+            List<Omics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Omics.Fragmentation.MatchedFragmentIon>() { };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum, 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
             testPostTaskParameters.ProteinList = proteinList;
-            testPostTaskParameters.AllPsms = new List<PeptideSpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
+            testPostTaskParameters.AllPsms = new List<SpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
             testPostTaskParameters.SearchParameters.DoLabelFreeQuantification = false;

@@ -1,18 +1,19 @@
 ﻿using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
+using Omics;
 
 namespace EngineLayer
 {
     public class ProteinScoringAndFdrEngine : MetaMorpheusEngine
     {
-        private readonly IEnumerable<PeptideSpectralMatch> NewPsms;
+        private readonly IEnumerable<SpectralMatch> NewPsms;
         private readonly bool NoOneHitWonders;
         private readonly bool TreatModPeptidesAsDifferentPeptides;
         private readonly bool MergeIndistinguishableProteinGroups;
         private readonly List<ProteinGroup> ProteinGroups;
 
-        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<PeptideSpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public ProteinScoringAndFdrEngine(List<ProteinGroup> proteinGroups, List<SpectralMatch> newPsms, bool noOneHitWonders, bool treatModPeptidesAsDifferentPeptides, bool mergeIndistinguishableProteinGroups, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             NewPsms = newPsms;
             ProteinGroups = proteinGroups;
@@ -35,20 +36,20 @@ namespace EngineLayer
             return proteinGroupName.Contains("DECOY_") ? proteinGroupName.Replace("DECOY_", "") : proteinGroupName;
         }
 
-        private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<PeptideSpectralMatch> psmList)
+        private void ScoreProteinGroups(List<ProteinGroup> proteinGroups, IEnumerable<SpectralMatch> psmList)
         {
             // add each protein groups PSMs
-            var peptideToPsmMatching = new Dictionary<PeptideWithSetModifications, HashSet<PeptideSpectralMatch>>();
+            var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
             foreach (var psm in psmList)
             {
                 if (psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01)
                 {
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
-                        foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(p => p.Peptide))
+                        foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide))
                         {
-                            if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<PeptideSpectralMatch> psmsForThisPeptide))
-                                peptideToPsmMatching.Add(pepWithSetMods, new HashSet<PeptideSpectralMatch> { psm });
+                            if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<SpectralMatch> psmsForThisPeptide))
+                                peptideToPsmMatching.Add(pepWithSetMods, new HashSet<SpectralMatch> { psm });
                             else
                                 psmsForThisPeptide.Add(psm);
                         }
@@ -62,7 +63,7 @@ namespace EngineLayer
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring
-                    if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<PeptideSpectralMatch> psms))
+                    if (peptideToPsmMatching.TryGetValue(peptide, out HashSet<SpectralMatch> psms))
                         proteinGroup.AllPsmsBelowOnePercentFDR.UnionWith(psms);
                     else
                         pepsToRemove.Add(peptide);
@@ -91,8 +92,8 @@ namespace EngineLayer
                         // check to make sure they have the same peptides, then merge them
                         foreach (var p in pgsWithThisScore)
                         {
-                            var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
-                            var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.Protease));
+                            var seqs1 = new HashSet<string>(p.AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent));
+                            var seqs2 = new HashSet<string>(pg[i].AllPeptides.Select(x => x.FullSequence + x.DigestionParams.DigestionAgent));
 
                             if (p != pg[i] && seqs1.SetEquals(seqs2))
                             {

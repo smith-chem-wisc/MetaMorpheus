@@ -4,11 +4,13 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Digestion;
+using Omics.Modifications;
 
 namespace Test
 {
@@ -84,7 +86,7 @@ namespace Test
             }
 
             // create PSMs for the peptides
-            Dictionary<string, PeptideSpectralMatch> temp = new Dictionary<string, PeptideSpectralMatch>();
+            Dictionary<string, SpectralMatch> temp = new Dictionary<string, SpectralMatch>();
 
             MsDataScan fakeScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
@@ -104,7 +106,7 @@ namespace Test
                 }
             }
 
-            List<PeptideSpectralMatch> psms = temp.Values.ToList();
+            List<SpectralMatch> psms = temp.Values.ToList();
 
             foreach (var psm in psms)
             {
@@ -122,7 +124,7 @@ namespace Test
             proteinGroups = proteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
             // select the PSMs' proteins
-            List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide.Protein)).Select(v => v.BaseSequence).Distinct().ToList();
+            List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide.Parent)).Select(v => v.BaseSequence).Distinct().ToList();
 
             // check that correct proteins are in parsimony list
             Assert.Contains("AB--------", parsimonyProteinSequences);
@@ -228,7 +230,7 @@ namespace Test
             match66.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> psms = new List<SpectralMatch>
             {
                 match1,
                 match2,

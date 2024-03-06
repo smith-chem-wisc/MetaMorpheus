@@ -2,12 +2,14 @@
 using EngineLayer;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Linq;
 using MassSpectrometry;
 using FlashLFQ;
+using Omics.Digestion;
+using Omics.Modifications;
 using TaskLayer;
 
 namespace Test
@@ -72,7 +74,7 @@ namespace Test
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
 
-            List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> newPsms = new List<SpectralMatch>
             {
                 psm1,
                 psm2,
@@ -121,10 +123,10 @@ namespace Test
             Product producty1 = new (ProductType.y, FragmentationTerminus.C, 0, 1, 3, 0);
             Product producty2 = new (ProductType.y, FragmentationTerminus.C, 0, 2, 2, 0);
 
-            MatchedFragmentIon mfib1 = new MatchedFragmentIon(ref productb1, 0, 0, 1);
-            MatchedFragmentIon mfib2 = new MatchedFragmentIon(ref productb2, 0, 0, 2);
-            MatchedFragmentIon mfiy1 = new MatchedFragmentIon(ref producty1, 0, 0, 2);
-            MatchedFragmentIon mfiy2 = new MatchedFragmentIon(ref producty2, 0, 0, 2);
+            MatchedFragmentIon mfib1 = new MatchedFragmentIon(productb1, 0, 0, 1);
+            MatchedFragmentIon mfib2 = new MatchedFragmentIon(productb2, 0, 0, 2);
+            MatchedFragmentIon mfiy1 = new MatchedFragmentIon(producty1, 0, 0, 2);
+            MatchedFragmentIon mfiy2 = new MatchedFragmentIon(producty2, 0, 0, 2);
 
             List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfib1 };
             List<MatchedFragmentIon> mfis2 = new List<MatchedFragmentIon> { mfib2, mfiy1, mfiy2 };
@@ -141,7 +143,7 @@ namespace Test
             var psm3 = new PeptideSpectralMatch(pwsm3, 0, 1, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm3.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
 
-            List<PeptideSpectralMatch> newPsms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> newPsms = new List<SpectralMatch>
             {
                 psm1,
                 psm2,

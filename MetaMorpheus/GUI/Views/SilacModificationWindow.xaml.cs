@@ -7,6 +7,7 @@ using Proteomics.AminoAcidPolymer;
 using Chemistry;
 using System.Text.RegularExpressions;
 using System.Globalization;
+using Omics.Modifications;
 
 namespace MetaMorpheusGUI
 {

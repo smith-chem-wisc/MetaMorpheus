@@ -2,6 +2,7 @@
 using System.IO;
 using MassSpectrometry;
 using System.Globalization;
+using Omics.Modifications;
 using Proteomics;
 
 namespace EngineLayer

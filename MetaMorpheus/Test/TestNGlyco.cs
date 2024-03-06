@@ -6,7 +6,7 @@ using EngineLayer.Indexing;
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -16,12 +16,70 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using MzLibUtil;
 using Nett;
+using Omics.Modifications;
 
 namespace Test
 {
     [TestFixture]
-    public class XLTestNGlyco
+    public class TestNGlyco
     {
+        [Test]
+        public static void TestNGlycoPsmsHeader()
+        {
+            List<string> headerTerms = new()
+            {
+                "File Name",
+                "Scan Number",
+                "Retention Time",
+                "Precursor Scan Number",
+                "Precursor MZ",
+                "Precursor Charge",
+                "Precursor Mass",
+                "Protein Accession",
+                "Organism",
+                "Protein Name",
+                "Start and End Residues In Protein",
+                "Base Sequence",
+                "FlankingResidues",
+                "Full Sequence",
+                "Number of Mods",
+                "Peptide Monoisotopic Mass",
+                "Score",
+                "Rank",
+                "Matched Ion Series",
+                "Matched Ion Mass-To-Charge Ratios",
+                "Matched Ion Mass Diff (Da)",
+                "Matched Ion Mass Diff (Ppm)",
+                "Matched Ion Intensities",
+                "Matched Ion Counts",
+                "Decoy/Contaminant/Target",
+                "QValue",
+                "PEP",
+                "PEP_QValue",
+                "Localization Score",
+                "Yion Score",
+                "DiagonosticIon Score",
+                "Plausible Number Of Glycans",//Not used for N-Glyco
+                "Total Glycosylation sites",//Not used for N-Glyco
+                "GlycanMass",
+                "Plausible GlycanComposition",
+                "N-Glycan motif Check",//Not used for N-Glyco
+                "R138/144",
+                "Plausible GlycanStructure",
+                "GlycanLocalizationLevel",
+                "Localized Glycans with Peptide Site Specific Probability",
+                "Localized Glycans with Protein Site Specific Probability",
+                "All potential glycan localizations",//Not used for N-Glyco
+                "AllSiteSpecificLocalizationProbability",//Not used for N-Glyco
+
+            };
+
+            string nglycoHeaderString = GlycoSpectralMatch.GetTabSepHeaderSingle() + GlycoSpectralMatch.GetTabSeperatedHeaderGlyco();
+            List<string> nGlycoHeaderTerms = nglycoHeaderString.Split('\t').ToList();
+
+            CollectionAssert.AreEquivalent(headerTerms, nGlycoHeaderTerms);
+        }
+
         [Test]
         public static void GlyTest_GetKindString()
         {
@@ -98,7 +156,10 @@ namespace Test
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Q9C0Y4.fasta"), false);
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\yeast_glycan_25170.mgf");
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task) }, new List<string> { raw }, new List<DbForTask>
+                {
+                    db
+                }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
             Directory.Delete(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"), true);
         }
 
@@ -187,7 +248,7 @@ namespace Test
         public static void GlyTest_GlycanDecoy()
         {
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
-            var test = Glycan.BuildTargetDecoyGlycans(new Glycan[] { glycan});
+            var test = Glycan.BuildTargetDecoyGlycans(new Glycan[] { glycan });
             Assert.AreEqual(test.Last().Decoy, true);
             foreach (var ion in test.Last().Ions)
             {
@@ -245,6 +306,5 @@ namespace Test
             Assert.That(overlap == 13);
      
         }
-
     }
 }

@@ -1,18 +1,20 @@
 ﻿using EngineLayer;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
 
 namespace TaskLayer
 {
     public static class PepXMLWriter
     {
-        public static void WritePepXml(List<PeptideSpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath)
+        public static void WritePepXml(List<SpectralMatch> psms, List<DbForTask> database, List<Modification> variableModifications, List<Modification> fixedModifications, CommonParameters CommonParameters, string outputPath)
         {
             if (!psms.Any())
             {
@@ -117,7 +119,7 @@ namespace TaskLayer
 
             foreach (var psm in psms)
             {
-                PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
+                PeptideWithSetModifications peptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide as PeptideWithSetModifications;
 
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
                 foreach (var mod in peptide.AllModsOneIsNterminus)
@@ -130,7 +132,7 @@ namespace TaskLayer
                     mods.Add(pepXmlMod);
                 }
 
-                var proteinAccessions = psm.BestMatchingPeptides.Select(p => p.Peptide.Protein.Accession).Distinct();
+                var proteinAccessions = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide.Parent.Accession).Distinct();
 
                 var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                 {
@@ -139,12 +141,12 @@ namespace TaskLayer
                     // TODO: add amino acid substitution
                     hit_rank = 1,
                     peptide = ((psm.BaseSequence != null) ? psm.BaseSequence : "Ambiguous"),
-                    peptide_prev_aa = peptide.PreviousAminoAcid.ToString(),
-                    peptide_next_aa = peptide.NextAminoAcid.ToString(),
+                    peptide_prev_aa = peptide.PreviousResidue.ToString(),
+                    peptide_next_aa = peptide.NextResidue.ToString(),
                     protein = ((peptide.Protein.Accession != null) ? peptide.Protein.Accession : string.Join("|", proteinAccessions)),
                     num_tot_proteins = (uint)proteinAccessions.Count(),
-                    calc_neutral_pep_mass = (float)((psm.PeptideMonisotopicMass != null) ? psm.PeptideMonisotopicMass : float.NaN),
-                    massdiff = ((psm.PeptideMonisotopicMass != null) ? (psm.ScanPrecursorMass - psm.PeptideMonisotopicMass.Value).ToString() : "Ambiguous"),
+                    calc_neutral_pep_mass = (float)((psm.BioPolymerWithSetModsMonoisotopicMass != null) ? psm.BioPolymerWithSetModsMonoisotopicMass : float.NaN),
+                    massdiff = ((psm.BioPolymerWithSetModsMonoisotopicMass != null) ? (psm.ScanPrecursorMass - psm.BioPolymerWithSetModsMonoisotopicMass.Value).ToString() : "Ambiguous"),
                     modification_info = (mods.Count == 0 ? new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() } : null),
                     search_score = new pepXML.Generated.nameValueType[]
                     {

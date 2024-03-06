@@ -1,11 +1,11 @@
-﻿using Proteomics.Fragmentation;
+﻿using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using EngineLayer.CrosslinkSearch;
-using System.Threading.Tasks;
+using Omics.SpectrumMatch;
 
 namespace EngineLayer
 {
@@ -17,7 +17,7 @@ namespace EngineLayer
         public string UniqueSequence { get; private set; }
         public bool IsBetaPeptide { get; }
         public static Regex CrosslinkRegex = new Regex(@"\(\d+\)");
-        public override string Name => UniqueSequence + "/" + ChargeState; 
+        public new string Name => UniqueSequence + "/" + ChargeState; 
 
         public CrosslinkLibrarySpectrum(
             string uniqueSequence,

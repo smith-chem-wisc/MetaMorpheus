@@ -44,7 +44,7 @@ namespace EngineLayer
                 {
                     psms.Add(new PsmFromTsv(line, Split, parsedHeader));
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
                     warnings.Add("Could not read line: " + lineCount);
                 }

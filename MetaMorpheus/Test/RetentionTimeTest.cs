@@ -3,6 +3,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System.Collections.Generic;
+using Omics.Modifications;
 
 namespace Test
 {

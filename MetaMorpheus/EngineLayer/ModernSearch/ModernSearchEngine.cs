@@ -1,6 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -13,7 +13,7 @@ namespace EngineLayer.ModernSearch
     {
         protected const int FragmentBinsPerDalton = 1000;
         protected readonly List<int>[] FragmentIndex;
-        protected readonly PeptideSpectralMatch[] PeptideSpectralMatches;
+        protected readonly SpectralMatch[] PeptideSpectralMatches;
         protected readonly Ms2ScanWithSpecificMass[] ListOfSortedMs2Scans;
         protected readonly List<PeptideWithSetModifications> PeptideIndex;
         protected readonly int CurrentPartition;
@@ -21,7 +21,7 @@ namespace EngineLayer.ModernSearch
         protected readonly DissociationType DissociationType;
         protected readonly double MaxMassThatFragmentIonScoreIsDoubled;
 
-        public ModernSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
+        public ModernSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled,
             List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
@@ -82,7 +82,7 @@ namespace EngineLayer.ModernSearch
                 }
             });
 
-            foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
+            foreach (SpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
                 psm.ResolveAllAmbiguities();
             }
@@ -336,7 +336,7 @@ namespace EngineLayer.ModernSearch
         /// This is a second-pass scoring method which is costly (in terms of computational time and RAM) but calculates the "normal" MetaMorpheus score instead
         /// of the approximation computed by the IndexScoreScan method.
         /// </summary>
-        protected PeptideSpectralMatch FineScorePeptide(int id, Ms2ScanWithSpecificMass scan, int scanIndex, List<Product> peptideTheorProducts)
+        protected SpectralMatch FineScorePeptide(int id, Ms2ScanWithSpecificMass scan, int scanIndex, List<Product> peptideTheorProducts)
         {
             PeptideWithSetModifications peptide = PeptideIndex[id];
 
@@ -348,7 +348,7 @@ namespace EngineLayer.ModernSearch
             int notch = MassDiffAcceptor.Accepts(scan.PrecursorMass, peptide.MonoisotopicMass);
 
             bool meetsScoreCutoff = thisScore >= CommonParameters.ScoreCutoff;
-            bool scoreImprovement = PeptideSpectralMatches[scanIndex] == null || (thisScore - PeptideSpectralMatches[scanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
+            bool scoreImprovement = PeptideSpectralMatches[scanIndex] == null || (thisScore - PeptideSpectralMatches[scanIndex].RunnerUpScore) > -SpectralMatch.ToleranceForScoreDifferentiation;
 
             if (meetsScoreCutoff && scoreImprovement)
             {
@@ -384,7 +384,7 @@ namespace EngineLayer.ModernSearch
                     break;
                 }
 
-                PeptideSpectralMatch psm = FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
+                SpectralMatch psm = FineScorePeptide(id, scan, scanIndex, peptideTheorProducts);
 
                 if (psm != null && psm.Score > bestScore)
                 {

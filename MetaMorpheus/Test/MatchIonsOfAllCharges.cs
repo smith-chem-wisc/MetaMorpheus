@@ -7,7 +7,7 @@ using IO.MzML;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
 using Chemistry;
@@ -15,6 +15,9 @@ using System;
 using MassSpectrometry;
 using Nett;
 using EngineLayer.Gptmd;
+using Omics.Digestion;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
 using static System.Net.WebRequestMethods;
 
 namespace Test
@@ -46,7 +49,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //search by new method of looking for all charges 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
@@ -60,7 +63,7 @@ namespace Test
             Assert.That(psm[4].MatchedFragmentIons.Count == 16);
 
             //search by old method of looking for only one charge 
-            PeptideSpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray_oneCharge, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), false).Run();
             var psm_oneCharge = allPsmsArray_oneCharge.Where(p => p != null).ToList();
@@ -74,7 +77,7 @@ namespace Test
             var peptideTheorProducts = new List<Product>();
             Assert.That(psm_oneCharge[1].MatchedFragmentIons.Count == 12);
             var differences = psm[1].MatchedFragmentIons.Except(psm_oneCharge[1].MatchedFragmentIons);
-            psm[1].BestMatchingPeptides.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm[1].BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -109,7 +112,7 @@ namespace Test
                 addCompIons: false);
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
-            PeptideSpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             bool writeSpectralLibrary = true;
             new ClassicSearchEngine(allPsmsArray1, listOfSortedms2Scans1, variableModifications1, fixedModifications1, null, null, null,
@@ -148,7 +151,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             //search by new method of looking for all charges 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
 
@@ -157,7 +160,7 @@ namespace Test
 
 
             //search by old method of looking for only one charge 
-            PeptideSpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray_oneCharge = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray_oneCharge, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), false).Run();
 
@@ -172,7 +175,7 @@ namespace Test
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
             var differences = psm.MatchedFragmentIons.Except(psm_oneCharge.MatchedFragmentIons);
-            psm.BestMatchingPeptides.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm.BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -271,7 +274,7 @@ namespace Test
 
 
             //test when doing spectral library search without generating library
-            PeptideSpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray1 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray1, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, testLibrary, new List<string>(), false).Run();
             var psm1 = allPsmsArray1.Where(p => p != null).ToList();
@@ -286,7 +289,7 @@ namespace Test
 
             proteinList.Add(new Protein("LSISNVAK", "", isDecoy: true));
             //test when doing spectral library search with generating library; non spectral search won't generate decoy by "decoy on the fly" , so proteinlist used by non spectral library search would contain decoys
-            PeptideSpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray2 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, testLibrary, new List<string>(), true).Run();
             var psm2 = allPsmsArray2.Where(p => p != null).ToList();
@@ -299,7 +302,7 @@ namespace Test
             Assert.That(psm2[6].IsDecoy == false && psm2[6].FullSequence == "EKAEAEAEK");
 
             //test when doing non spectral library search without generating library
-            PeptideSpectralMatch[] allPsmsArray3 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray3 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray3, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), false).Run();
             var psm3 = allPsmsArray3.Where(p => p != null).ToList();
@@ -313,7 +316,7 @@ namespace Test
 
 
             //test when doing non spectral library search with generating library
-            PeptideSpectralMatch[] allPsmsArray4 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray4 = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray4, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchMode, CommonParameters, null, null, new List<string>(), true).Run();
             var psm4 = allPsmsArray4.Where(p => p != null).ToList();
@@ -353,18 +356,15 @@ namespace Test
             task.SearchParameters.WriteMzId = true;
             task.SearchParameters.WriteSpectralLibrary = true;
 
-            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"),false);
+            DbForTask db1 = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta"),false);
+            DbForTask db2 = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), false);
 
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
-
-            //we'll make a copy so that when we search this copy, we get enough psms to compute pep q-value. It gets deleted below.
-            string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput\rawCopy.mzML");
-            System.IO.File.Copy(raw, rawCopy);
+            string raw1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
+            string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             
-            EverythingRunnerEngine MassSpectraFile = new(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw, rawCopy }, new List<DbForTask> { db }, thisTaskOutputFolder);
+            EverythingRunnerEngine MassSpectraFile = new(new List<(string, MetaMorpheusTask)> { ("SpectraFileOutput", task) }, new List<string> { raw1, raw2 }, new List<DbForTask> { db1,db2 }, thisTaskOutputFolder);
 
             MassSpectraFile.Run();
-            System.IO.File.Delete(rawCopy);
             var list = Directory.GetFiles(thisTaskOutputFolder, "*.*", SearchOption.AllDirectories);
             string matchingvalue = list.First(p => Path.GetFileName(p).Contains("SpectralLibrary")).ToString();
             var lib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
@@ -379,7 +379,7 @@ namespace Test
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("ClassicSearch", searchTask) };
 
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { raw }, new List<DbForTask> { db,new DbForTask(libPath, false) }, outputDir);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { raw1,raw2 }, new List<DbForTask> { db1,db2,new DbForTask(libPath, false) }, outputDir);
             engine.Run();
             var test11 = Path.Combine(outputDir, @"ClassicSearch\AllPSMs.psmtsv");
             string[] results = System.IO.File.ReadAllLines(test11);
@@ -413,16 +413,19 @@ namespace Test
 
             //update library
             task.SearchParameters.UpdateSpectralLibrary = true;
+            task.SearchParameters.MassDiffAcceptorType = MassDiffAcceptorType.Exact;
 
-            string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
-            string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            string db1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
+            string db2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
+            string raw1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibrary.msp");
 
 
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary\rawCopy.mzML");
-            System.IO.File.Copy(raw, rawCopy);
+            System.IO.File.Copy(raw1, rawCopy);
 
-            EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw, rawCopy }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db,false) }, thisTaskOutputFolder);
+            EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw1, raw2 }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db1,false), new DbForTask(db2, false) }, thisTaskOutputFolder);
 
             UpdateLibrary.Run();
 
@@ -458,10 +461,10 @@ namespace Test
             Product c = new Product(ProductType.b, FragmentationTerminus.N, 3, 3, 1, 0);
             Product d = new Product(ProductType.b, FragmentationTerminus.N, 4, 4, 1, 0);
             var decoyPeptideTheorProducts = new List<Product> { a, b, c, d };
-            MatchedFragmentIon aa = new MatchedFragmentIon(ref a, 1, 1, 1);
-            MatchedFragmentIon bb = new MatchedFragmentIon(ref b, 2, 2, 1);
-            MatchedFragmentIon cc = new MatchedFragmentIon(ref c, 3, 3, 1);
-            MatchedFragmentIon dd = new MatchedFragmentIon(ref d, 4, 4, 1);
+            MatchedFragmentIon aa = new MatchedFragmentIon(a, 1, 1, 1);
+            MatchedFragmentIon bb = new MatchedFragmentIon(b, 2, 2, 1);
+            MatchedFragmentIon cc = new MatchedFragmentIon(c, 3, 3, 1);
+            MatchedFragmentIon dd = new MatchedFragmentIon(d, 4, 4, 1);
             var peaks = new List<MatchedFragmentIon> { aa, bb, cc, dd };
             var librarySpectrum = new LibrarySpectrum("library", 0, 0, peaks, 0);
             var decoySpectum = SpectralLibrarySearchFunction.GetDecoyLibrarySpectrumFromTargetByReverse(librarySpectrum, decoyPeptideTheorProducts);

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
+using Omics.Modifications;
 using Proteomics;
 
 namespace TaskLayer
@@ -15,6 +16,7 @@ namespace TaskLayer
             NoOneHitWonders = false;
             ModPeptidesAreDifferent = false;
             DoLabelFreeQuantification = true;
+            UseSharedPeptidesForLFQ = false;
             DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
@@ -75,6 +77,7 @@ namespace TaskLayer
         public bool KeepAllUniprotMods { get; set; }
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoLabelFreeQuantification { get; set; }
+        public bool UseSharedPeptidesForLFQ { get; set; }
         public bool DoMultiplexQuantification { get; set; }
         public string MultiplexModId { get; set; }
         public bool DoSpectralRecovery { get; set; }

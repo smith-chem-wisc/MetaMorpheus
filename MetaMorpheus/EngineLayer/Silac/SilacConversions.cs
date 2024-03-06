@@ -5,6 +5,8 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Modifications;
+using Omics;
 
 namespace EngineLayer
 {
@@ -39,36 +41,36 @@ namespace EngineLayer
             PeptideWithSetModifications labeledPwsm = new PeptideWithSetModifications(
                 pwsm.Protein,
                 pwsm.DigestionParams,
-                pwsm.OneBasedStartResidueInProtein,
-                pwsm.OneBasedEndResidueInProtein,
+                pwsm.OneBasedStartResidue,
+                pwsm.OneBasedEndResidue,
                 pwsm.CleavageSpecificityForFdrCategory,
                 pwsm.PeptideDescription,
                 pwsm.MissedCleavages,
                 pwsm.AllModsOneIsNterminus,
                 pwsm.NumFixedMods,
                 labeledBaseSequence);
-            return psm.Clone(new List<(int Notch, PeptideWithSetModifications Peptide)> { (notch, labeledPwsm) });
+            return psm.Clone(new List<(int Notch, IBioPolymerWithSetMods Peptide)> { (notch, labeledPwsm) });
         }
 
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel)
         {
-            List<(int Notch, PeptideWithSetModifications Peptide)> updatedBestMatchingPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
-            foreach ((int Notch, PeptideWithSetModifications Peptide) notchAndPwsm in psm.BestMatchingPeptides)
+            List<(int Notch, IBioPolymerWithSetMods Peptide)> updatedBestMatchingPeptides = new List<(int Notch, IBioPolymerWithSetMods Peptide)>();
+            foreach ((int Notch, PeptideWithSetModifications Peptide) notchAndPwsm in psm.BestMatchingBioPolymersWithSetMods)
             {
                 PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(silacLabel, notchAndPwsm.Peptide);
                 updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
             }
-            return psm.Clone(updatedBestMatchingPeptides);
+            return psm.Clone(updatedBestMatchingPeptides) as PeptideSpectralMatch;
         }
 
         //modify the proteins to appear only light (we want a protein sequence to look like PROTEINK instead of PROTEINa)
-        public static List<PeptideSpectralMatch> UpdateProteinSequencesToLight(List<PeptideSpectralMatch> originalPsms, List<SilacLabel> labels)
+        public static List<SpectralMatch> UpdateProteinSequencesToLight(List<PeptideSpectralMatch> originalPsms, List<SilacLabel> labels)
         {
-            List<PeptideSpectralMatch> psmsToReturn = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psmsToReturn = new List<SpectralMatch>();
             foreach (PeptideSpectralMatch psm in originalPsms)
             {
-                List<(int Notch, PeptideWithSetModifications Peptide)> originalPeptides = psm.BestMatchingPeptides.ToList();
-                List<(int Notch, PeptideWithSetModifications Peptide)> updatedPeptides = new List<(int Notch, PeptideWithSetModifications Peptide)>();
+                List<(int Notch, IBioPolymerWithSetMods Peptide)> originalPeptides = psm.BestMatchingBioPolymersWithSetMods.ToList();
+                List<(int Notch, IBioPolymerWithSetMods Peptide)> updatedPeptides = new List<(int Notch, IBioPolymerWithSetMods Peptide)>();
                 foreach ((int Notch, PeptideWithSetModifications Peptide) notchPwsm in originalPeptides)
                 {
                     PeptideWithSetModifications pwsm = notchPwsm.Peptide;
@@ -90,8 +92,8 @@ namespace EngineLayer
                     PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(
                         updatedProtein,
                         pwsm.DigestionParams,
-                        pwsm.OneBasedStartResidueInProtein,
-                        pwsm.OneBasedEndResidueInProtein,
+                        pwsm.OneBasedStartResidue,
+                        pwsm.OneBasedEndResidue,
                         pwsm.CleavageSpecificityForFdrCategory,
                         pwsm.PeptideDescription,
                         pwsm.MissedCleavages,
@@ -257,8 +259,8 @@ namespace EngineLayer
             return new PeptideWithSetModifications(
                 pwsm.Protein,
                 pwsm.DigestionParams,
-                pwsm.OneBasedStartResidueInProtein,
-                pwsm.OneBasedEndResidueInProtein,
+                pwsm.OneBasedStartResidue,
+                pwsm.OneBasedEndResidue,
                 pwsm.CleavageSpecificityForFdrCategory,
                 pwsm.PeptideDescription,
                 pwsm.MissedCleavages,

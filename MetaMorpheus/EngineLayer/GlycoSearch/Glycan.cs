@@ -5,6 +5,7 @@ using Chemistry;
 using System;
 using Proteomics;
 using MassSpectrometry;
+using Omics.Modifications;
 
 namespace EngineLayer
 {

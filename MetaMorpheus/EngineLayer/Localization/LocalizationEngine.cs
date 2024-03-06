@@ -1,5 +1,6 @@
 ﻿using MassSpectrometry;
-using Proteomics.Fragmentation;
+using Omics;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -16,10 +17,10 @@ namespace EngineLayer.Localization
     /// </summary>
     public class LocalizationEngine : MetaMorpheusEngine
     {
-        private readonly IEnumerable<PeptideSpectralMatch> AllResultingIdentifications;
+        private readonly IEnumerable<SpectralMatch> AllResultingIdentifications;
         private readonly MsDataFile MyMsDataFile;
 
-        public LocalizationEngine(IEnumerable<PeptideSpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public LocalizationEngine(IEnumerable<SpectralMatch> allResultingIdentifications, MsDataFile myMsDataFile, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllResultingIdentifications = allResultingIdentifications;
             MyMsDataFile = myMsDataFile;
@@ -28,7 +29,7 @@ namespace EngineLayer.Localization
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             // don't try to localize mass differences for ambiguous peptides
-            PeptideSpectralMatch[] unambiguousPsms = AllResultingIdentifications.Where(b => b.FullSequence != null).ToArray();
+            SpectralMatch[] unambiguousPsms = AllResultingIdentifications.Where(b => b.FullSequence != null).ToArray();
 
             double psmsSearched = 0;
             int oldPercentProgress = 0;
@@ -43,14 +44,14 @@ namespace EngineLayer.Localization
 
                     for (int i = range.Item1; i < range.Item2; i++)
                     {
-                        PeptideSpectralMatch psm = unambiguousPsms[i];
+                        SpectralMatch psm = unambiguousPsms[i];
 
                         // Stop loop if canceled
                         if (GlobalVariables.StopLoops) { break; }
 
                         MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                         Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, CommonParameters);
-                        PeptideWithSetModifications peptide = psm.BestMatchingPeptides.First().Peptide;
+                        IBioPolymerWithSetMods peptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
                         double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
 
                         // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue
@@ -58,7 +59,7 @@ namespace EngineLayer.Localization
                         for (int r = 0; r < peptide.Length; r++)
                         {
                             // create new PeptideWithSetMods with unidentified mass difference at the given residue
-                            PeptideWithSetModifications peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
+                            var peptideWithLocalizedMassDiff = peptide.Localize(r, massDifference);
 
                             // this is the list of theoretical products for this peptide with mass-difference on this residue
                             peptideWithLocalizedMassDiff.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, productsWithLocalizedMassDiff);
