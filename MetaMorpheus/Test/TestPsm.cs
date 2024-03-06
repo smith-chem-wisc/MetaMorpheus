@@ -118,7 +118,7 @@ namespace Test
                 ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
                 ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpetralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes,
                 new CommonParameters(), null, null, new List<string>(), writeSpetralLibrary).Run();
@@ -126,13 +126,13 @@ namespace Test
                 CommonParameters, fsp, new List<string>()).Run());
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
 
-            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            foreach (SpectralMatch psm in nonNullPsms)
             {
                 double daError =
-                    Math.Round(psm.ScanPrecursorMass - psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass, 5);
+                    Math.Round(psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass, 5);
                 Assert.That(psm.PrecursorMassErrorDa.First(), Is.EqualTo(daError).Within(0.01));
 
-                double ppmError = Math.Round((psm.ScanPrecursorMass - psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass) / psm.BestMatchingPeptides.First().Peptide.MonoisotopicMass * 1e6, 5);
+                double ppmError = Math.Round((psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass) / psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass * 1e6, 5);
                 Assert.That(psm.PrecursorMassErrorPpm.First(), Is.EqualTo(ppmError).Within(0.1));
             }
         }
@@ -152,7 +152,7 @@ namespace Test
                     ProteinDbLoader.UniprotOrganismRegex, -1);
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
-            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpetralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, 
                 new CommonParameters(), null, null, new List<string>(), writeSpetralLibrary).Run();

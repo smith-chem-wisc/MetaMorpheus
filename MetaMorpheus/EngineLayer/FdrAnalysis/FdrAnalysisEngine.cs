@@ -98,7 +98,7 @@ namespace EngineLayer.FdrAnalysis
             CountPsm();
         }
 
-        private static void QValueInverted(List<PeptideSpectralMatch> psms)
+        private static void QValueInverted(List<SpectralMatch> psms)
         {
             psms.Reverse();
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
@@ -242,7 +242,7 @@ namespace EngineLayer.FdrAnalysis
                     sequenceToPsmCount.Add(fullSequence.Key, fullSequence.Count());
                 }
 
-                foreach (PeptideSpectralMatch psm in allUnambiguousProteasePsms)
+                foreach (SpectralMatch psm in allUnambiguousProteasePsms)
                 {
                     if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
                     {
