@@ -160,7 +160,7 @@ namespace EngineLayer
         }
 
         //The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
-        internal static void AddBasicMatchData(Dictionary<string, string> s, PeptideSpectralMatch psm)
+        internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm)
         {
             s[PsmTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
             s[PsmTsvHeader.Ms2ScanNumber] = psm == null ? " " : psm.ScanNumber.ToString(CultureInfo.InvariantCulture);
@@ -177,7 +177,7 @@ namespace EngineLayer
         }
 
         //The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
-        internal static void AddPeptideSequenceData(Dictionary<string, string> s, PeptideSpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned)
         {
             bool pepWithModsIsNull = sm == null || sm.BestMatchingBioPolymersWithSetMods == null || !sm.BestMatchingBioPolymersWithSetMods.Any();
 
