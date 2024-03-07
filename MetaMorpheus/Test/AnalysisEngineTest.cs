@@ -13,6 +13,7 @@ using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
+using Omics;
 
 namespace Test
 {
@@ -57,19 +58,19 @@ namespace Test
 
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "accession") };
             var modPep = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).Last();
-            HashSet<PeptideWithSetModifications> value1 = new HashSet<PeptideWithSetModifications> { modPep };
-            PeptideWithSetModifications compactPeptide1 = value1.First();
+            HashSet<IBioPolymerWithSetMods> value1 = new HashSet<IBioPolymerWithSetMods> { modPep };
+            var compactPeptide1 = value1.First();
 
             Assert.AreEqual("QQQ", value1.First().BaseSequence);
             var modPep2 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).First();
-            HashSet<PeptideWithSetModifications> value2 = new HashSet<PeptideWithSetModifications> { modPep2 };
-            PeptideWithSetModifications compactPeptide2 = value2.First();
+            HashSet<IBioPolymerWithSetMods> value2 = new HashSet<IBioPolymerWithSetMods> { modPep2 };
+            var compactPeptide2 = value2.First();
 
             Assert.AreEqual("MNNNK", value2.First().BaseSequence);
 
             var modPep3 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[1];
-            HashSet<PeptideWithSetModifications> value3 = new HashSet<PeptideWithSetModifications> { modPep3 };
-            PeptideWithSetModifications compactPeptide3 = value3.First();
+            HashSet<IBioPolymerWithSetMods> value3 = new HashSet<IBioPolymerWithSetMods> { modPep3 };
+            var compactPeptide3 = value3.First();
             Assert.AreEqual("NNNK", value3.First().BaseSequence);
 
 
@@ -83,7 +84,7 @@ namespace Test
 
             var newPsms = new List<SpectralMatch> { matchA, matchB, matchC };
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { value1.First(), value2.First(), value3.First() });
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { value1.First(), value2.First(), value3.First() });
 
             var searchMode = new SinglePpmAroundZeroSearchMode(5);
             Action<List<SpectralMatch>, string, List<string>> action2 = (List<SpectralMatch> l, string s, List<string> sdf) => {; };

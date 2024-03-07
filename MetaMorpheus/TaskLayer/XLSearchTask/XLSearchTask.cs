@@ -8,6 +8,8 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics;
+using Omics.Digestion;
 
 namespace TaskLayer
 {
@@ -52,7 +54,7 @@ namespace TaskLayer
             MyFileManager myFileManager = new MyFileManager(true);
 
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
-            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
+            var ListOfDigestionParams = new HashSet<IDigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
 
             int completedFiles = 0;
             object indexLock = new object();
@@ -66,13 +68,14 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("crosslinker mass = " + XlSearchParameters.Crosslinker.TotalMass + "; ");
             ProseCreatedWhileRunning.Append("crosslinker modification site(s) = " + XlSearchParameters.Crosslinker.CrosslinkerModSites + "; ");
 
-            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
+            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinLength + "; ");
+            ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?
                 "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
-            ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
+                "maximum peptide length = " + CommonParameters.DigestionParams.MaxLength + "; ");
+            if (CommonParameters.DigestionParams is DigestionParams digestionParams)
+                ProseCreatedWhileRunning.Append("initiator methionine behavior = " + digestionParams.InitiatorMethionineBehavior + "; ");
             ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
 
             ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif)) + "; ");

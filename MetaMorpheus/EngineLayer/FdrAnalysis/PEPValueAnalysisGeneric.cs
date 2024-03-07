@@ -745,7 +745,7 @@ namespace EngineLayer
                     hasSpectralAngle = 1;
                 }
 
-                if (psm.DigestionParams.Protease.Name != "top-down")
+                if (psm.DigestionParams.DigestionAgent.Name != "top-down")
                 {
                     missedCleavages = selectedPeptide.MissedCleavages;
                     bool fileIsCzeSeparationType = fileSpecificParameters.Any(p => Path.GetFileName(p.fileName) == Path.GetFileName(psm.FullFilePath) && p.fileSpecificParameters.SeparationType == "CZE");

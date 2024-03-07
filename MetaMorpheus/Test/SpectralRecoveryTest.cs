@@ -15,6 +15,7 @@ using Omics.Modifications;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
 using Omics;
+using Omics.Digestion;
 
 namespace Test
 {
@@ -103,7 +104,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = new HashSet<IDigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
@@ -272,7 +273,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = new HashSet<IDigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
@@ -318,7 +319,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = new HashSet<IDigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
