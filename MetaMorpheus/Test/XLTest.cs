@@ -9,6 +9,7 @@ using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -18,7 +19,6 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using Omics.Digestion;
-using Omics.Fragmentation;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -187,8 +187,8 @@ namespace Test
             List<CrosslinkSpectralMatch>[] possiblePsms = new List<CrosslinkSpectralMatch>[listOfSortedms2Scans.Length];
             List<(int, int, int)>[] candidates = new List<(int, int, int)>[listOfSortedms2Scans.Length];
 
-            var XLEngine = new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0, 
-                commonParameters, null, crosslinker, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.CrosslinkAtCleavageSite, 
+            var XLEngine = new CrosslinkSearchEngine(possiblePsms, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, null, 0,
+                commonParameters, null, crosslinker, xlSearchParameters.CrosslinkSearchTopNum, xlSearchParameters.CrosslinkAtCleavageSite,
                 xlSearchParameters.XlQuench_H2O, xlSearchParameters.XlQuench_NH2, xlSearchParameters.XlQuench_Tris, new List<string> { },
                 candidates, 0, indexResults.PeptideIndex, precursorss);
             XLEngine.FirstRoundSearch();
@@ -608,6 +608,8 @@ namespace Test
                 }
             }
 
+
+
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
             List<string> sequences = new List<string>();
             foreach (CrosslinkSpectralMatch psm in firstCsmsFromListsOfCsms)
@@ -632,7 +634,7 @@ namespace Test
                 { Path.GetFileName(intraCsm.FullFilePath), 0 }
             };
 
-            var intraPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("crosslink", fsp, intraCsm,  fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, intraCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy);
+            var intraPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("crosslink", fsp, intraCsm, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, medianFragmentMassError, chargeStateMode, intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, intraCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy);
             Assert.That(intraPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(1.0).Within(0.1));
             Assert.That(intraPsmData.AlphaIntensity, Is.EqualTo(1).Within(0.1));
             Assert.AreEqual(intraPsmData.Ambiguity, 0);
@@ -1083,7 +1085,7 @@ namespace Test
             MsDataScan sc = new MsDataScan(spectrum, 1, 2, true, Polarity.Positive, 1, spectrum.Range, "",
                 MZAnalyzerType.Orbitrap, 12, 1.0, null, null);
             scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "", new CommonParameters());
-            List<List<(double, int, double)>> precursorss = new List<List<(double, int, double)>> 
+            List<List<(double, int, double)>> precursorss = new List<List<(double, int, double)>>
                 { new List<(double, int, double)> { (scans[0].PrecursorMass, scans[0].PrecursorCharge, scans[0].PrecursorMonoisotopicPeakMz)} };
 
 
@@ -1191,7 +1193,7 @@ namespace Test
             //sending the wrong writeType doesn't error. Method Simply breaks.
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\TestXLWrite");
             Directory.CreateDirectory(outputFolder);
-            
+
             Ms2ScanWithSpecificMass scan = new(new MsDataScan(
                     new MzSpectrum(new double[] { }, new double[] { }, false),
                     2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
@@ -1222,7 +1224,7 @@ namespace Test
             csmAlpha.LinkPositions = new() { 1 };
             csmBeta.LinkPositions = new() { 1 };
 
-            WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch>() { csmAlpha}, outputFolder + "csm.psmtsv", 0);
+            WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch>() { csmAlpha }, outputFolder + "csm.psmtsv", 0);
 
             //check decoy label
             csmAlpha.BetaPeptide = csmBeta;
@@ -1262,7 +1264,7 @@ namespace Test
                 {
                     WriteOutputForPercolator = true
                 },
-                CommonParameters = new CommonParameters(trimMsMsPeaks: false, addCompIons:false)
+                CommonParameters = new CommonParameters(trimMsMsPeaks: false, addCompIons: false)
             };
 
             string myFileXl = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\BSA_DSSO_ETchD6010.mgf");

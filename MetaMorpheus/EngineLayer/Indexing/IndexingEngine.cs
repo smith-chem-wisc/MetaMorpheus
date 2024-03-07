@@ -1,6 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer.NonSpecificEnzymeSearch;
 using Proteomics;
+using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
@@ -34,7 +34,7 @@ namespace EngineLayer.Indexing
 
         public IndexingEngine(List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications,
             List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel, int currentPartition, DecoyType decoyType,
-            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
+            CommonParameters commonParams, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             double maxFragmentSize, bool generatePrecursorIndex, List<FileInfo> proteinDatabases, TargetContaminantAmbiguity tcAmbiguity, List<string> nestedIds)
             : base(commonParams, fileSpecificParameters, nestedIds)
         {
@@ -260,9 +260,19 @@ namespace EngineLayer.Indexing
             foreach (KeyValuePair<int, List<Modification>> relevantDatabaseMod in databaseAnnotatedMods)
             {
                 int fragmentNumber = relevantDatabaseMod.Key;
-                Product fragmentAtIndex = fragmentMasses.Where(x => x.FragmentNumber == fragmentNumber).FirstOrDefault();
-                double basePrecursorMass = fragmentAtIndex.NeutralMass == default(Product).NeutralMass ? 
-                    peptide.MonoisotopicMass : fragmentAtIndex.NeutralMass - DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) + WaterMonoisotopicMass;
+                Product fragmentAtIndex = fragmentMasses.FirstOrDefault(x => x.FragmentNumber == fragmentNumber);
+
+                double basePrecursorMass;
+                if (fragmentAtIndex is null)
+                {
+                    basePrecursorMass = peptide.MonoisotopicMass;
+                }
+                else
+                {
+                    basePrecursorMass = fragmentAtIndex.NeutralMass -
+                                        DissociationTypeCollection.GetMassShiftFromProductType(fragmentAtIndex.ProductType) +
+                                        WaterMonoisotopicMass;
+                }
 
                 foreach (Modification mod in relevantDatabaseMod.Value)
                 {
