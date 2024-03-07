@@ -1326,5 +1326,25 @@ namespace Test
             var task = new PostGlycoSearchAnalysisTask();
             task.RunTask(TestContext.CurrentContext.TestDirectory, new List<DbForTask>(), new List<string>(), "");
         }
+
+        [Test]
+        public static void TestWriteSpectrumLibrary()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.WriteSpectrumLibrary =  true;
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder).Run();
+
+            List<string> folderContents = Directory.GetFiles(Path.Combine(outputFolder,"Task")).Select(p => Path.GetFileName(p)).ToList();
+            string spectrumLibrary = folderContents.Where(p => p.Contains("SpectralLibrary")).FirstOrDefault();
+            Assert.That(spectrumLibrary.Contains(".msp"));
+
+            Directory.Delete(outputFolder, true);
+        }
     }
 }

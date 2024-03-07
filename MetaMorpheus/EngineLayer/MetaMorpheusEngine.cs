@@ -1,11 +1,7 @@
 ﻿using Chemistry;
 using MassSpectrometry;
-using Microsoft.ML.Trainers.FastTree;
-using MzLibUtil;
-using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
+using Omics.Fragmentation;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;

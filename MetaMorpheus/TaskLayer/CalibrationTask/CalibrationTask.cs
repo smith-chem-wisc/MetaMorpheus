@@ -261,7 +261,7 @@ namespace TaskLayer
                 new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
             Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
@@ -269,25 +269,25 @@ namespace TaskLayer
             bool writeSpectralLibrary = false;
             _ = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters,
                 FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }, writeSpectralLibrary).Run();
-            List<PeptideSpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
+            List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
 
             allPsms = allPsms.OrderByDescending(b => b.Score)
-                .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
             _ = new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }, doPEP: false).Run();
 
-            List<PeptideSpectralMatch> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.001 && !b.IsDecoy && b.FullSequence != null).ToList();
+            List<SpectralMatch> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.001 && !b.IsDecoy && b.FullSequence != null).ToList();
 
             if (!goodIdentifications.Any())
             {
-                return new DataPointAquisitionResults(null, new List<PeptideSpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
+                return new DataPointAquisitionResults(null, new List<SpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
             }
 
             //get the deconvoluted ms2scans for the good identifications
             List<Ms2ScanWithSpecificMass> goodScans = new List<Ms2ScanWithSpecificMass>();
-            List<PeptideSpectralMatch> unfilteredPsms = allPsmsArray.ToList();
-            foreach (PeptideSpectralMatch psm in goodIdentifications)
+            List<SpectralMatch> unfilteredPsms = allPsmsArray.ToList();
+            foreach (SpectralMatch psm in goodIdentifications)
             {
                 goodScans.Add(listOfSortedms2Scans[unfilteredPsms.IndexOf(psm)]);
             }

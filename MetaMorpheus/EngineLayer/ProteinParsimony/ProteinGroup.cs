@@ -19,7 +19,7 @@ namespace EngineLayer
             ProteinGroupName = string.Join("|", ListOfProteinsOrderedByAccession.Select(p => p.Accession));
             AllPeptides = peptides;
             UniquePeptides = uniquePeptides;
-            AllPsmsBelowOnePercentFDR = new HashSet<PeptideSpectralMatch>();
+            AllPsmsBelowOnePercentFDR = new HashSet<SpectralMatch>();
             SequenceCoverageFraction = new List<double>();
             SequenceCoverageDisplayList = new List<string>();
             SequenceCoverageDisplayListWithMods = new List<string>();
@@ -64,7 +64,7 @@ namespace EngineLayer
 
         public HashSet<PeptideWithSetModifications> UniquePeptides { get; set; }
 
-        public HashSet<PeptideSpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
+        public HashSet<SpectralMatch> AllPsmsBelowOnePercentFDR { get; set; }
 
         public List<double> SequenceCoverageFraction { get; private set; }
 
@@ -403,7 +403,7 @@ namespace EngineLayer
                 {
                     psm.GetAminoAcidCoverage();
 
-                    foreach (var peptide in psm.BestMatchingPeptides.Select(psm => psm.Peptide).DistinctBy(pep => pep.FullSequence))
+                    foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods.Select(psm => psm.Peptide as PeptideWithSetModifications).DistinctBy(pep => pep.FullSequence))
                     {
                         // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
                         if (Proteins.Contains(peptide.Protein))
@@ -429,13 +429,13 @@ namespace EngineLayer
                 HashSet<int> coveredResiduesInProteinOneBased = new();
 
                 //loop through PSMs
-                foreach (PeptideSpectralMatch psm in AllPsmsBelowOnePercentFDR.Where(psm => psm.BaseSequence != null))
+                foreach (SpectralMatch psm in AllPsmsBelowOnePercentFDR.Where(psm => psm.BaseSequence != null))
                 {
                     //Calculate the covered bases within the psm. This is one based numbering for the peptide only
                     psm.GetAminoAcidCoverage();
                     if (psm.FragmentCoveragePositionInPeptide == null) continue;
                     //loop through each peptide within the psm
-                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingPeptides.Select(p => p.Peptide)
+                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide as PeptideWithSetModifications)
                         .Where(p => p.Protein.Accession == protein.Accession);
                     foreach (PeptideWithSetModifications pwsm in pwsms)
                     {
@@ -444,7 +444,7 @@ namespace EngineLayer
                         //add the peptide start position within the protein to each covered index of the psm
                         foreach (var position in psm.FragmentCoveragePositionInPeptide)
                         {
-                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidueInProtein -
+                            coveredResiduesInPeptide.Add(position + pwsm.OneBasedStartResidue -
                                                          1); //subtract one because these are both one based
                         }
 
@@ -471,7 +471,7 @@ namespace EngineLayer
                 // get residue numbers of each peptide in the protein and identify them as observed if the sequence is unambiguous
                 foreach (var peptide in proteinsWithUnambigSeqPsms[protein])
                 {
-                    for (int i = peptide.OneBasedStartResidueInProtein; i <= peptide.OneBasedEndResidueInProtein; i++)
+                    for (int i = peptide.OneBasedStartResidue; i <= peptide.OneBasedEndResidue; i++)
                     {
                         coveredOneBasedResidues.Add(i);
                     }
@@ -508,7 +508,7 @@ namespace EngineLayer
                             && !mod.Value.ModificationType.Contains("Common Fixed"))
                         {
                             modsOnThisProtein.Add(
-                                new KeyValuePair<int, Modification>(pep.OneBasedStartResidueInProtein + mod.Key - 2,
+                                new KeyValuePair<int, Modification>(pep.OneBasedStartResidue + mod.Key - 2,
                                     mod.Value));
                         }
                     }
@@ -571,7 +571,7 @@ namespace EngineLayer
                         }
                         else if (mod.Value.LocationRestriction.Equals("Anywhere."))
                         {
-                            indexInProtein = pep.OneBasedStartResidueInProtein + mod.Key - 2;
+                            indexInProtein = pep.OneBasedStartResidue + mod.Key - 2;
                         }
                         else if (mod.Value.LocationRestriction.Equals("C-terminal."))
                         {
@@ -594,8 +594,8 @@ namespace EngineLayer
                             modIndex.Add(modKey);
                             foreach (var pept in proteinsWithPsmsWithLocalizedMods[protein])
                             {
-                                if (indexInProtein >= pept.OneBasedStartResidueInProtein - (indexInProtein == 1 ? 1 : 0)
-                                    && indexInProtein <= pept.OneBasedEndResidueInProtein)
+                                if (indexInProtein >= pept.OneBasedStartResidue - (indexInProtein == 1 ? 1 : 0)
+                                    && indexInProtein <= pept.OneBasedEndResidue)
                                 {
                                     pepNumTotal += 1;
                                 }
@@ -643,11 +643,11 @@ namespace EngineLayer
         public ProteinGroup ConstructSubsetProteinGroup(string fullFilePath, List<SilacLabel> silacLabels = null)
         {
             var allPsmsForThisFile =
-                new HashSet<PeptideSpectralMatch>(
+                new HashSet<SpectralMatch>(
                     AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
             var allPeptidesForThisFile =
                 new HashSet<PeptideWithSetModifications>(
-                    allPsmsForThisFile.SelectMany(p => p.BestMatchingPeptides.Select(v => v.Peptide)));
+                    allPsmsForThisFile.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications)));
             var allUniquePeptidesForThisFile =
                 new HashSet<PeptideWithSetModifications>(UniquePeptides.Intersect(allPeptidesForThisFile));
 

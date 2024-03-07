@@ -446,7 +446,7 @@ namespace Test
 
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
-            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+            MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
@@ -488,7 +488,7 @@ namespace Test
 
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
-            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+            MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
@@ -504,7 +504,7 @@ namespace Test
             Assert.That(found);
 
             // test again w/ NOT appending motifs onto mod names
-            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+            MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, false);
 

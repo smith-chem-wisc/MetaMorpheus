@@ -15,7 +15,7 @@ namespace TaskLayer
 {
     public static class MzIdentMLWriter
     {
-        public static void WriteMzIdentMl(IEnumerable<PeptideSpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
+        public static void WriteMzIdentMl(IEnumerable<SpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
             List<Modification> fixedMods, List<SilacLabel> silacLabels, List<Protease> proteases, Tolerance productTolerance, 
             Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames)
         {
@@ -38,7 +38,7 @@ namespace TaskLayer
                 psms = psms.Where(p => p.BaseSequence != null && !p.FullSequence.Contains("|") && !labelsToSearch.Any(x => p.BaseSequence.Contains(x)));
             }
 
-            List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.BestMatchingPeptides.Select(v => v.Peptide)).Distinct().ToList();
+            List<PeptideWithSetModifications> peptides = psms.SelectMany(i => i.BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications)).Distinct().ToList();
             List<Protein> proteins = peptides.Select(p => p.Protein).Distinct().ToList();
             List<string> filenames = psms.Select(i => i.FullFilePath).Distinct().ToList();
             Dictionary<string, string> database_reference = new Dictionary<string, string>();
@@ -323,9 +323,9 @@ namespace TaskLayer
 
             var unambiguousPsms = psms.Where(psm => psm.FullSequence != null);
 
-            foreach (PeptideSpectralMatch psm in unambiguousPsms)
+            foreach (SpectralMatch psm in unambiguousPsms)
             {
-                foreach (PeptideWithSetModifications peptide in psm.BestMatchingPeptides.Select(p => p.Peptide).Distinct())
+                foreach (PeptideWithSetModifications peptide in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).Distinct())
                 {
                     //if first peptide on list hasn't been added, add peptide and peptide evidence
                     if (!peptide_ids.TryGetValue(peptide.FullSequence, out Tuple<int, HashSet<string>> peptide_id))
@@ -367,11 +367,11 @@ namespace TaskLayer
                             dBSequence_ref = "DBS_" + peptide.Protein.Accession,
                             isDecoy = peptide.Protein.IsDecoy,
                             startSpecified = true,
-                            start = peptide.OneBasedStartResidueInProtein,
+                            start = peptide.OneBasedStartResidue,
                             endSpecified = true,
-                            end = peptide.OneBasedEndResidueInProtein,
-                            pre = peptide.PreviousAminoAcid.ToString(),
-                            post = (peptide.OneBasedEndResidueInProtein < peptide.Protein.BaseSequence.Length) ? peptide.Protein[peptide.OneBasedEndResidueInProtein].ToString() : "-",
+                            end = peptide.OneBasedEndResidue,
+                            pre = peptide.PreviousResidue.ToString(),
+                            post = (peptide.OneBasedEndResidue < peptide.Protein.BaseSequence.Length) ? peptide.Protein[peptide.OneBasedEndResidue].ToString() : "-",
                         };
                         peptide_evidence_ids.Add(peptide, pe_index);
                         pe_index++;
@@ -406,7 +406,7 @@ namespace TaskLayer
                     psm_per_scan[new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber)] = new Tuple<int, int>(scan_result_scan_item.Item1, scan_result_scan_item.Item2 + 1);
                     scan_result_scan_item = psm_per_scan[new Tuple<string, int>(psm.FullFilePath, psm.ScanNumber)];
                 }
-                foreach (PeptideWithSetModifications p in psm.BestMatchingPeptides.Select(p => p.Peptide).Distinct())
+                foreach (PeptideWithSetModifications p in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).Distinct())
                 {
                     peptide_ids[p.FullSequence].Item2.Add("SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2);
                 }
@@ -419,7 +419,7 @@ namespace TaskLayer
                     passThreshold = psm.FdrInfo.QValue <= 0.01,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
                     peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,
-                    PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.BestMatchingPeptides.Select(p => p.Peptide).Distinct().Count()],
+                    PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).Distinct().Count()],
                     cvParam = new mzIdentML110.Generated.CVParamType[2]
                     {
                         new mzIdentML110.Generated.CVParamType
@@ -438,14 +438,14 @@ namespace TaskLayer
                         }
                     }
                 };
-                if (psm.PeptideMonisotopicMass.HasValue)
+                if (psm.BioPolymerWithSetModsMonoisotopicMass.HasValue)
                 {
-                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToCharge = Math.Round(psm.PeptideMonisotopicMass.Value.ToMz(psm.ScanPrecursorCharge), 5);
+                    _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToCharge = Math.Round(psm.BioPolymerWithSetModsMonoisotopicMass.Value.ToMz(psm.ScanPrecursorCharge), 5);
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].calculatedMassToChargeSpecified = true;
                 }
 
                 int pe = 0;
-                foreach (PeptideWithSetModifications p in psm.BestMatchingPeptides.Select(p => p.Peptide).Distinct())
+                foreach (PeptideWithSetModifications p in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).Distinct())
                 {
                     _mzid.DataCollection.AnalysisData.SpectrumIdentificationList[0].SpectrumIdentificationResult[scan_result_scan_item.Item1].SpectrumIdentificationItem[scan_result_scan_item.Item2].PeptideEvidenceRef[pe]
                         = new mzIdentML110.Generated.PeptideEvidenceRefType

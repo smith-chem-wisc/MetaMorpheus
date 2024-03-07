@@ -42,7 +42,7 @@ namespace Test
             Assert.That(unmodifiedPeptide.NumMods == 0); // there was no modification on this protein
 
             // build PSMs for parsimony
-            List<PeptideSpectralMatch> psmsForParsimony = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psmsForParsimony = new List<SpectralMatch>();
 
             MsDataScan fakeScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
@@ -50,11 +50,11 @@ namespace Test
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            SpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm1.ResolveAllAmbiguities();
 
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            SpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm2.ResolveAllAmbiguities();
             
@@ -76,8 +76,8 @@ namespace Test
             // because modified peptides were considered as unique, then there should be two protein groups after parsimony, and one protein accession for each peptide
             Assert.That(countOfProteinGroups == 2);
             Assert.That(results.SortedAndScoredProteinGroups.All(p => p.Proteins.Count == 1));
-            Assert.That(psm1.ProteinAccession == "accession1");
-            Assert.That(psm2.ProteinAccession == "accession2");
+            Assert.That(psm1.Accession == "accession1");
+            Assert.That(psm2.Accession == "accession2");
         }
 
         [Test]
@@ -109,7 +109,7 @@ namespace Test
             Assert.That(unmodifiedPeptide.NumMods == 0); // there was no modification on this protein
 
             // build PSMs for parsimony
-            List<PeptideSpectralMatch> psmsForParsimony = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psmsForParsimony = new List<SpectralMatch>();
 
             MsDataScan fakeScan = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false),
                 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null,
@@ -117,11 +117,11 @@ namespace Test
 
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(fakeScan, 2, 0, "File", new CommonParameters());
 
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            SpectralMatch psm1 = new PeptideSpectralMatch(modifiedPeptide, 0, 10, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm1.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm1.ResolveAllAmbiguities();
 
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            SpectralMatch psm2 = new PeptideSpectralMatch(unmodifiedPeptide, 0, 10, 2, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm2.ResolveAllAmbiguities();
             
@@ -145,8 +145,8 @@ namespace Test
             // and two protein accessions for each peptide
             Assert.AreEqual(1, countOfProteinGroups);
             Assert.AreEqual(2, results.SortedAndScoredProteinGroups.First().Proteins.Count);
-            Assert.IsNull(psm1.ProteinAccession);
-            Assert.IsNull(psm2.ProteinAccession);
+            Assert.IsNull(psm1.Accession);
+            Assert.IsNull(psm2.Accession);
         }
 
         [Test]
@@ -172,7 +172,7 @@ namespace Test
             MatchedFragmentIon mfiC3 = new MatchedFragmentIon(ref productC3, 0, 0, 1);
             MatchedFragmentIon mfiC4 = new MatchedFragmentIon(ref productC4, 0, 0, 1);
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> psms = new List<SpectralMatch>
             {
                 new PeptideSpectralMatch(pep1,0,1,0, scan, new CommonParameters(), new List<MatchedFragmentIon>() {mfiC3, mfiC4}),
             };
@@ -221,7 +221,7 @@ namespace Test
             MsDataScan dfb = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfb, 2, 0, "File", new CommonParameters());
 
-            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>
+            List<SpectralMatch> psms = new List<SpectralMatch>
             {
                 new PeptideSpectralMatch(fillerPep,0,30,0, scan, new CommonParameters(), new List<MatchedFragmentIon>()),
                 new PeptideSpectralMatch(decoyPep,0,15.11,0, scan, new CommonParameters(), new List<MatchedFragmentIon>()),

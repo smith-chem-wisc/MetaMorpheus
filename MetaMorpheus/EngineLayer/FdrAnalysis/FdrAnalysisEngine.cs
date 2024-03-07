@@ -6,14 +6,14 @@ namespace EngineLayer.FdrAnalysis
 {
     public class FdrAnalysisEngine : MetaMorpheusEngine
     {
-        private List<PeptideSpectralMatch> AllPsms;
+        private List<SpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
 
-        public FdrAnalysisEngine(List<PeptideSpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
+        public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms.OrderByDescending(p=>p).ToList();
@@ -52,6 +52,51 @@ namespace EngineLayer.FdrAnalysis
                 QValueTraditional(psms);
                 if (psms.Count > 100)
                 {
+                    QValueInverted(psms);
+                }
+
+                // set q-value thresholds such that a lower scoring PSM can't have
+                // a higher confidence than a higher scoring PSM
+                //Populate min qValues
+                double qValueThreshold = 1.0;
+                double[] qValueNotchThreshold = new double[MassDiffAcceptorNumNotches + 1];
+                for (int i = 0; i < qValueNotchThreshold.Length; i++)
+                {
+                    qValueNotchThreshold[i] = 1.0;
+                }
+
+                for (int i = psms.Count - 1; i >= 0; i--)
+                {
+                    SpectralMatch psm = psms[i];
+
+                    // threshold q-values
+                    if (psm.FdrInfo.QValue > qValueThreshold)
+                    {
+                        psm.FdrInfo.QValue = qValueThreshold;
+                    }
+                    else if (psm.FdrInfo.QValue < qValueThreshold)
+                    {
+                        qValueThreshold = psm.FdrInfo.QValue;
+                    }
+
+                    // threshold notch q-values
+                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
+                    if (psm.FdrInfo.QValueNotch > qValueNotchThreshold[notch])
+                    {
+                        psm.FdrInfo.QValueNotch = qValueNotchThreshold[notch];
+                    }
+                    else if (psm.FdrInfo.QValueNotch < qValueNotchThreshold[notch])
+                    {
+                        qValueNotchThreshold[notch] = psm.FdrInfo.QValueNotch;
+                    }
+                }
+            }
+            if (DoPEP)
+            {
+                Compute_PEPValue(myAnalysisResults);
+            }
+            CountPsm();
+        }
                     if (DoPEP)
                     {
                         Compute_PEPValue(myAnalysisResults);
@@ -62,7 +107,7 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
-        private static void QValueInverted(List<PeptideSpectralMatch> psms)
+        private static void QValueInverted(List<SpectralMatch> psms)
         {
             psms.Reverse();
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
@@ -88,7 +133,7 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
-        private void QValueTraditional(List<PeptideSpectralMatch> psms)
+        private void QValueTraditional(List<SpectralMatch> psms)
         {
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;
@@ -103,7 +148,7 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                PeptideSpectralMatch psm = psms[i];
+                SpectralMatch psm = psms[i];
                 int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
                 if (psm.IsDecoy)
                 {
@@ -112,10 +157,10 @@ namespace EngineLayer.FdrAnalysis
                     // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
                     double decoyHits = 0;
                     double totalHits = 0;
-                    var hits = psm.BestMatchingPeptides.GroupBy(p => p.Peptide.FullSequence);
+                    var hits = psm.BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Peptide.FullSequence);
                     foreach (var hit in hits)
                     {
-                        if (hit.First().Peptide.Protein.IsDecoy)
+                        if (hit.First().Peptide.Parent.IsDecoy)
                         {
                             decoyHits++;
                         }
@@ -172,7 +217,7 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
-        public static void Compute_PEPValue_Based_QValue(List<PeptideSpectralMatch> psms)
+        public static void Compute_PEPValue_Based_QValue(List<SpectralMatch> psms)
         {
             double[] allPEPValues = psms.Select(p => p.FdrInfo.PEP).ToArray();
             int[] psmsArrayIndicies = Enumerable.Range(0, psms.Count).ToArray();
@@ -194,12 +239,14 @@ namespace EngineLayer.FdrAnalysis
             // exclude ambiguous psms and has a fdr cutoff = 0.01
             var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
 
-            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                psm.FdrInfo.QValue <= 0.01
-                && psm.FdrInfo.QValueNotch <= 0.01)
-                .GroupBy(p => p.FullSequence);
+                var fullSequenceGroups = allUnambiguousProteasePsms.Where(p => p.FdrInfo.QValue < 0.01 && p.FdrInfo.QValueNotch < 0.01)
+                    .Select(p => p.FullSequence).GroupBy(s => s);
 
-            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+                Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+                foreach (var fullSequence in fullSequenceGroups)
+                {
+                    sequenceToPsmCount.Add(fullSequence.Key, fullSequence.Count());
+                }
 
             foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
             {

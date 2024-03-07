@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-using EngineLayer.Gptmd;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
@@ -14,10 +13,11 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation.Peptide;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
 
@@ -157,10 +157,7 @@ namespace TaskLayer
                             if (commonParameters.DoPrecursorDeconvolution)
                             {
                                 foreach (IsotopicEnvelope envelope in ms2scan.GetIsolatedMassesAndCharges(
-                                    precursorSpectrum.MassSpectrum, 1,
-                                    commonParameters.DeconvolutionMaxAssumedChargeState,
-                                    commonParameters.DeconvolutionMassTolerance.Value,
-                                    commonParameters.DeconvolutionIntensityRatio))
+                                    precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
                                     precursors.Add((monoPeakMz, envelope.Charge));
@@ -450,7 +447,9 @@ namespace TaskLayer
                 assumeOrphanPeaksAreZ1Fragments: commonParams.AssumeOrphanPeaksAreZ1Fragments,
                 maxHeterozygousVariants: commonParams.MaxHeterozygousVariants,
                 minVariantDepth: commonParams.MinVariantDepth,
-                addTruncations: commonParams.AddTruncations);
+                addTruncations: commonParams.AddTruncations,
+                precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
+                productDeconParams: commonParams.ProductDeconvolutionParameters );
 
             return returnParams;
         }
@@ -655,11 +654,11 @@ namespace TaskLayer
             }
         }
 
-        protected static void WritePsmsToTsv(IEnumerable<PeptideSpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                output.WriteLine(PeptideSpectralMatch.GetTabSeparatedHeader());
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader());
                 foreach (var psm in psms)
                 {
                     output.WriteLine(psm.ToString(modstoWritePruned));
@@ -667,7 +666,7 @@ namespace TaskLayer
             }
         }
 
-        protected static void WriteSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
+        protected static void WriteSpectrumLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
             string spectrumFilePath = outputFolder + "\\SpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";

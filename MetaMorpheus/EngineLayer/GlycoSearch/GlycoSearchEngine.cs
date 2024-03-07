@@ -250,9 +250,9 @@ namespace EngineLayer.GlycoSearch
 
                             if (preString == currentString)
                             {
-                                foreach (var bestMatchPeptide in gsm.BestMatchingPeptides)
+                                foreach ((int, PeptideWithSetModifications Peptide) bestMatchPeptide in gsm.BestMatchingBioPolymersWithSetMods)
                                 {
-                                    GlobalCsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide, gsm.PeptidesToMatchingFragments[bestMatchPeptide.Peptide]);
+                                    GlobalCsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide, gsm.BioPolymersWithSetModsToMatchingFragments[bestMatchPeptide.Peptide]);
 
                                 }
                             }

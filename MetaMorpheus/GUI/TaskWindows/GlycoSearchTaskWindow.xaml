@@ -495,6 +495,7 @@
                         <CheckBox x:Name="WriteDecoyCheckBox" Content="Write decoys" />
                         <CheckBox x:Name="WriteContaminantCheckBox" Content="Write contaminants" />
                         <CheckBox x:Name="WriteIndividualResultsCheckBox" Content="Write individual file results" />
+                        <CheckBox x:Name="WriteSpectrumLibraryCheckBox" Content="Write spectrum library" />
                     </StackPanel>
                 </GroupBox>
                 

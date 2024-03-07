@@ -39,7 +39,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: new PpmTolerance(5),
@@ -74,7 +74,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(
                 scoreCutoff: 1,
@@ -111,7 +111,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(
                 productMassTolerance: new PpmTolerance(5),
@@ -148,7 +148,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 600, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
 
@@ -179,7 +179,7 @@ namespace Test
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             MsDataScan scan = new MsDataScan(massSpectrum, 1, 1, true, Polarity.Positive, 1, new MzRange(300, 2000), "", MZAnalyzerType.Unknown, massSpectrum.SumOfAllY, null, null, "scan=1", 0, null, null, 0, null, DissociationType.Unknown, 1, null);
 
-            PeptideSpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
+            SpectralMatch[] globalPsms = new PeptideSpectralMatch[1];
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 0, 0, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
             bool writeSpetralLibrary = false;

@@ -14,7 +14,7 @@ namespace EngineLayer.Calibration
     {
         private const double FineResolutionForIsotopeDistCalculation = 0.1;
 
-        private readonly List<PeptideSpectralMatch> GoodIdentifications;
+        private readonly List<SpectralMatch> GoodIdentifications;
         private readonly List<Ms2ScanWithSpecificMass> GoodScans;
         private readonly MsDataFile MyMsDataFile;
         private readonly Tolerance PrecursorMassTolerance;
@@ -22,7 +22,7 @@ namespace EngineLayer.Calibration
         private readonly int MinMS1isotopicPeaksNeededForConfirmedIdentification;
 
         public DataPointAcquisitionEngine(
-            List<PeptideSpectralMatch> goodIdentifications,
+            List<SpectralMatch> goodIdentifications,
             List<Ms2ScanWithSpecificMass> goodScans,
             MsDataFile myMsDataFile,
             Tolerance precursorMassTolerance,
@@ -65,16 +65,16 @@ namespace EngineLayer.Calibration
                     // Stop loop if canceled
                     if (GlobalVariables.StopLoops) { return; }
 
-                    PeptideSpectralMatch identification = GoodIdentifications[matchIndex];
+                    SpectralMatch identification = GoodIdentifications[matchIndex];
 
                     // Each identification has an MS2 spectrum attached to it.
                     int ms2scanNumber = identification.ScanNumber;
                     int peptideCharge = identification.ScanPrecursorCharge;
                     //skip if ambiguous
-                    if (identification.FullSequence == null || identification.BestMatchingPeptides.Any(p => p.Peptide.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
+                    if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.Peptide.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
                         continue;
 
-                    var representativeSinglePeptide = identification.BestMatchingPeptides.First().Peptide;
+                    var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().Peptide;
 
                     // Get the peptide, don't forget to add the modifications!!!!
                     var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
@@ -126,7 +126,7 @@ namespace EngineLayer.Calibration
             );
         }
 
-        private (List<LabeledDataPoint>, int, int) SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, PeptideSpectralMatch identification)
+        private (List<LabeledDataPoint>, int, int) SearchMS1Spectra(double[] theoreticalMasses, double[] theoreticalIntensities, int ms2spectrumIndex, int direction, int peptideCharge, SpectralMatch identification)
         {
             List<LabeledDataPoint> result = new List<LabeledDataPoint>();
             int numMs1MassChargeCombinationsConsidered = 0;
@@ -220,7 +220,7 @@ namespace EngineLayer.Calibration
             return (result, numMs1MassChargeCombinationsConsidered, numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks);
         }
 
-        private static List<LabeledDataPoint> SearchMS2Spectrum(Ms2ScanWithSpecificMass ms2DataScan, PeptideSpectralMatch identification, Tolerance ms2Tolerance)
+        private static List<LabeledDataPoint> SearchMS2Spectrum(Ms2ScanWithSpecificMass ms2DataScan, SpectralMatch identification, Tolerance ms2Tolerance)
         {
             List<LabeledDataPoint> result = new List<LabeledDataPoint>();
 

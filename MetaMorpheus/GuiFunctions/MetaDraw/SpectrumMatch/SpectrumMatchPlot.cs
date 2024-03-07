@@ -18,6 +18,8 @@ using iText.Layout;
 using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
 using mzPlot;
+using Omics.Fragmentation;
+using Omics.SpectrumMatch;
 using OxyPlot;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;

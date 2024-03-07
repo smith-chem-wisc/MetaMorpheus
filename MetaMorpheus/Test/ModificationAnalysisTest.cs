@@ -69,7 +69,7 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
 
-            var newPsms = new List<PeptideSpectralMatch>
+            var newPsms = new List<SpectralMatch>
             {
                 new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
                 new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, CommonParameters, new List<MatchedFragmentIon>()),
@@ -137,7 +137,7 @@ namespace Test
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
             fsp.Add(("", CommonParameters));
 
-            PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            SpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>(),0);
             
             myPsm.ResolveAllAmbiguities();
@@ -145,9 +145,9 @@ namespace Test
             MassDiffAcceptor searchMode = new SinglePpmAroundZeroSearchMode(5);
             List<Protein> proteinList = new List<Protein> { protein1 };
 
-            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, searchMode.NumNotches, CommonParameters, fsp, new List<string>());
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(new List<SpectralMatch> { myPsm }, searchMode.NumNotches, CommonParameters, fsp, new List<string>());
             fdrAnalysisEngine.Run();
-            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(new List<PeptideSpectralMatch> { myPsm }, new CommonParameters(), fsp, new List<string>());
+            ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(new List<SpectralMatch> { myPsm }, new CommonParameters(), fsp, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
             Assert.AreEqual(1, res.CountOfEachModSeenOnProteins.Count());

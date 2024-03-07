@@ -6,6 +6,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FlashLFQ;
+using Omics.Modifications;
+using Omics.SpectrumMatch;
+using pepXML.Generated;
 using Proteomics.ProteolyticDigestion;
 using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
@@ -87,7 +90,7 @@ namespace TaskLayer
                         SingleFDRAnalysis(allPsmsOgly, commonParameters, new List<string> { taskId });
                         var writtenFileOGlyco = Path.Combine(OutputFolder + "\\oglyco" + ".psmtsv");
 
-                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsOgly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsOgly.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
                         var seen_oglyco_localization_file = Path.Combine(OutputFolder + "\\seen_oglyco_localization" + ".tsv");
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_oglyco_localization_file);
 
@@ -104,7 +107,7 @@ namespace TaskLayer
 
                         var writtenFileNGlyco = Path.Combine(OutputFolder + "\\nglyco" + ".psmtsv");
 
-                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsNgly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsNgly.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
                         var seen_nglyco_localization_file = Path.Combine(OutputFolder + "\\seen_nglyco_localization" + ".tsv");
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_nglyco_localization_file);
 
@@ -122,7 +125,7 @@ namespace TaskLayer
 
                         var writtenFileNOGlyco = Path.Combine(OutputFolder + "\\no_glyco" + ".psmtsv");
 
-                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsgly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsgly.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
                         var seen_no_glyco_localization_file = Path.Combine(OutputFolder + "\\seen_no_glyco_localization" + ".tsv");
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_no_glyco_localization_file);
 
@@ -142,12 +145,22 @@ namespace TaskLayer
                 GlycoAccessionAnalysis(filteredGsms, OutputFolder);//Do the whole group last so inference is done on the whole group
             }
             
-
             QuantificationAnalysis();
             WriteQuantificationResults();
 
             var writtenFileSingle = Path.Combine(OutputFolder, "AllPSMs.psmtsv");
             WriteGlycoFile.WritePsmGlycoToTsv(filteredGsms, writtenFileSingle, true);
+
+            if (Parameters.GlycoSearchParameters.WriteSpectrumLibrary)
+            {
+                List<LibrarySpectrum> spectrumLibrary = new List<LibrarySpectrum>();
+                foreach (var gsm in filteredGsms)
+                {
+                    spectrumLibrary.Add(new LibrarySpectrum(gsm.FullSequence, gsm.ScanPrecursorMonoisotopicPeakMz, gsm.ScanPrecursorCharge, gsm.MatchedFragmentIons,gsm.ScanRetentionTime,gsm.IsDecoy));
+                }
+                WriteSpectrumLibrary(spectrumLibrary, OutputFolder);
+            }
+
             FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
 
             return MyTaskResults;
@@ -166,7 +179,7 @@ namespace TaskLayer
                         SingleFDRAnalysis(allPsmsOgly, commonParameters, new List<string> { taskId });
                         var writtenFileOGlyco = Path.Combine(individualFileFolderPath, individualFileFolder + "oglyco" + ".psmtsv");
                         
-                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsOgly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsOgly.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
                         var seen_oglyco_localization_file = Path.Combine(individualFileFolderPath, individualFileFolder + "seen_oglyco_localization" + ".tsv");
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_oglyco_localization_file);
 
@@ -182,7 +195,7 @@ namespace TaskLayer
                         SingleFDRAnalysis(allPsmsNgly, commonParameters, new List<string> { taskId });
                         var writtenFileNGlyco = Path.Combine(individualFileFolderPath, individualFileFolder + "nglyco" + ".psmtsv");
 
-                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsNgly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsNgly.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
                         var seen_nglyco_localization_file = Path.Combine(individualFileFolderPath, individualFileFolder + "seen_nglyco_localization" + ".tsv");
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_nglyco_localization_file);
 
@@ -199,7 +212,7 @@ namespace TaskLayer
                         var writtenFileNOGlyco = Path.Combine(individualFileFolderPath, individualFileFolder + "no_glyco" + ".psmtsv");
                         WriteGlycoFile.WritePsmGlycoToTsv(allPsmsGly, writtenFileNOGlyco, true);
 
-                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly.Where(p => p.ProteinAccession != null && p.OneBasedStartResidueInProtein.HasValue).ToList());
+                        var ProteinLevelLocalization = GlycoProteinParsimony.ProteinLevelGlycoParsimony(allPsmsGly.Where(p => p.Accession != null && p.OneBasedStartResidue.HasValue).ToList());
                         var seen_no_glyco_localization_file = Path.Combine(individualFileFolderPath, individualFileFolder + "seen_no_glyco_localization" + ".tsv");
                         WriteGlycoFile.WriteSeenProteinGlycoLocalization(ProteinLevelLocalization, seen_no_glyco_localization_file);
 
@@ -214,14 +227,14 @@ namespace TaskLayer
         private void SingleFDRAnalysis(List<GlycoSpectralMatch> items, CommonParameters commonParameters, List<string> taskIds)
         {
             // calculate single PSM FDR
-            List<PeptideSpectralMatch> psms = items.Select(p => p as PeptideSpectralMatch).ToList();
+            List<SpectralMatch> psms = items.Select(p => p as SpectralMatch).ToList();
             new FdrAnalysisEngine(psms, 0, commonParameters, this.FileSpecificParameters, taskIds).Run();
 
         }
         private void GlycoProteinAnalysis(List<GlycoSpectralMatch> gsms, string outputFolder, string individualFileFolder = null)
         {
             // convert gsms to psms
-            List<PeptideSpectralMatch> psmsForProteinParsimony = gsms.Select(p => p as PeptideSpectralMatch).ToList();
+            List<SpectralMatch> psmsForProteinParsimony = gsms.Select(p => p as SpectralMatch).ToList();
 
             Status("Constructing protein groups...", Parameters.SearchTaskId);
 
@@ -242,7 +255,7 @@ namespace TaskLayer
             List<ProteinGroup> _proteinGroups = new List<ProteinGroup>();
 
             // convert gsms to psms
-            List<PeptideSpectralMatch> psmsForProteinParsimony = gsms.Select(p => p as PeptideSpectralMatch).ToList();
+            List<SpectralMatch> psmsForProteinParsimony = gsms.Select(p => p as SpectralMatch).ToList();
 
             foreach (var psm in psmsForProteinParsimony)
             {
@@ -250,16 +263,16 @@ namespace TaskLayer
             }
 
             //get non-ambigous psms above cutoffs that are normally used for parsimony
-            List<PeptideSpectralMatch>  _filteredPsms = psmsForProteinParsimony.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList();
+            List<SpectralMatch>  _filteredPsms = psmsForProteinParsimony.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList();
 
             // if there are no peptides observed, there are no proteins; return an empty list of protein groups
             if (_filteredPsms.Count != 0)
             {
                 foreach (var psm in _filteredPsms)
                 {
-                    List<Protein> proteinList = psm.BestMatchingPeptides.Select(p => p.Peptide.Protein).ToList();
+                    List<Protein> proteinList = psm.BestMatchingBioPolymersWithSetMods.Select(p => ((PeptideWithSetModifications)p.Peptide).Protein).ToList();
                     ProteinGroup newProteinGroup = new ProteinGroup(new HashSet<Protein>(proteinList),
-                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingPeptides.Select(p=>p.Peptide).ToList())), new HashSet<PeptideWithSetModifications>());
+                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.Peptide).ToList())), new HashSet<PeptideWithSetModifications>());
 
                     if (_proteinGroups.Any(p => p.Equals(newProteinGroup)))
                     {
@@ -359,7 +372,7 @@ namespace TaskLayer
                 && p.FullSequence != null).ToList();
 
             // pass protein group info for each PSM
-            var psmToProteinGroups = new Dictionary<PeptideSpectralMatch, List<FlashLFQ.ProteinGroup>>();
+            var psmToProteinGroups = new Dictionary<SpectralMatch, List<FlashLFQ.ProteinGroup>>();
             if (ProteinGroups != null && ProteinGroups.Count != 0) //ProteinGroups can be null if parsimony wasn't done, and it can be empty if you're doing the two peptide rule
             {
                 foreach (var proteinGroup in ProteinGroups)
@@ -388,7 +401,7 @@ namespace TaskLayer
                 var accessionToPg = new Dictionary<string, FlashLFQ.ProteinGroup>();
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                 {
-                    var proteins = psm.BestMatchingPeptides.Select(b => b.Peptide.Protein).Distinct();
+                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => ((PeptideWithSetModifications)b.Peptide).Protein).Distinct();
 
                     foreach (var protein in proteins)
                     {
@@ -398,7 +411,7 @@ namespace TaskLayer
                         }
                         
                     }
-                    psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { accessionToPg[psm.ProteinAccession] });
+                    psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { accessionToPg[psm.Accession] });
                 }
             }
 
@@ -409,14 +422,14 @@ namespace TaskLayer
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
             //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-            Dictionary<Protease, List<PeptideSpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<PeptideSpectralMatch>>();
+            Dictionary<Protease, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<SpectralMatch>>();
             Dictionary<Protease, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<Protease, FlashLfqResults>();
 
             foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
             {
                 if (!proteaseSortedPsms.ContainsKey(dp.Protease))
                 {
-                    proteaseSortedPsms.Add(dp.Protease, new List<PeptideSpectralMatch>());
+                    proteaseSortedPsms.Add(dp.Protease, new List<SpectralMatch>());
                 }
             }
             foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
@@ -438,7 +451,7 @@ namespace TaskLayer
                 foreach (var psm in spectraFile)
                 {
                     flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.PeptideMonisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                        psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
                 }
             }
 

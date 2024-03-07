@@ -6,9 +6,9 @@ namespace EngineLayer.ModificationAnalysis
 {
     public class ModificationAnalysisEngine : MetaMorpheusEngine
     {
-        private readonly List<PeptideSpectralMatch> NewPsms;
+        private readonly List<SpectralMatch> NewPsms;
 
-        public ModificationAnalysisEngine(List<PeptideSpectralMatch> newPsms, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public ModificationAnalysisEngine(List<SpectralMatch> newPsms, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             NewPsms = newPsms;
         }
@@ -23,17 +23,17 @@ namespace EngineLayer.ModificationAnalysis
 
             // For the database ones, only need un-ambiguous protein and location in protein
             var forObserved = confidentTargetPsms
-                .Where(b => b.ProteinAccession != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null);
+                .Where(b => b.Accession != null && b.OneBasedEndResidue != null && b.OneBasedStartResidue != null);
 
             // For the unambiguously localized ones, need FullSequence and un-ambiguous protein and location in protein
             var forUnambiguouslyLocalized = confidentTargetPsms
-                .Where(b => b.FullSequence != null && b.ProteinAccession != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null);
+                .Where(b => b.FullSequence != null && b.Accession != null && b.OneBasedEndResidue != null && b.OneBasedStartResidue != null);
 
             //**DEBUG
-            List<PeptideSpectralMatch> toby = new List<PeptideSpectralMatch>();
-            foreach (PeptideSpectralMatch psm in confidentTargetPsms)
+            List<SpectralMatch> toby = new List<SpectralMatch>();
+            foreach (SpectralMatch psm in confidentTargetPsms)
             {
-                if (psm.FullSequence != null && psm.ProteinAccession != null && psm.OneBasedEndResidueInProtein != null && psm.OneBasedStartResidueInProtein != null)
+                if (psm.FullSequence != null && psm.Accession != null && psm.OneBasedEndResidue != null && psm.OneBasedStartResidue != null)
                     toby.Add(psm);
             }
 
@@ -42,7 +42,7 @@ namespace EngineLayer.ModificationAnalysis
 
             // For the localized but ambiguous ones, need FullSequence
             var forAmbiguousButLocalized = confidentTargetPsms
-                .Where(b => b.FullSequence != null && !(b.ProteinAccession != null && b.OneBasedEndResidueInProtein != null && b.OneBasedStartResidueInProtein != null))
+                .Where(b => b.FullSequence != null && !(b.Accession != null && b.OneBasedEndResidue != null && b.OneBasedStartResidue != null))
                 .GroupBy(b => b.FullSequence);
 
             // For unlocalized but identified modifications, skip ones with full sequences!
@@ -59,28 +59,28 @@ namespace EngineLayer.ModificationAnalysis
             HashSet<(string, string, int)> modsOnProteins = new HashSet<(string, string, int)>();
             foreach (var psm in forObserved)
             {
-                var singlePeptide = psm.BestMatchingPeptides.First().Peptide;
-                foreach (var modInProtein in singlePeptide.Protein.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidueInProtein && b.Key <= singlePeptide.OneBasedEndResidueInProtein))
+                var singlePeptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                foreach (var modInProtein in singlePeptide.Parent.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidue && b.Key <= singlePeptide.OneBasedEndResidue))
 
                     foreach (var huh in modInProtein.Value)
-                        modsOnProteins.Add((singlePeptide.Protein.Accession, huh.IdWithMotif, modInProtein.Key));
+                        modsOnProteins.Add((singlePeptide.Parent.Accession, huh.IdWithMotif, modInProtein.Key));
             }
 
             // We do not want to double-count modifications. Hence the HashSet!!!
             HashSet<(string, string, int)> modsSeenAndLocalized = new HashSet<(string, string, int)>();
             foreach (var psm in forUnambiguouslyLocalized)
             {
-                var singlePeptide = psm.BestMatchingPeptides.First().Peptide;
+                var singlePeptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
                 foreach (var nice in singlePeptide.AllModsOneIsNterminus)
                 {
                     int locInProtein;
                     if (nice.Key == 1)
-                        locInProtein = singlePeptide.OneBasedStartResidueInProtein;
+                        locInProtein = singlePeptide.OneBasedStartResidue;
                     else if (nice.Key == singlePeptide.Length + 2)
-                        locInProtein = singlePeptide.OneBasedEndResidueInProtein;
+                        locInProtein = singlePeptide.OneBasedEndResidue;
                     else
-                        locInProtein = singlePeptide.OneBasedStartResidueInProtein + nice.Key - 2;
-                    modsSeenAndLocalized.Add((singlePeptide.Protein.Accession, nice.Value.IdWithMotif, locInProtein));
+                        locInProtein = singlePeptide.OneBasedStartResidue + nice.Key - 2;
+                    modsSeenAndLocalized.Add((singlePeptide.Parent.Accession, nice.Value.IdWithMotif, locInProtein));
                 }
             }
 
