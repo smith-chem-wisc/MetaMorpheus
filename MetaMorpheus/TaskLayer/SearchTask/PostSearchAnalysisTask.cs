@@ -589,6 +589,7 @@ namespace TaskLayer
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                 matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+                useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
@@ -857,7 +858,7 @@ namespace TaskLayer
                     bestPsm.ScanRetentionTime));
             }
             
-            WriteSpectralLibrary(spectraLibrary, Parameters.OutputFolder);
+            WriteSpectrumLibrary(spectraLibrary, Parameters.OutputFolder);
         }
         private void WriteProteinResults()
         {

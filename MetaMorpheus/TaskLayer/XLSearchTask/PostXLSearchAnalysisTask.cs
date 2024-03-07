@@ -276,7 +276,7 @@ namespace TaskLayer
                     rt: bestPsm.ScanRetentionTime));
             }
 
-            WriteSpectralLibrary(librarySpectra, outputFolder);
+            WriteSpectrumLibrary(librarySpectra, outputFolder);
         }
     }
 }

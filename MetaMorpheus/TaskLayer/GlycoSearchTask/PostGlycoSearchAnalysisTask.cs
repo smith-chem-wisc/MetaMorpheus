@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using FlashLFQ;
 using Omics.Modifications;
+using Omics.SpectrumMatch;
 using pepXML.Generated;
 using Proteomics.ProteolyticDigestion;
 using ThermoFisher.CommonCore.Data;
@@ -144,12 +145,22 @@ namespace TaskLayer
                 GlycoAccessionAnalysis(filteredGsms, OutputFolder);//Do the whole group last so inference is done on the whole group
             }
             
-
             QuantificationAnalysis();
             WriteQuantificationResults();
 
             var writtenFileSingle = Path.Combine(OutputFolder, "AllPSMs.psmtsv");
             WriteGlycoFile.WritePsmGlycoToTsv(filteredGsms, writtenFileSingle, true);
+
+            if (Parameters.GlycoSearchParameters.WriteSpectrumLibrary)
+            {
+                List<LibrarySpectrum> spectrumLibrary = new List<LibrarySpectrum>();
+                foreach (var gsm in filteredGsms)
+                {
+                    spectrumLibrary.Add(new LibrarySpectrum(gsm.FullSequence, gsm.ScanPrecursorMonoisotopicPeakMz, gsm.ScanPrecursorCharge, gsm.MatchedFragmentIons,gsm.ScanRetentionTime,gsm.IsDecoy));
+                }
+                WriteSpectrumLibrary(spectrumLibrary, OutputFolder);
+            }
+
             FinishedWritingFile(writtenFileSingle, new List<string> { taskId });
 
             return MyTaskResults;

@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using EngineLayer;
-using EngineLayer.Gptmd;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
@@ -14,8 +13,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using Omics;
@@ -696,7 +693,7 @@ namespace TaskLayer
             }
         }
 
-        protected static void WriteSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
+        protected static void WriteSpectrumLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
             string spectrumFilePath = outputFolder + "\\SpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";

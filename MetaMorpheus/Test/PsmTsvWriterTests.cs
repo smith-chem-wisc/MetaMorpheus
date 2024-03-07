@@ -71,7 +71,7 @@ namespace Test
             string ppmErrorString = myPsmStringSplit[24];
 
             //The two different mods produce two separate mass errors, which are both then reported
-            Assert.AreEqual("0.00|11801.30", ppmErrorString);
+            Assert.AreEqual("0.00000|11801.30000", ppmErrorString);
 
             //Make sure we see produt ion neutral losses in the output.
             string matchedIonSeries = myPsmStringSplit[39];
@@ -94,7 +94,7 @@ namespace Test
             myPsmStringSplit = myPsmString.Split('\t');
             ppmErrorString = myPsmStringSplit[24];
 
-            Assert.AreEqual("0.00", ppmErrorString);
+            Assert.AreEqual("0.00000", ppmErrorString);
         }
     }
 }

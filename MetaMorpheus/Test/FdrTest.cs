@@ -172,7 +172,6 @@ namespace Test
                 CommonParameters, fsp, new List<string>()).Run());
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            var nonNullPsmsOriginalCopy = allPsmsArray.Where(p => p != null).ToList();
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
             SpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
@@ -213,7 +212,7 @@ namespace Test
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
 
-            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Parent.IsDecoy);
+            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Parent.IsDecoy);
             Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
@@ -224,7 +223,6 @@ namespace Test
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
-            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
 
@@ -288,7 +286,7 @@ namespace Test
             var (vnotch, vpwsm) = variantPSM.BestMatchingBioPolymersWithSetMods.First();
 
             massError.Add(Path.GetFileName(variantPSM.FullFilePath), 0);
-            PsmData variantPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, vnotch, !maxScorePsm.IsDecoy);
+            PsmData variantPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, variantPSM,  fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, vnotch, !maxScorePsm.IsDecoy);
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
 
@@ -408,7 +406,7 @@ namespace Test
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
-            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Parent.IsDecoy);
+            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Parent.IsDecoy);
             Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length / 10.0;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
@@ -419,7 +417,6 @@ namespace Test
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
-            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount * reps));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
         }
@@ -644,15 +641,15 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" };
+            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "top-down";
             string[] trainingInfoTopDown = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle" };
+            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle" };
             Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
 
-            List<string> positiveAttributes = new List<string> { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "PsmCount", "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta" };
+            List<string> positiveAttributes = new List<string> { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta" };
             List<string> negativeAttributes = new List<string> { "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "IsInter", "IsIntra" };
 
             foreach (string attribute in positiveAttributes)
@@ -671,32 +668,31 @@ namespace Test
                 PrecursorChargeDiffToMode = 2,
                 DeltaScore = 3,
                 Notch = 4,
-                PsmCount = 5,
-                ModsCount = 6,
-                AbsoluteAverageFragmentMassErrorFromMedian = 7,
-                MissedCleavagesCount = 8,
-                Ambiguity = 9,
-                LongestFragmentIonSeries = 10,
-                ComplementaryIonCount = 11,
-                HydrophobicityZScore = 12,
-                IsVariantPeptide = 13,
-                AlphaIntensity = 14,
-                BetaIntensity = 15,
-                LongestFragmentIonSeries_Alpha = 16,
-                LongestFragmentIonSeries_Beta = 17,
-                IsDeadEnd = 18,
-                IsLoop = 19,
-                IsInter = 20,
-                IsIntra = 21,
+                ModsCount = 5,
+                AbsoluteAverageFragmentMassErrorFromMedian = 6,
+                MissedCleavagesCount = 7,
+                Ambiguity = 8,
+                LongestFragmentIonSeries = 9,
+                ComplementaryIonCount = 10,
+                HydrophobicityZScore = 11,
+                IsVariantPeptide = 12,
+                AlphaIntensity = 13,
+                BetaIntensity = 14,
+                LongestFragmentIonSeries_Alpha = 15,
+                LongestFragmentIonSeries_Beta = 16,
+                IsDeadEnd = 17,
+                IsLoop = 18,
+                IsInter = 19,
+                IsIntra = 20,
                 Label = false,
-                SpectralAngle = 22,
-                HasSpectralAngle = 23
+                SpectralAngle = 21,
+                HasSpectralAngle = 22
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t18\t19\t22\t23";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22";
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
-            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t9\t10\t11\t22\t23";
+            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22";
             Assert.AreEqual(topDownToString, pd.ToString("top-down"));
         }
     }

@@ -18,7 +18,7 @@ namespace EngineLayer.GlycoSearch
         Level3
     }
 
-    public class GlycoSpectralMatch : PeptideSpectralMatch
+    public class GlycoSpectralMatch : SpectralMatch
     {
         public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)

@@ -159,6 +159,7 @@ namespace MetaMorpheusGUI
             WriteDecoyCheckBox.IsChecked = task._glycoSearchParameters.WriteDecoys;
             WriteContaminantCheckBox.IsChecked = task._glycoSearchParameters.WriteContaminants;
             WriteIndividualResultsCheckBox.IsChecked = task._glycoSearchParameters.WriteIndividualFiles;
+            WriteSpectrumLibraryCheckBox.IsChecked = task._glycoSearchParameters.WriteSpectrumLibrary;
 
             CheckBoxDecoy.IsChecked = task._glycoSearchParameters.DecoyType != DecoyType.None;
             RadioButtonReverseDecoy.IsChecked = task._glycoSearchParameters.DecoyType == DecoyType.Reverse;
@@ -309,6 +310,7 @@ namespace MetaMorpheusGUI
             TheTask._glycoSearchParameters.WriteDecoys = WriteDecoyCheckBox.IsChecked.Value;
             TheTask._glycoSearchParameters.WriteContaminants = WriteContaminantCheckBox.IsChecked.Value;
             TheTask._glycoSearchParameters.WriteIndividualFiles = WriteIndividualResultsCheckBox.IsChecked.Value;
+            TheTask._glycoSearchParameters.WriteSpectrumLibrary = WriteSpectrumLibraryCheckBox.IsChecked.Value;
 
             if (CheckBoxDecoy.IsChecked.Value)
             {
