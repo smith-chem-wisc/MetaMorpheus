@@ -57,12 +57,12 @@ namespace EngineLayer
         public List<GlycanIon> Ions { get; set; }
         public bool Decoy { get; private set; }
 
-        public HashSet<int> DiagnosticIons
+        public HashSet<int> DiagnosticIons // The all posible oxonium come from each monoscarride
         {
             get
             {
                 HashSet<int> diagnosticIons = new HashSet<int>();
-                if (Kind[0] >= 1)
+                if (Kind[0] >= 1) // the following are three two kind of oxonium ions form hexose
                 {
                     diagnosticIons.Add(10902895 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(11503951 - hydrogenAtomMonoisotopicMass);
@@ -77,7 +77,7 @@ namespace EngineLayer
                     diagnosticIons.Add(18607663 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(20408720 - hydrogenAtomMonoisotopicMass);
                 }
-                if (Kind[1] >= 1 && Kind[0] >= 1)
+                if (Kind[1] >= 1 && Kind[0] >= 1) // that is the oxonium from Hex+HexNAc
                 {
                     diagnosticIons.Add(36614002 - hydrogenAtomMonoisotopicMass);
                 }
@@ -104,7 +104,7 @@ namespace EngineLayer
         //Glycan mass dictionary
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
         //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C:Acetyl for Neu5Ac
-        //X: C5H10O5 Xylose
+        //X: C5H10O5 Xylose, K = ketodeoxyoctulosonic acid (Kdn) C9H16NO9
         //If add more monosacchrades here, please change GetMass, GetKind, GetKindString, GlycanBox constructor, search byte[].
         private readonly static Dictionary<char, int> CharMassDic = new Dictionary<char, int> {
             { 'H', 16205282 },
@@ -117,9 +117,10 @@ namespace EngineLayer
             { 'Y', 2298977 },
             { 'C',  4201056 },
             { 'X', 15005282 },
+            { 'K', 25006897 },
         };
 
-        //Compitable with Byonic, for loading glycan by Kind.
+        //Compitable with Byonic, for loading glycan by Kind. Byonic use Hex(1)HexNAc(2)Fuc(1) representation, our dict is H1N2F1.
         public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
         {
             {"Hex", new Tuple<char, int>('H', 0) },
@@ -131,7 +132,8 @@ namespace EngineLayer
             {"Sulfo", new Tuple<char, int>('S', 6) },
             {"Na", new Tuple<char, int>('Y', 7) },
             {"Ac", new Tuple<char, int>('C', 8) },
-            {"Xylose", new Tuple<char, int>('X', 9) }
+            {"Xylose", new Tuple<char, int>('X', 9) },
+            {"Kdn", new Tuple<char, int>('K', 10) }
         };
 
         public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int>
@@ -184,7 +186,7 @@ namespace EngineLayer
             }
             if (!isOglycan)
             {
-                glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
+                glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
             }
             glycanIons.Add(new GlycanIon(null, 0, kind, mass));
 
@@ -389,6 +391,9 @@ namespace EngineLayer
 
         #region Transfer information
 
+
+        //The function is to calculate the mass of a glycan based on its composition. Ex. [ "(N(H)(N))" is HexNAcHexHexNAc.] then the mass is 568.21156
+        // input: a string of glycan composition. Output: the mass of the glycan.
         private static int GetMass(string structure)
         {
             int y = CharMassDic['H'] * structure.Count(p => p == 'H') +
@@ -400,11 +405,15 @@ namespace EngineLayer
                 CharMassDic['S'] * structure.Count(p => p == 'S') +
                 CharMassDic['Y'] * structure.Count(p => p == 'Y') +
                 CharMassDic['C'] * structure.Count(p => p == 'C') +
-                CharMassDic['X'] * structure.Count(p => p == 'X')
+                CharMassDic['X'] * structure.Count(p => p == 'X') +
+                CharMassDic['K'] * structure.Count(p => p == 'K')
                 ;
             return y;
         }
 
+        //The function is to calculate the mass of a glycan based on its composition. Ex. [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0] is HexNAcHexFuc.]
+        // then the mass is  625.2167.
+        // input: a kind list of glycan composition. Output: the mass of the glycan.
         public static int GetMass(byte[] kind)
         {
             int mass = CharMassDic['H'] * kind[0] +
@@ -416,12 +425,16 @@ namespace EngineLayer
             CharMassDic['S'] * kind[6] +
             CharMassDic['Y'] * kind[7] +
             CharMassDic['C'] * kind[8] +
-            CharMassDic['X'] * kind[9]
+            CharMassDic['X'] * kind[9] +
+            CharMassDic['K'] * kind[10]
             ;
 
             return mass;
         }
 
+        //The function is to convert the structure form of the glycan composition into the list form.
+        //Ex. [ "(N(H)(N))" is HexNAcHexHexNAc.] then the kind is [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0]
+        //input: a string of glycan composition. Output: a kind list of glycan composition.
         public static byte[] GetKind(string structure)
         {
             var kind = new byte[] 
@@ -435,10 +448,15 @@ namespace EngineLayer
                 Convert.ToByte(structure.Count(p => p == 'Y')),
                 Convert.ToByte(structure.Count(p => p == 'C')),
                 Convert.ToByte(structure.Count(p => p == 'X')),
+                Convert.ToByte(structure.Count(p => p == 'K')),
             };
             return kind;
         }
 
+
+        //The function is to convert the list form into the kindString form.
+        //Ex. the kind is [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0] then the kindString is "H1N1A1".
+        //input: a kind list of glycan composition. Output: a String represent glycan composition.
         public static string GetKindString(byte[] Kind)
         {
             string H = Kind[0]==0 ? "" : "H" + Kind[0].ToString();
@@ -451,7 +469,8 @@ namespace EngineLayer
             string Y = Kind[7] == 0 ? "" : "Y" + Kind[7].ToString();
             string C = Kind[8] == 0 ? "" : "C" + Kind[8].ToString();
             string X = Kind[9] == 0 ? "" : "X" + Kind[9].ToString();
-            string kindString = H + N + A + G + F + P + S + Y + C + X;
+            string K = Kind[10] == 0 ? "" : "K" + Kind[10].ToString();
+            string kindString = H + N + A + G + F + P + S + Y + C + X + K;
             return kindString;
         }
 
@@ -488,6 +507,8 @@ namespace EngineLayer
             return modification;
         }
 
+
+        // the function is creat a modification tyoe data from the based on glycan information.
         public static Modification OGlycanToModification(Glycan glycan)
         {
             //TO THINK: what the neutralLoss for O-Glyco?
