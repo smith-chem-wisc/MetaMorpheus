@@ -226,7 +226,7 @@ namespace EngineLayer.FdrAnalysis
 
         public void CountPsm()
         {
-            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.Protease);
+            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.DigestionAgent);
 
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
