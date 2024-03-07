@@ -2,8 +2,10 @@
 using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 

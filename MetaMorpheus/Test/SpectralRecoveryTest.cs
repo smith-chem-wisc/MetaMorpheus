@@ -14,6 +14,7 @@ using Easy.Common.Extensions;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
 using Omics;
+using Omics.Modifications;
 
 namespace Test
 {

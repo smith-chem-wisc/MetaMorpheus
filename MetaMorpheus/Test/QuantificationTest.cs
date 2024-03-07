@@ -4,15 +4,15 @@ using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
+using Omics.Fragmentation;
+using Omics.Modifications;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using TaskLayer;
 
 namespace Test
@@ -192,7 +192,7 @@ namespace Test
                             mzAnalyzer: MZAnalyzerType.Orbitrap, totalIonCurrent: intensities.Sum(), injectionTime: 1.0, noiseData: null, nativeId: "scan=1");
 
                         // create the MS2 scan
-                        var pep = new PeptideWithSetModifications(peptide, new Dictionary<string, Proteomics.Modification>());
+                        var pep = new PeptideWithSetModifications(peptide, new Dictionary<string, Modification>());
                         List<Product> frags = new List<Product>();
                         pep.Fragment(DissociationType.HCD, FragmentationTerminus.Both, frags);
                         double[] mz2 = frags.Select(v => v.NeutralMass.ToMz(1)).ToArray();

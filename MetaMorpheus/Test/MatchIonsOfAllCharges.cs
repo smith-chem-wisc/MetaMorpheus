@@ -7,18 +7,17 @@ using IO.MzML;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
 using Chemistry;
 using System;
 using MassSpectrometry;
 using Nett;
-using EngineLayer.Gptmd;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using static System.Net.WebRequestMethods;
+using Omics.Fragmentation;
 
 namespace Test
 {
@@ -461,10 +460,10 @@ namespace Test
             Product c = new Product(ProductType.b, FragmentationTerminus.N, 3, 3, 1, 0);
             Product d = new Product(ProductType.b, FragmentationTerminus.N, 4, 4, 1, 0);
             var decoyPeptideTheorProducts = new List<Product> { a, b, c, d };
-            MatchedFragmentIon aa = new MatchedFragmentIon(ref a, 1, 1, 1);
-            MatchedFragmentIon bb = new MatchedFragmentIon(ref b, 2, 2, 1);
-            MatchedFragmentIon cc = new MatchedFragmentIon(ref c, 3, 3, 1);
-            MatchedFragmentIon dd = new MatchedFragmentIon(ref d, 4, 4, 1);
+            MatchedFragmentIon aa = new MatchedFragmentIon(a, 1, 1, 1);
+            MatchedFragmentIon bb = new MatchedFragmentIon(b, 2, 2, 1);
+            MatchedFragmentIon cc = new MatchedFragmentIon(c, 3, 3, 1);
+            MatchedFragmentIon dd = new MatchedFragmentIon(d, 4, 4, 1);
             var peaks = new List<MatchedFragmentIon> { aa, bb, cc, dd };
             var librarySpectrum = new LibrarySpectrum("library", 0, 0, peaks, 0);
             var decoySpectum = SpectralLibrarySearchFunction.GetDecoyLibrarySpectrumFromTargetByReverse(librarySpectrum, decoyPeptideTheorProducts);

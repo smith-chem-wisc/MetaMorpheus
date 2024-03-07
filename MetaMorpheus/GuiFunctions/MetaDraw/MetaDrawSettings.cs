@@ -1,15 +1,12 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using OxyPlot;
-using Proteomics;
-using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Windows.Media;
+using Omics.Fragmentation;
 
 namespace GuiFunctions
 {

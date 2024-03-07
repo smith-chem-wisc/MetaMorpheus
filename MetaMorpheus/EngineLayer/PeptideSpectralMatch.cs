@@ -6,7 +6,7 @@ using Omics.Modifications;
 
 namespace EngineLayer
 {
-    public class PeptideSpectralMatch : IComparable<PeptideSpectralMatch>
+    public class PeptideSpectralMatch : SpectralMatch
     {
         public PeptideSpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex,
             Ms2ScanWithSpecificMass scan, CommonParameters commonParameters,
@@ -49,28 +49,5 @@ namespace EngineLayer
         }
         #endregion
 
-
-        /// <summary>
-        /// There are a few key locations in MetaMorpheus where we want to have psms sorted in a consistent manner.
-        /// These are for q-value determination and for when we write the psms to psmtsv. 
-        /// </summary>
-        /// <param name="otherPsm"></param>
-        /// <returns></returns>
-        public int CompareTo(PeptideSpectralMatch otherPsm)
-        {
-            if (Math.Abs(this.Score - otherPsm.Score) > ToleranceForScoreDifferentiation)
-            {
-                return this.Score.CompareTo(otherPsm.Score);
-            }
-            else if (Math.Abs(this.DeltaScore - otherPsm.DeltaScore) > ToleranceForScoreDifferentiation)
-            {
-                return this.RunnerUpScore.CompareTo(otherPsm.RunnerUpScore);
-            }
-            else if (otherPsm.PrecursorMassErrorPpm != null && (Math.Abs(otherPsm.PrecursorMassErrorPpm.First() - this.PrecursorMassErrorPpm.First()) > 0.01))
-            {
-                return Math.Abs(otherPsm.PrecursorMassErrorPpm.First()).CompareTo(Math.Abs(this.PrecursorMassErrorPpm.First())); //precursor mass errors defined for both otherPsms. Reverse the comparision so that lower ppm error comes first
-            }
-            return otherPsm.ScanNumber.CompareTo(this.ScanNumber); //reverse the comparision so that the lower scan number comes first.
-        }
     }
 }

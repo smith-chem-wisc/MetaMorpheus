@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EngineLayer;
+using EngineLayer.FdrAnalysis;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -52,51 +54,6 @@ namespace EngineLayer.FdrAnalysis
                 QValueTraditional(psms);
                 if (psms.Count > 100)
                 {
-                    QValueInverted(psms);
-                }
-
-                // set q-value thresholds such that a lower scoring PSM can't have
-                // a higher confidence than a higher scoring PSM
-                //Populate min qValues
-                double qValueThreshold = 1.0;
-                double[] qValueNotchThreshold = new double[MassDiffAcceptorNumNotches + 1];
-                for (int i = 0; i < qValueNotchThreshold.Length; i++)
-                {
-                    qValueNotchThreshold[i] = 1.0;
-                }
-
-                for (int i = psms.Count - 1; i >= 0; i--)
-                {
-                    SpectralMatch psm = psms[i];
-
-                    // threshold q-values
-                    if (psm.FdrInfo.QValue > qValueThreshold)
-                    {
-                        psm.FdrInfo.QValue = qValueThreshold;
-                    }
-                    else if (psm.FdrInfo.QValue < qValueThreshold)
-                    {
-                        qValueThreshold = psm.FdrInfo.QValue;
-                    }
-
-                    // threshold notch q-values
-                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
-                    if (psm.FdrInfo.QValueNotch > qValueNotchThreshold[notch])
-                    {
-                        psm.FdrInfo.QValueNotch = qValueNotchThreshold[notch];
-                    }
-                    else if (psm.FdrInfo.QValueNotch < qValueNotchThreshold[notch])
-                    {
-                        qValueNotchThreshold[notch] = psm.FdrInfo.QValueNotch;
-                    }
-                }
-            }
-            if (DoPEP)
-            {
-                Compute_PEPValue(myAnalysisResults);
-            }
-            CountPsm();
-        }
                     if (DoPEP)
                     {
                         Compute_PEPValue(myAnalysisResults);
@@ -234,26 +191,24 @@ namespace EngineLayer.FdrAnalysis
         /// <summary>
         /// This method gets the PSM count for each psm with q-value < 0.01 and adds that information to the individual psm.
         /// </summary>
-        public void CountPsm(List<PeptideSpectralMatch> proteasePsms)
+        public void CountPsm(List<SpectralMatch> proteasePsms)
         {
             // exclude ambiguous psms and has a fdr cutoff = 0.01
             var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
 
-                var fullSequenceGroups = allUnambiguousProteasePsms.Where(p => p.FdrInfo.QValue < 0.01 && p.FdrInfo.QValueNotch < 0.01)
-                    .Select(p => p.FullSequence).GroupBy(s => s);
+            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
+                    psm.FdrInfo.QValue <= 0.01
+                    && psm.FdrInfo.QValueNotch <= 0.01)
+                .GroupBy(p => p.FullSequence);
 
-                Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
-                foreach (var fullSequence in fullSequenceGroups)
-                {
-                    sequenceToPsmCount.Add(fullSequence.Key, fullSequence.Count());
-                }
+            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
 
             foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
             {
                 sequenceToPsmCount.TryAdd(sequenceGroup.First().FullSequence, sequenceGroup.Count());
             }
 
-            foreach (PeptideSpectralMatch psm in allUnambiguousPsms)
+            foreach (SpectralMatch psm in allUnambiguousPsms)
             {
                 if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
                 {

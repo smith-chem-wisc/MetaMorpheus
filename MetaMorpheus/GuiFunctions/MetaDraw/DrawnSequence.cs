@@ -1,6 +1,5 @@
 ﻿using EngineLayer;
 using OxyPlot;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
-using Proteomics;
+using Omics.Fragmentation;
 
 namespace GuiFunctions
 {

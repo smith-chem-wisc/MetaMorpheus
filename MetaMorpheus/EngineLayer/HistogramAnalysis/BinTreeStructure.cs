@@ -1,10 +1,8 @@
-﻿using MassSpectrometry;
-using MathNet.Numerics.Statistics;
+﻿using MathNet.Numerics.Statistics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Proteomics.Fragmentation;
 
 namespace EngineLayer.HistogramAnalysis
 {

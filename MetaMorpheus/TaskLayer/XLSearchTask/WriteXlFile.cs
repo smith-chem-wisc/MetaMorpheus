@@ -1,15 +1,14 @@
 ﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
-using EngineLayer.GlycoSearch;
 using Proteomics;
-using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Xml.Serialization;
-using Easy.Common.Extensions;
+using Omics.Modifications;
+using Omics.Fragmentation.Peptide;
 
 namespace TaskLayer
 {

@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using EngineLayer;
 using MzLibUtil;
 using Nett;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
-using Proteomics.Fragmentation;
+using Omics.Fragmentation;
 
 namespace TaskLayer
 {

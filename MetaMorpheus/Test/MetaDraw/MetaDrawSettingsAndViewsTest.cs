@@ -7,8 +7,8 @@ using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.ViewModels.Legends;
 using NUnit.Framework;
+using Omics.Fragmentation;
 using OxyPlot;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 
 namespace Test.MetaDraw

@@ -2,11 +2,11 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Fragmentation;
+using Omics.Modifications;
 
 namespace Test
 {
@@ -169,8 +169,8 @@ namespace Test
             Product productC3 = new Product(ProductType.y, FragmentationTerminus.C, 0, 3, 4, 0);
             Product productC4 = new Product(ProductType.y, FragmentationTerminus.C, 0, 4, 3, 0);
 
-            MatchedFragmentIon mfiC3 = new MatchedFragmentIon(ref productC3, 0, 0, 1);
-            MatchedFragmentIon mfiC4 = new MatchedFragmentIon(ref productC4, 0, 0, 1);
+            MatchedFragmentIon mfiC3 = new MatchedFragmentIon(productC3, 0, 0, 1);
+            MatchedFragmentIon mfiC4 = new MatchedFragmentIon(productC4, 0, 0, 1);
 
             List<SpectralMatch> psms = new List<SpectralMatch>
             {

@@ -3,6 +3,7 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
+using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;

@@ -1,17 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using System.Windows.Controls;
 using EngineLayer;
 using GuiFunctions;
 using NUnit.Framework;
 using OxyPlot;
 using OxyPlot.Annotations;
-using Proteomics.Fragmentation;
 using TaskLayer;
 
 namespace Test.MetaDraw

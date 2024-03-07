@@ -1,6 +1,5 @@
 ﻿using Chemistry;
 using MzLibUtil;
-using Proteomics.Fragmentation;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -11,7 +10,7 @@ using System.Text.RegularExpressions;
 using Easy.Common.Extensions;
 using Omics.Fragmentation.Peptide;
 using Omics.SpectrumMatch;
-using ThermoFisher.CommonCore.Data.Business;
+using Omics.Fragmentation;
 
 namespace EngineLayer
 {
@@ -443,7 +442,7 @@ namespace EngineLayer
                     //TODO: figure out amino acid position
                     var product = new Product(peakProductType, terminus, experMz, fragmentNumber, 0, 0);
 
-                    matchedFragmentIons.Add(new MatchedFragmentIon(ref product, experMz, experIntensity, fragmentCharge));
+                    matchedFragmentIons.Add(new MatchedFragmentIon(product, experMz, experIntensity, fragmentCharge));
                 }
             }
 
@@ -590,12 +589,12 @@ namespace EngineLayer
                     out var terminus))
             {
                 int peptideLength = peptideSequence.IsNotNullOrEmptyOrWhiteSpace() ? peptideSequence.Length : 25; // Arbitrary default peptide length
-                product = new Product(peakProductType, terminus, experMz.ToMass(fragmentCharge), fragmentNumber,
-                    aminoAcidPosition: terminus == FragmentationTerminus.N ? fragmentNumber : peptideLength - fragmentNumber,
+                product = new Product(peakProductType, terminus, experMz.ToMass(fragmentCharge), fragmentNumber, 
+                    residuePosition: terminus == FragmentationTerminus.N ? fragmentNumber : peptideLength - fragmentNumber,
                     neutralLoss);
             }
 
-            return new MatchedFragmentIon(ref product, experMz, experIntensity, fragmentCharge);
+            return new MatchedFragmentIon(product, experMz, experIntensity, fragmentCharge);
         }
 
         private void IndexSpectralLibrary(string path)

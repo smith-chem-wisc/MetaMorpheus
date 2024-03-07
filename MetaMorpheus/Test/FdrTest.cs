@@ -2,13 +2,10 @@
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
-using EngineLayer.Indexing;
-using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -17,6 +14,9 @@ using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
 
 namespace Test
 {
@@ -262,7 +262,7 @@ namespace Test
             PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
 
             Product prod = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
-            List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(ref prod, 1, 1.0, 1) };
+            List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(prod, 1, 1.0, 1) };
 
             SpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new CommonParameters(), mfi);
 

@@ -1,10 +1,10 @@
 ﻿using MassSpectrometry;
-using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics.Fragmentation;
+using Omics.Modifications;
 
 namespace EngineLayer.CrosslinkSearch
 {

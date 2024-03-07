@@ -1,8 +1,6 @@
-﻿using Chemistry;
-using EngineLayer;
+﻿using EngineLayer;
 using MassSpectrometry;
 using OxyPlot;
-using Proteomics.Fragmentation;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,6 +16,7 @@ using LinearAxis = OxyPlot.Axes.LinearAxis;
 using LineSeries = OxyPlot.Series.LineSeries;
 using Plot = mzPlot.Plot;
 using TextAnnotation = OxyPlot.Annotations.TextAnnotation;
+using Omics.Fragmentation;
 
 namespace GuiFunctions
 {

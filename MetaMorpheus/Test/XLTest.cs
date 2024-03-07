@@ -9,7 +9,6 @@ using Nett;
 using NUnit.Framework;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -18,6 +17,9 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -605,8 +607,6 @@ namespace Test
                     Assert.GreaterOrEqual(csm.Score, csm.BetaPeptide.Score);
                 }
             }
-            
-
 
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
             List<string> sequences = new List<string>();

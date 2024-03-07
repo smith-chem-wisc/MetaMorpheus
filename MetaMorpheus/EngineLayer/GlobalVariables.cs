@@ -1,7 +1,6 @@
 ﻿using Chemistry;
 using MassSpectrometry;
 using Nett;
-using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -11,7 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using TopDownProteomics;
+using Omics.Modifications;
 using UsefulProteomicsDatabases;
 
 namespace EngineLayer

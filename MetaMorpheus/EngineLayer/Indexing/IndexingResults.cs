@@ -1,5 +1,4 @@
-﻿using Proteomics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
+﻿using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Text;
 

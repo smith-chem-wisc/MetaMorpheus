@@ -4,19 +4,13 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Chemistry;
-using Easy.Common.Extensions;
 using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using MassSpectrometry;
-using MassSpectrometry.MzSpectra;
 using mzPlot;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
@@ -24,7 +18,6 @@ using OxyPlot;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using Proteomics.Fragmentation;
 using Canvas = System.Windows.Controls.Canvas;
 using FontWeights = OxyPlot.FontWeights;
 using HorizontalAlignment = OxyPlot.HorizontalAlignment;
@@ -449,7 +442,7 @@ namespace GuiFunctions
                     libraryIon.NeutralTheoreticalProduct.AminoAcidPosition,
                     libraryIon.NeutralTheoreticalProduct.NeutralLoss);
 
-                mirroredLibraryIons.Add(new MatchedFragmentIon(ref neutralProduct, libraryIon.Mz,
+                mirroredLibraryIons.Add(new MatchedFragmentIon(neutralProduct, libraryIon.Mz,
                     multiplier * libraryIon.Intensity, libraryIon.Charge));
             }
 

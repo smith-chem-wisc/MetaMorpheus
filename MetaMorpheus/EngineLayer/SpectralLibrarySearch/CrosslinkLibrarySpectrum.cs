@@ -1,10 +1,10 @@
-﻿using Proteomics.Fragmentation;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using EngineLayer.CrosslinkSearch;
+using Omics.Fragmentation;
 using Omics.SpectrumMatch;
 
 namespace EngineLayer

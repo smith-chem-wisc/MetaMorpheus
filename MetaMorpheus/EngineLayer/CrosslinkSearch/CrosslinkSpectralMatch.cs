@@ -1,18 +1,18 @@
 ﻿using Easy.Common.Extensions;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MathNet.Numerics.Distributions;
+using Omics;
+using Omics.Fragmentation;
 
 namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSpectralMatch : PeptideSpectralMatch
     {
         public CrosslinkSpectralMatch(
-            PeptideWithSetModifications theBestPeptide,
+            IBioPolymerWithSetMods theBestPeptide,
             int notch,
             double score,
             int scanIndex,

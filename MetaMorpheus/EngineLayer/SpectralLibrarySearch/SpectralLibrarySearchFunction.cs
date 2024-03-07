@@ -1,14 +1,10 @@
-﻿using Chemistry;
-using MassSpectrometry;
-using Proteomics.Fragmentation;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using Proteomics.ProteolyticDigestion;
 using System.Threading.Tasks;
-using Easy.Common.Extensions;
+using Chemistry;
 using MassSpectrometry.MzSpectra;
 using Omics;
+using Omics.Fragmentation;
 using Omics.SpectrumMatch;
 
 namespace EngineLayer
@@ -97,7 +93,7 @@ namespace EngineLayer
                     {
                         double decoyFragmentMz = decoyPeptideTheorIon.NeutralMass.ToMz(targetIon.Charge);
                         Product temProduct = decoyPeptideTheorIon;
-                        decoyFragmentIons.Add(new MatchedFragmentIon(ref temProduct, decoyFragmentMz, targetIon.Intensity, targetIon.Charge));
+                        decoyFragmentIons.Add(new MatchedFragmentIon(temProduct, decoyFragmentMz, targetIon.Intensity, targetIon.Charge));
                     }
                 }
             }

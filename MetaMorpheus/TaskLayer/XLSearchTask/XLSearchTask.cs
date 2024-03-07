@@ -126,7 +126,7 @@ namespace TaskLayer
 
                     //The second Fragment index is for 'MS1-HCD_MS1-ETD_MS2s' type of data. If LowCID is used for MS1, ion-index is not allowed to use.
                     List<int>[] secondFragmentIndex = null;
-                    if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID && combinedParams.MS2ChildScanDissociationType!= DissociationType.Unknown
+                    if (combinedParams.MS2ChildScanDissociationType != DissociationType.LowCID && combinedParams.MS2ChildScanDissociationType != DissociationType.Unknown
                     && !CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(combinedParams.DissociationType, combinedParams.MS2ChildScanDissociationType))
                     {
                         //Becuase two different type of dissociation methods are used, the parameters are changed with different dissociation type.
@@ -168,7 +168,7 @@ namespace TaskLayer
                     {
                         List<PeptideWithSetModifications> peptideIndex_b = null;
 
-                        if(currentPartition == nextPartition)
+                        if (currentPartition == nextPartition)
                         {
                             peptideIndex_b = peptideIndex_a;
                         }
@@ -225,7 +225,7 @@ namespace TaskLayer
                 }
 
 
-                if (_ListOfCsmsPerMS2ScanParsimony.SelectMany(p=>p).Count() >0)
+                if (_ListOfCsmsPerMS2ScanParsimony.SelectMany(p => p).Count() > 0)
                 {
                     _ListOfCsmsPerMS2ScanParsimony = SortListsOfCsms(_ListOfCsmsPerMS2ScanParsimony, CommonParameters);
                     AssignCrossType(_ListOfCsmsPerMS2ScanParsimony);
@@ -248,7 +248,7 @@ namespace TaskLayer
 
                 completedFiles++;
                 ReportProgress(new ProgressEventArgs(completedFiles / currentRawFileList.Count, "Searching...", new List<string> { taskId, "Individual Spectra Files" }));
-            }     
+            }
 
             ReportProgress(new ProgressEventArgs(100, "Done with all searches!", new List<string> { taskId, "Individual Spectra Files" }));
 

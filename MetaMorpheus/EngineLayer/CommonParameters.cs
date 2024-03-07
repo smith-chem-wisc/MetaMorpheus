@@ -1,11 +1,11 @@
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Nett;
+using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 
 namespace EngineLayer

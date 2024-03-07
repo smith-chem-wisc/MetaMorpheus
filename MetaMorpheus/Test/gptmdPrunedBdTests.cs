@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics.Modifications;
+using Omics.Fragmentation;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -359,7 +361,7 @@ namespace Test
             CommonParameters commonParam = new CommonParameters();
             double[,] noiseData = new double[10000, 10000];
             noiseData[0,0] = 1.0; 
-            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
+            List<MatchedFragmentIon> matchedFragmentIons = new List<MatchedFragmentIon>() { };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum , 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
             testPostTaskParameters.ProteinList = new List<Protein>() { protein1, protein2 };
@@ -464,7 +466,7 @@ namespace Test
             CommonParameters commonParam = new CommonParameters();
             double[,] noiseData = new double[10000, 10000];
             noiseData[0, 0] = 1.0;
-            List<Proteomics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Proteomics.Fragmentation.MatchedFragmentIon>() { };
+            List<MatchedFragmentIon> matchedFragmentIons = new List<MatchedFragmentIon>() { };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum, 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
             testPostTaskParameters.ProteinList = proteinList;

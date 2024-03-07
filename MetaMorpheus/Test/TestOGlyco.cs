@@ -2,7 +2,6 @@
 using MassSpectrometry;
 using NUnit.Framework;
 using Proteomics;
-using Proteomics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -13,12 +12,9 @@ using UsefulProteomicsDatabases;
 using Nett;
 using EngineLayer.GlycoSearch;
 using FlashLFQ;
-using NUnit.Framework.Internal;
+using Omics.Fragmentation;
+using Omics.Modifications;
 using SpectralAveraging;
-using Chemistry;
-using MzLibUtil;
-using Readers;
-using System.Text;
 
 namespace Test
 {
