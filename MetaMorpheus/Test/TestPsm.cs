@@ -103,6 +103,41 @@ namespace Test
         }
 
         [Test]
+        public static void TestPpmAndDaMassErrors()
+        {
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters();
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add((origDataFile, CommonParameters));
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, CommonParameters);
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
+                ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                ProteinDbLoader.UniprotOrganismRegex, -1);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+            SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
+            bool writeSpetralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes,
+                new CommonParameters(), null, null, new List<string>(), writeSpetralLibrary).Run();
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1,
+                CommonParameters, fsp, new List<string>()).Run());
+            var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
+
+            foreach (SpectralMatch psm in nonNullPsms)
+            {
+                double daError =
+                    Math.Round(psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass, 5);
+                Assert.That(psm.PrecursorMassErrorDa.First(), Is.EqualTo(daError).Within(0.01));
+
+                double ppmError = Math.Round((psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass) / psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass * 1e6, 5);
+                Assert.That(psm.PrecursorMassErrorPpm.First(), Is.EqualTo(ppmError).Within(0.1));
+            }
+        }
+
+        [Test]
         public static void TestLongestFragmentIonSequence()
         {
             var variableModifications = new List<Modification>();
@@ -117,13 +152,12 @@ namespace Test
                     ProteinDbLoader.UniprotOrganismRegex, -1);
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\DbForPrunedDb.fasta");
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
-            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpetralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, 
                 new CommonParameters(), null, null, new List<string>(), writeSpetralLibrary).Run();
 
             List<int> longestSeriesObserved = new List<int>();
-
             List<int> longestSeriesExpected = new List<int> { 4, 3, 3, 7, 7, 7, 7, 3, 3, 12, 8, 4, 4, 13, 7, 7, 7, 12, 12, 3, 3, 3, 2, 2, 2, 2, 2, 2, 11, 11, 11, 11, 11, 11, 4, 4, 4, 4, 4, 4, 10, 10, 13, 13, 5, 5, 5, 5, 15, 15, 15, 15, 3, 3, 3, 15, 15, 15, 3, 3, 3, 16, 6, 2, 2, 18, 3, 2, 2, 2, 2, 2, 9, 9, 9, 3, 2, 2, 2, 2, 2, 3, 3, 12, 6, 3, };
 
             foreach (SpectralMatch psm in allPsmsArray)
@@ -136,7 +170,6 @@ namespace Test
                     }
                 }
             }
-
             Assert.IsTrue(longestSeriesExpected.SequenceEqual(longestSeriesObserved));
         }
 
@@ -337,28 +370,40 @@ namespace Test
 
             task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
 
-            var peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv"));
+            List<string> peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv")).ToList();
             var header = peptides[0].Split(new char[] { '\t' }).ToArray();
             int indexOfPsmCountInTsv = Array.IndexOf(header, PsmTsvHeader.PsmCount);
             int indexOfQValueInTsv = Array.IndexOf(header, PsmTsvHeader.QValue);
             Assert.That(indexOfPsmCountInTsv >= 0);
             Assert.That(indexOfQValueInTsv >= 0);
 
-            var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
-            var psmsGroupedBySequence = psmsFromTsv.GroupBy(p => p.FullSequence).ToList();
-            Assert.AreEqual(psmsGroupedBySequence.Count, peptides.Length - 1);
-
-            for (int i = 0; i < psmsGroupedBySequence.Count; i++)
+            peptides.RemoveAt(0);//delete header line
+            var allPeptidesQvalueBelowCutoff = 0;
+            foreach (var peptide in peptides)
             {
-                var peptideLine = peptides[i + 1];
-                var split = peptideLine.Split(new char[] { '\t' });
-
-                int psmCount = psmsGroupedBySequence[i].Count(p => p.QValue <= 0.01);
-                int psmCountWrittenToPeptidesFile = int.Parse(split[indexOfPsmCountInTsv]);
-
-                Assert.AreEqual(psmCount, psmCountWrittenToPeptidesFile);
+                string qValueString = peptide.Split('\t')[indexOfQValueInTsv].ToString();
+                double qValue = Convert.ToDouble(qValueString);
+                if (qValue < 0.01)
+                {
+                    allPeptidesQvalueBelowCutoff++;
+                }
             }
 
+            var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
+
+            var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
+
+            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
+                    psm.QValue <= 0.01)
+                .GroupBy(p => p.FullSequence).ToList();
+
+            Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, allPeptidesQvalueBelowCutoff);
+
+            List<string> results = File.ReadAllLines(Path.Combine(outputFolder, @"results.txt")).ToList();
+
+            string peptideCountFromResultsString = results.Where(r => r.Contains("All target peptides with q-value = 0.01 : ")).FirstOrDefault();
+            double peptideCountFromResults = Convert.ToDouble(peptideCountFromResultsString.Split(':')[1].ToString());
+            Assert.AreEqual(allPeptidesQvalueBelowCutoff, peptideCountFromResults);
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }

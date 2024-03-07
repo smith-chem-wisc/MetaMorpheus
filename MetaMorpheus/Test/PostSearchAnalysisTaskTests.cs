@@ -83,7 +83,7 @@ namespace Test
 
             allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             allResults = File.ReadAllLines(allResultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 498", allResults[12]);
+            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 499", allResults[12]);
             Assert.AreEqual("All target peptides with pep q-value = 0.01 : 179", allResults[13]);
             Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", allResults[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip target PSMs with pep q-value = 0.01: 230", allResults[18]);
@@ -96,7 +96,7 @@ namespace Test
 
             resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             results = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 498", results[7]);
+            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 499", results[7]);
             Assert.AreEqual("All target peptides with pep q-value = 0.01 : 179", results[8]);
             Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", results[9]);
             Assert.AreEqual("TaGe_SA_A549_3_snip target PSMs with pep q-value = 0.01: 230", results[13]);
