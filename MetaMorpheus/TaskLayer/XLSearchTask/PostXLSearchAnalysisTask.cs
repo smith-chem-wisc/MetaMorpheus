@@ -24,12 +24,12 @@ namespace TaskLayer
         }
 
         public MyTaskResults Run(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
-        {               
+        {
             // inter-crosslinks; different proteins are linked
             List<CrosslinkSpectralMatch> interCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter).OrderByDescending(p => p.XLTotalScore).ToList();
 
             // intra-crosslinks; crosslinks within a protein
-            List<CrosslinkSpectralMatch> intraCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Intra).OrderByDescending(p => p.XLTotalScore).ToList();       
+            List<CrosslinkSpectralMatch> intraCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Intra).OrderByDescending(p => p.XLTotalScore).ToList();
 
             var singlePsms = allPsms.Where(p => p.CrossType == PsmCrossType.Single).OrderByDescending(p => p.Score).ToList();
 
@@ -68,7 +68,7 @@ namespace TaskLayer
                 }
             }
 
-            if(xlSearchParameters.WriteSpectralLibrary)
+            if (xlSearchParameters.WriteSpectralLibrary)
             {
                 WriteXlSpectralLibrary(interCsms, intraCsms, singlePsms, outputFolder);
             }
@@ -106,7 +106,7 @@ namespace TaskLayer
 
             WriteCsvFiles(outputFolder, interCsms, intraCsms, singlePsms, loopPsms, deadendPsms, taskId, xlSearchParameters);
 
-            allFilterPsms.AddRange(interCsms.Where(p=>p.FdrInfo.QValue <= 0.2)); 
+            allFilterPsms.AddRange(interCsms.Where(p => p.FdrInfo.QValue <= 0.2));
             allFilterPsms.AddRange(intraCsms.Where(p => p.FdrInfo.QValue <= 0.2));
             allFilterPsms.AddRange(singlePsms.Where(p => p.FdrInfo.QValue <= 0.2));
             allFilterPsms.AddRange(loopPsms.Where(p => p.FdrInfo.QValue <= 0.2));
@@ -115,7 +115,7 @@ namespace TaskLayer
             return allFilterPsms;
         }
 
-        public void WriteCsvFiles(string outputFolder, List<CrosslinkSpectralMatch> interCsms, List<CrosslinkSpectralMatch> intraCsms,  List<CrosslinkSpectralMatch> singlePsms, 
+        public void WriteCsvFiles(string outputFolder, List<CrosslinkSpectralMatch> interCsms, List<CrosslinkSpectralMatch> intraCsms, List<CrosslinkSpectralMatch> singlePsms,
             List<CrosslinkSpectralMatch> loopPsms, List<CrosslinkSpectralMatch> deadendPsms, string taskId, XlSearchParameters xlSearchParameters)
         {
             // write interlink CSMs
@@ -125,7 +125,7 @@ namespace TaskLayer
                 WriteXlFile.WritePsmCrossToTsv(interCsms, file, 2);
                 FinishedWritingFile(file, new List<string> { taskId });
             }
-            
+
             if (xlSearchParameters.WriteOutputForPercolator)
             {
                 var interPsmsXLPercolator = interCsms.Where(p => p.Score >= 2 && p.BetaPeptide.Score >= 2).OrderBy(p => p.ScanNumber).ToList();
@@ -149,7 +149,7 @@ namespace TaskLayer
             }
 
             // write single peptides
-            
+
             if (singlePsms.Any())
             {
                 string writtenFileSingle = Path.Combine(outputFolder, "SinglePeptides" + ".tsv");
@@ -216,7 +216,7 @@ namespace TaskLayer
             for (int i = 0; i < csms.Count; i++)
             {
                 var csm = csms[i];
-                if (csm.IsDecoy || (csm.BetaPeptide!=null && csm.BetaPeptide.IsDecoy))
+                if (csm.IsDecoy || (csm.BetaPeptide != null && csm.BetaPeptide.IsDecoy))
                 {
                     cumulativeDecoy++;
                 }
@@ -237,15 +237,15 @@ namespace TaskLayer
 
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void WriteXlSpectralLibrary(
-            List<CrosslinkSpectralMatch> interCsms, 
-            List<CrosslinkSpectralMatch> intraCsms, 
+            List<CrosslinkSpectralMatch> interCsms,
+            List<CrosslinkSpectralMatch> intraCsms,
             List<CrosslinkSpectralMatch> singlePsms,
             string outputFolder)
         {
             IEnumerable<CrosslinkSpectralMatch> linkedCsms = interCsms.Concat(intraCsms);
             List<LibrarySpectrum> librarySpectra = new();
 
-            foreach (var csmGroups in linkedCsms.Where(c => 
+            foreach (var csmGroups in linkedCsms.Where(c =>
                     !c.IsDecoy
                     && c.FdrInfo.QValueNotch < 0.05)
                 .GroupBy(c => (c.UniqueSequence, c.ScanPrecursorCharge)))

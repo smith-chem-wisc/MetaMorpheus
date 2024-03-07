@@ -64,8 +64,13 @@ namespace TaskLayer
                         tmlString.Value == "AverageDdaScansWithOverlap"
                             ? SpectraFileAveragingType.AverageDdaScans
                             : Enum.Parse<SpectraFileAveragingType>(tmlString.Value))))
+            .ConfigureType<DigestionParams>(type => type
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.MaxMods)
+                .IgnoreProperty(p => p.MaxLength)
+                .IgnoreProperty(p => p.MinLength))
         );
-       
+
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
 
@@ -364,7 +369,7 @@ namespace TaskLayer
             var childScanNumbers = new HashSet<int>(scansWithPrecursors.SelectMany(p => p.SelectMany(v => v.ChildScans.Select(x => x.OneBasedScanNumber))));
             //var parentScans = scansWithPrecursors.Where(p => p.Any() && !childScanNumbers.Contains(p.First().OneBasedScanNumber)).Select(p=>p.First()).ToArray();
 
-            
+
             for (int i = 0; i < scansWithPrecursors.Length; i++)
             {
                 if (scansWithPrecursors[i].Any() && !childScanNumbers.Contains(scansWithPrecursors[i].First().OneBasedScanNumber))
@@ -449,7 +454,7 @@ namespace TaskLayer
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
-                productDeconParams: commonParams.ProductDeconvolutionParameters );
+                productDeconParams: commonParams.ProductDeconvolutionParameters);
 
             return returnParams;
         }
@@ -683,7 +688,7 @@ namespace TaskLayer
         protected string UpdateSpectralLibrary(List<LibrarySpectrum> spectrumLibrary, string outputFolder)
         {
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
-            string spectrumFilePath = outputFolder + "\\updateSpectralLibrary" +"_" + startTimeForAllFilenames + ".msp";
+            string spectrumFilePath = outputFolder + "\\updateSpectralLibrary" + "_" + startTimeForAllFilenames + ".msp";
             using (StreamWriter output = new StreamWriter(spectrumFilePath))
             {
 
@@ -752,7 +757,7 @@ namespace TaskLayer
         {
             return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => (b.Split('\t').First(), b.Split('\t').Last())).ToList();
         }
-        
+
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
         {
             MyTaskResults.AddResultText(e.ToString());
