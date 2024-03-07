@@ -390,9 +390,7 @@ namespace Test
             }
 
             var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
-
             var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
-
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                     psm.QValue<= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
