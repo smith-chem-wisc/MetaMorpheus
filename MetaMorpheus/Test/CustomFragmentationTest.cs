@@ -1,14 +1,14 @@
 ﻿using EngineLayer;
 using Nett;
 using NUnit.Framework;
+using Omics.Fragmentation;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using MassSpectrometry;
-using TaskLayer;
-using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
+using TaskLayer;
 
 namespace Test
 {
@@ -83,7 +83,7 @@ namespace Test
                 CollectionAssert.AreEquivalent(customIons, task.Item2.CommonParameters.CustomIons);
                 Assert.That(task.Item2.CommonParameters.DissociationType, Is.EqualTo(DissociationType.Custom));
             }
-            
+
             // run all tasks
             List<DbForTask> database = new List<DbForTask> { new DbForTask(myDatabase, false) };
             var engine = new EverythingRunnerEngine(taskCollection, new List<string> { myFile },

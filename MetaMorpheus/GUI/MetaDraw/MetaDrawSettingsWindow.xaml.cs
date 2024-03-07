@@ -1,16 +1,9 @@
-﻿using EngineLayer;
-using EngineLayer.GlycoSearch;
+﻿using EngineLayer.GlycoSearch;
 using GuiFunctions;
-using Nett;
 using OxyPlot;
-using Proteomics.Fragmentation;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 
