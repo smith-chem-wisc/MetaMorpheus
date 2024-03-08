@@ -5,6 +5,7 @@ using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Omics.Modifications;
@@ -141,6 +142,15 @@ namespace EngineLayer.ClassicSearch
                                 // calculate the peptide's score
                                 double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
 
+                                if (peptide.Protein.IsDecoy)
+                                {
+                                    lock (myLocks[scan.ScanIndex])
+                                    {
+                                        scan.TheScan.AddNewScore(thisScore);
+                                    }
+                                }
+                                
+                                
                                 AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
 
                                 if (SpectralLibrary != null)
@@ -167,6 +177,15 @@ namespace EngineLayer.ClassicSearch
             {
                 psm.ResolveAllAmbiguities();
             }
+
+            List<string> myOut = new List<string>();
+
+            foreach (var scan in ArrayOfSortedMS2Scans)
+            {
+                myOut.Add(scan.OneBasedScanNumber + "\t" + scan.ComputeTailorDenominator());
+            }
+
+            File.WriteAllLines(@"E:\Projects\Mann_11cell_lines\A549\A549_1\myTailor.tsv", myOut);
 
             return new MetaMorpheusEngineResults(this);
         }
