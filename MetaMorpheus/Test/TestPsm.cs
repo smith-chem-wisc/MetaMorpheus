@@ -6,19 +6,19 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Omics.Digestion;
-using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using PsmFromTsv = EngineLayer.PsmFromTsv;
 using Omics;
+using Omics.Digestion;
+using Omics.Fragmentation;
+using Omics.Modifications;
 
 namespace Test
 {
@@ -126,7 +126,7 @@ namespace Test
                 CommonParameters, fsp, new List<string>()).Run());
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
 
-            foreach (SpectralMatch psm in nonNullPsms)
+            foreach (PeptideSpectralMatch psm in nonNullPsms)
             {
                 double daError =
                     Math.Round(psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass, 5);
@@ -154,7 +154,7 @@ namespace Test
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
             SpectralMatch[] allPsmsArray = new SpectralMatch[listOfSortedms2Scans.Length];
             bool writeSpetralLibrary = false;
-            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes, 
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchModes,
                 new CommonParameters(), null, null, new List<string>(), writeSpetralLibrary).Run();
 
             List<int> longestSeriesObserved = new List<int>();
@@ -346,7 +346,7 @@ namespace Test
 
             var fdrEngine = new FdrAnalysisEngine(allPsms, 0, new CommonParameters(), fsp, new List<string>());
 
-            fdrEngine.CountPsm();
+            fdrEngine.CountPsm(allPsms);
             var psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
             Assert.That(psmGroups.First().Count() == 2);
             Assert.That(psmGroups.First().First().PsmCount == 1);
@@ -354,7 +354,7 @@ namespace Test
             psm2.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
             psm3.ResolveAllAmbiguities();
 
-            fdrEngine.CountPsm();
+            fdrEngine.CountPsm(allPsms);
             psmGroups = allPsms.Where(psm => psm.FullSequence != null && psm.PsmCount > 0).GroupBy(p => p.FullSequence).ToList();
             Assert.That(psmGroups.First().Count() == 3);
         }
@@ -390,9 +390,7 @@ namespace Test
             }
 
             var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
-
             var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
-
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                     psm.QValue <= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
@@ -514,7 +512,7 @@ namespace Test
             Protein p2 = new Protein("GGGGGGGGGGGGGGKPEPTIDEPEPTIDE", null);
             PeptideWithSetModifications pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList()[1];
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2});
+            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2 });
 
             //psm 1 - test first and last amino acid positions, along with one internal Amino Acid position
             Product productC3 = new Product(ProductType.y, FragmentationTerminus.C, 0, 3, 12, 0);
@@ -535,7 +533,7 @@ namespace Test
             MatchedFragmentIon mfiN6 = new MatchedFragmentIon(productN6, 0, 0, 1);
             MatchedFragmentIon mfiN8 = new MatchedFragmentIon(productN8, 0, 0, 1);
             MatchedFragmentIon mfiN13 = new MatchedFragmentIon(productN13, 0, 0, 1);
-            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfiC3, mfiC4, mfiC7, mfiC13, mfiN3, mfiN4, mfiN6, mfiN8, mfiN13};
+            List<MatchedFragmentIon> mfis1 = new List<MatchedFragmentIon> { mfiC3, mfiC4, mfiC7, mfiC13, mfiN3, mfiN4, mfiN6, mfiN8, mfiN13 };
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, 0, 1, null, new CommonParameters());
             SpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 0, 0, scan1, commonParameters, mfis1);

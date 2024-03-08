@@ -1,7 +1,13 @@
 ﻿using EngineLayer;
 using GuiFunctions;
+using MassSpectrometry;
 using NUnit.Framework;
+using Omics.Digestion;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -222,7 +228,7 @@ namespace Test
         }
 
         [Test]
-        public static void TestSimpleToLibrarySpectrum() 
+        public static void TestSimpleToLibrarySpectrum()
         {
             string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
             List<string> warnings = new();
@@ -236,7 +242,7 @@ namespace Test
             //not a great way to test equality but we are experiencing a great deal of 10th digit rounding differences
             Assert.AreEqual(Regex.Matches(expectedLibrarySpectrum, "ppm").Count, Regex.Matches(librarySpectrum, "ppm").Count);
 
-            
+
             //the code below tests the addition and correct output for neutral loss fragments
             Product p = new Product(ProductType.bWaterLoss, FragmentationTerminus.N, 1, 1, 1, 18);
             MatchedFragmentIon matchedIon = new(p, 1, 1, 1);
@@ -244,6 +250,102 @@ namespace Test
             string librarySpectrumWithNeutralLoss = psms[0].ToLibrarySpectrum().ToString();
 
             Assert.That(librarySpectrumWithNeutralLoss.Contains("WaterLoss"));
+        }
+        [Test]
+        public static void TestPsmSortFunction()
+        {
+            string[] sequences = {
+                "ABCKPEPR",
+                "BRPEPR",
+                "ARPEPR",
+                "PEPPER",
+                "PEPTIDE",
+                "PRTIEN"
+            };
+
+            var p = new List<Protein>();
+            List<Tuple<string, string>> gn = new List<Tuple<string, string>>();
+            for (int i = 0; i < sequences.Length; i++)
+            {
+                p.Add(new Protein(sequences[i], (i + 1).ToString(), null, gn, new Dictionary<int, List<Modification>>()));
+            }
+
+            CommonParameters commonParams = new CommonParameters(digestionParams: new DigestionParams(protease: "trypsin", minPeptideLength: 1));
+
+            PeptideWithSetModifications pepOne = new PeptideWithSetModifications(protein: p.ElementAt(0), digestionParams: commonParams.DigestionParams, oneBasedStartResidueInProtein: 5, oneBasedEndResidueInProtein: 8, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "ABCKPEPR", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+            PeptideWithSetModifications pepTwo = new PeptideWithSetModifications(protein: p.ElementAt(1), digestionParams: commonParams.DigestionParams, oneBasedStartResidueInProtein: 3, oneBasedEndResidueInProtein: 6, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "BRPEPR", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+            PeptideWithSetModifications pepThree = new PeptideWithSetModifications(protein: p.ElementAt(2), digestionParams: commonParams.DigestionParams, oneBasedStartResidueInProtein: 3, oneBasedEndResidueInProtein: 6, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "ARPEPR", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+            PeptideWithSetModifications pepFour = new PeptideWithSetModifications(protein: p.ElementAt(3), digestionParams: commonParams.DigestionParams, oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 3, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "PEPPER", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+            PeptideWithSetModifications pepFive = new PeptideWithSetModifications(protein: p.ElementAt(4), digestionParams: commonParams.DigestionParams, oneBasedStartResidueInProtein: 3, oneBasedEndResidueInProtein: 6, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "PEPTIDE", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+            PeptideWithSetModifications pepSix = new PeptideWithSetModifications(protein: p.ElementAt(5), digestionParams: commonParams.DigestionParams, oneBasedStartResidueInProtein: 3, oneBasedEndResidueInProtein: 6, cleavageSpecificity: CleavageSpecificity.Full, peptideDescription: "PRTIEN", missedCleavages: 0, allModsOneIsNterminus: new Dictionary<int, Modification>(), numFixedMods: 0);
+
+            MsDataScan scanNumberOne = new MsDataScan(new MzSpectrum(new double[] { 10 }, new double[] { 1 }, false), 1, 2, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", 10, 2, 100, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            MsDataScan scanNumberTwo = new MsDataScan(new MzSpectrum(new double[] { 20 }, new double[] { 1 }, false), 2, 2, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=2", 20, 2, 100, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            MsDataScan scanNumberThree = new MsDataScan(new MzSpectrum(new double[] { 20 }, new double[] { 1 }, false), 3, 2, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=3", 20, 2, 100, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+
+            Ms2ScanWithSpecificMass ms2ScanOneMzTen = new Ms2ScanWithSpecificMass(scanNumberOne, 10, 2, "File", new CommonParameters());
+            Ms2ScanWithSpecificMass ms2ScanOneMzTwenty = new Ms2ScanWithSpecificMass(scanNumberTwo, 20, 2, "File", new CommonParameters());
+            Ms2ScanWithSpecificMass ms2ScanTwoMzTwenty = new Ms2ScanWithSpecificMass(scanNumberTwo, 20, 2, "File", new CommonParameters());
+            Ms2ScanWithSpecificMass ms2ScanThreeMzTwenty = new Ms2ScanWithSpecificMass(scanNumberThree, 20, 2, "File", new CommonParameters());
+
+            //highest score
+            PeptideSpectralMatch psmOne = new(pepOne, 0, 10, 0, ms2ScanOneMzTen, commonParams,
+                new List<MatchedFragmentIon>());
+
+            //second highest score 9. delta score 1
+            PeptideSpectralMatch psmTwo = new(pepOne, 0, 8, 0, ms2ScanOneMzTen, commonParams,
+                new List<MatchedFragmentIon>());
+            psmTwo.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>(), 0);
+
+            //second highest score 9. delta score 0.1
+            PeptideSpectralMatch psmThree = new(pepOne, 0, 8.90000000000000000000000000000, 0, ms2ScanOneMzTen, commonParams,
+                new List<MatchedFragmentIon>());
+            psmThree.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>(), 0);
+
+            //third highest score delta score 1. ppm error -888657.54 low
+            PeptideSpectralMatch psmFour = new(pepOne, 0, 7, 0, ms2ScanOneMzTwenty, commonParams,
+                new List<MatchedFragmentIon>());
+            psmFour.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>(), 0);
+
+            //third highest score 8. delta score 1. ppm error -947281.29 high
+            PeptideSpectralMatch psmFive = new(pepOne, 0, 7, 0, ms2ScanOneMzTen, commonParams,
+                new List<MatchedFragmentIon>());
+            psmFive.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>(), 0);
+
+            //fourth highest score 7. delta score 1. same ppm error
+            PeptideSpectralMatch psmSix = new(pepOne, 0, 6, 0, ms2ScanTwoMzTwenty, commonParams,
+                new List<MatchedFragmentIon>());
+            psmSix.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>(), 0);
+
+            //fourth highest score 7. delta score 1. same ppm error
+            PeptideSpectralMatch psmSeven = new(pepOne, 0, 6, 0, ms2ScanThreeMzTwenty, commonParams,
+                new List<MatchedFragmentIon>());
+            psmSeven.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>(), 0);
+
+            List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmFour, psmOne, psmThree, psmSeven, psmTwo, psmFive, psmSix };
+            psms.ForEach(j => j.ResolveAllAmbiguities());
+            psms.ForEach(j => j.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0));
+
+            List<PeptideSpectralMatch> orderedPsms = psms.OrderByDescending(p => p).ToList();
+
+            Assert.AreEqual(10, orderedPsms[0].Score);
+            Assert.AreEqual(9, orderedPsms[1].Score);
+            Assert.AreEqual(9, orderedPsms[2].Score);
+            Assert.AreEqual(8, orderedPsms[3].Score);
+            Assert.AreEqual(8, orderedPsms[4].Score);
+            Assert.AreEqual(7, orderedPsms[5].Score);
+            Assert.AreEqual(7, orderedPsms[6].Score);
+
+            Assert.AreEqual(5, orderedPsms[0].RunnerUpScore);
+            Assert.AreEqual(8.9, orderedPsms[1].RunnerUpScore);
+            Assert.AreEqual(8, orderedPsms[2].RunnerUpScore);
+            Assert.AreEqual(7, orderedPsms[3].RunnerUpScore);
+            Assert.AreEqual(7, orderedPsms[4].RunnerUpScore);
+            Assert.AreEqual(6, orderedPsms[5].RunnerUpScore);
+            Assert.AreEqual(6, orderedPsms[6].RunnerUpScore);
+
+            Assert.IsTrue(Math.Abs(orderedPsms[3].PrecursorMassErrorPpm.First()) < Math.Abs(orderedPsms[4].PrecursorMassErrorPpm.First()));
+            Assert.IsTrue(orderedPsms[5].ScanNumber < orderedPsms[6].ScanNumber);
         }
     }
 }
