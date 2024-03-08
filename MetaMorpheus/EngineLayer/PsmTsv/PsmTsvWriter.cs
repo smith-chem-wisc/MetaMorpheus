@@ -139,7 +139,6 @@ namespace EngineLayer
                 return (returnString, null);
             }
         }
-
         internal static (string ResolvedString, string ResolvedValue) Resolve(IEnumerable<string> enumerable, string ambiguousIfNull)
         {
             var list = enumerable.ToList();
