@@ -3,7 +3,6 @@ using CommandLine.Text;
 using EngineLayer;
 using IO.ThermoRawFileReader;
 using Nett;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,7 +18,7 @@ namespace MetaMorpheusCommandLine
         private static bool InProgress;
         private static CommandLineSettings CommandLineSettings;
 
-        private static System.CodeDom.Compiler.IndentedTextWriter MyWriter = new System.CodeDom.Compiler.IndentedTextWriter(Console.Out, "\t");
+        private static System.CodeDom.Compiler.IndentedTextWriter MyWriter = new(Console.Out, "\t");
 
         public static int Main(string[] args)
         {
@@ -196,7 +195,6 @@ namespace MetaMorpheusCommandLine
             }
 
             List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)>();
-
             var tasks = settings.Tasks.ToList();
             for (int i = 0; i < tasks.Count; i++)
             {
