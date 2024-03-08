@@ -10,6 +10,7 @@ using System.Text;
 using Omics;
 using Omics.Modifications;
 
+
 namespace EngineLayer
 {
     public static class PsmTsvWriter
@@ -161,6 +162,7 @@ namespace EngineLayer
             }
         }
 
+        //The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
         internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm)
         {
             s[PsmTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
@@ -177,6 +179,7 @@ namespace EngineLayer
             s[PsmTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch)).ResolvedString;
         }
 
+        //The null-coalescing operator ?? returns the value of its left-hand operand if it isn't null; otherwise, it evaluates the right-hand operand and returns its result.
         internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned)
         {
             bool pepWithModsIsNull = sm == null || sm.BestMatchingBioPolymersWithSetMods == null || !sm.BestMatchingBioPolymersWithSetMods.Any();
@@ -216,7 +219,7 @@ namespace EngineLayer
                         .Where(d => Includes(b, d))
                         .Select(d => $"{d.OneBasedBeginPosition.ToString()}-{d.OneBasedEndPosition.ToString()}")))).ResolvedString;
             }
-           
+
             s[PsmTsvHeader.Contaminant] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsContaminant ? "Y" : "N")).ResolvedString;
             s[PsmTsvHeader.Decoy] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "Y" : "N")).ResolvedString;
             s[PsmTsvHeader.PeptideDesicription] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Description)).ResolvedString;
