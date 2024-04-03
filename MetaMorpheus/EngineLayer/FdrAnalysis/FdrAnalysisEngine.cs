@@ -189,7 +189,7 @@ namespace EngineLayer.FdrAnalysis
             }
         }
         /// <summary>
-        /// This method gets the PSM count for each psm with q-value < 0.01 and adds that information to the individual psm.
+        /// This method gets the count of PSMs with the same full sequence (with q-value < 0.01) to include in the psmtsv output
         /// </summary>
         public void CountPsm(List<SpectralMatch> proteasePsms)
         {
