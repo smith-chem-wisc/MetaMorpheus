@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
-using Proteomics.ProteolyticDigestion;
-using Transcriptomics;
 
 namespace EngineLayer
 {
@@ -20,8 +15,8 @@ namespace EngineLayer
         {
 
         }
-
         #region Silac
+            
 
         /// <summary>
         /// This method changes the base and full sequences to reflect heavy silac labels
@@ -52,8 +47,8 @@ namespace EngineLayer
             : base(psm, bestMatchingPeptides)
         {
         }
-
         #endregion
+
 
     }
 }
