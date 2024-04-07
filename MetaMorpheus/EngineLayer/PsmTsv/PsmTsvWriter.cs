@@ -10,6 +10,7 @@ using System.Text;
 using Omics;
 using Omics.Modifications;
 
+
 namespace EngineLayer
 {
     public static class PsmTsvWriter
@@ -216,7 +217,7 @@ namespace EngineLayer
                         .Where(d => Includes(b, d))
                         .Select(d => $"{d.OneBasedBeginPosition.ToString()}-{d.OneBasedEndPosition.ToString()}")))).ResolvedString;
             }
-           
+
             s[PsmTsvHeader.Contaminant] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsContaminant ? "Y" : "N")).ResolvedString;
             s[PsmTsvHeader.Decoy] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "Y" : "N")).ResolvedString;
             s[PsmTsvHeader.PeptideDesicription] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Description)).ResolvedString;
