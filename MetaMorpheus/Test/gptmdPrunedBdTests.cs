@@ -11,6 +11,7 @@ using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
+using Org.BouncyCastle.Asn1;
 
 namespace Test
 {
@@ -531,6 +532,44 @@ namespace Test
             Assert.That(modPruned.Count().Equals(2));
             Assert.That(modPruned.ElementAt(0).OneBasedPossibleLocalizedModifications.Count().Equals(1));
             Assert.That(modPruned.ElementAt(1).OneBasedPossibleLocalizedModifications.Count().Equals(1));
+        }
+
+
+
+
+        [Test]
+        public static void TestContaminantGPTMD()
+        {
+            //Create GPTMD Task
+            //Create Search Task
+            GptmdTask task1 = new GptmdTask
+            {
+                CommonParameters = new CommonParameters(),
+                GptmdParameters = new GptmdParameters
+                {
+                    ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
+                        b.ModificationType.Equals("Common Artifact")
+                        || b.ModificationType.Equals("Common Biological")
+                        || b.ModificationType.Equals("Metal")
+                        || b.ModificationType.Equals("Less Common")
+                        ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
+                }
+            };
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1) };
+            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+            string fastaName = @"TestData\DbForPrunedDb.fasta";
+            string contaminantName = @"DatabaseTests\ProteaseModTest.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGeneration");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
+                new List<DbForTask> { new DbForTask(fastaName, false), new DbForTask(contaminantName, true) },
+                outputFolder);
+            engine.Run();
+            string final = Path.Combine(MySetUpClass.outputFolder, "task1", "DbForPrunedDbGPTMD.xml");
+            string contaminantFinal = Path.Combine(MySetUpClass.outputFolder, "task1", "ProteaseModTestGPTMD.xml");
+            Assert.That(File.Exists(final));
+            Assert.That(File.Exists(contaminantFinal));
+            Directory.Delete(outputFolder, true);
         }
     }
 }
