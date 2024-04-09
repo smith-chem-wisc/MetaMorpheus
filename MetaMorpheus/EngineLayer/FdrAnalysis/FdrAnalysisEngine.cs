@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using EngineLayer;
+using EngineLayer.FdrAnalysis;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -10,13 +12,13 @@ namespace EngineLayer.FdrAnalysis
         private readonly int MassDiffAcceptorNumNotches;
         private readonly double ScoreCutoff;
         private readonly string AnalysisType;
-        private readonly string OutputFolder; // used for storing PEP training models
+        private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
 
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
-            AllPsms = psms.OrderByDescending(p=>p).ToList();
+            AllPsms = psms.OrderByDescending(p => p).ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             ScoreCutoff = commonParameters.ScoreCutoff;
             AnalysisType = analysisType;
@@ -52,50 +54,14 @@ namespace EngineLayer.FdrAnalysis
                 QValueTraditional(psms);
                 if (psms.Count > 100)
                 {
+                    if (DoPEP)
+                    {
+                        Compute_PEPValue(myAnalysisResults);
+                    }
                     QValueInverted(psms);
                 }
-
-                // set q-value thresholds such that a lower scoring PSM can't have
-                // a higher confidence than a higher scoring PSM
-                //Populate min qValues
-                double qValueThreshold = 1.0;
-                double[] qValueNotchThreshold = new double[MassDiffAcceptorNumNotches + 1];
-                for (int i = 0; i < qValueNotchThreshold.Length; i++)
-                {
-                    qValueNotchThreshold[i] = 1.0;
-                }
-
-                for (int i = psms.Count - 1; i >= 0; i--)
-                {
-                    SpectralMatch psm = psms[i];
-
-                    // threshold q-values
-                    if (psm.FdrInfo.QValue > qValueThreshold)
-                    {
-                        psm.FdrInfo.QValue = qValueThreshold;
-                    }
-                    else if (psm.FdrInfo.QValue < qValueThreshold)
-                    {
-                        qValueThreshold = psm.FdrInfo.QValue;
-                    }
-
-                    // threshold notch q-values
-                    int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
-                    if (psm.FdrInfo.QValueNotch > qValueNotchThreshold[notch])
-                    {
-                        psm.FdrInfo.QValueNotch = qValueNotchThreshold[notch];
-                    }
-                    else if (psm.FdrInfo.QValueNotch < qValueNotchThreshold[notch])
-                    {
-                        qValueNotchThreshold[notch] = psm.FdrInfo.QValueNotch;
-                    }
-                }
+                CountPsm(psms);
             }
-            if (DoPEP)
-            {
-                Compute_PEPValue(myAnalysisResults);
-            }
-            CountPsm();
         }
 
         private static void QValueInverted(List<SpectralMatch> psms)
@@ -194,7 +160,6 @@ namespace EngineLayer.FdrAnalysis
 
                     Compute_PEPValue_Based_QValue(AllPsms);
                 }
-                CountPsm(); // recounting Psm's after PEP based disambiguation
             }
 
             if (AnalysisType == "Peptide")
@@ -223,35 +188,31 @@ namespace EngineLayer.FdrAnalysis
                 psms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
             }
         }
-
-        public void CountPsm()
+        /// <summary>
+        /// This method gets the count of PSMs with the same full sequence (with q-value < 0.01) to include in the psmtsv output
+        /// </summary>
+        public void CountPsm(List<SpectralMatch> proteasePsms)
         {
-            var psmsGroupedByProtease = AllPsms.GroupBy(p => p.DigestionParams.DigestionAgent);
+            // exclude ambiguous psms and has a fdr cutoff = 0.01
+            var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
 
-            foreach (var proteasePsms in psmsGroupedByProtease)
+            var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
+                    psm.FdrInfo.QValue <= 0.01
+                    && psm.FdrInfo.QValueNotch <= 0.01)
+                .GroupBy(p => p.FullSequence);
+
+            Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
+
+            foreach (var sequenceGroup in unambiguousPsmsLessThanOnePercentFdr)
             {
-                // exclude ambiguous psms and has a fdr cutoff = 0.01
-                var allUnambiguousProteasePsms = proteasePsms.Where(p => p.FullSequence != null).ToList();
+                sequenceToPsmCount.TryAdd(sequenceGroup.First().FullSequence, sequenceGroup.Count());
+            }
 
-                var fullSequenceGroups = allUnambiguousProteasePsms.Where(p => p.FdrInfo.QValue < 0.01 && p.FdrInfo.QValueNotch < 0.01)
-                    .Select(p => p.FullSequence).GroupBy(s => s);
-
-                Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
-                foreach (var fullSequence in fullSequenceGroups)
+            foreach (SpectralMatch psm in allUnambiguousPsms)
+            {
+                if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
                 {
-                    sequenceToPsmCount.Add(fullSequence.Key, fullSequence.Count());
-                }
-
-                foreach (SpectralMatch psm in allUnambiguousProteasePsms)
-                {
-                    if (sequenceToPsmCount.TryGetValue(psm.FullSequence, out int count))
-                    {
-                        psm.PsmCount = count;
-                    }
-                    else
-                    {
-                        psm.PsmCount = 0;
-                    }
+                    psm.PsmCount = count;
                 }
             }
         }
