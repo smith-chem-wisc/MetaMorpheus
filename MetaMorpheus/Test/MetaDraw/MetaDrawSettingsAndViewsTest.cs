@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.ViewModels.Legends;
@@ -215,7 +216,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestModTypeForTreeView()
         {
-            var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType);
+            var modGroups = GlobalVariables.AllModsKnown.GroupBy(b => b.ModificationType).ToList();
             var key = modGroups.First().Key;
             ModTypeForTreeViewModel modTypeForTreeView = new(key, false);
             Assert.That(!modTypeForTreeView.Expanded);
@@ -227,6 +228,23 @@ namespace Test.MetaDraw
             modTypeForTreeView = new(modGroups.First().Key, true);
             Assert.That(((SolidColorBrush)modTypeForTreeView.Background).Color ==
                         new SolidColorBrush(Colors.Red).Color);
+
+            modGroups.First().Select(p =>
+                    new ModForTreeViewModel(p.ToString(), false, p.IdWithMotif, false, modTypeForTreeView))
+                .ForEach(mod => modTypeForTreeView.Children.Add(mod));
+            Assert.That(modTypeForTreeView.Children.Count == modGroups.First().Count());
+            Assert.That(modTypeForTreeView.Children.All(p => p.Parent == modTypeForTreeView));
+            Assert.That(modTypeForTreeView.Children.All(p => p.Use == false));
+            modTypeForTreeView.VerifyCheckState();
+            Assert.That(modTypeForTreeView.Use == false);
+
+            modTypeForTreeView.Children.First().Use = true;
+            modTypeForTreeView.VerifyCheckState();
+            Assert.That(modTypeForTreeView.Use == null);
+
+            modTypeForTreeView.Children.ForEach(mod => mod.Use = true);
+            modTypeForTreeView.VerifyCheckState();
+            Assert.That(modTypeForTreeView.Use == true);
         }
 
         [Test]
