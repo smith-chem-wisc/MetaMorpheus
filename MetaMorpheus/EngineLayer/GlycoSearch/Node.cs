@@ -1,7 +1,6 @@
 ﻿
 namespace EngineLayer
 {
-
     public class Node
     {
         public Node(char v)
