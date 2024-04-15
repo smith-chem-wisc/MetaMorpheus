@@ -1,4 +1,4 @@
-<Project Sdk="WixToolset.Sdk/4.0.0-rc.2">
+<Project Sdk="WixToolset.Sdk/5.0.0">
   <PropertyGroup>
     <OutputName>MetaMorpheusInstaller</OutputName>
     <OutputType>Bundle</OutputType>
@@ -6,7 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.Util.wixext" Version="5.0.0" />
-    <PackageReference Include="WixToolset.Bal.wixext" Version="4.0.0-rc.2" />
+    <PackageReference Include="WixToolset.Bal.wixext" Version="5.0.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MetaMorpheusSetup\MetaMorpheusSetup.wixproj">
