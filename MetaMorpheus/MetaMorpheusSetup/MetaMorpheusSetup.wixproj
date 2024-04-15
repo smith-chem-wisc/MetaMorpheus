@@ -53,7 +53,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="WixToolset.Util.wixext" Version="4.0.0-rc.2" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.0" />
     <PackageReference Include="WixToolset.UI.wixext" Version="4.0.0-rc.2" />
   </ItemGroup>
   <Import Project="Sdk.targets" Sdk="WixToolset.Sdk" Version="4.0.0-rc.2" />
