@@ -12,6 +12,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using Omics.Modifications;
@@ -606,6 +607,29 @@ namespace EngineLayer
             return (float)mobilityZScore;
         }
 
+        private static float GetFraggerHyperscore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        {
+            var peptideFragmentIons = psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide];
+            var nIons = peptideFragmentIons.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).ToList();
+            var cIons = peptideFragmentIons.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).ToList();
+            ulong nIonFactorial = GetFactorial((ulong)nIons.Count);
+            nIonFactorial = nIonFactorial < 0 ? ulong.MaxValue : nIonFactorial; // this is a hack to prevent overflow
+            ulong cIonFactorial = GetFactorial((ulong)cIons.Count);
+            cIonFactorial = cIonFactorial < 0 ? ulong.MaxValue : cIonFactorial; // this is a hack to prevent overflow
+            double nIonIntensitySum = nIons.Sum(f => f.Intensity);
+            double cIonIntensitySum = cIons.Sum(f => f.Intensity);
+            return (float)((Math.Log10(nIonFactorial) + Math.Log10(cIonFactorial) + Math.Log10(nIonIntensitySum * cIonIntensitySum)));
+        }
+
+        private static ulong GetFactorial(ulong n)
+        {
+            if (n == 0)
+            {
+                return 1;
+            }
+            return n * GetFactorial(n - 1);
+        }
+
         public static IEnumerable<PsmData> CreatePsmData(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             List<SpectralMatch> psms, List<int> psmIndicies,
             Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified,
@@ -716,6 +740,7 @@ namespace EngineLayer
             float isIntra = 0;
             float spectralAngle = 0;
             float hasSpectralAngle = 0;
+            float fraggerHyperScore = 0;
 
             if (searchType != "crosslink")
             {
@@ -724,7 +749,7 @@ namespace EngineLayer
                     normalizationFactor /= 10.0;
                 }
                 totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count / normalizationFactor * 10, 0));
-                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * 100.0, 0));
+                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * 100.0, 1));
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * 10.0, 0);
                 notch = notchToUse;
@@ -744,7 +769,7 @@ namespace EngineLayer
                 {
                     hasSpectralAngle = 1;
                 }
-
+                fraggerHyperScore = GetFraggerHyperscore(psm, selectedPeptide);
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
                     missedCleavages = selectedPeptide.MissedCleavages;
@@ -850,7 +875,8 @@ namespace EngineLayer
                 Label = label,
 
                 SpectralAngle = spectralAngle,
-                HasSpectralAngle = hasSpectralAngle
+                HasSpectralAngle = hasSpectralAngle,
+                FraggerHyperScore = fraggerHyperScore
             };
 
             return psm.PsmData_forPEPandPercolator;
