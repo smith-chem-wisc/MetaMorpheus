@@ -248,8 +248,44 @@
                                                 <!-- actual ptm legend -->
                                                 <local:PtmLegendControl x:Name="ChildScanPtmLegendControl"   DataContext="{Binding}" />
                                             </StackPanel>
-                                            
                                         </Grid>
+
+                                        <Expander  VerticalAlignment="Bottom" IsExpanded="False" x:Name="AdditionalFragmentIonDisplay"
+                                                   DataContext="{x:Type guiFunctions:FragmentResearchingViewModel}">
+                                            <Expander.Header>
+                                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" >
+
+                                                    <TextBlock Text="Additional Fragment Types" Margin="5 3" VerticalAlignment="Center"/>
+                                                    <Button Content="Search"  VerticalAlignment="Bottom" Margin="5 3" 
+                                                            VerticalContentAlignment="Center" />
+                                                    <CheckBox Content="Persist?" VerticalAlignment="Center" 
+                                                              IsChecked="{Binding Persist}"
+                                                              Margin="5 3"/>
+                                                </StackPanel>
+                                            </Expander.Header>
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+
+                                                <ListView Grid.Column="0" Background="{StaticResource BackgroundColor}"
+                                                          ItemsSource="{Binding PossibleProducts}" BorderThickness="0">
+                                                    <ListView.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <CheckBox IsChecked="{Binding Use}" />
+                                                                <TextBlock Text="{Binding TypeString}"></TextBlock>
+                                                            </StackPanel>
+                                                        </DataTemplate>
+                                                    </ListView.ItemTemplate>
+                                                    <ListView.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <UniformGrid Columns="6"/>
+                                                        </ItemsPanelTemplate>
+                                                    </ListView.ItemsPanel>
+                                                </ListView>
+                                            </Grid>
+                                        </Expander>
                                     </Grid>
                                 </TabItem>
 

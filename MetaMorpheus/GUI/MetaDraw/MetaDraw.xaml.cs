@@ -36,6 +36,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private MetaDrawSettingsViewModel SettingsView;
+        private FragmentResearchingViewModel FragmentResearchingViewModel;
 
         public MetaDraw()
         {
@@ -60,6 +61,7 @@ namespace MetaMorpheusGUI
 
             dataGridScanNums.DataContext = MetaDrawLogic.PeptideSpectralMatchesView;
 
+
             Title = "MetaDraw: version " + GlobalVariables.MetaMorpheusVersion;
             base.Closing += this.OnClosing;
 
@@ -71,7 +73,9 @@ namespace MetaMorpheusGUI
             SetUpPlots();
             plotsListBox.ItemsSource = plotTypes;
 
-            exportPdfs.Content = MetaDrawSettings.ExportType; ;
+            exportPdfs.Content = MetaDrawSettings.ExportType;
+            FragmentResearchingViewModel = new FragmentResearchingViewModel();
+            AdditionalFragmentIonDisplay.DataContext = FragmentResearchingViewModel;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
