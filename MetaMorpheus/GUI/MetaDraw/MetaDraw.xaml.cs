@@ -1,6 +1,7 @@
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
+using MassSpectrometry;
 using OxyPlot;
 using System;
 using System.Collections.Generic;
@@ -16,6 +17,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using Omics.Fragmentation;
 
 namespace MetaMorpheusGUI
 {
@@ -160,6 +162,9 @@ namespace MetaMorpheusGUI
 
         /// <summary>
         /// Event triggers when a different cell is selected in the PSM data grid
+        /// <remarks>
+        ///  if sender is FragmentResearchingViewModel, then this method was run by clicking the search button on the FragmentResearchingViewModel
+        /// </remarks>
         /// </summary>
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
         {
@@ -175,6 +180,13 @@ namespace MetaMorpheusGUI
             wholeSequenceCoverageHorizontalScroll.ScrollToLeftEnd();
             plotView.Visibility = Visibility.Visible;
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
+
+            List<MatchedFragmentIon> oldMatchedIons = null;
+            if (FragmentResearchingViewModel.Persist && sender is DataGrid)
+            {
+                oldMatchedIons = psm.MatchedIons;
+                ReplaceFragmentIonsOnPsmFromFragmentResearchViewModel(psm);
+            }
 
             // Chimera plotter
             if (MetaDrawTabControl.SelectedContent is Grid { Name: "chimeraPlotGrid" })
@@ -201,8 +213,19 @@ namespace MetaMorpheusGUI
             }
 
             SetSequenceDrawingPositionSettings(true);
+            // Psm selected from ambiguous dropdown => adjust the psm to be drawn
+            // Clicking the research button on an ambiguous psm => research with new ions
+            if (psm.FullSequence.Contains('|') && (sender.ToString() == "System.Object" || sender is FragmentResearchingViewModel))
+            {
+                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                if (FragmentResearchingViewModel.Persist || sender is FragmentResearchingViewModel)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    ReplaceFragmentIonsOnPsmFromFragmentResearchViewModel(psm);
+                }
+            }
             // Selection of ambiguous psm => clean up the canvases and show the option box
-            if (psm.FullSequence.Contains('|') && sender.ToString() != "System.Object")
+            else if(psm.FullSequence.Contains('|') && sender.ToString() != "System.Object")
             {
                 // clear all drawings of the previous non-ambiguous psm
                 ClearPresentationArea();
@@ -219,11 +242,7 @@ namespace MetaMorpheusGUI
                 }
                 return;
             }
-            // Psm selected from ambiguous dropdown => adjust the psm to be drawn
-            else if (psm.FullSequence.Contains('|') && sender.ToString() == "System.Object")
-            {
-                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
-            }
+            
             // Selection of non-ambiguous psm => clear items in the drop down
             else if (!psm.FullSequence.Contains('|'))
             {
@@ -311,6 +330,10 @@ namespace MetaMorpheusGUI
                     propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
                 }
             }
+
+            // put the original ions back in place if they were altered
+            if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                psm.MatchedIons = oldMatchedIons;
         }
 
         private void selectSpectraFileButton_Click(object sender, RoutedEventArgs e)
@@ -994,6 +1017,9 @@ namespace MetaMorpheusGUI
         {
             PsmFromTsv selectedPsm = (PsmFromTsv)dataGridScanNums.SelectedItem;
 
+            if (e.OriginalSource is not TabControl) // only clicking on different MetaDrawTabs will trigger this event
+                return;
+
             // switch from chimera to other views
             if (e.RemovedItems.Count > 0 && ((TabItem)e.RemovedItems[0]).Name == "ChimeraScanPlot")
             {
@@ -1060,6 +1086,38 @@ namespace MetaMorpheusGUI
             exportSpectrumLibrary.IsEnabled = value;
         }
 
-      
+        /// <summary>
+        /// Method to fire the plotting method with new fragment ions
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        /// <exception cref="NotImplementedException"></exception>
+        private void SearchWithNewIons_OnClick(object sender, RoutedEventArgs e)
+        {
+            // find currently selected psm
+            var psm = dataGridScanNums.SelectedItem as PsmFromTsv;
+            if (psm is null)
+                return;
+            
+            // replace the ions and replot
+            var oldIons = psm.MatchedIons;
+            ReplaceFragmentIonsOnPsmFromFragmentResearchViewModel(psm);
+            dataGridScanNums.SelectedItem = psm;
+            dataGridScanNums_SelectedCellsChanged(FragmentResearchingViewModel, null);
+
+            // put the old ions back
+            psm.MatchedIons = oldIons;
+        }
+
+        /// <summary>
+        /// Replaces matched fragment ions on a psm with new ion types after a quick search
+        /// </summary>
+        /// <param name="psm"></param>
+        private void ReplaceFragmentIonsOnPsmFromFragmentResearchViewModel(PsmFromTsv psm)
+        {
+            var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
+            var newIons = FragmentResearchingViewModel.MatchIonsWithNewTypes(scan, psm);
+            psm.MatchedIons = newIons;
+        }
     }
 }

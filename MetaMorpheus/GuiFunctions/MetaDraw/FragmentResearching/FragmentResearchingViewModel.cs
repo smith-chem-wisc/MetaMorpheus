@@ -3,17 +3,12 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using Easy.Common.Extensions;
-using Easy.Common.Interfaces;
 using EngineLayer;
 using MassSpectrometry;
 using Omics;
 using Omics.Fragmentation;
-using Org.BouncyCastle.Asn1.Cms;
 using Proteomics.ProteolyticDigestion;
 
 namespace GuiFunctions
@@ -29,12 +24,25 @@ namespace GuiFunctions
 
         private readonly bool _isProtein;
 
-        public FragmentResearchingViewModel(DissociationType selectedDissociationType = DissociationType.HCD, bool isProtein = true)
+        public FragmentResearchingViewModel(bool isProtein = true)
         {
             _isProtein = isProtein;
-            DissociationTypes = new ObservableCollection<DissociationType>(Enum.GetValues<DissociationType>());
-            PossibleProducts = new ObservableCollection<FragmentViewModel>(GetPossibleProducts(_isProtein));
-            SelectedDissociationType = selectedDissociationType;
+            UseInternalIons = false;
+            MinInternalIonLength = 10;
+            if (isProtein)
+            {
+                DissociationTypes = new ObservableCollection<DissociationType>(Enum.GetValues<DissociationType>()
+                    .Where(p => p != DissociationType.AnyActivationType && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) && prod.Any()));
+                PossibleProducts = new ObservableCollection<FragmentViewModel>(GetPossibleProducts(_isProtein));
+                SelectedDissociationType = DissociationType.HCD;
+            }
+            else
+            {
+                // TODO: Possible product types for RNA
+                PossibleProducts = new ObservableCollection<FragmentViewModel>(GetPossibleProducts(_isProtein));
+                SelectedDissociationType = DissociationType.LowCID;
+            }
+
         }
 
         private ObservableCollection<FragmentViewModel> _possibleProducts;
@@ -43,6 +51,8 @@ namespace GuiFunctions
             get => _possibleProducts;
             set { _possibleProducts = value; OnPropertyChanged(nameof(PossibleProducts)); }
         }
+
+        private IEnumerable<ProductType> _productsToUse => PossibleProducts.Where(p => p.Use).Select(p => p.ProductType);
 
         private bool _persist;
         public bool Persist
@@ -68,6 +78,20 @@ namespace GuiFunctions
                 SetUseForFragmentsBasedUponDissociationType(value, _isProtein);
                 OnPropertyChanged(nameof(SelectedDissociationType));
             }
+        }
+
+        private int _minInternalIonLength;
+        public int MinInternalIonLength
+        {
+            get => _minInternalIonLength;
+            set { _minInternalIonLength = value; OnPropertyChanged(nameof(MinInternalIonLength)); }
+        }
+
+        private bool _useInternalIons;
+        public bool UseInternalIons
+        {
+            get => _useInternalIons;
+            set { _useInternalIons = value; OnPropertyChanged(nameof(UseInternalIons)); }
         }
 
         private IEnumerable<FragmentViewModel> GetPossibleProducts(bool isProtein)
@@ -136,6 +160,7 @@ namespace GuiFunctions
                     // unsupported ions due to :
                     case ProductType.Y:
                     case ProductType.Ycore:
+                    case ProductType.D:
                         break;
 
                     // default case
@@ -169,22 +194,34 @@ namespace GuiFunctions
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
         }
 
-        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectralMatch psmToRematch)
+        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, PsmFromTsv psmToRematch)
         {
+            if (psmToRematch.FullSequence.Contains('|'))
+                return psmToRematch.MatchedIons;
+
             IBioPolymerWithSetMods bioPolymer = /*_isProtein ? */
                 new PeptideWithSetModifications(psmToRematch.FullSequence, GlobalVariables.AllModsKnownDictionary);
             /*: new OligoWithSetMods(psmToRematch.FullSequence, GlobalVariables.AllRNAModsKnownDictionary);*/
 
-            List<Product> allProducts = new List<Product>();
-            bioPolymer.Fragment(SelectedDissociationType, FragmentationTerminus.Both, allProducts);
+            List<Product> terminalProducts = new List<Product>();
+            Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList(); 
+            bioPolymer.Fragment(DissociationType.Custom, FragmentationTerminus.Both, terminalProducts);
+
+            List<Product> internalProducts = new List<Product>();
+            if (UseInternalIons && bioPolymer is PeptideWithSetModifications) // internal ions are not currently implemented for RNA
+            {
+                Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList();
+                bioPolymer.FragmentInternally(DissociationType.Custom, MinInternalIonLength, internalProducts);
+            }
+            var allProducts = terminalProducts.Concat(internalProducts).ToList();
 
             // TODO: Adjust decon params for when RNA gets incorporated
             var commonParams = new CommonParameters();
-            var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, psmToRematch.ScanPrecursorMonoisotopicPeakMz,
-                psmToRematch.ScanPrecursorCharge, psmToRematch.FullFilePath, commonParams);
+            var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, psmToRematch.PrecursorMz,
+                psmToRematch.PrecursorCharge, psmToRematch.FileNameWithoutExtension, commonParams);
 
             // TOCHECK: if the matchAllCharges is the correct boolean here
-            return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, true);
+            return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false);
         }
     }
 }
