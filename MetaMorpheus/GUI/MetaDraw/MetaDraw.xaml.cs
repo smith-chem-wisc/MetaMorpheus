@@ -38,7 +38,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private MetaDrawSettingsViewModel SettingsView;
-        private FragmentResearchingViewModel FragmentResearchingViewModel;
+        private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
 
         public MetaDraw()
         {
@@ -76,8 +76,8 @@ namespace MetaMorpheusGUI
             plotsListBox.ItemsSource = plotTypes;
 
             exportPdfs.Content = MetaDrawSettings.ExportType;
-            FragmentResearchingViewModel = new FragmentResearchingViewModel();
-            AdditionalFragmentIonDisplay.DataContext = FragmentResearchingViewModel;
+            FragmentationReanalysisViewModel = new FragmentationReanalysisViewModel();
+            AdditionalFragmentIonDisplay.DataContext = FragmentationReanalysisViewModel;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -163,7 +163,7 @@ namespace MetaMorpheusGUI
         /// <summary>
         /// Event triggers when a different cell is selected in the PSM data grid
         /// <remarks>
-        ///  if sender is FragmentResearchingViewModel, then this method was run by clicking the search button on the FragmentResearchingViewModel
+        ///  if sender is FragmentationReanalysisViewModel, then this method was run by clicking the search button on the FragmentationReanalysisViewModel
         /// </remarks>
         /// </summary>
         private void dataGridScanNums_SelectedCellsChanged(object sender, SelectedCellsChangedEventArgs e)
@@ -182,10 +182,10 @@ namespace MetaMorpheusGUI
             PsmFromTsv psm = (PsmFromTsv)dataGridScanNums.SelectedItem;
 
             List<MatchedFragmentIon> oldMatchedIons = null;
-            if (FragmentResearchingViewModel.Persist && sender is DataGrid)
+            if (FragmentationReanalysisViewModel.Persist && sender is DataGrid)
             {
                 oldMatchedIons = psm.MatchedIons;
-                ReplaceFragmentIonsOnPsmFromFragmentResearchViewModel(psm);
+                ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
             }
 
             // Chimera plotter
@@ -215,13 +215,13 @@ namespace MetaMorpheusGUI
             SetSequenceDrawingPositionSettings(true);
             // Psm selected from ambiguous dropdown => adjust the psm to be drawn
             // Clicking the research button on an ambiguous psm => research with new ions
-            if (psm.FullSequence.Contains('|') && (sender.ToString() == "System.Object" || sender is FragmentResearchingViewModel))
+            if (psm.FullSequence.Contains('|') && (sender.ToString() == "System.Object" || sender is FragmentationReanalysisViewModel))
             {
                 psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
-                if (FragmentResearchingViewModel.Persist || sender is FragmentResearchingViewModel)
+                if (FragmentationReanalysisViewModel.Persist || sender is FragmentationReanalysisViewModel)
                 {
                     oldMatchedIons = psm.MatchedIons;
-                    ReplaceFragmentIonsOnPsmFromFragmentResearchViewModel(psm);
+                    ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
                 }
             }
             // Selection of ambiguous psm => clean up the canvases and show the option box
@@ -1101,9 +1101,9 @@ namespace MetaMorpheusGUI
             
             // replace the ions and replot
             var oldIons = psm.MatchedIons;
-            ReplaceFragmentIonsOnPsmFromFragmentResearchViewModel(psm);
+            ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
             dataGridScanNums.SelectedItem = psm;
-            dataGridScanNums_SelectedCellsChanged(FragmentResearchingViewModel, null);
+            dataGridScanNums_SelectedCellsChanged(FragmentationReanalysisViewModel, null);
 
             // put the old ions back
             psm.MatchedIons = oldIons;
@@ -1113,10 +1113,10 @@ namespace MetaMorpheusGUI
         /// Replaces matched fragment ions on a psm with new ion types after a quick search
         /// </summary>
         /// <param name="psm"></param>
-        private void ReplaceFragmentIonsOnPsmFromFragmentResearchViewModel(PsmFromTsv psm)
+        private void ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(PsmFromTsv psm)
         {
             var scan = MetaDrawLogic.GetMs2ScanFromPsm(psm);
-            var newIons = FragmentResearchingViewModel.MatchIonsWithNewTypes(scan, psm);
+            var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm);
             psm.MatchedIons = newIons;
         }
     }

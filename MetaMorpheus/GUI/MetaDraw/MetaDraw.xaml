@@ -253,7 +253,7 @@
 
                                         <!-- Refragment analysis -->
                                         <Expander Grid.Row="1" VerticalAlignment="Bottom" IsExpanded="False" x:Name="AdditionalFragmentIonDisplay"
-                                                   DataContext="{x:Type guiFunctions:FragmentResearchingViewModel}" Header="Additional Fragment Types">
+                                                   DataContext="{x:Type guiFunctions:FragmentationReanalysisViewModel}" Header="Fragment Reanalysis">
                                             <Expander.ToolTip>
                                                 Research the spectra file against the sequence with different fragment ions. 
                                             </Expander.ToolTip>
@@ -288,7 +288,7 @@
                                                         <TextBlock Text="Set Dissociation Type: " VerticalAlignment="Center"/>
                                                         <ComboBox x:Name="DissociationTypeComboBox" ItemsSource="{Binding DissociationTypes}" 
                                                                   SelectedItem="{Binding SelectedDissociationType}" 
-                                                                  Margin="5 3" VerticalContentAlignment="Center" />
+                                                                  Margin="5 3" VerticalContentAlignment="Center" Width="80" />
                                                     </StackPanel>
                                                     <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center">
                                                         <CheckBox Content="Use internal ions of minimum length " IsChecked="{Binding UseInternalIons}" 

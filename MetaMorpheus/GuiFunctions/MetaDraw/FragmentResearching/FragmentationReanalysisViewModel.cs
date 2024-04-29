@@ -13,18 +13,15 @@ using Proteomics.ProteolyticDigestion;
 
 namespace GuiFunctions
 {
-
-    // TODO: Option to use prexisting fragmentation method instead of custom
-
     /// <summary>
     /// Class representing all GUI interactions that occur within the Additional Fragment Types section of the MetaDraw GUI
     /// </summary>
-    public class FragmentResearchingViewModel : BaseViewModel
+    public class FragmentationReanalysisViewModel : BaseViewModel
     {
 
         private readonly bool _isProtein;
 
-        public FragmentResearchingViewModel(bool isProtein = true)
+        public FragmentationReanalysisViewModel(bool isProtein = true)
         {
             _isProtein = isProtein;
             UseInternalIons = false;
@@ -90,7 +87,7 @@ namespace GuiFunctions
         private bool _useInternalIons;
         public bool UseInternalIons
         {
-            get => _useInternalIons;
+            get => _useInternalIons; 
             set { _useInternalIons = value; OnPropertyChanged(nameof(UseInternalIons)); }
         }
 
@@ -129,7 +126,9 @@ namespace GuiFunctions
                     case ProductType.aStar:
                     case ProductType.aDegree:
                     case ProductType.bAmmoniaLoss:
+                    case ProductType.bWaterLoss:
                     case ProductType.yAmmoniaLoss:
+                    case ProductType.yWaterLoss:
                     case ProductType.zPlusOne:
                     case ProductType.zDot:
                         if (isProtein)
@@ -139,7 +138,6 @@ namespace GuiFunctions
                     // rna specific ions
                     case ProductType.aWaterLoss:
                     case ProductType.aBaseLoss:
-                    case ProductType.bWaterLoss:
                     case ProductType.bBaseLoss:
                     case ProductType.cWaterLoss:
                     case ProductType.cBaseLoss:
@@ -149,7 +147,6 @@ namespace GuiFunctions
                     case ProductType.wBaseLoss:
                     case ProductType.xWaterLoss:
                     case ProductType.xBaseLoss:
-                    case ProductType.yWaterLoss:
                     case ProductType.yBaseLoss:
                     case ProductType.zWaterLoss:
                     case ProductType.zBaseLoss:
@@ -220,7 +217,6 @@ namespace GuiFunctions
             var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, psmToRematch.PrecursorMz,
                 psmToRematch.PrecursorCharge, psmToRematch.FileNameWithoutExtension, commonParams);
 
-            // TOCHECK: if the matchAllCharges is the correct boolean here
             return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false);
         }
     }
