@@ -20,14 +20,4 @@ namespace GuiFunctions
             ProductType = type;
         }
     }
-
-    public class FragmentModel : FragmentViewModel
-    {
-        public static FragmentModel Instance => new FragmentModel();
-
-        public FragmentModel() : base(true, ProductType.a)
-        {
-
-        }
-    }
 }

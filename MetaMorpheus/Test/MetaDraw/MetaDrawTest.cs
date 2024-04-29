@@ -437,6 +437,12 @@ namespace Test.MetaDraw
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
                 psm.StartAndEndResiduesInProtein.Replace("[", "").Replace("]", "").Replace("to", "").Replace(" ", "").Length + 2);
 
+
+            // get scan from psm
+            var scan = metadrawLogic.GetMs2ScanFromPsm(psm);
+            Assert.That(scan.OneBasedScanNumber, Is.EqualTo(psm.Ms2ScanNumber));
+            Assert.That(scan.MsnOrder, Is.EqualTo(2));
+
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());

@@ -100,6 +100,7 @@ namespace GuiFunctions
                     // primary ions
                     case ProductType.a:
                     case ProductType.b:
+                    case ProductType.bWaterLoss:
                     case ProductType.c:
                         yield return new FragmentViewModel(false, product);
                         break;
@@ -110,6 +111,7 @@ namespace GuiFunctions
 
                     case ProductType.x:
                     case ProductType.y:
+                    case ProductType.yWaterLoss:
                     case ProductType.z:
                         yield return new FragmentViewModel(false, product);
                         break;
@@ -126,9 +128,7 @@ namespace GuiFunctions
                     case ProductType.aStar:
                     case ProductType.aDegree:
                     case ProductType.bAmmoniaLoss:
-                    case ProductType.bWaterLoss:
                     case ProductType.yAmmoniaLoss:
-                    case ProductType.yWaterLoss:
                     case ProductType.zPlusOne:
                     case ProductType.zDot:
                         if (isProtein)
@@ -181,11 +181,10 @@ namespace GuiFunctions
             {
                 MessageBox.Show($"Ruh Roh Raggy - Default to HCD\n{e.Message}");
 
+                _selectedDissociationType = DissociationType.HCD;
                 dissociationTypeProducts = isProtein ?
                     Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.HCD].ToArray()
                     : Omics.Fragmentation.Oligo.DissociationTypeCollection.GetRnaProductTypesFromDissociationType(DissociationType.HCD).ToArray();
-
-                Debugger.Break();
             }
 
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
