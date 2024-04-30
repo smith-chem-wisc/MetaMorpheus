@@ -18,7 +18,6 @@ namespace GuiFunctions
     /// </summary>
     public class FragmentationReanalysisViewModel : BaseViewModel
     {
-
         private readonly bool _isProtein;
 
         public FragmentationReanalysisViewModel(bool isProtein = true)
