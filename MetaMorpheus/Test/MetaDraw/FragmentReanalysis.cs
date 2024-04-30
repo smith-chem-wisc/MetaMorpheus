@@ -11,6 +11,7 @@ using GuiFunctions;
 using MassSpectrometry;
 using Nett;
 using NUnit.Framework;
+using Omics.Fragmentation;
 using Org.BouncyCastle.Bcpg;
 using pepXML.Generated;
 using Readers;
@@ -105,6 +106,9 @@ namespace Test.MetaDraw
 
             // searching with additional ions should yield more 
             Assert.That(psmToResearch.MatchedIons.Count, Is.LessThan(newMatchedIons.Count));
+            // all original ions should be retained
+            var intersect = newMatchedIons.Intersect(psmToResearch.MatchedIons);
+            Assert.That(intersect.Count(), Is.EqualTo(psmToResearch.MatchedIons.Count));
 
             // perform the same operation but also with internal ions
             viewModel.UseInternalIons = true;
@@ -114,6 +118,10 @@ namespace Test.MetaDraw
             var internalIonNewIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
             Assert.That(psmToResearch.MatchedIons.Count, Is.LessThan(internalIonNewIons.Count));
             Assert.That(newMatchedIons.Count, Is.LessThan(internalIonNewIons.Count));
+
+            // all original ions should be retained
+            intersect = internalIonNewIons.Intersect(psmToResearch.MatchedIons);
+            Assert.That(intersect.Count(), Is.EqualTo(psmToResearch.MatchedIons.Count));
 
             // clean up
             Directory.Delete(outputFolder, true);

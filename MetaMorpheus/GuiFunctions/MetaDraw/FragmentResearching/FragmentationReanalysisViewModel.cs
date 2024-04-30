@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows;
 using Easy.Common.Extensions;
 using EngineLayer;
+using iText.StyledXmlParser.Jsoup;
 using MassSpectrometry;
 using Omics;
 using Omics.Fragmentation;
@@ -215,7 +216,10 @@ namespace GuiFunctions
             var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, psmToRematch.PrecursorMz,
                 psmToRematch.PrecursorCharge, psmToRematch.FileNameWithoutExtension, commonParams);
 
-            return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false);
+            return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false)
+                .Union(psmToRematch.MatchedIons)
+                .ToList();
+            
         }
     }
 }
