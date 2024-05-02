@@ -7,7 +7,7 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         KeyDown="KeyPressed"
-        Title="Search Task" Width="750" Height="725" WindowStartupLocation="CenterScreen">
+        Title="Search Task" Width="750" Height="725" d:DesignHeight="2000" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
@@ -630,7 +630,7 @@
                 <!-- END BASIC SETTINGS -->
 
                 <!-- ADVANCED SETTINGS -->
-                <Expander Header="Advanced Options" DockPanel.Dock="Top" Margin="10,0,10,10">
+                <Expander Header="Advanced Options" DockPanel.Dock="Top" Margin="10,0,10,10" d:IsExpanded="true">
                     <StackPanel>
                         <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
                             <Expander x:Name="FileLoadExpander" Collapsed="ApmdExpander_Collapsed">
@@ -759,7 +759,7 @@
                         </GroupBox>
 
                         <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
-                            <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed">
+                            <Expander x:Name="SearchModeExpander" Collapsed="ApmdExpander_Collapsed" d:IsExpanded="true">
                                 <Expander.Style>
                                     <Style TargetType="Expander">
                                         <Setter Property="Header" Value="{Binding SearchModeExpanderTitle}" />
@@ -836,13 +836,10 @@
                                                 </StackPanel>
                                                 <StackPanel Margin="5">
                                                     <Grid>
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="1*" />
-                                                            <ColumnDefinition Width="3*" />
-                                                        </Grid.ColumnDefinitions>
-                                                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                                                        <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Center">
                                                             <Label x:Name="numerOfDatabaseSearchesLabel" Content="Number of Database Partitions:" />
-                                                            <TextBox x:Name="NumberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"  IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
+                                                            <TextBox x:Name="NumberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"  
+                                                                     IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton, Converter={StaticResource InvertedBooleanConverter}}">
                                                                 <TextBox.ToolTip>
                                                                     <TextBlock>
                                                                 Splits indexed search modes (Modern, Semi-, Non-) into separate, smaller searches to reduce RAM requirements. More partitions means less RAM.
@@ -851,6 +848,14 @@
                                                                     </TextBlock>
                                                                 </TextBox.ToolTip>
                                                             </TextBox>
+                                                            <Label x:Name="MaxIdsPerSpectrumLabel" Content="Maximum Identifications per Spectrum:" Margin="20 0"/>
+                                                            <local:IntegerTexBoxControl x:Name="MaximumIdPerSpectraTextBox" Width="45" >
+                                                                <local:IntegerTexBoxControl.ToolTip>
+                                                                    Maximum number of identifications per MS2 spectra. 
+                                                                    This is used to prevent over-identification of highly chimeric spectra. 
+                                                                    Recommended maximum is 7 for the average top-down dataset.
+                                                                </local:IntegerTexBoxControl.ToolTip>
+                                                            </local:IntegerTexBoxControl>
                                                         </StackPanel>
                                                     </Grid>
                                                 </StackPanel>

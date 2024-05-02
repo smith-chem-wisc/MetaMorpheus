@@ -291,6 +291,7 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             AddCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
+            MaximumIdPerSpectraTextBox.Text = task.CommonParameters.MaximumIdentificationsPerSpectrum.ToString();
             DeconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
             UseProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
             RemoveContaminantRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveContaminant;
@@ -572,7 +573,7 @@ namespace MetaMorpheusGUI
             bool normalizePeaksAccrossAllWindows = NormalizePeaksInWindowCheckBox.IsChecked.Value;
 
             bool parseMaxThreadsPerFile = !MaxThreadsTextBox.Text.Equals("") && (int.Parse(MaxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(MaxThreadsTextBox.Text) > 0);
-
+            int maxIdsPerSpectrum = int.Parse(MaximumIdPerSpectraTextBox.Text, CultureInfo.InvariantCulture);
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
@@ -602,7 +603,8 @@ namespace MetaMorpheusGUI
                 addCompIons: AddCompIonCheckBox.IsChecked.Value,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
-                maxHeterozygousVariants: MaxHeterozygousVariants);
+                maxHeterozygousVariants: MaxHeterozygousVariants,
+                maximumIdentificationsPerSpectrum: maxIdsPerSpectrum);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {
@@ -645,7 +647,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.UpdateSpectralLibrary = UpdateSpectralLibraryCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
-
+            
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {
                 TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;
