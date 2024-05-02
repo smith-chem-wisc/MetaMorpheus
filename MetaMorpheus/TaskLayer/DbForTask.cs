@@ -1,7 +1,9 @@
 ﻿using EngineLayer;
+using System;
 
 namespace TaskLayer
 {
+    [Serializable]
     public class DbForTask
     {
         public DbForTask(string filePath, bool isContaminant)

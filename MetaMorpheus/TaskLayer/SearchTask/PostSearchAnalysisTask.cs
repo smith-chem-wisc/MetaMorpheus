@@ -27,6 +27,7 @@ using Omics.SpectrumMatch;
 
 namespace TaskLayer
 {
+    [Serializable]
     public class PostSearchAnalysisTask : MetaMorpheusTask
     {
         public PostSearchAnalysisParameters Parameters { get; set; }

@@ -14,6 +14,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
@@ -379,6 +380,7 @@ namespace TaskLayer
                 allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters, FileSpecificParameters);
             }
 
+            
             PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
             {
                 SearchTaskResults = MyTaskResults,
@@ -406,6 +408,11 @@ namespace TaskLayer
                 FileSpecificParameters = this.FileSpecificParameters,
                 CommonParameters = CommonParameters
             };
+
+            var outPath = Path.Combine(OutputFolder, "SerializedPostSearhAnalysisTask.txt");
+            postProcessing.ObjectToByteArrayFile(outPath);
+            postProcessing = ByteSerializer.ByteArrayFileToObject<PostSearchAnalysisTask>(outPath);
+            
             return postProcessing.Run();
         }
 

@@ -11,6 +11,7 @@ using System;
 
 namespace EngineLayer
 {
+    [Serializable]
     public abstract class SpectralMatch : IComparable<SpectralMatch>
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
@@ -35,6 +36,8 @@ namespace EngineLayer
             RunnerUpScore = commonParameters.ScoreCutoff;
             MsDataScan = scan.TheScan;
             SpectralAngle = -1;
+            PrecursorDeconvolutionScore = scan.PrecursorDeconvolutionScore;
+            PeaksInPrecursorEnvelope = scan.PeaksInPrecursorEnvelope;
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
         }
@@ -69,6 +72,8 @@ namespace EngineLayer
         public int NumDifferentMatchingPeptides { get { return _BestMatchingBioPolymersWithSetMods.Count; } }
         public FdrInfo FdrInfo { get; private set; }
         public PsmData PsmData_forPEPandPercolator { get; set; }
+        public double PeaksInPrecursorEnvelope { get; } 
+        public double PrecursorDeconvolutionScore { get; }
 
         public double Score { get; private set; }
         public double Xcorr;

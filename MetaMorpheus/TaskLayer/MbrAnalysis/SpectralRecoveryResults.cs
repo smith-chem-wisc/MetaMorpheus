@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace TaskLayer.MbrAnalysis
 {
+    [Serializable]
     public class SpectralRecoveryResults
     {
         public readonly ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> BestMbrMatches;

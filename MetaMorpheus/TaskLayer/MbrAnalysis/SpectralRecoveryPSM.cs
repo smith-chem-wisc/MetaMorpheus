@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using EngineLayer;
@@ -6,6 +7,7 @@ using FlashLFQ;
 
 namespace TaskLayer.MbrAnalysis
 {
+    [Serializable]
     public class SpectralRecoveryPSM
     {
         public SpectralMatch spectralLibraryMatch { get; set; }

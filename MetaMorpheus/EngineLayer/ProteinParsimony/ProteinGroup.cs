@@ -1,4 +1,5 @@
-﻿using FlashLFQ;
+﻿using System;
+using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using ThermoFisher.CommonCore.Data;
 
 namespace EngineLayer
 {
+    [Serializable]
     public class ProteinGroup
     {
         public ProteinGroup(HashSet<Protein> proteins, HashSet<PeptideWithSetModifications> peptides,

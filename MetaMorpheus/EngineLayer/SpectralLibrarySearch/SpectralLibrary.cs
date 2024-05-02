@@ -15,6 +15,7 @@ using ThermoFisher.CommonCore.Data.Business;
 
 namespace EngineLayer
 {
+    [Serializable]
     public class SpectralLibrary
     {
         private List<string> LibraryPaths;

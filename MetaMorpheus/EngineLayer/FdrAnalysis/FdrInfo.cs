@@ -1,5 +1,8 @@
-﻿namespace EngineLayer.FdrAnalysis
+﻿using System;
+
+namespace EngineLayer.FdrAnalysis
 {
+    [Serializable]
     public class FdrInfo
     {
         public double CumulativeTarget { get; set; }

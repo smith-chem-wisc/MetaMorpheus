@@ -8,6 +8,7 @@ using Readers;
 
 namespace TaskLayer
 {
+    [Serializable]
     public class MyFileManager
     {
         private readonly bool DisposeOfFileWhenDone;

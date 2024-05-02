@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace EngineLayer
 {
+    [Serializable]
     public class ProgressEventArgs : MyRecursiveEventArgs
 
     {

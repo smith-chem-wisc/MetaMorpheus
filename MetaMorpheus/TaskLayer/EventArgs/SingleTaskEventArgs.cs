@@ -2,6 +2,7 @@
 
 namespace TaskLayer
 {
+    [Serializable]
     public class SingleTaskEventArgs : EventArgs
     {
         public SingleTaskEventArgs(string displayName)

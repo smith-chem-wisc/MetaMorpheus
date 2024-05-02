@@ -5,6 +5,7 @@ using System.Text;
 
 namespace TaskLayer
 {
+    [Serializable]
     public class MyTaskResults
     {
         public List<string> NewSpectra; // calibration writes new calibrated spectra

@@ -6,9 +6,11 @@ using Nett;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using Omics.Fragmentation;
+using System;
 
 namespace TaskLayer
 {
+    [Serializable]
     public class FileSpecificParameters
     {
         public FileSpecificParameters(TomlTable tomlTable)

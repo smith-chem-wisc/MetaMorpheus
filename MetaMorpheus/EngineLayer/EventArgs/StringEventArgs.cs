@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace EngineLayer
 {
+    [Serializable]
     public class StringEventArgs : MyRecursiveEventArgs
     {
         public StringEventArgs(string s, List<string> nestedIDs)

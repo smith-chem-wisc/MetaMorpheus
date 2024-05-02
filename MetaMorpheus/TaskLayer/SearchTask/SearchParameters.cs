@@ -3,9 +3,11 @@ using UsefulProteomicsDatabases;
 using EngineLayer;
 using Omics.Modifications;
 using Proteomics;
+using System;
 
 namespace TaskLayer
 {
+    [Serializable]
     public class SearchParameters
     {
         public SearchParameters()

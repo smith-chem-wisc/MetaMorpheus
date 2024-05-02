@@ -1,16 +1,18 @@
 ﻿using Microsoft.ML.Data;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Text;
 
 namespace EngineLayer.FdrAnalysis
 {
+    [Serializable]
     public class PsmData
     {
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
             { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" } },
-            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle" } },
+            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", /*"PeaksInPrecursorEnvelope", "PrecursorEnvelopeScore"*/ "ChimeraDecoyRatio" } },
             { "crosslink", new [] { "TotalMatchingFragmentCount", "AbsoluteAverageFragmentMassErrorFromMedian", "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
         }.ToImmutableDictionary();
 
@@ -42,7 +44,10 @@ namespace EngineLayer.FdrAnalysis
             { "IsInter", -1 },
             { "IsIntra", -1 },
             { "SpectralAngle", 1 },
-            { "HasSpectralAngle", 1 }
+            { "HasSpectralAngle", 1 },
+            { "PeaksInPrecursorEnvelope", 1},
+            { "PrecursorEnvelopeScore", 1},
+            { "ChimeraDecoyRatio", -1},
             }.ToImmutableDictionary();
 
         public string ToString(string searchType)
@@ -132,5 +137,14 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(23)]
         public float HasSpectralAngle { get; set; }
+
+        [LoadColumn(25)]
+        public float PeaksInPrecursorEnvelope { get; set; }
+
+        [LoadColumn(26)]
+        public float PrecursorEnvelopeScore { get; set; }
+
+        [LoadColumn(27)]
+        public float ChimeraDecoyRatio { get; set; }
     }
 }

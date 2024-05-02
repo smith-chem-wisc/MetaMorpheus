@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Omics;
 using Omics.Fragmentation;
@@ -6,6 +7,7 @@ using Omics.Modifications;
 
 namespace EngineLayer
 {
+    [Serializable]
     public class PeptideSpectralMatch : SpectralMatch
     {
         public PeptideSpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex,

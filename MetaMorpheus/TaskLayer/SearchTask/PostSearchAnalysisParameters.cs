@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿using System;
+using EngineLayer;
 using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -7,6 +8,7 @@ using Omics.Modifications;
 
 namespace TaskLayer
 {
+    [Serializable]
     public class PostSearchAnalysisParameters
     {
         public MyTaskResults SearchTaskResults { get; set; }
