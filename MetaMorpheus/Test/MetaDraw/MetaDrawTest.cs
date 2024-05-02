@@ -1130,9 +1130,8 @@ namespace Test.MetaDraw
             // clean up resources
             metadrawLogic.CleanUpResources();
 
-            // delete output
-           
-
+            // delete output - added thread sleep to ensure meta draw finished cleaning up resources - this was causing the test to fail when run in appveyor
+            Thread.Sleep(3000); 
             File.Delete(pathWithPeriodInIt);
             Directory.Delete(outputFolder, true);
         }
