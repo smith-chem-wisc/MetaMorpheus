@@ -1089,7 +1089,8 @@ namespace Test.MetaDraw
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
 
             string pathWithPeriodInIt = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
-            File.Copy(spectraFile, pathWithPeriodInIt, true);
+            if (!File.Exists(pathWithPeriodInIt))
+                File.Copy(spectraFile, pathWithPeriodInIt, true);
             spectraFile = pathWithPeriodInIt;
 
             Directory.CreateDirectory(outputFolder);
@@ -1129,10 +1130,6 @@ namespace Test.MetaDraw
 
             // clean up resources
             metadrawLogic.CleanUpResources();
-
-            // delete output - added thread sleep to ensure meta draw finished cleaning up resources - this was causing the test to fail when run in appveyor
-            Thread.Sleep(3000); 
-            File.Delete(pathWithPeriodInIt);
             Directory.Delete(outputFolder, true);
         }
 
