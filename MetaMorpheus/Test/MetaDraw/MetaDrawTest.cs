@@ -1083,7 +1083,8 @@ namespace Test.MetaDraw
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
 
             string pathWithPeriodInIt = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
-            File.Copy(spectraFile, pathWithPeriodInIt, true);
+            if (!File.Exists(pathWithPeriodInIt))
+                File.Copy(spectraFile, pathWithPeriodInIt, true);
             spectraFile = pathWithPeriodInIt;
 
             Directory.CreateDirectory(outputFolder);
@@ -1125,9 +1126,6 @@ namespace Test.MetaDraw
             metadrawLogic.CleanUpResources();
 
             // delete output
-           
-
-            File.Delete(pathWithPeriodInIt);
             Directory.Delete(outputFolder, true);
         }
 
@@ -1599,7 +1597,7 @@ namespace Test.MetaDraw
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
             Assert.That(Directory.Exists(outputFolder));
 
-            psm = metadrawLogic.FilteredListOfPsms[17];
+            psm = metadrawLogic.FilteredListOfPsms[20];
             metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psm);
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psm, outputFolder, 200);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"2_RGNVC[Common FixedCarbamidomet_SequenceAnnotation.bmp")));
