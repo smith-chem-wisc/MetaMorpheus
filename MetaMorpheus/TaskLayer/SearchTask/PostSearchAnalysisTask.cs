@@ -143,13 +143,18 @@ namespace TaskLayer
                 }
             }
 
-            _filteredPsms = _filterType.Equals("q-value")
+            // after pep or q value filtering ,group by chimera,
+            // order in each group by q value,
+            // return top n in each group where n the maximum number of ids per spectrum
+            _filteredPsms = (_filterType.Equals("q-value")
                 ? Parameters.AllPsms.Where(p =>
                         p.FdrInfo.QValue <= _filterThreshold
                         && p.FdrInfo.QValueNotch <= _filterThreshold)
-                    .ToList()
                 : Parameters.AllPsms.Where(p =>
-                        p.FdrInfo.PEP_QValue <= _filterThreshold)
+                        p.FdrInfo.PEP_QValue <= _filterThreshold))
+                    .GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
+                    .Select(chimeraGroup => chimeraGroup.OrderBy(p => p.FdrInfo.QValue))
+                    .SelectMany(chimeraGroup => chimeraGroup.Take(CommonParameters.MaximumIdentificationsPerSpectrum))
                     .ToList();
 
             // This property is used for calculating file specific results, which requires calculating
@@ -173,6 +178,11 @@ namespace TaskLayer
         /// <param name="psmOrPeptideCountForResults"> The number of target psms scoring below threshold </param>
         private void FilterSpecificPsms(List<SpectralMatch> fileSpecificPsmsOrPeptides, out int psmOrPeptideCountForResults)
         {
+            fileSpecificPsmsOrPeptides = fileSpecificPsmsOrPeptides.GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
+                .Select(chimeraGroup => chimeraGroup.OrderBy(p => p.FdrInfo.QValue))
+                .SelectMany(chimeraGroup => chimeraGroup.Take(CommonParameters.MaximumIdentificationsPerSpectrum))
+                .ToList();
+
             psmOrPeptideCountForResults = _filterType.Equals("q-value")
                 ? fileSpecificPsmsOrPeptides.Count(p =>
                     !p.IsDecoy
@@ -683,8 +693,13 @@ namespace TaskLayer
                 ? Parameters.AllPsms.Where(p =>
                         (Parameters.SearchParameters.WriteDecoys || !p.IsDecoy)
                         && (Parameters.SearchParameters.WriteContaminants || !p.IsContaminant))
+                    .GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
+                    .Select(chimeraGroup => chimeraGroup.OrderBy(p => p.FdrInfo.QValue))
+                    .SelectMany(chimeraGroup => chimeraGroup.Take(CommonParameters.MaximumIdentificationsPerSpectrum))
                     .ToList()
                 : thresholdPsmList;
+
+            
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
