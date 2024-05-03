@@ -61,28 +61,6 @@ namespace EngineLayer.FdrAnalysis
             return sb.ToString();
         }
 
-        public static void ExportCsv(string outputPath, string searchType, IEnumerable<PsmData> psmData)
-        {
-            var variablesToOutput = PsmData.trainingInfos[searchType];
-            var header = string.Join(",", variablesToOutput);
-            var lines = new List<string> { header };
-
-            foreach (var psm in psmData)
-            {
-                var line = new StringBuilder();
-                foreach (var variable in variablesToOutput)
-                {
-                    var property = typeof(PsmData).GetProperty(variable).GetValue(psm, null);
-                    var floatValue = (float)property;
-                    line.Append(floatValue.ToString());
-                    line.Append(",");
-                }
-                lines.Add(line.ToString());
-            }
-
-            System.IO.File.WriteAllLines(outputPath, lines);
-        }
-
         [LoadColumn(0)]
         public float Intensity { get; set; }
 
