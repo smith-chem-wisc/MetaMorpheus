@@ -38,9 +38,29 @@ namespace TaskLayer
         private string _filterType;
         private double _filterThreshold;
 
+        public Func<(List<SpectralMatch> SpectralMatches, int MaxIdentifications), List<SpectralMatch>>
+            ExcessiveChimeraRemover = spectralMatches =>
+            {
+                return spectralMatches.SpectralMatches.GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
+                    .Select(chimeraGroup => chimeraGroup
+                        .OrderBy(p => p.FdrInfo.QValue)
+                        .ThenBy(psm => psm.FdrInfo.PEP_QValue)
+                        .ThenBy(psm => psm.Score))
+                    .SelectMany(chimeraGroup => chimeraGroup.Take(spectralMatches.MaxIdentifications))
+                    .OrderByDescending(b => b.Score)
+                    .ThenBy(b =>
+                        b.BioPolymerWithSetModsMonoisotopicMass.HasValue
+                            ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value)
+                            : double.MaxValue)
+                    .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass))
+                    .Select(b => b.First()).ToList();
+            };
+ 
+
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
+
         }
 
         public MyTaskResults Run()
@@ -67,9 +87,12 @@ namespace TaskLayer
                 Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
                 Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
                 Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-                   .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
-                   .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
-
+                    .ThenBy(b =>
+                        b.BioPolymerWithSetModsMonoisotopicMass.HasValue
+                            ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value)
+                            : double.MaxValue)
+                    .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass))
+                    .Select(b => b.First()).ToList();
                 CalculatePsmFdr();
             }
 
@@ -146,16 +169,13 @@ namespace TaskLayer
             // after pep or q value filtering ,group by chimera,
             // order in each group by q value,
             // return top n in each group where n the maximum number of ids per spectrum
-            _filteredPsms = (_filterType.Equals("q-value")
+            _filteredPsms = ExcessiveChimeraRemover(((_filterType.Equals("q-value")
                 ? Parameters.AllPsms.Where(p =>
-                        p.FdrInfo.QValue <= _filterThreshold
-                        && p.FdrInfo.QValueNotch <= _filterThreshold)
+                    p.FdrInfo.QValue <= _filterThreshold
+                    && p.FdrInfo.QValueNotch <= _filterThreshold)
                 : Parameters.AllPsms.Where(p =>
-                        p.FdrInfo.PEP_QValue <= _filterThreshold))
-                    .GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
-                    .Select(chimeraGroup => chimeraGroup.OrderBy(p => p.FdrInfo.QValue))
-                    .SelectMany(chimeraGroup => chimeraGroup.Take(CommonParameters.MaximumIdentificationsPerSpectrum))
-                    .ToList();
+                    p.FdrInfo.PEP_QValue <= _filterThreshold)).ToList(),
+                CommonParameters.MaximumIdentificationsPerSpectrum));
 
             // This property is used for calculating file specific results, which requires calculating
             // FDR separately for each file. Therefore, no filtering is performed
@@ -176,12 +196,10 @@ namespace TaskLayer
         /// </summary>
         /// <param name="fileSpecificPsmsOrPeptides"> A list of PSMs to be modified in place </param>
         /// <param name="psmOrPeptideCountForResults"> The number of target psms scoring below threshold </param>
-        private void FilterSpecificPsms(List<SpectralMatch> fileSpecificPsmsOrPeptides, out int psmOrPeptideCountForResults)
+        private void FilterSpecificPsms(ref List<SpectralMatch> fileSpecificPsmsOrPeptides, out int psmOrPeptideCountForResults)
         {
-            fileSpecificPsmsOrPeptides = fileSpecificPsmsOrPeptides.GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
-                .Select(chimeraGroup => chimeraGroup.OrderBy(p => p.FdrInfo.QValue))
-                .SelectMany(chimeraGroup => chimeraGroup.Take(CommonParameters.MaximumIdentificationsPerSpectrum))
-                .ToList();
+            fileSpecificPsmsOrPeptides = ExcessiveChimeraRemover((fileSpecificPsmsOrPeptides, CommonParameters.MaximumIdentificationsPerSpectrum));
+                
 
             psmOrPeptideCountForResults = _filterType.Equals("q-value")
                 ? fileSpecificPsmsOrPeptides.Count(p =>
@@ -694,12 +712,13 @@ namespace TaskLayer
                         (Parameters.SearchParameters.WriteDecoys || !p.IsDecoy)
                         && (Parameters.SearchParameters.WriteContaminants || !p.IsContaminant))
                     .GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
-                    .Select(chimeraGroup => chimeraGroup.OrderBy(p => p.FdrInfo.QValue))
+                    .Select(chimeraGroup => chimeraGroup
+                        .OrderBy(p => p.FdrInfo.QValue)
+                        .ThenBy(psm => psm.FdrInfo.PEP_QValue)
+                        .ThenBy(psm => psm.Score))
                     .SelectMany(chimeraGroup => chimeraGroup.Take(CommonParameters.MaximumIdentificationsPerSpectrum))
                     .ToList()
                 : thresholdPsmList;
-
-            
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
@@ -744,7 +763,7 @@ namespace TaskLayer
                 new FdrAnalysisEngine(psmsForThisFile, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
                     new List<string> { Parameters.SearchTaskId }).Run();
 
-                FilterSpecificPsms(psmsForThisFile, out psmOrPeptideCountForResults);
+                FilterSpecificPsms(ref psmsForThisFile, out psmOrPeptideCountForResults);
 
                 // write summary text
                 Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
@@ -955,7 +974,7 @@ namespace TaskLayer
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
 
-                    FilterSpecificPsms(psmsForThisFile, out int count); // Filter psms in place before writing
+                    FilterSpecificPsms(ref psmsForThisFile, out int count); // Filter psms in place before writing
                     // write mzID
                     if (Parameters.SearchParameters.WriteMzId)
                     {
@@ -1342,7 +1361,7 @@ namespace TaskLayer
                 FileSpecificParameters, new List<string> { Parameters.SearchTaskId },
                 "Peptide").Run();
 
-            FilterSpecificPsms(peptides, out int psmOrPeptideCountForResults);
+            FilterSpecificPsms(ref peptides, out int psmOrPeptideCountForResults);
 
             WritePsmsToTsv(peptides, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
@@ -1367,7 +1386,7 @@ namespace TaskLayer
                 new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
                     new List<string> { Parameters.SearchTaskId }, "Peptide").Run();
 
-                FilterSpecificPsms(peptidesForFile, out psmOrPeptideCountForResults);
+                FilterSpecificPsms(ref peptidesForFile, out psmOrPeptideCountForResults);
 
                 Parameters.SearchTaskResults.AddTaskSummaryText(
                     strippedFileName + " Target " + GlobalVariables.AnalyteType.ToLower() + "s with " 
@@ -1522,7 +1541,7 @@ namespace TaskLayer
                 .ThenBy(p => p.FdrInfo.CumulativeTarget)
                 .ToList();
 
-            FilterSpecificPsms(possibleVariantPsms, out int countOfConfidentPsms);
+            FilterSpecificPsms(ref possibleVariantPsms, out int countOfConfidentPsms);
             WritePsmsToTsv(possibleVariantPsms, variantPsmFile);
 
             List<SpectralMatch> variantPeptides = possibleVariantPsms
@@ -1566,7 +1585,7 @@ namespace TaskLayer
             Dictionary<Protein, HashSet<SequenceVariation>> stopGainVariants = new();
             Dictionary<Protein, HashSet<SequenceVariation>> stopLossVariants = new();
 
-            FilterSpecificPsms(confidentVariantPeps, out int countOfConfidentPeptides); // Filter psms in place
+            FilterSpecificPsms(ref confidentVariantPeps, out int countOfConfidentPeptides); // Filter psms in place
 
             List<PeptideSpectralMatch> modifiedVariantPeptides = confidentVariantPeps
                 .Where(p => p.ModsIdentified != null && p.ModsIdentified.Count > 0 && p is PeptideSpectralMatch)
