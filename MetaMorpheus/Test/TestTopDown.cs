@@ -111,6 +111,8 @@ namespace Test
 
             var spectraPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData",
                 "HighlyChimericSnip.mzML");
+            var secondSpectraPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData",
+                               "TDGPTMDSearchSingleSpectra.mzML");
             var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData",
                 "HistoneH3GPTMD.xml");
             var taskPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData",
@@ -124,19 +126,29 @@ namespace Test
                 var searchTaskDir = Path.Combine(tempDirPath, $"Task1-SearchTask{maxIds}");
                 var runner = new EverythingRunnerEngine(
                     new List<(string, MetaMorpheusTask)> { ($"Task1-SearchTask{maxIds}", searchTask) },
-                    new List<string> { spectraPath },
+                    new List<string> { spectraPath, secondSpectraPath },
                     new List<DbForTask> { new DbForTask(dbPath, false) }, tempDirPath);
                 runner.Run();
 
-
-                var psms = PsmTsvReader.ReadTsv(Path.Combine(searchTaskDir, "AllPSMs.psmtsv"), out _);
-                    
-                    psms.GroupBy(psm => psm, new CustomComparer<PsmFromTsv>(psm => psm.Ms2ScanNumber, psm => psm.FileNameWithoutExtension))
+                // check bulk results
+                PsmTsvReader.ReadTsv(Path.Combine(searchTaskDir, "AllPSMs.psmtsv"), out _)
+                    .GroupBy(psm => psm, new CustomComparer<PsmFromTsv>(psm => psm.Ms2ScanNumber, psm => psm.FileNameWithoutExtension))
                     .ForEach(chimeraGroup => Assert.That(chimeraGroup.Count(), Is.LessThanOrEqualTo(maxIds)));
 
-                var proteoforms = PsmTsvReader.ReadTsv(Path.Combine(searchTaskDir, "AllProteoforms.psmtsv"), out _);
-                    proteoforms.GroupBy(proteoform => proteoform, CustomComparer<PsmFromTsv>.ChimeraComparer)
+                PsmTsvReader.ReadTsv(Path.Combine(searchTaskDir, "AllProteoforms.psmtsv"), out _)
+                    .GroupBy(proteoform => proteoform, CustomComparer<PsmFromTsv>.ChimeraComparer)
                     .ForEach(chimeraGroup => Assert.That(chimeraGroup.Count(), Is.LessThanOrEqualTo(maxIds)));
+
+                // check individual file results
+                var files = Directory.GetFiles(Path.Combine(searchTaskDir, "Individual File Results"));
+                files.Where(p => p.Contains("PSMs.psmtsv"))
+                    .ForEach(psmFile => PsmTsvReader.ReadTsv(psmFile, out _)
+                    .GroupBy(psm => psm, new CustomComparer<PsmFromTsv>(psm => psm.Ms2ScanNumber, psm => psm.FileNameWithoutExtension))
+                    .ForEach(chimeraGroup => Assert.That(chimeraGroup.Count(), Is.LessThanOrEqualTo(maxIds))));
+                files.Where(p => p.Contains("Proteoforms.psmtsv"))
+                    .ForEach(proteoformFile => PsmTsvReader.ReadTsv(proteoformFile, out _)
+                    .GroupBy(proteoform => proteoform, CustomComparer<PsmFromTsv>.ChimeraComparer)
+                    .ForEach(chimeraGroup => Assert.That(chimeraGroup.Count(), Is.LessThanOrEqualTo(maxIds))));
             }
 
             Directory.Delete(tempDirPath, true);
