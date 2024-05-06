@@ -35,6 +35,7 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
+            PrecursorScanIntensity = scan.PrecursorIntensity;
             DigestionParams = commonParameters.DigestionParams;
             PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
@@ -65,6 +66,7 @@ namespace EngineLayer
         public List<double> LocalizedScores { get; internal set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
+        public double? PrecursorScanIntensity { get; }
         public double ScanRetentionTime { get; }
         public int ScanExperimentalPeaks { get; }
         public double TotalIonCurrent { get; }
