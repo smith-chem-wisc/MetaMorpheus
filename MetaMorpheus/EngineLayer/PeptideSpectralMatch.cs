@@ -13,24 +13,6 @@ namespace EngineLayer
             List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0) : base(peptide, notch, score, scanIndex,
             scan, commonParameters, matchedFragmentIons, xcorr)
         {
-            _BestMatchingPeptides = new List<(int, PeptideWithSetModifications)>();
-            ScanIndex = scanIndex;
-            FullFilePath = scan.FullFilePath;
-            ScanNumber = scan.OneBasedScanNumber;
-            PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
-            ScanRetentionTime = scan.RetentionTime;
-            ScanExperimentalPeaks = scan.NumPeaks;
-            TotalIonCurrent = scan.TotalIonCurrent;
-            ScanPrecursorCharge = scan.PrecursorCharge;
-            ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
-            ScanPrecursorMass = scan.PrecursorMass;
-            DigestionParams = commonParameters.DigestionParams;
-            PeptidesToMatchingFragments = new Dictionary<PeptideWithSetModifications, List<MatchedFragmentIon>>();
-            Xcorr = xcorr;
-            NativeId = scan.NativeId;
-            RunnerUpScore = commonParameters.ScoreCutoff;
-            MsDataScan = scan.TheScan;
-            SpectralAngle = -1;
 
         }
         #region Silac

@@ -24,6 +24,7 @@ namespace EngineLayer
             PrecursorScanNumber = scan.OneBasedPrecursorScanNumber;
             ScanRetentionTime = scan.RetentionTime;
             ScanExperimentalPeaks = scan.NumPeaks;
+            PrecursorScanIntensity = scan.PrecursorIntensity;
             TotalIonCurrent = scan.TotalIonCurrent;
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
@@ -63,6 +64,7 @@ namespace EngineLayer
         public double TotalIonCurrent { get; }
         public int ScanPrecursorCharge { get; }
         public double ScanPrecursorMonoisotopicPeakMz { get; }
+        public double PrecursorScanIntensity { get; }
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
