@@ -57,7 +57,7 @@ namespace Test
             //we're adding a neutral loss of 5 to the product to make sure we hit the right spot in the unit test to add that loss to the product ion string
             Product p = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 5);
             mfi.Add(new MatchedFragmentIon(p, 1, 1, 1));
-            PeptideSpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), mfi);
+            SpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), mfi);
 
             myPsm.AddOrReplace(pwsm2, 10, 0, true, mfi, 10);
 
@@ -71,7 +71,7 @@ namespace Test
             string ppmErrorString = myPsmStringSplit[24];
 
             //The two different mods produce two separate mass errors, which are both then reported
-            Assert.AreEqual("0.00|11801.30", ppmErrorString);
+            Assert.AreEqual("0.00000|11801.30000", ppmErrorString);
 
             //Make sure we see produt ion neutral losses in the output.
             string matchedIonSeries = myPsmStringSplit[39];
@@ -94,7 +94,7 @@ namespace Test
             myPsmStringSplit = myPsmString.Split('\t');
             ppmErrorString = myPsmStringSplit[24];
 
-            Assert.AreEqual("0.00", ppmErrorString);
+            Assert.AreEqual("0.00000", ppmErrorString);
         }
     }
 }

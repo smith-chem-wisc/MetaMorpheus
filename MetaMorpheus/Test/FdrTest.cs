@@ -18,6 +18,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -65,20 +66,20 @@ namespace Test
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 3, 0, scan1, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 3, 0, scan1, commonParameters, new List<MatchedFragmentIon>());
 
             MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
             Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, pep2.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 1, 2, 1, scan2, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psm2 = new PeptideSpectralMatch(pep2, 1, 2, 1, scan2, commonParameters, new List<MatchedFragmentIon>());
 
             MsDataScan mzLibScan3 = t.GetOneBasedScan(6);
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, pep3.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
-            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, commonParameters, new List<MatchedFragmentIon>());
 
             psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(), 0);
 
-            var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
-            foreach (PeptideSpectralMatch psm in newPsms)
+            var newPsms = new List<SpectralMatch> { psm1, psm2, psm3 };
+            foreach (SpectralMatch psm in newPsms)
             {
                 psm.ResolveAllAmbiguities();
             }
@@ -125,20 +126,20 @@ namespace Test
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 3, 0, scan1, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 3, 0, scan1, commonParameters, new List<MatchedFragmentIon>());
 
             MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
             Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, pep2.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
-            PeptideSpectralMatch psm2 = new PeptideSpectralMatch(pep2, 1, 2, 1, scan2, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psm2 = new PeptideSpectralMatch(pep2, 1, 2, 1, scan2, commonParameters, new List<MatchedFragmentIon>());
 
             MsDataScan mzLibScan3 = t.GetOneBasedScan(6);
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, pep3.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
-            PeptideSpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, commonParameters, new List<MatchedFragmentIon>());
+            SpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, commonParameters, new List<MatchedFragmentIon>());
 
             psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(), 0);
 
-            var newPsms = new List<PeptideSpectralMatch> { psm1, psm2, psm3 };
-            foreach (PeptideSpectralMatch psm in newPsms)
+            var newPsms = new List<SpectralMatch> { psm1, psm2, psm3 };
+            foreach (SpectralMatch psm in newPsms)
             {
                 psm.ResolveAllAmbiguities();
             }
@@ -164,24 +165,23 @@ namespace Test
             List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta"), true, DecoyType.Reverse, false, out var dbErrors, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
                     ProteinDbLoader.UniprotOrganismRegex, -1);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML", CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), SearchParameters.WriteSpectralLibrary).Run();
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1, 
                 CommonParameters, fsp, new List<string>()).Run());
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            var nonNullPsmsOriginalCopy = allPsmsArray.Where(p => p != null).ToList();
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
-            PeptideSpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
+            SpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
 
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
 
             List<string> sequences = new List<string>();
-            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Peptide.FullSequence).ToList();
                 sequences.Add(String.Join("|", ss));
             }
 
@@ -206,30 +206,29 @@ namespace Test
             fileSpecificRetTimeHI_behavior.Add("TaGe_SA_HeLa_04_subset_longestSeq.mzML", HI_Time_avg_dev);
 
             int chargeStateMode = 4;
-            var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
+            var (notch, pwsm) = maxScorePsm.BestMatchingBioPolymersWithSetMods.First();
             Dictionary<string, float> massError = new Dictionary<string, float>
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
 
-            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Protein.IsDecoy);
-            Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
+            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, maxScorePsm, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Parent.IsDecoy);
+            Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(52.0).Within(0.05));
-            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
-            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
-            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
 
-            List<PeptideSpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
-            List<PeptideSpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
-            List<PeptideSpectralMatch> psmCopyForNoOutputFolder = nonNullPsms.ToList();
+            List<SpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
+            List<SpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
+            List<SpectralMatch> psmCopyForNoOutputFolder = nonNullPsms.ToList();
 
             PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(nonNullPsms, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
 
@@ -244,11 +243,11 @@ namespace Test
                 }
             }
 
-            List<PeptideSpectralMatch> moreNonNullPSMs = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> moreNonNullPSMs = new List<SpectralMatch>();
 
             for (int i = 0; i < 3; i++)
             {
-                foreach (PeptideSpectralMatch psm in nonNullPsms)
+                foreach (SpectralMatch psm in nonNullPsms)
                 {
                     moreNonNullPSMs.Add(psm);
                 }
@@ -267,14 +266,14 @@ namespace Test
             Product prod = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
             List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(prod, 1, 1.0, 1) };
 
-            PeptideSpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new CommonParameters(), mfi);
+            SpectralMatch variantPSM = new PeptideSpectralMatch(varPep, 0, maxScorePsm.Score, maxScorePsm.ScanIndex, scan, new CommonParameters(), mfi);
 
             sequenceToPsmCount = new Dictionary<string, int>();
             sequences = new List<string>();
             nonNullPsms.Add(variantPSM);
-            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Peptide.FullSequence).ToList();
                 sequences.Add(String.Join("|", ss));
             }
 
@@ -284,10 +283,10 @@ namespace Test
             {
                 sequenceToPsmCount.Add(grp.Key, grp.Count());
             }
-            var (vnotch, vpwsm) = variantPSM.BestMatchingPeptides.First();
+            var (vnotch, vpwsm) = variantPSM.BestMatchingBioPolymersWithSetMods.First();
 
             massError.Add(Path.GetFileName(variantPSM.FullFilePath), 0);
-            PsmData variantPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, variantPSM, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, vnotch, !maxScorePsm.IsDecoy);
+            PsmData variantPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, variantPSM,  fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, vpwsm, vnotch, !maxScorePsm.IsDecoy);
 
             Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
 
@@ -310,11 +309,11 @@ namespace Test
                 }
             }
 
-            List<PeptideSpectralMatch> moreNonNullPSMsCZE = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> moreNonNullPSMsCZE = new List<SpectralMatch>();
 
             for (int i = 0; i < 3; i++)
             {
-                foreach (PeptideSpectralMatch psm in psmCopyForCZETest)
+                foreach (SpectralMatch psm in psmCopyForCZETest)
                 {
                     moreNonNullPSMsCZE.Add(psm);
                 }
@@ -362,18 +361,18 @@ namespace Test
 
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchMode, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            List<PeptideSpectralMatch> moreNonNullPSMs = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> moreNonNullPSMs = new List<SpectralMatch>();
 
             int reps = 10;
             for (int i = 0; i < reps; i++)
             {
-                foreach (PeptideSpectralMatch psm in nonNullPsms)
+                foreach (SpectralMatch psm in nonNullPsms)
                 {
                     moreNonNullPSMs.Add(psm);
                 }
@@ -382,12 +381,12 @@ namespace Test
             FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(moreNonNullPSMs.Where(p => p != null).OrderByDescending(f=>f.Score).ToList(), 1, CommonParameters, fsp, new List<string>(), analysisType: "PSM", outputFolder: Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\")).Run());
 
             var maxScore = nonNullPsms.Select(n => n.Score).Max();
-            PeptideSpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
+            SpectralMatch maxScorePsm = nonNullPsms.Where(n => n.Score == maxScore).First();
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();
             List<string> sequences = new List<string>();
-            foreach (PeptideSpectralMatch psm in nonNullPsms)
+            foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingPeptides.Select(b => b.Peptide.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Peptide.FullSequence).ToList();
                 sequences.Add(String.Join(" | ", ss));
             }
             var s = sequences.GroupBy(i => i);
@@ -401,24 +400,23 @@ namespace Test
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTemHI_behaviorModifiedPeptides = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
             int chargeStateMode = 4;
-            var (notch, pwsm) = maxScorePsm.BestMatchingPeptides.First();
+            var (notch, pwsm) = maxScorePsm.BestMatchingBioPolymersWithSetMods.First();
 
             Dictionary<string, float> massError = new Dictionary<string, float>
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
-            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, sequenceToPsmCount, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Protein.IsDecoy);
-            Assert.That(maxScorePsm.PeptidesToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
+            var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Parent.IsDecoy);
+            Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)pwsm.BaseSequence.Length / 10.0;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             float maxPsmIntensity = (float)Math.Min(50, Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.AreEqual(maxPsmData.HydrophobicityZScore, float.NaN);
-            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
-            Assert.That(maxScorePsm.BestMatchingPeptides.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
-            Assert.That(maxScorePsm.PsmCount, Is.EqualTo(maxPsmData.PsmCount * reps));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
         }
@@ -436,7 +434,7 @@ namespace Test
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
-            PeptideSpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
+            SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
             psm.AddOrReplace(pwsm, 1, 1, true, new List<MatchedFragmentIon>(), 0);
             psm.AddOrReplace(pwsm, 1, 2, true, new List<MatchedFragmentIon>(), 0);
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
@@ -451,8 +449,8 @@ namespace Test
             Assert.AreEqual(2, pepValuePredictions.Count);
 
             List<int> notches = new List<int>();
-            List<PeptideWithSetModifications> peptides = new List<PeptideWithSetModifications>();
-            foreach (var bmp in psm.BestMatchingPeptides)
+            List<IBioPolymerWithSetMods> peptides = new List<IBioPolymerWithSetMods>();
+            foreach (var bmp in psm.BestMatchingBioPolymersWithSetMods)
             {
                 notches.Add(bmp.Notch);
                 peptides.Add(bmp.Peptide);
@@ -460,7 +458,7 @@ namespace Test
 
             PEP_Analysis_Cross_Validation.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, notches, peptides, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
             Assert.AreEqual(1, ambiguousPeptidesRemovedCount);
-            Assert.AreEqual(2, psm.BestMatchingPeptides.Select(b => b.Notch).ToList().Count);
+            Assert.AreEqual(2, psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Notch).ToList().Count);
         }
 
         [Test]
@@ -526,14 +524,14 @@ namespace Test
 
             extendedArray = extendedArray.OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
-            List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
+            List<SpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
-            List<PeptideSpectralMatch> psmBloated = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psmBloated = new List<SpectralMatch>();
             psmBloated.AddRange(nonNullPsms);
             int arrayMax = nonNullPsms.Count;
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
@@ -580,22 +578,22 @@ namespace Test
 
             extendedArray = extendedArray.OrderBy(b => b.PrecursorMass).ToArray();
 
-            PeptideSpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[extendedArray.Length];
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, extendedArray, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
-            List<PeptideSpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
+            List<SpectralMatch> nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             nonNullPsms = nonNullPsms.OrderByDescending(p => p.Score).ToList();
-            List<PeptideSpectralMatch> psmBloated = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> psmBloated = new List<SpectralMatch>();
             psmBloated.AddRange(nonNullPsms);
             int arrayMax = nonNullPsms.Count;
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
             psmBloated.AddRange(nonNullPsms.GetRange(2, arrayMax - 2));
-            PeptideSpectralMatch pp = psmBloated.OrderBy(p => p.ScanRetentionTime).First();
+            SpectralMatch pp = psmBloated.OrderBy(p => p.ScanRetentionTime).First();
 
             PeptideWithSetModifications newPwsmTwo = new PeptideWithSetModifications(new Protein("WAGVLPWFPWAAVVWGFWF", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
-            PeptideSpectralMatch newPsmTwo = new PeptideSpectralMatch(newPwsmTwo, pp.BestMatchingPeptides.First().Notch, pp.Score, pp.ScanIndex, mwsm, new CommonParameters(), pp.MatchedFragmentIons);
+            SpectralMatch newPsmTwo = new PeptideSpectralMatch(newPwsmTwo, pp.BestMatchingBioPolymersWithSetMods.First().Notch, pp.Score, pp.ScanIndex, mwsm, new CommonParameters(), pp.MatchedFragmentIons);
 
             psmBloated.Add(newPsmTwo);
 
@@ -611,17 +609,17 @@ namespace Test
                     2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
                 100, 1, null, new CommonParameters(), null);
 
-            PeptideSpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>(), 0);
+            SpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>(), 0);
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
             psm1.AddOrReplace(pwsm, 10, 1, true, new List<MatchedFragmentIon>(), 0);
 
-            Assert.AreEqual(2, psm1.BestMatchingPeptides.Count());
+            Assert.AreEqual(2, psm1.BestMatchingBioPolymersWithSetMods.Count());
 
             psm1.RemoveThisAmbiguousPeptide(1, pwsm);
 
-            Assert.AreEqual(1, psm1.BestMatchingPeptides.Count());
+            Assert.AreEqual(1, psm1.BestMatchingBioPolymersWithSetMods.Count());
         }
 
         [Test]
@@ -643,15 +641,15 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" };
+            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "top-down";
             string[] trainingInfoTopDown = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "PsmCount", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle" };
+            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle" };
             Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
 
-            List<string> positiveAttributes = new List<string> { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "PsmCount", "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta" };
+            List<string> positiveAttributes = new List<string> { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta" };
             List<string> negativeAttributes = new List<string> { "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "IsInter", "IsIntra" };
 
             foreach (string attribute in positiveAttributes)
@@ -670,32 +668,31 @@ namespace Test
                 PrecursorChargeDiffToMode = 2,
                 DeltaScore = 3,
                 Notch = 4,
-                PsmCount = 5,
-                ModsCount = 6,
-                AbsoluteAverageFragmentMassErrorFromMedian = 7,
-                MissedCleavagesCount = 8,
-                Ambiguity = 9,
-                LongestFragmentIonSeries = 10,
-                ComplementaryIonCount = 11,
-                HydrophobicityZScore = 12,
-                IsVariantPeptide = 13,
-                AlphaIntensity = 14,
-                BetaIntensity = 15,
-                LongestFragmentIonSeries_Alpha = 16,
-                LongestFragmentIonSeries_Beta = 17,
-                IsDeadEnd = 18,
-                IsLoop = 19,
-                IsInter = 20,
-                IsIntra = 21,
+                ModsCount = 5,
+                AbsoluteAverageFragmentMassErrorFromMedian = 6,
+                MissedCleavagesCount = 7,
+                Ambiguity = 8,
+                LongestFragmentIonSeries = 9,
+                ComplementaryIonCount = 10,
+                HydrophobicityZScore = 11,
+                IsVariantPeptide = 12,
+                AlphaIntensity = 13,
+                BetaIntensity = 14,
+                LongestFragmentIonSeries_Alpha = 15,
+                LongestFragmentIonSeries_Beta = 16,
+                IsDeadEnd = 17,
+                IsLoop = 18,
+                IsInter = 19,
+                IsIntra = 20,
                 Label = false,
-                SpectralAngle = 22,
-                HasSpectralAngle = 23
+                SpectralAngle = 21,
+                HasSpectralAngle = 22
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t13\t18\t19\t22\t23";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22";
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
-            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t9\t10\t11\t22\t23";
+            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22";
             Assert.AreEqual(topDownToString, pd.ToString("top-down"));
         }
     }

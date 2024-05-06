@@ -4,18 +4,19 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Omics;
 using Omics.Modifications;
 
 namespace EngineLayer.Gptmd
 {
     public class GptmdEngine : MetaMorpheusEngine
     {
-        private readonly List<PeptideSpectralMatch> AllIdentifications;
+        private readonly List<SpectralMatch> AllIdentifications;
         private readonly IEnumerable<Tuple<double, double>> Combos;
         private readonly List<Modification> GptmdModifications;
         private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
 
-        public GptmdEngine(List<PeptideSpectralMatch> allIdentifications, List<Modification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public GptmdEngine(List<SpectralMatch> allIdentifications, List<Modification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
             GptmdModifications = gptmdModifications;
@@ -23,7 +24,7 @@ namespace EngineLayer.Gptmd
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
         }
 
-        public static bool ModFits(Modification attemptToLocalize, Protein protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
+        public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
         {
             //the peptideOneBasedIndex and proteinOneBasedIndex are for the position of the modification on the sequence
 
@@ -75,17 +76,17 @@ namespace EngineLayer.Gptmd
                 Tolerance precursorMassTolerance = FilePathToPrecursorMassTolerance[psm.FullFilePath];
 
                 // get mods to annotate database with
-                foreach (var pepWithSetMods in psm.BestMatchingPeptides.Select(v => v.Peptide))
+                foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications))
                 {
                     foreach (Modification mod in GetPossibleMods(psm.ScanPrecursorMass, GptmdModifications, Combos, precursorMassTolerance, pepWithSetMods))
                     {
-                        var isVariantProtein = pepWithSetMods.Protein != pepWithSetMods.Protein.NonVariantProtein;
+                        var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Protein.NonVariantProtein;
 
                         for (int i = 0; i < pepWithSetMods.Length; i++)
                         {
-                            int indexInProtein = pepWithSetMods.OneBasedStartResidueInProtein + i;
+                            int indexInProtein = pepWithSetMods.OneBasedStartResidue + i;
 
-                            if (ModFits(mod, pepWithSetMods.Protein, i + 1, pepWithSetMods.Length, indexInProtein))
+                            if (ModFits(mod, pepWithSetMods.Parent, i + 1, pepWithSetMods.Length, indexInProtein))
                             {
                                 // if not a variant protein, index to base protein sequence
                                 if (!isVariantProtein)

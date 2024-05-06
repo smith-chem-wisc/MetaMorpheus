@@ -22,13 +22,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private readonly List<int>[] PrecursorIndex;
         private readonly int MinimumPeptideLength;
-        readonly PeptideSpectralMatch[][] GlobalCategorySpecificPsms;
+        readonly SpectralMatch[][] GlobalCategorySpecificPsms;
         readonly CommonParameters ModifiedParametersNoComp;
         readonly List<ProductType> ProductTypesToSearch;
         readonly List<Modification> VariableTerminalModifications;
         readonly List<int>[] CoisolationIndex;
 
-        public NonSpecificEnzymeSearchEngine(PeptideSpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<int>[] coisolationIndex,
+        public NonSpecificEnzymeSearchEngine(SpectralMatch[][] globalPsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<int>[] coisolationIndex,
             List<PeptideWithSetModifications> peptideIndex, List<int>[] fragmentIndex, List<int>[] precursorIndex, int currentPartition,
             CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<Modification> variableModifications, MassDiffAcceptor massDiffAcceptor, double maximumMassThatFragmentIonScoreIsDoubled, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, massDiffAcceptor, maximumMassThatFragmentIonScoreIsDoubled, nestedIds)
@@ -136,7 +136,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                         double thisScore = CalculatePeptideScore(scan.TheScan, matchedIons);
                                         if (thisScore > CommonParameters.ScoreCutoff)
                                         {
-                                            PeptideSpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
+                                            SpectralMatch[] localPeptideSpectralMatches = GlobalCategorySpecificPsms[(int)FdrClassifier.GetCleavageSpecificityCategory(peptide.CleavageSpecificityForFdrCategory)];
                                             if (localPeptideSpectralMatches[ms2ArrayIndex] == null)
                                             {
                                                 localPeptideSpectralMatches[ms2ArrayIndex] = new PeptideSpectralMatch(peptide, notch, thisScore, ms2ArrayIndex, scan, CommonParameters, matchedIons);
@@ -349,11 +349,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     PeptideWithSetModifications updatedPwsm = null;
                     if (fragmentationTerminus == FragmentationTerminus.N)
                     {
-                        int endResidue = peptide.OneBasedStartResidueInProtein + fragment.FragmentNumber - 1; //-1 for one based index
+                        int endResidue = peptide.OneBasedStartResidue + fragment.FragmentNumber - 1; //-1 for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();
                         foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)
                         {
-                            if (mod.Key < endResidue - peptide.OneBasedStartResidueInProtein + 3) //check if we cleaved it off, +1 for N-terminus being mod 1 and first residue being mod 2, +1 again for the -1 on end residue for one based index, +1 (again) for the one-based start residue
+                            if (mod.Key < endResidue - peptide.OneBasedStartResidue + 3) //check if we cleaved it off, +1 for N-terminus being mod 1 and first residue being mod 2, +1 again for the -1 on end residue for one based index, +1 (again) for the one-based start residue
                             {
                                 updatedMods.Add(mod.Key, mod.Value);
                             }
@@ -362,13 +362,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         {
                             updatedMods.Add(endResidue, terminalMod);
                         }
-                        updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, endResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
+                        updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue, endResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
                     else //if C terminal ions, shave off the n-terminus
                     {
-                        int startResidue = peptide.OneBasedEndResidueInProtein - fragment.FragmentNumber + 1; //plus one for one based index
+                        int startResidue = peptide.OneBasedEndResidue - fragment.FragmentNumber + 1; //plus one for one based index
                         Dictionary<int, Modification> updatedMods = new Dictionary<int, Modification>();  //updateMods
-                        int indexShift = startResidue - peptide.OneBasedStartResidueInProtein;
+                        int indexShift = startResidue - peptide.OneBasedStartResidue;
                         foreach (KeyValuePair<int, Modification> mod in peptide.AllModsOneIsNterminus)
                         {
                             if (mod.Key > indexShift + 1) //check if we cleaved it off, +1 for N-terminus being mod 1 and first residue being 2
@@ -381,7 +381,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         {
                             updatedMods.Add(startResidue - 1, terminalMod);
                         }
-                        updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, startResidue, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
+                        updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, startResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
                     return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
                 }
@@ -399,7 +399,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 if (notch >= 0)
                 {
                     //need to update so that the cleavage specificity is recorded
-                    PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, peptide.AllModsOneIsNterminus, peptide.NumFixedMods);
+                    PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, peptide.AllModsOneIsNterminus, peptide.NumFixedMods);
                     return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
                 }
                 else //try a terminal mod (if it exists)
@@ -421,14 +421,14 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 //add the terminal mod
                                 if (fragmentationTerminus == FragmentationTerminus.N)
                                 {
-                                    updatedMods[peptide.OneBasedEndResidueInProtein] = terminalMod;
+                                    updatedMods[peptide.OneBasedEndResidue] = terminalMod;
                                 }
                                 else
                                 {
-                                    updatedMods[peptide.OneBasedStartResidueInProtein - 1] = terminalMod;
+                                    updatedMods[peptide.OneBasedStartResidue - 1] = terminalMod;
                                 }
 
-                                PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidueInProtein, peptide.OneBasedEndResidueInProtein, CleavageSpecificity.Unknown, "", 0, updatedMods, peptide.NumFixedMods);
+                                PeptideWithSetModifications updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, peptide.NumFixedMods);
                                 return new Tuple<int, PeptideWithSetModifications>(notch, updatedPwsm);
                             }
                         }
@@ -438,7 +438,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             return new Tuple<int, PeptideWithSetModifications>(-1, null);
         }
 
-        public static List<PeptideSpectralMatch> ResolveFdrCategorySpecificPsms(List<PeptideSpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        public static List<SpectralMatch> ResolveFdrCategorySpecificPsms(List<SpectralMatch>[] AllPsms, int numNotches, string taskId, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
         {
             //update all psms with peptide info
             AllPsms.ToList()
@@ -446,13 +446,13 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 .ForEach(psmArray => psmArray.Where(psm => psm != null).ToList()
                 .ForEach(psm => psm.ResolveAllAmbiguities()));
 
-            foreach (List<PeptideSpectralMatch> psmsArray in AllPsms)
+            foreach (List<SpectralMatch> psmsArray in AllPsms)
             {
                 if (psmsArray != null)
                 {
-                    List<PeptideSpectralMatch> cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
-                       .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
-                       .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.PeptideMonisotopicMass)).Select(b => b.First()).ToList();
+                    List<SpectralMatch> cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
+                       .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                       .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
 
                     new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
 
@@ -495,19 +495,19 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             //There's a chance of weird categories getting a random decoy before a random target, but we don't want to give that target a q value of zero.
             //We can't just take the q of the first decoy, because if the target wasn't random (score = 40), but there are no other targets before the decoy (score = 5), then we're incorrectly dinging the target
             //The current solution is such that if a minor category has a lower q value than it's corresponding score in the major category, then its q-value is changed to what it would be in the major category
-            List<PeptideSpectralMatch> majorCategoryPsms = AllPsms[majorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted major category
+            List<SpectralMatch> majorCategoryPsms = AllPsms[majorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted major category
             for (int i = 0; i < indexesOfInterest.Count; i++)
             {
                 int minorCategoryIndex = indexesOfInterest[i];
                 if (minorCategoryIndex != majorCategoryIndex)
                 {
-                    List<PeptideSpectralMatch> minorCategoryPsms = AllPsms[minorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted minor category
+                    List<SpectralMatch> minorCategoryPsms = AllPsms[minorCategoryIndex].Where(x => x != null).OrderByDescending(x => x.Score).ToList(); //get sorted minor category
                     int minorPsmIndex = 0;
                     int majorPsmIndex = 0;
                     while (minorPsmIndex < minorCategoryPsms.Count && majorPsmIndex < majorCategoryPsms.Count) //while in the lists
                     {
-                        PeptideSpectralMatch majorPsm = majorCategoryPsms[majorPsmIndex];
-                        PeptideSpectralMatch minorPsm = minorCategoryPsms[minorPsmIndex];
+                        SpectralMatch majorPsm = majorCategoryPsms[majorPsmIndex];
+                        SpectralMatch minorPsm = minorCategoryPsms[minorPsmIndex];
                         //major needs to be a lower score than the minor
                         if (majorPsm.Score > minorPsm.Score)
                         {
@@ -525,8 +525,8 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     //wrap up if we hit the end of the major category
                     while (minorPsmIndex < minorCategoryPsms.Count)
                     {
-                        PeptideSpectralMatch majorPsm = majorCategoryPsms[majorPsmIndex - 1]; //-1 because it's out of index right now
-                        PeptideSpectralMatch minorPsm = minorCategoryPsms[minorPsmIndex];
+                        SpectralMatch majorPsm = majorCategoryPsms[majorPsmIndex - 1]; //-1 because it's out of index right now
+                        SpectralMatch minorPsm = minorCategoryPsms[minorPsmIndex];
                         if (majorPsm.FdrInfo.QValue > minorPsm.FdrInfo.QValue)
                         {
                             minorPsm.FdrInfo.QValue = majorPsm.FdrInfo.QValue;
@@ -537,15 +537,15 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             }
 
             int numTotalSpectraWithPrecursors = AllPsms[indexesOfInterest[0]].Count;
-            List<PeptideSpectralMatch> bestPsmsList = new List<PeptideSpectralMatch>();
+            List<SpectralMatch> bestPsmsList = new List<SpectralMatch>();
             for (int i = 0; i < numTotalSpectraWithPrecursors; i++)
             {
-                PeptideSpectralMatch bestPsm = null;
+                SpectralMatch bestPsm = null;
                 double lowestQ = double.MaxValue;
                 int bestIndex = -1;
                 foreach (int index in indexesOfInterest) //foreach category
                 {
-                    PeptideSpectralMatch currentPsm = AllPsms[index][i];
+                    SpectralMatch currentPsm = AllPsms[index][i];
                     if (currentPsm != null)
                     {
                         double currentQValue = currentPsm.FdrInfo.QValue;
@@ -575,12 +575,12 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
             //It's probable that psms from some categories were removed by psms from other categories.
             //however, the fdr is still affected by their presence, since it was calculated before their removal.
-            foreach (List<PeptideSpectralMatch> psmsArray in AllPsms)
+            foreach (List<SpectralMatch> psmsArray in AllPsms)
             {
                 if (psmsArray != null)
                 {
-                    List<PeptideSpectralMatch> cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
-                       .ThenBy(b => b.PeptideMonisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value) : double.MaxValue)
+                    List<SpectralMatch> cleanedPsmsArray = psmsArray.Where(b => b != null).OrderByDescending(b => b.Score)
+                       .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                        .ToList();
 
                     new FdrAnalysisEngine(cleanedPsmsArray, numNotches, commonParameters, fileSpecificParameters, new List<string> { taskId }).Run();
@@ -605,11 +605,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
             //determine the start and end index ranges when considering the minimum peptide length
             int startResidue = nTerminus ?
-                peptide.OneBasedStartResidueInProtein + digestionParams.MinPeptideLength - 1 :
-                peptide.OneBasedStartResidueInProtein;
+                peptide.OneBasedStartResidue + digestionParams.MinPeptideLength - 1 :
+                peptide.OneBasedStartResidue;
             int endResidue = nTerminus ?
-                peptide.OneBasedEndResidueInProtein :
-                peptide.OneBasedEndResidueInProtein - digestionParams.MinPeptideLength + 1;
+                peptide.OneBasedEndResidue :
+                peptide.OneBasedEndResidue - digestionParams.MinPeptideLength + 1;
             string terminalStringToFind = nTerminus ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
 
             //get all the mods for this protein
@@ -627,11 +627,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 {
                     if (nTerminus)
                     {
-                        annotatedTerminalModDictionary.Add(index - peptide.OneBasedStartResidueInProtein + 1, terminalModsHere);
+                        annotatedTerminalModDictionary.Add(index - peptide.OneBasedStartResidue + 1, terminalModsHere);
                     }
                     else
                     {
-                        annotatedTerminalModDictionary.Add(peptide.OneBasedEndResidueInProtein - index + 1, terminalModsHere);
+                        annotatedTerminalModDictionary.Add(peptide.OneBasedEndResidue - index + 1, terminalModsHere);
                     }
                 }
             }
