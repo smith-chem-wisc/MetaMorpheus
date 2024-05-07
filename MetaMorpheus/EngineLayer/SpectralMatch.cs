@@ -29,6 +29,7 @@ namespace EngineLayer
             ScanPrecursorCharge = scan.PrecursorCharge;
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
+            PrecursorScanEnvelopePeakCount = scan.EnvelopePeakCount;
             DigestionParams = commonParameters.DigestionParams;
             BioPolymersWithSetModsToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
@@ -65,6 +66,7 @@ namespace EngineLayer
         public int ScanPrecursorCharge { get; }
         public double ScanPrecursorMonoisotopicPeakMz { get; }
         public double PrecursorScanIntensity { get; }
+        public int PrecursorScanEnvelopePeakCount { get; }
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
