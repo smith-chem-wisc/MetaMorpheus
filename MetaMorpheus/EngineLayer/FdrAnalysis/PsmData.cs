@@ -12,7 +12,7 @@ namespace EngineLayer.FdrAnalysis
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
             { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" } },
-            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", /*"PeaksInPrecursorEnvelope", "PrecursorEnvelopeScore"*/ "ChimeraDecoyRatio" } },
+            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope", /*"PrecursorEnvelopeScore", "ChimeraDecoyRatio",*/ "ChimeraCount" } },
             { "crosslink", new [] { "TotalMatchingFragmentCount", "AbsoluteAverageFragmentMassErrorFromMedian", "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
         }.ToImmutableDictionary();
 
@@ -48,6 +48,7 @@ namespace EngineLayer.FdrAnalysis
             { "PeaksInPrecursorEnvelope", 1},
             { "PrecursorEnvelopeScore", 1},
             { "ChimeraDecoyRatio", -1},
+            { "ChimeraCount", -1},
             }.ToImmutableDictionary();
 
         public string ToString(string searchType)
@@ -64,6 +65,27 @@ namespace EngineLayer.FdrAnalysis
             }
 
             return sb.ToString();
+        }
+        public static void ExportCsv(string outputPath, string searchType, IEnumerable<PsmData> psmData)
+        {
+            var variablesToOutput = PsmData.trainingInfos[searchType];
+            var header = string.Join(",", variablesToOutput);
+            var lines = new List<string> { header };
+
+            foreach (var psm in psmData)
+            {
+                var line = new StringBuilder();
+                foreach (var variable in variablesToOutput)
+                {
+                    var property = typeof(PsmData).GetProperty(variable).GetValue(psm, null);
+                    var floatValue = (float)property;
+                    line.Append(floatValue.ToString());
+                    line.Append(",");
+                }
+                lines.Add(line.ToString());
+            }
+
+            System.IO.File.WriteAllLines(outputPath, lines);
         }
 
         [LoadColumn(0)]
@@ -146,5 +168,8 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(27)]
         public float ChimeraDecoyRatio { get; set; }
+
+        [LoadColumn(28)]
+        public float ChimeraCount { get; set; }
     }
 }

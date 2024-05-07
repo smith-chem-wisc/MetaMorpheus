@@ -728,7 +728,7 @@ namespace TaskLayer
                 string strippedFileName = Path.GetFileNameWithoutExtension(psmFileGroup.Key);
                 var psmsForThisFile = psmFileGroup.ToList();
                 new FdrAnalysisEngine(psmsForThisFile, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
-                    new List<string> { Parameters.SearchTaskId }).Run();
+                    new List<string> { Parameters.SearchTaskId }, Parameters.OutputFolder).Run();
 
                 FilterSpecificPsms(psmsForThisFile, out psmOrPeptideCountForResults);
 

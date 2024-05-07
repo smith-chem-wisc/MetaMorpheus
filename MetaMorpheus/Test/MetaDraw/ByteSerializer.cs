@@ -40,6 +40,33 @@ namespace Test.MetaDraw
 
         #endregion
 
+        #region SingleObjectToFile
+
+        public static void ObjectToByteArrayFile<T>(this T obj, string fileName)
+        {
+            if (obj == null)
+                return;
+            System.Runtime.Serialization.Formatters.Binary.BinaryFormatter bf = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+            using (System.IO.FileStream fs = new System.IO.FileStream(fileName, System.IO.FileMode.Create))
+            {
+                bf.Serialize(fs, obj);
+            }
+        }
+
+        public static T ByteArrayFileToObject<T>(string fileName)
+        {
+            if (fileName == null)
+                return default;
+            using (System.IO.FileStream fs = new System.IO.FileStream(fileName, System.IO.FileMode.Open))
+            {
+                System.Runtime.Serialization.Formatters.Binary.BinaryFormatter binForm = new System.Runtime.Serialization.Formatters.Binary.BinaryFormatter();
+                T obj = (T)binForm.Deserialize(fs);
+                return obj;
+            }
+        }
+
+        #endregion
+
         #region Object Collection in Memory
 
         public static byte[] ObjectArrayToByteArray(object[] obj)
