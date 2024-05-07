@@ -1086,12 +1086,8 @@ namespace Test.MetaDraw
             // test loading when the file has a periods, commas, spaces in the name
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawLoadingWithWeirdFileNames");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
 
-            string pathWithPeriodInIt = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
-            if (!File.Exists(pathWithPeriodInIt))
-                File.Copy(spectraFile, pathWithPeriodInIt, true);
-            spectraFile = pathWithPeriodInIt;
 
             Directory.CreateDirectory(outputFolder);
 
@@ -1104,7 +1100,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.PsmResultFilePaths.Add(psmFile);
-            metadrawLogic.SpectraFilePaths.Add(pathWithPeriodInIt);
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
             var errors = metadrawLogic.LoadFiles(true, true);
             Assert.That(!errors.Any());
 
