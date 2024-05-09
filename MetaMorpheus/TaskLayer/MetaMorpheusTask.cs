@@ -181,7 +181,7 @@ namespace TaskLayer
                             if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                             {
                                 double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
-                                double precursorIntensity = ms2scan.SelectedIonMonoisotopicGuessIntensity.Value;
+                                double precursorIntensity = ms2scan.SelectedIonMonoisotopicGuessIntensity ?? 1;
 
                                 if (!precursors.Any(b =>
                                     commonParameters.DeconvolutionMassTolerance.Within(
@@ -193,7 +193,7 @@ namespace TaskLayer
                             else
                             {
                                 double precursorMZ = ms2scan.SelectedIonMZ.Value;
-                                double precursorIntensity = ms2scan.SelectedIonIntensity.Value;
+                                double precursorIntensity = ms2scan.SelectedIonIntensity ?? 1;
                                 if (!precursors.Any(b =>
                                     commonParameters.DeconvolutionMassTolerance.Within(
                                         precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
