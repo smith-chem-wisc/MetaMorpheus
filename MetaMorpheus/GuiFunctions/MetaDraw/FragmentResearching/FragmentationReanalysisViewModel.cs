@@ -179,8 +179,6 @@ namespace GuiFunctions
             }
             catch (Exception e)
             {
-                MessageBox.Show($"Ruh Roh Raggy - Default to HCD\n{e.Message}");
-
                 _selectedDissociationType = DissociationType.HCD;
                 dissociationTypeProducts = isProtein ?
                     Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.HCD].ToArray()
