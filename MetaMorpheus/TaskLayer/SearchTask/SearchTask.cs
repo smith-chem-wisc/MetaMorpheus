@@ -409,9 +409,9 @@ namespace TaskLayer
                 CommonParameters = CommonParameters
             };
 
-            var outPath = Path.Combine(OutputFolder, "SerializedPostSearhAnalysisTask.txt");
-            postProcessing.ObjectToByteArrayFile(outPath);
-            postProcessing = ByteSerializer.ByteArrayFileToObject<PostSearchAnalysisTask>(outPath);
+            //var outPath = Path.Combine(OutputFolder, "SerializedPostSearhAnalysisTask.txt");
+            //postProcessing.ObjectToByteArrayFile(outPath);
+            //postProcessing = ByteSerializer.ByteArrayFileToObject<PostSearchAnalysisTask>(outPath);
             
             return postProcessing.Run();
         }

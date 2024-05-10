@@ -745,10 +745,9 @@ namespace EngineLayer
                     normalizationFactor /= 10.0;
                 }
 
-                normalizationFactor = 1;
-
                 totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count / normalizationFactor * 10, 0));
-                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * 100.0, 0));
+                //intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * 100.0, 0));
+                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score)  * 10.0, 0));
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * 10.0, 0);
                 notch = notchToUse;
