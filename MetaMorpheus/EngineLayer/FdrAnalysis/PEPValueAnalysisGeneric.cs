@@ -25,7 +25,7 @@ namespace EngineLayer
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
-        private static Dictionary<string, (float DecoyRatio, float Count)> chimeraCounts = new Dictionary<string, (float DecoyRatio, float Count)>();
+        private static Dictionary<string, float> chimeraCounts = new Dictionary<string, float>();
 
 
         public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
@@ -56,7 +56,7 @@ namespace EngineLayer
             if (trainingVariables.Contains("ChimeraDecoyRatio") || trainingVariables.Contains("ChimeraCount"))
                 chimeraCounts = psms.Select(psm => ($"{psm.ScanNumber}{psm.FullFilePath}{psm.PrecursorScanNumber}", psm))
                     .GroupBy(p => p.Item1)
-                    .ToDictionary(p => p.Key, val => (val.Count(p => p.psm.IsDecoy) / (float)val.Count(), (float)val.Count()));
+                    .ToDictionary(p => p.Key, val => (float)val.Count());
 
             int chargeStateMode = GetChargeStateMode(psms);
 
@@ -624,7 +624,7 @@ namespace EngineLayer
             List<SpectralMatch> psms, List<int> psmIndicies,
             Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified,
             Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified,
-            Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, Dictionary<string, (float DecoyRatio, float Count)> chimeraCounts = null)
+            Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, Dictionary<string,float> chimeraCounts = null)
         {
             object psmDataListLock = new object();
             List<PsmData> psmDataList = new List<PsmData>();
@@ -705,7 +705,7 @@ namespace EngineLayer
             SpectralMatch psm, Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified,
             Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_modified,
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors, int chargeStateMode, IBioPolymerWithSetMods selectedPeptide, int notchToUse, bool label,
-            Dictionary<string, (float DecoyRatio, float Count)> chimeraCounts = null)
+            Dictionary<string, float> chimeraCounts = null)
         {
             double normalizationFactor = selectedPeptide.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
@@ -723,9 +723,7 @@ namespace EngineLayer
             float hydrophobicityZscore = float.NaN;
             bool isVariantPeptide = false;
             float chimeraCount = 0;
-            float chimeraDecoyRatio = 0;
             float peaksInPrecursorEnvelope = 0;
-            float precursorEnvelopeScore = 0;
 
             //crosslink specific features
             float alphaIntensity = 0;
@@ -770,13 +768,9 @@ namespace EngineLayer
 
                 if (PsmHasSpectralAngle(psm))
                     hasSpectralAngle = 1;
-                if (chimeraCounts is not null && chimeraCounts.TryGetValue($"{psm.ScanNumber}{psm.FullFilePath}{psm.PrecursorScanNumber}", out (float DecoyRatio, float Count) chimeraData))
-                {
-                    chimeraDecoyRatio = chimeraData.DecoyRatio;
-                    chimeraCount = chimeraData.Count;
-                }
+                if (chimeraCounts is not null && chimeraCounts.TryGetValue($"{psm.ScanNumber}{psm.FullFilePath}{psm.PrecursorScanNumber}", out float count))
+                    chimeraCount = count;
                 peaksInPrecursorEnvelope = (float)psm.PeaksInPrecursorEnvelope;
-                precursorEnvelopeScore = (float)(psm.PrecursorDeconvolutionScore / (double)1E6);
 
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
@@ -886,9 +880,7 @@ namespace EngineLayer
                 SpectralAngle = spectralAngle,
                 HasSpectralAngle = hasSpectralAngle,
                 ChimeraCount = chimeraCount,
-                ChimeraDecoyRatio = chimeraDecoyRatio,
                 PeaksInPrecursorEnvelope = peaksInPrecursorEnvelope,
-                PrecursorEnvelopeScore = precursorEnvelopeScore
             };
 
             return psm.PsmData_forPEPandPercolator;

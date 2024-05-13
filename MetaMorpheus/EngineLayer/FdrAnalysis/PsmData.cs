@@ -12,7 +12,7 @@ namespace EngineLayer.FdrAnalysis
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
             { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" } },
-            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope", /*"PrecursorEnvelopeScore", "ChimeraDecoyRatio",*/ "ChimeraCount" } },
+            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope", "ChimeraCount" } },
             { "crosslink", new [] { "TotalMatchingFragmentCount", "AbsoluteAverageFragmentMassErrorFromMedian", "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
         }.ToImmutableDictionary();
 
@@ -46,8 +46,6 @@ namespace EngineLayer.FdrAnalysis
             { "SpectralAngle", 1 },
             { "HasSpectralAngle", 1 },
             { "PeaksInPrecursorEnvelope", 1},
-            { "PrecursorEnvelopeScore", 1},
-            { "ChimeraDecoyRatio", -1},
             { "ChimeraCount", -1},
             }.ToImmutableDictionary();
 
@@ -164,12 +162,6 @@ namespace EngineLayer.FdrAnalysis
         public float PeaksInPrecursorEnvelope { get; set; }
 
         [LoadColumn(26)]
-        public float PrecursorEnvelopeScore { get; set; }
-
-        [LoadColumn(27)]
-        public float ChimeraDecoyRatio { get; set; }
-
-        [LoadColumn(28)]
         public float ChimeraCount { get; set; }
     }
 }
