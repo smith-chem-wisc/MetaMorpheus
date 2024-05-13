@@ -55,6 +55,8 @@ namespace MetaMorpheusGUI
 
             itemsControlSampleViewModel = new ParentChildScanPlotsView();
             ParentChildScanViewPlots.DataContext = itemsControlSampleViewModel;
+            AdditionalFragmentIonControl.DataContext = FragmentationReanalysisViewModel ??= new FragmentationReanalysisViewModel();
+            AdditionalFragmentIonControl.LinkMetaDraw(this);
 
             propertyView = new DataTable();
             propertyView.Columns.Add("Name", typeof(string));
@@ -76,8 +78,6 @@ namespace MetaMorpheusGUI
             plotsListBox.ItemsSource = plotTypes;
 
             exportPdfs.Content = MetaDrawSettings.ExportType;
-            FragmentationReanalysisViewModel = new FragmentationReanalysisViewModel();
-            AdditionalFragmentIonDisplay.DataContext = FragmentationReanalysisViewModel;
         }
 
         private void Window_Drop(object sender, DragEventArgs e)
@@ -1092,7 +1092,7 @@ namespace MetaMorpheusGUI
         /// <param name="sender"></param>
         /// <param name="e"></param>
         /// <exception cref="NotImplementedException"></exception>
-        private void SearchWithNewIons_OnClick(object sender, RoutedEventArgs e)
+        internal void SearchWithNewIons_OnClick(object sender, RoutedEventArgs e)
         {
             // find currently selected psm
             var psm = dataGridScanNums.SelectedItem as PsmFromTsv;
