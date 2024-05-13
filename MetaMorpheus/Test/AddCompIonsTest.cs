@@ -24,6 +24,44 @@ namespace Test
     [TestFixture]
     internal static class AddCompIonsTest
     {
+
+        [Test]
+        public static void RnTest()
+        {
+            //string path = @"B:\Users\Nic\Chimeras\TopDown_Analysis\Jurkat\SearchResults\MetaMorpheus\Task2-AveragingTask\TwoFileSerializationTest\Task1-SearchTask\SerializedPostSearhAnalysisTask.txt";
+            //PostSearchAnalysisTask task = ByteSerializer.ByteArrayFileToObject<PostSearchAnalysisTask>(path);
+            //GlobalVariables.AnalyteType = "Proteoform";
+            //task.Run();
+            string dirPath = @"B:\Users\Nic\Chimeras\TopDown_Analysis\Jurkat\SearchResults\MetaMorpheus\Task2-AveragingTask\TwoFileSerializationTest\Task1-SearchTask";
+            string originalPsmsPath = Path.Combine(dirPath, "AllPSMs_.psmtsv");
+            string reRanPsmsPath = Path.Combine(dirPath, "AllPSMs.psmtsv");
+            string originalPeptidesPath = Path.Combine(dirPath, "AllProteoforms_.psmtsv");
+            string reRanPeptidesPath = Path.Combine(dirPath, "AllProteoforms.psmtsv");
+            string originalProteinsPath = Path.Combine(dirPath, "AllProteinGroups_.tsv");
+            string reRanProteinsPath = Path.Combine(dirPath, "AllProteinGroups.tsv");
+
+            var psmFile = File.ReadAllLines(originalPsmsPath);
+            var reRanPsmFile = File.ReadAllLines(reRanPsmsPath);
+            Assert.That(psmFile.Length, Is.EqualTo(reRanPsmFile.Length));
+            for (int i = 0; i < psmFile.Length; i++)
+                Assert.That(psmFile[i], Is.EqualTo(reRanPsmFile[i]));
+
+            var proteoformFile = File.ReadAllLines(originalPeptidesPath);
+            var newProteoformFile = File.ReadAllLines(reRanPeptidesPath);
+            Assert.That(proteoformFile.Length, Is.EqualTo(newProteoformFile.Length));
+            for (int i = 0; i < proteoformFile.Length; i++)
+                Assert.That(proteoformFile[i], Is.EqualTo(newProteoformFile[i]));
+
+            var proteins = File.ReadAllLines(originalProteinsPath);
+            var newProteins = File.ReadAllLines(reRanProteinsPath);
+            Assert.That(proteins.Length, Is.EqualTo(newProteins.Length));
+            for (int i = 0; i < proteins.Length; i++)
+                Assert.That(proteins[i], Is.EqualTo(newProteins[i]));
+
+
+        }
+
+
         [Test]
         public static void TestAddCompIonsClassic()
         {
