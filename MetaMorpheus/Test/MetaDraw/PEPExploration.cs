@@ -12,7 +12,8 @@ namespace Test.MetaDraw
 {
     internal class PEPExploration
     {
-        public static string DirectoryPath = @"B:\Users\Nic\Chimeras\PEPTesting";
+        //public static string DirectoryPath = @"B:\Users\Nic\Chimeras\PEPTesting";
+        public static string DirectoryPath = @"B:\Users\Nic\Chimeras\TopDown_Analysis\Jurkat\SearchResults";
         public static string TwoRawFiles = @"B:\Users\Nic\Chimeras\PEPTesting\TwoRawFiles_SerializedPostSearhAnalysisTask.txt";
         public static string EntireTask = @"B:\Users\Nic\Chimeras\PEPTesting\FullJurkat_SerializedPostSearhAnalysisTask.txt";
 
@@ -22,7 +23,7 @@ namespace Test.MetaDraw
             // setup
             var task = ByteSerializer.ByteArrayFileToObject<PostSearchAnalysisTask>(EntireTask);
             GlobalVariables.AnalyteType = "Proteoform";
-            string outputFolder = Path.Combine(DirectoryPath, "Jurkat_Norm_Remove2");
+            string outputFolder = Path.Combine(DirectoryPath, "MetaMorpheus_NewPEP_NoNormNoMult");
             if (!Directory.Exists(outputFolder))
                 Directory.CreateDirectory(outputFolder);
             task.Parameters.OutputFolder = outputFolder;

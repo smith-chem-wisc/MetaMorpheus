@@ -745,11 +745,13 @@ namespace EngineLayer
                     normalizationFactor /= 10.0;
                 }
 
-                totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count / normalizationFactor * 10, 0));
+                //totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count / normalizationFactor * 10, 0));
+                totalMatchingFragmentCount = (float)(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count);
                 //intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * 100.0, 0));
-                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score)  * 10.0, 0));
+                intensity = (float)Math.Round((psm.Score - (int)psm.Score)  * 100.0, 0);
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
-                deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * 10.0, 0);
+                //deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * 10.0, 0);
+                deltaScore = (float)psm.DeltaScore;
                 notch = notchToUse;
                 modCount = Math.Min((float)selectedPeptide.AllModsOneIsNterminus.Keys.Count(), 10);
                 if (psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide]?.Count() > 0)
@@ -758,8 +760,10 @@ namespace EngineLayer
                 }
 
                 ambiguity = Math.Min((float)(psm.BioPolymersWithSetModsToMatchingFragments.Keys.Count - 1), 10);
-                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
-                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
+                //longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
+                longestSeq = (float)SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide);
+                //complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
+                complementaryIonCount = (float)SpectralMatch.GetCountComplementaryIons(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide);
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
                 spectralAngle = (float)psm.SpectralAngle;
 
