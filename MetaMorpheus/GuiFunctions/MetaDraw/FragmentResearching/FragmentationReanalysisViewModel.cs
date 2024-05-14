@@ -215,7 +215,7 @@ namespace GuiFunctions
                 psmToRematch.PrecursorCharge, psmToRematch.FileNameWithoutExtension, commonParams);
 
             return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false)
-                .Union(psmToRematch.MatchedIons)
+                .Union(psmToRematch.MatchedIons.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType)))
                 .ToList();
             
         }
