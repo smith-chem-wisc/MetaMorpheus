@@ -507,6 +507,11 @@ namespace Test
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SLSNVIAHEISHSWTGNLVTNK.psmtsv");
             List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
 
+            CollectionAssert.AreEqual(psms[0].MatchedIons.Select(p => (p.NeutralTheoreticalProduct.ProductType, p.NeutralTheoreticalProduct.FragmentNumber))
+                    .OrderBy(p => p.Item1).ThenBy(p => p.Item2),
+                spectrum.MatchedFragmentIons.Select(p => (p.NeutralTheoreticalProduct.ProductType, p.NeutralTheoreticalProduct.FragmentNumber))
+                    .OrderBy(p => p.Item1).ThenBy(p => p.Item2));
+
             var computedSpectralSimilarity = spectrum.CalculateSpectralAngleOnTheFly(psms[0].MatchedIons);
 
             Assert.AreEqual(1,Convert.ToDouble(computedSpectralSimilarity),0.01);
