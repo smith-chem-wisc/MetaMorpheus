@@ -56,6 +56,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 throw new NotImplementedException();
             }
 
+            if (CommonParameters.DissociationType == DissociationType.Custom)
+                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = CommonParameters.CustomIons;
+
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (i) =>
@@ -163,6 +166,11 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                 }
             });
+
+            if (CommonParameters.DissociationType == DissociationType.Custom)
+                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
+                    new List<ProductType>();
+
             return new MetaMorpheusEngineResults(this);
         }
 

@@ -64,13 +64,18 @@ namespace Test
             var customIons = new List<ProductType>
                 { ProductType.b, ProductType.c, ProductType.zDot };
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = customIons;
-            CalibrationTask calibrationTask = new CalibrationTask();
-            calibrationTask.CommonParameters.GetType().GetProperty("DissociationType")?.SetValue(calibrationTask.CommonParameters, DissociationType.Custom);
-
+            var calibCommonParams = new CommonParameters(
+                dissociationType: DissociationType.Custom,
+                productMassTolerance: new PpmTolerance(25),
+                precursorMassTolerance: new PpmTolerance(15),
+                trimMsMsPeaks: false,
+                doPrecursorDeconvolution: false);
+            CalibrationTask calibrationTask = new CalibrationTask() {CommonParameters = calibCommonParams};
+            
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = customIons;
-            GptmdTask gptmdTask = new GptmdTask();
-            gptmdTask.CommonParameters.GetType().GetProperty("DissociationType")?.SetValue(gptmdTask.CommonParameters, DissociationType.Custom);
-
+            var gptmdCommonParam = new CommonParameters(dissociationType: DissociationType.Custom);
+            GptmdTask gptmdTask = new GptmdTask() {CommonParameters = gptmdCommonParam};
+            
             SearchTask searchTask = Toml.ReadFile<SearchTask>(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\customBCZ.toml"),
                 MetaMorpheusTask.tomlConfig);
