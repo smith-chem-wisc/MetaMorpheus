@@ -395,10 +395,10 @@ namespace Test
                     psm.QValue <= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
 
-            // TODO: This
-            int scanNumberOfEnvelopeYouKnowThePrecursorIntensity= -1;
-            var psmOfInterest = psmsFromTsv.First(psm => psm.PrecursorScanNum == scanNumberOfEnvelopeYouKnowThePrecursorIntensity);
-            Assert.That(psmOfInterest.PrecursorIntensity == -80);
+            // Test for precursorIntensity
+            int scanNumber = 117;
+            var psmOfInterest = psmsFromTsv.First(psm => psm.PrecursorScanNum == scanNumber);
+            Assert.That(psmOfInterest.PrecursorIntensity == 4634473.5);
 
             Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, allPeptidesQvalueBelowCutoff);
 
