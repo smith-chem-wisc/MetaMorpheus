@@ -395,6 +395,11 @@ namespace Test
                     psm.QValue <= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
 
+            // TODO: This
+            int scanNumberOfEnvelopeYouKnowThePrecursorIntensity= -1;
+            var psmOfInterest = psmsFromTsv.First(psm => psm.PrecursorScanNum == scanNumberOfEnvelopeYouKnowThePrecursorIntensity);
+            Assert.That(psmOfInterest.PrecursorIntensity == -80);
+
             Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, allPeptidesQvalueBelowCutoff);
 
             List<string> results = File.ReadAllLines(Path.Combine(outputFolder, @"results.txt")).ToList();
@@ -563,6 +568,35 @@ namespace Test
 
             //check that fragment coverage positions are the same
             Assert.That(psm1.FragmentCoveragePositionInPeptide.SequenceEqual(psm2.FragmentCoveragePositionInPeptide));
+        }
+
+        [Test]
+        public static void TestPrecursorIntensity()
+        {
+            //1: do the deconvolution and use isotopic envelope to find precursor info
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters();
+            var myMsDataFile = myFileManager.LoadFile(filePath, CommonParameters);
+
+            var scansWithPrecursors = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters);
+            var Ms2Scan1 = scansWithPrecursors[17][1];
+            Assert.IsTrue(Math.Abs(2889051 - Ms2Scan1.PrecursorIntensity) <= 10);
+            Assert.That(Ms2Scan1.PrecursorEnvelopePeakCount, Is.EqualTo(2)); //might not be the correct number of peaks but use it for now
+
+            //just to look at the envelopes, not relavent to the test
+            var msNScans = myMsDataFile.GetAllScansList().ToArray();
+            var ms2Scan23 = msNScans.Where(p => p.OneBasedScanNumber == 23).First();
+            var precursorSpectrum22 = msNScans.Where(p => p.OneBasedScanNumber == 22).First();
+            var envelopes = ms2Scan23.GetIsolatedMassesAndCharges(precursorSpectrum22.MassSpectrum, CommonParameters.PrecursorDeconvolutionParameters);
+
+            //2: use scan header to find precursor info
+            CommonParameters CommonParameters2 = new CommonParameters(doPrecursorDeconvolution: false, useProvidedPrecursorInfo: true);
+            var scansWithPrecursors2 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters2);
+            var Ms2Scan2 = scansWithPrecursors2[17][0];
+            Assert.IsTrue(Math.Abs(1.14554e7 - Ms2Scan2.PrecursorIntensity) <= 1000);
+            Assert.That(Ms2Scan2.PrecursorEnvelopePeakCount, Is.EqualTo(1));
+
         }
     }
 }
