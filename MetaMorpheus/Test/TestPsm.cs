@@ -635,8 +635,6 @@ namespace Test
             SourceFile genericSourceFile = new SourceFile("no nativeID format", "mzML format",
                     null, null, null);
             GenericMsDataFile msFile = new GenericMsDataFile(newScans, genericSourceFile);
-            //msFile.ExportAsMzML(outputPath, false);
-            //var myNewFile = myFileManager.LoadFile(outputPath, CommonParameters2);
             var scansWithPrecursors3 = MetaMorpheusTask._GetMs2Scans(msFile, outputPath, CommonParameters2);
             var Ms2Scan3 = scansWithPrecursors3[17][0];
             Assert.IsTrue(Math.Abs(1.14554e7 - Ms2Scan3.PrecursorIntensity) <= 1000);
