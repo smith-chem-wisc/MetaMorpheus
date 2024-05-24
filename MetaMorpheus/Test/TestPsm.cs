@@ -19,6 +19,9 @@ using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
+using Easy.Common.Extensions;
+using Readers;
+using static Nett.TomlObjectFactory;
 
 namespace Test
 {
@@ -609,12 +612,35 @@ namespace Test
             var precursorSpectrum22 = msNScans.Where(p => p.OneBasedScanNumber == 22).First();
             var envelopes = ms2Scan23.GetIsolatedMassesAndCharges(precursorSpectrum22.MassSpectrum, CommonParameters.PrecursorDeconvolutionParameters);
 
-            //2: use scan header to find precursor info
+            //2: use scan header (selectedIonMonoisotopicGuessIntensity) to find precursor info
             CommonParameters CommonParameters2 = new CommonParameters(doPrecursorDeconvolution: false, useProvidedPrecursorInfo: true);
             var scansWithPrecursors2 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters2);
             var Ms2Scan2 = scansWithPrecursors2[17][0];
             Assert.IsTrue(Math.Abs(1.14554e7 - Ms2Scan2.PrecursorIntensity) <= 1000);
             Assert.That(Ms2Scan2.PrecursorEnvelopePeakCount, Is.EqualTo(1));
+
+            //3: use scan header (selectedIonIntensity) to find precursor info 
+            MsDataScan[] newScans = new MsDataScan[msNScans.Length];
+            int i = 0;
+            foreach (MsDataScan scan in msNScans)
+            {
+                MsDataScan myScan = new MsDataScan(scan.MassSpectrum, scan.OneBasedScanNumber, scan.MsnOrder, scan.IsCentroid,
+                scan.Polarity, scan.RetentionTime, scan.ScanWindowRange, scan.ScanFilter, scan.MzAnalyzer, scan.TotalIonCurrent,
+                scan.InjectionTime, scan.NoiseData, scan.NativeId, selectedIonChargeStateGuess: scan.SelectedIonChargeStateGuess, 
+                selectedIonMz: scan.SelectedIonMZ, selectedIonIntensity: scan.SelectedIonIntensity);
+                newScans[i] = myScan;
+                i++;
+            }
+            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestForPrecursorIntensity.mzML");
+            SourceFile genericSourceFile = new SourceFile("no nativeID format", "mzML format",
+                    null, null, null);
+            GenericMsDataFile msFile = new GenericMsDataFile(newScans, genericSourceFile);
+            //msFile.ExportAsMzML(outputPath, false);
+            //var myNewFile = myFileManager.LoadFile(outputPath, CommonParameters2);
+            var scansWithPrecursors3 = MetaMorpheusTask._GetMs2Scans(msFile, outputPath, CommonParameters2);
+            var Ms2Scan3 = scansWithPrecursors3[17][0];
+            Assert.IsTrue(Math.Abs(1.14554e7 - Ms2Scan3.PrecursorIntensity) <= 1000);
+            Assert.That(Ms2Scan3.PrecursorEnvelopePeakCount, Is.EqualTo(1));
 
             //Test for SpectralMatch
             SearchTask task = new SearchTask();
@@ -643,7 +669,6 @@ namespace Test
                     psms.Add(psm);
                 }
             }
-
             SpectralMatch psmScan23 = psms.ToArray()[33];
             Assert.That(psmScan23.PrecursorScanEnvelopePeakCount, Is.EqualTo(4));
         }
