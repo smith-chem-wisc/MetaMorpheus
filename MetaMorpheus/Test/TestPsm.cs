@@ -394,13 +394,31 @@ namespace Test
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                     psm.QValue <= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
+            Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, allPeptidesQvalueBelowCutoff);
 
-            // Test for precursorIntensity
+
+            // Test for precursorIntensity in PsmFromTsv
             int scanNumber = 117;
             var psmOfInterest = psmsFromTsv.First(psm => psm.PrecursorScanNum == scanNumber);
             Assert.That(psmOfInterest.PrecursorIntensity == 4634473.5);
 
-            Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, allPeptidesQvalueBelowCutoff);
+            //Test for precursorIntensity and precursorEnvelopePeakCount in SpectralMatch
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse, false, out List<string> errors);
+            var fsp = new List<(string, CommonParameters)>();
+            CommonParameters commonParameters = new CommonParameters();
+            fsp.Add(("SmallCalibratible_Yeast.mzML", commonParameters));
+
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters CommonParameters = new CommonParameters();
+            var myMsDataFile = myFileManager.LoadFile(myFile, CommonParameters);
+            var arrayOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, myFile, commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            bool writeSpectralLibrary = false;
+            SpectralMatch[] allPsmsArray = new SpectralMatch[arrayOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, arrayOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
             List<string> results = File.ReadAllLines(Path.Combine(outputFolder, @"results.txt")).ToList();
 
@@ -573,6 +591,7 @@ namespace Test
         [Test]
         public static void TestPrecursorIntensity()
         {
+            //Test for Ms2WithSpecificMass
             //1: do the deconvolution and use isotopic envelope to find precursor info
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
@@ -597,6 +616,36 @@ namespace Test
             Assert.IsTrue(Math.Abs(1.14554e7 - Ms2Scan2.PrecursorIntensity) <= 1000);
             Assert.That(Ms2Scan2.PrecursorEnvelopePeakCount, Is.EqualTo(1));
 
+            //Test for SpectralMatch
+            SearchTask task = new SearchTask();
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse, false, out List<string> errors);
+            var fsp = new List<(string, CommonParameters)>();
+            CommonParameters commonParameters = new CommonParameters();
+            fsp.Add(("SmallCalibratible_Yeast.mzML", commonParameters));
+            var arrayOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, filePath, commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            bool writeSpectralLibrary = false;
+            MassDiffAcceptor massDiffAcceptor = new DotMassDiffAcceptor("1mm", new List<double> { 0, 1.0029 }, new PpmTolerance(5));
+            SpectralMatch[] allPsmsArray = new SpectralMatch[arrayOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, arrayOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, massDiffAcceptor, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
+
+            List<SpectralMatch> psms = new List<SpectralMatch>();
+            foreach(SpectralMatch psm in allPsmsArray)
+            {
+                if (psm != null)
+                {
+                    psms.Add(psm);
+                }
+            }
+
+            SpectralMatch psmScan23 = psms.ToArray()[33];
+            Assert.That(psmScan23.PrecursorScanEnvelopePeakCount, Is.EqualTo(4));
         }
     }
 }
