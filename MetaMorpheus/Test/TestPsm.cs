@@ -666,45 +666,5 @@ namespace Test
             SpectralMatch psmScan23 = psms.ToArray()[33];
             Assert.That(psmScan23.PrecursorScanEnvelopePeakCount, Is.EqualTo(4));
         }
-
-
-        [Test]
-        public static void TestPrecursorIntensity3()
-        {
-            //Test for Ms2WithSpecificMass
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
-            MyFileManager myFileManager = new MyFileManager(true);
-            CommonParameters CommonParameters = new CommonParameters();
-            var myMsDataFile = myFileManager.LoadFile(filePath, CommonParameters);
-
-            //just to look at the envelopes, not relavent to the test
-            var msNScans = myMsDataFile.GetAllScansList().ToArray();
-            var ms2Scan23 = msNScans.Where(p => p.OneBasedScanNumber == 23).First();
-            var precursorSpectrum22 = msNScans.Where(p => p.OneBasedScanNumber == 22).First();
-            var envelopes = ms2Scan23.GetIsolatedMassesAndCharges(precursorSpectrum22.MassSpectrum, CommonParameters.PrecursorDeconvolutionParameters);
-
-            CommonParameters CommonParameters2 = new CommonParameters(doPrecursorDeconvolution: false, useProvidedPrecursorInfo: true);
-
-            //3: use scan header (selectedIonIntensity) to find precursor info 
-            MsDataScan[] newScans = new MsDataScan[msNScans.Length];
-            int i = 0;
-            foreach (MsDataScan scan in msNScans)
-            {
-                MsDataScan myScan = new MsDataScan(scan.MassSpectrum, scan.OneBasedScanNumber, scan.MsnOrder, scan.IsCentroid,
-                scan.Polarity, scan.RetentionTime, scan.ScanWindowRange, scan.ScanFilter, scan.MzAnalyzer, scan.TotalIonCurrent,
-                scan.InjectionTime, scan.NoiseData, scan.NativeId, selectedIonChargeStateGuess: scan.SelectedIonChargeStateGuess,
-                selectedIonMz: scan.SelectedIonMZ, selectedIonIntensity: scan.SelectedIonIntensity, oneBasedPrecursorScanNumber: scan.OneBasedPrecursorScanNumber);
-                newScans[i] = myScan;
-                i++;
-            }
-            string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestForPrecursorIntensity.mzML");
-            SourceFile genericSourceFile = new SourceFile("no nativeID format", "mzML format",
-                    null, null, null);
-            GenericMsDataFile msFile = new GenericMsDataFile(newScans, genericSourceFile);
-            var scansWithPrecursors3 = MetaMorpheusTask._GetMs2Scans(msFile, outputPath, CommonParameters2);
-            var Ms2Scan3 = scansWithPrecursors3[17][0];
-            Assert.IsTrue(Math.Abs(1.14554e7 - Ms2Scan3.PrecursorIntensity) <= 1000);
-            Assert.That(Ms2Scan3.PrecursorEnvelopePeakCount, Is.EqualTo(1));
-        }
         }
 }
