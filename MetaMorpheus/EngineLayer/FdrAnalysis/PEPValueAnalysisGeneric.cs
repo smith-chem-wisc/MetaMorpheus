@@ -301,7 +301,8 @@ namespace EngineLayer
             return groupsOfIndicies;
         }
 
-        public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<int> notches, List<IBioPolymerWithSetMods> pwsmList, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
+        public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove,
+            List<int> notches, List<IBioPolymerWithSetMods> pwsmList, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
         {
             foreach (int i in indiciesOfPeptidesToRemove)
             {
@@ -647,6 +648,10 @@ namespace EngineLayer
                                 label = true;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
                             }
+                            else
+                            {
+                                continue;
+                            }
                             localPsmDataList.Add(newPsmData);
                             localPsmOrder.Add(i);
                         }
@@ -666,6 +671,10 @@ namespace EngineLayer
                                 {
                                     label = true;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm,  timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
+                                }
+                                else
+                                {
+                                    continue;
                                 }
                                 localPsmDataList.Add(newPsmData);
                                 localPsmOrder.Add(i + (bmp / bmpc / 2.0));
