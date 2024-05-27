@@ -606,6 +606,11 @@ namespace Test
             Assert.IsTrue(Math.Abs(2889051 - Ms2Scan1.PrecursorIntensity) <= 10);
             Assert.That(Ms2Scan1.PrecursorEnvelopePeakCount, Is.EqualTo(2)); //might not be the correct number of peaks but use it for now
 
+            CommonParameters CommonParameters1 = new CommonParameters(useMostAbundantPrecursorIntensity: false);
+            var scansWithPrecursors1 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters1);
+            var Ms2Scan1_2 = scansWithPrecursors1[17][1];
+            Assert.IsTrue(Math.Abs(3405218 - Ms2Scan1_2.PrecursorIntensity) <= 10);
+
             //just to look at the envelopes, not relavent to the test
             var msNScans = myMsDataFile.GetAllScansList().ToArray();
             var ms2Scan23 = msNScans.Where(p => p.OneBasedScanNumber == 23).First();
