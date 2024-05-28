@@ -6,10 +6,10 @@ using System.Linq;
 
 namespace EngineLayer
 {
-
-    public static class GlycanDatabase
+    // in our database, the N-glycan.gdb should be correct to the new format
+    public static class GlycanDatabase 
     {
-        //Load Glycan. Generally, glycan-ions should be generated for N-Glycopepitdes which produce Y-ions; MS method couldn't produce o-glycan-ions.
+        //Load Glycan from the database file (located in the Glycan_Mod). Generally, glycan-ions should be generated for N-Glycopepitdes which produce Y-ions; MS method couldn't produce o-glycan-ions.
         public static IEnumerable<Glycan> LoadGlycan(string filePath, bool ToGenerateIons, bool IsOGlycanSearch)
         {
             bool isKind = true;
@@ -18,7 +18,7 @@ namespace EngineLayer
                 while(lines.Peek() != -1)
                 {
                     string line = lines.ReadLine();
-                    if (!line.Contains("HexNAc"))
+                    if (!line.Contains("HexNAc")) //use the first line to determine the type of glycan database.
                     {
                         isKind = false;
                     }
@@ -28,11 +28,11 @@ namespace EngineLayer
 
             if (isKind)
             {
-                return LoadKindGlycan(filePath, ToGenerateIons, IsOGlycanSearch);
+                return LoadKindGlycan(filePath, ToGenerateIons, IsOGlycanSearch); // open the file of the kind format, example: HexNAc(2)Hex(5)NeuAc(1)Fuc(1)
             }
             else
             {
-                return LoadStructureGlycan(filePath, IsOGlycanSearch);
+                return LoadStructureGlycan(filePath, IsOGlycanSearch); // open the file of the structure format, example: (N(H(A))(A))
             }
         }
 
@@ -51,9 +51,9 @@ namespace EngineLayer
                         continue;
                     }
 
-                    var kind = String2Kind(line);
+                    var kind = String2Kind(line); // convert the database string to kind[] format (byte array).
 
-                    var glycan = new Glycan(kind);
+                    var glycan = new Glycan(kind); // use the kind[] to create a glycan object.
                     glycan.GlyId = id++;
                     if (ToGenerateIons)
                     {
@@ -71,7 +71,9 @@ namespace EngineLayer
             }
         }
 
-        public static byte[] String2Kind(string line)
+        //Convert the string to byte array.
+        //Input example: HexNAc(2)Hex(5)NeuAc(1)Fuc(1), Output example: [2, 5, 0, 0, 1, 0, 0, 0, 0, 1]
+        public static byte[] String2Kind(string line) 
         {
             byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             var x = line.Split(new char[] { '(', ')' });
@@ -94,7 +96,7 @@ namespace EngineLayer
                 while (glycans.Peek() != -1)
                 {
                     string line = glycans.ReadLine();
-                    yield return Glycan.Struct2Glycan(line, id++, IsOGlycan);
+                    yield return Glycan.Struct2Glycan(line, id++, IsOGlycan); // Directly convert the string to Glycan object.
                 }
             }
         }
@@ -102,6 +104,7 @@ namespace EngineLayer
         //This function build fragments based on the general core of NGlyco fragments. 
         //From https://github.com/mobiusklein/glycopeptidepy/structure/fragmentation_strategy/glycan.py#L408
         //The fragment generation is not as good as structure based method. So it is better to use a structure based N-Glycan database.
+        // The function is used to load the database from the different formats, but we don't use it now.
         public static List<GlycanIon> NGlycanCompositionFragments(byte[] kind)
         {
             int glycan_mass = Glycan.GetMass(kind);

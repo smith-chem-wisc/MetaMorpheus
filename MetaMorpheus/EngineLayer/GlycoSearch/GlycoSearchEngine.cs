@@ -30,6 +30,7 @@ namespace EngineLayer.GlycoSearch
 
         private readonly List<int>[] SecondFragmentIndex;
 
+        // The constructor for GlycoSearchEngine, we can load the parameter for the searhcing like mode, topN, maxOGlycanNum, oxoniumIonFilter, datsbase, etc.
         public GlycoSearchEngine(List<GlycoSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds)
@@ -48,19 +49,19 @@ namespace EngineLayer.GlycoSearch
             ProductSearchMode = new SinglePpmAroundZeroSearchMode(20); //For Oxonium ion only
 
 
-            if (glycoSearchType == GlycoSearchType.OGlycanSearch)
+            if (glycoSearchType == GlycoSearchType.OGlycanSearch) //if we do the O-glycan search, we need to load the O-glycan database and generate the glycoBox.
             {
                 GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray();
+                GlycanBox.OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(_maxOGlycanNum, false).OrderBy(p => p.Mass).ToArray(); //generate glycan box for O-glycan search
             }
-            else if (glycoSearchType == GlycoSearchType.NGlycanSearch)
+            else if (glycoSearchType == GlycoSearchType.NGlycanSearch) //because the there is only one glycan in N-glycanpeptide, so we don't need to build the n-glycanBox here.
             {
                 NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _nglycanDatabase).First(), true, false).OrderBy(p => p.Mass).ToArray();
                 //TO THINK: Glycan Decoy database.
                 //DecoyGlycans = Glycan.BuildTargetDecoyGlycans(NGlycans);
             }
-            else if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch)
+            else if (glycoSearchType == GlycoSearchType.N_O_GlycanSearch) //search both N-glycan and O-glycan is still not tested and build completely yet.
             {
                 GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => System.IO.Path.GetFileName(p) == _oglycanDatabase).First(), true, true).ToArray();
                 GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
@@ -85,7 +86,7 @@ namespace EngineLayer.GlycoSearch
             byte byteScoreCutoff = (byte)CommonParameters.ScoreCutoff;
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
-            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
+            int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray(); // We can do the parallel search on different threads
             Parallel.ForEach(threads, (scanIndex) =>
             {
                 byte[] scoringTable = new byte[PeptideIndex.Count];
@@ -272,7 +273,7 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        //For FindOGlycan
+        //For FindOGlycan, generate the gsms for O-glycan search
         private GlycoSpectralMatch CreateGsm(Ms2ScanWithSpecificMass theScan, int scanIndex, int rank, PeptideWithSetModifications peptide, Route localization, double[] oxoniumIonIntensities, List<LocalizationGraph> localizationGraphs)
         {
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(localization, peptide);
@@ -348,7 +349,7 @@ namespace EngineLayer.GlycoSearch
             }
             else
             {
-                psmGlyco.R138vs144 = oxoniumIonIntensities[4] / oxoniumIonIntensities[5];
+                psmGlyco.R138vs144 = oxoniumIonIntensities[4] / oxoniumIonIntensities[5]; // if the ratio is high, that means the glycan is more likely to be N-glycan. Oppsitely, ration is small means close to O-glycan.
             }
 
             return psmGlyco;
@@ -370,16 +371,17 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
+        //
         private void FindOGlycan(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications theScanBestPeptide, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<GlycoSpectralMatch> possibleMatches)
         {
-            int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow);
+            int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
 
-            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
+            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray(); //list all of the possible glycoslation site/postition
 
             var localizationScan = theScan;
-            List<Product> products = new List<Product>();
+            List<Product> products = new List<Product>(); // product list for the theoretical fragment ions
 
-            //For HCD-pd-ETD or CD-pd-EThcD type of data
+            //For HCD-pd-ETD or CD-pd-EThcD type of data, we generate the different rpoducts.
             if (theScan.ChildScans.Count > 0 && GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons))
             {
                 localizationScan = theScan.ChildScans.First();
@@ -396,14 +398,14 @@ namespace EngineLayer.GlycoSearch
             //No localization can be done with MS2-HCD spectrum
             //TO THINK: there is a special situation. The HCD only scan from  HCD-pd-EThcD data can be a glycopeptide, but there is no ETD, so there is no localization. What to do with this?
             bool is_HCD_only_data = !GlycoPeptides.DissociationTypeContainETD(CommonParameters.DissociationType, CommonParameters.CustomIons) && !GlycoPeptides.DissociationTypeContainETD(CommonParameters.MS2ChildScanDissociationType, CommonParameters.CustomIons);
-            if (is_HCD_only_data)
+            if (is_HCD_only_data) // In the HCD, there is no Y  ion, so we don't need to consider the modification here.
             {
                 theScanBestPeptide.Fragment(DissociationType.HCD, FragmentationTerminus.Both, products);
             }
 
             double bestLocalizedScore = 0;
 
-            List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>();
+            List<LocalizationGraph> localizationGraphs = new List<LocalizationGraph>(); // if we also have ETD, then we will search the localization
 
             while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass)))
             {
@@ -519,7 +521,7 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-
+        // Conduct the search and generate the gsms for N-glycan search
         private List<GlycoSpectralMatch> FindNGlycopeptide(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
@@ -566,6 +568,9 @@ namespace EngineLayer.GlycoSearch
             }
             return possibleMatches;
         }
+
+        // This function conduct the search and generate the glyco search match spectrum (gsms).
+        // The search is the modern search to check each possible peptide candidate.
         private List<GlycoSpectralMatch> FindOGlycopeptideHashLocal(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
@@ -574,11 +579,11 @@ namespace EngineLayer.GlycoSearch
             {
                 var theScanBestPeptide = PeptideIndex[idsOfPeptidesPossiblyObserved[ind]];
 
-                if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass))
+                if (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass)) // If the peptide mass is indentical to the precursor mass (or within the tolerance), we can directly search the glycopeptide.
                 {
                     FindSingle(theScan, scanIndex, scoreCutOff, theScanBestPeptide, ind, ref possibleMatches);
                 }
-                else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100) //Filter out unknow non-glycan modifications.
+                else if (theScan.PrecursorMass - theScanBestPeptide.MonoisotopicMass >= 100) //If not, we need to consider the glycan mass difference.
                 {
                     //Filter by glycanBoxes mass difference.
                     var possibleGlycanMassLow = PrecusorSearchMode.GetMinimumValue(theScan.PrecursorMass) - theScanBestPeptide.MonoisotopicMass;
@@ -587,7 +592,7 @@ namespace EngineLayer.GlycoSearch
 
                     if (possibleGlycanMassHigh < GlycanBox.OGlycanBoxes.First().Mass || possibleGlycanMassLow > GlycanBox.OGlycanBoxes.Last().Mass)
                     {
-                        continue;
+                        continue; // if the glycan mass difference is out of the range of the glycan box, we can skip this peptide.
                     }
 
                     //Filter by OxoniumIon

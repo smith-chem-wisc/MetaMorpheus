@@ -12,6 +12,8 @@ namespace EngineLayer
     //One peptide can have several o-glycans. The combined glycans are grouped as a glycan box. Used for localization. 
     //GlycanBox -- A defined combination of glycans will be considered to modify on one peptide. 
     //The GlycanBoxMass is the total mass of all glycans on the peptide
+    //For example, if we have 3 glycans on one peptide (g1,g2,g3), the GlycanBoxMass is the sum of the three glycans.(glycanBox: [g1,g2,g3])
+    //By the way, the GlycanBox will be first step in the search, the parameter (Max glycan num in peptide) will be used to limit the capacity of the list.
     public class GlycanBox:ModBox
     {
         public static Glycan[] GlobalOGlycans { get; set; }
@@ -22,7 +24,7 @@ namespace EngineLayer
 
         //TO DO: Decoy O-glycan can be created, but the results need to be reasoned.
         //public static int[] SugarShift = new int[]{ -16205282, -20307937, -29109542, -14605791, -30709033, -15005282, -36513219, -40615874, 16205282, 20307937, 29109542, 14605791, 30709033, 15005282, 36513219, 40615874 };
-        private readonly static int[] SugarShift = new int[] 
+        private readonly static int[] SugarShift = new int[] //still unclear about the shift...
         {
             7103710, 10300920, 11502690, 12904260, 14706840, 5702150, 13705890, 12809500, 11308410, 13104050,
             11404290, 9705280, 12805860, 15610110, 8703200, 10104770, 9906840, 18607930, 16306330,

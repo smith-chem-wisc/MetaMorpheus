@@ -113,7 +113,7 @@ namespace EngineLayer.GlycoSearch
             return false;
         }
 
-        public static string GetTabSepHeaderSingle()
+        public static string GetTabSepHeaderSingle() //Most complicate part in this class, writing function to input the outcome into the excel file
         {
             var sb = new StringBuilder();
             sb.Append("File Name" + '\t');
@@ -358,6 +358,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         //Output: <int, int, string> <ModBoxId, ModPosition, is localized>; Input: List<Route>
+        // example: {18, 1, Ture}, means the 18th glycan is localized on the 1st position of the peptide.
         public static List<Tuple<int, int, bool>> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out LocalizationLevel localizationLevel)
         {
             List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();

@@ -2,7 +2,7 @@
 namespace EngineLayer
 {
 
-    public class Node
+    public class Node //The structure of the glycan
     {
         public Node(char v, Node l, Node r, Node m)
         {
