@@ -47,8 +47,6 @@ namespace EngineLayer.ModernSearch
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
-            if (CommonParameters.DissociationType == DissociationType.Custom)
-                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = CommonParameters.CustomIons;
 
             Parallel.ForEach(threads, (scanIndex) =>
             {
@@ -89,10 +87,6 @@ namespace EngineLayer.ModernSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-
-            if (CommonParameters.DissociationType == DissociationType.Custom)
-                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
-                    new List<ProductType>();
 
             return new MetaMorpheusEngineResults(this);
         }

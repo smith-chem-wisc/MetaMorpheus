@@ -68,10 +68,6 @@ namespace EngineLayer.ClassicSearch
                 myLocks[i] = new object();
             }
 
-            if (CommonParameters.DissociationType == DissociationType.Custom)
-                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
-                    CommonParameters.CustomIons;
-
             Status("Performing classic search...");
 
             if (Proteins.Any())
@@ -172,10 +168,6 @@ namespace EngineLayer.ClassicSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-
-            if (CommonParameters.DissociationType == DissociationType.Custom)
-                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
-                    new List<ProductType>();
 
             return new MetaMorpheusEngineResults(this);
         }

@@ -256,7 +256,7 @@ namespace EngineLayer
 
         public void SetCustomProductTypes()
         {
-            DissociationTypeCollection.ProductsFromDissociationType[MassSpectrometry.DissociationType.Custom] = CustomIons;
+            DissociationTypeCollection.ProductsFromDissociationType[MassSpectrometry.DissociationType.Custom] = CustomIons; 
         }
     }
 }

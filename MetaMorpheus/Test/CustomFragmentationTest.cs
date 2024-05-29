@@ -10,6 +10,7 @@ using System.Linq;
 using MassSpectrometry;
 using Omics.Fragmentation.Peptide;
 using TaskLayer;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -217,11 +218,19 @@ namespace Test
 
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = customIons2;
             var searchTask2CommonParams = new CommonParameters(dissociationType: DissociationType.Custom);
-            SearchTask searchTask2 = new SearchTask() { CommonParameters = searchTask2CommonParams };
+            SearchTask searchTask2 = new SearchTask()
+            {
+                CommonParameters = searchTask2CommonParams,
+                SearchParameters = new SearchParameters()
+                {
+                    SearchType = SearchType.NonSpecific, DecoyType = DecoyType.None,
+                    MassDiffAcceptorType = MassDiffAcceptorType.PlusOrMinusThreeMM
+                }
+            };
 
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = customIons3;
             var searchTask3CommonParams = new CommonParameters(dissociationType: DissociationType.Custom);
-            SearchTask searchTask3 = new SearchTask() { CommonParameters = searchTask3CommonParams };
+            SearchTask searchTask3 = new SearchTask() { CommonParameters = searchTask3CommonParams, SearchParameters = new SearchParameters() {SearchType = SearchType.Modern}};
 
             var taskCollection = new List<(string, MetaMorpheusTask)>
             { ("Calibration", calibrationTask), ("GPTMD", gptmdTask), ("Search1", searchTask1), ("Search2", searchTask2), ("Search3", searchTask3) };
