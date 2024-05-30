@@ -353,8 +353,6 @@ namespace GuiFunctions
                 new Point(alphaSite * MetaDrawSettings.AnnotatedSequenceTextSpacing, 50),
                 new Point(betaSite * MetaDrawSettings.AnnotatedSequenceTextSpacing, 90),
                 Colors.Black);
-            if (Math.Abs(SequenceDrawingCanvas.Height - 60) < 0.001)
-                SequenceDrawingCanvas.Height = 120;
         }
 
         /// <summary>

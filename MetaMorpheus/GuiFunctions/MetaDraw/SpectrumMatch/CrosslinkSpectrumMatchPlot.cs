@@ -58,7 +58,7 @@ namespace GuiFunctions
             double dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
             // render stationary sequence as bitmap and export as png
-            stationarySequence.Height += 30;
+            stationarySequence.Height += 80;
             stationarySequence.Width += 30;
             Size stationarySequenceSize = new Size((int)stationarySequence.Width, (int)stationarySequence.Height);
             stationarySequence.Measure(stationarySequenceSize);
