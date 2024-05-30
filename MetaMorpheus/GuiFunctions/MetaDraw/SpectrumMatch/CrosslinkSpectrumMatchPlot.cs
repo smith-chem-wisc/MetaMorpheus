@@ -90,7 +90,7 @@ namespace GuiFunctions
             // render ptm legend as bitmap and export as png if used
             System.Drawing.Bitmap ptmLegendBitmap = null;
             Point ptmLegendPoint;
-            if (ptmLegend != null && MetaDrawSettings.ShowLegend)
+            if (ptmLegend != null && MetaDrawSettings.ShowLegend && ptmLegend.ActualHeight > 0)
             {
                 // Saving Canvas as a usable Png
                 RenderTargetBitmap ptmLegendRenderBitmap = new((int)(dpiScale * ptmLegend.ActualWidth), (int)(dpiScale * ptmLegend.ActualHeight),
