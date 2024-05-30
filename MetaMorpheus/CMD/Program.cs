@@ -231,11 +231,6 @@ namespace MetaMorpheusCommandLine
                         taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
                         break;
 
-                    case "Average":
-                        var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
-                        taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
-                        break;
-
                     default:
                         if (settings.Verbosity == CommandLineSettings.VerbosityType.minimal || settings.Verbosity == CommandLineSettings.VerbosityType.normal)
                         {
