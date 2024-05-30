@@ -163,7 +163,6 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     }
                 }
             });
-
             return new MetaMorpheusEngineResults(this);
         }
 
