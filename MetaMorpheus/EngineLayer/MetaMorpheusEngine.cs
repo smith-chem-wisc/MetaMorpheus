@@ -278,6 +278,7 @@ namespace EngineLayer
             StartingSingleEngine();
             var stopWatch = new Stopwatch();
             stopWatch.Start();
+            this.CommonParameters.SetCustomProductTypes();
             var myResults = RunSpecific();
             stopWatch.Stop();
             myResults.Time = stopWatch.Elapsed;
