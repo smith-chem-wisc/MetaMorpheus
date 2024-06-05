@@ -137,7 +137,7 @@ namespace EngineLayer.ClassicSearch
                                 if (!Peptide.Parent.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                 {
                                     SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
-                                        SpectralSimilarity.SpectrumNormalizationScheme.squareRootSpectrumSum, fileSpecificParameters.ProductMassTolerance.Value, false);
+                                        SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, fileSpecificParameters.ProductMassTolerance.Value, false);
                                     if (s.SpectralContrastAngle().HasValue)
                                     {
                                         pwsms.Add((Notch, Peptide));
