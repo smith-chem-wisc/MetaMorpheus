@@ -482,7 +482,11 @@ namespace Test
             DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
             DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), true);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML");
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
+            new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                new List<string> { spectraFile },
+                new List<DbForTask> { targetDbForTask, contaminDbForTask }, 
+                outputFolder).Run();
 
 
             // TODO: Test output, make sure the values on the results.txt really reflect the number counted in the csv files
@@ -530,6 +534,87 @@ namespace Test
             string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");
             List<PsmFromTsv> onePercentoGlycoPsms = PsmTsvReader.ReadTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.QValue <= 0.01).ToList(); // the filtering (Q<0.01)
+            int readInGlycoPsmCount = onePercentoGlycoPsms.Count; // the gPSMs number with Fdr<0.01
+            Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
+
+            //For Level1GlycoPSMs
+            int readInLevel1GlycoPsmCount = onePercentoGlycoPsms.Count(p => p.GlycanLocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1); //the level1 gPSMs number
+
+            //Compare the numbers
+            Assert.That(psmCount, Is.EqualTo(readInPsmsCount));
+            Assert.That(proteinGroupCount, Is.EqualTo(readInProteinCount));
+            Assert.That(glycoPsmCount, Is.EqualTo(readInGlycoPsmCount));
+            Assert.That(level1Psmcount, Is.EqualTo(readInLevel1GlycoPsmCount));
+
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void OGlycoTest_Run5_WriteContaminants()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSnip.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.WriteContaminants = true;
+
+            DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
+            DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), true);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML");
+            new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                new List<string> { spectraFile },
+                new List<DbForTask> { targetDbForTask, contaminDbForTask },
+                outputFolder).Run();
+
+
+            // TODO: Test output, make sure the values on the results.txt really reflect the number counted in the csv files
+            // Parse values from results.txt
+            string resultsTextPath = Directory.GetFiles(outputFolder, "allResults.txt", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(); // Try to find the file name "allResults.txt" in the output folder
+            if (resultsTextPath is null)
+                Assert.Fail("Results file not found.");
+            string[] allResultTxtLines = File.ReadAllLines(resultsTextPath); //read all lines from the file
+            Assert.That(allResultTxtLines.Length > 0); // make sure there are lines in the file
+
+            //For PSMs
+            var allPsmLine = allResultTxtLines.First(p => p.Contains("target PSMs within"));
+            int psmCount = int.Parse(allPsmLine.Split(':').Last().Trim());
+
+            //For ProteinGroups
+            var proteinGroupLine = allResultTxtLines.First(p => p.Contains("protein groups within"));
+            int proteinGroupCount = int.Parse(proteinGroupLine.Split(':').Last().Trim());
+
+            //For GlycoPSMs
+            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("Glyco PSMs within"));
+            int glycoPsmCount = int.Parse(glycoPsmLine.Split(':').Last().Trim()); // read the number of glyco PSMs from the results file
+
+            //For Level1GlycoPSMs
+            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 Glyco PSMs within"));
+            int level1Psmcount = int.Parse(level1PsmLine.Split(':').Last().Trim()); // read the number of Level1-PSMs from the results file
+
+            // Parse counted number from csv files
+
+            //For PSMs
+            var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
+            List<PsmFromTsv> onePercentPsms1 = PsmTsvReader.ReadTsv(allPsmPath, out var errors2)
+            .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C").ToList();
+            Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
+            int readInPsmsCount = onePercentPsms1.Count;
+
+            //For ProteinGroups
+            var allProteinGroupsPath = Path.Combine(outputFolder, "Task", "_AllProteinGroups.tsv");
+            string[] proteinGroupHeaders = File.ReadAllLines(allProteinGroupsPath).First().Split("\t");
+            int readInProteinCount = File.ReadAllLines(Path.Combine(outputFolder, "Task", "_AllProteinGroups.tsv")).Skip(1)
+                .Select(line => line.Split('\t'))
+                .Count(p => double.TryParse(p[Array.IndexOf(proteinGroupHeaders, "Protein QValue")], out double qVaule)
+                && qVaule < 0.01 && p[Array.IndexOf(proteinGroupHeaders, "Protein Decoy/Contaminant/Target")] != "C");
+
+            //For GlycoPSMs
+            string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");
+            List<PsmFromTsv> onePercentoGlycoPsms = PsmTsvReader.ReadTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+                .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C").ToList(); // the filtering (Q<0.01)
             int readInGlycoPsmCount = onePercentoGlycoPsms.Count; // the gPSMs number with Fdr<0.01
             Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
 
