@@ -6,6 +6,7 @@ namespace EngineLayer
     /// </summary>
     public class Node
     {
+
         public Node(char v)
         {
             Value = v;

@@ -44,7 +44,7 @@ namespace TaskLayer
             //This is all psms for all files including glyco- and non-glyco psms.
             SingleFDRAnalysis(allPSMs, commonParameters, new List<string> { taskId });
 
-            List<GlycoSpectralMatch> filteredGsms = allPSMs.Where(p => p.FdrInfo.QValue < 0.01).ToList();
+            List<GlycoSpectralMatch> filteredGsms = allPSMs.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
 
             //write individual file results
             if (Parameters.GlycoSearchParameters.WriteIndividualFiles)
@@ -99,9 +99,9 @@ namespace TaskLayer
                         // Writing the oglyco results to a file and summary text
                         WriteGlycoFile.WritePsmGlycoToTsv(allPsmsOgly, writtenFileOGlyco, true); //we write this last so localization can be attempted 
                         MyTaskResults.AddTaskSummaryText("All target Glyco PSMs within 1% FDR: " + allPsmsOgly.
-                            Count(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && !p.IsContaminant));
+                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant));
                         MyTaskResults.AddTaskSummaryText("All target Level 1 Glyco PSMs within 1% FDR: " + allPsmsOgly
-                            .Count(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1));
+                            .Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1));
 
                     }
                     break;
@@ -121,9 +121,9 @@ namespace TaskLayer
                         WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_nglyco_localization_file);
                         WriteGlycoFile.WritePsmGlycoToTsv(allPsmsNgly, writtenFileNGlyco, true); //we write this last so localization can be attempted
                         MyTaskResults.AddTaskSummaryText("All target Glyco PSMs within 1% FDR: " + allPsmsNgly. //we write the search summary into the Allresult file
-                            Count(p => p.FdrInfo.QValue < 0.01 && !p.IsContaminant && !p.IsDecoy));
+                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsContaminant && !p.IsDecoy));
                         MyTaskResults.AddTaskSummaryText("All target Level 1 Glyco PSMs within 1% FDR: " + allPsmsNgly
-                            .Count(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1));
+                            .Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1));
                     }
                     break;
                 case GlycoSearchType.N_O_GlycanSearch:
@@ -143,9 +143,9 @@ namespace TaskLayer
                         WriteGlycoFile.WriteProteinGlycoLocalization(ProteinLevelLocalization, protein_no_glyco_localization_file);
                         WriteGlycoFile.WritePsmGlycoToTsv(allPsmsgly, writtenFileNOGlyco, true); //we write this last so localization can be attempted
                         MyTaskResults.AddTaskSummaryText("All target Glyco PSMs within 1% FDR: " + allPsmsgly.
-                            Count(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && !p.IsContaminant));
+                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant));
                         MyTaskResults.AddTaskSummaryText("All target Level 1 Glyco PSMs within 1% FDR: " + allPsmsgly
-                            .Count(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1));
+                            .Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1));
                     }
                     break;
             }
@@ -165,7 +165,7 @@ namespace TaskLayer
             var writtenFileSingle = Path.Combine(OutputFolder, "AllPSMs.psmtsv");
             WriteGlycoFile.WritePsmGlycoToTsv(filteredGsms, writtenFileSingle, true);
             MyTaskResults.AddTaskSummaryText("All target PSMs within 1% FDR: " + filteredGsms.
-                            Count(p => p.FdrInfo.QValue < 0.01 && !p.IsDecoy && !p.IsContaminant));
+                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant));
      
 
             if (Parameters.GlycoSearchParameters.WriteSpectrumLibrary)
@@ -311,7 +311,7 @@ namespace TaskLayer
             WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId }, qValueCutoff_FORDEBUGONLY);
             if (myTaskResults is not null) 
                 myTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + ProteinGroups.
-                            Count(p => p.QValue < 0.01 && !p.IsDecoy &&　!p.IsContaminant));
+                            Count(p => p.QValue <= 0.01 && !p.IsDecoy &&　!p.IsContaminant));
 
         }
         private void WriteProteinGroupsToTsv(List<EngineLayer.ProteinGroup> proteinGroups, string filePath, List<string> nestedIds, double qValueCutoff)
