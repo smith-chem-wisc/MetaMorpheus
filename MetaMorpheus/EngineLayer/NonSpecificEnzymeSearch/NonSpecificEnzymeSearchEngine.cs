@@ -35,7 +35,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
         {
             CoisolationIndex = coisolationIndex;
             PrecursorIndex = precursorIndex;
-            MinimumPeptideLength = commonParameters.DigestionParams.MinPeptideLength;
+            MinimumPeptideLength = commonParameters.DigestionParams.MinLength;
             GlobalCategorySpecificPsms = globalPsms;
             ModifiedParametersNoComp = commonParameters.CloneWithNewTerminus(addCompIons: false);
             ProductTypesToSearch = DissociationTypeCollection.ProductsFromDissociationType[commonParameters.DissociationType].Intersect(TerminusSpecificProductTypes.ProductIonTypesFromSpecifiedTerminus[commonParameters.DigestionParams.FragmentationTerminus]).ToList();
@@ -318,7 +318,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
 
         private Tuple<int, PeptideWithSetModifications> Accepts(List<Product> fragments, double scanPrecursorMass, PeptideWithSetModifications peptide, FragmentationTerminus fragmentationTerminus, MassDiffAcceptor searchMode, bool semiSpecificSearch)
         {
-            int localminPeptideLength = CommonParameters.DigestionParams.MinPeptideLength;
+            int localminPeptideLength = CommonParameters.DigestionParams.MinLength;
 
             //Get terminal modifications, if any
             Dictionary<int, List<Modification>> databaseAnnotatedMods = semiSpecificSearch ? null : GetTerminalModPositions(peptide, CommonParameters.DigestionParams, VariableTerminalModifications);
@@ -598,18 +598,18 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 variableModifications.Where(x => x.LocationRestriction.Contains(terminalStringToFind)).ToList();
         }
 
-        public static Dictionary<int, List<Modification>> GetTerminalModPositions(PeptideWithSetModifications peptide, DigestionParams digestionParams, List<Modification> variableMods)
+        public static Dictionary<int, List<Modification>> GetTerminalModPositions(PeptideWithSetModifications peptide, IDigestionParams digestionParams, List<Modification> variableMods)
         {
             Dictionary<int, List<Modification>> annotatedTerminalModDictionary = new Dictionary<int, List<Modification>>();
             bool nTerminus = digestionParams.FragmentationTerminus == FragmentationTerminus.N; //is this the singleN or singleC search?
 
             //determine the start and end index ranges when considering the minimum peptide length
             int startResidue = nTerminus ?
-                peptide.OneBasedStartResidue + digestionParams.MinPeptideLength - 1 :
+                peptide.OneBasedStartResidue + digestionParams.MinLength - 1 :
                 peptide.OneBasedStartResidue;
             int endResidue = nTerminus ?
                 peptide.OneBasedEndResidue :
-                peptide.OneBasedEndResidue - digestionParams.MinPeptideLength + 1;
+                peptide.OneBasedEndResidue - digestionParams.MinLength + 1;
             string terminalStringToFind = nTerminus ? "C-terminal" : "N-terminal"; //if singleN, want to find c-terminal mods and vice-versa
 
             //get all the mods for this protein
@@ -647,7 +647,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     if (nTerminus)
                     {
                         //if singleN, then we're looking at C-terminal
-                        if (index >= digestionParams.MinPeptideLength)
+                        if (index >= digestionParams.MinLength)
                         {
                             if (annotatedTerminalModDictionary.ContainsKey(index))
                             {
@@ -663,7 +663,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         int fragmentIndex = peptide.BaseSequence.Length - index + 1; //if index == 0, length should be the peptide length
                         //if singleC, then we're looking at N-terminal
-                        if (fragmentIndex >= digestionParams.MinPeptideLength)
+                        if (fragmentIndex >= digestionParams.MinLength)
                         {
                             if (annotatedTerminalModDictionary.ContainsKey(fragmentIndex))
                             {

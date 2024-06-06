@@ -1,18 +1,8 @@
 ﻿
 namespace EngineLayer
 {
-
     public class Node
     {
-        public Node(char v, Node l, Node r, Node m)
-        {
-            Value = v;
-            LeftChild = l;
-            RightChild = r;
-            MiddleChild = m;
-            Level = null;
-        }
-
         public Node(char v)
         {
             Value = v;

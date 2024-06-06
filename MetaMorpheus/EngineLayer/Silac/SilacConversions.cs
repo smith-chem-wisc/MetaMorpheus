@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics.Modifications;
 using Omics;
+using Omics.Digestion;
 
 namespace EngineLayer
 {
@@ -303,7 +304,7 @@ namespace EngineLayer
         //This light to heavy conversion needs to happen for the flashLFQ peptides here, but can't for the psm peptides, which are constrained to the protein
         //i.e. pwsms currently don't have sequences; they have start/end residues and a protein sequence. We have to change the output sequences when they're created.
         public static void SilacConversionsPostQuantification(List<SilacLabel> allSilacLabels, SilacLabel startLabel, SilacLabel endLabel,
-            List<SpectraFileInfo> spectraFileInfo, List<ProteinGroup> proteinGroups, HashSet<DigestionParams> listOfDigestionParams, FlashLfqResults flashLfqResults,
+            List<SpectraFileInfo> spectraFileInfo, List<ProteinGroup> proteinGroups, HashSet<IDigestionParams> listOfDigestionParams, FlashLfqResults flashLfqResults,
             List<PeptideSpectralMatch> allPsms, Dictionary<string, int> modsToWriteSelection, bool quantifyUnlabeledPeptides)
         {
             //do protein quant if we had any results

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics;
 using System;
+using Omics.Digestion;
 
 namespace EngineLayer
 {
@@ -102,7 +103,7 @@ namespace EngineLayer
         }
 
         #region Search
-        public DigestionParams DigestionParams { get; }
+        public IDigestionParams DigestionParams { get; }
         public Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> BioPolymersWithSetModsToMatchingFragments { get; private set; }
 
         protected List<(int Notch, IBioPolymerWithSetMods Pwsm)> _BestMatchingBioPolymersWithSetMods;
