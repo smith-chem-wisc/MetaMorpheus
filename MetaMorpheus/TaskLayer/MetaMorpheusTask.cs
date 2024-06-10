@@ -167,10 +167,12 @@ namespace TaskLayer
                                     double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
                                     int peakCount = envelope.Peaks.Count();
                                     double intensity = 1;
-                                    if (commonParameters.UseMostAbundantPrecursorIntensity) { 
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity) 
+                                    { 
                                         intensity = envelope.Peaks.Max(p => p.intensity); 
                                     }
-                                    else{
+                                    else
+                                    {
                                         intensity = envelope.Peaks.Sum(p => p.intensity);
                                     }
                                     precursors.Add((monoPeakMz, envelope.Charge, intensity, peakCount));
