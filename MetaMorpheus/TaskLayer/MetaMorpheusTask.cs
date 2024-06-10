@@ -468,7 +468,8 @@ namespace TaskLayer
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
-                productDeconParams: commonParams.ProductDeconvolutionParameters );
+                productDeconParams: commonParams.ProductDeconvolutionParameters,
+                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity);
 
             return returnParams;
         }
