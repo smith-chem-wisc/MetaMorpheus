@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 
 namespace EngineLayer.ClassicSearch
@@ -67,10 +66,6 @@ namespace EngineLayer.ClassicSearch
             {
                 myLocks[i] = new object();
             }
-
-            if (CommonParameters.DissociationType == DissociationType.Custom)
-                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
-                    CommonParameters.CustomIons;
 
             Status("Performing classic search...");
 
@@ -172,10 +167,6 @@ namespace EngineLayer.ClassicSearch
             {
                 psm.ResolveAllAmbiguities();
             }
-
-            if (CommonParameters.DissociationType == DissociationType.Custom)
-                DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
-                    new List<ProductType>();
 
             return new MetaMorpheusEngineResults(this);
         }
