@@ -32,9 +32,23 @@ namespace EngineLayer
 
             //ensure that the order is always stable.
             psms = psms.OrderByDescending(p => p).ToList();
+            List<int> allPeptideIndices = new List<int>();
             List<SpectralMatch> peptides = psms
                 .GroupBy(b => b.FullSequence)
                 .Select(b => b.FirstOrDefault()).ToList();
+            if (psms.Count() > 100)
+            {
+                foreach (var peptide in peptides)
+                {
+                    allPeptideIndices.Add(peptides.IndexOf(peptide));
+                }
+            }
+            else
+            {
+                //there are too few psms to do any meaningful training if we used only peptides. So, we will train using psms instead.
+                allPeptideIndices = Enumerable.Range(0, psms.Count).ToList();
+            }
+
 
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
@@ -58,18 +72,17 @@ namespace EngineLayer
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(peptides);
 
             MLContext mlContext = new MLContext();
+
             //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code.
             int numGroups = 4;
-            if (peptides.Count < 1000)
-            {
-                numGroups = 1;
-            }
 
-            List<int>[] psmGroupIndices = Get_PSM_Group_Indices(peptides, numGroups);
+            List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms, numGroups);
+            //the psms will be randomly divided. but then we want to make another array that just contains the subset of peptides that are in those psms. that way we don't compute pep using any peptides that were used in training.
+            List<int>[] peptideGroupIndices = Get_Peptide_Group_Indices(psmGroupIndices, allPeptideIndices);
             IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
             for (int i = 0; i < numGroups; i++)
             {
-                PSMDataGroups[i] = CreatePsmData(searchType, fileSpecificParameters, peptides, psmGroupIndices[i], fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
+                PSMDataGroups[i] = CreatePsmData(searchType, fileSpecificParameters, psms, peptideGroupIndices[i], fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
             }
 
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
@@ -113,7 +126,7 @@ namespace EngineLayer
                     }
 
                     //model is trained on peptides but here we can use that to compute PEP for all PSMs
-                    int ambiguousPeptidesResolved = Compute_PSM_PEP(psms, Enumerable.Range(0,psms.Count -1).ToList(), mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
+                    int ambiguousPeptidesResolved = Compute_PSM_PEP(psms, psmGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
 
                     allMetrics.Add(metrics);
                     sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
@@ -125,6 +138,16 @@ namespace EngineLayer
             {
                 return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
             }
+        }
+
+        private static List<int>[] Get_Peptide_Group_Indices(List<int>[] psmGroupIndices, List<int> allPeptideIndices)
+        {
+            List<int>[] peptideGroupIndices = new List<int>[psmGroupIndices.Length];
+            for (int i = 0; i < psmGroupIndices.Length; i++)
+            {
+                peptideGroupIndices[i] = psmGroupIndices[i].Intersect(allPeptideIndices).ToList();
+            }
+            return peptideGroupIndices;
         }
 
         public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved)
