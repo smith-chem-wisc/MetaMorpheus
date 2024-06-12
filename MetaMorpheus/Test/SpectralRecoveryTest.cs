@@ -36,13 +36,14 @@ namespace Test
         public void SpectralRecoveryTestSetup()
         {
             // This block of code converts from PsmFromTsv to SpectralMatch objects
-            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\MSMSids.psmtsv");
+            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\AllPSMsTesting.psmtsv");
             tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
             psms = new List<SpectralMatch>();
             proteinList = new List<Protein>();
             myFileManager = new MyFileManager(true);
+            
 
-            foreach (PsmFromTsv readPsm in tsvPsms)
+            foreach (PsmFromTsv readPsm in tsvPsms.Where(psm => !psm.FullSequence.Contains('['))) // Modifications break the parser
             {
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                     "TestData", "SpectralRecoveryTest", readPsm.FileNameWithoutExtension + ".mzML");
@@ -55,17 +56,25 @@ namespace Test
                 string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
-
+                
+                
                 PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
                     readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
                     oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
                 SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
+                if (protein.IsDecoy)
+                {
+                    int placeholder = 0;
+                }
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                psm.ResolveAllAmbiguities();
                 if (readPsm.Ms2ScanNumber == 206 && readPsm.BaseSeq.Equals("HADIVTTTTHK")) psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0.0046, 0); // Necessary for to be implemented "original pep" test
                 psms.Add(psm);
                 proteinList.Add(protein);
             }
+
+            int decoyCount = psms.Count(p => p.IsDecoy);
 
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput"));
 
