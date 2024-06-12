@@ -58,6 +58,11 @@ namespace EngineLayer.FdrAnalysis
                     {
                         Compute_PEPValue(myAnalysisResults);
                     }
+                    else if (AnalysisType == "Peptide")
+                    {
+                        Compute_PEPValue_Based_QValue(psms);
+                    }
+                    
                     QValueInverted(psms);
                 }
                 CountPsm(psms);
