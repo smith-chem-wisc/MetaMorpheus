@@ -15,6 +15,7 @@ using Omics.Modifications;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
 using Omics;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -39,9 +40,12 @@ namespace Test
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\AllPSMsTesting.psmtsv");
             tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
             psms = new List<SpectralMatch>();
-            proteinList = new List<Protein>();
             myFileManager = new MyFileManager(true);
-            
+
+            Loaders.LoadElements();
+            string databasePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta");
+            proteinList = ProteinDbLoader.LoadProteinFasta(databasePath, true, DecoyType.Reverse, false, out List<string> errors)
+                .Where(protein => protein.AppliedSequenceVariations != null).ToList();
 
             foreach (PsmFromTsv readPsm in tsvPsms.Where(psm => !psm.FullSequence.Contains('['))) // Modifications break the parser
             {
@@ -50,31 +54,24 @@ namespace Test
                 MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
                     filePath, new CommonParameters());
-                Protein protein = new(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName,
-                    isDecoy: readPsm.DecoyContamTarget == "D",
-                    isContaminant: readPsm.DecoyContamTarget == "C");
+                Protein protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
+
                 string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
-                
-                
+
                 PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
                     readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
                     oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
                 SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
-                if (protein.IsDecoy)
-                {
-                    int placeholder = 0;
-                }
+
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
                 psm.ResolveAllAmbiguities();
                 if (readPsm.Ms2ScanNumber == 206 && readPsm.BaseSeq.Equals("HADIVTTTTHK")) psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0.0046, 0); // Necessary for to be implemented "original pep" test
                 psms.Add(psm);
                 proteinList.Add(protein);
             }
-
-            int decoyCount = psms.Count(p => p.IsDecoy);
 
             Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput"));
 
