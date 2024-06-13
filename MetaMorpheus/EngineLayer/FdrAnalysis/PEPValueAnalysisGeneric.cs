@@ -45,7 +45,7 @@ namespace EngineLayer
             {
                 foreach (var peptide in peptides)
                 {
-                    allPeptideIndices.Add(peptides.IndexOf(peptide));
+                    allPeptideIndices.Add(psms.IndexOf(peptide));
                 }
                 chargeStateMode = GetChargeStateMode(peptides);
                 fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(peptides);
@@ -92,8 +92,8 @@ namespace EngineLayer
             {
                 numGroups = 2;
             }
-
             List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms, numGroups);
+
             //the psms will be randomly divided. but then we want to make another array that just contains the subset of peptides that are in those psms. that way we don't compute pep using any peptides that were used in training.
             List<int>[] peptideGroupIndices = Get_Peptide_Group_Indices(psmGroupIndices, allPeptideIndices);
             IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
@@ -300,58 +300,57 @@ namespace EngineLayer
             return ambiguousPeptidesResolved;
         }
 
-        //we add the indexes of the targets and decoys to the groups separately in the hope that we'll get at least one target and one decoy in each group.
-        //then training can possibly be more successful.
         public static List<int>[] Get_PSM_Group_Indices(List<SpectralMatch> psms, int numGroups)
         {
             List<int>[] groupsOfIndicies = new List<int>[numGroups];
+            var targetIndexes = psms.Select((item, index) => new { Item = item, Index = index })
+                .Where(x => !x.Item.IsDecoy)
+                .Select(x => x.Index)
+                .ToList();
+            RandomizeListInPlace(targetIndexes);
+            var decoyIndexes = psms.Select((item, index) => new { Item = item, Index = index })
+                .Where(x => x.Item.IsDecoy)
+                .Select(x => x.Index)
+                .ToList();
+            RandomizeListInPlace(decoyIndexes);
+
+            var targetGroups = DivideListIntoGroups(targetIndexes, numGroups);
+            var decoyGroups = DivideListIntoGroups(decoyIndexes, numGroups);
+
             for (int i = 0; i < numGroups; i++)
             {
-                groupsOfIndicies[i] = new List<int>();
-            }
-
-            List<int> targetPsmIndexes = new List<int>();
-            List<int> decoyPsmIndexes = new List<int>();
-
-            for (int i = 0; i < psms.Count; i++)
-            {
-                if (psms[i].IsDecoy)
-                {
-                    decoyPsmIndexes.Add(i);
-                }
-                else
-                {
-                    targetPsmIndexes.Add(i);
-                }
-            }
-
-            int myIndex = 0;
-
-            while (myIndex < decoyPsmIndexes.Count)
-            {
-                int subIndex = 0;
-                while (subIndex < numGroups && myIndex < decoyPsmIndexes.Count)
-                {
-                    groupsOfIndicies[subIndex].Add(decoyPsmIndexes[myIndex]);
-                    subIndex++;
-                    myIndex++;
-                }
-            }
-
-            myIndex = 0;
-
-            while (myIndex < targetPsmIndexes.Count)
-            {
-                int subIndex = 0;
-                while (subIndex < numGroups && myIndex < targetPsmIndexes.Count)
-                {
-                    groupsOfIndicies[subIndex].Add(targetPsmIndexes[myIndex]);
-                    subIndex++;
-                    myIndex++;
-                }
+                groupsOfIndicies[i] = targetGroups[i].Concat(decoyGroups[i]).ToList();
             }
 
             return groupsOfIndicies;
+        }
+
+        static void RandomizeListInPlace<T>(List<T> list)
+        {
+            Random rng = new Random(42);
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = rng.Next(n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+
+        }
+
+        static List<List<T>> DivideListIntoGroups<T>(List<T> list, int n)
+        {
+            var groups = new List<List<T>>();
+            int groupSize = (int)Math.Ceiling(list.Count / (double)n);
+
+            for (int i = 0; i < n; i++)
+            {
+                groups.Add(list.Skip(i * groupSize).Take(groupSize).ToList());
+            }
+
+            return groups;
         }
 
         public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<int> notches, List<IBioPolymerWithSetMods> pwsmList, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
