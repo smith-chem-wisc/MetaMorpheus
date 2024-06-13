@@ -49,7 +49,6 @@ namespace EngineLayer
                 allPeptideIndices = Enumerable.Range(0, psms.Count).ToList();
             }
 
-
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
             //the z-score. That z-score is used as a feature for machine learning.
@@ -75,11 +74,16 @@ namespace EngineLayer
 
             //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code.
             int numGroups = 4;
+            if (psms.Count < 1000 || allPeptideIndices.Count < 500)
+            {
+                numGroups = 2;
+            }
 
             List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms, numGroups);
             //the psms will be randomly divided. but then we want to make another array that just contains the subset of peptides that are in those psms. that way we don't compute pep using any peptides that were used in training.
             List<int>[] peptideGroupIndices = Get_Peptide_Group_Indices(psmGroupIndices, allPeptideIndices);
             IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
+            
             for (int i = 0; i < numGroups; i++)
             {
                 PSMDataGroups[i] = CreatePsmData(searchType, fileSpecificParameters, psms, peptideGroupIndices[i], fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
@@ -113,7 +117,11 @@ namespace EngineLayer
                     allGroupIndexes.RemoveAt(groupIndexNumber);
 
                     //concat doesn't work in a loop, therefore I had to hard code the concat to group 3 out of 4 lists. if the const int numGroups value is changed, then the concat has to be changed accordingly.
-                    IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]].Concat(PSMDataGroups[allGroupIndexes[1]].Concat(PSMDataGroups[allGroupIndexes[2]])));
+                    IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]]);
+                    if (numGroups > 2)
+                    {
+                        dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]].Concat(PSMDataGroups[allGroupIndexes[1]].Concat(PSMDataGroups[allGroupIndexes[2]])));
+                    }
                     trainedModels[groupIndexNumber] = pipeline.Fit(dataView);
                     var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
                     CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
