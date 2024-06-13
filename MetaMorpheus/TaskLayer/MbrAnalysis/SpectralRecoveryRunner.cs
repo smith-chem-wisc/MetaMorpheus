@@ -25,6 +25,8 @@ namespace TaskLayer.MbrAnalysis
         /// Performs secondary analysis of MBR results by searching acceptor files for candidate spectra,
         /// and comparing those spectra to a spectral library. Results (PEP model and .psmtsv) are written to
         /// unique MbrAnalysis folder.
+        /// WARNING: The implemnetation of PEP within this method is broken. If this is every published or used, this should be fixed!!!
+        /// However, as this code is totally unused, it is not a priority.
         /// </summary>
         /// <param name="parameters"></param>
         /// <param name="commonParameters"></param>
@@ -248,6 +250,7 @@ namespace TaskLayer.MbrAnalysis
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
             var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables).Append(trainer);
 
+            // TODO: To do this properly, you need to concant the PSMDataGroups. See PEPValueAnalysisGenerics for example
             IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[0]);
 
             string outputFolder = parameters.OutputFolder;
