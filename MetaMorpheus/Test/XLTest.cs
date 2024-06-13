@@ -531,7 +531,7 @@ namespace Test
 
             var fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra).ToList<SpectralMatch>(), 1, CommonParameters, fsp, new List<string>(), "crosslink").Run();
 
-            fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType != PsmCrossType.Inter && c.CrossType != PsmCrossType.Intra).ToList<SpectralMatch>(), 1, CommonParameters, fsp, new List<string>(), "standard").Run();
+            fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType != PsmCrossType.Inter && c.CrossType != PsmCrossType.Intra).ToList<SpectralMatch>(), 1, CommonParameters, fsp, new List<string>(), "PSM").Run();
 
             unnasignedCrossType = 0;
             inter = 0;
@@ -588,6 +588,69 @@ namespace Test
             Assert.AreEqual(55, inter);
             Assert.AreEqual(83, intra);
             Assert.AreEqual(229, single);
+            Assert.AreEqual(8, loop);
+            Assert.AreEqual(0, deadend);
+            Assert.AreEqual(62, deadendH2O);
+            Assert.AreEqual(0, deadendNH2);
+            Assert.AreEqual(0, deadendTris);
+            Assert.AreEqual(0, unnasignedCrossType);
+
+            // Redo the above tests but looking at PEP values
+            unnasignedCrossType = 0;
+            inter = 0;
+            intra = 0;
+            single = 0;
+            loop = 0;
+            deadend = 0;
+            deadendH2O = 0;
+            deadendNH2 = 0;
+            deadendTris = 0;
+
+            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms.Where(c => c.FdrInfo.PEP <= 0.01).ToList())
+            {
+                switch (csm.CrossType)
+                {
+                    case PsmCrossType.Inter:
+                        inter++;
+                        break;
+
+                    case PsmCrossType.Intra:
+                        intra++;
+                        break;
+
+                    case PsmCrossType.Single:
+                        single++;
+                        break;
+
+                    case PsmCrossType.Loop:
+                        loop++;
+                        break;
+
+                    case PsmCrossType.DeadEnd:
+                        deadend++;
+                        break;
+
+                    case PsmCrossType.DeadEndH2O:
+                        deadendH2O++;
+                        break;
+
+                    case PsmCrossType.DeadEndNH2:
+                        deadendNH2++;
+                        break;
+
+                    case PsmCrossType.DeadEndTris:
+                        deadendTris++;
+                        break;
+
+                    default:
+                        unnasignedCrossType++;
+                        break;
+                }
+            }
+
+            Assert.AreEqual(70, inter);
+            Assert.AreEqual(89, intra);
+            Assert.AreEqual(235, single);
             Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(62, deadendH2O);
