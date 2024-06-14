@@ -405,6 +405,17 @@ namespace Test
             var psmOfInterest = psmsFromTsv.First(psm => psm.PrecursorScanNum == scanNumber);
             Assert.That(psmOfInterest.PrecursorIntensity == 4634473.5);
 
+            var lines = File.ReadAllLines(Path.Combine(outputFolder, @"AllPSMs.psmtsv")).ToList();
+            int indexOfPrecursorIntensity = Array.IndexOf(header, PsmTsvHeader.PrecursorIntensity);
+            var copy = lines[lines.Count - 1].Split('\t').ToArray();
+            copy[indexOfPrecursorIntensity] = copy[indexOfPrecursorIntensity] + "a";
+            string line = string.Join("\t", copy);
+            lines.Add(line);
+            File.WriteAllLines(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), lines.ToArray());
+            var psmsFromTsvInvalid = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
+            var psmInvalid = psmsFromTsvInvalid[psmsFromTsvInvalid.Count - 1];
+            Assert.AreEqual(psmInvalid.PrecursorIntensity, null);
+
             //Test for precursorIntensity and precursorEnvelopePeakCount in SpectralMatch
             List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse, false, out List<string> errors);
             var fsp = new List<(string, CommonParameters)>();
