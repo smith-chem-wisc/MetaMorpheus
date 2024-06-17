@@ -54,7 +54,8 @@ namespace EngineLayer
             int minVariantDepth = 1, 
             bool addTruncations = false,
             DeconvolutionParameters precursorDeconParams = null,
-            DeconvolutionParameters productDeconParams = null)
+            DeconvolutionParameters productDeconParams = null,
+            bool useMostAbundantPrecursorIntensity = true)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -86,6 +87,7 @@ namespace EngineLayer
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
             MS3ChildScanDissociationType = ms3childScanDissociationType;
+            UseMostAbundantPrecursorIntensity = useMostAbundantPrecursorIntensity;
 
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
             // reset custom fragmentation product types to default empty list
@@ -174,6 +176,8 @@ namespace EngineLayer
 
         public DissociationType MS2ChildScanDissociationType { get; private set; }
         public DissociationType MS3ChildScanDissociationType { get; private set; }
+
+        public bool UseMostAbundantPrecursorIntensity { get; set; }
         
         public CommonParameters Clone()
         {
