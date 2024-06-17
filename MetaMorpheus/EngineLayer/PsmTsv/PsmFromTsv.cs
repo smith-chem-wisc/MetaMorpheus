@@ -26,6 +26,8 @@ namespace EngineLayer
         public string FileNameWithoutExtension { get; }
         public int PrecursorScanNum { get; }
         public int PrecursorCharge { get; }
+
+        public double? PrecursorIntensity { get; }
         public double PrecursorMz { get; }
         public double PrecursorMass { get; }
         public double Score { get; }
@@ -126,6 +128,7 @@ namespace EngineLayer
             }
 
             PrecursorCharge = (int)double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorIntensity = (parsedHeader[PsmTsvHeader.PrecursorIntensity] < 0) ? null : Double.TryParse(spl[parsedHeader[PsmTsvHeader.PrecursorIntensity]].Trim(), out double value) ? value : null;
             PrecursorMz = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
             BaseSeq = RemoveParentheses(spl[parsedHeader[PsmTsvHeader.BaseSequence]].Trim());
