@@ -10,6 +10,7 @@
         public const string TotalIonCurrent = "Total Ion Current";
         public const string PrecursorScanNum = "Precursor Scan Number";
         public const string PrecursorCharge = "Precursor Charge";
+        public const string PrecursorIntensity = "Precursor Intensity";
         public const string PrecursorMz = "Precursor MZ";
         public const string PrecursorMass = "Precursor Mass";
         public const string Score = "Score";
