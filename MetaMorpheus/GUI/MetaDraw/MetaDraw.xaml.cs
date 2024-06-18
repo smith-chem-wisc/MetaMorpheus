@@ -243,7 +243,7 @@ namespace MetaMorpheusGUI
                 return;
             }
             
-            // Selection of non-ambiguous psm => clear items in the drop down
+            // Selection of non-ambiguous psm => clear psms in the drop down
             else if (!psm.FullSequence.Contains('|'))
             {
                 AmbiguousSequenceOptionBox.Items.Clear();
@@ -614,12 +614,12 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            List<PsmFromTsv> items = new List<PsmFromTsv>();
+            List<PsmFromTsv> psms = new List<PsmFromTsv>();
 
             foreach (var cell in dataGridScanNums.SelectedItems)
             {
                 var psm = (PsmFromTsv)cell;
-                items.Add(psm);
+                psms.Add(psm);
             }
 
             string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.PsmResultFilePaths.First()),
@@ -631,12 +631,21 @@ namespace MetaMorpheusGUI
                 Directory.CreateDirectory(directoryPath);
             }
 
-            directoryPath = Path.Combine(directoryPath, "spectrumLibrary.msp");
+            var libraryPath = Path.Combine(directoryPath, "spectrumLibrary.msp");
 
-            File.WriteAllLines(directoryPath, items.Select(i => i.ToLibrarySpectrum().ToString()).ToArray());
-
-            MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + directoryPath);
-
+            // research all identifications with the newly matched ion types
+            using (var sw = new StreamWriter(File.Create(libraryPath)))
+            {
+                foreach (var psm in psms)
+                {
+                    var oldIons = psm.MatchedIons;
+                    ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
+                    sw.WriteLine(psm.ToLibrarySpectrum().ToString());
+                    psm.MatchedIons = oldIons;
+                }
+            }
+            
+            MessageBox.Show("Spectral Library exported to: " + libraryPath);
         }
 
         private void SequenceCoverageExportButton_Click(object sender, RoutedEventArgs e)
