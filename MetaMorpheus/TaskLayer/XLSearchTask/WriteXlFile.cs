@@ -232,7 +232,7 @@ namespace TaskLayer
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
                                         new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
-                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
+                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].PsmFdrInfo.QValue.ToString() }
                                     },
                     };
                     searchHits.Add(searchHit);
@@ -270,7 +270,7 @@ namespace TaskLayer
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
                                         new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
-                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
+                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].PsmFdrInfo.QValue.ToString() }
                                     },
                     };
                     searchHits.Add(searchHit);
@@ -348,7 +348,7 @@ namespace TaskLayer
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
                                         new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
-                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
+                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].PsmFdrInfo.QValue.ToString() }
                                     }
                     };
                     searchHits.Add(searchHit);
@@ -386,7 +386,7 @@ namespace TaskLayer
                         search_score = new pepXML.Generated.nameValueType[]
                                     {
                                         new pepXML.Generated.nameValueType{ name = "xlTotalScore", value = items[i].XLTotalScore.ToString()},
-                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].FdrInfo.QValue.ToString() }
+                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = items[i].PsmFdrInfo.QValue.ToString() }
                                     }
                     };
                     searchHits.Add(searchHit);

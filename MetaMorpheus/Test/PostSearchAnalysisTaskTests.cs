@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using EngineLayer;
 using Nett;
 using NUnit.Framework;
 using TaskLayer;
@@ -19,6 +20,11 @@ namespace Test
             string myFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip_2.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
+            ExperimentalDesign.WriteExperimentalDesignToFile( new List<FlashLFQ.SpectraFileInfo>
+            {
+                new FlashLFQ.SpectraFileInfo(myFile1, "A", 0, 0, 0),
+                new FlashLFQ.SpectraFileInfo(myFile2, "A", 1, 0, 0)
+            });
 
             EverythingRunnerEngine engineToml = new(new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) }, new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
@@ -60,6 +66,9 @@ namespace Test
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 target PSMs with q-value = 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, results[17]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 Target peptides with q-value = 0.01 : " + TaGe_SA_A549_3_snip_2ExpectedPeptides, results[23]);
 
+            string peptideQuantFile = Path.Combine(outputFolder, "postSearchAnalysisTaskTestOutput", "AllQuantifiedPeptides.tsv");
+            string[] peptideQuant = File.ReadAllLines(peptideQuantFile);
+            Assert.AreEqual(175, peptideQuantFile.Length); // 174 peptides + header. Make sure that we're quantifying only those peptides with q-value <= 0.01
 
             Directory.Delete(outputFolder, true);
 

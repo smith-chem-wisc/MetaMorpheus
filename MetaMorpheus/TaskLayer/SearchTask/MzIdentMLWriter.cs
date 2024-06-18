@@ -418,7 +418,7 @@ namespace TaskLayer
                     chargeState = psm.ScanPrecursorCharge,
                     id = "SII_" + scan_result_scan_item.Item1 + "_" + scan_result_scan_item.Item2,
                     experimentalMassToCharge = Math.Round(psm.ScanPrecursorMonoisotopicPeakMz, 5),
-                    passThreshold = psm.FdrInfo.QValue <= 0.01,
+                    passThreshold = psm.PsmFdrInfo.QValue <= 0.01,
                     //NOTE:ONLY CAN HAVE ONE PEPTIDE REF PER SPECTRUM IDENTIFICATION ITEM
                     peptide_ref = "P_" + peptide_ids[psm.FullSequence].Item1,
                     PeptideEvidenceRef = new mzIdentML110.Generated.PeptideEvidenceRefType[psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).Distinct().Count()],
@@ -436,7 +436,7 @@ namespace TaskLayer
                             accession = "MS:1002354",
                             name = "PSM-level q-value",
                             cvRef = "PSI-MS",
-                            value = psm.FdrInfo.QValue.ToString()
+                            value = psm.PsmFdrInfo.QValue.ToString()
                         }
                     }
                 };

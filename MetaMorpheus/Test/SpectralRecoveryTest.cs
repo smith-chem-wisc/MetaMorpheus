@@ -146,7 +146,7 @@ namespace Test
             List<string> expectedMatches = mbrPsms.Select(p => p.BaseSeq).Intersect(expectedMbrPsms.Select(p => p.BaseSeq).ToList()).ToList();
 
             Assert.That(matches2ng.Count >= 2);
-            Assert.That(matches02ng.Count >= 8);
+            Assert.That(matches02ng.Count >= 7); // AS: 6/17/24 - Fewer quantification events (8 -> 7) because one of the peptides doesn't clear peptide level FDR threshold
             Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
 
             //TODO: Add test for recovering fdrInfo from original. Currently, PsmTsvReader doesn't support the new columns, so it's hard to test

@@ -14,16 +14,21 @@ namespace EngineLayer.FdrAnalysis
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
+        private readonly bool PeptideLevelFdr;
 
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
-            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
+            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
+            List<string> nestedIds, string analysisType = "PSM",
+            bool doPEP = true, string outputFolder = null,
+            bool peptideLevelFdr = false) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms.OrderByDescending(p => p).ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             ScoreCutoff = commonParameters.ScoreCutoff;
             AnalysisType = analysisType;
-            this.OutputFolder = outputFolder;
-            this.DoPEP = doPEP;
+            OutputFolder = outputFolder;
+            DoPEP = doPEP;
+            PeptideLevelFdr = peptideLevelFdr;
             if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
         }
 
@@ -34,7 +39,7 @@ namespace EngineLayer.FdrAnalysis
             Status("Running FDR analysis...");
             DoFalseDiscoveryRateAnalysis(myAnalysisResults);
             Status("Done.");
-            myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.FdrInfo.QValue <= 0.01 && !b.IsDecoy);
+            myAnalysisResults.PsmsWithin1PercentFdr = AllPsms.Count(b => b.GetFdrInfo(PeptideLevelFdr).QValue <= 0.01 && !b.IsDecoy);
 
             return myAnalysisResults;
         }
@@ -64,13 +69,13 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
-        private static void QValueInverted(List<SpectralMatch> psms)
+        private void QValueInverted(List<SpectralMatch> psms)
         {
             psms.Reverse();
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
             //and qValueNotch for the last/lowest scoring psm in the bunch
-            double qValue = (psms[0].FdrInfo.CumulativeDecoy + 1) / psms[0].FdrInfo.CumulativeTarget;
-            double qValueNotch = (psms[0].FdrInfo.CumulativeDecoyNotch + 1) / psms[0].FdrInfo.CumulativeTargetNotch;
+            double qValue = (psms[0].GetFdrInfo(PeptideLevelFdr).CumulativeDecoy + 1) / psms[0].GetFdrInfo(PeptideLevelFdr).CumulativeTarget;
+            double qValueNotch = (psms[0].GetFdrInfo(PeptideLevelFdr).CumulativeDecoyNotch + 1) / psms[0].GetFdrInfo(PeptideLevelFdr).CumulativeTargetNotch;
 
             //Assign FDR values to PSMs
             for (int i = 0; i < psms.Count; i++)
@@ -78,13 +83,13 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                qValue = Math.Min(qValue, (psms[i].FdrInfo.CumulativeDecoy + 1) / psms[i].FdrInfo.CumulativeTarget);
-                qValueNotch = Math.Min(qValueNotch, (psms[i].FdrInfo.CumulativeDecoyNotch + 1) / psms[i].FdrInfo.CumulativeTargetNotch);
+                qValue = Math.Min(qValue, (psms[i].GetFdrInfo(PeptideLevelFdr).CumulativeDecoy + 1) / psms[i].GetFdrInfo(PeptideLevelFdr).CumulativeTarget);
+                qValueNotch = Math.Min(qValueNotch, (psms[i].GetFdrInfo(PeptideLevelFdr).CumulativeDecoyNotch + 1) / psms[i].GetFdrInfo(PeptideLevelFdr).CumulativeTargetNotch);
 
-                double pep = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP;
-                double pepQValue = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP_QValue;
+                double pep = psms[i].GetFdrInfo(PeptideLevelFdr) == null ? double.NaN : psms[i].GetFdrInfo(PeptideLevelFdr).PEP;
+                double pepQValue = psms[i].GetFdrInfo(PeptideLevelFdr) == null ? double.NaN : psms[i].GetFdrInfo(PeptideLevelFdr).PEP_QValue;
 
-                psms[i].SetQandPEPvalues(qValue, qValueNotch, pep, pepQValue);
+                psms[i].SetQandPEPvalues(qValue, qValueNotch, pep, pepQValue, PeptideLevelFdr);
 
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
@@ -136,10 +141,10 @@ namespace EngineLayer.FdrAnalysis
                 double qValue = Math.Min(1, cumulativeDecoy / cumulativeTarget);
                 double qValueNotch = Math.Min(1, cumulativeDecoyPerNotch[notch] / cumulativeTargetPerNotch[notch]);
 
-                double pep = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP;
-                double pepQValue = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP_QValue;
+                double pep = psm.GetFdrInfo(PeptideLevelFdr) == null ? double.NaN : psm.GetFdrInfo(PeptideLevelFdr).PEP;
+                double pepQValue = psm.GetFdrInfo(PeptideLevelFdr) == null ? double.NaN : psm.GetFdrInfo(PeptideLevelFdr).PEP_QValue;
 
-                psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, pep, pepQValue);
+                psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, pep, pepQValue, PeptideLevelFdr);
             }
         }
 
@@ -156,7 +161,7 @@ namespace EngineLayer.FdrAnalysis
                         searchType = "top-down";
                     }
 
-                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType, this.FileSpecificParameters, this.OutputFolder);
+                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType, this.FileSpecificParameters, this.OutputFolder, PeptideLevelFdr);
 
                     Compute_PEPValue_Based_QValue(AllPsms);
                 }
@@ -169,14 +174,14 @@ namespace EngineLayer.FdrAnalysis
 
             if (AnalysisType == "crosslink" && AllPsms.Count > 100)
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink", this.FileSpecificParameters, this.OutputFolder);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink", this.FileSpecificParameters, this.OutputFolder, PeptideLevelFdr);
                 Compute_PEPValue_Based_QValue(AllPsms);
             }
         }
 
-        public static void Compute_PEPValue_Based_QValue(List<SpectralMatch> psms)
+        public void Compute_PEPValue_Based_QValue(List<SpectralMatch> psms)
         {
-            double[] allPEPValues = psms.Select(p => p.FdrInfo.PEP).ToArray();
+            double[] allPEPValues = psms.Select(p => p.PsmFdrInfo.PEP).ToArray(); // Currently, we only calculate PEP at the PSM level, so this is hardcoded to access the 
             int[] psmsArrayIndicies = Enumerable.Range(0, psms.Count).ToArray();
             Array.Sort(allPEPValues, psmsArrayIndicies);//sort the second thing by the first
 
@@ -185,7 +190,9 @@ namespace EngineLayer.FdrAnalysis
             {
                 runningSum += allPEPValues[i];
                 double qValue = runningSum / (i + 1);
-                psms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
+                psms[psmsArrayIndicies[i]].GetFdrInfo(PeptideLevelFdr).PEP_QValue = Math.Round(qValue, 6);
+                // Copy the PSM level PEP value to the peptide level
+                if (PeptideLevelFdr) psms[psmsArrayIndicies[i]].GetFdrInfo(PeptideLevelFdr).PEP = allPEPValues[i];
             }
         }
         /// <summary>
@@ -197,8 +204,8 @@ namespace EngineLayer.FdrAnalysis
             var allUnambiguousPsms = proteasePsms.Where(psm => psm.FullSequence != null).ToList();
 
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
-                    psm.FdrInfo.QValue <= 0.01
-                    && psm.FdrInfo.QValueNotch <= 0.01)
+                    psm.GetFdrInfo(PeptideLevelFdr).QValue <= 0.01
+                    && psm.GetFdrInfo(PeptideLevelFdr).QValueNotch <= 0.01)
                 .GroupBy(p => p.FullSequence);
 
             Dictionary<string, int> sequenceToPsmCount = new Dictionary<string, int>();

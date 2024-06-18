@@ -151,7 +151,7 @@ namespace TaskLayer
                     search_score = new pepXML.Generated.nameValueType[]
                     {
                                         new pepXML.Generated.nameValueType{ name = "Score", value = psm.Score.ToString()},
-                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = psm.FdrInfo.QValue.ToString() }
+                                        new pepXML.Generated.nameValueType{ name = "Qvalue", value = psm.PsmFdrInfo.QValue.ToString() }
                     },
                 };
                 searchHits.Add(searchHit);

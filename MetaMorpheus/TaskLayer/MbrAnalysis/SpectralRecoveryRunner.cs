@@ -118,7 +118,7 @@ namespace TaskLayer.MbrAnalysis
             {
                 List<SpectralMatch> allPsms = parameters.AllPsms.
                     OrderByDescending(p => p.Score).
-                    ThenBy(p => p.FdrInfo.QValue).
+                    ThenBy(p => p.PsmFdrInfo.QValue).
                     ThenBy(p => p.FullFilePath).
                     ThenBy(x => x.ScanNumber).
                     ThenBy(p => p.FullSequence).
@@ -158,11 +158,11 @@ namespace TaskLayer.MbrAnalysis
             double qValueCutoff = 0.01;
             if (parameters.AllPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
             {
-                peptides.RemoveAll(p => p.FdrInfo.PEP_QValue > qValueCutoff);
+                peptides.RemoveAll(p => p.PsmFdrInfo.PEP_QValue > qValueCutoff);
             }
             else
             {
-                peptides.RemoveAll(p => p.FdrInfo.QValue > qValueCutoff);
+                peptides.RemoveAll(p => p.PsmFdrInfo.QValue > qValueCutoff);
             }
 
             return peptides;
@@ -191,7 +191,7 @@ namespace TaskLayer.MbrAnalysis
         private static void AssignEstimatedPsmQvalue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<SpectralMatch> allPsms)
         {
             double[] allScores = allPsms.Select(s => s.Score).OrderByDescending(s => s).ToArray();
-            double[] allQValues = allPsms.OrderByDescending(s => s.Score).Select(q => q.FdrInfo.QValue).ToArray();
+            double[] allQValues = allPsms.OrderByDescending(s => s.Score).Select(q => q.PsmFdrInfo.QValue).ToArray();
 
             foreach (SpectralRecoveryPSM match in bestMbrMatches.Values)
             {
@@ -204,12 +204,12 @@ namespace TaskLayer.MbrAnalysis
                     }
                     if (myIndex == allScores.Length - 1)
                     {
-                        match.spectralLibraryMatch.FdrInfo.QValue = allQValues.Last();
+                        match.spectralLibraryMatch.PsmFdrInfo.QValue = allQValues.Last();
                     }
                     else
                     {
                         double estimatedQ = (allQValues[myIndex] + allQValues[myIndex + 1]) / 2;
-                        match.spectralLibraryMatch.FdrInfo.QValue = estimatedQ;
+                        match.spectralLibraryMatch.PsmFdrInfo.QValue = estimatedQ;
                     }
                 }
             }
@@ -262,8 +262,8 @@ namespace TaskLayer.MbrAnalysis
             List<double> pepValues = bestMbrMatches. 
                 Select(p => p.Value.spectralLibraryMatch).
                 Where(p => p != null).
-                OrderBy(p => p.FdrInfo.PEP).
-                Select(p => p.FdrInfo.PEP).
+                OrderBy(p => p.PsmFdrInfo.PEP).
+                Select(p => p.PsmFdrInfo.PEP).
                 ToList();
 
             foreach (SpectralRecoveryPSM match in bestMbrMatches.Values)
@@ -271,18 +271,18 @@ namespace TaskLayer.MbrAnalysis
                 if (match.spectralLibraryMatch == null) continue;
 
                 int myIndex = 0;
-                while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= match.spectralLibraryMatch.FdrInfo.PEP)
+                while (myIndex < (pepValues.Count - 1) && pepValues[myIndex] <= match.spectralLibraryMatch.PsmFdrInfo.PEP)
                 {
                     myIndex++;
                 }
                 if (myIndex == pepValues.Count - 1)
                 {
-                    match.spectralLibraryMatch.FdrInfo.PEP_QValue = pepValues.Last();
+                    match.spectralLibraryMatch.PsmFdrInfo.PEP_QValue = pepValues.Last();
                 }
                 else
                 {
                     double estimatedQ = (pepValues[myIndex - 1] + pepValues[myIndex]) / 2;
-                    match.spectralLibraryMatch.FdrInfo.PEP_QValue = estimatedQ;
+                    match.spectralLibraryMatch.PsmFdrInfo.PEP_QValue = estimatedQ;
                 }
             }
         }
