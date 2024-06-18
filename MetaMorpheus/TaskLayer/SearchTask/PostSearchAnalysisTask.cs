@@ -629,7 +629,9 @@ namespace TaskLayer
                 useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile,
-                peptideSequencesToUse: Parameters.SearchParameters.SilacLabels == null ? _filteredPeptides.Select(peptide => peptide.FullSequence).ToList() : null);
+                peptideSequencesToUse: (Parameters.SearchParameters.SilacLabels == null && Parameters.SearchParameters.OnlyQuantifyConfidentPeptides)
+                    ? _filteredPeptides.Select(peptide => peptide.FullSequence).ToList() 
+                    : null);
 
             if (flashLFQIdentifications.Any())
             {

@@ -544,6 +544,24 @@
                                     <ToolTip Content="Use peptide sequences shared between proteins for protein quantification" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
+                            <CheckBox x:Name="CheckBoxOnlyQuantifyConfidentPeptides" Content="Only quantify confident peptides" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <CheckBox.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource boolOrConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.IsEnabled>
+                                <CheckBox.Visibility>
+                                    <MultiBinding Converter="{StaticResource boolOr2VisConverter}">
+                                        <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
+                                        <Binding  ElementName="CheckBoxLFQwSpectralRecovery" Path ="IsChecked"/>
+                                    </MultiBinding>
+                                </CheckBox.Visibility>
+                                <ToolTipService.ToolTip>
+                                    <ToolTip Content="Only quantify peptides that meet the Q-Value or PEP Q-Value threshold.&#x0a;Unchecking this option results in low-confidence peptides being reported in the AllQuantifiedPeptides output" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                </ToolTipService.ToolTip>
+                            </CheckBox>
+
 
                             <!-- Multiplex Options -->
                             <StackPanel Orientation="Horizontal" Margin="5 5 5 0" Grid.Column="0" Grid.Row="0">
