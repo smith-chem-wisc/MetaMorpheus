@@ -41,11 +41,11 @@ namespace EngineLayer
             // KEEP contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.PsmFdrInfo.QValue <= FdrCutoffForParsimony && p.PsmFdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
             else
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.PsmFdrInfo.QValue <= FdrCutoffForParsimony && p.PsmFdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
 
             // peptides to use in parsimony = peptides observed in high-confidence PSMs (including decoys)

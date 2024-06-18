@@ -70,13 +70,13 @@ namespace TaskLayer
 
                         if (!localizedGlycan.ContainsKey(proPosId))
                         {
-                            GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.Accession, proteinPos, gsm.BaseSequence[local.Item1-2], local.Item3, gsm.PsmFdrInfo.QValue, gsm.LocalizationLevel, prob);
+                            GlycoProteinParsimony gpp = new GlycoProteinParsimony(gsm.Accession, proteinPos, gsm.BaseSequence[local.Item1-2], local.Item3, gsm.FdrInfo.QValue, gsm.LocalizationLevel, prob);
                             localizedGlycan.Add(proPosId, gpp);
                         }
                         else
                         {
                             bool islocalized = (local.Item3 || localizedGlycan[proPosId].IsLocalized);
-                            double minQValue = localizedGlycan[proPosId].MinQValue > gsm.PsmFdrInfo.QValue ? gsm.PsmFdrInfo.QValue : localizedGlycan[proPosId].MinQValue;
+                            double minQValue = localizedGlycan[proPosId].MinQValue > gsm.FdrInfo.QValue ? gsm.FdrInfo.QValue : localizedGlycan[proPosId].MinQValue;
                             double maxProb = localizedGlycan[proPosId].MaxProbability > prob ? localizedGlycan[proPosId].MaxProbability : prob;
                             var localLevel = localizedGlycan[proPosId].BestLocalizeLevel < gsm.LocalizationLevel ? localizedGlycan[proPosId].BestLocalizeLevel : gsm.LocalizationLevel;
 

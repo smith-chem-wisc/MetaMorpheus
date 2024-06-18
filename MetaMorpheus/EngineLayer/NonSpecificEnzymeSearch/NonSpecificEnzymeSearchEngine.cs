@@ -460,7 +460,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         if (psmsArray[i] != null)
                         {
-                            if (psmsArray[i].PsmFdrInfo == null) //if it was grouped in the cleanedPsmsArray
+                            if (psmsArray[i].FdrInfo == null) //if it was grouped in the cleanedPsmsArray
                             {
                                 psmsArray[i] = null;
                             }
@@ -475,7 +475,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
             {
                 if (AllPsms[i] != null)
                 {
-                    ranking[i] = AllPsms[i].Where(x => x != null).Count(x => x.PsmFdrInfo.QValue <= 0.01); //set ranking as number of psms above 1% FDR
+                    ranking[i] = AllPsms[i].Where(x => x != null).Count(x => x.FdrInfo.QValue <= 0.01); //set ranking as number of psms above 1% FDR
                     indexesOfInterest.Add(i);
                 }
             }
@@ -515,9 +515,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                         }
                         else
                         {
-                            if (majorPsm.PsmFdrInfo.QValue > minorPsm.PsmFdrInfo.QValue)
+                            if (majorPsm.FdrInfo.QValue > minorPsm.FdrInfo.QValue)
                             {
-                                minorPsm.PsmFdrInfo.QValue = majorPsm.PsmFdrInfo.QValue;
+                                minorPsm.FdrInfo.QValue = majorPsm.FdrInfo.QValue;
                             }
                             minorPsmIndex++;
                         }
@@ -527,9 +527,9 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         SpectralMatch majorPsm = majorCategoryPsms[majorPsmIndex - 1]; //-1 because it's out of index right now
                         SpectralMatch minorPsm = minorCategoryPsms[minorPsmIndex];
-                        if (majorPsm.PsmFdrInfo.QValue > minorPsm.PsmFdrInfo.QValue)
+                        if (majorPsm.FdrInfo.QValue > minorPsm.FdrInfo.QValue)
                         {
-                            minorPsm.PsmFdrInfo.QValue = majorPsm.PsmFdrInfo.QValue;
+                            minorPsm.FdrInfo.QValue = majorPsm.FdrInfo.QValue;
                         }
                         minorPsmIndex++;
                     }
@@ -548,7 +548,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     SpectralMatch currentPsm = AllPsms[index][i];
                     if (currentPsm != null)
                     {
-                        double currentQValue = currentPsm.PsmFdrInfo.QValue;
+                        double currentQValue = currentPsm.FdrInfo.QValue;
                         if (currentQValue < lowestQ //if the new one is better
                             || (currentQValue == lowestQ && currentPsm.Score > bestPsm.Score))
                         {
@@ -587,7 +587,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 }
             }
 
-            return bestPsmsList.OrderBy(b => b.PsmFdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
+            return bestPsmsList.OrderBy(b => b.FdrInfo.QValue).ThenByDescending(b => b.Score).ToList();
         }
 
         public static List<Modification> GetVariableTerminalMods(FragmentationTerminus fragmentationTerminus, List<Modification> variableModifications)

@@ -248,7 +248,7 @@ namespace EngineLayer.GlycoSearch
             sb.Append((IsDecoy) ? "D" : (IsContaminant) ? "C" : "T"); sb.Append("\t");
 
 
-            sb.Append(PsmFdrInfo!=null? PsmFdrInfo.QValue.ToString() : "-1" );  sb.Append("\t");
+            sb.Append(FdrInfo!=null? FdrInfo.QValue.ToString() : "-1" );  sb.Append("\t");
 
             sb.Append("0" + "\t"); //This is space for PEP
 

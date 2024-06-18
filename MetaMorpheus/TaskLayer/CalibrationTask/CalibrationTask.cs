@@ -278,7 +278,7 @@ namespace TaskLayer
 
             _ = new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }, doPEP: false).Run();
 
-            List<SpectralMatch> goodIdentifications = allPsms.Where(b => b.PsmFdrInfo.QValueNotch < 0.001 && !b.IsDecoy && b.FullSequence != null).ToList();
+            List<SpectralMatch> goodIdentifications = allPsms.Where(b => b.FdrInfo.QValueNotch < 0.001 && !b.IsDecoy && b.FullSequence != null).ToList();
 
             if (!goodIdentifications.Any())
             {

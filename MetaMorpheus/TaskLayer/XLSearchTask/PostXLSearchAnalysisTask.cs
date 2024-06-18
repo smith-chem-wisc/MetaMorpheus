@@ -43,21 +43,21 @@ namespace TaskLayer
             ComputeXlinkQandPValues(allPsms, intraCsms, interCsms, commonParameters, taskId);
 
             WriteCsvFiles(outputFolder, interCsms, intraCsms, singlePsms, loopPsms, deadendPsms, taskId, xlSearchParameters);
-            MyTaskResults.AddTaskSummaryText("Target inter-crosslinks within 1% FDR: " + interCsms.Count(p => p.PsmFdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
-            MyTaskResults.AddTaskSummaryText("Target intra-crosslinks within 1% FDR: " + intraCsms.Count(p => p.PsmFdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
-            MyTaskResults.AddTaskSummaryText("Target single peptides within 1% FDR: " + singlePsms.Count(p => p.PsmFdrInfo.QValue <= 0.01 && !p.IsDecoy));
-            MyTaskResults.AddTaskSummaryText("Target loop-linked peptides within 1% FDR: " + loopPsms.Count(p => p.PsmFdrInfo.QValue <= 0.01 && !p.IsDecoy));
-            MyTaskResults.AddTaskSummaryText("Target deadend peptides within 1% FDR: " + deadendPsms.Count(p => p.PsmFdrInfo.QValue <= 0.01 && !p.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target inter-crosslinks within 1% FDR: " + interCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target intra-crosslinks within 1% FDR: " + intraCsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.BetaPeptide.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target single peptides within 1% FDR: " + singlePsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target loop-linked peptides within 1% FDR: " + loopPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
+            MyTaskResults.AddTaskSummaryText("Target deadend peptides within 1% FDR: " + deadendPsms.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy));
 
             // write pepXML
             if (xlSearchParameters.WritePepXml)
             {
                 List<CrosslinkSpectralMatch> writeToXml = new List<CrosslinkSpectralMatch>();
-                writeToXml.AddRange(intraCsms.Where(p => !p.IsDecoy && !p.BetaPeptide.IsDecoy && p.PsmFdrInfo.QValue <= 0.05));
-                writeToXml.AddRange(interCsms.Where(p => !p.IsDecoy && !p.BetaPeptide.IsDecoy && p.PsmFdrInfo.QValue <= 0.05));
-                writeToXml.AddRange(singlePsms.Where(p => !p.IsDecoy && p.PsmFdrInfo.QValue <= 0.05));
-                writeToXml.AddRange(loopPsms.Where(p => !p.IsDecoy && p.PsmFdrInfo.QValue <= 0.05));
-                writeToXml.AddRange(deadendPsms.Where(p => !p.IsDecoy && p.PsmFdrInfo.QValue <= 0.05));
+                writeToXml.AddRange(intraCsms.Where(p => !p.IsDecoy && !p.BetaPeptide.IsDecoy && p.FdrInfo.QValue <= 0.05));
+                writeToXml.AddRange(interCsms.Where(p => !p.IsDecoy && !p.BetaPeptide.IsDecoy && p.FdrInfo.QValue <= 0.05));
+                writeToXml.AddRange(singlePsms.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.05));
+                writeToXml.AddRange(loopPsms.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.05));
+                writeToXml.AddRange(deadendPsms.Where(p => !p.IsDecoy && p.FdrInfo.QValue <= 0.05));
                 writeToXml = writeToXml.OrderBy(p => p.ScanNumber).ToList();
 
                 foreach (var fullFilePath in currentRawFileList)
@@ -106,11 +106,11 @@ namespace TaskLayer
 
             WriteCsvFiles(outputFolder, interCsms, intraCsms, singlePsms, loopPsms, deadendPsms, taskId, xlSearchParameters);
 
-            allFilterPsms.AddRange(interCsms.Where(p=>p.PsmFdrInfo.QValue <= 0.2)); 
-            allFilterPsms.AddRange(intraCsms.Where(p => p.PsmFdrInfo.QValue <= 0.2));
-            allFilterPsms.AddRange(singlePsms.Where(p => p.PsmFdrInfo.QValue <= 0.2));
-            allFilterPsms.AddRange(loopPsms.Where(p => p.PsmFdrInfo.QValue <= 0.2));
-            allFilterPsms.AddRange(deadendPsms.Where(p => p.PsmFdrInfo.QValue <= 0.2));
+            allFilterPsms.AddRange(interCsms.Where(p=>p.FdrInfo.QValue <= 0.2)); 
+            allFilterPsms.AddRange(intraCsms.Where(p => p.FdrInfo.QValue <= 0.2));
+            allFilterPsms.AddRange(singlePsms.Where(p => p.FdrInfo.QValue <= 0.2));
+            allFilterPsms.AddRange(loopPsms.Where(p => p.FdrInfo.QValue <= 0.2));
+            allFilterPsms.AddRange(deadendPsms.Where(p => p.FdrInfo.QValue <= 0.2));
 
             return allFilterPsms;
         }
@@ -228,8 +228,8 @@ namespace TaskLayer
                 double qValue = Math.Min(1, (double)cumulativeDecoy / (cumulativeTarget <= 0 ? 1 : cumulativeTarget));
                 double qValueNotch = 0; //maybe we should assign this some day?
 
-                double pep = csm.PsmFdrInfo == null ? double.NaN : csm.PsmFdrInfo.PEP;
-                double pepQValue = csm.PsmFdrInfo == null ? double.NaN : csm.PsmFdrInfo.PEP_QValue;
+                double pep = csm.FdrInfo == null ? double.NaN : csm.FdrInfo.PEP;
+                double pepQValue = csm.FdrInfo == null ? double.NaN : csm.FdrInfo.PEP_QValue;
 
                 csm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, 0, 0, qValueNotch, pep, pepQValue);
             }
@@ -247,7 +247,7 @@ namespace TaskLayer
 
             foreach (var csmGroups in linkedCsms.Where(c => 
                     !c.IsDecoy
-                    && c.PsmFdrInfo.QValueNotch < 0.05)
+                    && c.FdrInfo.QValueNotch < 0.05)
                 .GroupBy(c => (c.UniqueSequence, c.ScanPrecursorCharge)))
             {
                 CrosslinkSpectralMatch bestCsm = csmGroups.MaxBy(c => c.XLTotalScore);
@@ -263,7 +263,7 @@ namespace TaskLayer
 
             foreach (var singlePsmGroup in singlePsms.Where(c =>
                     !c.IsDecoy
-                    && c.PsmFdrInfo.QValueNotch < 0.05)
+                    && c.FdrInfo.QValueNotch < 0.05)
                 .GroupBy(c => (c.FullSequence, c.ScanPrecursorCharge)))
             {
                 CrosslinkSpectralMatch bestPsm = singlePsmGroup.MaxBy(c => c.Score);

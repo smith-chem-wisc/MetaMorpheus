@@ -42,7 +42,7 @@ namespace EngineLayer
             var peptideToPsmMatching = new Dictionary<IBioPolymerWithSetMods, HashSet<SpectralMatch>>();
             foreach (var psm in psmList)
             {
-                if (psm.PsmFdrInfo.QValueNotch <= 0.01 && psm.PsmFdrInfo.QValue <= 0.01)
+                if (psm.FdrInfo.QValueNotch <= 0.01 && psm.FdrInfo.QValue <= 0.01)
                 {
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
@@ -155,7 +155,7 @@ namespace EngineLayer
                 }
 
                 pg.BestPeptideScore = pg.AllPsmsBelowOnePercentFDR.Max(psm => psm.Score);
-                pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.PsmFdrInfo.QValueNotch);
+                pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValueNotch);
             }
 
             // pick the best notch-QValue for each paired accession

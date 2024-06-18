@@ -374,7 +374,8 @@ namespace Test
 
             var xlSearchParameters = new XlSearchParameters
             {
-                CrosslinkAtCleavageSite = true
+                CrosslinkAtCleavageSite = true,
+                WritePepXml = true
             };
 
             //Create databases contain two protein.

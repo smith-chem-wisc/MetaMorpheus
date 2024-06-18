@@ -44,7 +44,7 @@ namespace TaskLayer
             //This is all psms for all files including glyco- and non-glyco psms.
             SingleFDRAnalysis(allPSMs, commonParameters, new List<string> { taskId });
 
-            List<GlycoSpectralMatch> filteredGsms = allPSMs.Where(p => p.PsmFdrInfo.QValue < 0.01).ToList();
+            List<GlycoSpectralMatch> filteredGsms = allPSMs.Where(p => p.FdrInfo.QValue < 0.01).ToList();
 
             //write individual file results
             if (Parameters.GlycoSearchParameters.WriteIndividualFiles)
@@ -263,7 +263,7 @@ namespace TaskLayer
             }
 
             //get non-ambigous psms above cutoffs that are normally used for parsimony
-            List<SpectralMatch>  _filteredPsms = psmsForProteinParsimony.Where(p => p.FullSequence != null && p.PsmFdrInfo.QValue <= 0.01 && p.PsmFdrInfo.QValueNotch <= 0.01).ToList();
+            List<SpectralMatch>  _filteredPsms = psmsForProteinParsimony.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= 0.01 && p.FdrInfo.QValueNotch <= 0.01).ToList();
 
             // if there are no peptides observed, there are no proteins; return an empty list of protein groups
             if (_filteredPsms.Count != 0)
@@ -366,8 +366,8 @@ namespace TaskLayer
 
             // get PSMs to pass to FlashLFQ
             var unambiguousPsmsBelowOnePercentFdr = Parameters.AllPsms.Where(p =>
-                p.PsmFdrInfo.QValue <= 0.01
-                && p.PsmFdrInfo.QValueNotch <= 0.01
+                p.FdrInfo.QValue <= 0.01
+                && p.FdrInfo.QValueNotch <= 0.01
                 && !p.IsDecoy
                 && p.FullSequence != null).ToList();
 
