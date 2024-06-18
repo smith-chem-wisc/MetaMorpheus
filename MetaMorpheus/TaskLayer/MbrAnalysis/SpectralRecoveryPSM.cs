@@ -65,9 +65,9 @@ namespace TaskLayer.MbrAnalysis
 
         public override string ToString()
         {
-            string originalPsmQ = originalSpectralMatch == null ? "Spectrum Not Found" : originalSpectralMatch.PsmFdrInfo.QValue.ToString();
-            string originalPsmPEP = originalSpectralMatch == null ? "" : originalSpectralMatch.PsmFdrInfo.PEP.ToString();
-            string originalPsmPEPQ = originalSpectralMatch == null ? "" : originalSpectralMatch.PsmFdrInfo.PEP_QValue.ToString();
+            string originalPsmQ = originalSpectralMatch == null ? "Spectrum Not Found" : originalSpectralMatch.FdrInfo.QValue.ToString();
+            string originalPsmPEP = originalSpectralMatch == null ? "" : originalSpectralMatch.FdrInfo.PEP.ToString();
+            string originalPsmPEPQ = originalSpectralMatch == null ? "" : originalSpectralMatch.FdrInfo.PEP_QValue.ToString();
             var sb = new StringBuilder();
             sb.Append(spectralLibraryMatch);
             sb.Append('\t');

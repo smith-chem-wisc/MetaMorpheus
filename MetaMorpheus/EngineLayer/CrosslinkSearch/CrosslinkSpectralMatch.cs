@@ -492,18 +492,18 @@ namespace EngineLayer.CrosslinkSearch
                 sb.Append((IsDecoy || BetaPeptide.IsDecoy) ? "D" : (IsContaminant || BetaPeptide.IsContaminant) ? "C" : "T");
                 sb.Append("\t");
             }
-            if (PsmFdrInfo == null)
+            if (FdrInfo == null)
             {
                 sb.Append("0\t0\t0\t");
             }
             else
             {
-                sb.Append(PsmFdrInfo.QValue.ToString());
+                sb.Append(FdrInfo.QValue.ToString());
                 sb.Append("\t");
 
-                sb.Append(PsmFdrInfo.PEP.ToString()); sb.Append("\t");
+                sb.Append(FdrInfo.PEP.ToString()); sb.Append("\t");
 
-                sb.Append(PsmFdrInfo.PEP_QValue.ToString()); sb.Append("\t");
+                sb.Append(FdrInfo.PEP_QValue.ToString()); sb.Append("\t");
             }
             return sb.ToString();
         }
