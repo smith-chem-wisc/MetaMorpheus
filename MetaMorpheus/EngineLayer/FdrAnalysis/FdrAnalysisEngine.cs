@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using EngineLayer;
 using EngineLayer.FdrAnalysis;
+using Newtonsoft.Json.Linq;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -174,20 +175,76 @@ namespace EngineLayer.FdrAnalysis
             }
         }
 
+
         public static void Compute_PEPValue_Based_QValue(List<SpectralMatch> psms)
         {
-            double[] allPEPValues = psms.Select(p => p.FdrInfo.PEP).ToArray();
-            int[] psmsArrayIndicies = Enumerable.Range(0, psms.Count).ToArray();
-            Array.Sort(allPEPValues, psmsArrayIndicies);//sort the second thing by the first
+            //sort from lowest to highest PEP (good to bad)
+            psms = psms.OrderBy(p => p.FdrInfo.PEP).ToList();
 
-            double runningSum = 0;
-            for (int i = 0; i < allPEPValues.Length; i++)
+            double cumulativeTarget = 0;
+            double cumulativeDecoy = 0;
+
+            //set up arrays for local FDRs
+            double[] cumulativeTargetArray = new double[psms.Count];
+            double[] cumultativeDecoyArray = new double[psms.Count];
+
+            //Assign FDR values to PSMs
+            for (int i = 0; i < psms.Count; i++)
             {
-                runningSum += allPEPValues[i];
-                double qValue = runningSum / (i + 1);
-                psms[psmsArrayIndicies[i]].FdrInfo.PEP_QValue = Math.Round(qValue, 6);
+                // Stop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
+                if (psms[i].IsDecoy)
+                {
+                    // the PSM can be ambiguous between a target and a decoy sequence
+                    // in that case, count it as the fraction of decoy hits
+                    // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
+                    double decoyHits = 0;
+                    double totalHits = 0;
+                    var hits = psms[i].BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Peptide.FullSequence);
+                    foreach (var hit in hits)
+                    {
+                        if (hit.First().Peptide.Parent.IsDecoy)
+                        {
+                            decoyHits++;
+                        }
+                        totalHits++;
+                    }
+
+                    cumulativeDecoy += decoyHits / totalHits;
+                    cumultativeDecoyArray[i] = cumulativeDecoy;
+                    cumulativeTargetArray[i] = cumulativeTarget;
+                }
+                else
+                {
+                    cumulativeTarget++;
+                    cumultativeDecoyArray[i] = cumulativeDecoy;
+                    cumulativeTargetArray[i] = cumulativeTarget;
+                }
             }
+
+            //sort from highest to lowest PEP (bad to good)
+            psms = psms.OrderByDescending(p => p.FdrInfo.PEP).ToList();
+            cumulativeTargetArray = cumulativeTargetArray.Reverse().ToArray();
+            cumultativeDecoyArray = cumultativeDecoyArray.Reverse().ToArray();
+            double pepQValue = 1;
+            for (int i = 0; i < psms.Count; i++)
+            {
+                double potentialPepQvalue = (cumultativeDecoyArray[i] + 1) / cumulativeTargetArray[i];
+                if (potentialPepQvalue < pepQValue)
+                {
+                    pepQValue = Math.Round(potentialPepQvalue,6);
+                    psms[i].FdrInfo.PEP_QValue = pepQValue;
+                }
+                else
+                {
+                    psms[i].FdrInfo.PEP_QValue = pepQValue;
+                }
+            }
+            //use traditional order by descending metamorpheus score
+            psms = psms.OrderByDescending(p => p).ToList();
         }
+
         /// <summary>
         /// This method gets the count of PSMs with the same full sequence (with q-value < 0.01) to include in the psmtsv output
         /// </summary>
