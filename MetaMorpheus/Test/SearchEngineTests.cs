@@ -98,7 +98,7 @@ namespace Test
             Assert.AreEqual("0", psm.Notch);
             Assert.AreEqual("Homo sapiens", psm.OrganismName);
             Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
-            Assert.AreEqual(0, psm.PEP_QValue);
+            Assert.AreEqual(0.066667, psm.PEP_QValue);
             Assert.AreEqual("full", psm.PeptideDescription);
             Assert.AreEqual("2125.92875", psm.PeptideMonoMass);
             Assert.AreEqual(3, psm.PrecursorCharge);
