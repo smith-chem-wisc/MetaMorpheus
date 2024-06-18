@@ -68,7 +68,7 @@ namespace Test
 
             string peptideQuantFile = Path.Combine(outputFolder, "postSearchAnalysisTaskTestOutput", "AllQuantifiedPeptides.tsv");
             string[] peptideQuant = File.ReadAllLines(peptideQuantFile);
-            Assert.AreEqual(175, peptideQuantFile.Length); // 174 peptides + header. Make sure that we're quantifying only those peptides with q-value <= 0.01
+            Assert.AreEqual(175, peptideQuant.Length); // 174 peptides + header. Make sure that we're quantifying only those peptides with q-value <= 0.01
 
             Directory.Delete(outputFolder, true);
 
