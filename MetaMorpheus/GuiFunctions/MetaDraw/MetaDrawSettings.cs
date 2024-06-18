@@ -278,36 +278,43 @@ namespace GuiFunctions
             ProductTypeToYOffset[ProductType.zPlusOne] = -19;
 
             ProductTypeToXOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
+            ProductTypeToXOffset[ProductType.aStar] = -2.0;
+            ProductTypeToXOffset[ProductType.aDegree] = -1.75;
             ProductTypeToXOffset[ProductType.a] = -1.5;
-            ProductTypeToXOffset[ProductType.aStar] = -1.5;
-            ProductTypeToXOffset[ProductType.aDegree] = -1.5;
-            ProductTypeToXOffset[ProductType.aBaseLoss] = -1.5;
-            ProductTypeToXOffset[ProductType.aWaterLoss] = -1.5;
+            ProductTypeToXOffset[ProductType.aBaseLoss] = -1.25;
+            ProductTypeToXOffset[ProductType.aWaterLoss] = -1.25;
+
+            ProductTypeToXOffset[ProductType.bAmmoniaLoss] = -0.75;
             ProductTypeToXOffset[ProductType.b] = -0.5;
-            ProductTypeToXOffset[ProductType.bBaseLoss] = -0.5;
-            ProductTypeToXOffset[ProductType.bWaterLoss] = -0.5;
-            ProductTypeToXOffset[ProductType.bAmmoniaLoss] = -0.5;
+            ProductTypeToXOffset[ProductType.bBaseLoss] = -0.25;
+            ProductTypeToXOffset[ProductType.bWaterLoss] = -0.25;
+
             ProductTypeToXOffset[ProductType.c] = 0.5;
-            ProductTypeToXOffset[ProductType.cBaseLoss] = 0.5;
-            ProductTypeToXOffset[ProductType.cWaterLoss] = 0.5;
+            ProductTypeToXOffset[ProductType.cBaseLoss] = 0.25;
+            ProductTypeToXOffset[ProductType.cWaterLoss] = 0.25;
+
             ProductTypeToXOffset[ProductType.d] = 1.5;
-            ProductTypeToXOffset[ProductType.dBaseLoss] = 1.5;
-            ProductTypeToXOffset[ProductType.dWaterLoss] = 1.5;
+            ProductTypeToXOffset[ProductType.dBaseLoss] = 1.25;
+            ProductTypeToXOffset[ProductType.dWaterLoss] = 1.25;
+
             ProductTypeToXOffset[ProductType.w] = 1.5;
-            ProductTypeToXOffset[ProductType.wBaseLoss] = 1.5;
-            ProductTypeToXOffset[ProductType.wWaterLoss] = 1.5;
+            ProductTypeToXOffset[ProductType.wBaseLoss] = 1.75;
+            ProductTypeToXOffset[ProductType.wWaterLoss] = 1.75;
+
             ProductTypeToXOffset[ProductType.x] = 0.5;
-            ProductTypeToXOffset[ProductType.xBaseLoss] = 0.5;
-            ProductTypeToXOffset[ProductType.xWaterLoss] = 0.5;
+            ProductTypeToXOffset[ProductType.xBaseLoss] = 0.75;
+            ProductTypeToXOffset[ProductType.xWaterLoss] = 0.75;
+
+            ProductTypeToXOffset[ProductType.yAmmoniaLoss] = -0.75;
             ProductTypeToXOffset[ProductType.y] = -0.5;
-            ProductTypeToXOffset[ProductType.yBaseLoss] = -0.5;
-            ProductTypeToXOffset[ProductType.yAmmoniaLoss] = -0.5;
-            ProductTypeToXOffset[ProductType.yWaterLoss] = -0.5;
+            ProductTypeToXOffset[ProductType.yWaterLoss] = -0.25;
+            ProductTypeToXOffset[ProductType.yBaseLoss] = -0.25;
+
+            ProductTypeToXOffset[ProductType.zDot] = -1.25;
             ProductTypeToXOffset[ProductType.z] = -1.5;
-            ProductTypeToXOffset[ProductType.zPlusOne] = -1.5;
-            ProductTypeToXOffset[ProductType.zBaseLoss] = -1.5;
-            ProductTypeToXOffset[ProductType.zWaterLoss] = -1.5;
-            ProductTypeToXOffset[ProductType.zDot] = -1.5;
+            ProductTypeToXOffset[ProductType.zBaseLoss] = -1.25;
+            ProductTypeToXOffset[ProductType.zWaterLoss] = -1.25;
+            ProductTypeToXOffset[ProductType.zPlusOne] = -1.75;
 
             PossibleColors = AllColors.ToDictionary(p => p, p => p.GetColorName());
         }
