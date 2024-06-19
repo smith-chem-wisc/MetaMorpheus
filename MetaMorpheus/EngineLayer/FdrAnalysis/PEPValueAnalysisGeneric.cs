@@ -100,10 +100,6 @@ namespace EngineLayer
                 chimeraCountDictionary = psms.GroupBy(p => p.ChimeraIdString)
                     .ToDictionary(p => p.Key, p => p.Count());
 
-            int chargeStateMode = GetChargeStateMode(psms);
-
-            Dictionary<string, float> fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
-
             MLContext mlContext = new MLContext();
 
             //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code.
