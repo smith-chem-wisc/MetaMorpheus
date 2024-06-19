@@ -601,6 +601,13 @@ namespace GuiFunctions
 
         }
 
+        public MsDataScan GetMs2ScanFromPsm(PsmFromTsv spectralMatch)
+        {
+            return !MsDataFiles.TryGetValue(spectralMatch.FileNameWithoutExtension, out MsDataFile spectraFile) 
+                ? null 
+                : spectraFile.GetOneBasedScanFromDynamicConnection(spectralMatch.Ms2ScanNumber);
+        }
+
         /// <summary>
         /// Exports the sequence coverage view to an image file
         /// </summary>

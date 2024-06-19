@@ -169,7 +169,7 @@ namespace GuiFunctions
                             residue = ion.NeutralTheoreticalProduct.AminoAcidPosition;
                         }
                         
-                        double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11;
+                        double x = residue * MetaDrawSettings.AnnotatedSequenceTextSpacing + 11 + MetaDrawSettings.ProductTypeToXOffset[ion.NeutralTheoreticalProduct.ProductType];
                         double y = yLoc + MetaDrawSettings.ProductTypeToYOffset[ion.NeutralTheoreticalProduct.ProductType];
 
                         if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
