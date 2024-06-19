@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using Newtonsoft.Json.Linq;
@@ -11,7 +12,6 @@ namespace EngineLayer.FdrAnalysis
     {
         private List<SpectralMatch> AllPsms;
         private readonly int MassDiffAcceptorNumNotches;
-        private readonly double ScoreCutoff;
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
@@ -19,9 +19,8 @@ namespace EngineLayer.FdrAnalysis
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
-            AllPsms = psms.OrderByDescending(p => p).ToList();
+            AllPsms = psms.ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
-            ScoreCutoff = commonParameters.ScoreCutoff;
             AnalysisType = analysisType;
             this.OutputFolder = outputFolder;
             this.DoPEP = doPEP;
@@ -50,48 +49,52 @@ namespace EngineLayer.FdrAnalysis
 
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
-                var psms = proteasePsms.ToList();
-
-                QValueTraditional(psms);
+                var psms = proteasePsms.OrderBy(p=>p).ToList();
                 if (psms.Count > 100)
                 {
-                    if (DoPEP)
+                    var peptides = psms
+                        .GroupBy(b => b.FullSequence)
+                        .Select(b => b.FirstOrDefault()).ToList();
+                    if (peptides.Count > 100)
                     {
-                        Compute_PEPValue(myAnalysisResults);
+                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
+                        QValueInvertedPeptides(peptides);
+                        if (DoPEP)
+                        {
+                            //PEP will model will be developed using peptides and then applied to all PSMs. 
+                            Compute_PEPValue(myAnalysisResults, psms);
+                            //some PSMs will be eliminated during the PEP calculation. So, we need to recompute the cumulative target and decoy counts
+                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides.OrderBy(p=>p.FdrInfo.PEP).ToList(), false);
+                            QValueInvertedPeptides(peptides);
+                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms.OrderBy(p => p).ToList(), true);
+                            QValueInvertedPsms(psms);
+                        }
+                        else
+                        {
+                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
+                            QValueInvertedPsms(psms);
+                        }
                     }
-                    QValueInverted(psms);
+                }
+                else
+                {
+                    var peptides = psms
+                        .GroupBy(b => b.FullSequence)
+                        .Select(b => b.FirstOrDefault()).ToList();
+                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides.OrderBy(p => p).ToList(), false);
+                    QValueTraditionalPeptides(peptides);
+                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms.OrderBy(p => p).ToList(), true);
+                    QValueTraditionalPsms(psms);
                 }
                 CountPsm(psms);
             }
         }
-
-        private static void QValueInverted(List<SpectralMatch> psms)
-        {
-            psms.Reverse();
-            //this calculation is performed from bottom up. So, we begin the loop by computing qValue
-            //and qValueNotch for the last/lowest scoring psm in the bunch
-            double qValue = (psms[0].FdrInfo.CumulativeDecoy + 1) / psms[0].FdrInfo.CumulativeTarget;
-            double qValueNotch = (psms[0].FdrInfo.CumulativeDecoyNotch + 1) / psms[0].FdrInfo.CumulativeTargetNotch;
-
-            //Assign FDR values to PSMs
-            for (int i = 0; i < psms.Count; i++)
-            {
-                // Stop if canceled
-                if (GlobalVariables.StopLoops) { break; }
-
-                qValue = Math.Min(qValue, (psms[i].FdrInfo.CumulativeDecoy + 1) / psms[i].FdrInfo.CumulativeTarget);
-                qValueNotch = Math.Min(qValueNotch, (psms[i].FdrInfo.CumulativeDecoyNotch + 1) / psms[i].FdrInfo.CumulativeTargetNotch);
-
-                double pep = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP;
-                double pepQValue = psms[i].FdrInfo == null ? double.NaN : psms[i].FdrInfo.PEP_QValue;
-
-                psms[i].SetQandPEPvalues(qValue, qValueNotch, pep, pepQValue);
-
-            }
-            psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
-        }
-
-        private void QValueTraditional(List<SpectralMatch> psms)
+        /// <summary>
+        /// This methods assumes that PSMs are already sorted appropriately for downstream usage
+        /// For traditional q-value calculation, the PSMs should be sorted from highest to lowest score
+        /// For PEP q-value calculation, the PSMs should be sorted from lowest to highest PEP
+        /// </summary>
+        private void ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(List<SpectralMatch> psms, bool isPsmNotPeptide)
         {
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;
@@ -101,12 +104,11 @@ namespace EngineLayer.FdrAnalysis
             double[] cumulativeDecoyPerNotch = new double[MassDiffAcceptorNumNotches + 1];
 
             //Assign FDR values to PSMs
-            for (int i = 0; i < psms.Count; i++)
+            foreach (var psm in psms)
             {
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                SpectralMatch psm = psms[i];
                 int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
                 if (psm.IsDecoy)
                 {
@@ -134,44 +136,115 @@ namespace EngineLayer.FdrAnalysis
                     cumulativeTargetPerNotch[notch]++;
                 }
 
-                double qValue = Math.Min(1, cumulativeDecoy / cumulativeTarget);
-                double qValueNotch = Math.Min(1, cumulativeDecoyPerNotch[notch] / cumulativeTargetPerNotch[notch]);
-
-                double pep = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP;
-                double pepQValue = psm.FdrInfo == null ? double.NaN : psm.FdrInfo.PEP_QValue;
-
-                psm.SetFdrValues(cumulativeTarget, cumulativeDecoy, qValue, cumulativeTargetPerNotch[notch], cumulativeDecoyPerNotch[notch], qValueNotch, pep, pepQValue);
-            }
-        }
-
-        public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults)
-        {
-            if (AnalysisType == "PSM")
-            {
-                //Need some reasonable number of PSMs to train on to get a reasonable estimation of the PEP
-                if (AllPsms.Count > 100)
+                if (!isPsmNotPeptide)
                 {
-                    string searchType = "standard";
-                    if (AllPsms[0].DigestionParams.Protease.Name == "top-down")
-                    {
-                        searchType = "top-down";
-                    }
-
-                    myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, searchType, this.FileSpecificParameters, this.OutputFolder);
-
-                    Compute_PEPValue_Based_QValue(AllPsms);
+                    psm.PsmFdrInfo.CumulativeDecoy = cumulativeDecoy;
+                    psm.PsmFdrInfo.CumulativeTarget = cumulativeTarget;
+                    psm.PsmFdrInfo.CumulativeDecoyNotch = cumulativeDecoyPerNotch[notch];
+                    psm.PsmFdrInfo.CumulativeTargetNotch = cumulativeTargetPerNotch[notch];
+                }
+                else
+                {
+                    psm.PeptideFdrInfo.CumulativeDecoy = cumulativeDecoy;
+                    psm.PeptideFdrInfo.CumulativeTarget = cumulativeTarget;
+                    psm.PeptideFdrInfo.CumulativeDecoyNotch = cumulativeDecoyPerNotch[notch];
+                    psm.PeptideFdrInfo.CumulativeTargetNotch = cumulativeTargetPerNotch[notch];
                 }
             }
-
-            if (AnalysisType == "Peptide")
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        private void QValueTraditionalPsms(List<SpectralMatch> psms)
+        {
+            double qValue = 0;
+            double qValueNotch = 0;
+            for (int i = 0; i < psms.Count; i++)
             {
-                Compute_PEPValue_Based_QValue(AllPsms);
+                // Stop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
+                qValue = Math.Max(qValue, psms[i].PsmFdrInfo.CumulativeDecoy / psms[i].PsmFdrInfo.CumulativeTarget);
+                qValueNotch = Math.Max(qValueNotch, psms[i].PsmFdrInfo.CumulativeDecoyNotch / psms[i].PsmFdrInfo.CumulativeTargetNotch);
+
+                psms[i].PsmFdrInfo.QValue = qValue;
+                psms[i].PsmFdrInfo.QValueNotch = qValueNotch;
             }
+        }
+        private void QValueTraditionalPeptides(List<SpectralMatch> psms)
+        {
+            double qValue = 0;
+            double qValueNotch = 0;
+            for (int i = 0; i < psms.Count; i++)
+            {
+                // Stop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
+                qValue = Math.Max(qValue, psms[i].PeptideFdrInfo.CumulativeDecoy / psms[i].PeptideFdrInfo.CumulativeTarget);
+                qValueNotch = Math.Max(qValueNotch, psms[i].PeptideFdrInfo.CumulativeDecoyNotch / psms[i].PeptideFdrInfo.CumulativeTargetNotch);
+
+                psms[i].PeptideFdrInfo.QValue = qValue;
+                psms[i].PeptideFdrInfo.QValueNotch = qValueNotch;
+            }
+        }
+        private static void QValueInvertedPsms(List<SpectralMatch> psms)
+        {
+            psms.Reverse();
+            //this calculation is performed from bottom up. So, we begin the loop by computing qValue
+            //and qValueNotch for the last/lowest scoring psm in the bunch
+            double qValue = (psms[0].PsmFdrInfo.CumulativeDecoy + 1) / psms[0].PsmFdrInfo.CumulativeTarget;
+            double qValueNotch = (psms[0].PsmFdrInfo.CumulativeDecoyNotch + 1) / psms[0].PsmFdrInfo.CumulativeTargetNotch;
+
+            //Assign FDR values to PSMs
+            for (int i = 0; i < psms.Count; i++)
+            {
+                // Stop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
+                psms[i].PsmFdrInfo.QValue = Math.Min(qValue, (psms[i].PsmFdrInfo.CumulativeDecoy + 1) / psms[i].PsmFdrInfo.CumulativeTarget);
+                psms[i].PsmFdrInfo.QValueNotch = Math.Min(qValueNotch, (psms[i].PsmFdrInfo.CumulativeDecoyNotch + 1) / psms[i].PsmFdrInfo.CumulativeTargetNotch);
+            }
+            psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
+        }
+
+        private static void QValueInvertedPeptides(List<SpectralMatch> psms)
+        {
+            psms.Reverse();
+            //this calculation is performed from bottom up. So, we begin the loop by computing qValue
+            //and qValueNotch for the last/lowest scoring psm in the bunch
+            double qValue = (psms[0].PeptideFdrInfo.CumulativeDecoy + 1) / psms[0].PeptideFdrInfo.CumulativeTarget;
+            double qValueNotch = (psms[0].PeptideFdrInfo.CumulativeDecoyNotch + 1) / psms[0].PeptideFdrInfo.CumulativeTargetNotch;
+
+            //Assign FDR values to PSMs
+            for (int i = 0; i < psms.Count; i++)
+            {
+                // Stop if canceled
+                if (GlobalVariables.StopLoops) { break; }
+
+                psms[i].PeptideFdrInfo.QValue = Math.Min(qValue, (psms[i].PeptideFdrInfo.CumulativeDecoy + 1) / psms[i].PeptideFdrInfo.CumulativeTarget);
+                psms[i].PeptideFdrInfo.QValueNotch = Math.Min(qValueNotch, (psms[i].PeptideFdrInfo.CumulativeDecoyNotch + 1) / psms[i].PeptideFdrInfo.CumulativeTargetNotch);
+            }
+            psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
+        }
+
+
+        public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms)
+        {
 
             if (AnalysisType == "crosslink" && AllPsms.Count > 100)
             {
                 myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink", this.FileSpecificParameters, this.OutputFolder);
                 Compute_PEPValue_Based_QValue(AllPsms);
+            }
+            else
+            {
+                string searchType = "standard";
+                if (AllPsms[0].DigestionParams.Protease.Name == "top-down")
+                {
+                    searchType = "top-down";
+                }
+
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, searchType, this.FileSpecificParameters, this.OutputFolder);
             }
         }
 
