@@ -357,8 +357,6 @@ namespace Test
 
             var searchMode = new SinglePpmAroundZeroSearchMode(5);
 
-            Tolerance DeconvolutionMassTolerance = new PpmTolerance(5);
-
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
