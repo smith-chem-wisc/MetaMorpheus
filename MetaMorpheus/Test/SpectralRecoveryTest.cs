@@ -6,15 +6,14 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.DirectoryServices;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Easy.Common.Extensions;
 using Omics.Modifications;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
 using Omics;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -35,33 +34,43 @@ namespace Test
         [OneTimeSetUp]
         public void SpectralRecoveryTestSetup()
         {
+            string input = "MPGGGPEMDDYMETLKDEEDALWENVECNRHMLSRYINPAKLTPYLRQCKVIDEQDEDEVLNAPMLPSKINRAGRLLDILHTKGQRGYVVFLESLEFYYPELYKLVTGKEPTRRFSTIVVEEGHEGLTHFLMNEVIKLQQQMKAKDLQRCELLARLRQLEDEKKQMTLTRVELLTFQERYYKMKEERDSYNDELVKVKDDNYNLAMRYAQLSEEKNMAVMRSRDLQLEIDQLKHRLNKMEEECKLERNQSLKLKNDIENRPKKEQVLELERENEMLKTKNQELQSIIQAGKRSLPDSDKAILDILEHDRKEALEDRQELVNRIYNLQEEARQAEELRDKYLEEKEDLELKCSTLGKDCEMYKHRMNTVMLQLEEVERERDQAFHSRDEAQTQYSQCLIEKDKYRKQIRELEEKNDEMRIEMVRREACIVNLESKLRRLSKDSNNLDQSLPRNLPVTIISQDFGDASPRTNGQEADDSSTSEESPEDSKYFLPYHPPQRRMNLKGIQLQRAKSPISLKRTSDFQAKGHEEEGTDASPSSCGSLPITNSFTKMQPPRSRSSIMSITAEPPGNDSIVRRYKEDAPHRSTVEEDNDSGGFDALDLDDDSHERYSFGPSSIHSSSSSHQSEGLDAYDLEQVNLMFRKFSLERPFRPSVTSVGHVRGPGPSVQHTTLNGDSLTSQLTLLGGNARGSFVHSVKPGSLAEKAGLREGHQLLLLEGCIRGERQSVPLDTCTKEEAHWTIQRCSGPVTLHYKVNHEGYRKLVKDMEDGLITSGDSFYIRLNLNISSQLDACTMSLKCDDVVHVRDTMYQDRHEWLCARVDPFTDHDLDMGTIPSYSRAQQLLLVKLQRLMHRGSREEVDGTHHTLRALRNTLQPEEALSTSDPRVSPRLSRASFLFGQLLQFVSRSENKYKRMNSNERVRIISGSPLGSLARSSLDATKLLTEKQEELDPESELGKNLSLIPYSLVRAFYCERRRPVLFTPTVLAKTLVQRLLNSGGAMEFTICKSDIVTRDEFLRRQKTETIIYSREKNPNAFECIAPANIEAVAAKNKHCLLEAGIGCTRDLIKSNIYPIVLFIRVCEKNIKRFRKLLPRPETEEEFLRVCRLKEKELEALPCLYATVEPDMWGSVEELLRVVKDKIG";
+            string reversed = new string(input.Reverse().ToArray());
+
+
             // This block of code converts from PsmFromTsv to SpectralMatch objects
-            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\MSMSids.psmtsv");
+            
+            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\AllPSMsTesting.psmtsv");
             tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
             psms = new List<SpectralMatch>();
-            proteinList = new List<Protein>();
             myFileManager = new MyFileManager(true);
 
-            foreach (PsmFromTsv readPsm in tsvPsms)
+            Loaders.LoadElements();
+            string databasePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta");
+            proteinList = ProteinDbLoader.LoadProteinFasta(databasePath, true, DecoyType.Reverse, false, out List<string> errors)
+                .Where(protein => protein.AppliedSequenceVariations != null).ToList();
+
+            foreach (PsmFromTsv readPsm in tsvPsms.Where(psm => !psm.FullSequence.Contains('['))) // Modifications break the parser
             {
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                     "TestData", "SpectralRecoveryTest", readPsm.FileNameWithoutExtension + ".mzML");
                 MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
                     filePath, new CommonParameters());
-                Protein protein = new(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName,
-                    isDecoy: readPsm.DecoyContamTarget == "D",
-                    isContaminant: readPsm.DecoyContamTarget == "C");
-                string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
-                int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
-                int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
+                Protein protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
+
+                //string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
+                //int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
+                //int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
 
                 PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
                     readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
-                    oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
+                    oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 1);
                 SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
+
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                psm.ResolveAllAmbiguities();
                 if (readPsm.Ms2ScanNumber == 206 && readPsm.BaseSeq.Equals("HADIVTTTTHK")) psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0.0046, 0); // Necessary for to be implemented "original pep" test
                 psms.Add(psm);
                 proteinList.Add(protein);
@@ -86,8 +95,10 @@ namespace Test
                     WriteSpectralLibrary = false,
                     MatchBetweenRuns = false,
                     DoSpectralRecovery = false,
-                    WriteMzId = false
-                },
+                    WriteMzId = false,
+                    MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM,
+                    WriteHighQValuePsms = true
+        },
                 CommonParameters = new CommonParameters()
             };
             searchTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
