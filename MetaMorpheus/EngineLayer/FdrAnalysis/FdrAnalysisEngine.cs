@@ -19,12 +19,23 @@ namespace EngineLayer.FdrAnalysis
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
-            AllPsms = psms.ToList();
+            AllPsms = psms.OrderBy(p=>p).ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             AnalysisType = analysisType;
             this.OutputFolder = outputFolder;
             this.DoPEP = doPEP;
+            if (psms[0].FdrInfo == null)
+                AddPsmAndPeptideFdrInfoIfNotPresent();
             if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
+        }
+
+        private void AddPsmAndPeptideFdrInfoIfNotPresent()
+        {
+            foreach (var psm in AllPsms)
+            {
+                psm.PsmFdrInfo = new FdrInfo();                
+                psm.PeptideFdrInfo = new FdrInfo();
+            }
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -49,7 +60,7 @@ namespace EngineLayer.FdrAnalysis
 
             foreach (var proteasePsms in psmsGroupedByProtease)
             {
-                var psms = proteasePsms.OrderBy(p=>p).ToList();
+                var psms = proteasePsms.ToList();
                 if (psms.Count > 100)
                 {
                     var peptides = psms
@@ -64,25 +75,43 @@ namespace EngineLayer.FdrAnalysis
                             //PEP will model will be developed using peptides and then applied to all PSMs. 
                             Compute_PEPValue(myAnalysisResults, psms);
                             //some PSMs will be eliminated during the PEP calculation. So, we need to recompute the cumulative target and decoy counts
+                            //peptiides are first ordered by PEP from good to bad and then by MM score from good to bad
+                            peptides = peptides.OrderBy(p => p.PeptideFdrInfo.PEP).ThenBy(p => p).ToList();
                             ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
+                            PepQValueInvertedPeptides(peptides);
+                            psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenBy(p => p).ToList();
+                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
+                            PepQValueInvertedPsms(psms);
+
+                            //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
+                            peptides = peptides.OrderBy(p => p).ToList();
+                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides.OrderBy(p=>p).ToList(), false);
                             QValueInvertedPeptides(peptides);
+                            psms = psms.OrderBy(p => p).ToList();
                             ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
                             QValueInvertedPsms(psms);
-                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides.OrderBy(p=>p.PeptideFdrInfo.PEP).ToList(), false);
-                            PepQValueInvertedPeptides(peptides);
-                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms.OrderBy(p => p.PsmFdrInfo.PEP).ToList(), false);
-                            PepQValueInvertedPsms(psms);
                         }
                     }
-                    else
+                    else //we have more than 100 psms but less than 100 peptides so
                     {
+                        if (DoPEP)
+                        {
+                            //this will be done using PSMs because we dont' have enough peptides
+                            Compute_PEPValue(myAnalysisResults, psms);
+                            psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenBy(p => p).ToList();
+                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
+                            PepQValueInvertedPsms(psms);
+                        }
+                        //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
+                        peptides = peptides.OrderBy(p => p).ToList();
+                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides.OrderBy(p => p).ToList(), false);
+                        QValueTraditionalPeptides(peptides);
+                        psms = psms.OrderBy(p => p).ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
                         QValueInvertedPsms(psms);
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
-                        QValueInvertedPeptides(peptides);
                     }
                 }
-                else
+                else //psms .Count <= 100
                 {
                     var peptides = psms
                         .GroupBy(b => b.FullSequence)
@@ -274,21 +303,13 @@ namespace EngineLayer.FdrAnalysis
 
         public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms)
         {
-
-            if (AnalysisType == "crosslink" && AllPsms.Count > 100)
+            if (psms[0].DigestionParams.Protease.Name != "top-down")
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(AllPsms, "crosslink", this.FileSpecificParameters, this.OutputFolder);
-                Compute_PEPValue_Based_QValue(AllPsms);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, AnalysisType, this.FileSpecificParameters, this.OutputFolder);
             }
             else
             {
-                string searchType = "standard";
-                if (AllPsms[0].DigestionParams.Protease.Name == "top-down")
-                {
-                    searchType = "top-down";
-                }
-
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, searchType, this.FileSpecificParameters, this.OutputFolder);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "top-down", this.FileSpecificParameters, this.OutputFolder);
             }
         }
 

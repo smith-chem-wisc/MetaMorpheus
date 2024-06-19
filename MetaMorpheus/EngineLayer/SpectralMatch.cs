@@ -71,9 +71,15 @@ namespace EngineLayer
         public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingBioPolymersWithSetMods.Count; } }
-        public FdrInfo FdrInfo => PsmFdrInfo;
-        public FdrInfo PsmFdrInfo { get; private set; }
-        public FdrInfo PeptideFdrInfo { get; private set; }
+
+        public FdrInfo FdrInfo
+        {
+            get => PsmFdrInfo;
+            set => PsmFdrInfo = value;
+
+        }
+        public FdrInfo PsmFdrInfo { get;  set; }
+        public FdrInfo PeptideFdrInfo { get;  set; }
         public PsmData PsmData_forPEPandPercolator { get; set; }
 
         public double Score { get; private set; }
