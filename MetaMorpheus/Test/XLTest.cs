@@ -1085,6 +1085,9 @@ namespace Test
             MsDataScan sc = new MsDataScan(spectrum, 1, 2, true, Polarity.Positive, 1, spectrum.Range, "",
                 MZAnalyzerType.Orbitrap, 12, 1.0, null, null);
             scans[0] = new Ms2ScanWithSpecificMass(sc, deadendPeptide.MonoisotopicMass.ToMz(2), 2, "", new CommonParameters());
+            Assert.That(scans[0].PrecursorIntensity, Is.EqualTo(1));
+            Assert.That(scans[0].PrecursorEnvelopePeakCount, Is.EqualTo(1));
+
             List<List<(double, int, double)>> precursorss = new List<List<(double, int, double)>> 
                 { new List<(double, int, double)> { (scans[0].PrecursorMass, scans[0].PrecursorCharge, scans[0].PrecursorMonoisotopicPeakMz)} };
 
