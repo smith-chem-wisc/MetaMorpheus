@@ -10,7 +10,7 @@ namespace EngineLayer.FdrAnalysis
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
             { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" } },
-            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope", "ChimeraCount" } },
+            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope", "ChimeraCount", "MostAbundantPrecursorPeakIntensity" } },
             { "crosslink", new [] { "TotalMatchingFragmentCount", "AbsoluteAverageFragmentMassErrorFromMedian", "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
         }.ToImmutableDictionary();
 
@@ -45,6 +45,7 @@ namespace EngineLayer.FdrAnalysis
             { "HasSpectralAngle", 1 },
             { "PeaksInPrecursorEnvelope", 1 },
             { "ChimeraCount", -1 },
+            { "MostAbundantPrecursorPeakIntensity", 1 },
             }.ToImmutableDictionary();
 
         public string ToString(string searchType)
@@ -140,5 +141,8 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(25)]
         public float ChimeraCount { get; set; }
+
+        [LoadColumn(26)]
+        public float MostAbundantPrecursorPeakIntensity { get; set; }
     }
 }

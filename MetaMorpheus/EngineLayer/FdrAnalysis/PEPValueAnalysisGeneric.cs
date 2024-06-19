@@ -21,12 +21,22 @@ namespace EngineLayer
 {
     public static class PEP_Analysis_Cross_Validation
     {
-        private static string searchmode;
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+        
+        /// <summary>
+        /// A dictionary which stores the chimeric ID string in the key and the number of chimeric identifications as the vale
+        /// </summary>
         private static Dictionary<string, int> chimeraCountDictionary = new Dictionary<string, int>();
+        
+        /// <summary>
+        /// Used to determine if the search is classic or modern. If it is top-down, then the PEP values will not be normalized.
+        /// In a closed classic search, normalizing to the protein length is not necessary.
+        /// In a modern search, normalizing to the protein length is necessary due to the possibility of a precursor mass difference acceptor
+        /// </summary>
+        private static bool isOpenSearch;
 
         /// <summary>
         /// This method is used to compute the PEP values for all PSMs in a dataset. 
@@ -37,10 +47,10 @@ namespace EngineLayer
         /// <param name="outputFolder"></param>
         /// <param name="searchMode">Used only when constructing the PsmData. If Top-Down and classic, no normalization will occur</param>
         /// <returns></returns>
-        public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, string searchMode)
+        public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool isOpenSearch = false)
         {
             string[] trainingVariables = PsmData.trainingInfos[searchType];
-            searchmode = searchMode;
+            PEP_Analysis_Cross_Validation.isOpenSearch = isOpenSearch;
 
             //ensure that the order is always stable.
             psms = psms.OrderByDescending(p => p).ToList();
@@ -774,6 +784,11 @@ namespace EngineLayer
             float ambiguity = 0;
             float modCount = 0;
             float absoluteFragmentMassError = 0;
+            float spectralAngle = 0;
+            float hasSpectralAngle = 0;
+            float chimeraCount = 0;
+            float peaksInPrecursorEnvelope = 0;
+            float mostAbundantPrecursorPeakIntensity = 0;
 
             float missedCleavages = 0;
             float longestSeq = 0;
@@ -790,14 +805,16 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
-            float spectralAngle = 0;
-            float hasSpectralAngle = 0;
 
             if (searchType != "crosslink")
             {
                 if (searchType == "top-down")
                 {
-                    normalizationFactor /= 10.0;
+                    //normalizationFactor /= 10.0;
+
+                    //if it is an open search, we need to normalize several scores to the length of the proteoform
+                    //if (!isOpenSearch) 
+                        normalizationFactor = 1;
                 }
                 totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count / normalizationFactor * 10, 0));
                 intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * 100.0, 0));
@@ -815,6 +832,10 @@ namespace EngineLayer
                 complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
                 spectralAngle = (float)psm.SpectralAngle;
+                if (chimeraCountDictionary.TryGetValue(psm.ChimeraIdString, out int val))
+                    chimeraCount = val;
+                peaksInPrecursorEnvelope = psm.PrecursorScanEnvelopePeakCount;
+                mostAbundantPrecursorPeakIntensity = (float)psm.PrecursorScanIntensity;
 
                 if (PsmHasSpectralAngle(psm))
                 {
@@ -926,7 +947,10 @@ namespace EngineLayer
                 Label = label,
 
                 SpectralAngle = spectralAngle,
-                HasSpectralAngle = hasSpectralAngle
+                HasSpectralAngle = hasSpectralAngle,
+                PeaksInPrecursorEnvelope = peaksInPrecursorEnvelope,
+                ChimeraCount = chimeraCount,
+                MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
             };
 
             return psm.PsmData_forPEPandPercolator;
