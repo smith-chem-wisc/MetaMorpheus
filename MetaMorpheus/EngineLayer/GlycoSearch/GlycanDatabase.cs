@@ -70,10 +70,10 @@ namespace EngineLayer
                 }
             }
         }
-
+        //convert the String information to Kind information. ex HexNac(2)Hex(3)NeuAc(2)Fuc(1)Xyl(1)HexA(1) -> [2, 3, 0, 0, 1, 0, 0, 0, 1, 1, 0]
         public static byte[] String2Kind(string line)
         {
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             var x = line.Split(new char[] { '(', ')' });
             int i = 0;
             while (i < x.Length - 1)
@@ -337,7 +337,7 @@ namespace EngineLayer
 
         private static GlycanIon GenerateGlycanIon(byte hexose_count, byte hexnac_count, byte fuc_count, byte xyl_count, int glycan_mass)
         {
-            byte[] ionKind = new byte[] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, 0, xyl_count };
+            byte[] ionKind = new byte[] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, 0, xyl_count, 0 };
 
             int ionMass = Glycan.GetMass(ionKind);
 
@@ -514,7 +514,7 @@ namespace EngineLayer
 
             return glycanIons.OrderBy(p=>p.IonMass).ToList();
         }
-
+        //the function to get all the combinations of the kind. ex.[3,2,1,0] -> [2,2,1,0], [3,1,1,0], [3,2,0,0], [2,1,1,0], [2,2,0,0], [3,1,0,0], [2,1,0,0], [1,1,0,0] and store in _kinds
         private static void _GetCombinations(byte[] kind, List<byte[]> _kinds, HashSet<string> _keys)
         {
             if (kind.Sum(p=>p) == 0)
