@@ -208,7 +208,8 @@
                                     </TabItem.Header>
                                     <Grid Name="PsmAnnotationGrid">
                                         <Grid.RowDefinitions>
-                                            <RowDefinition/>
+                                            <RowDefinition Height="*"/>
+                                            <RowDefinition Height="Auto"/>
                                         </Grid.RowDefinitions>
 
                                         <!--Spectrum annotation-->
@@ -248,8 +249,16 @@
                                                 <!-- actual ptm legend -->
                                                 <local:PtmLegendControl x:Name="ChildScanPtmLegendControl"   DataContext="{Binding}" />
                                             </StackPanel>
-                                            
                                         </Grid>
+
+                                        <!-- Refragment analysis -->
+                                        <Expander Grid.Row="1" VerticalAlignment="Bottom" IsExpanded="False" x:Name="AdditionalFragmentIonDisplay"
+                                                   DataContext="{x:Type guiFunctions:FragmentationReanalysisViewModel}" Header="Fragment Reanalysis">
+                                            <Expander.ToolTip>
+                                                Research the spectra file against the sequence with different fragment ions. 
+                                            </Expander.ToolTip>
+                                            <local:FragmentReanalysisControl x:Name="AdditionalFragmentIonControl" DataContext="{Binding }" />
+                                        </Expander>
                                     </Grid>
                                 </TabItem>
 

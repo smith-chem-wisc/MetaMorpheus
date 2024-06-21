@@ -318,6 +318,9 @@
     <None Update="TestData\sliced_b6_2.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SmallCalibratible_Yeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
