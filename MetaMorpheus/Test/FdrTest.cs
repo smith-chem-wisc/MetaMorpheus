@@ -91,19 +91,19 @@ namespace Test
             fdr.Run();
 
             Assert.AreEqual(2, searchModes.NumNotches);
-            Assert.AreEqual(0, newPsms[0].FdrInfo.CumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0].FdrInfo.CumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[1].FdrInfo.CumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[1].FdrInfo.CumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[2].FdrInfo.CumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[0].PsmFdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[0].PsmFdrInfo.CumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[1].PsmFdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[1].PsmFdrInfo.CumulativeTargetNotch);
+            Assert.AreEqual(0, newPsms[2].PsmFdrInfo.CumulativeDecoyNotch);
+            Assert.AreEqual(1, newPsms[2].PsmFdrInfo.CumulativeTargetNotch);
 
-            Assert.AreEqual(0, newPsms[0].FdrInfo.CumulativeDecoy);
-            Assert.AreEqual(1, newPsms[0].FdrInfo.CumulativeTarget);
-            Assert.AreEqual(0, newPsms[1].FdrInfo.CumulativeDecoy);
-            Assert.AreEqual(2, newPsms[1].FdrInfo.CumulativeTarget);
-            Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoy);
-            Assert.AreEqual(3, newPsms[2].FdrInfo.CumulativeTarget);
+            Assert.AreEqual(0, newPsms[0].PsmFdrInfo.CumulativeDecoy);
+            Assert.AreEqual(1, newPsms[0].PsmFdrInfo.CumulativeTarget);
+            Assert.AreEqual(0, newPsms[1].PsmFdrInfo.CumulativeDecoy);
+            Assert.AreEqual(2, newPsms[1].PsmFdrInfo.CumulativeTarget);
+            Assert.AreEqual(0, newPsms[2].PsmFdrInfo.CumulativeDecoy);
+            Assert.AreEqual(3, newPsms[2].PsmFdrInfo.CumulativeTarget);
         }
 
         [Test]
@@ -236,7 +236,7 @@ namespace Test
 
             foreach (var item in allPsmsArray.Where(p => p != null))
             {
-                var b = item.FdrInfo.PEP;
+                var b = item.PsmFdrInfo.PEP;
                 if (b >= 0.5)
                 {
                     trueCount++;
@@ -302,7 +302,7 @@ namespace Test
 
             foreach (var item in psmCopyForCZETest.Where(p => p != null))
             {
-                var b = item.FdrInfo.PEP;
+                var b = item.PsmFdrInfo.PEP;
                 if (b >= 0.5)
                 {
                     trueCount++;

@@ -303,6 +303,12 @@
     <None Update="TestData\oneEmptyEntry.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\PostSearchAnalysisTaskTestData\TaGe_SA_A549_3_snip.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\PostSearchAnalysisTaskTestData\TaGe_SA_A549_3_snip_2.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\PrunedDbSpectra.mzml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

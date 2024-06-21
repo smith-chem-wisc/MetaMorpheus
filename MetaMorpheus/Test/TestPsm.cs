@@ -305,7 +305,7 @@ namespace Test
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", commonParameters) };
 
             new FdrAnalysisEngine(new List<SpectralMatch> { psm }, 1, new CommonParameters(), fsp, new List<string>()).Run();
-            Assert.AreEqual(0.5, psm.FdrInfo.CumulativeDecoy);
+            Assert.AreEqual(0.5, psm.PsmFdrInfo.CumulativeDecoy);
         }
 
         [Test]

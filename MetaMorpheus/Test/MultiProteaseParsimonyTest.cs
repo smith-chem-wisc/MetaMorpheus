@@ -710,7 +710,7 @@ namespace Test
             var fdrFilteredPsms = new List<SpectralMatch>();
             foreach (SpectralMatch psm in psms)
             {
-                if (psm != null && psm.FdrInfo.QValue <= 0.0100 && psm.FdrInfo.QValueNotch <= 0.0100)
+                if (psm != null && psm.PsmFdrInfo.QValue <= 0.0100 && psm.PsmFdrInfo.QValueNotch <= 0.0100)
                 {
                     fdrFilteredPsms.Add(psm);
                 }
@@ -1032,15 +1032,15 @@ namespace Test
             new FdrAnalysisEngine(psms, 0, new CommonParameters(), fsp, new List<string>()).Run();
             psms = psms.OrderByDescending(p => p.Score).ToList();
 
-            Assert.AreEqual(0.00, Math.Round(psms[1].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[2].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[3].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.5, Math.Round(psms[4].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[5].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[6].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.67, Math.Round(psms[8].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.5, Math.Round(psms[9].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[1].PsmFdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[2].PsmFdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[3].PsmFdrInfo.QValue, 2));
+            Assert.AreEqual(0.5, Math.Round(psms[4].PsmFdrInfo.QValue, 2));
+            Assert.AreEqual(0.33, Math.Round(psms[5].PsmFdrInfo.QValue, 2));
+            Assert.AreEqual(0.00, Math.Round(psms[6].PsmFdrInfo.QValue, 2));
+            Assert.AreEqual(0.33, Math.Round(psms[7].PsmFdrInfo.QValue, 2));
+            Assert.AreEqual(0.67, Math.Round(psms[8].PsmFdrInfo.QValue, 2));
+            Assert.AreEqual(0.5, Math.Round(psms[9].PsmFdrInfo.QValue, 2));
         }
     }
 }
