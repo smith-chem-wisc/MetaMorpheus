@@ -32,6 +32,11 @@ namespace GuiFunctions
         public List<string> CoverageTypeToColorValues { get; set; }
         public string UnannotatedPeakColor { get; set; }
         public string InternalIonColor { get; set; }
+        public int AnnotatedFontSize { get; set; }
+        public int AxisTitleTextSize { get; set; } 
+        public int AxisLabelTextSize { get; set; }
+        public double StrokeThicknessUnannotated { get; set; } 
+        public double StrokeThicknessAnnotated { get; set; } 
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;

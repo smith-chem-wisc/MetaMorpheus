@@ -50,6 +50,15 @@ namespace GuiFunctions
 
         public static bool SubAndSuperScriptIons = true;
 
+        // TODO:
+
+        public static int AnnotatedFontSize { get; set; } = 14;
+        public static int AxisTitleTextSize { get; set; } = 14;
+        public static int AxisLabelTextSize { get; set; } = 12;
+        public static double StrokeThicknessUnannotated { get; set; } = 0.7;
+        public static double StrokeThicknessAnnotated { get; set; } = 1.0;
+
+
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
         public static bool ShowContaminants { get; set; } = true;
@@ -100,10 +109,7 @@ namespace GuiFunctions
         public static OxyColor InternalIonColor { get; set; } = OxyColors.Purple;
         public static SolidColorBrush ModificationAnnotationColor { get; set; } = Brushes.Orange;
         public static double CanvasPdfExportDpi { get; set; } = 600;
-        public static double StrokeThicknessUnannotated { get; set; } = 0.7;
-        public static double StrokeThicknessAnnotated { get; set; } = 1.0;
         public static double AnnotatedSequenceTextSpacing { get; set; } = 22;
-        public static int AnnotatedFontSize { get; set; } = 14;
         public static int NumberOfAAOnScreen { get; set; }
         public static int FirstAAonScreenIndex { get; set; }
         public static bool DrawMatchedIons { get; set; } = true;
@@ -352,6 +358,11 @@ namespace GuiFunctions
                 SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
                 UnannotatedPeakColor = UnannotatedPeakColor.GetColorName(),
                 InternalIonColor = InternalIonColor.GetColorName(),
+                AnnotatedFontSize = AnnotatedFontSize,
+                AxisTitleTextSize = AxisTitleTextSize,
+                AxisLabelTextSize = AxisLabelTextSize,
+                StrokeThicknessUnannotated = StrokeThicknessUnannotated,
+                StrokeThicknessAnnotated = StrokeThicknessAnnotated
             };
         }
 
@@ -377,6 +388,11 @@ namespace GuiFunctions
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
             ExportType = settings.ExportType;
+            AnnotatedFontSize = settings.AnnotatedFontSize;
+            AxisTitleTextSize = settings.AxisTitleTextSize;
+            AxisLabelTextSize = settings.AxisLabelTextSize;
+            StrokeThicknessUnannotated = settings.StrokeThicknessUnannotated;
+            StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated;
 
             ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
             BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
@@ -417,6 +433,12 @@ namespace GuiFunctions
             ExportType = "Pdf";
             UnannotatedPeakColor = OxyColors.LightGray;
             InternalIonColor = OxyColors.Purple;
+            CanvasPdfExportDpi = 600;
+            AnnotatedFontSize = 14;
+            AxisTitleTextSize = 14;
+            AxisLabelTextSize = 12;
+            StrokeThicknessUnannotated = 0.7;
+            StrokeThicknessAnnotated = 1.0;
         }
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
