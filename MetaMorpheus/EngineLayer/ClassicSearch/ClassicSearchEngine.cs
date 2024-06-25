@@ -166,6 +166,7 @@ namespace EngineLayer.ClassicSearch
             {
                 psm.ResolveAllAmbiguities();
             }
+            var test = PeptideSpectralMatches.Where(p => p != null).ToArray();
 
             return new MetaMorpheusEngineResults(this);
         }
