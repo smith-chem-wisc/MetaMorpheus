@@ -111,7 +111,7 @@
 
                             </Grid>
 
-                            <Expander Header="Advanced Ion Annotations" DockPanel.Dock="Top" Margin="10 5 5 5" IsExpanded="True">
+                            <Expander Header="Advanced Ion Annotations" DockPanel.Dock="Top" Margin="10 5 5 5">
                                 <StackPanel Margin="5 5 0 0">
 
                                     
