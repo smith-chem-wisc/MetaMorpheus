@@ -119,32 +119,32 @@
                                     <CheckBox Name="SubSuperScriptedIonAnnotations" Content="Sub/superscripted ion annotations" Margin="5" />
 
                                     <StackPanel Orientation="Horizontal" Margin="5 0">
-                                        <Label Content="Annotation text size:" Width="140"/>
+                                        <Label Content="Annotation text size:" Width="165"/>
                                         <local:DoubleTextBoxControl x:Name ="TextSizeBox" Width="80" Height="24" 
                                                                     VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                     </StackPanel>
 
                                     <StackPanel Orientation="Horizontal" Margin="5 0">
-                                        <Label Content="Axis title text size:" Width="140"/>
+                                        <Label Content="Axis title text size:" Width="165"/>
                                         <local:DoubleTextBoxControl x:Name ="AxisTitleTextSizeBox" Width="80" Height="24" 
                                                  VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                     </StackPanel>
 
                                     <StackPanel Orientation="Horizontal" Margin="5 0">
-                                        <Label Content="Axis label text size:" Width="140"/>
+                                        <Label Content="Axis label text size:" Width="165"/>
                                         <local:DoubleTextBoxControl x:Name ="AxisLabelTextSizeBox" Width="80" Height="24" 
                                                                     VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                     </StackPanel>
 
 
                                     <StackPanel Orientation="Horizontal" Margin="5 0">
-                                        <Label Content="Annotated peak size:" Width="140"/>
+                                        <Label Content="Annotated peak thickness:" Width="165"/>
                                         <local:DoubleTextBoxControl x:Name ="AnnotatedPeakSizeBox" Width="80" Height="24" 
                                                                     VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                     </StackPanel>
 
-                                    <StackPanel Orientation="Horizontal" Margin="5 0">
-                                        <Label Content="Unannotated peak size:" Width="140"/>
+                                    <StackPanel Orientation="Horizontal" Margin="5 0" >
+                                        <Label Content="Unannotated peak thickness:" Width="165"/>
                                         <local:DoubleTextBoxControl x:Name ="UnannotatedPeakSizeBox" Width="80" Height="24" 
                                                                     VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                     </StackPanel>
