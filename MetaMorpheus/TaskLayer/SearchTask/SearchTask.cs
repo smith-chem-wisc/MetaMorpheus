@@ -164,8 +164,7 @@ namespace TaskLayer
                 return proteins;
             });
             proteinLoadingTask.Start();    
-            //LoadAndSanitizeProteinsAsync(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters, SearchParameters.TCAmbiguity);
-
+            
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
@@ -222,7 +221,6 @@ namespace TaskLayer
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
-                //MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
 
                 // ensure that the next file has finished loading from the async method
                 nextFileLoadingTask.Wait();
