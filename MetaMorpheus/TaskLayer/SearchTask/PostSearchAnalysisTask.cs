@@ -36,24 +36,25 @@ namespace TaskLayer
         private string _filterType;
         private double _filterThreshold;
 
+        /// <summary>
+        /// ONLY CALL THIS FUNCTION AFTER FDR HAS BEEN CALCULATED
+        /// A function which can be used to remove excessive chimeras from the list of spectral matches.
+        /// 
+        /// Use this in a custom task by setting it to a lambda function that takes a list of spectral matches and returns a list of spectral matches.
+        ///
+        /// It will first group the spectral matches by MS2 and MS1 Scan Numbers and data file with the custom comparer and order them
+        /// IT will then take the top n identifications for each group where n is the maximum number of identifications per spectrum from common parameters of the search task
+        /// </summary>
         public Func<(List<SpectralMatch> SpectralMatches, int MaxIdentifications), List<SpectralMatch>>
             ExcessiveChimeraRemover = spectralMatches =>
             {
                 return spectralMatches.SpectralMatches.GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
                     .Select(chimeraGroup => chimeraGroup
-                        .OrderBy(p => p.FdrInfo.QValue)
-                        .ThenBy(psm => psm.FdrInfo.PEP_QValue)
-                        .ThenBy(psm => psm.Score))
+                        .OrderByDescending(p => p))
                     .SelectMany(chimeraGroup => chimeraGroup.Take(spectralMatches.MaxIdentifications))
-                    .OrderByDescending(b => b.Score)
-                    .ThenBy(b =>
-                        b.BioPolymerWithSetModsMonoisotopicMass.HasValue
-                            ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value)
-                            : double.MaxValue)
-                    .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass))
-                    .Select(b => b.First()).ToList();
+                    .OrderByDescending(b => b)
+                    .ToList();
             };
- 
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -86,7 +87,6 @@ namespace TaskLayer
                 Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
                     .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
                     .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
-                
                 CalculatePsmFdr();
             }
 

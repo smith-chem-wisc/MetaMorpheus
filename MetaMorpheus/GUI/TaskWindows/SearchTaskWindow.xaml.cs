@@ -647,6 +647,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.UpdateSpectralLibrary = UpdateSpectralLibraryCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
+
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {
                 TheTask.SearchParameters.TCAmbiguity = TargetContaminantAmbiguity.RemoveContaminant;

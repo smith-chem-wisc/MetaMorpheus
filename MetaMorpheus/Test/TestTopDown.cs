@@ -1,29 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
-using iText.Forms.Xfdf;
-using MassSpectrometry;
+using IO.MzML;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework;
-using Omics.Digestion;
-using Omics.Fragmentation;
-using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
-using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Mzml = IO.MzML.Mzml;
 
 namespace Test
 {
@@ -153,5 +145,22 @@ namespace Test
 
             Directory.Delete(tempDirPath, true);
         }
-    }
+
+        [Test]
+        public static void TestPsmsAreInTheCorrectOrder()
+        {
+            string tempDirPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "ChimeraFilteringTest");
+            if (!Directory.Exists(tempDirPath))
+                Directory.CreateDirectory(tempDirPath);
+
+            var spectraPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData",
+                "HighlyChimericSnip.mzML");
+            var secondSpectraPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData",
+                "TDGPTMDSearchSingleSpectra.mzML");
+            var dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData",
+                "HistoneH3GPTMD.xml");
+            var taskPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData",
+                "HighlyChimeric.toml");
+            var searchTask = Toml.ReadFile<SearchTask>(taskPath, MetaMorpheusTask.tomlConfig);
+        }
 }

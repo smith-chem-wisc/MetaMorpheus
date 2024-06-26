@@ -20,38 +20,38 @@ namespace EngineLayer
         }
 
         public CommonParameters(
-            string taskDescriptor = null,
-            DissociationType dissociationType = DissociationType.HCD,
-            DissociationType ms2childScanDissociationType = DissociationType.Unknown,
-            DissociationType ms3childScanDissociationType = DissociationType.Unknown,
-            string separationType = "HPLC",
+            string taskDescriptor = null, 
+            DissociationType dissociationType = DissociationType.HCD, 
+            DissociationType ms2childScanDissociationType = DissociationType.Unknown, 
+            DissociationType ms3childScanDissociationType = DissociationType.Unknown, 
+            string separationType = "HPLC", 
             bool doPrecursorDeconvolution = true,
-            bool useProvidedPrecursorInfo = true,
-            double deconvolutionIntensityRatio = 3,
-            int deconvolutionMaxAssumedChargeState = 12,
+            bool useProvidedPrecursorInfo = true, 
+            double deconvolutionIntensityRatio = 3, 
+            int deconvolutionMaxAssumedChargeState = 12, 
             bool reportAllAmbiguity = true,
-            bool addCompIons = false,
-            int totalPartitions = 1,
+            bool addCompIons = false, 
+            int totalPartitions = 1, 
             double qValueThreshold = 0.01,
             double pepQValueThreshold = 1.0,
-            double scoreCutoff = 5,
-            int? numberOfPeaksToKeepPerWindow = 200,
-            double? minimumAllowedIntensityRatioToBasePeak = 0.01,
-            double? windowWidthThomsons = null,
-            int? numberOfWindows = null,
-            bool normalizePeaksAccrossAllWindows = false,
-            bool trimMs1Peaks = false,
-            bool trimMsMsPeaks = true,
-            Tolerance productMassTolerance = null,
-            Tolerance precursorMassTolerance = null,
+            double scoreCutoff = 5, 
+            int? numberOfPeaksToKeepPerWindow = 200, 
+            double? minimumAllowedIntensityRatioToBasePeak = 0.01, 
+            double? windowWidthThomsons = null, 
+            int? numberOfWindows = null, 
+            bool normalizePeaksAccrossAllWindows = false, 
+            bool trimMs1Peaks = false, 
+            bool trimMsMsPeaks = true, 
+            Tolerance productMassTolerance = null, 
+            Tolerance precursorMassTolerance = null, 
             Tolerance deconvolutionMassTolerance = null,
-            int maxThreadsToUsePerFile = -1,
-            DigestionParams digestionParams = null,
-            IEnumerable<(string, string)> listOfModsVariable = null,
+            int maxThreadsToUsePerFile = -1, 
+            DigestionParams digestionParams = null, 
+            IEnumerable<(string, string)> listOfModsVariable = null, 
             IEnumerable<(string, string)> listOfModsFixed = null,
-            bool assumeOrphanPeaksAreZ1Fragments = true,
-            int maxHeterozygousVariants = 4,
-            int minVariantDepth = 1,
+            bool assumeOrphanPeaksAreZ1Fragments = true, 
+            int maxHeterozygousVariants = 4, 
+            int minVariantDepth = 1, 
             bool addTruncations = false,
             DeconvolutionParameters precursorDeconParams = null,
             DeconvolutionParameters productDeconParams = null,
@@ -75,18 +75,14 @@ namespace EngineLayer
             NormalizePeaksAccrossAllWindows = normalizePeaksAccrossAllWindows;
             TrimMs1Peaks = trimMs1Peaks;
             TrimMsMsPeaks = trimMsMsPeaks;
-            MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1
-                ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1
-                : maxThreadsToUsePerFile;
+            MaxThreadsToUsePerFile = maxThreadsToUsePerFile == -1 ? Environment.ProcessorCount > 1 ? Environment.ProcessorCount - 1 : 1 : maxThreadsToUsePerFile;
 
             ProductMassTolerance = productMassTolerance ?? new PpmTolerance(20);
             PrecursorMassTolerance = precursorMassTolerance ?? new PpmTolerance(5);
             DeconvolutionMassTolerance = deconvolutionMassTolerance ?? new PpmTolerance(4);
             DigestionParams = digestionParams ?? new DigestionParams();
-            ListOfModsVariable = listOfModsVariable ?? new List<(string, string)>
-                { ("Common Variable", "Oxidation on M") };
-            ListOfModsFixed = listOfModsFixed ?? new List<(string, string)>
-                { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
+            ListOfModsVariable = listOfModsVariable ?? new List<(string, string)> { ("Common Variable", "Oxidation on M") };
+            ListOfModsFixed = listOfModsFixed ?? new List<(string, string)> { ("Common Fixed", "Carbamidomethyl on C"), ("Common Fixed", "Carbamidomethyl on U") };
             DissociationType = dissociationType;
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
@@ -96,8 +92,7 @@ namespace EngineLayer
 
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
             // reset custom fragmentation product types to default empty list
-            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] =
-                new List<ProductType>() { };
+            DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = new List<ProductType>() { };
 
             AssumeOrphanPeaksAreZ1Fragments = assumeOrphanPeaksAreZ1Fragments;
 
@@ -116,8 +111,7 @@ namespace EngineLayer
             }
             else // negative mode
             {
-                PrecursorDeconvolutionParameters = precursorDeconParams ?? new ClassicDeconvolutionParameters(
-                    deconvolutionMaxAssumedChargeState,
+                PrecursorDeconvolutionParameters = precursorDeconParams ?? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState,
                     -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
                 ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
                     -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
@@ -139,13 +133,11 @@ namespace EngineLayer
         public bool DoPrecursorDeconvolution { get; private set; }
         public bool UseProvidedPrecursorInfo { get; private set; }
         [TomlIgnore] public double DeconvolutionIntensityRatio { get; private set; }
-
         public int DeconvolutionMaxAssumedChargeState
         {
             get => PrecursorDeconvolutionParameters.MaxAssumedChargeState;
             private set => PrecursorDeconvolutionParameters.MaxAssumedChargeState = value;
         }
-
         [TomlIgnore] public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
         [TomlIgnore] public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
@@ -153,21 +145,18 @@ namespace EngineLayer
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
         public Tolerance PrecursorMassTolerance { get; set; } // public setter required for calibration task
         public bool AddCompIons { get; private set; }
-
         /// <summary>
         /// Only peptides/PSMs with Q-Value and Q-Value Notch below this threshold are used for quantification and
         /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
         /// peptides/PSMs with Q-Value/Notch below this threshold are included in .psmtsv results files.
         /// </summary>
         public double QValueThreshold { get; private set; }
-
         /// <summary>
         /// Only peptides/PSMs with PEP Q-Value below this threshold are used for quantification and
         /// spectral library generation. If SearchParameters.WriteHighQValuePsms is set to false, only 
         /// peptides/PSMs with PEP Q-Value below this threshold are included in .psmtsv results files.
         /// </summary>
         public double PepQValueThreshold { get; private set; }
-
         public double ScoreCutoff { get; private set; }
         public DigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
@@ -185,12 +174,9 @@ namespace EngineLayer
         public bool AddTruncations { get; private set; }
         public DissociationType DissociationType { get; private set; }
         public string SeparationType { get; private set; }
-
         public DissociationType MS2ChildScanDissociationType { get; private set; }
         public DissociationType MS3ChildScanDissociationType { get; private set; }
-
         public bool UseMostAbundantPrecursorIntensity { get; set; }
-
         public int MaximumIdentificationsPerSpectrum { get; set; }
 
         public CommonParameters Clone()
@@ -216,9 +202,7 @@ namespace EngineLayer
             return c;
         }
 
-        public CommonParameters
-            CloneWithNewTerminus(FragmentationTerminus? terminus = null,
-                bool? addCompIons = null) //for use with speedy semi-specific searches to get both termini
+        public CommonParameters CloneWithNewTerminus(FragmentationTerminus? terminus = null, bool? addCompIons = null) //for use with speedy semi-specific searches to get both termini
         {
             if (terminus == null)
             {
@@ -241,7 +225,7 @@ namespace EngineLayer
                 DeconvolutionIntensityRatio,
                 DeconvolutionMaxAssumedChargeState,
                 ReportAllAmbiguity,
-                addCompIons.Value, //possibly changed
+                addCompIons.Value,//possibly changed
                 TotalPartitions,
                 QValueThreshold,
                 PepQValueThreshold,
@@ -282,8 +266,7 @@ namespace EngineLayer
 
         public void SetCustomProductTypes()
         {
-            DissociationTypeCollection.ProductsFromDissociationType[MassSpectrometry.DissociationType.Custom] =
-                CustomIons;
+            DissociationTypeCollection.ProductsFromDissociationType[MassSpectrometry.DissociationType.Custom] = CustomIons;
         }
     }
 }
