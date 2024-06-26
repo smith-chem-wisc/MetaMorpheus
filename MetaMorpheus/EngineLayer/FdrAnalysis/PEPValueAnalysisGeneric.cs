@@ -817,7 +817,7 @@ namespace EngineLayer
                     //if it is an open search, we need to normalize several scores to the length of the proteoform
                     //if (!isOpenSearch) 
                         normalizationFactor = 1.0;
-                        multiplier = 1.0;
+                        multiplier = 10.0;
                 }
                 totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count / normalizationFactor * multiplier, 0));
                 intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * Math.Pow(multiplier, 2), 0));
