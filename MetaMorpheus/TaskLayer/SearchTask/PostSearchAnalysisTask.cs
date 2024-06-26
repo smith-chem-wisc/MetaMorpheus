@@ -58,7 +58,6 @@ namespace TaskLayer
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
-
         }
 
         public MyTaskResults Run()
@@ -762,7 +761,7 @@ namespace TaskLayer
                     new FdrAnalysisEngine(psmsForThisFile, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
                         new List<string> { Parameters.SearchTaskId }, doPEP: false).Run();
 
-                    FilterSpecificPsms(psmsForThisFile, out psmOrPeptideCountForResults);
+                    FilterSpecificPsms(ref psmsForThisFile, out psmOrPeptideCountForResults);
 
                     // write summary text
                     Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
@@ -1383,7 +1382,7 @@ namespace TaskLayer
                     new FdrAnalysisEngine(peptidesForFile, Parameters.NumNotches, CommonParameters, FileSpecificParameters,
                         new List<string> { Parameters.SearchTaskId }, "Peptide", doPEP: false).Run();
 
-                    FilterSpecificPsms(peptidesForFile, out psmOrPeptideCountForResults);
+                    FilterSpecificPsms(ref peptidesForFile, out psmOrPeptideCountForResults);
 
                     Parameters.SearchTaskResults.AddTaskSummaryText(
                         strippedFileName + " Target " + GlobalVariables.AnalyteType.ToLower() + "s with "
