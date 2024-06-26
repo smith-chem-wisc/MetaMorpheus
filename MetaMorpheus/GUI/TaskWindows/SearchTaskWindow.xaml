@@ -853,7 +853,7 @@
                                                                 <local:IntegerTexBoxControl.ToolTip>
                                                                     Maximum number of identifications per MS2 spectra. 
                                                                     This is used to prevent over-identification of highly chimeric spectra. 
-                                                                    Recommended maximum is 7 for the average top-down dataset.
+                                                                    Recommended maximum is 10 for the average top-down dataset.
                                                                 </local:IntegerTexBoxControl.ToolTip>
                                                             </local:IntegerTexBoxControl>
                                                         </StackPanel>
