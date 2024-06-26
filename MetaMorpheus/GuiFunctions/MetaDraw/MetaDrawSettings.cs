@@ -47,17 +47,12 @@ namespace GuiFunctions
         public static bool DrawStationarySequence { get; set; } = true;
         public static bool DrawNumbersUnderStationary { get; set; } = true;
         public static bool ShowLegend { get; set; } = true;
-
         public static bool SubAndSuperScriptIons = true;
-
-        // TODO:
-
         public static int AnnotatedFontSize { get; set; } = 14;
         public static int AxisTitleTextSize { get; set; } = 14;
         public static int AxisLabelTextSize { get; set; } = 12;
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
-
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
