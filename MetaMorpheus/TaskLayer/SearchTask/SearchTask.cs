@@ -151,9 +151,7 @@ namespace TaskLayer
             // start loading all data in the background while task is being set up
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
-            // load spectral libraries
-            var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
-
+            // start loading proteins in the background
             List<Protein> proteinList = null;
             Task<List<Protein>> proteinLoadingTask = new(() =>
             {
@@ -163,8 +161,11 @@ namespace TaskLayer
                 SanitizeProteinDatabase(proteins, SearchParameters.TCAmbiguity);
                 return proteins;
             });
-            proteinLoadingTask.Start();    
-            
+            proteinLoadingTask.Start();
+
+            // load spectral libraries
+            var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
+
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
