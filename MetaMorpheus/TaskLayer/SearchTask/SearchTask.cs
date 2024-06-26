@@ -142,19 +142,32 @@ namespace TaskLayer
                 SearchParameters.SilacLabels = null;
             }
 
-            LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
+            // start loading all data in the background while task is being set up
+            var modLoadingTask = LoadModificationsAsync(taskId);
+            //LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
-            // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
-            SanitizeProteinDatabase(proteinList, SearchParameters.TCAmbiguity);
 
             // load spectral libraries
-            var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
+            SpectralLibrary spectralLibrary = null;
+            Task<SpectralLibrary> specLibLoadingTask = LoadSpectralLibrariesAsync(taskId, dbFilenameList);
+            //var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
 
             // start loading first spectra file in the background
             var dataFilePathQueue = new Queue<string>(currentRawFileList);
-            Task<MsDataFile> nextFileTask = myFileManager.LoadFileAsync(dataFilePathQueue.Peek(),
+            Task<MsDataFile> nextFileLoadingTask = myFileManager.LoadFileAsync(dataFilePathQueue.Peek(),
                 SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0]));
+
+
+            // load proteins after mods have finished loading
+            modLoadingTask.Wait();
+            var fixedModifications = modLoadingTask.Result.FixedModifications;
+            var variableModifications = modLoadingTask.Result.VariableModifications;
+            var localizeableModificationTypes = modLoadingTask.Result.LocalizableModifications;
+
+            List<Protein> proteinList;
+            Task<List<Protein>> proteinLoadingTask = LoadProteinsAsync(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters, SearchParameters.TCAmbiguity);
+            //List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
+            //SanitizeProteinDatabase(proteinList, SearchParameters.TCAmbiguity);
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -173,8 +186,7 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy)
-                + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+            
 
             // start the search task
             MyTaskResults = new MyTaskResults(this);
@@ -197,6 +209,12 @@ namespace TaskLayer
             Status("Searching files...", taskId);
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
+  
+            proteinLoadingTask.Wait(); 
+            proteinList = proteinLoadingTask.Result;
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy)
+                + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -217,10 +235,10 @@ namespace TaskLayer
                 //MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
 
                 // ensure that the next file has finished loading from the async method
-                nextFileTask.Wait();
-                var myMsDataFile = nextFileTask.Result;
+                nextFileLoadingTask.Wait();
+                var myMsDataFile = nextFileLoadingTask.Result;
                 if (dataFilePathQueue.TryPeek(out string nextFilePath))
-                    nextFileTask = myFileManager.LoadFileAsync(nextFilePath,
+                    nextFileLoadingTask = myFileManager.LoadFileAsync(nextFilePath,
                         SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]));
 
                 Status("Getting ms2 scans...", thisId);
@@ -229,6 +247,11 @@ namespace TaskLayer
                 myFileManager.DoneWithFile(origDataFile);
 
                 SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+
+                // ensure library is loaded in before proceeding with search
+                if (!specLibLoadingTask.IsCompleted)
+                    specLibLoadingTask.Wait();
+                spectralLibrary = specLibLoadingTask.Result;
 
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
@@ -350,6 +373,8 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
+                    
+
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                        SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary);
                     newClassicSearchEngine.Run();
