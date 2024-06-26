@@ -26,12 +26,14 @@ namespace EngineLayer
         public string FileNameWithoutExtension { get; }
         public int PrecursorScanNum { get; }
         public int PrecursorCharge { get; }
+
+        public double? PrecursorIntensity { get; }
         public double PrecursorMz { get; }
         public double PrecursorMass { get; }
         public double Score { get; }
         public string ProteinAccession { get; }
         public double? SpectralAngle { get; }
-        public List<MatchedFragmentIon> MatchedIons { get; }
+        public List<MatchedFragmentIon> MatchedIons { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildScanMatchedIons { get; } // this is only used in crosslink for now, but in the future will be used for other experiment types
         public double QValue { get; }
 
@@ -126,6 +128,7 @@ namespace EngineLayer
             }
 
             PrecursorCharge = (int)double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorIntensity = (parsedHeader[PsmTsvHeader.PrecursorIntensity] < 0) ? null : Double.TryParse(spl[parsedHeader[PsmTsvHeader.PrecursorIntensity]].Trim(), out double value) ? value : null;
             PrecursorMz = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
             BaseSeq = RemoveParentheses(spl[parsedHeader[PsmTsvHeader.BaseSequence]].Trim());
