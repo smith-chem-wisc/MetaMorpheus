@@ -91,6 +91,10 @@ namespace TaskLayer
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
+            // start loading first spectra file in the background
+            var dataFilePathQueue = new Queue<string>(currentRawFileList);
+            Task<MsDataFile> nextFileLoadingTask = myFileManager.LoadFileAsync(dataFilePathQueue.Peek(),
+                SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0]));
 
             if (SearchParameters.DoLabelFreeQuantification)
             {
@@ -144,29 +148,13 @@ namespace TaskLayer
             }
 
             // start loading all data in the background while task is being set up
-            var modLoadingTask = LoadModificationsAsync(taskId);
-            //LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
-
+            LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load spectral libraries
-            SpectralLibrary spectralLibrary = null;
-            Task<SpectralLibrary> specLibLoadingTask = LoadSpectralLibrariesAsync(taskId, dbFilenameList);
-            //var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
-
-            
-            // start loading first spectra file in the background
-            var dataFilePathQueue = new Queue<string>(currentRawFileList);
-            Task<MsDataFile> nextFileLoadingTask = myFileManager.LoadFileAsync(dataFilePathQueue.Peek(),
-                SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0]));
-
-            // load proteins after mods have finished loading
-            modLoadingTask.Wait();
-            var fixedModifications = modLoadingTask.Result.FixedModifications;
-            var variableModifications = modLoadingTask.Result.VariableModifications;
-            var localizeableModificationTypes = modLoadingTask.Result.LocalizableModifications;
+            var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
 
             List<Protein> proteinList = null;
-            Task<List<Protein>> proteinLoadingTask = LoadProteinsAsync(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters, SearchParameters.TCAmbiguity);
+            Task<List<Protein>> proteinLoadingTask = LoadAndSanitizeProteinsAsync(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters, SearchParameters.TCAmbiguity);
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -240,20 +228,7 @@ namespace TaskLayer
 
                 SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
-                // ensure library and proteins are loaded in before proceeding with search
-                switch (specLibLoadingTask.IsCompleted)
-                {
-                    case true when spectralLibrary is null: // has finished loading but not been set
-                        spectralLibrary = specLibLoadingTask.Result;
-                        break;
-                    case true: // has finished loading and already been set
-                        break;
-                    case false: // has not finished loading
-                        specLibLoadingTask.Wait();
-                        spectralLibrary = specLibLoadingTask.Result;
-                        break;
-                }
-
+                // ensure proteins are loaded in before proceeding with search
                 switch (proteinLoadingTask.IsCompleted)
                 {
                     case true when proteinList is null: // has finished loading but not been set

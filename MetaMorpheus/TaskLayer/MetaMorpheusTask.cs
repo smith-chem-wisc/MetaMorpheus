@@ -590,7 +590,7 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        protected async Task<List<Protein>> LoadProteinsAsync(string taskId, List<DbForTask> dbFilenameList,
+        protected async Task<List<Protein>> LoadAndSanitizeProteinsAsync(string taskId, List<DbForTask> dbFilenameList,
             bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes,
             CommonParameters commonParameters, TargetContaminantAmbiguity tCAmbiguity)
         {
@@ -602,6 +602,7 @@ namespace TaskLayer
                 return proteins;
             });
         }
+
         protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
         {
             Status("Loading proteins...", new List<string> { taskId });
@@ -622,11 +623,6 @@ namespace TaskLayer
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
             return proteinList;
-        }
-
-        protected async Task<SpectralLibrary> LoadSpectralLibrariesAsync(string taskId, List<DbForTask> dbFilenameList)
-        {
-            return await Task.Run(() => LoadSpectralLibraries(taskId, dbFilenameList));
         }
 
         protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
@@ -673,14 +669,6 @@ namespace TaskLayer
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
 
-        protected async Task<(List<Modification> VariableModifications, List<Modification> FixedModifications, List<string> LocalizableModifications)> LoadModificationsAsync(string taskId)
-        {
-               return await Task.Run(() =>
-               {
-                   LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizableModificationTypes);
-                   return (variableModifications, fixedModifications, localizableModificationTypes);
-               });
-        }
         protected void LoadModifications(string taskId, out List<Modification> variableModifications, out List<Modification> fixedModifications, out List<string> localizableModificationTypes)
         {
             // load modifications
