@@ -226,10 +226,12 @@ namespace TaskLayer
                 // ensure that the next file has finished loading from the async method
                 nextFileLoadingTask.Wait();
                 var myMsDataFile = nextFileLoadingTask.Result;
+
+                // if another file exists, then begin loading it in while the previous is being searched
                 if (dataFilePathQueue.TryPeek(out string nextFilePath))
                 {
-                    var index = spectraFileIndex;
-                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(nextFilePath, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[index])));
+                    var nextFileIndex = spectraFileIndex+1;
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(nextFilePath, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
                     nextFileLoadingTask.Start();
                 }
 
