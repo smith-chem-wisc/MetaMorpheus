@@ -92,8 +92,7 @@ namespace TaskLayer
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             // start loading first spectra file in the background
-            var dataFilePathQueue = new Queue<string>(currentRawFileList);
-            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(dataFilePathQueue.Peek(), SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
             nextFileLoadingTask.Start();
             
 
@@ -210,7 +209,7 @@ namespace TaskLayer
             {
                 if (GlobalVariables.StopLoops) { break; }
 
-                var origDataFile = dataFilePathQueue.Dequeue();
+                var origDataFile = currentRawFileList[spectraFileIndex];
 
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -228,10 +227,10 @@ namespace TaskLayer
                 var myMsDataFile = nextFileLoadingTask.Result;
 
                 // if another file exists, then begin loading it in while the previous is being searched
-                if (dataFilePathQueue.TryPeek(out string nextFilePath))
+                if (origDataFile != currentRawFileList.Last())
                 {
-                    var nextFileIndex = spectraFileIndex+1;
-                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(nextFilePath, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
+                    int nextFileIndex = spectraFileIndex + 1;
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
                     nextFileLoadingTask.Start();
                 }
 
