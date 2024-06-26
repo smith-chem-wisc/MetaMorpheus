@@ -19,6 +19,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
 using Readers;
+using ThermoFisher.CommonCore.Data;
 
 namespace TaskLayer
 {
@@ -152,11 +153,11 @@ namespace TaskLayer
             Task<SpectralLibrary> specLibLoadingTask = LoadSpectralLibrariesAsync(taskId, dbFilenameList);
             //var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
 
+            
             // start loading first spectra file in the background
             var dataFilePathQueue = new Queue<string>(currentRawFileList);
             Task<MsDataFile> nextFileLoadingTask = myFileManager.LoadFileAsync(dataFilePathQueue.Peek(),
                 SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0]));
-
 
             // load proteins after mods have finished loading
             modLoadingTask.Wait();
@@ -164,10 +165,8 @@ namespace TaskLayer
             var variableModifications = modLoadingTask.Result.VariableModifications;
             var localizeableModificationTypes = modLoadingTask.Result.LocalizableModifications;
 
-            List<Protein> proteinList;
+            List<Protein> proteinList = null;
             Task<List<Protein>> proteinLoadingTask = LoadProteinsAsync(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters, SearchParameters.TCAmbiguity);
-            //List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
-            //SanitizeProteinDatabase(proteinList, SearchParameters.TCAmbiguity);
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -186,7 +185,6 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("report PSM ambiguity = " + CommonParameters.ReportAllAmbiguity + ". ");
-            
 
             // start the search task
             MyTaskResults = new MyTaskResults(this);
@@ -208,12 +206,6 @@ namespace TaskLayer
 
             Status("Searching files...", taskId);
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
-
-  
-            proteinLoadingTask.Wait(); 
-            proteinList = proteinLoadingTask.Result;
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy)
-                + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
@@ -248,10 +240,32 @@ namespace TaskLayer
 
                 SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
-                // ensure library is loaded in before proceeding with search
-                if (!specLibLoadingTask.IsCompleted)
-                    specLibLoadingTask.Wait();
-                spectralLibrary = specLibLoadingTask.Result;
+                // ensure library and proteins are loaded in before proceeding with search
+                switch (specLibLoadingTask.IsCompleted)
+                {
+                    case true when spectralLibrary is null: // has finished loading but not been set
+                        spectralLibrary = specLibLoadingTask.Result;
+                        break;
+                    case true: // has finished loading and already been set
+                        break;
+                    case false: // has not finished loading
+                        specLibLoadingTask.Wait();
+                        spectralLibrary = specLibLoadingTask.Result;
+                        break;
+                }
+
+                switch (proteinLoadingTask.IsCompleted)
+                {
+                    case true when proteinList is null: // has finished loading but not been set
+                        proteinList = proteinLoadingTask.Result;
+                        break;
+                    case true when proteinList.Any(): // has finished loading and already been set
+                        break;
+                    case false: // has not finished loading
+                        proteinLoadingTask.Wait();
+                        proteinList = proteinLoadingTask.Result;
+                        break;
+                }
 
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
@@ -373,8 +387,6 @@ namespace TaskLayer
                 else
                 {
                     Status("Starting search...", thisId);
-                    
-
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
                        SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary);
                     newClassicSearchEngine.Run();
@@ -419,6 +431,10 @@ namespace TaskLayer
             {
                 allPsms = NonSpecificEnzymeSearchEngine.ResolveFdrCategorySpecificPsms(allCategorySpecificPsms, numNotches, taskId, CommonParameters, FileSpecificParameters);
             }
+
+            // Finish writing prose settings that depended on files being loaded in
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy)
+                + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
             {
