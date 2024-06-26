@@ -590,18 +590,18 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        protected async Task<List<Protein>> LoadAndSanitizeProteinsAsync(string taskId, List<DbForTask> dbFilenameList,
-            bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes,
-            CommonParameters commonParameters, TargetContaminantAmbiguity tCAmbiguity)
-        {
-            return await Task.Run(() =>
-            {
-                var proteins = LoadProteins(taskId, dbFilenameList, searchTarget, decoyType, localizeableModificationTypes,
-                    commonParameters);
-                SanitizeProteinDatabase(proteins, tCAmbiguity);
-                return proteins;
-            });
-        }
+        //protected async Task<List<Protein>> LoadAndSanitizeProteinsAsync(string taskId, List<DbForTask> dbFilenameList,
+        //    bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes,
+        //    CommonParameters commonParameters, TargetContaminantAmbiguity tCAmbiguity)
+        //{
+            
+        //    var proteins = LoadProteins(taskId, dbFilenameList, searchTarget, decoyType,
+        //        localizeableModificationTypes,
+        //        commonParameters);
+        //    SanitizeProteinDatabase(proteins, tCAmbiguity);
+        //    return proteins;
+        //}
+
 
         protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
         {

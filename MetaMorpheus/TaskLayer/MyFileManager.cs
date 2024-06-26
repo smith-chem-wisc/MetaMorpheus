@@ -27,10 +27,10 @@ namespace TaskLayer
             return (MyMsDataFiles.ContainsKey(path) && MyMsDataFiles[path] != null);
         }
 
-        public async Task<MsDataFile> LoadFileAsync(string origDataFile, CommonParameters commonParameters)
-        {
-            return await Task.Run(() => LoadFile(origDataFile, commonParameters));
-        }
+        //public async Task<MsDataFile> LoadFileAsync(string origDataFile, CommonParameters commonParameters)
+        //{
+        //    return await Task.Run(() => LoadFile(origDataFile, commonParameters));
+        //}
 
         public MsDataFile LoadFile(string origDataFile, CommonParameters commonParameters)
         {

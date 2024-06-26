@@ -93,8 +93,9 @@ namespace TaskLayer
 
             // start loading first spectra file in the background
             var dataFilePathQueue = new Queue<string>(currentRawFileList);
-            Task<MsDataFile> nextFileLoadingTask = myFileManager.LoadFileAsync(dataFilePathQueue.Peek(),
-                SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0]));
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(dataFilePathQueue.Peek(), SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            nextFileLoadingTask.Start();
+            
 
             if (SearchParameters.DoLabelFreeQuantification)
             {
@@ -154,7 +155,16 @@ namespace TaskLayer
             var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
 
             List<Protein> proteinList = null;
-            Task<List<Protein>> proteinLoadingTask = LoadAndSanitizeProteinsAsync(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters, SearchParameters.TCAmbiguity);
+            Task<List<Protein>> proteinLoadingTask = new(() =>
+            {
+                var proteins = LoadProteins(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType,
+                    localizeableModificationTypes,
+                    CommonParameters);
+                SanitizeProteinDatabase(proteins, SearchParameters.TCAmbiguity);
+                return proteins;
+            });
+            proteinLoadingTask.Start();    
+            //LoadAndSanitizeProteinsAsync(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType, localizeableModificationTypes, CommonParameters, SearchParameters.TCAmbiguity);
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
@@ -218,8 +228,11 @@ namespace TaskLayer
                 nextFileLoadingTask.Wait();
                 var myMsDataFile = nextFileLoadingTask.Result;
                 if (dataFilePathQueue.TryPeek(out string nextFilePath))
-                    nextFileLoadingTask = myFileManager.LoadFileAsync(nextFilePath,
-                        SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]));
+                {
+                    var index = spectraFileIndex;
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(nextFilePath, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[index])));
+                    nextFileLoadingTask.Start();
+                }
 
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
