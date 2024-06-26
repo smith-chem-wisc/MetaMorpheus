@@ -14,9 +14,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
+using Readers;
 
 namespace TaskLayer
 {
@@ -85,6 +87,10 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+
+
             if (SearchParameters.DoLabelFreeQuantification)
             {
                 // disable quantification if a .mgf is being used
@@ -145,6 +151,11 @@ namespace TaskLayer
             // load spectral libraries
             var spectralLibrary = LoadSpectralLibraries(taskId, dbFilenameList);
 
+            // start loading first spectra file in the background
+            var dataFilePathQueue = new Queue<string>(currentRawFileList);
+            Task<MsDataFile> nextFileTask = myFileManager.LoadFileAsync(dataFilePathQueue.Peek(),
+                SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0]));
+
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
             ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
@@ -179,10 +190,6 @@ namespace TaskLayer
 
             FlashLfqResults flashLfqResults = null;
 
-            MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
-
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
-
             int completedFiles = 0;
             object indexLock = new object();
             object psmLock = new object();
@@ -195,7 +202,7 @@ namespace TaskLayer
             {
                 if (GlobalVariables.StopLoops) { break; }
 
-                var origDataFile = currentRawFileList[spectraFileIndex];
+                var origDataFile = dataFilePathQueue.Dequeue();
 
                 // mark the file as in-progress
                 StartingDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
@@ -207,7 +214,15 @@ namespace TaskLayer
                 var thisId = new List<string> { taskId, "Individual Spectra Files", origDataFile };
                 NewCollection(Path.GetFileName(origDataFile), thisId);
                 Status("Loading spectra file...", thisId);
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
+                //MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
+
+                // ensure that the next file has finished loading from the async method
+                nextFileTask.Wait();
+                var myMsDataFile = nextFileTask.Result;
+                if (dataFilePathQueue.TryPeek(out string nextFilePath))
+                    nextFileTask = myFileManager.LoadFileAsync(nextFilePath,
+                        SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]));
+
                 Status("Getting ms2 scans...", thisId);
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 numMs2SpectraPerFile.Add(Path.GetFileNameWithoutExtension(origDataFile), new int[] { myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2), arrayOfMs2ScansSortedByMass.Length });
