@@ -55,6 +55,8 @@ namespace EngineLayer
             bool addTruncations = false,
             DeconvolutionParameters precursorDeconParams = null,
             DeconvolutionParameters productDeconParams = null,
+            bool useMostAbundantPrecursorIntensity = true)
+            DeconvolutionParameters productDeconParams = null,
             int maximumIdentificationsPerSpectrum = 7)
 
         {
@@ -87,6 +89,7 @@ namespace EngineLayer
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
             MS3ChildScanDissociationType = ms3childScanDissociationType;
+            UseMostAbundantPrecursorIntensity = useMostAbundantPrecursorIntensity;
             MaximumIdentificationsPerSpectrum = maximumIdentificationsPerSpectrum;
 
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
@@ -176,6 +179,9 @@ namespace EngineLayer
 
         public DissociationType MS2ChildScanDissociationType { get; private set; }
         public DissociationType MS3ChildScanDissociationType { get; private set; }
+
+        public bool UseMostAbundantPrecursorIntensity { get; set; }
+        
         public int MaximumIdentificationsPerSpectrum { get; set; }
 
         public CommonParameters Clone()

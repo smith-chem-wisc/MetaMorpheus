@@ -352,8 +352,9 @@ namespace TaskLayer
                 if (spectralLibrary != null)
                 {
                     Status("Calculating spectral library similarity...", thisId);
+                    SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
+                    ReportProgress(new ProgressEventArgs(100, "Done with search!", thisId));
                 }
-                SpectralLibrarySearchFunction.CalculateSpectralAngles(spectralLibrary, fileSpecificPsms, arrayOfMs2ScansSortedByMass, combinedParams);
 
                 lock (psmLock)
                 {
