@@ -17,21 +17,22 @@ namespace EngineLayer.FdrAnalysis
         private readonly bool DoPEP;
 
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
-            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
+            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", 
+            bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms.ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             AnalysisType = analysisType;
             this.OutputFolder = outputFolder;
             this.DoPEP = doPEP;
-            if (psms[0].FdrInfo == null)
+            if (AllPsms.Any())
                 AddPsmAndPeptideFdrInfoIfNotPresent();
             if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
         }
 
         private void AddPsmAndPeptideFdrInfoIfNotPresent()
         {
-            foreach (var psm in AllPsms)
+            foreach (var psm in AllPsms.Where(p=>Equals(p.FdrInfo,null)))
             {
                 psm.PsmFdrInfo = new FdrInfo();                
                 psm.PeptideFdrInfo = new FdrInfo();
