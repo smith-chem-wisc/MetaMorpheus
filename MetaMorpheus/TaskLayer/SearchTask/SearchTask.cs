@@ -18,8 +18,6 @@ using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
-using Readers;
-using ThermoFisher.CommonCore.Data;
 
 namespace TaskLayer
 {
