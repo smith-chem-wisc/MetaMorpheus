@@ -1,14 +1,12 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using OxyPlot;
-using Proteomics;
 using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Windows.Media;
 
 namespace GuiFunctions
@@ -147,108 +145,7 @@ namespace GuiFunctions
             // If no default settings are saved
             string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
             if (!File.Exists(settingsPath))
-            {
-                // default color of each fragment to annotate
-                ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
-                ProductTypeToColor[ProductType.a] = OxyColors.DarkOrange;
-                ProductTypeToColor[ProductType.aBaseLoss] = OxyColors.SandyBrown;
-                ProductTypeToColor[ProductType.aWaterLoss] = OxyColors.Orange;
-                ProductTypeToColor[ProductType.b] = OxyColors.Blue;
-                ProductTypeToColor[ProductType.bBaseLoss] = OxyColors.DarkSlateBlue;
-                ProductTypeToColor[ProductType.bAmmoniaLoss] = OxyColors.DarkSlateBlue;
-                ProductTypeToColor[ProductType.bWaterLoss] = OxyColors.LightBlue;
-                ProductTypeToColor[ProductType.c] = OxyColors.Gold;
-                ProductTypeToColor[ProductType.cBaseLoss] = OxyColors.Goldenrod;
-                ProductTypeToColor[ProductType.cWaterLoss] = OxyColors.Khaki;
-                ProductTypeToColor[ProductType.d] = OxyColors.Purple;
-                ProductTypeToColor[ProductType.dBaseLoss] = OxyColors.DarkViolet;
-                ProductTypeToColor[ProductType.dWaterLoss] = OxyColors.MediumPurple;
-
-                ProductTypeToColor[ProductType.w] = OxyColors.Green;
-                ProductTypeToColor[ProductType.wBaseLoss] = OxyColors.DarkGreen;
-                ProductTypeToColor[ProductType.wWaterLoss] = OxyColors.LightGreen;
-                ProductTypeToColor[ProductType.x] = OxyColors.Peru;
-                ProductTypeToColor[ProductType.xBaseLoss] = OxyColors.Sienna;
-                ProductTypeToColor[ProductType.xWaterLoss] = OxyColors.BurlyWood;
-                ProductTypeToColor[ProductType.y] = OxyColors.Red;
-                ProductTypeToColor[ProductType.yBaseLoss] = OxyColors.DarkSalmon;
-                ProductTypeToColor[ProductType.yAmmoniaLoss] = OxyColors.DarkSalmon;
-                ProductTypeToColor[ProductType.yWaterLoss] = OxyColors.Tomato;
-                ProductTypeToColor[ProductType.z] = OxyColors.Magenta;
-                ProductTypeToColor[ProductType.zBaseLoss] = OxyColors.DarkMagenta;
-                ProductTypeToColor[ProductType.zWaterLoss] = OxyColors.Plum;
-
-                ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
-                ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
-                ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
-
-                // default color of each fragment to annotate
-                BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
-                BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
-                BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
-                BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
-                BetaProductTypeToColor[ProductType.c] = OxyColors.Orange;
-                BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
-                BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
-
-                #region Setting Color Defaults
-
-                    ModificationTypeToColor = GlobalVariables.AllModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
-                    
-                    // setting whole groups
-                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Common Biological").Select(p => p.IdWithMotif))
-                    {
-                        ModificationTypeToColor[mod] = OxyColors.Plum;
-                    }
-                    
-                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Less Common").Select(p => p.IdWithMotif))
-                    {
-                        ModificationTypeToColor[mod] = OxyColors.PowderBlue;
-                    }
-                    
-                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Common Artifact").Select(p => p.IdWithMotif))
-                    {
-                        ModificationTypeToColor[mod] = OxyColors.Teal;
-                    }
-                    
-                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Metal").Select(p => p.IdWithMotif))
-                    {
-                        ModificationTypeToColor[mod] = OxyColors.Maroon;
-                    }
-                    
-                    foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType.Contains("Glycosylation")).Select(p => p.IdWithMotif))
-                    {
-                        ModificationTypeToColor[mod] = OxyColors.Maroon;
-                    }
-
-                    // setting individual specific
-                    foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Phosphorylation")))
-                    {
-                        ModificationTypeToColor[mod.Key] = OxyColors.Red;
-                    }
-
-                    foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Acetylation")))
-                    {
-                        ModificationTypeToColor[mod.Key] = OxyColors.Purple; ;
-                    }
-
-                    ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
-                    ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
-                    ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
-
-                    CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
-                    CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
-                    CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
-
-                    UnannotatedPeakColor = OxyColors.LightGray;
-                    InternalIonColor = OxyColors.Purple;
-
-                #endregion
-
-                // lines to be written on the spectrum
-                SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
-                SpectrumDescription["Spectral Angle: "] = true;
-            }
+                SetDefaultColors();
             
             // offset for annotation on base sequence
             ProductTypeToYOffset = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => 0.0);
@@ -325,6 +222,110 @@ namespace GuiFunctions
             PossibleColors = AllColors.ToDictionary(p => p, p => p.GetColorName());
         }
 
+        private static void SetDefaultColors()
+        {
+            // default color of each fragment to annotate
+            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            ProductTypeToColor[ProductType.a] = OxyColors.DarkOrange;
+            ProductTypeToColor[ProductType.aBaseLoss] = OxyColors.SandyBrown;
+            ProductTypeToColor[ProductType.aWaterLoss] = OxyColors.Orange;
+            ProductTypeToColor[ProductType.b] = OxyColors.Blue;
+            ProductTypeToColor[ProductType.bBaseLoss] = OxyColors.DarkSlateBlue;
+            ProductTypeToColor[ProductType.bAmmoniaLoss] = OxyColors.DarkSlateBlue;
+            ProductTypeToColor[ProductType.bWaterLoss] = OxyColors.LightBlue;
+            ProductTypeToColor[ProductType.c] = OxyColors.Gold;
+            ProductTypeToColor[ProductType.cBaseLoss] = OxyColors.Goldenrod;
+            ProductTypeToColor[ProductType.cWaterLoss] = OxyColors.Khaki;
+            ProductTypeToColor[ProductType.d] = OxyColors.Purple;
+            ProductTypeToColor[ProductType.dBaseLoss] = OxyColors.DarkViolet;
+            ProductTypeToColor[ProductType.dWaterLoss] = OxyColors.MediumPurple;
+
+            ProductTypeToColor[ProductType.w] = OxyColors.Green;
+            ProductTypeToColor[ProductType.wBaseLoss] = OxyColors.DarkGreen;
+            ProductTypeToColor[ProductType.wWaterLoss] = OxyColors.LightGreen;
+            ProductTypeToColor[ProductType.x] = OxyColors.Peru;
+            ProductTypeToColor[ProductType.xBaseLoss] = OxyColors.Sienna;
+            ProductTypeToColor[ProductType.xWaterLoss] = OxyColors.BurlyWood;
+            ProductTypeToColor[ProductType.y] = OxyColors.Red;
+            ProductTypeToColor[ProductType.yBaseLoss] = OxyColors.DarkSalmon;
+            ProductTypeToColor[ProductType.yAmmoniaLoss] = OxyColors.DarkSalmon;
+            ProductTypeToColor[ProductType.yWaterLoss] = OxyColors.Tomato;
+            ProductTypeToColor[ProductType.z] = OxyColors.Magenta;
+            ProductTypeToColor[ProductType.zBaseLoss] = OxyColors.DarkMagenta;
+            ProductTypeToColor[ProductType.zWaterLoss] = OxyColors.Plum;
+
+            ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
+            ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
+            ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
+
+            // default color of each fragment to annotate
+            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
+            BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
+            BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
+            BetaProductTypeToColor[ProductType.c] = OxyColors.Orange;
+            BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
+            BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
+
+            #region Setting Color Defaults
+
+            ModificationTypeToColor = GlobalVariables.AllModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
+
+            // setting whole groups
+            foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Common Biological").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Plum;
+            }
+
+            foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Less Common").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.PowderBlue;
+            }
+
+            foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Common Artifact").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Teal;
+            }
+
+            foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Metal").Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Maroon;
+            }
+
+            foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType.Contains("Glycosylation")).Select(p => p.IdWithMotif))
+            {
+                ModificationTypeToColor[mod] = OxyColors.Maroon;
+            }
+
+            // setting individual specific
+            foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Phosphorylation")))
+            {
+                ModificationTypeToColor[mod.Key] = OxyColors.Red;
+            }
+
+            foreach (var mod in ModificationTypeToColor.Where(p => p.Key.Contains("Acetylation")))
+            {
+                ModificationTypeToColor[mod.Key] = OxyColors.Purple; ;
+            }
+
+            ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
+            ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
+            ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
+
+            CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
+            CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
+            CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
+
+            UnannotatedPeakColor = OxyColors.LightGray;
+            InternalIonColor = OxyColors.Purple;
+
+            #endregion
+
+            // lines to be written on the spectrum
+            SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
+            SpectrumDescription["Spectral Angle: "] = true;
+        }
+
 
         /// <summary>
         /// Create an instance of the metadraw settings to be saved
@@ -388,19 +389,39 @@ namespace GuiFunctions
             LocalizationLevelStart = settings.LocalizationLevelStart;
             LocalizationLevelEnd = settings.LocalizationLevelEnd;
             ExportType = settings.ExportType;
-            AnnotatedFontSize = settings.AnnotatedFontSize;
-            AxisTitleTextSize = settings.AxisTitleTextSize;
-            AxisLabelTextSize = settings.AxisLabelTextSize;
-            StrokeThicknessUnannotated = settings.StrokeThicknessUnannotated;
-            StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated;
+            AnnotatedFontSize = settings.AnnotatedFontSize == 0 ? 14 : settings.AnnotatedFontSize;
+            AxisTitleTextSize = settings.AxisTitleTextSize == 0 ? 14 : settings.AxisTitleTextSize;
+            AxisLabelTextSize = settings.AxisLabelTextSize == 0 ? 12 : settings.AxisLabelTextSize;
+            StrokeThicknessUnannotated = settings.StrokeThicknessUnannotated == 0 ? 0.7 : settings.StrokeThicknessUnannotated;
+            StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated == 0 ? 1 : settings.StrokeThicknessAnnotated;
 
-            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
-            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.BetaProductTypeToColorValues[Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
-            ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
-            CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => DrawnSequence.ParseOxyColorFromName(settings.CoverageTypeToColorValues[Array.IndexOf(CoverageTypes, p)]));
-            SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
-            UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
-            InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
+            try
+            {
+                SetDefaultColors();
+                ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p,
+                    p => DrawnSequence.ParseOxyColorFromName(
+                        settings.ProductTypeToColorValues[
+                            Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
+                BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p,
+                    p => DrawnSequence.ParseOxyColorFromName(
+                        settings.BetaProductTypeToColorValues[
+                            Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
+                ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p,
+                    p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[
+                        Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
+                CoverageTypeToColor = CoverageTypes.ToDictionary(p => p,
+                    p => DrawnSequence.ParseOxyColorFromName(
+                        settings.CoverageTypeToColorValues[Array.IndexOf(CoverageTypes, p)]));
+                SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p,
+                    p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
+                UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
+                InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
+            }
+            catch (Exception)
+            {
+                SetDefaultColors();
+                Debugger.Break();
+            }
         }
 
         /// <summary>
@@ -439,6 +460,7 @@ namespace GuiFunctions
             AxisLabelTextSize = 12;
             StrokeThicknessUnannotated = 0.7;
             StrokeThicknessAnnotated = 1.0;
+            SetDefaultColors();
         }
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
