@@ -137,7 +137,14 @@ namespace GuiFunctions
 
         private static void InitializeDictionaries()
         {
-            // If no default settings are saved
+            // Initialize dictionaries with dummy values
+            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            ModificationTypeToColor = GlobalVariables.AllModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
+            SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
+            CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
+
+            // If no default settings are saved, load in defaults
             string settingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
             if (!File.Exists(settingsPath))
                 SetDefaultColors();
@@ -217,10 +224,69 @@ namespace GuiFunctions
             PossibleColors = AllColors.ToDictionary(p => p, p => p.GetColorName());
         }
 
+        // These methods operate on the static properties and dictionaries instantiated in the static constructor
+        // These override the simple instantiated settings and should only be modified in these methods. Adding a new key should occur in the MetaDrawSettingsSnapshot
+        #region Default Settings Methods
+
+        /// <summary>
+        /// Used to reset the settings to their default value, particularly needed for unit testing
+        /// </summary>
+        public static void ResetSettings()
+        {
+            InitializeDictionaries();
+            DrawMatchedIons = true;
+            DisplayIonAnnotations = true;
+            AnnotateMzValues = false;
+            AnnotateCharges = false;
+            AnnotationBold = false;
+            DisplayInternalIons = true;
+            DisplayInternalIonAnnotations = true;
+            SubAndSuperScriptIons = true;
+            DrawStationarySequence = true;
+            DrawNumbersUnderStationary = true;
+            ShowLegend = true;
+            ShowDecoys = false;
+            ShowContaminants = true;
+            QValueFilter = 0.01;
+            AmbiguityFilter = "No Filter";
+            LocalizationLevelStart = LocalizationLevel.Level1;
+            LocalizationLevelEnd = LocalizationLevel.Level3;
+            DrawMatchedIons = true;
+            AnnotatedFontSize = 12;
+            SequenceAnnotaitonResiduesPerSegment = 10;
+            SequenceAnnotationSegmentPerRow = 3;
+            ExportType = "Pdf";
+            UnannotatedPeakColor = OxyColors.LightGray;
+            InternalIonColor = OxyColors.Purple;
+            CanvasPdfExportDpi = 600;
+            AnnotatedFontSize = 14;
+            AxisTitleTextSize = 14;
+            AxisLabelTextSize = 12;
+            StrokeThicknessUnannotated = 0.7;
+            StrokeThicknessAnnotated = 1.0;
+            SetDefaultColors();
+        }
+
+        /// <summary>
+        /// Sets all default color settings
+        /// </summary>
         private static void SetDefaultColors()
         {
-            // default color of each fragment to annotate
-            ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            SetDefaultProductTypeColors();
+            SetDefaultBetaProductTypeColors();
+            SetDefaultCoverageTypeColors();
+            SetDefaultModificationColors();
+            SetDefaultSpectrumDescriptors();
+
+            UnannotatedPeakColor = OxyColors.LightGray;
+            InternalIonColor = OxyColors.Purple;
+        }
+
+        /// <summary>
+        /// Color to plot matched fragment ion peaks
+        /// </summary>
+        private static void SetDefaultProductTypeColors()
+        {
             ProductTypeToColor[ProductType.a] = OxyColors.DarkOrange;
             ProductTypeToColor[ProductType.aBaseLoss] = OxyColors.SandyBrown;
             ProductTypeToColor[ProductType.aWaterLoss] = OxyColors.Orange;
@@ -252,20 +318,26 @@ namespace GuiFunctions
             ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
             ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
             ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
+        }
 
-            // default color of each fragment to annotate
-            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+        /// <summary>
+        /// Color to plot matched fragment ion peaks derived from beta peptides
+        /// </summary>
+        private static void SetDefaultBetaProductTypeColors()
+        {
             BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
             BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
             BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
             BetaProductTypeToColor[ProductType.c] = OxyColors.Orange;
             BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
             BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
+        }
 
-            #region Setting Color Defaults
-
-            ModificationTypeToColor = GlobalVariables.AllModsKnownDictionary.Values.ToDictionary(p => p.IdWithMotif, p => OxyColors.Orange);
-
+        /// <summary>
+        /// Color to annotate modifications in the annotated sequence
+        /// </summary>
+        private static void SetDefaultModificationColors()
+        {
             // setting whole groups
             foreach (var mod in GlobalVariables.AllModsKnownDictionary.Values.Where(p => p.ModificationType == "Common Biological").Select(p => p.IdWithMotif))
             {
@@ -306,25 +378,40 @@ namespace GuiFunctions
             ModificationTypeToColor["Carbamidomethyl on C"] = OxyColors.Green;
             ModificationTypeToColor["Carbamidomethyl on U"] = OxyColors.Green;
             ModificationTypeToColor["Oxidation on M"] = OxyColors.HotPink;
+        }
 
-            CoverageTypeToColor = CoverageTypes.ToDictionary(p => p, p => OxyColors.Blue);
-            CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
-            CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
-
-            UnannotatedPeakColor = OxyColors.LightGray;
-            InternalIonColor = OxyColors.Purple;
-
-            #endregion
-
-            // lines to be written on the spectrum
-            SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p, p => true);
+        /// <summary>
+        /// Lines to be written on the spectrum in the upper right hand corner
+        /// </summary>
+        private static void SetDefaultSpectrumDescriptors()
+        {
             SpectrumDescription["Spectral Angle: "] = true;
         }
 
+        /// <summary>
+        /// Colors for the sequence coverage view
+        /// TODO: Add colors for beta product ions
+        /// </summary>
+        private static void SetDefaultCoverageTypeColors()
+        {
+            CoverageTypeToColor["N-Terminal Color"] = OxyColors.Blue;
+            CoverageTypeToColor["C-Terminal Color"] = OxyColors.Red;
+            CoverageTypeToColor["Internal Color"] = OxyColors.Purple;
+        }
+
+        #endregion
+
+        #region IO
 
         /// <summary>
-        /// Create an instance of the metadraw settings to be saved
+        /// Create an instance of the MetaDraw settings to be saved
         /// </summary>
+        /// 
+        /// <remarks>
+        /// On 6/27/24 the method was changed to output the key and value of all settings dictionaries,
+        /// all settings files from before will revert to the default settings
+        /// This will make the saved settings files significantly more robust to changes in the future
+        /// </remarks>
         /// <returns></returns>
         public static MetaDrawSettingsSnapshot MakeSnapShot()
         {
@@ -347,11 +434,11 @@ namespace GuiFunctions
                 LocalizationLevelStart = LocalizationLevelStart,
                 LocalizationLevelEnd = LocalizationLevelEnd,
                 ExportType = ExportType,
-                ProductTypeToColorValues = ProductTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
-                BetaProductTypeToColorValues = BetaProductTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
-                ModificationTypeToColorValues = ModificationTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
-                CoverageTypeToColorValues = CoverageTypeToColor.Values.Select(p => p.GetColorName()).ToList(),
-                SpectrumDescriptionValues = SpectrumDescription.Values.ToList(),
+                ProductTypeToColorValues = ProductTypeToColor.Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList(),
+                ModificationTypeToColorValues = ModificationTypeToColor.Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList(),
+                CoverageTypeToColorValues = CoverageTypeToColor.Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList(),
+                BetaProductTypeToColorValues = BetaProductTypeToColor.Select(p => $"{p.Key},{p.Value.GetColorName()}").ToList(),
+                SpectrumDescriptionValues = SpectrumDescription.Select(p => $"{p.Key},{p.Value}").ToList(),
                 UnannotatedPeakColor = UnannotatedPeakColor.GetColorName(),
                 InternalIonColor = InternalIonColor.GetColorName(),
                 AnnotatedFontSize = AnnotatedFontSize,
@@ -389,74 +476,172 @@ namespace GuiFunctions
             AxisLabelTextSize = settings.AxisLabelTextSize == 0 ? 12 : settings.AxisLabelTextSize;
             StrokeThicknessUnannotated = settings.StrokeThicknessUnannotated == 0 ? 0.7 : settings.StrokeThicknessUnannotated;
             StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated == 0 ? 1 : settings.StrokeThicknessAnnotated;
+            UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
+            InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
 
-            try
+            try // Product Type Colors
             {
-                SetDefaultColors();
-                ProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p,
-                    p => DrawnSequence.ParseOxyColorFromName(
-                        settings.ProductTypeToColorValues[
-                            Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
-                BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p,
-                    p => DrawnSequence.ParseOxyColorFromName(
-                        settings.BetaProductTypeToColorValues[
-                            Array.IndexOf(((ProductType[])Enum.GetValues(typeof(ProductType))), p)]));
-                ModificationTypeToColor = GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToDictionary(p => p,
-                    p => DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[
-                        Array.IndexOf(GlobalVariables.AllModsKnown.Select(p => p.IdWithMotif).ToArray(), p)]));
-                CoverageTypeToColor = CoverageTypes.ToDictionary(p => p,
-                    p => DrawnSequence.ParseOxyColorFromName(
-                        settings.CoverageTypeToColorValues[Array.IndexOf(CoverageTypes, p)]));
-                SpectrumDescription = SpectrumDescriptors.ToDictionary(p => p,
-                    p => settings.SpectrumDescriptionValues[Array.IndexOf(SpectrumDescriptors, p)]);
-                UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
-                InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
+                var firstSplit = settings.ProductTypeToColorValues.First().Split(',');
+                switch (firstSplit.Length)
+                {
+                    case 1  // if it is an old settings file
+                    when settings.ProductTypeToColorValues.Count == ProductTypeToColor.Count
+                    : // if they have the same number of elements, assume they are in the correct order
+                    {
+                        for (int i = 0; i < settings.ProductTypeToColorValues.Count; i++)
+                            ProductTypeToColor[ProductTypeToColor.ElementAt(i).Key] = DrawnSequence.ParseOxyColorFromName(settings.ProductTypeToColorValues[i]);
+                        break;
+                    }
+                    // if it is a new settings file, assign colors by name
+                    case 2:
+                    {
+                        foreach (var savedProductType in settings.ProductTypeToColorValues)
+                        {
+                            var key = Enum.Parse<ProductType>(savedProductType.Split(',')[0]);
+                            if (ProductTypeToColor.ContainsKey(key))
+                                ProductTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
+                        }
+
+                        break;
+                    }
+                }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                SetDefaultColors();
+                Debugger.Break();
+            }
+
+            try // Beta Product Type Colors
+            {
+
+                var firstSplit = settings.BetaProductTypeToColorValues.First().Split(',');
+                switch (firstSplit.Length)
+                {
+                    case 1  // if it is an old settings file
+                        when settings.BetaProductTypeToColorValues.Count == BetaProductTypeToColor.Count
+                        : // if they have the same number of elements, assume they are in the correct order
+                    {
+                        for (int i = 0; i < settings.BetaProductTypeToColorValues.Count; i++)
+                            BetaProductTypeToColor[BetaProductTypeToColor.ElementAt(i).Key] = DrawnSequence.ParseOxyColorFromName(settings.BetaProductTypeToColorValues[i]);
+                        break;
+                    }
+                    // if it is a new settings file, assign colors by name
+                    case 2:
+                    {
+                        foreach (var savedProductType in settings.BetaProductTypeToColorValues)
+                        {
+                            var key = Enum.Parse<ProductType>(savedProductType.Split(',')[0]);
+                            if (BetaProductTypeToColor.ContainsKey(key))
+                                BetaProductTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
+                        }
+
+                        break;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debugger.Break();
+            }
+
+            try // Modification Type Colors
+            {
+                var firstSplit = settings.ModificationTypeToColorValues.First().Split(',');
+                switch (firstSplit.Length)
+                {
+                    case 1 // if it is an old settings file
+                        when settings.ModificationTypeToColorValues.Count == ModificationTypeToColor.Count
+                        : // if they have the same number of mods as the default settings, assume they are in the correct order
+                    {
+                        for (int i = 0; i < settings.ModificationTypeToColorValues.Count; i++)
+                            ModificationTypeToColor[ModificationTypeToColor.ElementAt(i).Key] = DrawnSequence.ParseOxyColorFromName(settings.ModificationTypeToColorValues[i]);
+                        break;
+                    }
+                    // if it is a new settings file, assign colors by name
+                    case 2:
+                    {
+                        foreach (var savedProductType in settings.ModificationTypeToColorValues)
+                        {
+                            var key = savedProductType.Split(',')[0];
+                            if (ModificationTypeToColor.ContainsKey(key))
+                                ModificationTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
+                        }
+
+                        break;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debugger.Break();
+            }
+
+            try // Coverage Type Colors
+            {
+                var firstSplit = settings.CoverageTypeToColorValues.First().Split(',');
+                switch (firstSplit.Length)
+                {
+                    case 1 // if it is an old settings file
+                        when settings.CoverageTypeToColorValues.Count == CoverageTypeToColor.Count
+                        : // if they have the same number of mods as the default settings, assume they are in the correct order
+                    {
+                        for (int i = 0; i < settings.CoverageTypeToColorValues.Count; i++)
+                            CoverageTypeToColor[CoverageTypeToColor.ElementAt(i).Key] = DrawnSequence.ParseOxyColorFromName(settings.CoverageTypeToColorValues[i]);
+                        break;
+                    }
+                    // if it is a new settings file, assign colors by name
+                    case 2:
+                    {
+                        foreach (var savedProductType in settings.CoverageTypeToColorValues)
+                        {
+                            var key = savedProductType.Split(',')[0];
+                            if (CoverageTypeToColor.ContainsKey(key))
+                                CoverageTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
+                        }
+
+                        break;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debugger.Break();
+            }
+
+            try // Spectrum Descriptors
+            {
+                var firstSplit = settings.SpectrumDescriptionValues.First().Split(',');
+                switch (firstSplit.Length)
+                {
+                    case 1 // if it is an old settings file
+                        when settings.SpectrumDescriptionValues.Count == SpectrumDescription.Count
+                        : // if they have the same number of descriptors as the default settings, assume they are in the correct order
+                    {
+                        for (int i = 0; i < settings.SpectrumDescriptionValues.Count; i++)
+                                SpectrumDescription[SpectrumDescription.ElementAt(i).Key] = bool.Parse(settings.SpectrumDescriptionValues[i]);
+                        break;
+                    }
+                    // if it is a new settings file, assign colors by name
+                    case 2:
+                    {
+                        foreach (var savedProductType in settings.SpectrumDescriptionValues)
+                        {
+                            var key = savedProductType.Split(',')[0];
+                            if (SpectrumDescription.ContainsKey(key))
+                                    SpectrumDescription[key] = bool.Parse(savedProductType.Split(',')[1]);
+                        }
+
+                        break;
+                    }
+                }
+            }
+            catch (Exception e)
+            {
                 Debugger.Break();
             }
         }
 
-        /// <summary>
-        /// Used to reset the settings to their default value, particullary needed for unit testing
-        /// </summary>
-        public static void ResetSettings()
-        {
-            InitializeDictionaries();
-            DrawMatchedIons = true;
-            DisplayIonAnnotations  = true;
-            AnnotateMzValues = false;
-            AnnotateCharges = false;
-            AnnotationBold = false;
-            DisplayInternalIons = true;
-            DisplayInternalIonAnnotations = true;
-            SubAndSuperScriptIons = true;
-            DrawStationarySequence = true;
-            DrawNumbersUnderStationary = true;
-            ShowLegend = true;
-            ShowDecoys = false;
-            ShowContaminants = true;
-            QValueFilter = 0.01;
-            AmbiguityFilter = "No Filter";
-            LocalizationLevelStart = LocalizationLevel.Level1;
-            LocalizationLevelEnd = LocalizationLevel.Level3;
-            DrawMatchedIons  = true;
-            AnnotatedFontSize = 12;
-            SequenceAnnotaitonResiduesPerSegment = 10;
-            SequenceAnnotationSegmentPerRow = 3;
-            ExportType = "Pdf";
-            UnannotatedPeakColor = OxyColors.LightGray;
-            InternalIonColor = OxyColors.Purple;
-            CanvasPdfExportDpi = 600;
-            AnnotatedFontSize = 14;
-            AxisTitleTextSize = 14;
-            AxisLabelTextSize = 12;
-            StrokeThicknessUnannotated = 0.7;
-            StrokeThicknessAnnotated = 1.0;
-            SetDefaultColors();
-        }
+        #endregion
 
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue)
         {

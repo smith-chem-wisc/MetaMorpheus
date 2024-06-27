@@ -186,6 +186,9 @@
     <None Update="indexEngineTestFasta.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="MetaDraw\105MetaDrawSettingsSaved.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="sliced-db.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
