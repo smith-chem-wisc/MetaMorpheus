@@ -937,7 +937,7 @@ namespace TaskLayer
                         WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                     }
 
-                    FilterAndGroupAllPsms(psmsForThisFile,true,Parameters.SearchParameters.WriteDecoys,Parameters.SearchParameters.WriteContaminants,false);
+                    FilterAndGroupAllPsms(psmsForThisFile,true,Parameters.SearchParameters.WriteDecoys, Parameters.SearchParameters.WriteContaminants,false);
                     // write mzID
                     if (Parameters.SearchParameters.WriteMzId)
                     {
