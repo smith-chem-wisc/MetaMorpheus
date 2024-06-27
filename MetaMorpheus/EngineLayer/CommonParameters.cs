@@ -40,7 +40,7 @@ namespace EngineLayer
             double? windowWidthThomsons = null, 
             int? numberOfWindows = null, 
             bool normalizePeaksAccrossAllWindows = false, 
-            bool trimMs1Peaks = false, 
+            bool trimMs1Peaks = false,
             bool trimMsMsPeaks = true, 
             Tolerance productMassTolerance = null, 
             Tolerance precursorMassTolerance = null, 
@@ -186,7 +186,6 @@ namespace EngineLayer
             {
                 property.SetValue(c, property.GetValue(this));
             }
-
             return c;
         }
 
@@ -197,7 +196,6 @@ namespace EngineLayer
             {
                 property.SetValue(c, property.GetValue(this));
             }
-
             c.DissociationType = dissociationType;
             return c;
         }
@@ -213,7 +211,6 @@ namespace EngineLayer
             {
                 addCompIons = AddCompIons;
             }
-
             return new CommonParameters(
                 TaskDescriptor,
                 DissociationType,

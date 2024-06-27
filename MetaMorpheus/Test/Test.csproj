@@ -552,6 +552,9 @@
     <None Update="TMT_test\VA084TQ_6.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TopDownTestData\HighlyChimeric.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TopDownTestData\HighlyChimeric.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

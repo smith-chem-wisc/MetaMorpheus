@@ -36,26 +36,7 @@ namespace TaskLayer
         private string _filterType;
         private double _filterThreshold;
 
-        /// <summary>
-        /// ONLY CALL THIS FUNCTION AFTER FDR HAS BEEN CALCULATED
-        /// A function which can be used to remove excessive chimeras from the list of spectral matches.
-        /// 
-        /// Use this in a custom task by setting it to a lambda function that takes a list of spectral matches and returns a list of spectral matches.
-        ///
-        /// It will first group the spectral matches by MS2 and MS1 Scan Numbers and data file with the custom comparer and order them
-        /// IT will then take the top n identifications for each group where n is the maximum number of identifications per spectrum from common parameters of the search task
-        /// </summary>
-        public Func<(List<SpectralMatch> SpectralMatches, int MaxIdentifications), List<SpectralMatch>>
-            ExcessiveChimeraRemover = spectralMatches =>
-            {
-                return spectralMatches.SpectralMatches.GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
-                    .Select(chimeraGroup => chimeraGroup
-                        .OrderByDescending(p => p))
-                    .SelectMany(chimeraGroup => chimeraGroup.Take(spectralMatches.MaxIdentifications))
-                    .OrderByDescending(b => b)
-                    .ToList();
-            };
-
+        
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
@@ -163,13 +144,14 @@ namespace TaskLayer
             // after pep or q value filtering ,group by chimera,
             // order in each group by q value,
             // return top n in each group where n the maximum number of ids per spectrum
-            _filteredPsms = ExcessiveChimeraRemover(((_filterType.Equals("q-value")
+            _filteredPsms = _filterType.Equals("q-value")
                 ? Parameters.AllPsms.Where(p =>
-                    p.FdrInfo.QValue <= _filterThreshold
-                    && p.FdrInfo.QValueNotch <= _filterThreshold)
+                        p.FdrInfo.QValue <= _filterThreshold
+                        && p.FdrInfo.QValueNotch <= _filterThreshold)
+                    .ToList()
                 : Parameters.AllPsms.Where(p =>
-                    p.FdrInfo.PEP_QValue <= _filterThreshold)).ToList(),
-                CommonParameters.MaximumIdentificationsPerSpectrum));
+                        p.FdrInfo.PEP_QValue <= _filterThreshold)
+                    .ToList();
 
             // This property is used for calculating file specific results, which requires calculating
             // FDR separately for each file. Therefore, no filtering is performed
@@ -192,9 +174,6 @@ namespace TaskLayer
         /// <param name="psmOrPeptideCountForResults"> The number of target psms scoring below threshold </param>
         private void FilterSpecificPsms(ref List<SpectralMatch> fileSpecificPsmsOrPeptides, out int psmOrPeptideCountForResults)
         {
-            fileSpecificPsmsOrPeptides = ExcessiveChimeraRemover((fileSpecificPsmsOrPeptides, CommonParameters.MaximumIdentificationsPerSpectrum));
-                
-
             psmOrPeptideCountForResults = _filterType.Equals("q-value")
                 ? fileSpecificPsmsOrPeptides.Count(p =>
                     !p.IsDecoy
@@ -705,14 +684,9 @@ namespace TaskLayer
                 ? Parameters.AllPsms.Where(p =>
                         (Parameters.SearchParameters.WriteDecoys || !p.IsDecoy)
                         && (Parameters.SearchParameters.WriteContaminants || !p.IsContaminant))
-                    .GroupBy(p => p, CustomComparer<SpectralMatch>.SMChimeraComparer)
-                    .Select(chimeraGroup => chimeraGroup
-                        .OrderBy(p => p.FdrInfo.QValue)
-                        .ThenBy(psm => psm.FdrInfo.PEP_QValue)
-                        .ThenBy(psm => psm.Score))
-                    .SelectMany(chimeraGroup => chimeraGroup.Take(CommonParameters.MaximumIdentificationsPerSpectrum))
                     .ToList()
                 : thresholdPsmList;
+            filteredPsmListForOutput.RemoveExcessChimericIdentifications(CommonParameters.MaximumIdentificationsPerSpectrum);
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
@@ -762,6 +736,7 @@ namespace TaskLayer
                         new List<string> { Parameters.SearchTaskId }, doPEP: false).Run();
 
                     FilterSpecificPsms(ref psmsForThisFile, out psmOrPeptideCountForResults);
+                    psmsForThisFile.RemoveExcessChimericIdentifications(CommonParameters.MaximumIdentificationsPerSpectrum);
 
                     // write summary text
                     Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
@@ -1355,6 +1330,7 @@ namespace TaskLayer
                 "Peptide", doPEP: false).Run();
 
             FilterSpecificPsms(ref peptides, out int psmOrPeptideCountForResults);
+            peptides.RemoveExcessChimericIdentifications(CommonParameters.MaximumIdentificationsPerSpectrum);
 
             WritePsmsToTsv(peptides, writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
@@ -1383,6 +1359,7 @@ namespace TaskLayer
                         new List<string> { Parameters.SearchTaskId }, "Peptide", doPEP: false).Run();
 
                     FilterSpecificPsms(ref peptidesForFile, out psmOrPeptideCountForResults);
+                    peptidesForFile.RemoveExcessChimericIdentifications(CommonParameters.MaximumIdentificationsPerSpectrum);
 
                     Parameters.SearchTaskResults.AddTaskSummaryText(
                         strippedFileName + " Target " + GlobalVariables.AnalyteType.ToLower() + "s with "

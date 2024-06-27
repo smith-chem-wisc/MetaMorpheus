@@ -542,4 +542,38 @@ namespace EngineLayer
         }
 
     }
+
+    public static class SpectralMatchExtensions
+    {
+        /// <summary>
+        /// Modify a list of spectral matches in palce to remove excess chimeric identifications.
+        /// Will keep the top n identifications by the SpectralMatch CompareTo for each group where n is the
+        /// maximum number of identifications per spectrum from common parameters of the search task
+        /// 
+        /// ONLY USER IMMEDIATELY BEFORE WRITING in the PostSearchAnalysisTask
+        /// <remarks>
+        /// It will first group the spectral matches by MS2 and MS1 Scan Numbers and data file with the custom comparer and order them
+        /// IT will then take the top n identifications for each group where n is the maximum number of identifications per spectrum from common parameters of the search task
+        /// </remarks>
+        /// </summary>
+        public static void RemoveExcessChimericIdentifications(this List<SpectralMatch> spectralMatches,
+            int maxToKeepPerSpectrum)
+        {
+            foreach (var chimeraGroup in spectralMatches.GroupBy(p => p, CustomComparer<PsmFromTsv>.SMChimeraComparer))
+            {
+                if (chimeraGroup.Count() <= maxToKeepPerSpectrum)
+                    continue;
+
+                var toRemove = chimeraGroup.OrderByDescending(p => p)
+                    .Skip(maxToKeepPerSpectrum)
+                    .ToList();
+                foreach (var psm in toRemove)
+                {
+                    spectralMatches.Remove(psm);
+                }
+            }
+        }
+
+        
+    }
 }
