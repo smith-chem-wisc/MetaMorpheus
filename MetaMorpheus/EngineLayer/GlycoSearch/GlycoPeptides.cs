@@ -10,8 +10,8 @@ using Omics.Modifications;
 
 namespace EngineLayer.GlycoSearch
 {
-    public static class GlycoPeptides
-    {
+    public static class GlycoPeptides 
+    {   // a little bit confused part..., I guess the function will generate a list of isotopic intesitry of the oxonium ions.
         public static double[] ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
         {
             double[] oxoniumIonsintensities = new double[Glycan.AllOxoniumIons.Length];

@@ -1,6 +1,6 @@
 ﻿namespace EngineLayer
 {
-    public class ModBox
+    public class ModBox //The superclass of GlycanBox
     {
         //One peptide can have several modifications. The combined modifications are grouped as a modification box. Used for localization. 
         //ModBox -- a defined combination of modifications will be considered to modify on one peptide. The box means the combined group of modification. 
