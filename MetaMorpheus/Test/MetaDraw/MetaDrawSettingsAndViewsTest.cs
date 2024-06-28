@@ -16,6 +16,12 @@ namespace Test.MetaDraw
 {
     public static class MetaDrawSettingsAndViewsTest
     {
+        [SetUp]
+        public static void SetUp()
+        {
+            MetaDrawSettings.ResetSettings();
+        }
+
         [Test]
         public static void TestMetaDrawSettingsSnapshot()
         {
@@ -169,7 +175,6 @@ namespace Test.MetaDraw
         [Test]
         public static void TestOldMetaDrawSettingsFileDoesNotCrash()
         {
-            MetaDrawSettings.ResetSettings();
             // Save default values currently stored in MetaDrawSettings
             var defaultColorValues = MetaDrawSettings.ProductTypeToColor.Values.ToList();
             var defaultBetaColorValues = MetaDrawSettings.BetaProductTypeToColor.Values.ToList();

@@ -237,7 +237,7 @@ namespace GuiFunctions
             DrawMatchedIons = true;
             DisplayIonAnnotations = true;
             AnnotateMzValues = false;
-            AnnotateCharges = false;
+            AnnotateCharges = true;
             AnnotationBold = false;
             DisplayInternalIons = true;
             DisplayInternalIonAnnotations = true;
