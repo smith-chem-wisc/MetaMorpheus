@@ -110,7 +110,7 @@ namespace Test.MetaDraw
 
             snapshot.AnnotatedFontSize = 0;
             snapshot.AxisLabelTextSize = 0;
-            snapshot.AxisLabelTextSize = 0;
+            snapshot.AxisTitleTextSize = 0;
             snapshot.StrokeThicknessAnnotated = 0;
             snapshot.StrokeThicknessUnannotated = 0;
             MetaDrawSettings.LoadSettings(snapshot);
