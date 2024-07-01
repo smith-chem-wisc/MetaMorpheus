@@ -19,6 +19,9 @@ namespace Test.MetaDraw
         [SetUp]
         public static void SetUp()
         {
+            var defaultSettingsDirectory = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", "MetaDrawSettingsDefault.xml");
+            if (File.Exists(defaultSettingsDirectory))
+                File.Delete(defaultSettingsDirectory);
             MetaDrawSettings.ResetSettings();
         }
 
