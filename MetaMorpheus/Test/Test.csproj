@@ -186,6 +186,12 @@
     <None Update="indexEngineTestFasta.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="MetaDraw\105MetaDrawSettingsSavedEditedForTestCoverageFailures.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="MetaDraw\105MetaDrawSettingsSavedEditedForTestCoverageSuccess.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="MetaDraw\105MetaDrawSettingsSaved.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

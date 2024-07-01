@@ -107,6 +107,18 @@ namespace Test.MetaDraw
             Assert.That(!snapshot.ModificationTypeToColorValues.Except(modificationColorValues).Any());
             Assert.That(!snapshot.CoverageTypeToColorValues.Except(coverageColorValues).Any());
             Assert.That(!snapshot.SpectrumDescriptionValues.Except(spectrumDescriptionValues).Any());
+
+            snapshot.AnnotatedFontSize = 0;
+            snapshot.AxisLabelTextSize = 0;
+            snapshot.AxisLabelTextSize = 0;
+            snapshot.StrokeThicknessAnnotated = 0;
+            snapshot.StrokeThicknessUnannotated = 0;
+            MetaDrawSettings.LoadSettings(snapshot);
+            Assert.That(MetaDrawSettings.AnnotatedFontSize, Is.EqualTo(14));
+            Assert.That(MetaDrawSettings.AxisLabelTextSize, Is.EqualTo(12));
+            Assert.That(MetaDrawSettings.AxisTitleTextSize, Is.EqualTo(14));
+            Assert.That(MetaDrawSettings.StrokeThicknessAnnotated, Is.EqualTo(1));
+            Assert.That(MetaDrawSettings.StrokeThicknessUnannotated, Is.EqualTo(0.7));
         }
 
         [Test]
@@ -208,6 +220,18 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(1), Is.Not.EqualTo(defaultCoverageColors[1]));
             Assert.That(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(2), Is.EqualTo(OxyColors.Aqua));
             Assert.That(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(2), Is.Not.EqualTo(defaultCoverageColors[2]));
+        }
+
+        [Test] // This test passes by not crashing
+        public static void TestMetaDrawSettingsLoadSettingsCases()
+        {
+            string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"105MetaDrawSettingsSavedEditedForTestCoverageFailures.xml");
+            var snapShot = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(path);
+            MetaDrawSettings.LoadSettings(snapShot);
+
+            path = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"105MetaDrawSettingsSavedEditedForTestCoverageSuccess.xml");
+            snapShot = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(path);
+            MetaDrawSettings.LoadSettings(snapShot);
         }
 
         [Test]
