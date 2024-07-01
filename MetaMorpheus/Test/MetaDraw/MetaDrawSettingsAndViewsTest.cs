@@ -132,9 +132,11 @@ namespace Test.MetaDraw
                 // ignored
             }
 
-            Assert.That(model.Modifications.First().Children.First().SelectedColor, Is.EqualTo("Green"));
-            model.Modifications.First().Children.First().SelectionChanged("Blue");
-            Assert.That(model.Modifications.First().Children.First().SelectedColor, Is.EqualTo("Blue"));
+            var toTest = model.Modifications.SelectMany(p => p.Children)
+                .First(p => p.ModName == "Carbamidomethyl on C");
+            the Assert.That(toTest.SelectedColor, Is.EqualTo("Green"));
+            toTest.SelectionChanged("Blue");
+            Assert.That(toTest.SelectedColor, Is.EqualTo("Blue"));
             model.SaveAsDefault();
             Assert.That(model.HasDefaultSaved == true);
             model.LoadSettings();
