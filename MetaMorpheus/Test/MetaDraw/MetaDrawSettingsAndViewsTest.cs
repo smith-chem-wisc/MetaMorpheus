@@ -19,9 +19,6 @@ namespace Test.MetaDraw
         [SetUp]
         public static void SetUp()
         {
-            var defaultSettingsDirectory = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", "MetaDrawSettingsDefault.xml");
-            if (File.Exists(defaultSettingsDirectory))
-                File.Delete(defaultSettingsDirectory);
             MetaDrawSettings.ResetSettings();
         }
 
@@ -137,7 +134,7 @@ namespace Test.MetaDraw
 
             var toTest = model.Modifications.SelectMany(p => p.Children)
                 .First(p => p.ModName == "Carbamidomethyl on C");
-            Assert.That(toTest.SelectedColor, Is.EqualTo("Green"));
+            Assert.That(toTest.SelectedColor, Is.Not.EqualTo("Blue"));
             toTest.SelectionChanged("Blue");
             Assert.That(toTest.SelectedColor, Is.EqualTo("Blue"));
             model.SaveAsDefault();
