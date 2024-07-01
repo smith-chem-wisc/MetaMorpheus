@@ -6,8 +6,8 @@
         xmlns:local="clr-namespace:MetaMorpheusGUI" 
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
-        Title="Graphical Settings" Width="600" SizeToContent="Height" WindowStartupLocation="CenterScreen"
-        Height="500" MaxHeight="600">
+        Title="Graphical Settings" Width="620" SizeToContent="Height" WindowStartupLocation="CenterScreen"
+        Height="500" MaxHeight="1000">
 
     
     
@@ -28,52 +28,43 @@
             </Grid.ColumnDefinitions>
 
             <!-- left column -->
-            <StackPanel>
-                <StackPanel>
-                    <CheckBox Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
-                    <CheckBox Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
-                    <CheckBox Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
-                    <CheckBox Name="BoldTextCheckBox" Content="Bold text" Margin="5"/>
-                    <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5" />
-                    <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
-                    <CheckBox Name="ShowInternalIonsCheckBox" Content="Show internal ions" Margin="5" />
-                    <CheckBox Name="ShowInternalIonAnnotationsCheckBox" Content="Display internal ion annotations" Margin="5" />
-                    <CheckBox Name="SubSuperScriptedIonAnnotations" Content="Sub/superscripted ion annotations" Margin="5" />
+            <StackPanel Margin="5 0 0 0">
+                <GroupBox Header="Result Filtering">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <CheckBox Name="DecoysCheckBox" Content="Show decoys" Margin="5" />
+                            <CheckBox Name="ContaminantsCheckBox" Content="Show contaminants" Margin="5" />
+                        </StackPanel>
+                        
+                        <StackPanel Orientation="Horizontal" Margin="5">
+                            <Label Content="Filter to q-value:" Width="140"/>
+                            <TextBox Name ="qValueBox" Width="80" Height="24" Grid.Column="1"
+                                     VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                        </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <Label Content="Filter to q-value:" Width="140"/>
-                        <TextBox Name ="qValueBox" Width="80" Height="24" Grid.Column="1"
-                                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-                    </StackPanel>
+                        <StackPanel Margin="5">
+                            <Label Content="Filter to ambiguity level: " Width="140" />
+                            <ComboBox x:Name="AmbiguityFilteringComboBox" Width="80" ItemsSource="{Binding}"
+                                      VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
+                        </StackPanel>
 
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <Label Content="Filter to ambiguity level: " Width="140" />
-                        <ComboBox x:Name="AmbiguityFilteringComboBox" Width="80" ItemsSource="{Binding}"
-                                  VerticalContentAlignment="Center" HorizontalContentAlignment="Center"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" Margin="5">
-                        <Label Content="Text size:" Width="140"/>
-                        <TextBox Name ="TextSizeBox" Width="80" Height="24" 
-                                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                    </StackPanel>
-
-                    <!-- glycan localization level -->
-                    <StackPanel Orientation="Vertical">
-                        <Label Content="Glycan Localization Level:" Margin="5" HorizontalAlignment="Center"/>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20 0 20 0">
-                            <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24"  />
-                            <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" />
+                        <!-- glycan localization level -->
+                        <StackPanel >
+                            <Label Content="Glycan Localization Level:" Margin="5" HorizontalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="20 0 20 0">
+                                <ComboBox Name="CmbGlycanLocalizationLevelStart" Height="24"  />
+                                <ComboBox Name="CmbGlycanLocalizationLevelEnd" Height="24" />
+                            </StackPanel>
                         </StackPanel>
                     </StackPanel>
-                    
-                    <!-- exportation type options -->
-                    <StackPanel>
-                        <Label Content="Export File Type" Margin="5" HorizontalAlignment="Center" />
-                        <ComboBox x:Name="ExportFileFormatComboBox" Height="24" HorizontalAlignment="Center" 
-                                  HorizontalContentAlignment="Center" Margin="20 0 20 5" 
-                                  ItemsSource="{Binding}"/>
-                    </StackPanel>
+                </GroupBox>
+
+                <!-- exportation type options -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                    <Label Content="Export File Type" Margin="5" HorizontalAlignment="Center" />
+                    <ComboBox x:Name="ExportFileFormatComboBox" Height="24" HorizontalAlignment="Center" 
+                              HorizontalContentAlignment="Center" Margin="10" 
+                              ItemsSource="{Binding}"/>
                 </StackPanel>
             </StackPanel>
 
@@ -82,7 +73,7 @@
                                 VerticalAlignment="Stretch"
                                 HorizontalAlignment="Center"
                                 Background="Transparent"
-                                Width="5"
+                                Width="2"
                                 Margin="20,0,0,0"/>
 
             <!-- right column -->
@@ -90,49 +81,123 @@
                 <StackPanel>
 
                     <!-- Spectrum Customization Options -->
-                    <GroupBox Header="Spectrum Customization" x:Name="SpectrumCustomization" >
+                    <GroupBox Header="Spectral Match Display" x:Name="SpectrumCustomization" >
                         <StackPanel>
+                            
+                            <Grid Margin="15 0 0 0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <CheckBox Grid.Column="0" Grid.Row="0" 
+                                          Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
+                                <CheckBox Grid.Column="0" Grid.Row="1" 
+                                          Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
+                                <CheckBox Grid.Column="0" Grid.Row="2" 
+                                          Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
+                                <CheckBox Grid.Column="0" Grid.Row="3" 
+                                          Name="ShowInternalIonsCheckBox" Content="Show internal ions" Margin="5" />
+                                <CheckBox Grid.Column="0" Grid.Row="4" 
+                                          Name="ShowInternalIonAnnotationsCheckBox" Content="Display internal ion annotations" Margin="5" />
+
+                            </Grid>
+
+                            <Expander Header="Advanced Ion Annotations" DockPanel.Dock="Top" Margin="10 5 5 5">
+                                <StackPanel Margin="5 5 0 0">
+
+                                    
+                                    <CheckBox Name="BoldTextCheckBox" Content="Bold ion annotations" Margin="5"/>
+                                    <CheckBox Name="SubSuperScriptedIonAnnotations" Content="Sub/superscripted ion annotations" Margin="5" />
+
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Annotation text size:" Width="165"/>
+                                        <local:DoubleTextBoxControl x:Name ="TextSizeBox" Width="80" Height="24" 
+                                                                    VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Axis title text size:" Width="165"/>
+                                        <local:DoubleTextBoxControl x:Name ="AxisTitleTextSizeBox" Width="80" Height="24" 
+                                                 VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Axis label text size:" Width="165"/>
+                                        <local:DoubleTextBoxControl x:Name ="AxisLabelTextSizeBox" Width="80" Height="24" 
+                                                                    VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                    </StackPanel>
+
+
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Annotated peak thickness:" Width="165"/>
+                                        <local:DoubleTextBoxControl x:Name ="AnnotatedPeakSizeBox" Width="80" Height="24" 
+                                                                    VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                    </StackPanel>
+
+                                    <StackPanel Orientation="Horizontal" Margin="5 0" >
+                                        <Label Content="Unannotated peak thickness:" Width="165"/>
+                                        <local:DoubleTextBoxControl x:Name ="UnannotatedPeakSizeBox" Width="80" Height="24" 
+                                                                    VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
+
+
                             <Expander Name="SpectrumDescriptionExpander"  Header="Spectrum Description" 
-                                  DockPanel.Dock="Top" Margin="10 5 5 5">
+                                      DockPanel.Dock="Top" Margin="10 5 5 5">
 
                                 <!-- Spectrum Description Text Customization Options 
                                 To make changes here, add a checkbox then add it to Save_Click and PopulateChoices, 
                                 then add a new item to SpectrumDescripion Dictionary in Settings, 
                                 finally update PeptideSpectrumMatchPlot.AnnotateProperties() -->
-                                <StackPanel>
-                                    <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
-                                    <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
-                                    <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
-                                    <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
-                                    <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
-                                    <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
-                                    <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
-                                    <CheckBox Name="AmbiguityLevelCheckBox" Content="Ambiguity Level" Margin="3" 
-                                        ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                        <ToolTipService.ToolTip>
-                                            J. Proteome Res. 2018, 17, 3, 1321–1325
-                                        </ToolTipService.ToolTip>
-                                    </CheckBox>
-                                    <CheckBox Name="SpectralAngleCheckBox" Content="Spectral Angle" Margin="3" />
-                                    <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
-                                    <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
-                                    <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
-                                    <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
-                                </StackPanel>
+                                    <StackPanel>
+                                        <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
+                                        <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
+                                        <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
+                                        <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
+                                        <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
+                                        <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
+                                        <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
+                                        <CheckBox Name="AmbiguityLevelCheckBox" Content="Ambiguity Level" Margin="3" 
+                                                  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <ToolTipService.ToolTip>
+                                                J. Proteome Res. 2018, 17, 3, 1321–1325
+                                            </ToolTipService.ToolTip>
+                                        </CheckBox>
+                                        <CheckBox Name="SpectralAngleCheckBox" Content="Spectral Angle" Margin="3" />
+                                        <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
+                                        <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
+                                        <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
+                                        <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
+                                    </StackPanel>
                             </Expander>
 
                             <!-- spectrum components -->
                             <Expander Header="Spectrum Components" DockPanel.Dock="Top" Margin="10 5 5 5">
-                                <StackPanel>
+                                <StackPanel Margin="10 5 0 0">
                                     <CheckBox Name="StationarySequenceCheckBox" Content="Stationary Sequence" Margin="3" />
                                     <CheckBox Name="SequencenNumbersCheckBox" Content="Sequence Numbering" Margin="3" />
                                     <CheckBox Name="ShowLegendCheckBox" Content="Display Legend" Margin="3" ToolTip="Also removes legend in sequence annotation"/>
                                 </StackPanel>
                             </Expander>
 
+                            </StackPanel>
+                    </GroupBox>
+
+                    <GroupBox Header="Color Customization">
+                        <StackPanel>
                             <!-- ion color selection -->
                             <Expander x:Name="IonColorSelection" Header="Ion Color Selection"
-                                      DockPanel.Dock="Top" Margin="10 5 5 5 " >
+              DockPanel.Dock="Top" Margin="10 5 5 5 " >
                                 <StackPanel >
                                     <ItemsControl x:Name="IonColorExpander"  ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:IonTypeForTreeViewModel}">
                                         <ItemsControl.ItemTemplate>
@@ -144,12 +209,12 @@
                                                                 <StackPanel Orientation="Horizontal"  >
                                                                     <TextBlock Text="{Binding IonName, FallbackValue='y - ion'}" Margin="5 0 5 0" Width="120" TextAlignment="Center"/>
                                                                     <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                            Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                                    Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
                                                                     <ComboBox Width="100" HorizontalAlignment="Right" Margin="5 0 5 0" HorizontalContentAlignment="Center"
-                                                                              SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged"
-                                                                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
-                                                                                            RelativeSource={RelativeSource Mode=FindAncestor, 
-                                                                                            AncestorType={x:Type local:MetaDrawSettingsWindow}}}">   
+                                                      SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged"
+                                                      ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                                                    RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                                    AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
                                                                     </ComboBox>
                                                                 </StackPanel>
                                                             </DataTemplate>
@@ -164,7 +229,7 @@
 
                             <!-- ptm color selection -->
                             <Expander Name="PTMColorSelection" Header="PTM Color Selection"
-                                  DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
+          DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
                                 <StackPanel>
                                     <ItemsControl x:Name="PTMColorExpander" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}">
                                         <ItemsControl.ItemTemplate>
@@ -175,14 +240,14 @@
                                                             <DataTemplate>
                                                                 <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}" >
                                                                     <TextBlock Text="{Binding ModName, FallbackValue='y - ion'}" Margin="5 0 5 0" TextAlignment="Center"
-                                                                               TextWrapping="Wrap" Width="180"/>
+                                                       TextWrapping="Wrap" Width="180"/>
                                                                     <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                            Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                                    Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
                                                                     <ComboBox Width="80" HorizontalAlignment="Right" Margin="5 0 5 0" HorizontalContentAlignment="Center"
-                                                                              SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged_1"
-                                                                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
-                                                                                            RelativeSource={RelativeSource Mode=FindAncestor, 
-                                                                                            AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
+                                                      SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged_1"
+                                                      ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                                                    RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                                    AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
                                                                     </ComboBox>
                                                                 </StackPanel>
                                                             </DataTemplate>
@@ -194,10 +259,10 @@
                                     </ItemsControl>
                                 </StackPanel>
                             </Expander>
-                            
+
                             <!-- Sequence coverage colors -->
                             <Expander  Header="Sequence Coverage Color Selection" 
-                                      DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
+              DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
                                 <StackPanel>
                                     <ItemsControl x:Name="SequenceCoverageColorExpander" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:CoverageTypeForTreeViewModel}">
                                         <ItemsControl.ItemTemplate>
@@ -205,12 +270,12 @@
                                                 <StackPanel Orientation="Horizontal"  >
                                                     <TextBlock Text="{Binding Name, FallbackValue='y - ion'}" Margin="5 0 5 0" Width="180" TextAlignment="Center"/>
                                                     <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                                                            Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                                    Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
                                                     <ComboBox Width="80" HorizontalAlignment="Right" Margin="5 0 5 0" HorizontalContentAlignment="Center"
-                                                              SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged_2"
-                                                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
-                                                                            RelativeSource={RelativeSource Mode=FindAncestor, 
-                                                                            AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
+                                      SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged_2"
+                                      ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                                    RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                    AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
                                                     </ComboBox>
                                                 </StackPanel>
                                             </DataTemplate>
