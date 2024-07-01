@@ -132,18 +132,18 @@ namespace Test.MetaDraw
                 // ignored
             }
 
-            Assert.That(model.Modifications.First().Children.First().SelectedColor == "Green");
+            Assert.That(model.Modifications.First().Children.First().SelectedColor, Is.EqualTo("Green"));
             model.Modifications.First().Children.First().SelectionChanged("Blue");
-            Assert.That(model.Modifications.First().Children.First().SelectedColor == "Blue");
+            Assert.That(model.Modifications.First().Children.First().SelectedColor, Is.EqualTo("Blue"));
             model.SaveAsDefault();
             Assert.That(model.HasDefaultSaved == true);
             model.LoadSettings();
 
             MetaDrawSettingsViewModel model2 = new();
-            Assert.That(model2.Modifications.First().Children.First().SelectedColor == "Blue");
+            Assert.That(model2.Modifications.First().Children.First().SelectedColor, Is.EqualTo("Blue"));
 
             MetaDrawSettingsViewModel model3 = new(false);
-            Assert.That(model3.Modifications.First().Children.First().SelectedColor == "Blue");
+            Assert.That(model3.Modifications.First().Children.First().SelectedColor, Is.EqualTo("Blue"));
 
             Directory.Delete(outputFolder, true);
         }
