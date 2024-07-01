@@ -134,7 +134,7 @@ namespace Test.MetaDraw
 
             var toTest = model.Modifications.SelectMany(p => p.Children)
                 .First(p => p.ModName == "Carbamidomethyl on C");
-            the Assert.That(toTest.SelectedColor, Is.EqualTo("Green"));
+            Assert.That(toTest.SelectedColor, Is.EqualTo("Green"));
             toTest.SelectionChanged("Blue");
             Assert.That(toTest.SelectedColor, Is.EqualTo("Blue"));
             model.SaveAsDefault();
