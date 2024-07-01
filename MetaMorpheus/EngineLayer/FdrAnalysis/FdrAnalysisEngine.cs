@@ -81,7 +81,7 @@ namespace EngineLayer.FdrAnalysis
                             ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
                             PepQValueInvertedPeptides(peptides);
                             psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
-                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
+                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
                             PepQValueInvertedPsms(psms);
 
                             //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score

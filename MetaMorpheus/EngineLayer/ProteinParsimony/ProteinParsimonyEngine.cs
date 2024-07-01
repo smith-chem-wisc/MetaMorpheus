@@ -20,7 +20,6 @@ namespace EngineLayer
         private readonly HashSet<IBioPolymerWithSetMods> _fdrFilteredPeptides;
 
         private readonly List<SpectralMatch> _fdrFilteredPsms;
-        private readonly List<SpectralMatch> _allPsms;
         private const double FdrCutoffForParsimony = 0.01;
 
         /// <summary>
@@ -41,11 +40,11 @@ namespace EngineLayer
             // KEEP contaminants for use in parsimony!
             if (modPeptidesAreDifferent)
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = allPsms.Where(p => p.FullSequence != null && p.PsmFdrInfo.QValue <= FdrCutoffForParsimony && p.PsmFdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
             else
             {
-                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.FdrInfo.QValue <= FdrCutoffForParsimony && p.FdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
+                _fdrFilteredPsms = allPsms.Where(p => p.BaseSequence != null && p.PsmFdrInfo.QValue <= FdrCutoffForParsimony && p.PsmFdrInfo.QValueNotch <= FdrCutoffForParsimony).ToList();
             }
 
             // peptides to use in parsimony = peptides observed in high-confidence PSMs (including decoys)
@@ -57,10 +56,6 @@ namespace EngineLayer
                     _fdrFilteredPeptides.Add(peptide);
                 }
             }
-
-            // we're storing all PSMs (not just FDR-filtered ones) here because we will remove some protein associations
-            // from low-confidence PSMs if they can be explained by a parsimonious protein
-            _allPsms = allPsms;
         }
 
         protected override MetaMorpheusEngineResults RunSpecific()
@@ -427,7 +422,7 @@ namespace EngineLayer
             }
 
             // Parsimony stage 5: remove peptide objects that do not have proteins in the parsimonious list
-            foreach (SpectralMatch psm in _allPsms)
+            foreach (SpectralMatch psm in _fdrFilteredPsms)
             {
                 // if this PSM has a protein in the parsimonious list, it removes the proteins NOT in the parsimonious list
                 // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein,
