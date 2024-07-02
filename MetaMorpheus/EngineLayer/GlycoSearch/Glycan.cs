@@ -13,14 +13,14 @@ namespace EngineLayer
     {
         public GlycanIon(string ionStruct, int ionMass, byte[] ionKind, int lossIonMass)
         {
-            IonStruct = ionStruct;
+            IonStruct = ionStruct;     // Always set null, deprecated.
             IonMass = ionMass;
             IonKind = ionKind;
-            LossIonMass = lossIonMass; // neutral loss mass
+            LossIonMass = lossIonMass; // Neutral loss mass = Glycan.Mass - IonMass
         }
         public string IonStruct { get; set; }
         public int IonMass { get; set; }
-        public int LossIonMass { get; set; }//Glycan.Mass - IonMass
+        public int LossIonMass { get; set; }
         public byte[] IonKind { get; set; }
     }
 
@@ -41,13 +41,13 @@ namespace EngineLayer
             Mass = GetMass(kind);
         }
 
-        public int GlyId { get; set; }
-        public string Struc { get; private set; }
+        public int GlyId { get; set; }            // Glycan ID, which is the index of glycan in the glycan database.
+        public string Struc { get; private set; } // Glycan structure string represented the glycan structure and linkage. Ex. (N(H(A))(N(H(A))(F)))
         public int Mass { get; private set; }
 
-        //Glycans are composed of several different types of mono saccharides. In Kind, each number correspond to one type of mono saccharide in the same order as Glycan.CharMassDic. 
-        public byte[] Kind { get; private set; }
-        public string Composition
+         
+        public byte[] Kind { get; private set; }  // Glycans are composed of several types of mono suagr. In Kind, each number correspond to one type (corresponded order as Glycan.CharMassDic).
+        public string Composition                 // Glycan composition string. Ex. H2N2A2F1.
         {
             get
             {
@@ -57,10 +57,10 @@ namespace EngineLayer
         public List<GlycanIon> Ions { get; set; }
         public bool Decoy { get; private set; }
 
-        public HashSet<int> DiagnosticIons //B ions, and there are more ions to set...
+        public HashSet<int> DiagnosticIons // B ions (the sugar fragment dropped from the glycopeptide), used for the N-glycan. There are more ions to set...
         {
             get
-            {   //kind[] is the sugar type composition of glycan, and each index represent the corresponding sugar type.
+            {   
                 HashSet<int> diagnosticIons = new HashSet<int>();
                 if (Kind[0] >= 1) //if we have Hexose(the number more than one), then we have the corresponding diagonsitic ions as below.
                 {
@@ -68,7 +68,7 @@ namespace EngineLayer
                     diagnosticIons.Add(11503951 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(16306064 - hydrogenAtomMonoisotopicMass);
                 }
-                if (Kind[1] >= 1)
+                if (Kind[1] >= 1) // if we have HexNAc(the number more than one), then we have the corresponding diagonsitic ions as below.
                 {
                     diagnosticIons.Add(12605550 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(13805550 - hydrogenAtomMonoisotopicMass);
@@ -77,16 +77,16 @@ namespace EngineLayer
                     diagnosticIons.Add(18607663 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(20408720 - hydrogenAtomMonoisotopicMass);
                 }
-                if (Kind[1] >= 1 && Kind[0] >= 1)
+                if (Kind[1] >= 1 && Kind[0] >= 1) // if we have HexNAc and Hexose, then we have the corresponding diagonsitic ions as below.
                 {
                     diagnosticIons.Add(36614002 - hydrogenAtomMonoisotopicMass);
                 }
-                if (Kind[2] >= 1)
+                if (Kind[2] >= 1) //If we have NeuNAc, then we have the corresponding diagonsitic ions as below.
                 {
                     diagnosticIons.Add(27409268 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(29210324 - hydrogenAtomMonoisotopicMass);
                 }
-                if (Kind[3] >= 1)
+                if (Kind[3] >= 1) //If we have NeuNGc, then we have the corresponding diagonsitic ions as below.
                 {
                     diagnosticIons.Add(29008759 - hydrogenAtomMonoisotopicMass);
                     diagnosticIons.Add(30809816 - hydrogenAtomMonoisotopicMass);
@@ -105,7 +105,6 @@ namespace EngineLayer
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
         //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C:Acetyl for Neu5Ac
         //X: C5H10O5 Xylose
-        //If add more monosacchrades here, please change GetMass, GetKind, GetKindString, GlycanBox constructor, search byte[].
         private readonly static Dictionary<char, int> CharMassDic = new Dictionary<char, int> {
             { 'H', 16205282 },
             { 'N', 20307937 },
@@ -119,7 +118,7 @@ namespace EngineLayer
             { 'X', 15005282 },
         };
 
-        //Compitable with Byonic, for loading glycan by Kind.
+        // The corresponding index for sugar and Kind.
         public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
         {
             {"Hex", new Tuple<char, int>('H', 0) },
@@ -134,13 +133,15 @@ namespace EngineLayer
             {"Xylose", new Tuple<char, int>('X', 9) }
         };
 
-        public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int> //The same ion as we describe above in the diagnostic ions. That just for the initial matching with the gkycan.
-        {13805550, 16806607, 18607663, 20408720, 36614002 };// some software use the ions to predict verified glycopeptide (pre-filter).
+        //The same ion as we describe above in the diagnostic ions. That just for the initial filtering for glycopeptide peaks. Not used now.
+        public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int> 
+        {13805550, 16806607, 18607663, 20408720, 36614002 };
 
-        public readonly static int[] AllOxoniumIons = new int[] //The same ion as we describe above in the diagnostic ions. We didn't use the ions for matching now.
+        //The same ion as we describe above in the diagnostic ions. Used for building the oxoniumIntensity list.
+        public readonly static int[] AllOxoniumIons = new int[] 
         {10902895, 11503951, 12605550, 12703952, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002, 65723544, 67323035};
 
-        //TrimannosylCore is only useful for N-Glyco peptides.
+        //TrimannosylCore. Only useful for N-Glyco peptides.
         public readonly static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>
         {
             //Each of the mass represent as a N-Glycan core. 
@@ -160,24 +161,30 @@ namespace EngineLayer
 
         #region Glycan Structure manipulation
 
-        //There are two ways to represent a glycan in string, one is only composition, and the other is included linkage and composition information.
-        // first one: HexNAc(2)Hex(5)NeuAc(1)NeuGc(1)Fuc(1)Phospho(1)Sulfo(1)Na(1)Ac(1)Xylose(1), second one: (N(H(A))(N(H(A))(F)))
+        //There are two ways to represent a glycan in string
+        //Composition: HexNAc(2)Hex(5)NeuAc(1)NeuGc(1)Fuc(1)Phospho(1)Sulfo(1)Na(1)Ac(1)Xylose(1),
+        //Struct(Linkage): (N(H(A))(N(H(A))(F)))
 
-        //The method generate a glycan by reading the glycan structure string from database.
-        // input : (N(H(A))(N(H(A))(F))), output: Glycan object.
+        /// <summary>
+        /// Only for Gdb. The method generate a glycan object by reading the glycan structure string from database.
+        /// </summary>
+        /// <param name="theGlycanStruct"> structrue string ex. (N(H(A))(N(H(A))(F)))</param>
+        /// <param name="id"></param>
+        /// <param name="isOglycan"></param>
+        /// <returns> Glycan Object </returns>
         public static Glycan Struct2Glycan(string theGlycanStruct, int id, bool isOglycan = false)
         {
-            Node node = Struct2Node(theGlycanStruct); //Transfer string to tree structure.
-            List<Node> nodeIons = GetAllChildrenCombination(node); //Get all possible fragmentation/neutral loss of a glycan.
-            int mass = Glycan.GetMass(theGlycanStruct); //Get glycan mass.
-            byte[] kind = Glycan.GetKind(theGlycanStruct); //Get glycan composition, which is a byte array, EX. [2, 5, 1, 1, 1, 1, 1, 1, 1, 1].
+            Node node = Struct2Node(theGlycanStruct);              // String to tree structure.
+            List<Node> nodeIons = GetAllChildrenCombination(node); // Get all possible fragmentation & neutralLoss of a glycan.
+            int mass = Glycan.GetMass(theGlycanStruct);            // Get glycan mass.
+            byte[] kind = Glycan.GetKind(theGlycanStruct);         // Get glycan composition array, EX. [2, 5, 1, 1, 1, 1, 1, 1, 1, 1].
             List<GlycanIon> glycanIons = new List<GlycanIon>();
             HashSet<double> ionMasses = new HashSet<double>();
             foreach (var aNodeIon in nodeIons)
             {
-                var ionMass = Glycan.GetMass(Node2Struct(aNodeIon));
-                if (!ionMasses.Contains(ionMass) && ionMass != mass)
-                {
+                var ionMass = Glycan.GetMass(Node2Struct(aNodeIon)); // Get the ionMass
+                if (!ionMasses.Contains(ionMass) && ionMass != mass) // Avoid duplicate ions with the same mass. Ex. N(H)N and N(N(H)) have the same ionMass.
+                {                                                    // We also avoid the ionMass equals to the glycan mass. Because we won't assume the whole glycan is a fragment ion.
                     ionMasses.Add(ionMass);
                     var ionKind = Glycan.GetKind(Node2Struct(aNodeIon));
                     var lossIonMass = GetIonLossMass(kind, ionKind);
@@ -189,33 +196,37 @@ namespace EngineLayer
             {
                 glycanIons.Add(new GlycanIon(null, 8303819, new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, mass - 8303819)); //Cross-ring mass
             }
-            glycanIons.Add(new GlycanIon(null, 0, kind, mass));
+            glycanIons.Add(new GlycanIon(null, 0, kind, mass)); //That is Y0 ion. The whole glycan dropped from the glycopeptide. Like a netural loss.
 
             Glycan glycan = new Glycan(theGlycanStruct, mass, kind, glycanIons.OrderBy(p => p.IonMass).ToList(), false);
             glycan.GlyId = id;
             return glycan;
         }
 
-        //The function here is to transfer a glycan-string into tree format. (Glycan are represented in tree structures composed of Node) 
-        //input: (N(H)), output: Node(N, 0) -> left Child = Node(H, 1)
+
+        /// <summary>
+        /// Convert the glycan structure string to tree format
+        /// </summary>
+        /// <param name="theGlycanStruct"> linkage inforamtion ex. (N(H))</param>
+        /// <returns> glycan tree node ex. Current Nonde = Node(N, 0), left Child = Node(H, 1)</returns>
         public static Node Struct2Node(string theGlycanStruct)
         {
             int level = 0;
-            Node curr = new Node(theGlycanStruct[1], level);//The first character is always '(', so the second character is the root of the tree. In this case of (N(H)), N is the root.
-            for (int i = 2; i < theGlycanStruct.Length - 1; i++) //try to extract the following characters.
+            Node curr = new Node(theGlycanStruct[1], level);     // The first character is always '(', so the second character is the root of the tree. In this case of (N(H)), N is the root.
+            for (int i = 2; i < theGlycanStruct.Length - 1; i++) // Try to extract the following characters.
             {
-                if (theGlycanStruct[i] == '(') //skip the '(' character.
+                if (theGlycanStruct[i] == '(')                   // Skip the '(' character.
                 {
                     continue;
                 }
-                if (theGlycanStruct[i] == ')')//when we meet a ')', we need to go back to the father node.
+                if (theGlycanStruct[i] == ')')                   // When we meet a ')', we need to go back to the parent node.
                 {
                     curr = curr.Father;
                     level--;
                 }
-                else // when we meet a character, we need to decide where to put it in the tree. (putting priority: left -> right side -> middle)
+                else         // While meeting a character, we need to decide where to put it in the tree. (putting priority: left -> right side -> middle)
                 {
-                    level++; //first, move to the next level.(Deeper level)
+                    level++; // Move to the level.(Deeper/Child level)
                     if (curr.LeftChild == null)
                     {
                         curr.LeftChild = new Node(theGlycanStruct[i], level);
@@ -237,12 +248,16 @@ namespace EngineLayer
                     }
                 }
             }
-            return curr; // return the root of the tree.
+            return curr; 
 
         }
 
-        //The function is to generate all possible fragmentation/neutral loss of a glycan, which is a subset of glycan. 
-        //Node is tree structured glycan. subset of glycans are also represented by Node.
+        
+        /// <summary>
+        /// Generate all possible fragments(subset) of a glycan. The fragments are also represented by a Node.
+        /// </summary>
+        /// <param name="node"></param>
+        /// <returns> The all combination of the Glycan fragment. Presented by Node </returns>
         private static List<Node> GetAllChildrenCombination(Node node)
         {
             List<Node> nodes = new List<Node>();
@@ -380,7 +395,12 @@ namespace EngineLayer
             return output;
         }
 
-        //kind are compositions of glycan. The function here is to generate mass difference of two glycan.
+        /// <summary>
+        /// Calculate the mass difference of two glycan kind.
+        /// </summary>
+        /// <param name="Kind"> Composition of the glycan </param>
+        /// <param name="ionKind"> Composition of the glycanIon </param>
+        /// <returns> Mass different between the glycan and its glycanIon </returns>
         public static int GetIonLossMass(byte[] Kind, byte[] ionKind)
         {
             byte[] lossKind = new byte[Kind.Length];
@@ -394,8 +414,12 @@ namespace EngineLayer
         #endregion
 
         #region Transfer information
-
-        private static int GetMass(string structure) //Get glycan mass by glycan structure string. structure format : (N(H(A))(N(H(A))(F)))
+        /// <summary>
+        /// Get glycan mass by glycan structure string
+        /// </summary>
+        /// <param name="structure"> ex.(N(H(A))(N(H(A))(F))) </param>
+        /// <returns> The glycan Mass </returns>
+        private static int GetMass(string structure) 
         {
             int y = CharMassDic['H'] * structure.Count(p => p == 'H') +
                 CharMassDic['N'] * structure.Count(p => p == 'N') +
@@ -411,7 +435,12 @@ namespace EngineLayer
             return y;
         }
 
-        public static int GetMass(byte[] kind) //Get glycan mass by glycan composition. kind format : [2, 2, 2, 0, 1, 0, 0, 0, 0, 0]
+        /// <summary>
+        /// Get glycan mass by glycan composition
+        /// </summary>
+        /// <param name="kind"> [2, 2, 2, 0, 1, 0, 0, 0, 0, 0] </param>
+        /// <returns> The glycan mass </returns>
+        public static int GetMass(byte[] kind) 
         {
             int mass = CharMassDic['H'] * kind[0] +
             CharMassDic['N'] * kind[1] +
@@ -428,7 +457,13 @@ namespace EngineLayer
             return mass;
         }
 
-        public static byte[] GetKind(string structure) //Get glycan composition by the structure string. structure format : (N(H(A))(N(H(A))(F))), output : [2, 2, 2, 0, 1, 0, 0, 0, 0, 0]
+
+        /// <summary>
+        /// Get glycan composition by the structure string
+        /// </summary>
+        /// <param name="structure"> structure format : (N(H(A))(N(H(A))(F))) </param>
+        /// <returns> The kind List ex [2, 2, 2, 0, 1, 0, 0, 0, 0, 0].</returns>
+        public static byte[] GetKind(string structure) 
         {
             var kind = new byte[] 
             { Convert.ToByte(structure.Count(p => p == 'H')),
@@ -445,7 +480,13 @@ namespace EngineLayer
             return kind;
         }
 
-        public static string GetKindString(byte[] Kind)//Get glycan composition by the kind[]. kind format : [2, 2, 2, 0, 1, 0, 0, 0, 0, 0], output is H2N2A2F1.
+
+        /// <summary>
+        /// Get glycan composition text from the glycan kind[].
+        /// </summary>
+        /// <param name="Kind"> ex. [2, 2, 2, 0, 1, 0, 0, 0, 0, 0] </param>
+        /// <returns> The composition text ex. H2N2A2F1 </returns>
+        public static string GetKindString(byte[] Kind)
         {
             string H = Kind[0]==0 ? "" : "H" + Kind[0].ToString();
             string N = Kind[1] == 0 ? "" : "N" + Kind[1].ToString();
@@ -465,6 +506,12 @@ namespace EngineLayer
 
         //TO THINK: Is it reasonable to transfer Glycan to Modification the first time Glycan is read in? Which could save time.
         //Use glycan index and modification index to reduce space.
+
+        /// <summary>
+        /// Input the N-glycan object, and transfer it to the modification object.
+        /// </summary>
+        /// <param name="glycan"></param>
+        /// <returns></returns>
         public static Modification NGlycanToModification(Glycan glycan)
         {
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
@@ -494,6 +541,11 @@ namespace EngineLayer
             return modification;
         }
 
+        /// <summary>
+        /// Input the O-glycan object, and transfer it to the modification object.
+        /// </summary>
+        /// <param name="glycan"></param>
+        /// <returns> The modification object </returns>
         public static Modification OGlycanToModification(Glycan glycan) //try to transfer the glycan object to modification object.
         {
             //TO THINK: what the neutralLoss for O-Glyco?
@@ -528,14 +580,13 @@ namespace EngineLayer
 
         #region Combination or Permutation functions not directly related to glycan, use carefully these function don't deal duplicate elements.
 
+
         public static IEnumerable<IEnumerable<T>> GetKCombs<T>(IEnumerable<T> list, int length) where T : IComparable
         {
-            if (length == 1) return list.Select(t => new T[] { t });
+            if (length == 1) return list.Select(t => new T[] { t });  // Return the list of the single element.
             return GetKCombs(list, length - 1).SelectMany(t => list.Where(o => o.CompareTo(t.Last()) > 0), (t1, t2) => t1.Concat(new T[] { t2 }));
         }
 
-        // Try to create the combination with the list, and repeptitation is allowed.  
-        // List is the base list, the length is the length for combination
         public static IEnumerable<IEnumerable<T>> GetKCombsWithRept<T>(IEnumerable<T> list, int length) where T : IComparable
         {
             if (length == 1) return list.Select(t => new T[] { t });
@@ -546,7 +597,7 @@ namespace EngineLayer
         {
             if (length == 1)
             {
-                return list.Select(t => new T[] { t });
+                return list.Select(t => new T[] { t }); 
             }
             return GetPermutations(list, length - 1).SelectMany(t => list.Where(o => !t.Contains(o)), (t1, t2) => t1.Concat(new T[] { t2 }));
         }
@@ -561,6 +612,12 @@ namespace EngineLayer
 
         #region Functions are not used now, could be useful in the future.      
 
+        /// <summary>
+        /// Test the equality of two glycan objects. Including the glycan mass and the glycan ions should be totally indentical.
+        /// </summary>
+        /// <param name="glycan1"></param>
+        /// <param name="glycan2"></param>
+        /// <returns></returns>
         public static bool Equals(Glycan glycan1, Glycan glycan2)
         {
             if (glycan1.Mass == glycan2.Mass)

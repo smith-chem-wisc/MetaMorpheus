@@ -7,9 +7,17 @@ using System.Linq;
 namespace EngineLayer
 {
     // in our database, the N-glycan.gdb should be correct to the new format
+    // the class for loading glycan database then creeat the glycan object.
     public static class GlycanDatabase 
     {
-        //Load Glycan from the database file (located in the Glycan_Mod). Generally, glycan-ions should be generated for N-Glycopepitdes which produce Y-ions; MS method couldn't produce o-glycan-ions.
+        
+        /// <summary>
+        /// Load Glycan from the database file. Generally, glycan-ions should be generated for N-Glycopepitdes which produce Y-ions; MS method couldn't produce o-glycan-ions
+        /// </summary>
+        /// <param name="filePath"> Database file path</param>
+        /// <param name="ToGenerateIons"> Do we need to generate the glycanIon? </param>
+        /// <param name="IsOGlycanSearch"></param>
+        /// <returns> A glycan object collection </returns>
         public static IEnumerable<Glycan> LoadGlycan(string filePath, bool ToGenerateIons, bool IsOGlycanSearch)
         {
             bool isKind = true;
@@ -18,7 +26,7 @@ namespace EngineLayer
                 while(lines.Peek() != -1)
                 {
                     string line = lines.ReadLine();
-                    if (!line.Contains("HexNAc")) //use the first line to determine the type of glycan database.
+                    if (!line.Contains("HexNAc"))  // use the first line to determine the format (kind / structure) of glycan database.
                     {
                         isKind = false;
                     }
@@ -32,11 +40,18 @@ namespace EngineLayer
             }
             else
             {
-                return LoadStructureGlycan(filePath, IsOGlycanSearch); // open the file of the structure format, example: (N(H(A))(A))
+                return LoadStructureGlycan(filePath, IsOGlycanSearch);            // open the file of the structure format, example: (N(H(A))(A))
             }
         }
 
-        //Load KindGlycan. Compatible with Byonic.
+
+        /// <summary>
+        /// Load composition format Glycan database, then convert to kind format followed by generating the glycan object.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="ToGenerateIons"></param>
+        /// <param name="IsOGlycanSearch"></param>
+        /// <returns>The glycan collection </returns>
         public static IEnumerable<Glycan> LoadKindGlycan(string filePath, bool ToGenerateIons, bool IsOGlycanSearch)
         {
             using (StreamReader lines = new StreamReader(filePath))
@@ -46,14 +61,14 @@ namespace EngineLayer
                 {
                     string line = lines.ReadLine().Split('\t').First();
 
-                    if (!(line.Contains("HexNAc") || line.Contains("Hex")))
+                    if (!(line.Contains("HexNAc") || line.Contains("Hex"))) // Make sure the line is a glycan line. The line should contain HexNAc or Hex.
                     {
                         continue;
                     }
 
-                    var kind = String2Kind(line); // convert the database string to kind[] format (byte array).
+                    var kind = String2Kind(line);  // Convert the database string to kind[] format (byte array).
 
-                    var glycan = new Glycan(kind); // use the kind[] to create a glycan object.
+                    var glycan = new Glycan(kind); // Use the kind[] to create a glycan object.
                     glycan.GlyId = id++;
                     if (ToGenerateIons)
                     {
@@ -71,8 +86,11 @@ namespace EngineLayer
             }
         }
 
-        //Convert the string to byte array.
-        //Input example: HexNAc(2)Hex(5)NeuAc(1)Fuc(1), Output example: [2, 5, 0, 0, 1, 0, 0, 0, 0, 1]
+        /// <summary>
+        /// Convert the glycan string to Kind array
+        /// </summary>
+        /// <param name="line"> ex. HexNAc(2)Hex(5)NeuAc(1)Fuc(1) </param>
+        /// <returns> The glycan Kind List ex. [2, 5, 0, 0, 1, 0, 0, 0, 0, 1] </returns>
         public static byte[] String2Kind(string line) 
         {
             byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
@@ -87,7 +105,12 @@ namespace EngineLayer
             return kind;
         }
 
-        //Load structured Glycan database.
+        /// <summary>
+        /// Load structured format Glycan database and generate the glycan object.
+        /// </summary>
+        /// <param name="filePath"></param>
+        /// <param name="IsOGlycan"></param>
+        /// <returns> The Glycan object collection </returns>
         public static IEnumerable<Glycan> LoadStructureGlycan(string filePath, bool IsOGlycan)
         {
             using (StreamReader glycans = new StreamReader(filePath))
@@ -95,7 +118,7 @@ namespace EngineLayer
                 int id = 1;
                 while (glycans.Peek() != -1)
                 {
-                    string line = glycans.ReadLine();
+                    string line = glycans.ReadLine();                         // Read the line from the database file. Ex. (N(H(A))(A))
                     yield return Glycan.Struct2Glycan(line, id++, IsOGlycan); // Directly convert the string to Glycan object.
                 }
             }
@@ -367,6 +390,7 @@ namespace EngineLayer
         //This function build fragments based on the general core of OGlyco fragments. 
         //From https://github.com/mobiusklein/glycopeptidepy/structure/fragmentation_strategy/glycan.py
         //The fragment generation is not as good as structure based method. So it is better to use a structure based O-Glycan database.
+        // We don't use this function now, alternatively, we use the 'OGlycanCompositionCombinationChildIons'.
         public static List<GlycanIon> OGlycanCompositionFragments(byte[] kind)
         {
             List<GlycanIon> glycanIons = new List<GlycanIon>();
@@ -476,7 +500,11 @@ namespace EngineLayer
             return glycanIons;
         }
 
-        //The OGlycanCompositionFragments just generate some core GlycanIons. We need a combination solution.
+        /// <summary>
+        /// Generate some child ions based on the kind array. The kind array is the combination of the monosaccharides then filter by the rules.
+        /// </summary>
+        /// <param name="kind"> glycan Kind[]</param>
+        /// <returns> The glycanIon collection </returns>
         public static List<GlycanIon> OGlycanCompositionCombinationChildIons(byte[] kind)
         {
             List<GlycanIon> glycanIons = new List<GlycanIon>();
@@ -491,7 +519,7 @@ namespace EngineLayer
 
             foreach (var k in _kinds)
             {
-                //Rules to build OGlycan child ions.
+                //Rules to build OGlycan child ions. Filter the kind array which doesn't meet the rules.
                 //At least one HexNAc
                 if (k[1] == 0)
                 {
@@ -518,15 +546,21 @@ namespace EngineLayer
             return glycanIons.OrderBy(p=>p.IonMass).ToList();
         }
 
-        private static void _GetCombinations(byte[] kind, List<byte[]> _kinds, HashSet<string> _keys)
-        {
-            if (kind.Sum(p=>p) == 0)
+        /// <summary>
+        /// Try to create all possible combinations from the glycan kind[]. And store the combination array in the _kinds list.
+        /// </summary>
+        /// <param name="kind"> ex. [2,2,0]</param>
+        /// <param name="_kinds"></param>
+        /// <param name="_keys"></param>
+        private static void _GetCombinations(byte[] kind, List<byte[]> _kinds, HashSet<string> _keys) 
+        {                                                                                            
+            if (kind.Sum(p=>p) == 0)                                                                 
             {
-                return;
+                return; // if we don't have any monosaccharide, no need to generate the child ions.
             }
             else
             {
-                for (int i = 0; i < kind.Length; i++)
+                for (int i = 0; i < kind.Length; i++) //traverse the kind array
                 {
                     if (kind[i] >= 1)
                     {

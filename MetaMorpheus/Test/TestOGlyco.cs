@@ -97,7 +97,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_OGlycanChildIons()
         {
-            var glycan = GlycanBox.GlobalOGlycans[5];
+            var glycan = GlycanBox.GlobalOGlycans[5]; // we use the glycan (N(H)(N(H)))
 
             Assert.That(glycan.Ions.Count == 5);
 
@@ -197,13 +197,12 @@ namespace Test
         {
             //Get glycanBox
             var glycanBox = OGlycanBoxes[24];
-
             Protein protein = new Protein("TVYLGASK", "");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
 
             List<int> modPos = new List<int> { 2, 8 };
 
-            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[24]);
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]VYLGAS[O-Glycosylation:H1N1A1 on X]K");
 
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
@@ -507,11 +506,11 @@ namespace Test
             int proteinGroupCount = int.Parse(proteinGroupLine.Split(':').Last().Trim());
 
             //For GlycoPSMs
-            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("Glyco PSMs within"));
+            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("O-Glyco PSMs within"));
             int glycoPsmCount = int.Parse(glycoPsmLine.Split(':').Last().Trim()); // read the number of glyco PSMs from the results file
 
             //For Level1GlycoPSMs
-            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 Glyco PSMs within"));
+            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 O-Glyco PSMs within"));
             int level1Psmcount = int.Parse(level1PsmLine.Split(':').Last().Trim()); // read the number of Level1-PSMs from the results file
 
             // Parse counted number from csv files
@@ -587,11 +586,11 @@ namespace Test
             int proteinGroupCount = int.Parse(proteinGroupLine.Split(':').Last().Trim());
 
             //For GlycoPSMs
-            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("Glyco PSMs within"));
+            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("O-Glyco PSMs within"));
             int glycoPsmCount = int.Parse(glycoPsmLine.Split(':').Last().Trim()); // read the number of glyco PSMs from the results file
 
             //For Level1GlycoPSMs
-            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 Glyco PSMs within"));
+            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 O-Glyco PSMs within"));
             int level1Psmcount = int.Parse(level1PsmLine.Split(':').Last().Trim()); // read the number of Level1-PSMs from the results file
 
             // Parse counted number from csv files
@@ -684,11 +683,11 @@ namespace Test
             int proteinGroupCount = int.Parse(proteinGroupLine.Split(':').Last().Trim());
 
             //For GlycoPSMs
-            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("Glyco PSMs within"));
+            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("O-Glyco PSMs within"));
             int glycoPsmCount = int.Parse(glycoPsmLine.Split(':').Last().Trim()); // read the number of glyco PSMs from the results file
 
             //For Level1GlycoPSMs
-            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 Glyco PSMs within"));
+            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 O-Glyco PSMs within"));
             int level1Psmcount = int.Parse(level1PsmLine.Split(':').Last().Trim()); // read the number of Level1-PSMs from the results file
 
             // Parse counted number from csv files
