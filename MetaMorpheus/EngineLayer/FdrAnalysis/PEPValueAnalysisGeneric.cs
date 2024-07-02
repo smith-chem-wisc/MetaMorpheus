@@ -789,6 +789,7 @@ namespace EngineLayer
             float chimeraCount = 0;
             float peaksInPrecursorEnvelope = 0;
             float mostAbundantPrecursorPeakIntensity = 0;
+            float fractionalIntensity = 0;
 
             float missedCleavages = 0;
             float longestSeq = 0;
@@ -835,6 +836,7 @@ namespace EngineLayer
                     chimeraCount = val;
                 peaksInPrecursorEnvelope = psm.PrecursorScanEnvelopePeakCount;
                 mostAbundantPrecursorPeakIntensity = (float)Math.Round((float)psm.PrecursorScanIntensity / normalizationFactor * multiplier, 0);
+                fractionalIntensity = (float)psm.PrecursorFractionalIntensity;
 
                 if (PsmHasSpectralAngle(psm))
                 {
@@ -950,6 +952,7 @@ namespace EngineLayer
                 PeaksInPrecursorEnvelope = peaksInPrecursorEnvelope,
                 ChimeraCount = chimeraCount,
                 MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
+                PrecursorFractionalIntensity = fractionalIntensity,
             };
 
             return psm.PsmData_forPEPandPercolator;
