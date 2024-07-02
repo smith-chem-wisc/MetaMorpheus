@@ -261,19 +261,26 @@ namespace Test.MetaDraw
         [Test]
         public static void TestIonForTreeView()
         {
-            var ion = ((ProductType[])Enum.GetValues(typeof(ProductType))).First();
-            IonForTreeViewModel ionForTreeView = new(ion, false);
-            Assert.That(!ionForTreeView.IsBeta);
-            Assert.That(ionForTreeView.IonType == ion);
-            var color = MetaDrawSettings.ProductTypeToColor[ion];
-            Assert.That(ionForTreeView.SelectedColor == color.GetColorName());
-            Assert.That(ionForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
+            foreach (var ion in Enum.GetValues<ProductType>())
+            {
+                IonForTreeViewModel ionForTreeView = new(ion, false);
+                Assert.That(!ionForTreeView.IsBeta);
+                Assert.That(ionForTreeView.IonType == ion);
 
-            ionForTreeView = new(ion, true);
-            Assert.That(ionForTreeView.IsBeta);
-            color = MetaDrawSettings.BetaProductTypeToColor[ion];
-            Assert.That(ionForTreeView.SelectedColor == color.GetColorName());
-            Assert.That(ionForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
+                var color = MetaDrawSettings.ProductTypeToColor[ion];
+                var name = color.GetColorName();
+                Assert.That(ionForTreeView.SelectedColor.Replace(" ", "") == name);
+                Assert.That(ionForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
+
+                ionForTreeView = new(ion, true);
+                Assert.That(ionForTreeView.IsBeta);
+                Assert.That(ionForTreeView.IonType == ion);
+
+                color = MetaDrawSettings.BetaProductTypeToColor[ion];
+                name = color.GetColorName();
+                Assert.That(ionForTreeView.SelectedColor.Replace(" ", "") == name);
+                Assert.That(ionForTreeView.ColorBrush.Color == DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
+            }
         }
 
         [Test]
