@@ -127,7 +127,7 @@ namespace EngineLayer
         /// <param name="targetDecoy"></param>
         public GlycanBox(int[] ids, bool targetDecoy = true):base(ids)
         {
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             foreach (var id in ModIds) //ModIds is the same as ids.
             {
                 for (int i = 0; i < kind.Length; i++)   

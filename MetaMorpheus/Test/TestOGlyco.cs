@@ -130,6 +130,21 @@ namespace Test
             Assert.That(alphaPeptide.Length == 8);
             Assert.That(alphaPeptide.First().BaseSequence == "MPLFKNTSV");
         }
+        [Test]
+        public static void OGlycanTest_Kdn()
+        {
+            var kind = new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2 };
+            double mass = Glycan.GetMass(kind) / 1E5;
+            string name = Glycan.GetKindString(kind);
+            Assert.AreEqual(name, "H1N1K2");
+            Assert.AreEqual(mass, 865.27013);
+
+            string kdnGlycan = "HexNAc(2)Hex(2)Kdn(1)";
+            string kdnGlycan2 = "N(H)H(N)K";
+            var expectedKind = new byte[] { 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+            Assert.AreEqual(GlycanDatabase.String2Kind(kdnGlycan), expectedKind);
+            Assert.AreEqual(Glycan.GetKind(kdnGlycan2), expectedKind);
+        }
 
         [Test]
         public static void GlycoTest_MotifExist()

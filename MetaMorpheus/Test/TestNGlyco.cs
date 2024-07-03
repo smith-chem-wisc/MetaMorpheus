@@ -83,7 +83,7 @@ namespace Test
         [Test]
         public static void GlyTest_GetKindString()
         {
-            byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
             string kindString = Glycan.GetKindString(kind);
             Assert.AreEqual("H3N4F1", kindString);
         }
