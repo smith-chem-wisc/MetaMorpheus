@@ -128,28 +128,32 @@ namespace EngineLayer
         //From https://github.com/mobiusklein/glycopeptidepy/structure/fragmentation_strategy/glycan.py#L408
         //The fragment generation is not as good as structure based method. So it is better to use a structure based N-Glycan database.
         // The function is used to load the database from the different formats, but we don't use it now.
-        public static List<GlycanIon> NGlycanCompositionFragments(byte[] kind)
+        public static List<GlycanIon> NGlycanCompositionFragments(byte[] kind, bool isfucExtended = false)
         {
             int glycan_mass = Glycan.GetMass(kind);
 
-            int core_count = 1;
+            // int core_count = 1;
             int iteration_count = 0;
+            int hexnac_Core = 2;
+            int hexose_Core = 3;
             bool extended = true;
-            bool extended_fucosylation = false;
+            bool extended_fucosylation = isfucExtended;
 
             int fuc_count = kind[4];
             int xyl_count = kind[9];
-            int hexnac_inaggregate = kind[0];
-            int hexose_inaggregate = kind[1];
+            int hexnac_total = kind[1];
+            int hexose_total = kind[0];
 
             List<GlycanIon> glycanIons = new List<GlycanIon>();
 
-            int base_hexnac = Math.Min(hexnac_inaggregate + 1, 3);
-            for (int hexnac_count = 0; hexnac_count < base_hexnac; hexnac_count++)
+            int base_hexnac = Math.Min(hexnac_total, hexnac_Core); // base_hexnac is the first priority hexnac count, they all come from the core.
+            for (int hexnac_count = 0; hexnac_count < base_hexnac + 1 ; hexnac_count++)
             {
                 if (hexnac_count == 0)
                 {
-                    GlycanIon glycanIon = new GlycanIon(null, 8303819, new byte[] { 0, (byte)hexnac_count, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, glycan_mass - 8303819);
+                    byte[] startKind = new byte[] { 0, (byte)hexnac_count, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+                    string glycanName = Glycan.GetKindString(startKind);
+                    GlycanIon glycanIon = new GlycanIon(glycanName, 8303819, startKind, glycan_mass - 8303819);
                     glycanIons.Add(glycanIon);
                 }
                 else if (hexnac_count == 1)
@@ -191,7 +195,7 @@ namespace EngineLayer
 
                         for (int add_fuc_count = 2; add_fuc_count <= fuc_count; add_fuc_count++)
                         {
-                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(glycanIon, 0, 0, (byte)add_fuc_count, 0, glycan_mass);
+                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(glycanIon, 0, 0, 1, 0, glycan_mass);
                             glycanIons.Add(add_fuc_glycanIon);
                         }
 
@@ -209,22 +213,25 @@ namespace EngineLayer
                     }
 
 
-                    int min_hexose_inaggregate = Math.Min(hexose_inaggregate + 1, 4);
-                    for (int hexose_count = 1; hexose_count <= min_hexose_inaggregate; hexose_count++)
+                    int base_hexose = Math.Min(hexose_total, hexose_Core); // base_hexose is the first priority hexose count, they all come from the core.
+                    for (int hexose_count = 1; hexose_count <= base_hexose + 1; hexose_count++)
                     {
                         GlycanIon hexose_glycanIon = GenerateGlycanIon((byte)hexose_count, (byte)hexnac_count, 0, 0, glycan_mass);
                         glycanIons.Add(hexose_glycanIon);
 
                         if (!extended_fucosylation)
                         {
-                            GlycanIon fuc_glycanIon = ExtendGlycanIon(hexose_glycanIon, 0, 0, 1, 0, glycan_mass);
-                            glycanIons.Add(fuc_glycanIon);
-
-                            if (iteration_count < xyl_count)
+                            if (iteration_count < fuc_count)
                             {
-                                GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
-                                glycanIons.Add(xyl_fuc_glycanIon);
-                            }
+                                GlycanIon fuc_glycanIon = ExtendGlycanIon(hexose_glycanIon, 0, 0, 1, 0, glycan_mass);
+                                glycanIons.Add(fuc_glycanIon);
+
+                                if (iteration_count < xyl_count)
+                                {
+                                    GlycanIon xyl_fuc_glycanIon = ExtendGlycanIon(fuc_glycanIon, 0, 0, 0, 1, glycan_mass);
+                                    glycanIons.Add(xyl_fuc_glycanIon);
+                                }
+                            }                           
                         }
                         else if (fuc_count > 0)
                         {
@@ -233,7 +240,7 @@ namespace EngineLayer
 
                             for (int add_fuc_count = 2; add_fuc_count <= fuc_count; add_fuc_count++)
                             {
-                                GlycanIon add_fuc_glycanIon = ExtendGlycanIon(hexose_glycanIon, 0, 0, (byte)add_fuc_count, 0, glycan_mass);
+                                GlycanIon add_fuc_glycanIon = ExtendGlycanIon(hexose_glycanIon, 0, 0, 1, 0, glycan_mass);
                                 glycanIons.Add(add_fuc_glycanIon);
                             }
 
@@ -250,11 +257,11 @@ namespace EngineLayer
                             glycanIons.Add(xyl_glycanIon);
                         }
 
-                        if (hexose_count == 3 && hexnac_count >= 2 * core_count && extended)
+                        if (hexose_count == hexose_Core && hexnac_count >= hexnac_Core  && extended) //After the core motif has been exhausted, speculatively add on the remaining core monosaccharides sequentially until exhausted.
                         {
-                            for (int extra_hexnac_count = 0; extra_hexnac_count < hexnac_inaggregate - hexnac_count + 1; extra_hexnac_count++)
+                            for (int extra_hexnac_count = 0; extra_hexnac_count < hexnac_total - hexnac_count + 1; extra_hexnac_count++)
                             {
-                                if (extra_hexnac_count + hexnac_count > hexnac_inaggregate)
+                                if (extra_hexnac_count + hexnac_count > hexnac_total)
                                 {
                                     continue;
                                 }
@@ -283,7 +290,7 @@ namespace EngineLayer
 
                                         for (int add_fuc_count = 2; add_fuc_count <= fuc_count; add_fuc_count++)
                                         {
-                                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, (byte)add_fuc_count, 0, glycan_mass);
+                                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, 1, 0, glycan_mass);
                                             glycanIons.Add(add_fuc_glycanIon);
                                         }
 
@@ -302,9 +309,9 @@ namespace EngineLayer
 
                                 }
 
-                                for (int extra_hexose_count = 1; extra_hexose_count < hexose_inaggregate - hexose_count + 1; extra_hexose_count++)
+                                for (int extra_hexose_count = 1; extra_hexose_count < hexose_total - hexose_Core + 1; extra_hexose_count++)
                                 {
-                                    if (extra_hexose_count + hexose_count > hexose_inaggregate)
+                                    if (extra_hexose_count + hexose_count > hexose_total)
                                     {
                                         continue;
                                     }
@@ -331,7 +338,7 @@ namespace EngineLayer
 
                                         for (int add_fuc_count = 2; add_fuc_count <= fuc_count; add_fuc_count++)
                                         {
-                                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, (byte)add_fuc_count, 0, glycan_mass);
+                                            GlycanIon add_fuc_glycanIon = ExtendGlycanIon(new_glycanIon, 0, 0, 1, 0, glycan_mass);
                                             glycanIons.Add(add_fuc_glycanIon);
                                         }
 
@@ -367,7 +374,9 @@ namespace EngineLayer
 
             int ionMass = Glycan.GetMass(ionKind);
 
-            GlycanIon glycanIon = new GlycanIon(null, ionMass, ionKind, glycan_mass - ionMass);
+            String glycanName = Glycan.GetKindString(ionKind);
+
+            GlycanIon glycanIon = new GlycanIon(glycanName, ionMass, ionKind, glycan_mass - ionMass);
 
             return glycanIon;
         }
@@ -381,8 +390,9 @@ namespace EngineLayer
             ionKind[9] += xyl_count;
 
             int ionMass = Glycan.GetMass(ionKind);
+            string glycanName = Glycan.GetKindString(ionKind);
 
-            GlycanIon extend_glycanIon = new GlycanIon(null, ionMass, ionKind, glycan_mass - ionMass);
+            GlycanIon extend_glycanIon = new GlycanIon(glycanName, ionMass, ionKind, glycan_mass - ionMass);
 
             return extend_glycanIon;
         }

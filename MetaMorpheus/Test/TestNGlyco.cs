@@ -291,9 +291,11 @@ namespace Test
         [Test]
         public static void GlyTest_NGlycanCompositionFragments()
         {
-            var kind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)");
+            var kind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)Xylose(1)");
 
             var ions = GlycanDatabase.NGlycanCompositionFragments(kind);
+
+            var ions_fucExtended = GlycanDatabase.NGlycanCompositionFragments(kind, true);
 
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H)(H(N(F)(H(A)))))))", 0);
 
@@ -303,7 +305,7 @@ namespace Test
 
             var overlap = glycanIonmass.Intersect(ionMass).Count();
 
-            Assert.That(overlap == 13);
+            Assert.That(overlap == 15);
      
         }
     }
