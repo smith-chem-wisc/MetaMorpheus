@@ -261,7 +261,7 @@ namespace EngineLayer
                         {
                             for (int extra_hexnac_count = 0; extra_hexnac_count < hexnac_total - hexnac_count + 1; extra_hexnac_count++)
                             {
-                                if (extra_hexnac_count + hexnac_count > hexnac_total)
+                                if (extra_hexnac_count + hexnac_count > hexnac_total) // this part is doesn't make sense, because the hexnac_count cannot be larger than total-hexnac
                                 {
                                     continue;
                                 }
@@ -311,7 +311,7 @@ namespace EngineLayer
 
                                 for (int extra_hexose_count = 1; extra_hexose_count < hexose_total - hexose_Core + 1; extra_hexose_count++)
                                 {
-                                    if (extra_hexose_count + hexose_count > hexose_total)
+                                    if (extra_hexose_count + hexose_count > hexose_total) // this part is doesn't make sense, because the hexnac_count cannot be larger than total-hexnac
                                     {
                                         continue;
                                     }
@@ -411,12 +411,12 @@ namespace EngineLayer
             bool extended = true;
 
             int fuc_count = kind[4];
-            int hexnac_inaggregate = kind[0];
-            int hexose_inaggregate = kind[1];
+            int hexnac_total = kind[1];
+            int hexose_total = kind[0];
 
             for (int hexnac_count = 0; hexnac_count < 3; hexnac_count++)
             {
-                if (hexnac_inaggregate < hexnac_count)
+                if (hexnac_total < hexnac_count)
                 {
                     continue;
                 }
@@ -437,7 +437,7 @@ namespace EngineLayer
 
                     for (int hexose_count = 0; hexose_count < 2; hexose_count++)
                     {
-                        if (hexose_inaggregate < hexose_count)
+                        if (hexose_total < hexose_count)
                         {
                             continue;
                         }
@@ -457,9 +457,9 @@ namespace EngineLayer
 
                         // After the core motif has been exhausted, speculatively add on the remaining core monosaccharides sequentially until exhausted.
 
-                        if (extended && hexnac_inaggregate - hexnac_count >= 0)
+                        if (extended && hexnac_total - hexnac_count >= 0)
                         {
-                            for (int extra_hexnac_count = 0; extra_hexnac_count  < hexnac_inaggregate - hexnac_count + 1; extra_hexnac_count ++)
+                            for (int extra_hexnac_count = 0; extra_hexnac_count  < hexnac_total - hexnac_count + 1; extra_hexnac_count ++)
                             {
                                 if (extra_hexnac_count > 0)
                                 {
@@ -477,9 +477,9 @@ namespace EngineLayer
 
                                 }
 
-                                if (hexose_inaggregate > hexose_count && hexose_count > 0)
+                                if (hexose_total > hexose_count && hexose_count > 0)
                                 {
-                                    for (int extra_hexose_count = 0; extra_hexose_count < hexose_inaggregate - hexose_count; extra_hexose_count++)
+                                    for (int extra_hexose_count = 0; extra_hexose_count < hexose_total - hexose_count; extra_hexose_count++)
                                     {
                                         if (extra_hexose_count > 0 && extra_hexose_count + hexose_count >0)
                                         {
