@@ -49,6 +49,46 @@ namespace Test
         }
 
         [Test]
+        public static void OGlycanTest_GetGlycanBox_Decoy()
+        {
+            GlycanBox[] OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).ToArray();
+            Assert.That(OGlycanBoxes.All(p => p.TargetDecoy = true));
+
+            GlycanBox[] OGlycanBoxes_withDecoys = GlycanBox.BuildOGlycanBoxes(3, true).ToArray();
+            var group_target = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == true);
+            var group_decoy = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == false);
+            Assert.That(group_target.Count() == group_decoy.Count());
+
+        }
+
+        [Test]
+        public static void GlycoTest_WritingSummary()  // In order to test writing function on different search type ex. O-Search, N-search, N-O search, make sure we have the corresponding search Rseult file.
+        {
+            string outputFolder_NSearch = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder_NSearch);
+
+            var glycoSearchTask_NSearch = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigNGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask_NSearch) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder_NSearch).Run();
+
+            Directory.Delete(outputFolder_NSearch, true);
+
+
+            string outputFolder_NOSearch = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder_NOSearch);
+
+            var glycoSearchTask_NOSearch = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigN_OGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            string spectraFile_NOSearch = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask_NOSearch) }, new List<string> { spectraFile_NOSearch }, new List<DbForTask> { db }, outputFolder_NOSearch).Run();
+
+            Directory.Delete(outputFolder_NOSearch, true);
+        }
+
+
+        [Test]
         public static void GlycoSpectralHeader()
         {
             string header = GlycoSpectralMatch.GetTabSepHeaderSingle().Trim();
@@ -481,6 +521,7 @@ namespace Test
 
             Directory.Delete(outputFolder, true);
         }
+
 
         [Test]
         public static void OGlycoTest_Run5()

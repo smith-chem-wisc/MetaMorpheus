@@ -60,7 +60,7 @@ namespace EngineLayer
 
                     if (buildDecoy)
                     {
-                        GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray());
+                        GlycanBox glycanBox_decoy = new GlycanBox(idCombine.ToArray(),false); // decoy glycanBox
                         glycanBox_decoy.TargetDecoy = false;
                         glycanBox_decoy.ChildGlycanBoxes = BuildChildOGlycanBoxes(glycanBox_decoy.NumberOfMods, glycanBox_decoy.ModIds, glycanBox_decoy.TargetDecoy).ToArray();
                         yield return glycanBox_decoy;
