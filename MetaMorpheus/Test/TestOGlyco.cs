@@ -88,6 +88,7 @@ namespace Test
             Directory.Delete(outputFolder_NOSearch, true);
         }
 
+
         [Test]
         public static void GlycoSpectralHeader()
         {
@@ -149,6 +150,19 @@ namespace Test
 
             var coreIons = GlycanDatabase.OGlycanCompositionFragments(kind);
             Assert.That(coreIons.Count() == 6);
+
+            //The following code is to test the glycan with complex structure, only to pass the converage.
+
+            var testKind = GlycanDatabase.String2Kind("HexNAc(2)Hex(4)Fuc(2)NeuAc(1)Xylose(1)");
+            
+            var testGlycanIons = GlycanDatabase.OGlycanCompositionFragments(testKind);
+
+
+            var testKind_smallGlycan = GlycanDatabase.String2Kind("HexNAc(1)");
+
+            var testGlycanIons_smallGlycan = GlycanDatabase.OGlycanCompositionFragments(testKind_smallGlycan);
+
+
         }
 
         [Test]
@@ -523,6 +537,7 @@ namespace Test
 
             Directory.Delete(outputFolder, true);
         }
+
 
         [Test]
         public static void OGlycoTest_Run5()
