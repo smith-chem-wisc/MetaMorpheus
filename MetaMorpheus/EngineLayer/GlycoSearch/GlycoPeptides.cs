@@ -486,24 +486,37 @@ namespace EngineLayer.GlycoSearch
 
 
         /// <summary>
-        /// The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. Filter the invalid data.
+        /// Use the oxonium ions to determine the glycan type.
         /// </summary>
-        /// <param name="oxoniumIonsintensities"></param>
-        /// <param name="glycanBox"></param>
-        /// <returns >True : is Oglycan and pass the filter, False: isn't Oglycan and not pass the filter</returns>
-        public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
+        /// <param name="oxoniumIonsintensities"> From the Scan </param>
+        /// <param name="glycanBox"> The glycanBox to be tested </param>
+        /// <returns >True : The Oglycan pass the filter, False : The OGl</returns>
+        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, GlycanBox glycanBox)
         {
+            double HexNAc_diagnostic = oxoniumIonsintensities[4];
+            double NeuAc_diagnostic1 = oxoniumIonsintensities[10];
+            double NeuAc_diagnostic2 = oxoniumIonsintensities[12];
+            double HexNAcPlusHex_diagnostic = oxoniumIonsintensities[14];
+
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
-            if (oxoniumIonsintensities[10] <= 0 && oxoniumIonsintensities[12] <= 0)
+            if (NeuAc_diagnostic1 / HexNAc_diagnostic > 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic > 0.02)
             {
-                if (glycanBox.Kind[2] != 0 || glycanBox.Kind[3] != 0)
+                if (glycanBox.Kind[2] == 0 )
+                {
+                    return false;
+                }
+            }
+
+            if(NeuAc_diagnostic1 / HexNAc_diagnostic < 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic < 0.02)
+            {
+                if (glycanBox.Kind[2] != 0)
                 {
                     return false;
                 }
             }
 
             //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
-            if (oxoniumIonsintensities[14] > 0)
+            else if (HexNAcPlusHex_diagnostic / HexNAc_diagnostic > 0.02)
             {
                 if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
                 {

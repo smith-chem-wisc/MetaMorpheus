@@ -90,6 +90,44 @@ namespace Test
 
 
         [Test]
+        public static void OGlycanTest_IsobaricCase()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Glyco_Isobaric_testing.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.DoParsimony = false;
+            glycoSearchTask._glycoSearchParameters.DoQuantification = true;
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false; //turn off the diagnostic filter
+
+            DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
+            DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), true);
+
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
+            
+            string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");            
+            var glycanLevel_filterOFF = PsmTsvReader.ReadTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+                .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
+
+            
+            Assert.That(glycanLevel_filterOFF != EngineLayer.GlycoSearch.LocalizationLevel.Level1 && glycanLevel_filterOFF != EngineLayer.GlycoSearch.LocalizationLevel.Level1b);
+            Directory.Delete(outputFolder, true);
+
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = true;
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
+            var glycanLevel_filterON = PsmTsvReader.ReadTsv(oGlycoPath, out var error) //load the PSMs data from the "csv file" and bulid the objects
+                .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
+
+
+            Assert.That(glycanLevel_filterON == EngineLayer.GlycoSearch.LocalizationLevel.Level1);
+            Directory.Delete(outputFolder, true);
+
+        }
+
+
+
+        [Test]
         public static void GlycoSpectralHeader()
         {
             string header = GlycoSpectralMatch.GetTabSepHeaderSingle().Trim();
@@ -208,8 +246,8 @@ namespace Test
             Assert.That(exist);
         }
 
-        [Test]
-        public static void OxoniumIonAnalysis()
+        [Test] // In this test, there are 272 and 294 oxonium ions in the scan, but the glycanBox doesn't contain these HexNAc ions.
+        public static void DiagonsticFilter()
         {
             Assert.That(Glycan.AllOxoniumIons[4] == 13805550);
             Assert.That(Glycan.AllOxoniumIons[5] == 14406607);
@@ -230,8 +268,8 @@ namespace Test
             //Get glycanBox          
             var glycanBox = OGlycanBoxes[19];
 
-            var satifyOxonium = GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, glycanBox);
-            Assert.That(satifyOxonium);
+            var satifyOxonium = GlycoPeptides.DiagonsticFilter(oxoniumIonIntensities, glycanBox);
+            Assert.That(!satifyOxonium);
         
         }
 
@@ -511,7 +549,7 @@ namespace Test
 
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             var task2 = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig_ETD_Run3.toml"), MetaMorpheusTask.tomlConfig);
-            task2._glycoSearchParameters.OxoniumIonFilt = true;
+            task2._glycoSearchParameters.OxoniumIonFilt = true; //turn on the diagnostic filter
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task2) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
             var resultsExist = File.Exists(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\Task\oglyco.psmtsv"));
             Assert.That(!resultsExist);
@@ -1497,7 +1535,7 @@ namespace Test
             CollectionAssert.AreEquivalent(expectedIndividualFileOutput, individualOutputs);
 
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "AllQuantifiedProteins.tsv"));
-            string[] proteinGroupFields = allProteinGroups[1].Split('\t');
+            string[] proteinGroupFields = allProteinGroups[2].Split('\t');
 
             Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
 
