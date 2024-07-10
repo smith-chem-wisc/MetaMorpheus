@@ -176,6 +176,9 @@ namespace Test
         [Test]
         public static void OGlycoTest_OGlycanChildIons()
         {
+            // Reload the glycan database to test the child ions.
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
+
             var glycan = GlycanBox.GlobalOGlycans[5]; // we use the glycan (N(H)(N(H)))
 
             Assert.That(glycan.Ions.Count == 5);
