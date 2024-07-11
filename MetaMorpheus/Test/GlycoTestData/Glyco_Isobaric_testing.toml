@@ -1,7 +1,7 @@
 TaskType = "GlycoSearch"
 
 [_glycoSearchParameters]
-OGlycanDatabasefile = "Bullfrog 64 O-glycan wKdn corrected_convert.txt"
+OGlycanDatabasefile = "OGlycan_withIsobaric.gdb"
 NGlycanDatabasefile = "NGlycan.gdb"
 GlycoSearchType = "OGlycanSearch"
 OxoniumIonFilt = true
