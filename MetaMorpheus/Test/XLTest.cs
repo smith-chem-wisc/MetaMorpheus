@@ -374,7 +374,8 @@ namespace Test
 
             var xlSearchParameters = new XlSearchParameters
             {
-                CrosslinkAtCleavageSite = true
+                CrosslinkAtCleavageSite = true,
+                WritePepXml = true
             };
 
             //Create databases contain two protein.
@@ -543,7 +544,7 @@ namespace Test
             deadendNH2 = 0;
             deadendTris = 0;
 
-            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms.Where(c => c.FdrInfo.QValue <= 0.01).ToList())
+            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms.Where(c => c.PsmFdrInfo.QValue <= 0.01).ToList())
             {
                 switch (csm.CrossType)
                 {
@@ -728,7 +729,7 @@ namespace Test
             deadendNH2 = 0;
             deadendTris = 0;
 
-            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms.Where(c => c.FdrInfo.QValue <= 0.01).ToList())
+            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms.Where(c => c.PsmFdrInfo.QValue <= 0.01).ToList())
             {
                 switch (csm.CrossType)
                 {
