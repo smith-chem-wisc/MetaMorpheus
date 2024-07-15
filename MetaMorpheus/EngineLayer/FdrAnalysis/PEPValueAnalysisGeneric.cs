@@ -777,6 +777,7 @@ namespace EngineLayer
         {
             double normalizationFactor = selectedPeptide.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
+            float internalMatchingFragmentCount = 0;
             float intensity = 0;
             float chargeDifference = 0;
             float deltaScore = 0;
@@ -817,7 +818,8 @@ namespace EngineLayer
                     normalizationFactor = 1.0;
                 }
                 // count only terminal fragment ions
-                totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count(p => p.NeutralTheoreticalProduct.SecondaryProductType != null) / normalizationFactor * multiplier, 0));
+                totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count(p => p.NeutralTheoreticalProduct.SecondaryProductType == null) / normalizationFactor * multiplier, 0));
+                internalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count(p => p.NeutralTheoreticalProduct.SecondaryProductType != null) / normalizationFactor * multiplier, 0));
                 intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * Math.Pow(multiplier, 2), 0));
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * multiplier, 0);
