@@ -814,7 +814,6 @@ namespace EngineLayer
             {
                 if (searchType == "top-down")
                 {
-                    //normalizationFactor /= 10.0;
                     normalizationFactor = 1.0;
                 }
                 // count only terminal fragment ions
@@ -956,6 +955,7 @@ namespace EngineLayer
                 ChimeraCount = chimeraCount,
                 MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
                 PrecursorFractionalIntensity = fractionalIntensity,
+                InternalIonCount = internalMatchingFragmentCount,
             };
 
             return psm.PsmData_forPEPandPercolator;
