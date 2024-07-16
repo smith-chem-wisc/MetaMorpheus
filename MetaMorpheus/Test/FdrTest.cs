@@ -639,16 +639,38 @@ namespace Test
         {
             string searchType = "standard";
             string[] trainingInfoStandard = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoStandard = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" };
+            string[] expectedTrainingInfoStandard = new[]
+            {
+                "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
+                "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
+                "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide",
+                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle"
+            };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
             searchType = "top-down";
             string[] trainingInfoTopDown = PsmData.trainingInfos[searchType];
-            string[] expectedTrainingInfoTopDown = new[] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope", "ChimeraCount", "MostAbundantPrecursorPeakIntensity" };
+            string[] expectedTrainingInfoTopDown = new[]
+            {
+                "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
+                "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries",
+                "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope",
+                "ChimeraCount", "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
+            };
             Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
 
-            List<string> positiveAttributes = new List<string> { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "PeaksInPrecursorEnvelope", "MostAbundantPrecursorPeakIntensity" };
-            List<string> negativeAttributes = new List<string> { "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "IsInter", "IsIntra", "ChimeraCount" };
+            List<string> positiveAttributes = new List<string>
+            {
+                "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore",
+                "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity",
+                "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "PeaksInPrecursorEnvelope",
+                "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
+            };
+            List<string> negativeAttributes = new List<string>
+            {
+                "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
+                "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "IsInter", "IsIntra", "ChimeraCount"
+            };
 
             foreach (string attribute in positiveAttributes)
             {
@@ -688,12 +710,14 @@ namespace Test
                 PeaksInPrecursorEnvelope = 23,
                 ChimeraCount = 24,
                 MostAbundantPrecursorPeakIntensity = 25,
+                PrecursorFractionalIntensity = 26,
+                InternalIonCount = 27,
             };
 
             string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22";
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
-            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25";
+            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
             Assert.AreEqual(topDownToString, pd.ToString("top-down"));
         }
     }
