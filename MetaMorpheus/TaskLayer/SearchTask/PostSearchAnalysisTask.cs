@@ -871,122 +871,123 @@ namespace TaskLayer
             {
                 Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
             }
-                var psmsGroupedByFile = PsmFilter.Filter(Parameters.AllPsms,
-                    includeDecoys: true,
-                    includeContaminants: true,
-                    includeAmbiguous: true,
-                    includeHighQValuePsms: false).Psms.GroupBy(f => f.FullFilePath);
 
-                //if we're writing individual files, we need to reprocess the psms
-                //If doing a SILAC search and no "unlabeled" labels were specified (i.e. multiple labels are used for multiplexing and no conditions are "unlabeled"),
-                //then we need to update the psms (which were found in the data file that has the "unlabeled" named) and say they were found in the "heavy" file)
-                if (Parameters.SearchParameters.SilacLabels != null) //if we have silac labels
+            var psmsGroupedByFile = PsmFilter.Filter(Parameters.AllPsms,
+                includeDecoys: true,
+                includeContaminants: true,
+                includeAmbiguous: true,
+                includeHighQValuePsms: false).Psms.GroupBy(f => f.FullFilePath);
+
+            //if we're writing individual files, we need to reprocess the psms
+            //If doing a SILAC search and no "unlabeled" labels were specified (i.e. multiple labels are used for multiplexing and no conditions are "unlabeled"),
+            //then we need to update the psms (which were found in the data file that has the "unlabeled" named) and say they were found in the "heavy" file)
+            if (Parameters.SearchParameters.SilacLabels != null) //if we have silac labels
+            {
+                //get the original filenames
+                List<string> fileNamesThatHadPsms = psmsGroupedByFile.Select(v => v.Key).ToList();
+                EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault(); //grab the first protein to extract the files used for quantification
+                if (firstProteinGroup != null) //check that we even have a protein group to write
                 {
-                    //get the original filenames
-                    List<string> fileNamesThatHadPsms = psmsGroupedByFile.Select(v => v.Key).ToList();
-                    EngineLayer.ProteinGroup firstProteinGroup = ProteinGroups.FirstOrDefault(); //grab the first protein to extract the files used for quantification
-                    if (firstProteinGroup != null) //check that we even have a protein group to write
+                    var tempPsmsGroupedByFile = new List<IGrouping<string, SpectralMatch>>();
+                    //foreach original file
+                    foreach (string originalFile in fileNamesThatHadPsms)
                     {
-                        var tempPsmsGroupedByFile = new List<IGrouping<string, SpectralMatch>>();
-                        //foreach original file
-                        foreach (string originalFile in fileNamesThatHadPsms)
+                        //get all the "filenames" output by quantification. If no unlabeled condition was specified, the original datafile will not be present in the current grouping
+                        //Example: the datafile "test.mzml" that was searched with +4 or +10 neutron mass difference on arginine would appear as "test(R+4).mzml" and "test(R+10).mzml".
+                        //there would be no "test.mzml"
+                        List<string> labeledFiles = new List<string> { originalFile };
+                        foreach (SilacLabel label in Parameters.SearchParameters.SilacLabels)
                         {
-                            //get all the "filenames" output by quantification. If no unlabeled condition was specified, the original datafile will not be present in the current grouping
-                            //Example: the datafile "test.mzml" that was searched with +4 or +10 neutron mass difference on arginine would appear as "test(R+4).mzml" and "test(R+10).mzml".
-                            //there would be no "test.mzml"
-                            List<string> labeledFiles = new List<string> { originalFile };
-                            foreach (SilacLabel label in Parameters.SearchParameters.SilacLabels)
-                            {
-                                //rediscover the previous naming conversion(s)
-                                labeledFiles.Add(SilacConversions.GetHeavyFileInfo(new SpectraFileInfo(originalFile, "", 0, 0, 0), label).FullFilePathWithExtension);
-                            }
-
-                            //rename the file group for all of the relevant psms to their original file
-                            List<SpectralMatch> psms = psmsGroupedByFile.Where(g => labeledFiles.Contains(g.Key)).SelectMany(x => x).ToList(); //grab all the psms
-                            tempPsmsGroupedByFile.AddRange(psms.GroupBy(x => originalFile));
-                        }
-                        //overwrite the grouping for downstream processing
-                        psmsGroupedByFile = tempPsmsGroupedByFile.ToList();
-                    }
-                }
-
-                //write the individual result files for each datafile
-                foreach (var fullFilePath in psmsGroupedByFile.Select(v => v.Key))
-                {
-                    string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
-
-                    List<SpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
-                    var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
-
-                    ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
-                        Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent,
-                        false, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }).Run();
-
-                    subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
-
-                    Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
-
-                    writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
-                    WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-
-
-                    psmsForThisFile = PsmFilter.Filter(psmsForThisFile,
-                        includeDecoys: Parameters.SearchParameters.WriteDecoys,
-                        includeContaminants: Parameters.SearchParameters.WriteContaminants,
-                        includeAmbiguous: true,
-                        includeHighQValuePsms: true).Psms;
-
-                    // Filter psms in place before writing mzID
-                    if (Parameters.SearchParameters.WriteMzId)
-                    {
-                        Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-
-                        string mzidFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".mzID");
-                        if (Parameters.CurrentRawFileList.Count > 1)
-                        {
-                            mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
+                            //rediscover the previous naming conversion(s)
+                            labeledFiles.Add(SilacConversions.GetHeavyFileInfo(new SpectraFileInfo(originalFile, "", 0, 0, 0), label).FullFilePathWithExtension);
                         }
 
-                        MzIdentMLWriter.WriteMzIdentMl(
-                            psmsForThisFile,
-                            subsetProteinGroupsForThisFile,
-                            Parameters.VariableModifications,
-                            Parameters.FixedModifications,
-                            Parameters.SearchParameters.SilacLabels,
-                            new List<Protease> { CommonParameters.DigestionParams.Protease },
-                            CommonParameters.ProductMassTolerance,
-                            CommonParameters.PrecursorMassTolerance,
-                            CommonParameters.DigestionParams.MaxMissedCleavages,
-                            mzidFilePath,
-                            Parameters.SearchParameters.IncludeModMotifInMzid);
-
-                        FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+                        //rename the file group for all of the relevant psms to their original file
+                        List<SpectralMatch> psms = psmsGroupedByFile.Where(g => labeledFiles.Contains(g.Key)).SelectMany(x => x).ToList(); //grab all the psms
+                        tempPsmsGroupedByFile.AddRange(psms.GroupBy(x => originalFile));
                     }
-
-                    // write pepXML
-                    if (Parameters.SearchParameters.WritePepXml)
-                    {
-                        Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-
-                        string pepXMLFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".pep.XML");
-                        if (Parameters.CurrentRawFileList.Count > 1)
-                        {
-                            pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
-                        }
-
-                        PepXMLWriter.WritePepXml(psmsForThisFile,
-                            Parameters.DatabaseFilenameList,
-                            Parameters.VariableModifications,
-                            Parameters.FixedModifications,
-                            CommonParameters, pepXMLFilePath);
-
-                        FinishedWritingFile(pepXMLFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
-                    }
-
-                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }));
+                    //overwrite the grouping for downstream processing
+                    psmsGroupedByFile = tempPsmsGroupedByFile.ToList();
                 }
             }
+
+            //write the individual result files for each datafile
+            foreach (var fullFilePath in psmsGroupedByFile.Select(v => v.Key))
+            {
+                string strippedFileName = Path.GetFileNameWithoutExtension(fullFilePath);
+
+                List<SpectralMatch> psmsForThisFile = psmsGroupedByFile.Where(p => p.Key == fullFilePath).SelectMany(g => g).ToList();
+                var subsetProteinGroupsForThisFile = ProteinGroups.Select(p => p.ConstructSubsetProteinGroup(fullFilePath, Parameters.SearchParameters.SilacLabels)).ToList();
+
+                ProteinScoringAndFdrResults subsetProteinScoringAndFdrResults = (ProteinScoringAndFdrResults)new ProteinScoringAndFdrEngine(subsetProteinGroupsForThisFile, psmsForThisFile,
+                    Parameters.SearchParameters.NoOneHitWonders, Parameters.SearchParameters.ModPeptidesAreDifferent,
+                    false, CommonParameters, this.FileSpecificParameters, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }).Run();
+
+                subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
+
+                Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
+
+                writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
+                WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+
+
+                psmsForThisFile = PsmFilter.Filter(psmsForThisFile,
+                    includeDecoys: Parameters.SearchParameters.WriteDecoys,
+                    includeContaminants: Parameters.SearchParameters.WriteContaminants,
+                    includeAmbiguous: true,
+                    includeHighQValuePsms: true).Psms;
+
+                // Filter psms in place before writing mzID
+                if (Parameters.SearchParameters.WriteMzId)
+                {
+                    Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+
+                    string mzidFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".mzID");
+                    if (Parameters.CurrentRawFileList.Count > 1)
+                    {
+                        mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
+                    }
+
+                    MzIdentMLWriter.WriteMzIdentMl(
+                        psmsForThisFile,
+                        subsetProteinGroupsForThisFile,
+                        Parameters.VariableModifications,
+                        Parameters.FixedModifications,
+                        Parameters.SearchParameters.SilacLabels,
+                        new List<Protease> { CommonParameters.DigestionParams.Protease },
+                        CommonParameters.ProductMassTolerance,
+                        CommonParameters.PrecursorMassTolerance,
+                        CommonParameters.DigestionParams.MaxMissedCleavages,
+                        mzidFilePath,
+                        Parameters.SearchParameters.IncludeModMotifInMzid);
+
+                    FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+                }
+
+                // write pepXML
+                if (Parameters.SearchParameters.WritePepXml)
+                {
+                    Status("Writing pepXML...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+
+                    string pepXMLFilePath = Path.Combine(Parameters.OutputFolder, strippedFileName + ".pep.XML");
+                    if (Parameters.CurrentRawFileList.Count > 1)
+                    {
+                        pepXMLFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".pep.XML");
+                    }
+
+                    PepXMLWriter.WritePepXml(psmsForThisFile,
+                        Parameters.DatabaseFilenameList,
+                        Parameters.VariableModifications,
+                        Parameters.FixedModifications,
+                        CommonParameters, pepXMLFilePath);
+
+                    FinishedWritingFile(pepXMLFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
+                }
+
+                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath }));
+            }
         }
+
         private void WriteFlashLFQResults()
         {
             if (Parameters.SearchParameters.DoLabelFreeQuantification && Parameters.FlashLfqResults != null)
