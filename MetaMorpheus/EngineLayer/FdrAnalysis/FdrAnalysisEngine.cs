@@ -32,9 +32,13 @@ namespace EngineLayer.FdrAnalysis
 
         private void AddPsmAndPeptideFdrInfoIfNotPresent()
         {
-            foreach (var psm in AllPsms.Where(p=>Equals(p.FdrInfo,null)))
+            foreach (var psm in AllPsms.Where(p=> p.PsmFdrInfo == null))
             {
                 psm.PsmFdrInfo = new FdrInfo();                
+            }
+
+            foreach (var psm in AllPsms.Where(p => p.PeptideFdrInfo == null))
+            {
                 psm.PeptideFdrInfo = new FdrInfo();
             }
         }

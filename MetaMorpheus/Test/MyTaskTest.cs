@@ -491,7 +491,7 @@ namespace Test
             missingFiles = expectedFiles.Except(files);
             extraFiles = files.Except(expectedFiles);
 
-            Assert.That(files.SetEquals(expectedFiles));
+            CollectionAssert.AreEquivalent(expectedFiles, files);
 
             files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "Task Settings")).Select(v => Path.GetFileName(v)));
             expectedFiles = new HashSet<string> {

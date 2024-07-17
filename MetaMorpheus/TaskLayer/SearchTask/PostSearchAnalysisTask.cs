@@ -30,7 +30,6 @@ namespace TaskLayer
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
-        public PsmFilter PsmFilter { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -66,7 +65,6 @@ namespace TaskLayer
                 CalculatePsmAndPeptideFdr(Parameters.AllPsms);
             }
 
-            PsmFilter = new PsmFilter(CommonParameters);
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
@@ -156,7 +154,7 @@ namespace TaskLayer
                 }
             }
 
-            var psmForParsimony = PsmFilter.Filter(Parameters.AllPsms,
+            var psmForParsimony = Filter(Parameters.AllPsms,
                 includeDecoys: true,
                 includeContaminants: true,
                 includeAmbiguous: false,
@@ -270,17 +268,19 @@ namespace TaskLayer
             }
 
             // get PSMs to pass to FlashLFQ
-            var psmsForQuantification = PsmFilter.Filter(Parameters.AllPsms,
+            var psmsForQuantification = Filter(Parameters.AllPsms,
                 includeDecoys: false,
                 includeContaminants: true,
-                includeAmbiguous: true,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
                 includeHighQValuePsms: false);
 
             // Get peptides for quantification ( only these peptides will be reported in AllQuantifiedPeptides.tsv)
-            var peptidesForQuantification = PsmFilter.Filter(Parameters.AllPsms,
+            var peptidesForQuantification = Filter(Parameters.AllPsms,
                 includeDecoys: false,
                 includeContaminants: true,
-                includeAmbiguous: true,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
                 includeHighQValuePsms: false,
                 filterAtPeptideLevel: true);
 
@@ -551,7 +551,7 @@ namespace TaskLayer
         {
             if (Parameters.SearchParameters.DoHistogramAnalysis)
             {
-                var limitedpsms_with_fdr = PsmFilter.Filter(Parameters.AllPsms,
+                var limitedpsms_with_fdr = Filter(Parameters.AllPsms,
                     includeDecoys: false,
                     includeContaminants: true,
                     includeAmbiguous: false,
@@ -575,7 +575,7 @@ namespace TaskLayer
         /// </summary>
         /// <param name="psms">PSMs to be written</param>
         /// <param name="filePath">Full file path, up to and including the filename and extensioh. </param>
-        protected void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath)
+        protected void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, bool writePeptideLevelResults = false)
         {
             if (Parameters.SearchParameters.DoMultiplexQuantification &&
                 Parameters.MultiplexModification != null &&
@@ -587,13 +587,13 @@ namespace TaskLayer
             }
             else
             {
-                WritePsmsToTsv(psms, filePath, Parameters.SearchParameters.ModsToWriteSelection);
+                WritePsmsToTsv(psms, filePath, Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults);
             }
         }
         private void WritePsmResults()
         {
             Status("Writing PSM results...", Parameters.SearchTaskId);
-            var psmsForPsmResults = PsmFilter.Filter(Parameters.AllPsms,
+            var psmsForPsmResults = Filter(Parameters.AllPsms,
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
@@ -601,7 +601,7 @@ namespace TaskLayer
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(psmsForPsmResults.OrderByDescending(p=>p).ToList(), writtenFile, modstoWritePruned: Parameters.SearchParameters.ModsToWriteSelection, true);
+            WritePsmsToTsv(psmsForPsmResults.OrderByDescending(p=>p).ToList(), writtenFile, writePeptideLevelResults: true);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
@@ -633,7 +633,7 @@ namespace TaskLayer
         {
             Status("Writing peptide results...", Parameters.SearchTaskId);
 
-            var peptidesForPeptideResults = PsmFilter.Filter(Parameters.AllPsms,
+            var peptidesForPeptideResults = Filter(Parameters.AllPsms,
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
@@ -643,7 +643,7 @@ namespace TaskLayer
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
-            WritePsmsToTsv(peptidesForPeptideResults.OrderByDescending(p => p).ToList(), writtenFile, modstoWritePruned: Parameters.SearchParameters.ModsToWriteSelection, false);
+            WritePsmsToTsv(peptidesForPeptideResults.OrderByDescending(p => p).ToList(), writtenFile, writePeptideLevelResults: true);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
@@ -671,7 +671,7 @@ namespace TaskLayer
             Status("Writing Individual PSM results...", Parameters.SearchTaskId);
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
 
-            var psmsForPsmResults = PsmFilter.Filter(Parameters.AllPsms,
+            var psmsForPsmResults = Filter(Parameters.AllPsms,
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
@@ -684,7 +684,7 @@ namespace TaskLayer
                 string strippedFileName = Path.GetFileNameWithoutExtension(psmFileGroup.Key);
                 var psmsForThisFile = psmFileGroup.ToList();
                 CalculatePsmAndPeptideFdr(psmsForThisFile,"PSM", false);
-                var psmsToWrite = PsmFilter.Filter(psmsForThisFile,
+                var psmsToWrite = Filter(psmsForThisFile,
                     includeDecoys: Parameters.SearchParameters.WriteDecoys,
                     includeContaminants: Parameters.SearchParameters.WriteContaminants,
                     includeAmbiguous: false,
@@ -712,7 +712,7 @@ namespace TaskLayer
             Status("Writing Individual Peptide results...", Parameters.SearchTaskId);
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
 
-            var peptidesForPeptideResults = PsmFilter.Filter(Parameters.AllPsms,
+            var peptidesForPeptideResults = Filter(Parameters.AllPsms,
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
@@ -727,7 +727,7 @@ namespace TaskLayer
                 string strippedFileName = Path.GetFileNameWithoutExtension(peptideFileGroup.Key);
                 var peptidesForThisFile = peptideFileGroup.ToList();
                 CalculatePsmAndPeptideFdr(peptidesForThisFile, "PSM", false);
-                var peptidesToWrite = PsmFilter.Filter(peptidesForThisFile,
+                var peptidesToWrite = Filter(peptidesForThisFile,
                     includeDecoys: Parameters.SearchParameters.WriteDecoys,
                     includeContaminants: Parameters.SearchParameters.WriteContaminants,
                     includeAmbiguous: false,
@@ -743,18 +743,14 @@ namespace TaskLayer
 
                 // write PSMs
                 writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
-                WritePsmsToTsv(peptidesToWrite, writtenFile);
+                WritePsmsToTsv(peptidesToWrite, writtenFile, writePeptideLevelResults: true);
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", peptideFileGroup.Key });
 
-                // write PSMs for percolator
-                writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PeptidesFormattedForPercolator.tab");
-                WritePsmsForPercolator(peptidesToWrite.Psms, writtenFile);
-                FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", peptideFileGroup.Key });
             }
         }
         private void UpdateSpectralLibrary()
         {
-            var peptidesForSpectralLibrary = PsmFilter.Filter(Parameters.AllPsms,
+            var peptidesForSpectralLibrary = Filter(Parameters.AllPsms,
                 includeDecoys: false,
                 includeContaminants: false,
                 includeAmbiguous: false,
@@ -821,7 +817,7 @@ namespace TaskLayer
         //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
-            var peptidesForSpectralLibrary = PsmFilter.Filter(Parameters.AllPsms,
+            var peptidesForSpectralLibrary = Filter(Parameters.AllPsms,
                 includeDecoys: false,
                 includeContaminants: false,
                 includeAmbiguous: false,
@@ -872,7 +868,7 @@ namespace TaskLayer
                 Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
             }
 
-            var psmsGroupedByFile = PsmFilter.Filter(Parameters.AllPsms,
+            var psmsGroupedByFile = Filter(Parameters.AllPsms,
                 includeDecoys: true,
                 includeContaminants: true,
                 includeAmbiguous: true,
@@ -927,11 +923,15 @@ namespace TaskLayer
 
                 Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
 
-                writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
+                if(Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
+                {
+                    writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_ProteinGroups.tsv");
+                }
+                
                 WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
 
 
-                psmsForThisFile = PsmFilter.Filter(psmsForThisFile,
+                psmsForThisFile = Filter(psmsForThisFile,
                     includeDecoys: Parameters.SearchParameters.WriteDecoys,
                     includeContaminants: Parameters.SearchParameters.WriteContaminants,
                     includeAmbiguous: true,
@@ -1034,7 +1034,7 @@ namespace TaskLayer
                 HashSet<Modification> modificationsToWriteIfInDatabase = new HashSet<Modification>();
                 HashSet<Modification> modificationsToWriteIfObserved = new HashSet<Modification>();
 
-                var filteredPsms = PsmFilter.Filter(Parameters.AllPsms,
+                var filteredPsms = Filter(Parameters.AllPsms,
                         includeDecoys: false,
                         includeContaminants: true,
                         includeAmbiguous: false,
@@ -1082,7 +1082,7 @@ namespace TaskLayer
                 }
 
                 //generates dictionary of proteins with only localized modifications
-                var originalModPsms = PsmFilter.Filter(filteredPsms,
+                var originalModPsms = Filter(filteredPsms,
                         includeDecoys: false,
                         includeContaminants: true,
                         includeAmbiguous: false,
@@ -1311,7 +1311,7 @@ namespace TaskLayer
         }
 
         
-        private void WritePsmPlusMultiplexIons(IEnumerable<SpectralMatch> psms, string filePath)
+        private void WritePsmPlusMultiplexIons(IEnumerable<SpectralMatch> psms, string filePath, bool writePeptideLevelResults = false)
         {
             PpmTolerance ionTolerance = new PpmTolerance(10);
             double[] reporterIonMzs = Parameters.MultiplexModification.DiagnosticIons.First().Value
@@ -1330,7 +1330,7 @@ namespace TaskLayer
                         GetMultiplexIonIntensities(psm.MsDataScan.MassSpectrum, reporterIonMzs, ionTolerance)
                             .Select(d => d.ToString(CultureInfo.CurrentCulture));
 
-                    output.Write(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection).Trim());
+                    output.Write(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults).Trim());
                     output.Write('\t');
                     output.WriteLine(String.Join('\t', labelIonIntensities));
                 }
@@ -1423,7 +1423,7 @@ namespace TaskLayer
             string filename = "Variant" + GlobalVariables.AnalyteType + "s.psmtsv";
             string variantPeptideFile = Path.Combine(Parameters.OutputFolder, filename);
 
-            var fdrPsms = PsmFilter.Filter(Parameters.AllPsms,
+            var fdrPsms = Filter(Parameters.AllPsms,
                         includeDecoys: true,
                         includeContaminants: true,
                         includeAmbiguous: true,
@@ -1487,7 +1487,7 @@ namespace TaskLayer
             Dictionary<Protein, HashSet<SequenceVariation>> stopGainVariants = new();
             Dictionary<Protein, HashSet<SequenceVariation>> stopLossVariants = new();
 
-            var filteredVariants = PsmFilter.Filter(confidentVariantPeps,
+            var filteredVariants = Filter(confidentVariantPeps,
                         includeDecoys: false,
                         includeContaminants: false,
                         includeAmbiguous: false,

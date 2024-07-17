@@ -20,6 +20,7 @@ using Omics.Modifications;
 using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
+using Easy.Common.Extensions;
 
 namespace TaskLayer
 {
@@ -714,6 +715,87 @@ namespace TaskLayer
 
             }
             return spectrumFilePath;
+        }
+
+        /// <summary>
+        /// Returns a FilteredPsms object that holds every psm that passed the filtering criteria.
+        /// Q-Value and PEP Q-Value thresholds are read from common parameters by default, but can be overridden
+        /// Q-Value and PEP Q-Value filtering are mutually exculsive.
+        /// In cases where PEP filtering was selected but PEP wasn't performed due to insufficient PSMs, 
+        /// filtering defaults to Q and Q_Notch.
+        /// </summary>
+        /// <param name="psms"> List of spectral match objects to be filtered</param>
+        /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
+        /// <returns> A FilteredPsms object</returns>
+        public FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
+            bool includeDecoys = true,
+            bool includeContaminants = true,
+            bool includeAmbiguous = false,
+            bool includeAmbiguousMods = true,
+            bool includeHighQValuePsms = false,
+            double? qValueThreshold = null,
+            double? pepQValueThreshold = null,
+            bool filterAtPeptideLevel = false)
+        {
+
+            qValueThreshold ??= CommonParameters.QValueThreshold;
+            pepQValueThreshold ??= CommonParameters.PepQValueThreshold;
+            double filterThreshold = Math.Min((double)qValueThreshold, (double)pepQValueThreshold);
+            bool filteringNotPerformed = false;
+            List<SpectralMatch> filteredPsms = new List<SpectralMatch>();
+
+            // set the filter type
+            string filterType = "q-value";
+            if (pepQValueThreshold < qValueThreshold)
+            {
+                if (psms.Count() < 100)
+                {
+                    filteringNotPerformed = true;
+                    filterThreshold = 1;
+                }
+                else
+                {
+                    filterType = "pep q-value";
+                }
+            }
+
+            if (!includeHighQValuePsms)
+            {
+                filteredPsms = filterType.Equals("q-value")
+                    ? psms.Where(p => p.GetFdrInfo(filterAtPeptideLevel) != null 
+                        && p.GetFdrInfo(filterAtPeptideLevel).QValue <= filterThreshold 
+                        && p.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= filterThreshold).ToList()
+                    : psms.Where(p => p.GetFdrInfo(filterAtPeptideLevel) != null && p.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= filterThreshold).ToList();
+            }
+            else
+            {
+                filteredPsms = psms.ToList();
+            }
+
+            if (!includeDecoys)
+            {
+                filteredPsms.RemoveAll(p => p.IsDecoy);
+            }
+            if (!includeContaminants)
+            {
+                filteredPsms.RemoveAll(p => p.IsContaminant);
+            }
+            if (!includeAmbiguous)
+            {
+                filteredPsms.RemoveAll(p => p.BaseSequence.IsNullOrEmpty());
+            }
+            if (!includeAmbiguousMods)
+            {
+                filteredPsms.RemoveAll(p => p.FullSequence.IsNullOrEmpty());
+            }
+            if (filterAtPeptideLevel)
+            {
+                filteredPsms = filteredPsms
+                    .GroupBy(b => b.FullSequence)
+                    .Select(b => b.FirstOrDefault()).ToList();
+            }
+
+            return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
         }
 
         protected void ReportProgress(ProgressEventArgs v)

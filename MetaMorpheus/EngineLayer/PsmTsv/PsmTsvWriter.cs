@@ -316,7 +316,7 @@ namespace EngineLayer
             s[PsmTsvHeader.MatchedIonCounts] = nullPsm ? " " : matchedIons.Count.ToString();
         }
 
-        internal static void AddMatchScoreData(Dictionary<string, string> s, SpectralMatch peptide, bool writePsmNotPeptideFdrInfo = true)
+        internal static void AddMatchScoreData(Dictionary<string, string> s, SpectralMatch peptide, bool writePeptideLevelFdr = false)
         {
             string spectralAngle = peptide == null ? " " : peptide.SpectralAngle.ToString("F4");
             string localizedScores = " ";
@@ -339,28 +339,18 @@ namespace EngineLayer
             string PEP = " ";
             string PEP_Qvalue = " ";
 
-            if (writePsmNotPeptideFdrInfo && peptide != null && peptide.PsmFdrInfo != null)
+            if (peptide != null && peptide.GetFdrInfo(writePeptideLevelFdr) != null)
             {
-                cumulativeTarget = peptide.PsmFdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoy = peptide.PsmFdrInfo.CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
-                qValue = peptide.PsmFdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture);
-                cumulativeTargetNotch = peptide.PsmFdrInfo.CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoyNotch = peptide.PsmFdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture);
-                qValueNotch = peptide.PsmFdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
-                PEP = peptide.PsmFdrInfo.PEP.ToString();
-                PEP_Qvalue = peptide.PsmFdrInfo.PEP_QValue.ToString();
+                cumulativeTarget = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTarget.ToString(CultureInfo.InvariantCulture);
+                cumulativeDecoy = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
+                qValue = peptide.GetFdrInfo(writePeptideLevelFdr).QValue.ToString("F6", CultureInfo.InvariantCulture);
+                cumulativeTargetNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture);
+                cumulativeDecoyNotch = peptide.GetFdrInfo(writePeptideLevelFdr).CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture);
+                qValueNotch = peptide.GetFdrInfo(writePeptideLevelFdr).QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
+                PEP = peptide.GetFdrInfo(writePeptideLevelFdr).PEP.ToString();
+                PEP_Qvalue = peptide.GetFdrInfo(writePeptideLevelFdr).PEP_QValue.ToString();
             }
-            else if (peptide != null && peptide.PeptideFdrInfo != null)
-            {
-                cumulativeTarget = peptide.PeptideFdrInfo.CumulativeTarget.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoy = peptide.PeptideFdrInfo.CumulativeDecoy.ToString(CultureInfo.InvariantCulture);
-                qValue = peptide.PeptideFdrInfo.QValue.ToString("F6", CultureInfo.InvariantCulture);
-                cumulativeTargetNotch = peptide.PeptideFdrInfo.CumulativeTargetNotch.ToString(CultureInfo.InvariantCulture);
-                cumulativeDecoyNotch = peptide.PeptideFdrInfo.CumulativeDecoyNotch.ToString(CultureInfo.InvariantCulture);
-                qValueNotch = peptide.PeptideFdrInfo.QValueNotch.ToString("F6", CultureInfo.InvariantCulture);
-                PEP = peptide.PeptideFdrInfo.PEP.ToString();
-                PEP_Qvalue = peptide.PeptideFdrInfo.PEP_QValue.ToString();
-            }
+
             s[PsmTsvHeader.CumulativeTarget] = cumulativeTarget;
             s[PsmTsvHeader.CumulativeDecoy] = cumulativeDecoy;
             s[PsmTsvHeader.QValue] = qValue;
