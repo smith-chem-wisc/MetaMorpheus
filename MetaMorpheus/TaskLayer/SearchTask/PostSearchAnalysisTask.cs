@@ -29,8 +29,8 @@ namespace TaskLayer
     {
         public PostSearchAnalysisParameters Parameters { get; set; }
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
-        private IEnumerable<IGrouping<string, SpectralMatch>> PsmsGroupedByFile { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
+        public PsmFilter PsmFilter { get; set; }
 
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
@@ -66,6 +66,7 @@ namespace TaskLayer
                 CalculatePsmAndPeptideFdr(Parameters.AllPsms);
             }
 
+            PsmFilter = new PsmFilter(CommonParameters);
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
@@ -113,8 +114,6 @@ namespace TaskLayer
         }
 
 
-
-
         /// <summary>
         /// Sets the private field filteredPsms by removing all psms with Q and Q_Notch or PEP_QValues greater
         /// than a user defined threshold. Q-Value and PEP Q-Value filtering are mutually exculsive.
@@ -128,20 +127,22 @@ namespace TaskLayer
         /// <param name="includeDecoys"></param>
         /// <param name="includeContaminants"></param>
         /// <param name="includeAmbiguous"></param>
+        /// <param name="includeAmbiguousMods"></param>
         /// <param name="includeHighQValuePsms"> Bool determining wether psms with Q-value above threshold should be removed</param>
         /// <param name="qValueThreshold"></param>
         /// <param name="pepQValueThreshold"></param>
-        /// <param name="isPsmNotPeptide"> Filter results at the psm level (not the peptide level)</param>
+        /// <param name="filterAtPeptideLevel"> Filter results at the psm level (not the peptide level)</param>
         /// <returns></returns>
         private (List<SpectralMatch> filteredPsms, string filterType, double filterThreshold, bool filteringNotPerformed) FilterPsms(
             List<SpectralMatch> psms, 
             bool includeDecoys = true, 
             bool includeContaminants = true,
             bool includeAmbiguous = false,
+            bool includeAmbiguousMods = true,
             bool includeHighQValuePsms = true,
             double? qValueThreshold = null,
             double? pepQValueThreshold = null,
-            bool isPsmNotPeptide = true)
+            bool filterAtPeptideLevel = false)
         {
             string filterType = "q-value";
 
@@ -164,35 +165,19 @@ namespace TaskLayer
                 }
             }
 
-            if (isPsmNotPeptide)
+
+            if(!includeHighQValuePsms)
             {
-                if(!includeHighQValuePsms)
-                {
-                    filteredPsms = filterType.Equals("q-value")
-                    ? psms.Where(p => p.PsmFdrInfo.QValue <= filterThreshold && p.PsmFdrInfo.QValueNotch <= filterThreshold).ToList()
-                    : psms.Where(p => p.PsmFdrInfo.PEP_QValue <= filterThreshold)
-                        .ToList();
-                }
-                else
-                {
-                    filteredPsms = psms;
-                }
-                
+                filteredPsms = filterType.Equals("q-value")
+                ? psms.Where(p => p.GetFdrInfo(filterAtPeptideLevel).QValue <= filterThreshold && p.PsmFdrInfo.QValueNotch <= filterThreshold).ToList()
+                : psms.Where(p => p.PsmFdrInfo.PEP_QValue <= filterThreshold)
+                    .ToList();
             }
             else
             {
-                if (!includeHighQValuePsms)
-                {
-                    filteredPsms = filterType.Equals("q-value")
-                    ? psms.Where(p => p.PeptideFdrInfo.QValue <= filterThreshold && p.PeptideFdrInfo.QValueNotch <= filterThreshold).ToList()
-                    : psms.Where(p => p.PeptideFdrInfo.PEP_QValue <= filterThreshold)
-                        .ToList();
-                }
-                else
-                {
-                    filteredPsms = psms;
-                }
+                filteredPsms = psms;
             }
+
 
             if(!includeDecoys)
             {
@@ -206,7 +191,11 @@ namespace TaskLayer
             {
                 filteredPsms.RemoveAll(p => p.BaseSequence.IsNullOrEmpty());
             }
-            if(!isPsmNotPeptide)
+            if(!includeAmbiguousMods)
+            {
+                filteredPsms.RemoveAll(p => p.FullSequence.IsNullOrEmpty());
+            }
+            if(filterAtPeptideLevel)
             {
                 filteredPsms = filteredPsms
                     .GroupBy(b => b.FullSequence)
@@ -385,7 +374,7 @@ namespace TaskLayer
                 includeContaminants: true,
                 includeAmbiguous: true,
                 includeHighQValuePsms: false,
-                isPsmNotPeptide: true);
+                filterAtPeptideLevel: true);
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<SpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -701,7 +690,7 @@ namespace TaskLayer
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
-                includeHighQValuePsms: true);
+                includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms);
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
@@ -741,10 +730,9 @@ namespace TaskLayer
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
-                includeHighQValuePsms: true,
-                CommonParameters.QValueThreshold,
-                CommonParameters.PepQValueThreshold,
-                isPsmNotPeptide: true);
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms,
+                filterAtPeptideLevel: true);
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
@@ -759,8 +747,8 @@ namespace TaskLayer
                     Environment.NewLine);
             }
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
-                "All target PSMs with " + peptidesForPeptideResults.filterType + " = " + Math.Round(peptidesForPeptideResults.filterThreshold, 2) + ": " +
-                peptidesForPeptideResults.filteredPsms.Count + Environment.NewLine);
+                "All target peptides with " + peptidesForPeptideResults.filterType + " = " + Math.Round(peptidesForPeptideResults.filterThreshold, 2) + ": " +
+                peptidesForPeptideResults.filteredPsms + Environment.NewLine);
 
             if (Parameters.SearchParameters.DoParsimony)
             {
@@ -770,6 +758,7 @@ namespace TaskLayer
                     Environment.NewLine);
             }
         }
+
         private void WriteIndividualPsmResults()
         {
             Status("Writing Individual PSM results...", Parameters.SearchTaskId);
@@ -779,7 +768,7 @@ namespace TaskLayer
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
-                includeHighQValuePsms: true);
+                includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms);
             var psmsGroupedByFile = psmsForPsmResults.filteredPsms.GroupBy(p => p.FullFilePath);
             foreach (var psmFileGroup in psmsGroupedByFile)
             {
@@ -792,9 +781,7 @@ namespace TaskLayer
                     includeDecoys: Parameters.SearchParameters.WriteDecoys,
                     includeContaminants: Parameters.SearchParameters.WriteContaminants,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: true,
-                    CommonParameters.QValueThreshold,
-                    CommonParameters.PepQValueThreshold);
+                    includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms);
 
                 // write summary text
                 Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
@@ -821,11 +808,10 @@ namespace TaskLayer
             var peptidesForPeptideResults = FilterPsms(Parameters.AllPsms,
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
-                includeAmbiguous: true,
-                includeHighQValuePsms: true,
-                CommonParameters.QValueThreshold,
-                CommonParameters.PepQValueThreshold,
-                isPsmNotPeptide: true);
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms,
+                filterAtPeptideLevel: true);
             var peptidesGroupedByFile = peptidesForPeptideResults.filteredPsms.GroupBy(p => p.FullFilePath);
             foreach (var peptideFileGroup in peptidesGroupedByFile)
             {
@@ -838,10 +824,9 @@ namespace TaskLayer
                     includeDecoys: Parameters.SearchParameters.WriteDecoys,
                     includeContaminants: Parameters.SearchParameters.WriteContaminants,
                     includeAmbiguous: false,
-                    includeHighQValuePsms: true,
-                    CommonParameters.QValueThreshold,
-                    CommonParameters.PepQValueThreshold,
-                    isPsmNotPeptide: true);
+                    includeAmbiguousMods: false,
+                    includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms,
+                    filterAtPeptideLevel: true);
 
                 // write summary text
                 Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
@@ -1143,7 +1128,7 @@ namespace TaskLayer
                 var filteredPsms = FilterPsms(Parameters.AllPsms,
                         includeDecoys: false,
                         includeContaminants: true,
-                        includeAmbiguous: true,
+                        includeAmbiguous: false,
                         includeHighQValuePsms: false).filteredPsms;
 
 
@@ -1188,10 +1173,11 @@ namespace TaskLayer
                 }
 
                 //generates dictionary of proteins with only localized modifications
-                var originalModPsms = FilterPsms(Parameters.AllPsms,
+                var originalModPsms = FilterPsms(filteredPsms,
                         includeDecoys: false,
                         includeContaminants: true,
                         includeAmbiguous: false,
+                        includeAmbiguousMods: false,
                         includeHighQValuePsms: false).filteredPsms;
 
 
@@ -1533,7 +1519,7 @@ namespace TaskLayer
                         includeContaminants: true,
                         includeAmbiguous: true,
                         includeHighQValuePsms: false,
-                        isPsmNotPeptide: true);
+                        filterAtPeptideLevel: true);
 
             var fdrPsms = fdrPsmsFilterInfo.filteredPsms;
 
