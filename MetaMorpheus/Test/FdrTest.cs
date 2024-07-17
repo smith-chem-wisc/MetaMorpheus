@@ -406,7 +406,7 @@ namespace Test
             };
             var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("top-down", fsp, maxScorePsm, fileSpecificRetTimeHI_behavior, fileSpecificRetTemHI_behaviorModifiedPeptides, massError, chargeStateMode, pwsm, notch, !pwsm.Parent.IsDecoy);
             Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
-            double normalizationFactor = /*(double)pwsm.BaseSequence.Length / 10.0;*/ 1;
+            double normalizationFactor = 1;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             float maxPsmIntensity = (float)Math.Min(50, Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));

@@ -31,12 +31,6 @@ namespace EngineLayer
         /// </summary>
         private static Dictionary<string, int> chimeraCountDictionary = new Dictionary<string, int>();
         
-        /// <summary>
-        /// Used to determine if the search is classic or modern. If it is top-down, then the PEP values will not be normalized.
-        /// In a closed classic search, normalizing to the protein length is not necessary.
-        /// In a modern search, normalizing to the protein length is necessary due to the possibility of a precursor mass difference acceptor
-        /// </summary>
-        private static bool isOpenSearch;
 
         /// <summary>
         /// This method is used to compute the PEP values for all PSMs in a dataset. 
@@ -45,12 +39,10 @@ namespace EngineLayer
         /// <param name="searchType"></param>
         /// <param name="fileSpecificParameters"></param>
         /// <param name="outputFolder"></param>
-        /// <param name="searchMode">Used only when constructing the PsmData. If Top-Down and classic, no normalization will occur</param>
         /// <returns></returns>
-        public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, bool isOpenSearch = false)
+        public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
         {
             string[] trainingVariables = PsmData.trainingInfos[searchType];
-            PEP_Analysis_Cross_Validation.isOpenSearch = isOpenSearch;
 
             //ensure that the order is always stable.
             psms = psms.OrderByDescending(p => p).ToList();
@@ -807,7 +799,6 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
-
 
             double multiplier = 10;
             if (searchType != "crosslink")
