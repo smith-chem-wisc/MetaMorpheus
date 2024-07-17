@@ -13,7 +13,7 @@ namespace TaskLayer
     /// </summary>
     public class FilteredPsms : IEnumerable<SpectralMatch>
     {
-        public List<SpectralMatch> Psms { get; }
+        public List<SpectralMatch> Psms { get; set; }
         /// <summary>
         /// Filter type can have only two values: "q-value" or "pep q-value"
         /// </summary>
@@ -77,7 +77,7 @@ namespace TaskLayer
         /// <param name="psms"> List of spectral match objects to be filtered</param>
         /// <param name="filterAtPeptideLevel">Filter results at the peptide level (defaults to false) </param>
         /// <returns> A FilteredPsms object</returns>
-        public FilteredPsms Filter(List<SpectralMatch> psms,
+        public FilteredPsms Filter(IEnumerable<SpectralMatch> psms,
             bool includeDecoys = true,
             bool includeContaminants = true,
             bool includeAmbiguous = false,
@@ -98,7 +98,7 @@ namespace TaskLayer
             string filterType = "q-value";
             if (pepQValueThreshold < qValueThreshold)
             {
-                if (psms.Count < 100)
+                if (psms.Count() < 100)
                 {
                     filteringNotPerformed = true;
                     filterThreshold = 1;
@@ -118,7 +118,7 @@ namespace TaskLayer
             }
             else
             {
-                filteredPsms = psms;
+                filteredPsms = psms.ToList();
             }
 
             if (!includeDecoys)
