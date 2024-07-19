@@ -29,11 +29,9 @@ namespace TaskLayer
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Time to run task: " + Time);
             sb.AppendLine();
-            sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
             if ((NewSpectra != null && NewSpectra.Any()) || (NewDatabases != null && NewDatabases.Any()))
             {
-                sb.AppendLine();
                 sb.AppendLine();
                 sb.AppendLine("New files:");
                 if (NewSpectra != null && NewSpectra.Any())
@@ -48,17 +46,13 @@ namespace TaskLayer
                     sb.AppendLine(string.Join(Environment.NewLine + "\t", NewDatabases.Select(b => b.FilePath)).ToString());
                 }
                 sb.AppendLine();
-                sb.AppendLine();
                 sb.AppendLine("--------------------------------------------------");
             }
-            sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine(PsmPeptideProteinSummaryText.ToString());
             sb.AppendLine(TaskSummaryText.ToString());
             sb.AppendLine();
-            sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
-            sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine("Engine Results:");
             sb.AppendLine();
