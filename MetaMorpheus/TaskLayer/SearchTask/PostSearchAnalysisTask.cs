@@ -31,6 +31,8 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
 
+        private Dictionary<(string,string),string> ResultsDictionary { get; set; }
+
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
@@ -59,12 +61,9 @@ namespace TaskLayer
             {
                 Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
                 Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
-                //Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-                //   .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
-                //   .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
                 CalculatePsmAndPeptideFdr(Parameters.AllPsms);
             }
-
+            ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
@@ -79,6 +78,7 @@ namespace TaskLayer
                 WriteIndividualPeptideResults();
             }
             WriteProteinResults();
+            AddResultsTotalsToAllResultsTsv();
             WritePrunedDatabase();
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
@@ -100,7 +100,7 @@ namespace TaskLayer
             {
                 WriteVariantResults();
             }
-            WritePeptideResults(); // modifies the FDR results for PSMs, so do this last
+
             CompressIndividualFileResults();
             return Parameters.SearchTaskResults;
         }
@@ -613,21 +613,14 @@ namespace TaskLayer
             // write summary text
             if (psmsForPsmResults.FilteringNotPerformed)
             {
+                
                 Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
                     "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." +
                     Environment.NewLine);
             }
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
-                "All target PSMs with " +  psmsForPsmResults.FilterType + " = " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
-                psmsForPsmResults.PsmsAboveThreshold + Environment.NewLine);
-
-            if (Parameters.SearchParameters.DoParsimony)
-            {
-                Parameters.SearchTaskResults.AddTaskSummaryText(
-                    "All target protein groups with q-value = 0.01 (1% FDR): " +
-                    ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy) +
-                    Environment.NewLine);
-            }
+            string psmResultsText = "All target PSMs with " + psmsForPsmResults.FilterType + " = " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
+                psmsForPsmResults.PsmsAboveThreshold;
+            ResultsDictionary[("All", "PSMs")] = psmResultsText;
         }
         private void WritePeptideResults()
         {
@@ -650,20 +643,11 @@ namespace TaskLayer
             if (peptidesForPeptideResults.FilteringNotPerformed)
             {
                 Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
-                    "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." +
-                    Environment.NewLine);
+                    "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value.");
             }
-            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
-                "All target peptides with " + peptidesForPeptideResults.FilterType + " = " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
-                peptidesForPeptideResults.PsmsAboveThreshold + Environment.NewLine);
-
-            if (Parameters.SearchParameters.DoParsimony)
-            {
-                Parameters.SearchTaskResults.AddTaskSummaryText(
-                    "All target protein groups with q-value = 0.01 (1% FDR): " +
-                    ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy) +
-                    Environment.NewLine);
-            }
+            string peptideResultsText = "All target peptides with " + peptidesForPeptideResults.FilterType + " = " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
+                peptidesForPeptideResults.PsmsAboveThreshold;
+            ResultsDictionary[("All", "Peptides")] = peptideResultsText;
         }
 
         private void WriteIndividualPsmResults()
@@ -690,12 +674,6 @@ namespace TaskLayer
                     includeAmbiguous: false,
                     includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms);
 
-                // write summary text
-                Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
-                Parameters.SearchTaskResults.AddTaskSummaryText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
-                Parameters.SearchTaskResults.AddTaskSummaryText(strippedFileName + " target PSMs with " + psmsToWrite.FilterType + " = " +
-                Math.Round(psmsToWrite.FilterThreshold, 2) + ": " + psmsToWrite.PsmsAboveThreshold + Environment.NewLine);
-
                 // write PSMs
                 writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
                 WritePsmsToTsv(psmsToWrite, writtenFile);
@@ -705,6 +683,11 @@ namespace TaskLayer
                 writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMsFormattedForPercolator.tab");
                 WritePsmsForPercolator(psmsToWrite.Psms, writtenFile);
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
+
+                // write summary text
+                string psmResultsText = strippedFileName + " - All target PSMs with " + psmsToWrite.FilterType + " = " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " +
+                                        psmsToWrite.PsmsAboveThreshold;
+                ResultsDictionary[(strippedFileName, "PSMs")] = psmResultsText;
             }
         }
         private void WriteIndividualPeptideResults()
@@ -735,17 +718,15 @@ namespace TaskLayer
                     includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms,
                     filterAtPeptideLevel: true);
 
-                // write summary text
-                Parameters.SearchTaskResults.AddTaskSummaryText("MS2 spectra in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][0]);
-                Parameters.SearchTaskResults.AddTaskSummaryText("Precursors fragmented in " + strippedFileName + ": " + Parameters.NumMs2SpectraPerFile[strippedFileName][1]);
-                Parameters.SearchTaskResults.AddTaskSummaryText(strippedFileName + " target Peptides with " + peptidesToWrite.FilterType + " = " +
-                Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " + peptidesToWrite.PsmsAboveThreshold + Environment.NewLine);
-
                 // write PSMs
                 writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
                 WritePsmsToTsv(peptidesToWrite, writtenFile, writePeptideLevelResults: true);
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", peptideFileGroup.Key });
 
+                // write summary text
+                string peptideResultsText = strippedFileName + " - All target PSMs with " + peptidesToWrite.FilterType + " = " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
+                                        peptidesToWrite.PsmsAboveThreshold;
+                ResultsDictionary[(strippedFileName, "Peptides")] = peptideResultsText;
             }
         }
         private void UpdateSpectralLibrary()
@@ -847,6 +828,11 @@ namespace TaskLayer
             {
                 return;
             }
+            else
+            {
+                string proteinResultsText = "All target protein groups with q-value = 0.01 (1% FDR): " + ProteinGroups.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+                ResultsDictionary[("All", "Proteins")] = proteinResultsText;
+            }
             
             string fileName = "AllProteinGroups.tsv";
             if (Parameters.SearchParameters.DoLabelFreeQuantification)
@@ -921,7 +907,7 @@ namespace TaskLayer
 
                 subsetProteinGroupsForThisFile = subsetProteinScoringAndFdrResults.SortedAndScoredProteinGroups;
 
-                Parameters.SearchTaskResults.AddTaskSummaryText("Target protein groups within 1 % FDR in " + strippedFileName + ": " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy));
+                
 
                 if(Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
                 {
@@ -930,6 +916,9 @@ namespace TaskLayer
                 
                 WriteProteinGroupsToTsv(subsetProteinGroupsForThisFile, writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
 
+                // write summary text
+                string proteinResultsText = strippedFileName + " - Target protein groups within 1 % FDR: " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
+                ResultsDictionary[(strippedFileName, "Proteins")] = proteinResultsText;
 
                 psmsForThisFile = Filter(psmsForThisFile,
                     includeDecoys: Parameters.SearchParameters.WriteDecoys,
@@ -1858,11 +1847,69 @@ namespace TaskLayer
                         }
                     }
                 }
-
                 FinishedWritingFile(filePath, nestedIds);
             }
         }
 
+        private void ConstructResultsDictionary()
+        {
+            ResultsDictionary = new();
+
+            ResultsDictionary.Add(("All", "PSMs"),"");
+            ResultsDictionary.Add(("All", "Peptides"), "");
+
+            if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
+            {
+                foreach (var rawFile in Parameters.CurrentRawFileList)
+                {
+                    ResultsDictionary.Add((rawFile, "PSMs"), "");
+                    ResultsDictionary.Add((rawFile, "Peptides"), "");
+                }
+            }
+
+            if (Parameters.SearchParameters.DoParsimony)
+            {
+                ResultsDictionary.Add(("All", "Proteins"), ""); 
+                if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
+                {
+                    foreach (var rawFile in Parameters.CurrentRawFileList)
+                    {
+                        ResultsDictionary.Add((rawFile, "Proteins"), "");
+                    }
+                }
+            }
+        }
+
+        private string AllResultsTotals()
+        {
+            StringBuilder sb = new();
+            foreach (var key in ResultsDictionary.Keys)
+            {
+                if (key.Item1 == "All")
+                {
+                    sb.AppendLine(ResultsDictionary[key]);
+                }
+            }
+            sb.AppendLine();
+            sb.AppendLine();
+            var keys = ResultsDictionary.Keys.Where(k=>k.Item1 != "All").OrderBy(k=>k.Item1).ToList();
+            var item1 = keys.First().Item1;
+            foreach (var key in keys)
+            {
+                if (key.Item1 != item1)
+                {
+                    sb.AppendLine();
+                    item1 = key.Item1;
+                }
+                sb.AppendLine(ResultsDictionary[key]);
+            }
+            return sb.ToString();
+        }
+
+        private void AddResultsTotalsToAllResultsTsv()
+        {
+            Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(AllResultsTotals());
+        }
         private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");

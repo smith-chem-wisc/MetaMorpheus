@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Easy.Common.Extensions;
+
 namespace TaskLayer
 {
     public class MyTaskResults
@@ -10,7 +12,7 @@ namespace TaskLayer
         public List<string> NewSpectra; // calibration writes new calibrated spectra
         public List<DbForTask> NewDatabases; // gptmd writes new annotated databases
         public List<string> NewFileSpecificTomls; // calibration writes suggested ppm tolerances
-        public TimeSpan Time; 
+        public TimeSpan Time;
 
         private readonly List<string> resultTexts;
 

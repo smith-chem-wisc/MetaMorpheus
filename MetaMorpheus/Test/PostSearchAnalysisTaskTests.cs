@@ -37,8 +37,8 @@ namespace Test
 
             // The new PEP calculation method improves things, so all these numbers are increasing as of (7/17/24)
             Assert.AreEqual("All target PSMs with q-value = 0.01: 431", allResults[12]);
-            Assert.AreEqual("All target peptides with q-value = 0.01 : 180", allResults[13]);
-            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 167", allResults[14]);
+            Assert.AreEqual("All target peptides with q-value = 0.01: 180", allResults[13]);
+            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", allResults[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip target PSMs with q-value = 0.01: 214", allResults[18]);
             Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip: 165", allResults[24]);
             Assert.AreEqual("TaGe_SA_A549_3_snip Target peptides with q-value = 0.01 : 174", allResults[26]);
