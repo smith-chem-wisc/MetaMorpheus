@@ -308,7 +308,8 @@ namespace EngineLayer
                 psm.RemoveThisAmbiguousPeptide(notches[i], pwsmList[i]);
                 ambiguousPeptidesRemovedCount++;
             }
-            psm.FdrInfo.PEP = 1 - pepValuePredictions.Max();
+            psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
+            psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
         }
 
         /// <summary>

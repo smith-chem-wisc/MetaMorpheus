@@ -98,7 +98,7 @@ namespace Test
             Assert.AreEqual("0", psm.Notch);
             Assert.AreEqual("Homo sapiens", psm.OrganismName);
             Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
-            Assert.AreEqual(0.066667, psm.PEP_QValue);
+            Assert.AreEqual(0.0068, Math.Round(psm.PEP_QValue,4));
             Assert.AreEqual("full", psm.PeptideDescription);
             Assert.AreEqual("2125.92875", psm.PeptideMonoMass);
             Assert.AreEqual(3, psm.PrecursorCharge);
@@ -108,8 +108,8 @@ namespace Test
             Assert.AreEqual("K", psm.PreviousAminoAcid);
             Assert.AreEqual("P46013", psm.ProteinAccession);
             Assert.AreEqual("Proliferation marker protein Ki-67", psm.ProteinName);
-            Assert.That(0.004739, Is.EqualTo(psm.QValue).Within(1E-04));
-            Assert.That(0.004739, Is.EqualTo(psm.QValueNotch).Within(1E-04));
+            Assert.That(0.005747, Is.EqualTo(psm.QValue).Within(1E-04));
+            Assert.That(0.005747, Is.EqualTo(psm.QValueNotch).Within(1E-04));
             Assert.AreEqual(45.59512, psm.RetentionTime);
             Assert.AreEqual(662.486, psm.Score);
             Assert.AreEqual("[2742 to 2761]", psm.StartAndEndResiduesInProtein);

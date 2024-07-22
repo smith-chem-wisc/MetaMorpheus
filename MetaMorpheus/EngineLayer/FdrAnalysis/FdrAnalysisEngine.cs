@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
-using EngineLayer;
-using EngineLayer.FdrAnalysis;
-using Newtonsoft.Json.Linq;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -305,8 +302,8 @@ namespace EngineLayer.FdrAnalysis
             {
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
-
-                psms[i].PeptideFdrInfo.PEP_QValue = Math.Min(qValue, (psms[i].PeptideFdrInfo.CumulativeDecoy + 1) / psms[i].PeptideFdrInfo.CumulativeTarget);
+                qValue = Math.Min(qValue, (psms[i].PeptideFdrInfo.CumulativeDecoy + 1) / psms[i].PeptideFdrInfo.CumulativeTarget);
+                psms[i].PeptideFdrInfo.PEP_QValue = qValue;
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
