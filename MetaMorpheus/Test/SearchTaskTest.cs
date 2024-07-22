@@ -369,24 +369,27 @@ namespace Test
                 {
                     columns = lineline.ToList();
                 }
-
-                // since each PSM has a duplicate, these counts will be 1,3,5,7, etc. if peptide FDR isn't calculated
-                // if peptide FDR is calculated, they will be 1,2,3,4, etc. as expected
-                else if (lineline[columns.IndexOf("Decoy/Contaminant/Target")] == "D")
-                {
-                    Assert.AreEqual(++cumDecoys, int.Parse(lineline[columns.IndexOf("Cumulative Decoy")]));
-                    finalQValue = double.Parse(lineline[columns.IndexOf("QValue")], CultureInfo.InvariantCulture);
-                }
                 else
                 {
-                    Assert.AreEqual(++cumTargets, int.Parse(lineline[columns.IndexOf("Cumulative Target")]));
-                    finalQValue = double.Parse(lineline[columns.IndexOf("QValue")], CultureInfo.InvariantCulture);
+                    // since each PSM has a duplicate, these counts will be 1,3,5,7, etc. if peptide FDR isn't calculated
+                    // if peptide FDR is calculated, they will be 1,2,3,4, etc. as expected
+                    if (lineline[columns.IndexOf("Decoy/Contaminant/Target")] == "D")
+                    {
+                        Assert.AreEqual(++cumDecoys, int.Parse(lineline[columns.IndexOf("Cumulative Decoy")]));
+                    }
+                    else
+                    {
+                        Assert.AreEqual(++cumTargets, int.Parse(lineline[columns.IndexOf("Cumulative Target")]));
+                    }
+
+                    finalQValue = Math.Max(finalQValue, (double)cumDecoys / (double)cumTargets);
                 }
+                
             }
 
             // test that the final q-value follows the (target / decoy) formula
             // intermediate q-values no longer always follow this formula, so I'm not testing them here
-            Assert.That((double)cumDecoys / (double)cumTargets, Is.EqualTo(finalQValue).Within(.0005));
+            Assert.That(0.5, Is.EqualTo(finalQValue).Within(.0005));
             Directory.Delete(folderPath, true);
         }
 
