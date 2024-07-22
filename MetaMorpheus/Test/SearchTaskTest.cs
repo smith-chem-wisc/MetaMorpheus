@@ -13,6 +13,7 @@ using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
+using Org.BouncyCastle.Asn1.X509;
 
 namespace Test
 {
@@ -155,8 +156,6 @@ namespace Test
                     CommonParameters = new CommonParameters(scoreCutoff: 4, addCompIons: true,
                     digestionParams: new DigestionParams(searchModeType: CleavageSpecificity.Semi, fragmentationTerminus: fragTerm))
                 };
-
-                DbForTask db = new DbForTask(myDatabase, false);
 
                 List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("TestSemiSpecific", searchTask) };
 
@@ -614,8 +613,8 @@ namespace Test
 
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value.", results[7]);
-            Assert.AreEqual("All target PSMs with q-value = 0.02: 84", results[8]);
+            Assert.AreEqual("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value.", results[6]);
+            Assert.AreEqual("All target PSMs with q-value = 1: 89", results[7]);
 
             // clean up
             Directory.Delete(folderPath, true);

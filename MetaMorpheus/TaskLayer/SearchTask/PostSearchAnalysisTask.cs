@@ -80,6 +80,7 @@ namespace TaskLayer
             WriteProteinResults();
             AddResultsTotalsToAllResultsTsv();
             WritePrunedDatabase();
+            var k = CommonParameters;
             if (Parameters.SearchParameters.WriteSpectralLibrary)
             {
                 SpectralLibraryGeneration();
@@ -635,7 +636,7 @@ namespace TaskLayer
             if (peptidesForPeptideResults.FilteringNotPerformed)
             {
                 Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
-                    "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value.");
+                    "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." + Environment.NewLine);
             }
             string peptideResultsText = "All target peptides with " + peptidesForPeptideResults.FilterType + " = " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
                 peptidesForPeptideResults.PsmsAboveThreshold;
