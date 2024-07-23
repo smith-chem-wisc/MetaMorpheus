@@ -726,6 +726,7 @@ namespace TaskLayer
                                         peptidesToWrite.PsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, "Peptides")] = peptideResultsText;
             }
+                
         }
         private void UpdateSpectralLibrary()
         {

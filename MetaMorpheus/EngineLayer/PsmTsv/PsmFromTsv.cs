@@ -33,7 +33,7 @@ namespace EngineLayer
         public double Score { get; }
         public string ProteinAccession { get; }
         public double? SpectralAngle { get; }
-        public List<MatchedFragmentIon> MatchedIons { get; }
+        public List<MatchedFragmentIon> MatchedIons { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildScanMatchedIons { get; } // this is only used in crosslink for now, but in the future will be used for other experiment types
         public double QValue { get; }
 
