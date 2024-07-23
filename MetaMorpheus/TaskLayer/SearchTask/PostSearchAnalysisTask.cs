@@ -269,13 +269,13 @@ namespace TaskLayer
                 includeHighQValuePsms: false);
 
             // Get peptides for quantification ( only these peptides will be reported in AllQuantifiedPeptides.tsv)
-            var peptidesForQuantification = Filter(Parameters.AllPsms,
-                includeDecoys: false,
-                includeContaminants: true,
-                includeAmbiguous: false,
-                includeAmbiguousMods: false,
-                includeHighQValuePsms: false,
-                filterAtPeptideLevel: true);
+            //var peptidesForQuantification = Filter(Parameters.AllPsms,
+            //    includeDecoys: false,
+            //    includeContaminants: true,
+            //    includeAmbiguous: false,
+            //    includeAmbiguousMods: false,
+            //    includeHighQValuePsms: false,
+            //    filterAtPeptideLevel: true);
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<SpectralMatch, List<FlashLFQ.ProteinGroup>>();
