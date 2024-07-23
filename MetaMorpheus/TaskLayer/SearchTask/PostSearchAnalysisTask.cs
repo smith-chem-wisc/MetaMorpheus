@@ -462,7 +462,6 @@ namespace TaskLayer
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
             //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
             Dictionary<Protease, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<SpectralMatch>>();
-            Dictionary<Protease, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<Protease, FlashLfqResults>();
 
             foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
             {
