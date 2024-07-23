@@ -201,11 +201,11 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                qValue = Math.Max(qValue, psms[i].PsmFdrInfo.CumulativeDecoy / psms[i].PsmFdrInfo.CumulativeTarget);
-                qValueNotch = Math.Max(qValueNotch, psms[i].PsmFdrInfo.CumulativeDecoyNotch / psms[i].PsmFdrInfo.CumulativeTargetNotch);
+                qValue = Math.Max(qValue, psms[i].PsmFdrInfo.CumulativeDecoy / Math.Max(psms[i].PsmFdrInfo.CumulativeTarget,1));
+                qValueNotch = Math.Max(qValueNotch, psms[i].PsmFdrInfo.CumulativeDecoyNotch / Math.Max(psms[i].PsmFdrInfo.CumulativeTargetNotch,1));
 
-                psms[i].PsmFdrInfo.QValue = qValue;
-                psms[i].PsmFdrInfo.QValueNotch = qValueNotch;
+                psms[i].PsmFdrInfo.QValue = Math.Min(qValue, 1);
+                psms[i].PsmFdrInfo.QValueNotch = Math.Min(qValueNotch, 1);
             }
         }
         /// <summary>
@@ -221,11 +221,11 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                qValue = Math.Max(qValue, psms[i].PeptideFdrInfo.CumulativeDecoy / psms[i].PeptideFdrInfo.CumulativeTarget);
-                qValueNotch = Math.Max(qValueNotch, psms[i].PeptideFdrInfo.CumulativeDecoyNotch / psms[i].PeptideFdrInfo.CumulativeTargetNotch);
+                qValue = Math.Max(qValue, psms[i].PeptideFdrInfo.CumulativeDecoy / Math.Max(psms[i].PeptideFdrInfo.CumulativeTarget,1));
+                qValueNotch = Math.Max(qValueNotch, psms[i].PeptideFdrInfo.CumulativeDecoyNotch / Math.Max(psms[i].PeptideFdrInfo.CumulativeTargetNotch,1));
 
-                psms[i].PeptideFdrInfo.QValue = qValue;
-                psms[i].PeptideFdrInfo.QValueNotch = qValueNotch;
+                psms[i].PeptideFdrInfo.QValue = Math.Min(qValue,1);
+                psms[i].PeptideFdrInfo.QValueNotch = Math.Min(qValueNotch,1);
             }
         }
         private static void QValueInvertedPsms(List<SpectralMatch> psms)
@@ -242,11 +242,11 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                qValue = Math.Min(qValue, (psms[i].PsmFdrInfo.CumulativeDecoy + 1) / psms[i].PsmFdrInfo.CumulativeTarget);
-                qValueNotch = Math.Min(qValueNotch, (psms[i].PsmFdrInfo.CumulativeDecoyNotch + 1) / psms[i].PsmFdrInfo.CumulativeTargetNotch);
+                qValue = Math.Min(qValue, (psms[i].PsmFdrInfo.CumulativeDecoy + 1) / Math.Max(psms[i].PsmFdrInfo.CumulativeTarget,1));
+                qValueNotch = Math.Min(qValueNotch, (psms[i].PsmFdrInfo.CumulativeDecoyNotch + 1) / Math.Max(psms[i].PsmFdrInfo.CumulativeTargetNotch,1));
 
-                psms[i].PsmFdrInfo.QValue = qValue;
-                psms[i].PsmFdrInfo.QValueNotch = qValueNotch;
+                psms[i].PsmFdrInfo.QValue = Math.Min(qValue,1);
+                psms[i].PsmFdrInfo.QValueNotch = Math.Min(qValueNotch,1);
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
