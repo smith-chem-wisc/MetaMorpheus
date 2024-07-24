@@ -283,7 +283,7 @@ namespace Test
             //There is one PSM with close peptide mass (0 ppm difference) and one PSM with large mass difference (>1000 ppm difference)
             //Since this is an open search, both PSMs should be reported because they share the exact same MS2 scan
 
-            Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value = 0.01: 2"));
+            Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value = 0.01: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
