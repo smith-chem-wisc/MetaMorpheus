@@ -391,20 +391,20 @@ namespace EngineLayer.GlycoSearch
         {
             List<Tuple<int, int, bool>> localizedGlycan = new List<Tuple<int, int, bool>>();
 
-            Dictionary<string, int> ModSiteSeenCount = new Dictionary<string, int>(); // all possible glycan-sites pair, Dictionary<string, int>: site-glycan pair, count
+            Dictionary<string, int> modSiteSeenCount = new Dictionary<string, int>(); // all possible glycan-sites pair, Dictionary<string, int>: site-glycan pair, count
 
             foreach (var ogl in OGlycanBoxLocalization) // ogl means one case, there are three glycan located on the same peptide: (5,1,False),(9,8,Flase),(10,9,Ture)
             {
                 foreach (var og in ogl.Mods)            // og means one glycan locaization, like (5,1,False) -> glycan 1 attached on postion5.
                 {
                     var k = og.Item1.ToString() + "-" + og.Item2.ToString(); // k = 5-1(glycosite-glycan) means the glycan-site pair
-                    if (ModSiteSeenCount.ContainsKey(k)) // accout the number of the same glycan-site pair
+                    if (modSiteSeenCount.ContainsKey(k)) // accout the number of the same glycan-site pair
                     {
-                        ModSiteSeenCount[k] += 1;   // this pair cpunt +1
+                        modSiteSeenCount[k] += 1;   // this pair cpunt +1
                     }
                     else
                     {
-                        ModSiteSeenCount.Add(k, 1); // If the pair is first time to seen, add it to the dictionary.
+                        modSiteSeenCount.Add(k, 1); // If the pair is first time to seen, add it to the dictionary.
                     }
                 }
             }
@@ -416,7 +416,7 @@ namespace EngineLayer.GlycoSearch
             }
             else if (OGlycanBoxLocalization.Count > 1)
             {
-                if (ModSiteSeenCount.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0) //If anyone of the glycan-site pair is localized in all the cases, then the localization level is 2.
+                if (modSiteSeenCount.Values.Where(p => p == OGlycanBoxLocalization.Count).Count() > 0) //If anyone of the glycan-site pair is localized in all the cases, then the localization level is 2.
                 {
                     localizationLevel = LocalizationLevel.Level2;
                 }
@@ -426,7 +426,7 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            foreach (var seenMod in ModSiteSeenCount)
+            foreach (var seenMod in modSiteSeenCount)
             {
                 if (seenMod.Value == OGlycanBoxLocalization.Count) // Try to fine the glycan-site pair that always localized in all the cases.
                 {

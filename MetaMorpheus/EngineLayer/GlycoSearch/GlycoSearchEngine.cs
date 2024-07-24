@@ -16,7 +16,7 @@ namespace EngineLayer.GlycoSearch
     {
         public static readonly double ToleranceForMassDifferentiation = 1e-9;
         private readonly int OxoniumIon204Index = 9;               // Check Glycan.AllOxoniumIons
-        protected readonly List<GlycoSpectralMatch>[] GlobalCsms;  // Why don't we call it GlobalGsms?
+        protected readonly List<GlycoSpectralMatch>[] GlobalGsms;  // Why don't we call it GlobalGsms?
 
         private GlycoSearchType GlycoSearchType;
         private readonly int TopN;              // DDA top Peak number.
@@ -36,7 +36,7 @@ namespace EngineLayer.GlycoSearch
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
-            this.GlobalCsms = globalCsms;
+            this.GlobalGsms = globalCsms;
             this.GlycoSearchType = glycoSearchType;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
@@ -201,14 +201,14 @@ namespace EngineLayer.GlycoSearch
                             continue;
                         }
 
-                        if (GlobalCsms[scanIndex] == null)
+                        if (GlobalGsms[scanIndex] == null)
                         {
-                            GlobalCsms[scanIndex] = new List<GlycoSpectralMatch>(); //the first one finished task, create teh new gsms list.
+                            GlobalGsms[scanIndex] = new List<GlycoSpectralMatch>(); //the first one finished task, create teh new gsms list.
                         }
                         else
                         {
-                            gsms.AddRange(GlobalCsms[scanIndex]);
-                            GlobalCsms[scanIndex].Clear();                       
+                            gsms.AddRange(GlobalGsms[scanIndex]);
+                            GlobalGsms[scanIndex].Clear();                       
                         }
 
                         Add2GlobalGsms(ref gsms, scanIndex);
@@ -248,7 +248,7 @@ namespace EngineLayer.GlycoSearch
                         preScore = gsm.Score;
                         preString = gsm.FullSequence;
 
-                        GlobalCsms[scanIndex].Add(gsm);
+                        GlobalGsms[scanIndex].Add(gsm);
                         gsmsCount++;
                     }
                     else 
@@ -262,14 +262,14 @@ namespace EngineLayer.GlycoSearch
                             {
                                 foreach ((int, PeptideWithSetModifications Peptide) bestMatchPeptide in gsm.BestMatchingBioPolymersWithSetMods) // We should add tje new ProteinMatch to the gsm. 
                                 {                                                                                                               // Because the indentical sequence may from the different protein.
-                                    GlobalCsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide, gsm.BioPolymersWithSetModsToMatchingFragments[bestMatchPeptide.Peptide]);
+                                    GlobalGsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide, gsm.BioPolymersWithSetModsToMatchingFragments[bestMatchPeptide.Peptide]);
 
                                 }
                             }
                             else
                             {
                                 preString = currentString;
-                                GlobalCsms[scanIndex].Add(gsm);
+                                GlobalGsms[scanIndex].Add(gsm);
                                 gsmsCount++;
                             }
                         }
