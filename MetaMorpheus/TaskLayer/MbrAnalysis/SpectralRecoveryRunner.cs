@@ -207,40 +207,16 @@ namespace TaskLayer.MbrAnalysis
                 Select(p => p.Value.spectralLibraryMatch).
                 Where(v => v != null).
                 ToList();
-            List<int>[] psmGroupIndices = PEP_Analysis_Cross_Validation.Get_PSM_Group_Indices(psms, 1);
-            MLContext mlContext = new MLContext();
-            IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[1];
 
-            string searchType = "standard";
-            if (psms[0].DigestionParams.Protease.Name == "top-down")
-            {
-                searchType = "top-down";
-            }
+            FdrAnalysisEngine fdrAnalysisEngine = new FdrAnalysisEngine(psms,
+                parameters.NumNotches,
+                fileSpecificParameters.First().Item2,
+                fileSpecificParameters,
+                new List<string> { parameters.SearchTaskId },
+                doPEP: true);
 
-            int chargeStateMode = PEP_Analysis_Cross_Validation.GetChargeStateMode(allPsms);
+            fdrAnalysisEngine.Run();
 
-            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(allPsms, fileSpecificParameters, false);
-            Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(allPsms, fileSpecificParameters, true);
-            PEP_Analysis_Cross_Validation.ComputeMobilityValues(allPsms, fileSpecificParameters);
-
-            Dictionary<string, float> fileSpecificMedianFragmentMassErrors = PEP_Analysis_Cross_Validation.GetFileSpecificMedianFragmentMassError(allPsms);
-
-            PSMDataGroups[0] = PEP_Analysis_Cross_Validation.CreatePsmData(searchType, fileSpecificParameters, psms, psmGroupIndices[0], fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
-
-            string[] trainingVariables = PsmData.trainingInfos[searchType];
-
-            TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[1];
-
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
-            var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables).Append(trainer);
-
-            IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[0]);
-
-            string outputFolder = parameters.OutputFolder;
-
-            trainedModels[0] = pipeline.Fit(dataView);
-
-            PEP_Analysis_Cross_Validation.Compute_PSM_PEP(psms, psmGroupIndices[0], mlContext, trainedModels[0], searchType, fileSpecificParameters, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
         }
 
         private static void AssignEstimatedPsmPepQValue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<SpectralMatch> allPsms)

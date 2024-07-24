@@ -65,49 +65,25 @@ namespace EngineLayer.FdrAnalysis
                 var psms = proteasePsms.OrderByDescending(p=>p).ToList();
                 if (psms.Count > 100)
                 {
-                    var peptides = psms
-                        .GroupBy(b => b.FullSequence)
-                        .Select(b => b.FirstOrDefault()).ToList();
-                    if (peptides.Count > 100)
+                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
+                    QValueInvertedPeptides(psms);
+                    if (DoPEP)
                     {
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
-                        QValueInvertedPeptides(peptides);
-                        if (DoPEP)
-                        {
-                            //PEP will model will be developed using peptides and then applied to all PSMs. 
-                            Compute_PEPValue(myAnalysisResults, psms);
-                            //some PSMs will be eliminated during the PEP calculation. So, we need to recompute the cumulative target and decoy counts
-                            //peptiides are first ordered by PEP from good to bad and then by MM score from good to bad
-                            peptides = peptides.OrderBy(p => p.PeptideFdrInfo.PEP).ThenByDescending(p => p).ToList();
-                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
-                            PepQValueInvertedPeptides(peptides);
-                            psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
-                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
-                            PepQValueInvertedPsms(psms);
+                        //PEP will model will be developed using peptides and then applied to all PSMs. 
+                        Compute_PEPValue(myAnalysisResults, psms);
+                        //some PSMs will be eliminated during the PEP calculation. So, we need to recompute the cumulative target and decoy counts
+                        //peptiides are first ordered by PEP from good to bad and then by MM score from good to bad
+                        psms = psms.OrderBy(p => p.PeptideFdrInfo.PEP).ThenByDescending(p => p).ToList();
+                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
+                        PepQValueInvertedPeptides(psms);
+                        psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
+                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
+                        PepQValueInvertedPsms(psms);
 
-                            //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
-                            peptides = peptides.OrderByDescending(p => p).ToList();
-                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
-                            QValueInvertedPeptides(peptides);
-                            psms = psms.OrderByDescending(p => p).ToList();
-                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
-                            QValueInvertedPsms(psms);
-                        }
-                    }
-                    else //we have more than 100 psms but less than 100 peptides so
-                    {
-                        if (DoPEP)
-                        {
-                            //this will be done using PSMs because we dont' have enough peptides
-                            Compute_PEPValue(myAnalysisResults, psms);
-                            psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
-                            ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
-                            PepQValueInvertedPsms(psms);
-                        }
                         //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
-                        peptides = peptides.OrderByDescending(p => p).ToList();
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
-                        QValueTraditionalPeptides(peptides);
+                        psms = psms.OrderByDescending(p => p).ToList();
+                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
+                        QValueInvertedPeptides(psms);
                         psms = psms.OrderByDescending(p => p).ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
                         QValueInvertedPsms(psms);

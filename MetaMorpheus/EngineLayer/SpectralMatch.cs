@@ -151,8 +151,10 @@ namespace EngineLayer
                 BioPolymersWithSetModsToMatchingFragments.Clear();
                 BioPolymersWithSetModsToMatchingFragments.Add(pwsm, matchedFragmentIons);
             }
-            else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
+            else if (Math.Abs(newScore - Score) <= ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
+                if (_BestMatchingBioPolymersWithSetMods.Any(tuple => tuple.Pwsm == pwsm))
+                    return; // Dont add the same thing twice
                 _BestMatchingBioPolymersWithSetMods.Add((notch, pwsm));
                 BioPolymersWithSetModsToMatchingFragments.TryAdd(pwsm, matchedFragmentIons);
             }
