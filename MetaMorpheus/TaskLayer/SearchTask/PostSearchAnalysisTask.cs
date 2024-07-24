@@ -845,14 +845,6 @@ namespace TaskLayer
             string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
             WriteProteinGroupsToTsv(ProteinGroups, writtenFile, new List<string> { Parameters.SearchTaskId });
 
-            // write all individual file results to subdirectory
-            // local protein fdr, global parsimony, global psm fdr
-            if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.SearchParameters.WriteIndividualFiles
-                || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml))
-            {
-                Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
-            }
-
             var psmsGroupedByFile = Filter(Parameters.AllPsms,
                 includeDecoys: true,
                 includeContaminants: true,
@@ -891,9 +883,15 @@ namespace TaskLayer
                     psmsGroupedByFile = tempPsmsGroupedByFile.ToList();
                 }
             }
+            // write all individual file results to subdirectory
+            // local protein fdr, global parsimony, global psm fdr
 
-            if (Parameters.SearchParameters.WriteIndividualFiles && Parameters.CurrentRawFileList.Count > 1)
+            if (Parameters.CurrentRawFileList.Count > 1 && (Parameters.SearchParameters.WriteIndividualFiles
+                                                           || Parameters.SearchParameters.WriteMzId || Parameters.SearchParameters.WritePepXml))
             {
+
+                Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
+
                 //write the individual result files for each datafile
                 foreach (var fullFilePath in psmsGroupedByFile.Select(v => v.Key))
                 {
