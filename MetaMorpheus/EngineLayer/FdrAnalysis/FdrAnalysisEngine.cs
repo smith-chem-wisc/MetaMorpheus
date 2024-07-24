@@ -76,10 +76,11 @@ namespace EngineLayer.FdrAnalysis
                         //peptiides are first ordered by PEP from good to bad and then by MM score from good to bad
 
                         // Peptide level and PSM level PEPs are identical
-                        var peptides = psms.GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault())
+                        var peptides = psms
                             .OrderBy(p => p.PeptideFdrInfo.PEP)
                             .ThenByDescending(p => p)
+                            .GroupBy(p => p.FullSequence)
+                            .Select(p => p.FirstOrDefault())
                             .ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
                         PepQValueInvertedPeptides(peptides);
