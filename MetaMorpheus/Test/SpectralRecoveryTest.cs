@@ -98,7 +98,7 @@ namespace Test
                     WriteMzId = false,
                     MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM,
                     WriteHighQValuePsms = true
-        },
+                },
                 CommonParameters = new CommonParameters()
             };
             searchTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");

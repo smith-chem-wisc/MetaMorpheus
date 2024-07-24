@@ -1597,7 +1597,7 @@ namespace Test.MetaDraw
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psmToExport, outputFolder, 200);
             Assert.That(Directory.Exists(outputFolder));
 
-            psm = metadrawLogic.FilteredListOfPsms[19];
+            psm = metadrawLogic.FilteredListOfPsms[17];
             metadrawLogic.ExportSequenceCoverage(textCanvas, mapCanvas, outputFolder, psm);
             metadrawLogic.ExportAnnotatedSequence(sequenceAnnotationCanvas, ptmLegend, psm, outputFolder, 200);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"2_RGNVC[Common FixedCarbamidomet_SequenceAnnotation.bmp")));
