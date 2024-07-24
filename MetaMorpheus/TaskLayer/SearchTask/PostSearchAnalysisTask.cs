@@ -849,10 +849,8 @@ namespace TaskLayer
                                                             || Parameters.SearchParameters.WriteMzId ||
                                                             Parameters.SearchParameters.WritePepXml))
             {
-
                 Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
             }
-
 
             var psmsGroupedByFile = Filter(Parameters.AllPsms,
                 includeDecoys: true,
