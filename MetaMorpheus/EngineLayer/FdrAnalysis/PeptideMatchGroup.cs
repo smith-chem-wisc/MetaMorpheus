@@ -28,6 +28,8 @@ namespace EngineLayer
 
         public SpectralMatch BestMatch => SpectralMatches.MaxBy(match => match.Score);
 
+        public SpectralMatch BestMatchByPep => SpectralMatches.MinBy(match => match.FdrInfo.PEP);
+
         public IEnumerator<SpectralMatch> GetEnumerator()
         {
             return SpectralMatches.GetEnumerator();

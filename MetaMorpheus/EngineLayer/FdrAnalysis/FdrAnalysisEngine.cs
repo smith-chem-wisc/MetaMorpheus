@@ -67,23 +67,32 @@ namespace EngineLayer.FdrAnalysis
                 {
                     ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
                     QValueInvertedPeptides(psms);
+
                     if (DoPEP)
                     {
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
                         Compute_PEPValue(myAnalysisResults, psms);
                         //some PSMs will be eliminated during the PEP calculation. So, we need to recompute the cumulative target and decoy counts
                         //peptiides are first ordered by PEP from good to bad and then by MM score from good to bad
-                        psms = psms.OrderBy(p => p.PeptideFdrInfo.PEP).ThenByDescending(p => p).ToList();
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
-                        PepQValueInvertedPeptides(psms);
+
+                        // Peptide level and PSM level PEPs are identical
+                        var peptides = psms.GroupBy(p => p.FullSequence)
+                            .Select(p => p.FirstOrDefault())
+                            .OrderBy(p => p.PeptideFdrInfo.PEP)
+                            .ThenByDescending(p => p)
+                            .ToList();
+                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
+                        PepQValueInvertedPeptides(peptides);
+
                         psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
                         PepQValueInvertedPsms(psms);
 
                         //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
-                        psms = psms.OrderByDescending(p => p).ToList();
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
-                        QValueInvertedPeptides(psms);
+                        peptides = peptides.OrderByDescending(p => p).ToList();
+                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
+                        QValueInvertedPeptides(peptides);
+
                         psms = psms.OrderByDescending(p => p).ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
                         QValueInvertedPsms(psms);
@@ -107,7 +116,7 @@ namespace EngineLayer.FdrAnalysis
         /// For traditional q-value calculation, the PSMs should be sorted from highest to lowest score
         /// For PEP q-value calculation, the PSMs should be sorted from lowest to highest PEP
         /// </summary>
-        private void ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(List<SpectralMatch> psms, bool isPsmNotPeptide)
+        public void ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(List<SpectralMatch> psms, bool psmLevelCalculation)
         {
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;
@@ -149,7 +158,7 @@ namespace EngineLayer.FdrAnalysis
                     cumulativeTargetPerNotch[notch]++;
                 }
 
-                if (isPsmNotPeptide)
+                if (psmLevelCalculation)
                 {
                     psm.PsmFdrInfo.CumulativeDecoy = cumulativeDecoy;
                     psm.PsmFdrInfo.CumulativeTarget = cumulativeTarget;
@@ -165,6 +174,7 @@ namespace EngineLayer.FdrAnalysis
                 }
             }
         }
+        
         /// <summary>
         /// This method is used only to calculate q-values for total PSM counts below 100
         /// </summary>
@@ -227,7 +237,7 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
-        private static void QValueInvertedPeptides(List<SpectralMatch> psms)
+        public static void QValueInvertedPeptides(List<SpectralMatch> psms)
         {
             psms.Reverse();
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
@@ -248,7 +258,7 @@ namespace EngineLayer.FdrAnalysis
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
-        private static void PepQValueInvertedPsms(List<SpectralMatch> psms)
+        public static void PepQValueInvertedPsms(List<SpectralMatch> psms)
         {
             psms.Reverse();
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
@@ -266,7 +276,7 @@ namespace EngineLayer.FdrAnalysis
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
 
-        private static void PepQValueInvertedPeptides(List<SpectralMatch> psms)
+        public static void PepQValueInvertedPeptides(List<SpectralMatch> psms)
         {
             psms.Reverse();
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
@@ -288,15 +298,15 @@ namespace EngineLayer.FdrAnalysis
         {
             if (psms[0].DigestionParams.Protease.Name == "top-down")
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "top-down", this.FileSpecificParameters, this.OutputFolder);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "top-down", this.FileSpecificParameters, this.OutputFolder, this);
             }
             else if (psms[0].DigestionParams.Protease.Name == "crosslink")
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "crosslink", this.FileSpecificParameters, this.OutputFolder);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "crosslink", this.FileSpecificParameters, this.OutputFolder, this);
             }
             else
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "standard", this.FileSpecificParameters, this.OutputFolder);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "standard", this.FileSpecificParameters, this.OutputFolder, this);
             }
         }
 
