@@ -648,7 +648,6 @@ namespace TaskLayer
         private void WriteIndividualPsmResults()
         {
             Status("Writing Individual PSM results...", Parameters.SearchTaskId);
-            string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
 
             var psmsForPsmResults = Filter(Parameters.AllPsms,
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
@@ -670,7 +669,7 @@ namespace TaskLayer
                     includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms);
 
                 // write PSMs
-                writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
+                string writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_PSMs.psmtsv");
                 WritePsmsToTsv(psmsToWrite, writtenFile);
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
@@ -688,7 +687,6 @@ namespace TaskLayer
         private void WriteIndividualPeptideResults()
         {
             Status("Writing Individual Peptide results...", Parameters.SearchTaskId);
-            string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
 
             var psmsListForPeptideResults = Filter(Parameters.AllPsms,
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
@@ -717,7 +715,7 @@ namespace TaskLayer
                     filterAtPeptideLevel: true);
 
                 // write PSMs
-                writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
+                string writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
                 WritePsmsToTsv(peptidesToWrite, writtenFile, writePeptideLevelResults: true);
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
