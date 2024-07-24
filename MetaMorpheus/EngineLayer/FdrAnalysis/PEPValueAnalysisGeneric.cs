@@ -30,13 +30,27 @@ namespace EngineLayer
         {
             string[] trainingVariables = PsmData.trainingInfos[searchType];
 
+            #region Construct Peptide Groups
+
+            List<PeptideMatchGroup> peptides = new();
+            foreach (var pepGroup in psms.GroupBy(psm => psm.BestMatchingBioPolymersWithSetMods.MinBy(t => t.Notch).Peptide))
+            {
+                IBioPolymerWithSetMods peptide = pepGroup.Key;
+                List<SpectralMatch> spectralMatches = pepGroup.ToList();
+                peptides.Add(new PeptideMatchGroup(peptide, spectralMatches));
+            }
+
             //ensure that the order is always stable.
+            peptides.OrderByDescending(p => p.BestMatch).ToList();
+
+            GetPeptideGroupIndices(peptides, numGroups);
+
             psms = psms.OrderByDescending(p => p).ToList();
             List<int> allPeptideIndices = new List<int>();
-            List<SpectralMatch> peptides = psms
-                .GroupBy(b => b.FullSequence)
-                .Select(b => b.FirstOrDefault()).ToList();
-            List<int> countOfPeptidesInEachFile = peptides.GroupBy(b => b.FullFilePath).Select(b => b.Count()).ToList();
+            //List<SpectralMatch> peptides = psms
+            //    .GroupBy(b => b.FullSequence)
+            //    .Select(b => b.FirstOrDefault()).ToList();
+            //List<int> countOfPeptidesInEachFile = peptides.GroupBy(b => b.FullFilePath).Select(b => b.Count()).ToList();
             bool allFilesContainPeptides = (countOfPeptidesInEachFile.Count == fileSpecificParameters.Count); //rare condition where each file has psms but some files don't have peptides. probably only happens in unit tests.
 
             int chargeStateMode = 0;
@@ -88,10 +102,6 @@ namespace EngineLayer
 
             //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code.
             int numGroups = 4;
-            if (psms.Count < 1000 || allPeptideIndices.Count < 500)
-            {
-                numGroups = 2;
-            }
             List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms, numGroups);
 
             //the psms will be randomly divided. but then we want to make another array that just contains the subset of peptides that are in those psms. that way we don't compute pep using any peptides that were used in training.
@@ -105,7 +115,7 @@ namespace EngineLayer
 
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 100);
             var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
                 .Append(trainer);
 
