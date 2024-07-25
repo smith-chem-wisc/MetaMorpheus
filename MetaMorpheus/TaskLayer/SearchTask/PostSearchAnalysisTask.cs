@@ -124,12 +124,18 @@ namespace TaskLayer
             // for example, here it may be treated as a decoy PSM, where as in parsimony it will be determined by the parsimony algorithm which is agnostic of target/decoy assignments
             // this could cause weird PSM FDR issues
 
+
+            // TODO: This gets run multiple times but it really doesn't need to. What do i know though?
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
-            new FdrAnalysisEngine(psms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters, 
-                new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder).Run();
+            FdrEngine = new FdrAnalysisEngine(psms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters,
+                new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder);
+            FdrEngine.Run();
 
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
+
+        // I shouldn't need to stash this, the calls that I need should just be static methods.
+        public FdrAnalysisEngine FdrEngine { get; private set; }
 
         private void ProteinAnalysis()
         {
@@ -1907,6 +1913,7 @@ namespace TaskLayer
         {
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(AllResultsTotals());
         }
+
         private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");

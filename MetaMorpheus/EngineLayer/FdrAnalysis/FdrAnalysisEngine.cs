@@ -65,8 +65,8 @@ namespace EngineLayer.FdrAnalysis
                 var psms = proteasePsms.OrderByDescending(p=>p).ToList();
                 if (psms.Count > 100)
                 {
-                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
-                    QValueInvertedPsms(psms);
+                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, psmLevelCalculation: true, pepCalculation: false);
+
 
                     if (DoPEP)
                     {
@@ -211,6 +211,7 @@ namespace EngineLayer.FdrAnalysis
 
                 qValue = Math.Min(qValue, (psms[i].PeptideFdrInfo.CumulativeDecoy + 1) / psms[i].PeptideFdrInfo.CumulativeTarget);
                 qValueNotch = Math.Min(qValueNotch, (psms[i].PeptideFdrInfo.CumulativeDecoyNotch + 1) / psms[i].PeptideFdrInfo.CumulativeTargetNotch);
+
                 psms[i].PeptideFdrInfo.QValue = qValue;
                 psms[i].PeptideFdrInfo.QValueNotch = qValueNotch;
             }
@@ -229,7 +230,9 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                psms[i].PsmFdrInfo.PEP_QValue = Math.Min(qValue, (psms[i].PsmFdrInfo.CumulativeDecoy + 1) / psms[i].PsmFdrInfo.CumulativeTarget);
+                qValue = Math.Min(qValue, (psms[i].PsmFdrInfo.CumulativeDecoy + 1) / psms[i].PsmFdrInfo.CumulativeTarget);
+
+                psms[i].PsmFdrInfo.PEP_QValue = qValue;
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
         }
@@ -246,7 +249,9 @@ namespace EngineLayer.FdrAnalysis
             {
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
+
                 qValue = Math.Min(qValue, (psms[i].PeptideFdrInfo.CumulativeDecoy + 1) / psms[i].PeptideFdrInfo.CumulativeTarget);
+
                 psms[i].PeptideFdrInfo.PEP_QValue = qValue;
             }
             psms.Reverse(); //we inverted the psms for this calculation. now we need to put them back into the original order
@@ -256,15 +261,15 @@ namespace EngineLayer.FdrAnalysis
         {
             if (psms[0].DigestionParams.Protease.Name == "top-down")
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "top-down", this.FileSpecificParameters, this.OutputFolder, this);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "top-down", this.FileSpecificParameters, this.OutputFolder, fdrEngine: this);
             }
             else if (psms[0].DigestionParams.Protease.Name == "crosslink")
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "crosslink", this.FileSpecificParameters, this.OutputFolder, this);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "crosslink", this.FileSpecificParameters, this.OutputFolder, fdrEngine: this);
             }
             else
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "standard", this.FileSpecificParameters, this.OutputFolder, this);
+                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "standard", this.FileSpecificParameters, this.OutputFolder, fdrEngine: this);
             }
         }
 

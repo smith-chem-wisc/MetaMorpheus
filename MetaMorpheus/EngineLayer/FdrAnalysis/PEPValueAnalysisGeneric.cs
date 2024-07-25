@@ -28,13 +28,16 @@ namespace EngineLayer
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
         // These are variables for the GBDT model
-        private static readonly int _numberOfTrees = 1000; // Microsoft default is 100
+        private static readonly int _numberOfTrees = 1500; // Microsoft default is 100
         private static readonly double _learningRate = 0.2; // Microsoft default is 0.2
-        private static readonly double _fdrThresholdForPositiveExamples = 0.001;
+        public static double FdrThresholdForPositiveExamples { get; set; } = 0.005;
 
         public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder, FdrAnalysisEngine fdrEngine = null)
         {
             string[] trainingVariables = PsmData.trainingInfos[searchType];
+
+            var qValueArray = psms.OrderByDescending(p => p).Select(p => p.FdrInfo.QValue).ToArray();
+            FdrThresholdForPositiveExamples = qValueArray[(int)((double)qValueArray.Length * 0.25)];
 
             #region Construct Peptide Groups and Score Dictionaries
 
@@ -182,82 +185,7 @@ namespace EngineLayer
 
             #endregion
 
-            #region Iterative Training for semi-supervised learning
-            if (fdrEngine == null) // Need the fdrEngine to calculate PEP_QValues
-            {
-                return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved);
-            }
-
-            int numberOfTrainingIterations = 5;
-
-            for (int iteration = 0; iteration < numberOfTrainingIterations; iteration++)
-            {
-                // Calculate pep q-values within each split
-                List<SpectralMatch> peptidesToScore;
-                foreach (int gIndex in Enumerable.Range(0, numGroups))
-                {
-                    peptidesToScore = new();
-                    foreach (int pIndex in peptideGroupIndices[gIndex])
-                    {
-                       peptidesToScore.AddRange(peptideGroups[pIndex]);
-                    }
-                    peptidesToScore = peptidesToScore
-                        .OrderBy(p => p.FdrInfo.PEP)
-                        .ThenByDescending(p => p)
-                        .ToList();
-                    // Run a PEP_QValue calculation on all peptides within a given partition
-                    fdrEngine.ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptidesToScore, psmLevelCalculation: true, pepCalculation: true);
-                }
-
-
-                // Create a new set of training data, this time based on PEP and PEP_QValues (instead of score and QValue)
-                PSMDataGroups = new IEnumerable<PsmData>[numGroups];
-                for (int i = 0; i < numGroups; i++)
-                {
-                    PSMDataGroups[i] = CreatePsmDataFromPEP_QValue(searchType, fileSpecificParameters, peptideGroups, peptideGroupIndices[i], fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode);
-
-                    if (!PSMDataGroups[i].Any(p => p.Label == true) || !PSMDataGroups[i].Any(p => p.Label == false))
-                    {
-                        allSetsContainPositiveAndNegativeTrainingExamples = false;
-                        break;
-                    }
-                }
-                if(!allSetsContainPositiveAndNegativeTrainingExamples)
-                {
-                    break;
-                }
-
-                for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
-                {
-                    List<int> allGroupIndexes = Enumerable.Range(0, numGroups).ToList();
-                    allGroupIndexes.RemoveAt(groupIndexNumber);
-
-                    //concat doesn't work in a loop, therefore I had to hard code the concat to group 2 out of 3 lists. if the const int numGroups value is changed, then the concat has to be changed accordingly.
-                    IDataView dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]]);
-                    if (numGroups > 2)
-                    {
-                        dataView = mlContext.Data.LoadFromEnumerable(PSMDataGroups[allGroupIndexes[0]].Concat(PSMDataGroups[allGroupIndexes[1]]));
-                    }
-                    trainedModels[groupIndexNumber] = pipeline.Fit(dataView);
-                    var myPredictions = trainedModels[groupIndexNumber].Transform(mlContext.Data.LoadFromEnumerable(PSMDataGroups[groupIndexNumber]));
-                    CalibratedBinaryClassificationMetrics metrics = mlContext.BinaryClassification.Evaluate(data: myPredictions, labelColumnName: "Label", scoreColumnName: "Score");
-
-                    //Parallel operation of the following code requires the method to be stored and then read, once for each thread
-                    //if not output directory is specified, the model cannot be stored, and we must force single-threaded operation
-                    if (outputFolder != null)
-                    {
-                        mlContext.Model.Save(trainedModels[groupIndexNumber], dataView.Schema, Path.Combine(outputFolder, "model.zip"));
-                    }
-
-                    //model is trained on peptides but here we can use that to compute PEP for all PSMs
-                    int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, fileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
-
-                    allMetrics.Add(metrics);
-                    sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
-                }
-            }
-
-            #endregion
+            
 
             return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved);
         }
@@ -433,7 +361,7 @@ namespace EngineLayer
                                     label = false;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
                                 }
-                                else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= _fdrThresholdForPositiveExamples)
+                                else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.FdrInfo.QValue <= FdrThresholdForPositiveExamples)
                                 {
                                     label = true;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
@@ -456,7 +384,7 @@ namespace EngineLayer
                                         label = false;
                                         newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
                                     }
-                                    else if (!peptideWithSetMods.Parent.IsDecoy && psm.FdrInfo.QValue <= _fdrThresholdForPositiveExamples)
+                                    else if (!peptideWithSetMods.Parent.IsDecoy && psm.FdrInfo.QValue <= FdrThresholdForPositiveExamples)
                                     {
                                         label = true;
                                         newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
@@ -528,7 +456,7 @@ namespace EngineLayer
                                     label = false;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
                                 }
-                                else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.PeptideFdrInfo.PEP_QValue <= _fdrThresholdForPositiveExamples)
+                                else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.PeptideFdrInfo.PEP_QValue <= FdrThresholdForPositiveExamples)
                                 {
                                     label = true;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
@@ -552,7 +480,7 @@ namespace EngineLayer
                                         label = false;
                                         newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
                                     }
-                                    else if (!peptideWithSetMods.Parent.IsDecoy && psm.FdrInfo.PEP_QValue <= _fdrThresholdForPositiveExamples)
+                                    else if (!peptideWithSetMods.Parent.IsDecoy && psm.FdrInfo.PEP_QValue <= FdrThresholdForPositiveExamples)
                                     {
                                         label = true;
                                         newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);

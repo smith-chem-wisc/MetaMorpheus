@@ -791,7 +791,8 @@ namespace TaskLayer
             if (filterAtPeptideLevel)
             {
                 filteredPsms = filteredPsms
-                    .OrderByDescending(p => p)
+                    .OrderBy(p => p.FdrInfo.PEP)
+                    .ThenByDescending(p => p)
                     .GroupBy(b => b.FullSequence)
                     .Select(b => b.First()).ToList();
             }
