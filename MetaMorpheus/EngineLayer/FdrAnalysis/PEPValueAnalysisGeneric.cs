@@ -106,6 +106,11 @@ namespace EngineLayer
             //the psms will be randomly divided. but then we want to make another array that just contains the subset of peptides that are in those psms. that way we don't compute pep using any peptides that were used in training.
             IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
 
+            int decoyCountNow = peptideGroups.SelectMany(p => p).Count(p => p.IsDecoy);
+
+            int peptideGroupCount = peptideGroups.Count();
+            int psmCounts = peptideGroups.SelectMany(p => p).Count();
+
             bool allSetsContainPositiveAndNegativeTrainingExamples = true;
             for (int i = 0; i < numGroups; i++)
             {
@@ -368,32 +373,29 @@ namespace EngineLayer
                             }
                             else
                             {
-                                if (psm.BestMatchingBioPolymersWithSetMods.GroupBy(tuple => tuple.Peptide.FullSequence).Count() != 1)
+                                // I think sometimes things get duplicated here but idk what to do about it
+                                foreach(var (notch, peptideWithSetMods) in psm.BestMatchingBioPolymersWithSetMods)
                                 {
-                                    continue;
-                                }
-                                (int notch, IBioPolymerWithSetMods peptideWithSetMods) = psm.BestMatchingBioPolymersWithSetMods.First();
-
-                                bool label;
-                                double bmpc = psm.BestMatchingBioPolymersWithSetMods.Count();
-                                if (peptideWithSetMods.Parent.IsDecoy)
-                                {
-                                    label = false;
-                                    newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
-                                }
-                                else if (!peptideWithSetMods.Parent.IsDecoy && psm.FdrInfo.QValue <= _fdrThresholdForPositiveExamples)
-                                {
-                                    label = true;
-                                    newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
-                                }
-                                else
-                                {
-                                    continue;
-                                }
-                                if (newPsmData != null)
-                                {
-                                    localPsmDataList.Add(newPsmData);
-                                    localPsmOrder.Add(i);
+                                    bool label;
+                                    if (peptideWithSetMods.Parent.IsDecoy)
+                                    {
+                                        label = false;
+                                        newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
+                                    }
+                                    else if (!peptideWithSetMods.Parent.IsDecoy && psm.FdrInfo.QValue <= _fdrThresholdForPositiveExamples)
+                                    {
+                                        label = true;
+                                        newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
+                                    }
+                                    else
+                                    {
+                                        continue;
+                                    }
+                                    if (newPsmData != null)
+                                    {
+                                        localPsmDataList.Add(newPsmData);
+                                        localPsmOrder.Add(i);
+                                    }
                                 }
                             }
                         }
@@ -682,7 +684,7 @@ namespace EngineLayer
             List<int> decoyIndices = new List<int>();
             for(int i = 0; i< peptides.Count; i++)
             {
-                if (peptides[i].DecoyCount > 0)
+                if (peptides[i].Any(p => p.IsDecoy))
                 {
                    decoyIndices.Add(i);
                 }

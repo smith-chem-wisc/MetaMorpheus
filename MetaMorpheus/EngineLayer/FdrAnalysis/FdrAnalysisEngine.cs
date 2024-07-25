@@ -65,8 +65,8 @@ namespace EngineLayer.FdrAnalysis
                 var psms = proteasePsms.OrderByDescending(p=>p).ToList();
                 if (psms.Count > 100)
                 {
-                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, false);
-                    QValueInvertedPeptides(psms);
+                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
+                    QValueInvertedPsms(psms);
 
                     if (DoPEP)
                     {
