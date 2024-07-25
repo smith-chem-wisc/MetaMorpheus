@@ -271,15 +271,6 @@ namespace TaskLayer
                 includeAmbiguousMods: false,
                 includeHighQValuePsms: false);
 
-            // Get peptides for quantification ( only these peptides will be reported in AllQuantifiedPeptides.tsv)
-            //var peptidesForQuantification = Filter(Parameters.AllPsms,
-            //    includeDecoys: false,
-            //    includeContaminants: true,
-            //    includeAmbiguous: false,
-            //    includeAmbiguousMods: false,
-            //    includeHighQValuePsms: false,
-            //    filterAtPeptideLevel: true);
-
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<SpectralMatch, List<FlashLFQ.ProteinGroup>>();
             if (ProteinGroups != null && ProteinGroups.Count != 0) //ProteinGroups can be null if parsimony wasn't done, and it can be empty if you're doing the two peptide rule
@@ -1907,6 +1898,7 @@ namespace TaskLayer
         {
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(AllResultsTotals());
         }
+
         private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {
             var fullSeqPath = Path.Combine(outputFolder, fileName + ".tsv");

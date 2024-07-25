@@ -21,8 +21,8 @@ namespace EngineLayer.FdrAnalysis
             AllPsms = psms.OrderByDescending(p => p).ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
             AnalysisType = analysisType;
-            this.OutputFolder = outputFolder;
-            this.DoPEP = doPEP;
+            OutputFolder = outputFolder;
+            DoPEP = doPEP;
             if (AllPsms.Any())
                 AddPsmAndPeptideFdrInfoIfNotPresent();
             if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
@@ -105,6 +105,26 @@ namespace EngineLayer.FdrAnalysis
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
                 }
+                else if(psms.Any(psm => psm.FdrInfo.PEP > 0)) 
+                {
+                    // If PEP's have been calculated, but doPEP = false, then we don't want to train another model,
+                    // but we do want to calculate pep q-values
+                    // really, in this case, we only need to run one or the other (i.e., only peptides or psms are passed in)
+                    // but there's no mechanism to pass that info to the FDR analysis engine, so we'll do this for now
+                    peptides = psms
+                            .OrderBy(p => p.PeptideFdrInfo.PEP)
+                            .ThenByDescending(p => p)
+                            .GroupBy(p => p.FullSequence)
+                            .Select(p => p.FirstOrDefault())
+                            .ToList();
+                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, peptideLevelCalculation: true, pepCalculation: true);
+
+                    psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
+                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, peptideLevelCalculation: false, pepCalculation: true);
+
+                }
+
+
 
                 //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
                 peptides = psms
