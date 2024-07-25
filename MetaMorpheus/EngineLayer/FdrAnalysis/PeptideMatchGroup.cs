@@ -26,7 +26,7 @@ namespace EngineLayer
             SpectralMatches = spectralMatches;
         }
 
-        public SpectralMatch BestMatch => SpectralMatches.MaxBy(match => match.Score);
+        public SpectralMatch BestMatch => SpectralMatches.MaxBy(match => match);
 
         public SpectralMatch BestMatchByPep => SpectralMatches.MinBy(match => match.FdrInfo.PEP);
 
