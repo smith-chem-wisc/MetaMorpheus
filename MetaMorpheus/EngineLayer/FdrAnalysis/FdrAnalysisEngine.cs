@@ -132,6 +132,7 @@ namespace EngineLayer.FdrAnalysis
                     .GroupBy(b => b.FullSequence)
                     .Select(b => b.FirstOrDefault()).ToList();
                 ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, peptideLevelCalculation: true, pepCalculation: false);
+                psms = psms.OrderByDescending(p => p).ToList();
                 ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms.OrderByDescending(p => p).ToList(), peptideLevelCalculation: false, pepCalculation: false);
                 
                 CountPsm(psms);

@@ -587,7 +587,7 @@ namespace TaskLayer
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPSMs.psmtsv");
-            WritePsmsToTsv(psmsForPsmResults.OrderByDescending(p=>p).ToList(), writtenFile, writePeptideLevelResults: true);
+            WritePsmsToTsv(psmsForPsmResults.OrderByDescending(p=>p).ToList(), writtenFile, writePeptideLevelResults: false);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
