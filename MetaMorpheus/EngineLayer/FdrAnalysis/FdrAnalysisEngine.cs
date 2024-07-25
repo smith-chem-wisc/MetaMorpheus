@@ -73,8 +73,9 @@ namespace EngineLayer.FdrAnalysis
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
                         Compute_PEPValue(myAnalysisResults, psms);
                         //some PSMs will be eliminated during the PEP calculation. So, we need to recompute the cumulative target and decoy counts
-                        //peptiides are first ordered by PEP from good to bad and then by MM score from good to bad
+                        foreach (var psm in psms) psm.ResolveAllAmbiguities(); // Resolve ambiguities after PEP calculation before TDC
 
+                        //peptiides are first ordered by PEP from good to bad and then by MM score from good to bad
                         // Peptide level and PSM level PEPs are identical
                         var peptides = psms
                             .OrderBy(p => p.PeptideFdrInfo.PEP)
@@ -83,11 +84,9 @@ namespace EngineLayer.FdrAnalysis
                             .Select(p => p.FirstOrDefault())
                             .ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
-                        PepQValueInvertedPeptides(peptides);
 
                         psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
-                        PepQValueInvertedPsms(psms);
 
                         //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
                         peptides = psms
@@ -96,11 +95,9 @@ namespace EngineLayer.FdrAnalysis
                             .Select(p => p.FirstOrDefault())
                             .ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, false);
-                        QValueInvertedPeptides(peptides);
 
                         psms = psms.OrderByDescending(p => p).ToList();
                         ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, true);
-                        QValueInvertedPsms(psms);
                     }
                 }
                 else //psms .Count <= 100
@@ -139,23 +136,8 @@ namespace EngineLayer.FdrAnalysis
                 int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
                 if (psm.IsDecoy)
                 {
-                    // the PSM can be ambiguous between a target and a decoy sequence
-                    // in that case, count it as the fraction of decoy hits
-                    // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
-                    double decoyHits = 0;
-                    double totalHits = 0;
-                    var hits = psm.BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Peptide.FullSequence);
-                    foreach (var hit in hits)
-                    {
-                        if (hit.First().Peptide.Parent.IsDecoy)
-                        {
-                            decoyHits++;
-                        }
-                        totalHits++;
-                    }
-
-                    cumulativeDecoy += decoyHits / totalHits;
-                    cumulativeDecoyPerNotch[notch] += decoyHits / totalHits;
+                    cumulativeDecoy ++;
+                    cumulativeDecoyPerNotch[notch] ++;
                 }
                 else
                 {
@@ -177,6 +159,16 @@ namespace EngineLayer.FdrAnalysis
                     psm.PeptideFdrInfo.CumulativeDecoyNotch = cumulativeDecoyPerNotch[notch];
                     psm.PeptideFdrInfo.CumulativeTargetNotch = cumulativeTargetPerNotch[notch];
                 }
+
+            }
+
+            if(psmLevelCalculation)
+            {
+                PepQValueInvertedPsms(psms);
+            }
+            else
+            {
+                PepQValueInvertedPeptides(psms);
             }
         }
         
