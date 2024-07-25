@@ -39,15 +39,21 @@ namespace EngineLayer
             #region Construct Peptide Groups and Score Dictionaries
 
             List<PeptideMatchGroup> peptideGroups = new();
-            foreach (var pepGroup in psms.GroupBy(psm => psm.FullSequence))
-            {
-                IBioPolymerWithSetMods peptide = pepGroup.First().BestMatchingBioPolymersWithSetMods.MinBy(t => t.Notch).Peptide;
+            foreach (var pepGroup in psms.Where(psm => psm.FullSequence != null).GroupBy(psm => psm.FullSequence))
+            { 
                 List<SpectralMatch> spectralMatches = pepGroup.ToList();
-                peptideGroups.Add(new PeptideMatchGroup(peptide, spectralMatches));
+                peptideGroups.Add(new PeptideMatchGroup(pepGroup.Key, spectralMatches));
+            }
+            foreach(var psm in psms.Where(psm => psm.FullSequence == null))
+            {
+                peptideGroups.Add(new PeptideMatchGroup(psm.BaseSequence, new List<SpectralMatch> { psm }));
             }
 
             //ensure that the order is always stable.
-            peptideGroups = peptideGroups.OrderByDescending(p => p.BestMatch).ThenByDescending(g => g.Count()).ToList();
+            peptideGroups = peptideGroups
+                .OrderByDescending(p => p.TargetCount)
+                .ThenByDescending(p => p.DecoyCount)
+                .OrderByDescending(p => p.BestMatch).ToList();
 
             int numberOfFilesRepresentedInPeptideList = peptideGroups.GroupBy(b => b.BestMatch.FullFilePath).ToList().Count();
             bool allFilesContainPeptides = numberOfFilesRepresentedInPeptideList == fileSpecificParameters.Count; //rare condition where each file has psms but some files don't have peptides. probably only happens in unit tests.
@@ -58,11 +64,9 @@ namespace EngineLayer
                 // If we have to train on the PSM level, then we need to reconstruct the list of "peptideGroups"
                 // such that each psm is represented by its own peptide group
                 peptideGroups = new();
-                foreach (var pepGroup in psms.Select(psm => (psm.BestMatchingBioPolymersWithSetMods.MinBy(t => t.Notch).Peptide, psm)))
+                foreach (var psm in psms)
                 {
-                    IBioPolymerWithSetMods peptide = pepGroup.Peptide;
-                    List<SpectralMatch> spectralMatches = new List<SpectralMatch> { pepGroup.psm };
-                    peptideGroups.Add(new PeptideMatchGroup(peptide, spectralMatches));
+                    peptideGroups.Add(new PeptideMatchGroup(psm.FullSequence ?? psm.BaseSequence, new List<SpectralMatch> { psm }));
                 }
                 peptideGroups = peptideGroups.OrderByDescending(p => p.BestMatch).ToList();
             }
@@ -462,30 +466,29 @@ namespace EngineLayer
                         }
                         else
                         {
-                            if (psm.BestMatchingBioPolymersWithSetMods.GroupBy(tuple => tuple.Peptide.FullSequence).Count() != 1)
+                            double bmp = 0;
+                            foreach (var (notch, peptideWithSetMods) in psm.BestMatchingBioPolymersWithSetMods)
                             {
-                                continue;
+                                bool label;
+                                double bmpc = psm.BestMatchingBioPolymersWithSetMods.Count();
+                                if (peptideWithSetMods.Parent.IsDecoy)
+                                {
+                                    label = false;
+                                    newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
+                                }
+                                else if (!peptideWithSetMods.Parent.IsDecoy && psm.FdrInfo.QValue <= 0.005)
+                                {
+                                    label = true;
+                                    newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
+                                }
+                                else
+                                {
+                                    continue;
+                                }
+                                localPsmDataList.Add(newPsmData);
+                                localPsmOrder.Add(i + (bmp / bmpc / 2.0));
+                                bmp += 1.0;
                             }
-                            (int notch, IBioPolymerWithSetMods peptideWithSetMods) = psm.BestMatchingBioPolymersWithSetMods.First();
-
-                            bool label;
-                            double bmpc = psm.BestMatchingBioPolymersWithSetMods.Count();
-                            if (peptideWithSetMods.Parent.IsDecoy)
-                            {
-                                label = false;
-                                newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
-                            }
-                            else if (!peptideWithSetMods.Parent.IsDecoy && psm.PeptideFdrInfo.PEP_QValue <= _fdrThresholdForPositiveExamples)
-                            {
-                                label = true;
-                                newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
-                            }
-                            else
-                            {
-                                continue;
-                            }
-                            localPsmDataList.Add(newPsmData);
-                            localPsmOrder.Add(i);
                         }
                     }
                     lock (psmDataListLock)
@@ -679,7 +682,7 @@ namespace EngineLayer
             List<int> decoyIndices = new List<int>();
             for(int i = 0; i< peptides.Count; i++)
             {
-                if (peptides[i].Peptide.Parent.IsDecoy)
+                if (peptides[i].DecoyCount > 0)
                 {
                    decoyIndices.Add(i);
                 }

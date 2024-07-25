@@ -11,7 +11,7 @@ namespace EngineLayer
 {
     public class PeptideMatchGroup : IEnumerable<SpectralMatch>
     {
-        public IBioPolymerWithSetMods Peptide { get; }
+        public string PeptideFullSequence { get; }
         public List<SpectralMatch> SpectralMatches { get; }
 
         /// <summary>
@@ -20,11 +20,14 @@ namespace EngineLayer
         /// </summary>
         /// <param name="peptide"></param>
         /// <param name="spectralMatches"></param>
-        public PeptideMatchGroup(IBioPolymerWithSetMods peptide, List<SpectralMatch> spectralMatches)
+        public PeptideMatchGroup(string fullPeptideSeq, List<SpectralMatch> spectralMatches)
         {
-            Peptide = peptide;
+            PeptideFullSequence = fullPeptideSeq;
             SpectralMatches = spectralMatches;
         }
+
+        public int TargetCount => SpectralMatches.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count(t => !t.Peptide.Parent.IsDecoy));
+        public int DecoyCount => SpectralMatches.Sum(p => p.BestMatchingBioPolymersWithSetMods.Count(t => t.Peptide.Parent.IsDecoy));
 
         public SpectralMatch BestMatch => SpectralMatches.MaxBy(match => match);
 
