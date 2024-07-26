@@ -662,8 +662,9 @@ namespace Test
             List<SpectralMatch> psms = new List<SpectralMatch>();
             psms.AddRange(firstCsmsFromListsOfCsms);
 
-            fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(psms, fsp, false);
-            fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(psms, fsp, true);
+            PEP_Analysis_Cross_Validation.SetFileSpecificParamters(fsp);
+            fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(psms, false);
+            fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = PEP_Analysis_Cross_Validation.ComputeHydrophobicityValues(psms, true);
 
             var singleCsmPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", fsp, singleCsm,
                 fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified,

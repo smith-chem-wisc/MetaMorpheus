@@ -26,6 +26,13 @@ namespace EngineLayer
             SpectralMatches = spectralMatches;
         }
 
+        public static List<PeptideMatchGroup> GroupByFullSequence(List<SpectralMatch> spectralMatches)
+        {
+            return spectralMatches.GroupBy(p => p.FullSequence)
+                .Select(group => new PeptideMatchGroup(group.Key, group.ToList()))
+                .ToList();
+        }
+
         /// <summary>
         /// Returns the number of full sequences that match to at least one target protein.
         /// </summary>
@@ -55,5 +62,6 @@ namespace EngineLayer
         {
             return GetEnumerator();
         }
+
     }
 }
