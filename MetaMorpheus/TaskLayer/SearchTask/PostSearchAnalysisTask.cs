@@ -683,7 +683,6 @@ namespace TaskLayer
                 includeDecoys: Parameters.SearchParameters.WriteDecoys,
                 includeContaminants: Parameters.SearchParameters.WriteContaminants,
                 includeAmbiguous: false,
-                includeAmbiguousMods: false,
                 includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms,
                 filterAtPeptideLevel: false);
             var peptidesGroupedByFile = psmsListForPeptideResults.GroupBy(p => p.FullFilePath);

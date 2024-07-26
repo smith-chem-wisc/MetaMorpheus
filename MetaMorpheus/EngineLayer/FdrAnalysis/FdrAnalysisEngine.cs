@@ -74,27 +74,26 @@ namespace EngineLayer.FdrAnalysis
                 {
                     // Currently, inside PEP, we look at psm level Q-value when determining what should be used for training
                     // It's not clear that this is the correct thing to do, but it's what we're doing for now
-                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, peptideLevelCalculation: false, pepCalculation: false);
+                    CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
                     if (peptides.Count > 100 )
                     {
                         // I think this call is unneccesary, as peptide level q-value isn't considered in PEP
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, peptideLevelCalculation: true, pepCalculation: false);
+                        CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
                         Compute_PEPValue(myAnalysisResults, psms);
 
-                        //peptiides are first ordered by PEP from good to bad and then by MM score from good to bad
+                        //peptiides are ordered by MM score from good to bad
                         // Peptide level and PSM level PEPs are identical
                         peptides = psms
-                            .OrderBy(p => p.PeptideFdrInfo.PEP)
-                            .ThenByDescending(p => p)
+                            .OrderByDescending(p => p)
                             .GroupBy(p => p.FullSequence)
                             .Select(p => p.FirstOrDefault())
                             .ToList();
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, peptideLevelCalculation: true, pepCalculation: true);
+                        CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
                         psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, peptideLevelCalculation: false, pepCalculation: true);
+                        CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                         
                     }
                     else //we have more than 100 psms but less than 100 peptides so
@@ -102,7 +101,7 @@ namespace EngineLayer.FdrAnalysis
                         //this will be done using PSMs because we dont' have enough peptides
                         Compute_PEPValue(myAnalysisResults, psms);
                         psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
-                        ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, peptideLevelCalculation: false, pepCalculation: true);
+                        CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
                 }
                 else if(psms.Any(psm => psm.FdrInfo.PEP > 0)) 
@@ -112,15 +111,14 @@ namespace EngineLayer.FdrAnalysis
                     // really, in this case, we only need to run one or the other (i.e., only peptides or psms are passed in)
                     // but there's no mechanism to pass that info to the FDR analysis engine, so we'll do this for now
                     peptides = psms
-                            .OrderBy(p => p.PeptideFdrInfo.PEP)
-                            .ThenByDescending(p => p)
+                            .OrderByDescending(p => p)
                             .GroupBy(p => p.FullSequence)
                             .Select(p => p.FirstOrDefault())
                             .ToList();
-                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, peptideLevelCalculation: true, pepCalculation: true);
+                    CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
                     psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
-                    ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms, peptideLevelCalculation: false, pepCalculation: true);
+                    CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
 
                 }
 
@@ -129,9 +127,10 @@ namespace EngineLayer.FdrAnalysis
                     .OrderByDescending(p => p)
                     .GroupBy(b => b.FullSequence)
                     .Select(b => b.FirstOrDefault()).ToList();
-                ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(peptides, peptideLevelCalculation: true, pepCalculation: false);
+                CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
+
                 psms = psms.OrderByDescending(p => p).ToList();
-                ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(psms.OrderByDescending(p => p).ToList(), peptideLevelCalculation: false, pepCalculation: false);
+                CalculateQValue(psms.OrderByDescending(p => p).ToList(), peptideLevelCalculation: false, pepCalculation: false);
                 
                 CountPsm(psms);
             }
@@ -139,10 +138,10 @@ namespace EngineLayer.FdrAnalysis
 
         /// <summary>
         /// This methods assumes that PSMs are already sorted appropriately for downstream usage
-        /// For traditional q-value calculation, the PSMs should be sorted from highest to lowest score
-        /// For PEP q-value calculation, the PSMs should be sorted from lowest to highest PEP
+        /// Then, it counts the number of targets and (fractional) decoys, writes those values to the 
+        /// appropriate FdrInfo (PSM or Peptide level), and calculates q-values
         /// </summary>
-        public void ComputeCumulativeTargetAndDecoyCountsOnSortedPSMs(List<SpectralMatch> psms, bool peptideLevelCalculation, bool pepCalculation = false)
+        public void CalculateQValue(List<SpectralMatch> psms, bool peptideLevelCalculation, bool pepCalculation = false)
         {
             double cumulativeTarget = 0;
             double cumulativeDecoy = 0;

@@ -790,21 +790,11 @@ namespace TaskLayer
             }
             if (filterAtPeptideLevel)
             {
-                if(filterType.Equals("pep q-value"))
-                {
-                    filteredPsms = filteredPsms
-                        .OrderBy(p => p.FdrInfo.PEP)
-                        .ThenByDescending(p => p)
-                        .GroupBy(b => b.FullSequence)
-                        .Select(b => b.FirstOrDefault()).ToList();
-                }
-                else
-                {
-                    filteredPsms = filteredPsms
-                        .OrderByDescending(p => p)
-                        .GroupBy(b => b.FullSequence)
-                        .Select(b => b.FirstOrDefault()).ToList();
-                }
+                //Choose the top scoring PSM for each peptide
+                filteredPsms = filteredPsms
+                    .OrderByDescending(p => p)
+                    .GroupBy(b => b.FullSequence)
+                    .Select(b => b.FirstOrDefault()).ToList();
             }
 
             return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
