@@ -83,12 +83,13 @@ namespace EngineLayer.FdrAnalysis
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
                         Compute_PEPValue(myAnalysisResults, psms);
 
-                        //peptiides are ordered by MM score from good to bad
-                        // Peptide level and PSM level PEPs are identical
+                        // peptides are ordered by MM score from good to bad in order to select the best PSM for each peptide
                         peptides = psms
                             .OrderByDescending(p => p)
                             .GroupBy(p => p.FullSequence)
                             .Select(p => p.FirstOrDefault())
+                            .OrderBy(p => p.FdrInfo.PEP) // Then order by PEP (PSM PEP and Peptide PEP are the same)
+                            .ThenByDescending(p => p)
                             .ToList();
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
@@ -113,11 +114,16 @@ namespace EngineLayer.FdrAnalysis
                     peptides = psms
                             .OrderByDescending(p => p)
                             .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault())
+                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on MBR score
+                            .OrderBy(p => p.FdrInfo.PEP) // Then order by PEP (PSM PEP and Peptide PEP are the same)
+                            .ThenByDescending(p => p)
                             .ToList();
                     CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: true);
 
-                    psms = psms.OrderBy(p => p.PsmFdrInfo.PEP).ThenByDescending(p => p).ToList();
+                    psms = psms
+                        .OrderBy(p => p.PsmFdrInfo.PEP)
+                        .ThenByDescending(p => p)
+                        .ToList();
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
 
                 }
@@ -126,11 +132,12 @@ namespace EngineLayer.FdrAnalysis
                 peptides = psms
                     .OrderByDescending(p => p)
                     .GroupBy(b => b.FullSequence)
-                    .Select(b => b.FirstOrDefault()).ToList();
+                    .Select(b => b.FirstOrDefault())
+                    .ToList();
                 CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
                 psms = psms.OrderByDescending(p => p).ToList();
-                CalculateQValue(psms.OrderByDescending(p => p).ToList(), peptideLevelCalculation: false, pepCalculation: false);
+                CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
                 
                 CountPsm(psms);
             }

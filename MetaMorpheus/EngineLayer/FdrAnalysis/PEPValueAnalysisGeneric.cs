@@ -26,7 +26,8 @@ namespace EngineLayer
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
-        public static readonly bool UsePeptideLevelQValueForTraining = true;
+        public static bool UsePeptideLevelQValueForTraining = true;
+        public static double QValueCutoff = 0.005;
 
         public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
         {
@@ -42,23 +43,36 @@ namespace EngineLayer
             bool allFilesContainPeptides = (countOfPeptidesInEachFile.Count == fileSpecificParameters.Count); //rare condition where each file has psms but some files don't have peptides. probably only happens in unit tests.
 
             int chargeStateMode = 0;
+            int numberOfPositiveTrainingExamples = 0;
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = new Dictionary<string, float>();
-            if (peptides.Count() > 100 && allFilesContainPeptides)
+            while (numberOfPositiveTrainingExamples < 10)
             {
-                foreach (var peptide in peptides)
+                if (peptides.Count() > 100 && allFilesContainPeptides)
                 {
-                    allPeptideIndices.Add(psms.IndexOf(peptide));
+                    foreach (var peptide in peptides)
+                    {
+                        allPeptideIndices.Add(psms.IndexOf(peptide));
+                    }
+                    chargeStateMode = GetChargeStateMode(peptides);
+                    fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(peptides);
+                    numberOfPositiveTrainingExamples = peptides.Count(peptide => peptide.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff);
                 }
-                chargeStateMode = GetChargeStateMode(peptides);
-                fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(peptides);
+                else
+                {
+                    //there are too few psms to do any meaningful training if we used only peptides. So, we will train using psms instead.
+                    UsePeptideLevelQValueForTraining = false;
+                    numberOfPositiveTrainingExamples = psms.Count(psm => psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff);
+                    allPeptideIndices = Enumerable.Range(0, psms.Count).ToList();
+                    chargeStateMode = GetChargeStateMode(psms);
+                    fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
+                }
+
+                if (numberOfPositiveTrainingExamples < 10)
+                {
+                    QValueCutoff = QValueCutoff * 2;
+                }
             }
-            else
-            {
-                //there are too few psms to do any meaningful training if we used only peptides. So, we will train using psms instead.
-                allPeptideIndices = Enumerable.Range(0, psms.Count).ToList();
-                chargeStateMode = GetChargeStateMode(psms);
-                fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
-            }
+            
 
             //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
             //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
@@ -323,9 +337,6 @@ namespace EngineLayer
             {
                 groupsOfIndicies[i] = targetGroups[i].Concat(decoyGroups[i]).ToList();
             }
-
-            int allIndicesCount = groupsOfIndicies.SelectMany(p => p).Count();
-            int uniqueIndicesCount = groupsOfIndicies.SelectMany(p => p).Distinct().Count();
 
             return groupsOfIndicies;
         }
@@ -700,7 +711,7 @@ namespace EngineLayer
                                 label = false;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
                             }
-                            else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= 0.005)
+                            else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
                             {
                                 label = true;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
@@ -724,7 +735,7 @@ namespace EngineLayer
                                     label = false;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
                                 }
-                                else if (!peptideWithSetMods.Parent.IsDecoy && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= 0.005)
+                                else if (!peptideWithSetMods.Parent.IsDecoy && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
                                 {
                                     label = true;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm,  timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, peptideWithSetMods, notch, label);
