@@ -34,6 +34,17 @@ namespace EngineLayer
         }
 
         /// <summary>
+        /// This function is called if there aren't enough peptides to train at the peptide level
+        /// </summary>
+        /// <param name="spectralMatches"></param>
+        /// <returns></returns>
+        public static List<PeptideMatchGroup> GroupByIndividualPsm(List<SpectralMatch> spectralMatches)
+        {
+            return spectralMatches.Select(psm => new PeptideMatchGroup(psm.FullSequence, new List<SpectralMatch> { psm }))
+                .ToList();
+        }
+
+        /// <summary>
         /// Returns the number of full sequences that match to at least one target protein.
         /// </summary>
         public int TargetCount => SpectralMatches.Sum(p => p.BestMatchingBioPolymersWithSetMods
