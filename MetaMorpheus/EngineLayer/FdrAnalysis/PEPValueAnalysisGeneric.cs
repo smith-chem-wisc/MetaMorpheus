@@ -85,13 +85,6 @@ namespace EngineLayer
             
             MLContext mlContext = new MLContext();
 
-            //the number of groups used for cross-validation is hard-coded at four. Do not change this number without changes other areas of effected code.
-
-            //List<int>[] psmGroupIndices = Get_PSM_Group_Indices(psms, numGroups);
-
-            //the psms will be randomly divided. but then we want to make another array that just contains the subset of peptides that are in those psms. that way we don't compute pep using any peptides that were used in training.
-            //List<int>[] peptideGroupIndices = Get_Peptide_Group_Indices(psmGroupIndices, allPeptideIndices);
-
             int numGroups = 4;
             List<int>[] peptideGroupIndices = GetPeptideGroupIndices(peptideGroups, numGroups);
             IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
@@ -146,7 +139,7 @@ namespace EngineLayer
                     }
 
                     //model is trained on peptides but here we can use that to compute PEP for all PSMs
-                    int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, FileSpecificMedianFragmentMassErrors, chargeStateMode, outputFolder);
+                    int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, fileSpecificParameters, FileSpecificMedianFragmentMassErrors, ChargeStateMode, outputFolder);
 
                     allMetrics.Add(metrics);
                     sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
@@ -182,16 +175,6 @@ namespace EngineLayer
                 fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeHydrophobicityValues(trainingData,  true);
                 fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(trainingData);
             }
-        }
-
-        private static List<int>[] Get_Peptide_Group_Indices(List<int>[] psmGroupIndices, List<int> allPeptideIndices)
-        {
-            List<int>[] peptideGroupIndices = new List<int>[psmGroupIndices.Length];
-            for (int i = 0; i < psmGroupIndices.Length; i++)
-            {
-                peptideGroupIndices[i] = psmGroupIndices[i].Intersect(allPeptideIndices).ToList();
-            }
-            return peptideGroupIndices;
         }
 
         public static List<int>[] GetPeptideGroupIndices(List<PeptideMatchGroup> peptides, int numGroups)
@@ -616,6 +599,7 @@ namespace EngineLayer
                     {
                         foreach (SpectralMatch psm in peptideGroups[peptideGroupIndices[i]])
                         {
+                            // I'm not sure what's going one here vis-a-vis disambiguations, but I'm not going to touch it for now
                             if (psm != null)
                             {
                                 List<int> indiciesOfPeptidesToRemove = new List<int>();
@@ -630,7 +614,7 @@ namespace EngineLayer
                                 {
                                     allBmpNotches.Add(Notch);
                                     allBmpPeptides.Add(Peptide);
-                                    PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, Peptide, Notch, !Peptide.Parent.IsDecoy);
+                                    PsmData pd = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, ChargeStateMode, Peptide, Notch, !Peptide.Parent.IsDecoy);
                                     var pepValuePrediction = threadPredictionEngine.Predict(pd);
                                     pepValuePredictions.Add(pepValuePrediction.Probability);
                                     //A score is available using the variable pepvaluePrediction.Score
@@ -650,59 +634,6 @@ namespace EngineLayer
                     }
                 });
             return ambiguousPeptidesResolved;
-        }
-
-        public static List<int>[] Get_PSM_Group_Indices(List<SpectralMatch> psms, int numGroups)
-        {
-            List<int>[] groupsOfIndicies = new List<int>[numGroups];
-            var targetIndexes = psms.Select((item, index) => new { Item = item, Index = index })
-                .Where(x => !x.Item.IsDecoy)
-                .Select(x => x.Index)
-                .ToList();
-            RandomizeListInPlace(targetIndexes);
-            var decoyIndexes = psms.Select((item, index) => new { Item = item, Index = index })
-                .Where(x => x.Item.IsDecoy)
-                .Select(x => x.Index)
-                .ToList();
-            RandomizeListInPlace(decoyIndexes);
-
-            var targetGroups = DivideListIntoGroups(targetIndexes, numGroups);
-            var decoyGroups = DivideListIntoGroups(decoyIndexes, numGroups);
-
-            for (int i = 0; i < numGroups; i++)
-            {
-                groupsOfIndicies[i] = targetGroups[i].Concat(decoyGroups[i]).ToList();
-            }
-
-            return groupsOfIndicies;
-        }
-
-        static void RandomizeListInPlace<T>(List<T> list)
-        {
-            Random rng = new Random(42);
-            int n = list.Count;
-            while (n > 1)
-            {
-                n--;
-                int k = rng.Next(n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
-            }
-
-        }
-
-        static List<List<T>> DivideListIntoGroups<T>(List<T> list, int n)
-        {
-            var groups = new List<List<T>>();
-            int groupSize = (int)Math.Ceiling(list.Count / (double)n);
-
-            for (int i = 0; i < n; i++)
-            {
-                groups.Add(list.Skip(i * groupSize).Take(groupSize).ToList());
-            }
-
-            return groups;
         }
 
         public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<int> notches, List<IBioPolymerWithSetMods> pwsmList, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
