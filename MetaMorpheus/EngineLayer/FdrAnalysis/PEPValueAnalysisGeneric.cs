@@ -54,36 +54,26 @@ namespace EngineLayer
                 .Select(b => b.FirstOrDefault()).ToList();
             List<int> countOfPeptidesInEachFile = peptides.GroupBy(b => b.FullFilePath).Select(b => b.Count()).ToList();
             bool allFilesContainPeptides = (countOfPeptidesInEachFile.Count == fileSpecificParameters.Count); //rare condition where each file has psms but some files don't have peptides. probably only happens in unit tests.
+            QValueCutoff = fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min();
 
             int chargeStateMode = 0;
-            int numberOfPositiveTrainingExamples = 0;
             Dictionary<string, float> fileSpecificMedianFragmentMassErrors = new Dictionary<string, float>();
-            while (numberOfPositiveTrainingExamples < 10)
+            if (peptides.Count() > 100 && allFilesContainPeptides)
             {
-                if (peptides.Count() > 100 && allFilesContainPeptides)
+                foreach (var peptide in peptides)
                 {
-                    foreach (var peptide in peptides)
-                    {
-                        allPeptideIndices.Add(psms.IndexOf(peptide));
-                    }
-                    chargeStateMode = GetChargeStateMode(peptides);
-                    fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(peptides);
-                    numberOfPositiveTrainingExamples = peptides.Count(peptide => peptide.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff);
+                    allPeptideIndices.Add(psms.IndexOf(peptide));
                 }
-                else
-                {
-                    //there are too few psms to do any meaningful training if we used only peptides. So, we will train using psms instead.
-                    UsePeptideLevelQValueForTraining = false;
-                    numberOfPositiveTrainingExamples = psms.Count(psm => psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff);
-                    allPeptideIndices = Enumerable.Range(0, psms.Count).ToList();
-                    chargeStateMode = GetChargeStateMode(psms);
-                    fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
-                }
-
-                if (numberOfPositiveTrainingExamples < 10)
-                {
-                    QValueCutoff = QValueCutoff * 2;
-                }
+                chargeStateMode = GetChargeStateMode(peptides);
+                fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(peptides);
+            }
+            else
+            {
+                //there are too few psms to do any meaningful training if we used only peptides. So, we will train using psms instead.
+                UsePeptideLevelQValueForTraining = false;
+                allPeptideIndices = Enumerable.Range(0, psms.Count).ToList();
+                chargeStateMode = GetChargeStateMode(psms);
+                fileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(psms);
             }
             
 
