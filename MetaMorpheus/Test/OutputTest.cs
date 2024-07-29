@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using NUnit.Framework.Legacy;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;

@@ -15,6 +15,7 @@ using System;
 using MassSpectrometry;
 using Nett;
 using EngineLayer.Gptmd;
+using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;

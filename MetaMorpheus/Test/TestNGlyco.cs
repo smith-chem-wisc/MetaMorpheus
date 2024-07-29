@@ -16,6 +16,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using MzLibUtil;
 using Nett;
+using NUnit.Framework.Legacy;
 using Omics.Modifications;
 
 namespace Test

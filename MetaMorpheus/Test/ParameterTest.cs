@@ -8,6 +8,7 @@ using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using TaskLayer;

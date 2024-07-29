@@ -4,6 +4,7 @@ using System.IO;
 using TaskLayer;
 using EngineLayer;
 using System.Linq;
+using NUnit.Framework.Legacy;
 using Omics.Fragmentation;
 
 namespace Test

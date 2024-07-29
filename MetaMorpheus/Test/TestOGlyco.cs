@@ -19,6 +19,7 @@ using Chemistry;
 using MzLibUtil;
 using Readers;
 using System.Text;
+using NUnit.Framework.Legacy;
 using Omics.Modifications;
 
 namespace Test
