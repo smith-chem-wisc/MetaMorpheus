@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ApplicationManifest>app1.manifest</ApplicationManifest>
     <Configurations>Debug;Release</Configurations>
     <DebugType>full</DebugType>
