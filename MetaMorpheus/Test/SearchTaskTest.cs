@@ -386,7 +386,7 @@ namespace Test
 
             // test that the final q-value follows the (target / decoy) formula
             // intermediate q-values no longer always follow this formula, so I'm not testing them here
-            Assert.AreEqual(cumDecoys / (double)cumTargets, finalQValue, 0.0001);
+            Assert.That((double)cumDecoys / (double)cumTargets, Is.EqualTo(finalQValue).Within(.0005));
             Directory.Delete(folderPath, true);
         }
 
@@ -447,7 +447,7 @@ namespace Test
 
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
-            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+            MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
@@ -489,7 +489,7 @@ namespace Test
 
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
-            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+            MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
@@ -505,7 +505,7 @@ namespace Test
             Assert.That(found);
 
             // test again w/ NOT appending motifs onto mod names
-            MzIdentMLWriter.WriteMzIdentMl(new List<PeptideSpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
+            MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
                 new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, false);
 

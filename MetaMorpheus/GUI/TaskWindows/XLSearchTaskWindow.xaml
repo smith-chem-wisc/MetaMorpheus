@@ -72,9 +72,9 @@
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
                                     <ComboBox x:Name="cbCrosslinkers" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5">
+                                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label x:Name="lblQuenchMethods" Content="Quench Methods" />
-                                    <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" Margin="2" />
+                                    <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" Margin="2"/>
                                     <CheckBox x:Name="ckbQuenchTris"  VerticalAlignment="Center" Content="Tris" Margin="2" />
                                     <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" Margin="2" />
                                 </StackPanel>
@@ -87,7 +87,7 @@
                                 <Label x:Name="ionsToSearchLabel" Content="MS2 Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label.ToolTip>
                                         <TextBlock>
-                                                        The type of fragmentation.
+                                            Main fragmentation method used. If using triggered fragmentation methods, for example EThcD, set this to the triggering fragmentation method. 
                                         </TextBlock>
                                     </Label.ToolTip>
                                 </Label>
@@ -95,7 +95,9 @@
                                 <Label x:Name="ms2childScanIonsToSearchLabel" Content="MS2 Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label.ToolTip>
                                         <TextBlock>
-                                                        The type of fragmentation of the child scan (second MS2, or MS3).
+                                            Leave blank if not using triggered fragmentation scans.
+                                            <LineBreak/>
+                                            If using combined fragmentation methods, set this to the second dissociation type. For example, if using HCD to trigger ETD, set this dissociation type as ETD.    
                                         </TextBlock>
                                     </Label.ToolTip>
                                 </Label>
@@ -103,15 +105,31 @@
                                 <Label x:Name="ms3childScanIonsToSearchLabel" Content="MS3 Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label.ToolTip>
                                         <TextBlock>
-                                                        The type of fragmentation of the child scan (second MS2, or MS3).
+                                                        Set this to fragmentation type of any MS3 scans. Leave blank if not using triggered fragmentation methods.  
                                         </TextBlock>
                                     </Label.ToolTip>
                                 </Label>
                                 <ComboBox x:Name="MS3ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
                             </StackPanel>
-                            <StackPanel>
-                                <CheckBox x:Name="ckbAddCompIon"  VerticalAlignment="Center" Content="Generate Complementary Ions" Margin="2" />
-                                <CheckBox x:Name="ckbCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="Crosslink At Cleavage Site" Margin="2" />
+                            <StackPanel ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <CheckBox x:Name="ckbAddCompIon"  VerticalAlignment="Center" Content="Generate Complementary Ions" Margin="2">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Generates experimental (not theoretical) complementary ions for each MS2.
+                                            <LineBreak />
+                                            Useful for localization of modifications.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
+                                <CheckBox x:Name="ckbCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="Crosslink At Cleavage Site" Margin="2" >
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Amine-amine crosslinkers, such as DSS or DSSO, prevent the C-terminal cleavage of lysine by Trypsin.
+                                            <LineBreak/>
+                                            Check the box to override the default behavior and allow cleavage at crosslinker sites. 
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                             </StackPanel>
                         </StackPanel>
                     </Expander>

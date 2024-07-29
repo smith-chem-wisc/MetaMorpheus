@@ -14,9 +14,9 @@ namespace EngineLayer.HistogramAnalysis
 
         public List<Bin> FinalBins { get; private set; }
 
-        public void GenerateBins(List<PeptideSpectralMatch> targetAndDecoyMatches, double dc)
+        public void GenerateBins(List<SpectralMatch> targetAndDecoyMatches, double dc)
         {
-            List<double> listOfMassShifts = targetAndDecoyMatches.Where(b => b.PeptideMonisotopicMass.HasValue).Select(b => b.ScanPrecursorMass - b.PeptideMonisotopicMass.Value).OrderBy(b => b).ToList();
+            List<double> listOfMassShifts = targetAndDecoyMatches.Where(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue).Select(b => b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value).OrderBy(b => b).ToList();
             double minMassShift = listOfMassShifts.Min();
             double maxMassShift = listOfMassShifts.Max();
 
@@ -88,7 +88,7 @@ namespace EngineLayer.HistogramAnalysis
             for (int i = 0; i < targetAndDecoyMatches.Count; i++)
             {
                 foreach (Bin bin in FinalBins)
-                    if (targetAndDecoyMatches[i].PeptideMonisotopicMass.HasValue && Math.Abs(targetAndDecoyMatches[i].ScanPrecursorMass - targetAndDecoyMatches[i].PeptideMonisotopicMass.Value - bin.MassShift) <= dc)
+                    if (targetAndDecoyMatches[i].BioPolymerWithSetModsMonoisotopicMass.HasValue && Math.Abs(targetAndDecoyMatches[i].ScanPrecursorMass - targetAndDecoyMatches[i].BioPolymerWithSetModsMonoisotopicMass.Value - bin.MassShift) <= dc)
                         bin.Add(targetAndDecoyMatches[i]);
             }
 
@@ -155,7 +155,7 @@ namespace EngineLayer.HistogramAnalysis
             {
                 var numTarget = bin.UniquePSMs.Values.Count(b => !b.Item3.IsDecoy);
                 if (numTarget > 0)
-                    bin.MedianLength = Statistics.Median(bin.UniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Where(b => b.Item3.PeptideLength.HasValue).Select(b => (double)b.Item3.PeptideLength.Value));
+                    bin.MedianLength = Statistics.Median(bin.UniquePSMs.Values.Where(b => !b.Item3.IsDecoy).Where(b => b.Item3.BioPolymerWithSetModsLength.HasValue).Select(b => (double)b.Item3.BioPolymerWithSetModsLength.Value));
             }
         }
 

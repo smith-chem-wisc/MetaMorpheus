@@ -44,9 +44,9 @@ namespace Test
             ps.Fragment(DissociationType.HCD, FragmentationTerminus.Both, theoreticalProducts);
             
             var matchedIons = MetaMorpheusEngine.MatchFragmentIons(scan, theoreticalProducts, new CommonParameters());
-            PeptideSpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, commonParameters, matchedIons);
+            SpectralMatch newPsm = new PeptideSpectralMatch(ps, 0, 0, 2, scan, commonParameters, matchedIons);
 
-            LocalizationEngine f = new LocalizationEngine(new List<PeptideSpectralMatch> { newPsm }, myMsDataFile, new CommonParameters(), fsp, new List<string>());
+            LocalizationEngine f = new LocalizationEngine(new List<SpectralMatch> { newPsm }, myMsDataFile, new CommonParameters(), fsp, new List<string>());
 
             var singleEngine= new SingleEngineEventArgs(f);
             Assert.That(singleEngine.MyEngine.Equals(f));

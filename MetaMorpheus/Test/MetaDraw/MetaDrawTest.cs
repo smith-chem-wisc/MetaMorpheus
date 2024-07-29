@@ -437,6 +437,12 @@ namespace Test.MetaDraw
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
                 psm.StartAndEndResiduesInProtein.Replace("[", "").Replace("]", "").Replace("to", "").Replace(" ", "").Length + 2);
 
+
+            // get scan from psm
+            var scan = metadrawLogic.GetMs2ScanFromPsm(psm);
+            Assert.That(scan.OneBasedScanNumber, Is.EqualTo(psm.Ms2ScanNumber));
+            Assert.That(scan.MsnOrder, Is.EqualTo(2));
+
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
@@ -1080,11 +1086,8 @@ namespace Test.MetaDraw
             // test loading when the file has a periods, commas, spaces in the name
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawLoadingWithWeirdFileNames");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
 
-            string pathWithPeriodInIt = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
-            File.Copy(spectraFile, pathWithPeriodInIt, true);
-            spectraFile = pathWithPeriodInIt;
 
             Directory.CreateDirectory(outputFolder);
 
@@ -1097,7 +1100,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.PsmResultFilePaths.Add(psmFile);
-            metadrawLogic.SpectraFilePaths.Add(pathWithPeriodInIt);
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
             var errors = metadrawLogic.LoadFiles(true, true);
             Assert.That(!errors.Any());
 
@@ -1123,11 +1126,6 @@ namespace Test.MetaDraw
 
             // clean up resources
             metadrawLogic.CleanUpResources();
-
-            // delete output
-           
-
-            File.Delete(pathWithPeriodInIt);
             Directory.Delete(outputFolder, true);
         }
 

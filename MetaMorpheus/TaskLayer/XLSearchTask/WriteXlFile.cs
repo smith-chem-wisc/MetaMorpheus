@@ -58,7 +58,7 @@ namespace TaskLayer
                     "\tPeptide\tProtein");
                 foreach (var item in items)
                 {
-                    if (item.BaseSequence != null && item.BetaPeptide.BaseSequence != null && item.ProteinAccession != null && item.BetaPeptide.ProteinAccession != null)
+                    if (item.BaseSequence != null && item.BetaPeptide.BaseSequence != null && item.Accession != null && item.BetaPeptide.Accession != null)
                     {
                         string x = "T"; int label = 1;
                         if (item.IsDecoy || item.BetaPeptide.IsDecoy)
@@ -73,14 +73,14 @@ namespace TaskLayer
                             + "\t" + item.DeltaScore.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.ScanPrecursorCharge.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.ScanPrecursorMass.ToString(CultureInfo.InvariantCulture)
-                            + "\t" + ((item.PeptideMonisotopicMass.HasValue && item.BetaPeptide.PeptideMonisotopicMass.HasValue) ? ((item.ScanPrecursorMass - item.BetaPeptide.PeptideMonisotopicMass.Value - item.PeptideMonisotopicMass.Value - crosslinker.TotalMass) / item.ScanPrecursorMass * 1E6).ToString(CultureInfo.InvariantCulture) : "---")
+                            + "\t" + ((item.BioPolymerWithSetModsMonoisotopicMass.HasValue && item.BetaPeptide.BioPolymerWithSetModsMonoisotopicMass.HasValue) ? ((item.ScanPrecursorMass - item.BetaPeptide.BioPolymerWithSetModsMonoisotopicMass.Value - item.BioPolymerWithSetModsMonoisotopicMass.Value - crosslinker.TotalMass) / item.ScanPrecursorMass * 1E6).ToString(CultureInfo.InvariantCulture) : "---")
                             + "\t" + item.BetaPeptide.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
                             + "\t" + item.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
                             + "\t" + (item.BetaPeptide.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
                             + "\t" + "-." + item.FullSequence + item.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPeptide.FullSequence + item.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
-                            + "\t" + item.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + (item.XlProteinPos.HasValue ? item.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
-                            + "\t" + item.BetaPeptide.BestMatchingPeptides.First().Peptide.Protein.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BetaPeptide.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + (item.BetaPeptide.XlProteinPos.HasValue ? item.BetaPeptide.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
                             );
                     }
@@ -199,7 +199,7 @@ namespace TaskLayer
             for (int i = 0; i < items.Count; i++)
             {
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                var alphaPeptide = items[i].BestMatchingPeptides.First().Peptide;
+                var alphaPeptide = items[i].BestMatchingBioPolymersWithSetMods.First().Peptide;
 
                 foreach (var modification in alphaPeptide.AllModsOneIsNterminus)
                 {
@@ -220,12 +220,12 @@ namespace TaskLayer
 
                         hit_rank = 1,
                         peptide = alphaPeptide.BaseSequence,
-                        peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = alphaPeptide.NextAminoAcid.ToString(),
-                        protein = alphaPeptide.Protein.Accession,
+                        peptide_prev_aa = alphaPeptide.PreviousResidue.ToString(),
+                        peptide_next_aa = alphaPeptide.NextResidue.ToString(),
+                        protein = alphaPeptide.Parent.Accession,
                         num_tot_proteins = 1,
                         calc_neutral_pep_mass = (float)items[i].ScanPrecursorMass,
-                        massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value).ToString(),
+                        massdiff = (items[i].ScanPrecursorMass - items[i].BioPolymerWithSetModsMonoisotopicMass.Value).ToString(),
                         xlink_typeSpecified = true,
                         xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.na,
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
@@ -258,12 +258,12 @@ namespace TaskLayer
                     {
                         hit_rank = 1,
                         peptide = alphaPeptide.BaseSequence,
-                        peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = alphaPeptide.NextAminoAcid.ToString(),
-                        protein = alphaPeptide.Protein.Accession,
+                        peptide_prev_aa = alphaPeptide.PreviousResidue.ToString(),
+                        peptide_next_aa = alphaPeptide.NextResidue.ToString(),
+                        protein = alphaPeptide.Parent.Accession,
                         num_tot_proteins = 1,
                         calc_neutral_pep_mass = (float)items[i].ScanPrecursorMass,
-                        massdiff = (items[i].ScanPrecursorMass - items[i].PeptideMonisotopicMass.Value - crosslinkerDeadEndMass).ToString(),
+                        massdiff = (items[i].ScanPrecursorMass - items[i].BioPolymerWithSetModsMonoisotopicMass.Value - crosslinkerDeadEndMass).ToString(),
                         xlink_typeSpecified = true,
                         xlink_type = pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlink_type.na,
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
@@ -277,7 +277,7 @@ namespace TaskLayer
                 }
                 else if (items[i].CrossType == PsmCrossType.Inter || items[i].CrossType == PsmCrossType.Intra || items[i].CrossType == PsmCrossType.Cross)
                 {
-                    var betaPeptide = items[i].BetaPeptide.BestMatchingPeptides.First().Peptide;
+                    var betaPeptide = items[i].BetaPeptide.BestMatchingBioPolymersWithSetMods.First().Peptide;
                     var modsBeta = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
 
                     foreach (var mod in betaPeptide.AllModsOneIsNterminus)
@@ -295,11 +295,11 @@ namespace TaskLayer
                     var alpha = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
                     {
                         peptide = alphaPeptide.BaseSequence,
-                        peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = alphaPeptide.NextAminoAcid.ToString(),
-                        protein = alphaPeptide.Protein.Accession,
+                        peptide_prev_aa = alphaPeptide.PreviousResidue.ToString(),
+                        peptide_next_aa = alphaPeptide.NextResidue.ToString(),
+                        protein = alphaPeptide.Parent.Accession,
                         num_tot_proteins = 1,
-                        calc_neutral_pep_mass = (float)items[i].PeptideMonisotopicMass.Value,
+                        calc_neutral_pep_mass = (float)items[i].BioPolymerWithSetModsMonoisotopicMass.Value,
                         complement_mass = (float)(items[i].ScanPrecursorMass - alphaPeptide.MonoisotopicMass),
                         designation = "alpha",
                         modification_info = new pepXML.Generated.modInfoDataType { mod_aminoacid_mass = mods.ToArray() },
@@ -312,9 +312,9 @@ namespace TaskLayer
                     var beta = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hitXlinkLinked_peptide
                     {
                         peptide = betaPeptide.BaseSequence,
-                        peptide_prev_aa = betaPeptide.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = betaPeptide.NextAminoAcid.ToString(),
-                        protein = betaPeptide.Protein.Accession,
+                        peptide_prev_aa = betaPeptide.PreviousResidue.ToString(),
+                        peptide_next_aa = betaPeptide.NextResidue.ToString(),
+                        protein = betaPeptide.Parent.Accession,
                         num_tot_proteins = 1,
                         calc_neutral_pep_mass = (float)betaPeptide.MonoisotopicMass,
                         complement_mass = (float)(items[i].ScanPrecursorMass - betaPeptide.MonoisotopicMass),
@@ -368,9 +368,9 @@ namespace TaskLayer
                     {
                         hit_rank = 1,
                         peptide = alphaPeptide.BaseSequence,
-                        peptide_prev_aa = alphaPeptide.PreviousAminoAcid.ToString(),
-                        peptide_next_aa = alphaPeptide.NextAminoAcid.ToString(),
-                        protein = alphaPeptide.Protein.Accession,
+                        peptide_prev_aa = alphaPeptide.PreviousResidue.ToString(),
+                        peptide_next_aa = alphaPeptide.NextResidue.ToString(),
+                        protein = alphaPeptide.Parent.Accession,
                         num_tot_proteins = 1,
                         calc_neutral_pep_mass = (float)items[i].ScanPrecursorMass,
                         massdiff = (items[i].ScanPrecursorMass - alphaPeptide.MonoisotopicMass - crosslinker.LoopMass).ToString(),

@@ -178,7 +178,7 @@ namespace MetaMorpheusCommandLine
 
             foreach (var db in settings.Databases)
             {
-                if (!Path.GetExtension(db).Equals(".fasta"))
+                if (Path.GetExtension(db).Equals(".xml"))
                 {
                     GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<Modification>(), true);
 
@@ -229,6 +229,11 @@ namespace MetaMorpheusCommandLine
                     case "GlycoSearch":
                         var GlycoTask = Toml.ReadFile<GlycoSearchTask>(filePath, MetaMorpheusTask.tomlConfig);
                         taskList.Add(("Task" + (i + 1) + "GlycoSearchTask", GlycoTask));
+                        break;
+
+                    case "Average":
+                        var AveragingTask = Toml.ReadFile<SpectralAveragingTask>(filePath, MetaMorpheusTask.tomlConfig);
+                        taskList.Add(("Task" + (i + 1) + "AveragingTask", AveragingTask));
                         break;
 
                     default:

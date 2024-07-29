@@ -17,7 +17,7 @@ namespace TaskLayer
         public List<Modification> FixedModifications { get; set; }
         public Modification MultiplexModification { get; set; }
         public HashSet<DigestionParams> ListOfDigestionParams { get; set; }
-        public List<PeptideSpectralMatch> AllPsms { get; set; }
+        public List<SpectralMatch> AllPsms { get; set; }
         public FlashLfqResults FlashLfqResults { get; set; }
         public int NumNotches { get; set; }
         public string OutputFolder { get; set; }

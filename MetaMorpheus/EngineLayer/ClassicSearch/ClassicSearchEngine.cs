@@ -20,12 +20,12 @@ namespace EngineLayer.ClassicSearch
         private readonly List<Modification> VariableModifications;
         private readonly List<SilacLabel> SilacLabels;
         private readonly (SilacLabel StartLabel, SilacLabel EndLabel)? TurnoverLabels;
-        private readonly PeptideSpectralMatch[] PeptideSpectralMatches;
+        private readonly SpectralMatch[] PeptideSpectralMatches;
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
         private readonly bool WriteSpectralLibrary;
 
-        public ClassicSearchEngine(PeptideSpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
+        public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
             SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary)
@@ -163,7 +163,7 @@ namespace EngineLayer.ClassicSearch
                 });
             }
 
-            foreach (PeptideSpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
+            foreach (SpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
             {
                 psm.ResolveAllAmbiguities();
             }
@@ -201,7 +201,7 @@ namespace EngineLayer.ClassicSearch
                 // valid hit (met the cutoff score); lock the scan to prevent other threads from accessing it
                 lock (myLocks[scan.ScanIndex])
                 {
-                    bool scoreImprovement = PeptideSpectralMatches[scan.ScanIndex] == null || (thisScore - PeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -PeptideSpectralMatch.ToleranceForScoreDifferentiation;
+                    bool scoreImprovement = PeptideSpectralMatches[scan.ScanIndex] == null || (thisScore - PeptideSpectralMatches[scan.ScanIndex].RunnerUpScore) > -SpectralMatch.ToleranceForScoreDifferentiation;
 
                     if (scoreImprovement)
                     {

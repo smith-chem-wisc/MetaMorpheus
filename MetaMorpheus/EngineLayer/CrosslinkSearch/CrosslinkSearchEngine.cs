@@ -1,15 +1,12 @@
 ﻿using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Omics.Fragmentation;
 using Omics.Modifications;
 
 namespace EngineLayer.CrosslinkSearch
@@ -734,7 +731,7 @@ namespace EngineLayer.CrosslinkSearch
                 }
 
                 var peptideWithMod = new PeptideWithSetModifications(mainPeptide.Protein, mainPeptide.DigestionParams,
-                    mainPeptide.OneBasedStartResidueInProtein, mainPeptide.OneBasedEndResidueInProtein,
+                    mainPeptide.OneBasedStartResidue, mainPeptide.OneBasedEndResidue,
                     mainPeptide.CleavageSpecificityForFdrCategory, mainPeptide.PeptideDescription,
                     mainPeptide.MissedCleavages, mod, mainPeptide.NumFixedMods);
           
@@ -784,8 +781,8 @@ namespace EngineLayer.CrosslinkSearch
 
                 mods.Add(location + 1, deadEndMod);
  
-                var localizedPeptide = new PeptideWithSetModifications(originalPeptide.Protein, originalPeptide.DigestionParams, originalPeptide.OneBasedStartResidueInProtein,
-                    originalPeptide.OneBasedEndResidueInProtein, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
+                var localizedPeptide = new PeptideWithSetModifications(originalPeptide.Protein, originalPeptide.DigestionParams, originalPeptide.OneBasedStartResidue,
+                    originalPeptide.OneBasedEndResidue, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
 
                 localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both, products);
                 var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
