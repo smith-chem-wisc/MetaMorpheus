@@ -7,7 +7,7 @@ using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.ViewModels.Legends;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using OxyPlot;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;

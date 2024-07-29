@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Omics.Fragmentation;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;

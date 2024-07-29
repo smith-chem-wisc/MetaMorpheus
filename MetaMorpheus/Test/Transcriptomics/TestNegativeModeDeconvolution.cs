@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Readers;
 using System;
 using System.Collections.Generic;

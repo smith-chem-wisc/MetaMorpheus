@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
