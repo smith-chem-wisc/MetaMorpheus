@@ -50,7 +50,6 @@
   <ItemGroup>
     <PackageReference Include="MarkdownSharp" Version="2.0.5" />
     <PackageReference Include="MathNet.Numerics" Version="5.0.0" />
-    <PackageReference Include="MathNet.Numerics.MKL.Win" Version="3.0.0" />
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />

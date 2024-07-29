@@ -24,7 +24,6 @@
       <ComponentGroupRef Id="LinuxNativeMathComponents" />
       <ComponentGroupRef Id="OsxNativeMathComponents" />
       <ComponentGroupRef Id="WinNativeMathComponents" />
-      <ComponentGroupRef Id="MathNumerics_x64" />
       <!--ComponentRef creates a reference to a Component element in another Fragment-->
       <ComponentRef Id="MetaMorpheusProgramMenuFolderComponent" />
 
@@ -331,15 +330,6 @@
       <Component Id="src_OpenMcdf.Extensions.dll" Guid="69004206-94FD-4342-A98D-70560B41C7B3">
         <File Id="src_OpenMcdf.Extensions.dll" Name="OpenMcdf.Extensions.dll" Source="$(var.GUI_TargetDir)OpenMcdf.Extensions.dll" />
       </Component>
-      <Component Id="src_Common.Logging.Core.dll" Guid="894B4A68-17E7-48A5-B2C6-74C33CD08979">
-        <File Id="src_Common.Logging.Core.dll" Name="Common.Logging.Core.dll" Source="$(var.GUI_TargetDir)Common.Logging.Core.dll" />
-      </Component>
-      <Component Id="src_Common.Logging.dll" Guid="B543DE60-4AE9-4C43-88A7-1B1F752D7171">
-        <File Id="src_Common.Logging.dll" Name="Common.Logging.dll" Source="$(var.GUI_TargetDir)Common.Logging.dll" />
-      </Component>
-      <Component Id="src_BouncyCastle.Crypto.dll" Guid="54F72A71-C672-4655-95AA-4D32C9983A7D">
-        <File Id="src_BouncyCastle.Crypto.dll" Name="BouncyCastle.Crypto.dll" Source="$(var.GUI_TargetDir)BouncyCastle.Crypto.dll" />
-      </Component>
       <Component Id="src_Microsoft.DotNet.PlatformAbstractions.dll" Guid="F42DEDAA-6D88-4D5B-AB51-C472617F2C5F">
         <File Id="src_Microsoft.DotNet.PlatformAbstractions.dll" Name="Microsoft.DotNet.PlatformAbstractions.dll" Source="$(var.GUI_TargetDir)Microsoft.DotNet.PlatformAbstractions.dll" />
       </Component>
@@ -412,15 +402,6 @@
       </Component>
     </ComponentGroup>
     
-    <!--Other x64 Components-->
-    <ComponentGroup Id="MathNumerics_x64" Directory="MathNumericsFolder_x64">
-      <Component Id="src_libiomp5md.dll" Guid="CB28608B-0F60-4002-B0E3-F8A151DCD871">
-        <File Id="src_libiomp5md.dll" Name="libiomp5md.dll" Source="$(var.GUI_TargetDir)x64\libiomp5md.dll" />
-      </Component>
-      <Component Id="srcMathNet.Numerics.MKL.dll" Guid="9384C245-B63C-48EF-B5DA-8AB2C04A6B27">
-        <File Id="src_MathNet.Numerics.MKL.dll" Name="MathNet.Numerics.MKL.dll" Source="$(var.GUI_TargetDir)x64\MathNet.Numerics.MKL.dll" />
-      </Component>
-    </ComponentGroup>
   </Fragment>
 
   <!--Build the App Mods folder-->
