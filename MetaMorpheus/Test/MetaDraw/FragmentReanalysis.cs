@@ -14,7 +14,6 @@ using NUnit.Framework;
 using NUnit.Framework.Legacy;
 using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Omics.Fragmentation;
-//using Org.BouncyCastle.Bcpg;
 using pepXML.Generated;
 using Readers;
 using TaskLayer;
