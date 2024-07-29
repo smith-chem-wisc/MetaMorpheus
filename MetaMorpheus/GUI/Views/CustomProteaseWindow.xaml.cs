@@ -18,6 +18,7 @@ using System.Xml;
 using Easy.Common.Extensions;
 using System.Linq;
 using MassSpectrometry;
+using Omics.Digestion;
 
 namespace MetaMorpheusGUI.Views
 {

@@ -7,6 +7,7 @@ using Proteomics.ProteolyticDigestion;
 using System.IO;
 using NUnit.Framework;
 using EngineLayer;
+using Omics.Digestion;
 
 
 namespace Test
