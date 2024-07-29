@@ -30,6 +30,7 @@ namespace EngineLayer
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
             PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
+            PrecursorFractionalIntensity = scan.PrecursorFractionalIntensity;
             DigestionParams = commonParameters.DigestionParams;
             BioPolymersWithSetModsToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
@@ -67,6 +68,7 @@ namespace EngineLayer
         public double ScanPrecursorMonoisotopicPeakMz { get; }
         public double PrecursorScanIntensity { get; }
         public int PrecursorScanEnvelopePeakCount { get; }
+        public double PrecursorFractionalIntensity { get; }
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
@@ -379,7 +381,17 @@ namespace EngineLayer
 
         #endregion
 
+        #region FDR
 
+        private string _chimeraIdString;
+        public string ChimeraIdString => _chimeraIdString ??= $"{ScanNumber}{FullFilePath}{PrecursorScanNumber}";
+
+        /// <summary>
+        /// Returns an integer representing the longest continuous number of residues in the match covered on both sides by fragment ions
+        /// </summary>
+        /// <param name="PeptidesToMatchingFragments"></param>
+        /// <param name="peptide"></param>
+        /// <returns></returns>
         public static int GetLongestIonSeriesBidirectional(Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments, IBioPolymerWithSetMods peptide)
         {
             List<int> maxDiffs = new List<int> { 1 };
@@ -530,6 +542,8 @@ namespace EngineLayer
                 return 0;
             }
         }
+
+        #endregion
 
         /// <summary>
         /// There are a few key locations in MetaMorpheus where we want to have psms sorted in a consistent manner.

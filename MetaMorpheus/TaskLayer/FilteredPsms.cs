@@ -8,6 +8,12 @@ using System.Threading.Tasks;
 
 namespace TaskLayer
 {
+    public enum FilterType
+    {
+        QValue,
+        PepQValue
+    }
+
     /// <summary>
     /// Contains a filtered list of PSMs
     /// </summary>
@@ -17,11 +23,11 @@ namespace TaskLayer
         /// <summary>
         /// Filter type can have only two values: "q-value" or "pep q-value"
         /// </summary>
-        public string FilterType { get; }
+        public FilterType FilterType { get; }
         public double FilterThreshold { get; }
         public bool FilteringNotPerformed { get; }
         public bool PeptideLevelFiltering { get; }
-        public FilteredPsms(List<SpectralMatch> psms, string filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
+        public FilteredPsms(List<SpectralMatch> psms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
         {
             Psms = psms;
             FilterType = filterType;
@@ -36,7 +42,7 @@ namespace TaskLayer
 
             switch (FilterType)
             {
-                case "pep q-value":
+                case FilterType.PepQValue:
                     return psm.GetFdrInfo(PeptideLevelFiltering).PEP_QValue <= FilterThreshold;
                 default:
                     return psm.GetFdrInfo(PeptideLevelFiltering).QValue <= FilterThreshold && psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch <= FilterThreshold;
