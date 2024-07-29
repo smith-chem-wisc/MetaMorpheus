@@ -756,7 +756,7 @@ namespace TaskLayer
             List<SpectralMatch> filteredPsms = new List<SpectralMatch>();
 
             // set the filter type
-            string filterType = "q-value";
+            FilterType filterType = FilterType.QValue;
             if (pepQValueThreshold < qValueThreshold)
             {
                 if (psms.Count() < 100)
@@ -766,7 +766,7 @@ namespace TaskLayer
                 }
                 else
                 {
-                    filterType = "pep q-value";
+                    filterType = FilterType.PepQValue;
                 }
             }
 
