@@ -1,8 +1,5 @@
-﻿using Chemistry;
-using EngineLayer;
-using EngineLayer.CrosslinkSearch;
+﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
-using EngineLayer.Indexing;
 using MassSpectrometry;
 using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
@@ -13,7 +10,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
-using UsefulProteomicsDatabases;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework.Legacy;
