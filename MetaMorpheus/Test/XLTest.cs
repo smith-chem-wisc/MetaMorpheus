@@ -634,8 +634,6 @@ namespace Test
                 { Path.GetFileName(intraCsm.FullFilePath), 0 }
             };
 
-            PEP_Analysis_Cross_Validation.SetFileSpecificParameters(fsp);
-
             // Set values within PEP_Analysis through reflection
             PEP_Analysis_Cross_Validation.SetFileSpecificParameters(fsp);
             Type pepType = typeof(PEP_Analysis_Cross_Validation);
@@ -687,6 +685,23 @@ namespace Test
 
             List<SpectralMatch> psms = new List<SpectralMatch>();
             psms.AddRange(firstCsmsFromListsOfCsms);
+            // This writes the hydrophobicity dictionaries, charge state mode, and median fragment mass errors to the PEP_Analysis_Cross_Validation class
+            PEP_Analysis_Cross_Validation.BuildFileSpecificDictionaries(psms, PsmData.trainingInfos["standard"]);
+            // This overwrites the fragment mass errors and charge state mode
+            foreach (var p in pepType.GetProperties())
+            {
+                switch (p.Name)
+                {
+                    case "FileSpecificMedianFragmentMassErrors":
+                        p.SetValue(pepType, medianFragmentMassError);
+                        break;
+                    case "ChargeStateMode":
+                        p.SetValue(pepType, chargeStateMode);
+                        break;
+                    default:
+                        break;
+                }
+            }
 
             var singleCsmPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", 
                 singleCsm,
