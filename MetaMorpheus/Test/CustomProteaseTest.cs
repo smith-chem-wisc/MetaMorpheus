@@ -8,6 +8,7 @@ using System.IO;
 using NUnit.Framework;
 using EngineLayer;
 using Omics.Digestion;
+using MzLibUtil;
 
 
 namespace Test
@@ -17,26 +18,18 @@ namespace Test
         [Test]
         public static void TestAddCustomProtease ()
         {
-            string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            string path = ((!string.IsNullOrWhiteSpace(folderPath) && AppDomain.CurrentDomain.BaseDirectory.Contains(folderPath) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins")) ? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus") : AppDomain.CurrentDomain.BaseDirectory);
-            string path2 = Path.Combine(path, "ProteolyticDigestion", "proteases.tsv");
-
             string ProtDirectory = Path.Combine(GlobalVariables.DataDir, @"ProteolyticDigestion");
             string customProteasePath = Path.Combine(ProtDirectory, @"CustomProtease.tsv");
-            if (!File.Exists(customProteasePath))
-            {
-                File.Create(customProteasePath);
-            }
 
-            File.Copy(path2, customProteasePath, true);
+            string[] pString = new string[] { "p\tA|\t\t\tfull\tcusPsiNum\tcusPsiName\t\t\t\t\t" };
+            File.WriteAllLines(customProteasePath, pString);
 
-            Protease p = new Protease("p", CleavageSpecificity.Full, "cusPsiNum", "cusPsiName", DigestionMotif.ParseDigestionMotifsFromString("A|"));
-            string pString = "\np\tA|\t\t\tfull\tcusPsiNum\tcusPsiName\t\t\t\t\t";
+            GlobalVariables.LoadCustomProtease();
+            var dictionary = ProteaseDictionary.Dictionary;
+            Assert.That(ProteaseDictionary.Dictionary.ContainsKey("p"));
+            Assert.That(ProteaseDictionary.Dictionary["p"].PsiMsName == "cusPsiName");
 
-            File.AppendAllText(customProteasePath, pString);
-            Dictionary<string, Protease> dictionary = ProteaseDictionary.LoadProteaseDictionary(customProteasePath);
-
-            string[] lines = File.ReadAllLines(customProteasePath);
+            File.Delete(customProteasePath);
         }
     }
 }

@@ -15,6 +15,9 @@ using System.Text;
 using Omics.Modifications;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
+using Omics.Digestion;
+using static System.Net.Mime.MediaTypeNames;
+using System.Collections;
 
 namespace EngineLayer
 {
@@ -206,30 +209,30 @@ namespace EngineLayer
 
         public static void LoadCustomProtease()
         {
-            string ProtDirectory = Path.Combine(GlobalVariables.DataDir, @"ProteolyticDigestion");
+            string ProtDirectory = Path.Combine(DataDir, @"ProteolyticDigestion");
             string customProteasePath = Path.Combine(ProtDirectory, @"CustomProtease.tsv");
-
             //load proteases from customProtease file or the original file to Protease dictionary
             if (File.Exists(customProteasePath))
             {
-                string[] proteaseLines = File.ReadAllLines(customProteasePath);
-                ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(customProteasePath);
-                foreach (var protease in ProteaseDictionary.Dictionary)
+                string[] proteaseToAdd = File.ReadAllLines(customProteasePath);
+                for (int i = 0; i < proteaseToAdd.Length; i++)
                 {
-                    if (ProteaseDictionary.Dictionary.TryAdd(protease.Key, protease.Value))
+                    string[] array = proteaseToAdd[i].Split('\t');
+                    List<DigestionMotif> motifList = DigestionMotif.ParseDigestionMotifsFromString(array[1]);
+                    string name = array[0];
+                    CleavageSpecificity cleavageSpecificity = (CleavageSpecificity)Enum.Parse(typeof(CleavageSpecificity), array[4], ignoreCase: true);
+                    string psiMSAccessionNumber = array[5];
+                    string psiMSName = array[6];
+                    string proteaseModDetails = array[8];
+                    Protease protease = new Protease(name, cleavageSpecificity, psiMSAccessionNumber, psiMSName, motifList);
+                    if (!ProteaseDictionary.Dictionary.ContainsKey(protease.Name))
                     {
-                        throw new MzLibException(protease + "is not added to the dictionary");
+                        ProteaseDictionary.Dictionary.Add(protease.Name, protease);
                     }
                 }
             }
-            //else
-            //{
-            //    string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            //    string path = ((!string.IsNullOrWhiteSpace(folderPath) && AppDomain.CurrentDomain.BaseDirectory.Contains(folderPath) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins")) ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus") : AppDomain.CurrentDomain.BaseDirectory);
-            //    string path2 = System.IO.Path.Combine(path, "ProteolyticDigestion", "proteases.tsv");
-            //    ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(path2);
-            //}
         }
+    
 
         public static void WriteAminoAcidsFile()
         {

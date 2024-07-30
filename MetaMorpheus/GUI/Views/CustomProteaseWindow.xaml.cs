@@ -44,6 +44,16 @@ namespace MetaMorpheusGUI.Views
                 MessageBox.Show("Please specify the name of the protease");
                 return;
             }
+            if (CleavageSpecComboBox.Text.Length == 0)
+            {
+                MessageBox.Show("Please specify the cleavage specificity of the protease");
+                return;
+            }
+            if (DigestionMotifTextBox.Text.Length == 0)
+            {
+                MessageBox.Show("Please specify the digestion motif(s) of the protease");
+                return;
+            }
             string proteaseName = ProteaseNameTextBox.Text;
             string psiMsAccessionNum = PsiMsAccessionNumTextBox.Text;
             string psiMsName = PsiNameTextBox.Text;
@@ -66,10 +76,10 @@ namespace MetaMorpheusGUI.Views
             }
 
             //load the default ProteaseDictionary
-            string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            string path = ((!string.IsNullOrWhiteSpace(folderPath) && AppDomain.CurrentDomain.BaseDirectory.Contains(folderPath) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins")) ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus") : AppDomain.CurrentDomain.BaseDirectory);
-            string path2 = System.IO.Path.Combine(path, "ProteolyticDigestion", "proteases.tsv");
-            ProteaseDictionary.LoadProteaseDictionary(path2);
+            //string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
+            //string path = ((!string.IsNullOrWhiteSpace(folderPath) && AppDomain.CurrentDomain.BaseDirectory.Contains(folderPath) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins")) ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus") : AppDomain.CurrentDomain.BaseDirectory);
+            //string path2 = System.IO.Path.Combine(path, "ProteolyticDigestion", "proteases.tsv");
+            //ProteaseDictionary.LoadProteaseDictionary(path2);
 
             //create a new Protease and add to ProteaseDictionary
             Protease proteaseToAdd = new Protease(proteaseName, cleavageSpecificity, psiMsAccessionNum, psiMsName, digestionMotifs);
@@ -96,12 +106,11 @@ namespace MetaMorpheusGUI.Views
             if (!File.Exists(customProteasePath))
             {
                 File.Create(customProteasePath);
-                //copy the original file to custom file
-                File.Copy(path2, customProteasePath, true);
             }
 
             string lineToAdd = "\n" + proteaseName + "\t" + motifString + "\t\t\t" + CleavageSpecComboBox.Text + "\t" + psiMsAccessionNum + "\t" + psiMsName + "\t\t\t\t\t";
-            File.AppendAllText(customProteasePath, lineToAdd);
+            var lines = new List<string> { lineToAdd };
+            File.AppendAllLines(customProteasePath, lines);
             DialogResult = true;
         }
 
