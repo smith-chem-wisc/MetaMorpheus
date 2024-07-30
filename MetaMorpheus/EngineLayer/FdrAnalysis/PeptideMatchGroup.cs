@@ -28,8 +28,12 @@ namespace EngineLayer
 
         public static List<PeptideMatchGroup> GroupByFullSequence(List<SpectralMatch> spectralMatches)
         {
-            return spectralMatches.GroupBy(p => p.FullSequence ?? p.BaseSequence ?? p.BestMatchingBioPolymersWithSetMods.First().Peptide.FullSequence)
+            // This groups psms by full sequences. If ambiguous at the full sequence level, they're grouped by 
+            // base sequence or scan precursor mass.
+            return spectralMatches.GroupBy(p => p.FullSequence ?? p.BaseSequence ?? Math.Round(p.ScanPrecursorMass, 1).ToString())
                 .Select(group => new PeptideMatchGroup(group.Key, group.ToList()))
+                .OrderByDescending(matchGroup => matchGroup.Count())
+                .ThenByDescending(matchGroup => matchGroup.BestMatch.Score)
                 .ToList();
         }
 

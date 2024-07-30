@@ -30,14 +30,16 @@ namespace EngineLayer.FdrAnalysis
 
         private void AddPsmAndPeptideFdrInfoIfNotPresent()
         {
-            foreach (var psm in AllPsms.Where(p=> p.PsmFdrInfo == null))
+            foreach (var psm in AllPsms.Where(p => p.PsmFdrInfo == null))
             {
-                psm.PsmFdrInfo = new FdrInfo();                
+                psm.PsmFdrInfo = new FdrInfo();      
+                psm.PsmFdrInfo.PEP = 2; // If for some reason PEP is not calculated, we want to make sure it's put at the bottom of the list when sorting by PEP
             }
 
             foreach (var psm in AllPsms.Where(p => p.PeptideFdrInfo == null))
             {
                 psm.PeptideFdrInfo = new FdrInfo();
+                psm.PeptideFdrInfo.PEP = 2; // If for some reason PEP is not calculated, we want to make sure it's put at the bottom of the list when sorting by PEP
             }
         }
 
@@ -105,7 +107,7 @@ namespace EngineLayer.FdrAnalysis
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
                 }
-                else if(psms.Any(psm => psm.FdrInfo.PEP > 0)) 
+                else
                 {
                     // If PEP's have been calculated, but doPEP = false, then we don't want to train another model,
                     // but we do want to calculate pep q-values

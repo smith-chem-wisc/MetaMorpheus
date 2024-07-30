@@ -604,7 +604,7 @@ namespace TaskLayer
                     "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." +
                     Environment.NewLine);
             }
-            string psmResultsText = "All target PSMs with " + Enum.GetName(psmsForPsmResults.FilterType) + " = " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
+            string psmResultsText = "All target PSMs with " + psmsForPsmResults.GetFilterTypeString() + " = " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
                 psmsForPsmResults.PsmsAboveThreshold;
             ResultsDictionary[("All", "PSMs")] = psmResultsText;
         }
@@ -630,7 +630,7 @@ namespace TaskLayer
                 Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
                     "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." + Environment.NewLine);
             }
-            string peptideResultsText = "All target peptides with " + Enum.GetName(peptidesForPeptideResults.FilterType) + " = " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
+            string peptideResultsText = "All target peptides with " + peptidesForPeptideResults.GetFilterTypeString() + " = " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
                 peptidesForPeptideResults.PsmsAboveThreshold;
             ResultsDictionary[("All", "Peptides")] = peptideResultsText;
         }
@@ -639,11 +639,6 @@ namespace TaskLayer
         {
             Status("Writing Individual PSM results...", Parameters.SearchTaskId);
 
-            //var psmsForPsmResults = Filter(Parameters.AllPsms,
-            //    includeDecoys: Parameters.SearchParameters.WriteDecoys,
-            //    includeContaminants: Parameters.SearchParameters.WriteContaminants,
-            //    includeAmbiguous: false,
-            //    includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms);
             var psmsGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
             foreach (var psmFileGroup in psmsGroupedByFile)
             {
@@ -671,7 +666,7 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string psmResultsText = strippedFileName + " - All target PSMs with " + Enum.GetName(psmsToWrite.FilterType) + " = " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " +
+                string psmResultsText = strippedFileName + " - All target PSMs with " + psmsToWrite.GetFilterTypeString() + " = " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " +
                                         psmsToWrite.PsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, "PSMs")] = psmResultsText;
             }
@@ -680,12 +675,6 @@ namespace TaskLayer
         {
             Status("Writing Individual Peptide results...", Parameters.SearchTaskId);
 
-            //var psmsListForPeptideResults = Filter(Parameters.AllPsms,
-            //    includeDecoys: Parameters.SearchParameters.WriteDecoys,
-            //    includeContaminants: Parameters.SearchParameters.WriteContaminants,
-            //    includeAmbiguous: false,
-            //    includeHighQValuePsms: Parameters.SearchParameters.WriteHighQValuePsms,
-            //    filterAtPeptideLevel: false);
             var peptidesGroupedByFile = Parameters.AllPsms.GroupBy(p => p.FullFilePath);
             foreach (var psmFileGroup in peptidesGroupedByFile)
             {
@@ -712,7 +701,7 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string peptideResultsText = strippedFileName + " - All target peptides with " + Enum.GetName(peptidesToWrite.FilterType) + " = " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
+                string peptideResultsText = strippedFileName + " - All target peptides with " + peptidesToWrite.GetFilterTypeString() + " = " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
                                         peptidesToWrite.PsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, "Peptides")] = peptideResultsText;
             }

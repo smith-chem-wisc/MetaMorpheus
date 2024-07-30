@@ -86,6 +86,7 @@ namespace Test
 
             // Test that AllResults and Results display correct numbers of peptides and psms with PEP q-value filter on
             searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) }, new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
 

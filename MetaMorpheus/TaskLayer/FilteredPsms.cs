@@ -49,6 +49,11 @@ namespace TaskLayer
             }
         }
 
+        public string GetFilterTypeString()
+        {
+            return FilterType == FilterType.PepQValue ? "pep q-value" : "q-value";
+        }
+
         /// <summary>
         /// Returns the number of PSMs that passed the filtering criteria
         /// </summary>

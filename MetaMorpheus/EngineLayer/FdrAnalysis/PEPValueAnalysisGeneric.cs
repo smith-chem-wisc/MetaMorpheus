@@ -16,6 +16,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Omics.Modifications;
 using Omics;
+using Easy.Common.Extensions;
 
 namespace EngineLayer
 {
@@ -36,7 +37,6 @@ namespace EngineLayer
         public static Dictionary<string, CommonParameters> FileSpecificParametersDictionary { get; private set; }
         public static int ChargeStateMode { get; private set; }
 
-        public static bool PeptideLevelTraining = true;
         public static double QValueCutoff = 0.005;
 
         /// <summary>
@@ -67,11 +67,12 @@ namespace EngineLayer
             List<int> countOfPeptidesInEachFile = peptides.GroupBy(b => b.FullFilePath).Select(b => b.Count()).ToList();
             bool allFilesContainPeptides = (countOfPeptidesInEachFile.Count == fileSpecificParameters.Count); //rare condition where each file has psms but some files don't have peptides. probably only happens in unit tests.
             QValueCutoff = fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min();
+            
 
             BuildFileSpecificDictionaries(psms, trainingVariables);
 
             int numberOfPositiveTrainingExamples = 0;
-            if (peptides.Count() <= 100)
+            if (peptides.Count() >= 100)
             {
                 foreach (var peptide in peptides)
                 {
@@ -88,8 +89,8 @@ namespace EngineLayer
             }
 
             MLContext mlContext = new MLContext();
-            List<PeptideMatchGroup> peptideGroups = UsePeptideLevelQValueForTraining 
-                ? PeptideMatchGroup.GroupByFullSequence(psms) 
+            List<PeptideMatchGroup> peptideGroups = UsePeptideLevelQValueForTraining
+                ? PeptideMatchGroup.GroupByFullSequence(psms)
                 : PeptideMatchGroup.GroupByIndividualPsm(psms);
 
             int numGroups = 4;
@@ -248,11 +249,6 @@ namespace EngineLayer
                     for (int i = range.Item1; i < range.Item2; i++)
                     {
                         SpectralMatch psm = peptideGroups[peptideGroupIndices[i]].BestMatch;
-                        if(psm.FullSequence == null || psm.FullSequence.Contains("|"))
-                        {
-                            // Don't train on ambiguous peptides
-                            continue;
-                        }
 
                         // Stop loop if canceled
                         if (GlobalVariables.StopLoops) { return; }
@@ -268,7 +264,7 @@ namespace EngineLayer
                                 label = false;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, FileSpecificMedianFragmentMassErrors, ChargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
                             }
-                            else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.GetFdrInfo(PeptideLevelTraining).QValue <= QValueCutoff)
+                            else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
                             {
                                 label = true;
                                 newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, timeDependantHydrophobicityAverageAndDeviation_unmodified, timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
@@ -295,9 +291,8 @@ namespace EngineLayer
                                         timeDependantHydrophobicityAverageAndDeviation_modified, fileSpecificMedianFragmentMassErrors, chargeStateMode, 
                                         peptideWithSetMods, notch, label);
                                 }
-                                // If any associated peptide is a decoy, we don't want to train on it
                                 else if (!peptideWithSetMods.Parent.IsDecoy
-                                    && psm.GetFdrInfo(PeptideLevelTraining).QValue <= QValueCutoff)
+                                    && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
                                 {
                                     label = true;
                                     newPsmData = CreateOnePsmDataEntry(searchType, fileSpecificParameters, psm, 
@@ -449,7 +444,11 @@ namespace EngineLayer
                                 int peptidesRemoved = 0;
                                 RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, allBmpNotches, allBmpPeptides, pepValuePredictions, ref peptidesRemoved);
                                 ambigousPeptidesRemovedinThread += peptidesRemoved;
+
+                                psm.PsmFdrInfo.PEP = 1 - pepValuePredictions.Max();
+                                psm.PeptideFdrInfo.PEP = 1 - pepValuePredictions.Max();
                             }
+                            
                         }
                     }
 
@@ -647,6 +646,7 @@ namespace EngineLayer
 
             return psm.PsmData_forPEPandPercolator;
         }
+
         public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<int> notches, List<IBioPolymerWithSetMods> pwsmList, List<double> pepValuePredictions, ref int ambiguousPeptidesRemovedCount)
         {
             foreach (int i in indiciesOfPeptidesToRemove)
