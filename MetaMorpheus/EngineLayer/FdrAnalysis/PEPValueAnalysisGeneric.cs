@@ -20,24 +20,28 @@ using Easy.Common.Extensions;
 
 namespace EngineLayer
 {
-    public static class PEP_Analysis_Cross_Validation
+    public class PepAnalysisEngine
     {
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
-        public static Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified { get; private set; }
-        public static Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified { get; private set; }
-        public static Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE  { get; private set; }
+        public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified { get; private set; }
+        public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified { get; private set; }
+        public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE  { get; private set; }
 
         /// <summary>
         /// A dictionary which stores the chimeric ID string in the key and the number of chimeric identifications as the vale
         /// </summary>
-        private static Dictionary<string, int> chimeraCountDictionary = new Dictionary<string, int>();
+        private Dictionary<string, int> chimeraCountDictionary = new Dictionary<string, int>();
         
-        public static Dictionary<string, float> FileSpecificMedianFragmentMassErrors { get; private set; }
-        public static Dictionary<string, CommonParameters> FileSpecificParametersDictionary { get; private set; }
-        public static int ChargeStateMode { get; private set; }
+        public Dictionary<string, float> FileSpecificMedianFragmentMassErrors { get; private set; }
+        public Dictionary<string, CommonParameters> FileSpecificParametersDictionary { get; private set; }
+        public int ChargeStateMode { get; private set; }
 
-        public static double QValueCutoff = 0.005;
-        public static bool UsePeptideLevelQValueForTraining = true;
+        public double QValueCutoff = 0.005;
+        public bool UsePeptideLevelQValueForTraining = true;
+        public string[] TrainingVariables { get; }
+        public string OutputFolder { get; }
+        public List<SpectralMatch> AllPsms { get; }
+        public string SearchType { get; }
 
         /// <summary>
         /// This method is used to compute the PEP values for all PSMs in a dataset. 
@@ -47,58 +51,44 @@ namespace EngineLayer
         /// <param name="fileSpecificParameters"></param>
         /// <param name="outputFolder"></param>
         /// <returns></returns>
-        public static void SetFileSpecificParameters(List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
+        public void SetFileSpecificParameters(List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters)
         {
             FileSpecificParametersDictionary = fileSpecificParameters.ToDictionary(p => Path.GetFileName(p.fileName), p => p.fileSpecificParameters);
         }
 
-        public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
+        public PepAnalysisEngine(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
         {
-            string[] trainingVariables = PsmData.trainingInfos[searchType];
+            // This creates a new list of PSMs, but does not clone the Psms themselves.
+            // This allows the PSMs to be modified and the order to be preserved
+            AllPsms = psms.OrderByDescending(p => p).ToList();
+            TrainingVariables = PsmData.trainingInfos[searchType];
+            OutputFolder = outputFolder;
+            SearchType = searchType;
             SetFileSpecificParameters(fileSpecificParameters);
-
-            //ensure that the order is always stable.
-            psms = psms.OrderByDescending(p => p).ToList();
-            List<int> allPeptideIndices = new List<int>();
-            List<SpectralMatch> peptides = psms
-                .GroupBy(b => b.FullSequence)
-                .Select(b => b.FirstOrDefault())
-                .ToList();
-            List<int> countOfPeptidesInEachFile = peptides.GroupBy(b => b.FullFilePath).Select(b => b.Count()).ToList();
-            bool allFilesContainPeptides = (countOfPeptidesInEachFile.Count == fileSpecificParameters.Count); //rare condition where each file has psms but some files don't have peptides. probably only happens in unit tests.
+            BuildFileSpecificDictionaries(psms, TrainingVariables);
             QValueCutoff = fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min();
 
-            BuildFileSpecificDictionaries(psms, trainingVariables);
+            // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
+            UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Count(seq => seq.IsNotNullOrEmpty()) >= 100;
+        }
 
-            int numberOfPositiveTrainingExamples = 0;
-            if (peptides.Count() >= 100)
-            {
-                foreach (var peptide in peptides)
-                {
-                    allPeptideIndices.Add(psms.IndexOf(peptide));
-                }
-                numberOfPositiveTrainingExamples = peptides.Count(peptide => peptide.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff);
-            }
-            else
-            {
-                //there are too few psms to do any meaningful training if we used only peptides. So, we will train using psms instead.
-                UsePeptideLevelQValueForTraining = false;
-                numberOfPositiveTrainingExamples = psms.Count(psm => psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff);
-                allPeptideIndices = Enumerable.Range(0, psms.Count).ToList();
-            }
-
-            MLContext mlContext = new MLContext();
+        public string ComputePEPValuesForAllPSMs()
+        {
             List<PeptideMatchGroup> peptideGroups = UsePeptideLevelQValueForTraining
-                ? PeptideMatchGroup.GroupByFullSequence(psms)
-                : PeptideMatchGroup.GroupByIndividualPsm(psms);
+                ? PeptideMatchGroup.GroupByFullSequence(AllPsms)
+                : PeptideMatchGroup.GroupByIndividualPsm(AllPsms);
+
+            if(UsePeptideLevelQValueForTraining && (peptideGroups.Count(g => g.BestMatch.IsDecoy) < 4 || peptideGroups.Count(g => !g.BestMatch.IsDecoy) < 4))
+            {
+                peptideGroups = PeptideMatchGroup.GroupByIndividualPsm(AllPsms);
+            }
 
             int numGroups = 4;
             List<int>[] peptideGroupIndices = GetPeptideGroupIndices(peptideGroups, numGroups);
             IEnumerable<PsmData>[] PSMDataGroups = new IEnumerable<PsmData>[numGroups];
-            
             for (int i = 0; i < numGroups; i++)
             {
-                PSMDataGroups[i] = CreatePsmData(searchType,  peptideGroups, peptideGroupIndices[i]);
+                PSMDataGroups[i] = CreatePsmData(SearchType,  peptideGroups, peptideGroupIndices[i]);
 
                 if(!PSMDataGroups[i].Any(p => p.Label) || !PSMDataGroups[i].Any(p => !p.Label))
                 {
@@ -106,15 +96,15 @@ namespace EngineLayer
                 }
             }
 
+            MLContext mlContext = new MLContext();
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
             var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
-            var pipeline = mlContext.Transforms.Concatenate("Features", trainingVariables)
+            var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
                 .Append(trainer);
 
             List<CalibratedBinaryClassificationMetrics> allMetrics = new List<CalibratedBinaryClassificationMetrics>();
             int sumOfAllAmbiguousPeptidesResolved = 0;
-
 
             for (int groupIndexNumber = 0; groupIndexNumber < numGroups; groupIndexNumber++)
             {
@@ -129,13 +119,13 @@ namespace EngineLayer
 
                 //Parallel operation of the following code requires the method to be stored and then read, once for each thread
                 //if not output directory is specified, the model cannot be stored, and we must force single-threaded operation
-                if (outputFolder != null)
+                if (OutputFolder != null)
                 {
-                    mlContext.Model.Save(trainedModels[groupIndexNumber], dataView.Schema, Path.Combine(outputFolder, "model.zip"));
+                    mlContext.Model.Save(trainedModels[groupIndexNumber], dataView.Schema, Path.Combine(OutputFolder, "model.zip"));
                 }
 
                 //model is trained on peptides but here we can use that to compute PEP for all PSMs
-                int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], searchType, outputFolder);
+                int ambiguousPeptidesResolved = Compute_PSM_PEP(peptideGroups, peptideGroupIndices[groupIndexNumber], mlContext, trainedModels[groupIndexNumber], SearchType, OutputFolder);
 
                 allMetrics.Add(metrics);
                 sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
@@ -149,7 +139,7 @@ namespace EngineLayer
         /// </summary>
         /// <param name="trainingData"> The PSMs that will be used for training </param>
         /// <param name="trainingVariables"> An array of training variables from PsmData.trainingInfos dictionary </param>
-        public static void BuildFileSpecificDictionaries(List<SpectralMatch> trainingData, string[] trainingVariables)
+        public void BuildFileSpecificDictionaries(List<SpectralMatch> trainingData, string[] trainingVariables)
         {
             FileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(trainingData);
             ChargeStateMode = GetChargeStateMode(trainingData);
@@ -181,7 +171,7 @@ namespace EngineLayer
             List<int> decoyIndices = new List<int>();
             for (int i = 0; i < peptides.Count; i++)
             {
-                if (peptides[i].Any(p => p.IsDecoy))
+                if (peptides[i].BestMatch.IsDecoy)
                 {
                     decoyIndices.Add(i);
                 }
@@ -221,7 +211,7 @@ namespace EngineLayer
                 int subIndex = 0;
                 while (subIndex < numGroups && mainIndex < list.Count)
                 {
-                    groups[subIndex].Add(mainIndex);
+                    groups[subIndex].Add(list[mainIndex]);
 
                     subIndex++;
                     mainIndex++;
@@ -231,7 +221,7 @@ namespace EngineLayer
             return groups;
         }
 
-        public static IEnumerable<PsmData> CreatePsmData(string searchType,
+        public IEnumerable<PsmData> CreatePsmData(string searchType,
             List<PeptideMatchGroup> peptideGroups, List<int> peptideGroupIndices)
         {
             object psmDataListLock = new object();
@@ -374,7 +364,7 @@ namespace EngineLayer
             return s.ToString();
         }
 
-        public static int Compute_PSM_PEP(List<PeptideMatchGroup> peptideGroups,
+        public int Compute_PSM_PEP(List<PeptideMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
             MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
         {
@@ -456,7 +446,7 @@ namespace EngineLayer
             return ambiguousPeptidesResolved;
         }
 
-        public static PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide, int notchToUse, bool label)
+        public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide, int notchToUse, bool label)
         {
             double normalizationFactor = selectedPeptide.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
@@ -680,12 +670,12 @@ namespace EngineLayer
         /// <summary>
         /// Here we're getting the most common charge state for precursors that are Targets with q<=0.01.
 
-        public static int GetChargeStateMode(List<SpectralMatch> psms)
+        public int GetChargeStateMode(List<SpectralMatch> psms)
         {
-            return psms.Where(p => p.IsDecoy != true && p.FdrInfo.QValue <= 0.01).Select(p => p.ScanPrecursorCharge).GroupBy(n => n).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
+            return psms.Where(p => p.IsDecoy != true && p.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= 0.01).Select(p => p.ScanPrecursorCharge).GroupBy(n => n).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
         }
 
-        public static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeHydrophobicityValues(List<SpectralMatch> psms, bool computeHydrophobicitiesforModifiedPeptides)
+        public Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeHydrophobicityValues(List<SpectralMatch> psms, bool computeHydrophobicitiesforModifiedPeptides)
         {
             SSRCalc3 calc = new SSRCalc3("SSRCalc 3.0 (300A)", SSRCalc3.Column.A300);
 
@@ -790,7 +780,7 @@ namespace EngineLayer
             return rtHydrophobicityAvgDev;
         }
 
-        public static Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeMobilityValues(List<SpectralMatch> psms)
+        public Dictionary<string, Dictionary<int, Tuple<double, double>>> ComputeMobilityValues(List<SpectralMatch> psms)
         {
             Dictionary<string, Dictionary<int, Tuple<double, double>>> rtMobilityAvgDev = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
@@ -927,7 +917,7 @@ namespace EngineLayer
             return (float)hydrophobicityZscore;
         }
 
-        private static float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        private float GetMobilityZScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
         {
             double mobilityZScore = double.NaN;
 

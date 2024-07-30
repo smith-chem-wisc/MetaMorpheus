@@ -635,30 +635,25 @@ namespace Test
             };
 
             // Set values within PEP_Analysis through reflection
-            PEP_Analysis_Cross_Validation.SetFileSpecificParameters(fsp);
-            Type pepType = typeof(PEP_Analysis_Cross_Validation);
-            foreach (var p in pepType.GetProperties())
+            
+            PepAnalysisEngine pepEngine = new PepAnalysisEngine(new List<SpectralMatch>(firstCsmsFromListsOfCsms), "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
+            var pepEngineProperties = pepEngine.GetType().GetProperties();
+            foreach (var p in pepEngineProperties)
             {
                 switch (p.Name)
                 {
-                    case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified":
-                        p.SetValue(pepType, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified);
-                        break;
-                    case "FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified":
-                        p.SetValue(pepType, fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified);
-                        break;
                     case "ChargeStateMode":
-                        p.SetValue(pepType, chargeStateMode);
+                        p.SetValue(pepEngine, chargeStateMode);
                         break;
                     case "FileSpecificMedianFragmentMassErrors":
-                        p.SetValue(pepType, medianFragmentMassError);
+                        p.SetValue(pepEngine, medianFragmentMassError);
                         break;
                     default:
                         break;
                 }
             }
 
-            var intraPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("crosslink", intraCsm, intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, intraCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy);
+            var intraPsmData = pepEngine.CreateOnePsmDataEntry("crosslink", intraCsm, intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, intraCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy);
             Assert.That(intraPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(1.0).Within(0.1));
             Assert.That(intraPsmData.AlphaIntensity, Is.EqualTo(1).Within(0.1));
             Assert.AreEqual(intraPsmData.Ambiguity, 0);
@@ -683,27 +678,7 @@ namespace Test
 
             CrosslinkSpectralMatch singleCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Single).OrderBy(c => -c.Score).First();
 
-            List<SpectralMatch> psms = new List<SpectralMatch>();
-            psms.AddRange(firstCsmsFromListsOfCsms);
-            // This writes the hydrophobicity dictionaries, charge state mode, and median fragment mass errors to the PEP_Analysis_Cross_Validation class
-            PEP_Analysis_Cross_Validation.BuildFileSpecificDictionaries(psms, PsmData.trainingInfos["standard"]);
-            // This overwrites the fragment mass errors and charge state mode
-            foreach (var p in pepType.GetProperties())
-            {
-                switch (p.Name)
-                {
-                    case "FileSpecificMedianFragmentMassErrors":
-                        p.SetValue(pepType, medianFragmentMassError);
-                        break;
-                    case "ChargeStateMode":
-                        p.SetValue(pepType, chargeStateMode);
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            var singleCsmPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", 
+            var singleCsmPsmData = pepEngine.CreateOnePsmDataEntry("standard",
                 singleCsm,
                 singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Peptide,
                 singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Notch,
@@ -732,7 +707,7 @@ namespace Test
             Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(8).Within(0.1));
 
             CrosslinkSpectralMatch loopCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Loop).OrderBy(c => -c.Score).First();
-            var loopCsmPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("standard", loopCsm, loopCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, loopCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !loopCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy); Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(6).Within(0.1));
+            var loopCsmPsmData = pepEngine.CreateOnePsmDataEntry("standard", loopCsm, loopCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, loopCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !loopCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy); Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(6).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.AlphaIntensity, 0);
             Assert.AreEqual(loopCsmPsmData.Ambiguity, 0);
             Assert.AreEqual(loopCsmPsmData.BetaIntensity, 0);

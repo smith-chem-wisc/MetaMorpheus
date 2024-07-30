@@ -302,7 +302,7 @@ namespace Test
                         QuantifyPpmTol = 25
                     }
                 },
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, qValueCutoffForPepCalculation: 0.01),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters())
@@ -320,6 +320,7 @@ namespace Test
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("HEVSASTQSTPASSR", 3, out spectrum));
 
             testLibraryWithoutDecoy.CloseConnections();
+
 
             // new task with less than 100 psms.
             postSearchTask = new PostSearchAnalysisTask()
@@ -348,7 +349,7 @@ namespace Test
                         QuantifyPpmTol = 25
                     }
                 },
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, qValueCutoffForPepCalculation: 0.01),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters())
@@ -366,7 +367,7 @@ namespace Test
             postSearchTask.Parameters.SpectralLibrary = testLibraryWithoutDecoy;
             postSearchTask.Run();
 
-            var libraryList = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            var libraryList = Directory.GetFiles(outputFolder, "*.*", SearchOption.AllDirectories);
             string updateLibraryPath = libraryList.First(p => p.Contains("SpectralLibrary") && !p.Contains(matchingvalue)).ToString();
             var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
             Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));

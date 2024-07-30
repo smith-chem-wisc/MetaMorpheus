@@ -74,6 +74,7 @@ namespace Test
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
 
+            searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
             var engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("SearchTOML", searchTaskLoaded) }, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
             engineToml.Run();
 
@@ -98,7 +99,7 @@ namespace Test
             Assert.AreEqual("0", psm.Notch);
             Assert.AreEqual("Homo sapiens", psm.OrganismName);
             Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
-            Assert.That(0.0054, Is.EqualTo(psm.PEP_QValue).Within(1E-04));
+            Assert.That(0.0051, Is.EqualTo(psm.PEP_QValue).Within(1E-04));
             Assert.AreEqual("full", psm.PeptideDescription);
             Assert.AreEqual("2125.92875", psm.PeptideMonoMass);
             Assert.AreEqual(3, psm.PrecursorCharge);

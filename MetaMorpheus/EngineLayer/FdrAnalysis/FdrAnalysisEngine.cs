@@ -280,18 +280,21 @@ namespace EngineLayer.FdrAnalysis
 
         public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms)
         {
-            if (psms[0].DigestionParams.Protease.Name == "top-down")
+            string searchType;
+            switch(psms[0].DigestionParams.Protease.Name)
             {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "top-down", this.FileSpecificParameters, this.OutputFolder);
+               case "top-down":
+                    searchType = "top-down";
+                    break;
+                case "crosslink":
+                    searchType = "crosslink";
+                    break;
+                default:
+                    searchType = "standard";
+                    break;
             }
-            else if (psms[0].DigestionParams.Protease.Name == "crosslink")
-            {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "crosslink", this.FileSpecificParameters, this.OutputFolder);
-            }
-            else
-            {
-                myAnalysisResults.BinarySearchTreeMetrics = PEP_Analysis_Cross_Validation.ComputePEPValuesForAllPSMsGeneric(psms, "standard", this.FileSpecificParameters, this.OutputFolder);
-            }
+            myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, FileSpecificParameters, OutputFolder).ComputePEPValuesForAllPSMs();
+
         }
 
         /// <summary>

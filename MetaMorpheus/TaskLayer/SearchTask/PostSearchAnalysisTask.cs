@@ -713,7 +713,8 @@ namespace TaskLayer
                 includeDecoys: false,
                 includeContaminants: false,
                 includeAmbiguous: false,
-                includeHighQValuePsms: false);
+                includeHighQValuePsms: false,
+                filterAtPeptideLevel: true);
 
 
             //group psms by peptide and charge, then write highest scoring PSM to dictionary
@@ -724,7 +725,6 @@ namespace TaskLayer
                     keySelector: g => g.Key,
                     // Value is the highest scoring psm in the group
                     elementSelector: g => g.MaxBy(p => p.Score)); 
-
 
             //load the original library
             var originalLibrarySpectra = Parameters.SpectralLibrary.GetAllLibrarySpectra();
@@ -751,6 +751,11 @@ namespace TaskLayer
                     }
                     // once the spectrum is added, it is removed from the dictionary
                     psmSeqChargeDictionary.Remove((ogLibrarySpectrum.Sequence, ogLibrarySpectrum.ChargeState));
+                }
+                else
+                {
+                    // if the spectrum is included in the original library and absent from our search, it's added to the updated library
+                    updatedLibrarySpectra.Add(ogLibrarySpectrum);
                 }
             }
 
