@@ -92,12 +92,12 @@ namespace Test
 
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             var allResults = File.ReadAllLines(allResultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 427", allResults[10]);
-            Assert.AreEqual("All target peptides with pep q-value = 0.01: 172", allResults[11]);
-            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 155", allResults[12]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with pep q-value = 0.01: 213", allResults[14]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - All target peptides with pep q-value = 0.01: 172", allResults[15]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 155", allResults[16]);
+            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 376", allResults[10]);
+            Assert.AreEqual("All target peptides with pep q-value = 0.01: 152", allResults[11]);
+            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 137", allResults[12]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with pep q-value = 0.01: 187", allResults[14]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - All target peptides with pep q-value = 0.01: 152", allResults[15]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 137", allResults[16]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with pep q-value = 0.01: 213", allResults[18]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target peptides with pep q-value = 0.01: 172", allResults[19]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 155", allResults[20]);
