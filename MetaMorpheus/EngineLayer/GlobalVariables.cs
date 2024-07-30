@@ -233,7 +233,6 @@ namespace EngineLayer
             }
         }
     
-
         public static void WriteAminoAcidsFile()
         {
             string directory = Path.Combine(DataDir, @"CustomAminoAcids");
