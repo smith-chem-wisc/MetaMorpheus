@@ -89,7 +89,8 @@ namespace GuiFunctions
                 MinorStep = 200,
                 MajorTickSize = 2,
                 TitleFontWeight = FontWeights.Bold,
-                TitleFontSize = 14
+                TitleFontSize = MetaDrawSettings.AxisTitleTextSize,
+                FontSize = MetaDrawSettings.AxisLabelTextSize,
             });
 
             Model.Axes.Add(new LinearAxis
@@ -105,7 +106,8 @@ namespace GuiFunctions
                 StringFormat = "0e-0",
                 MajorTickSize = 2,
                 TitleFontWeight = FontWeights.Bold,
-                TitleFontSize = 14,
+                TitleFontSize = MetaDrawSettings.AxisTitleTextSize,
+                FontSize = MetaDrawSettings.AxisLabelTextSize,
                 AxisTitleDistance = 10,
                 ExtraGridlines = new double[] { 0 },
                 ExtraGridlineColor = OxyColors.Black,

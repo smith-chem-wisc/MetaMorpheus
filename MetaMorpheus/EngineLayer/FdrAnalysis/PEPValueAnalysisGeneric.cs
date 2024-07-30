@@ -25,7 +25,21 @@ namespace EngineLayer
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
         private static Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
+        
+        /// <summary>
+        /// A dictionary which stores the chimeric ID string in the key and the number of chimeric identifications as the vale
+        /// </summary>
+        private static Dictionary<string, int> chimeraCountDictionary = new Dictionary<string, int>();
+        
 
+        /// <summary>
+        /// This method is used to compute the PEP values for all PSMs in a dataset. 
+        /// </summary>
+        /// <param name="psms"></param>
+        /// <param name="searchType"></param>
+        /// <param name="fileSpecificParameters"></param>
+        /// <param name="outputFolder"></param>
+        /// <returns></returns>
         public static string ComputePEPValuesForAllPSMsGeneric(List<SpectralMatch> psms, string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, string outputFolder)
         {
             string[] trainingVariables = PsmData.trainingInfos[searchType];
@@ -83,6 +97,10 @@ namespace EngineLayer
                     fileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(psms, fileSpecificParameters);
                 }
             }
+
+            if (trainingVariables.Contains("ChimeraCount"))
+                chimeraCountDictionary = psms.GroupBy(p => p.ChimeraIdString)
+                    .ToDictionary(p => p.Key, p => p.Count());
 
             MLContext mlContext = new MLContext();
 
@@ -751,6 +769,7 @@ namespace EngineLayer
         {
             double normalizationFactor = selectedPeptide.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
+            float internalMatchingFragmentCount = 0;
             float intensity = 0;
             float chargeDifference = 0;
             float deltaScore = 0;
@@ -758,6 +777,12 @@ namespace EngineLayer
             float ambiguity = 0;
             float modCount = 0;
             float absoluteFragmentMassError = 0;
+            float spectralAngle = 0;
+            float hasSpectralAngle = 0;
+            float chimeraCount = 0;
+            float peaksInPrecursorEnvelope = 0;
+            float mostAbundantPrecursorPeakIntensity = 0;
+            float fractionalIntensity = 0;
 
             float missedCleavages = 0;
             float longestSeq = 0;
@@ -774,19 +799,20 @@ namespace EngineLayer
             float isLoop = 0;
             float isInter = 0;
             float isIntra = 0;
-            float spectralAngle = 0;
-            float hasSpectralAngle = 0;
 
+            double multiplier = 10;
             if (searchType != "crosslink")
             {
                 if (searchType == "top-down")
                 {
-                    normalizationFactor /= 10.0;
+                    normalizationFactor = 1.0;
                 }
-                totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count / normalizationFactor * 10, 0));
-                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * 100.0, 0));
+                // count only terminal fragment ions
+                totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count(p => p.NeutralTheoreticalProduct.SecondaryProductType == null) / normalizationFactor * multiplier, 0));
+                internalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count(p => p.NeutralTheoreticalProduct.SecondaryProductType != null) / normalizationFactor * multiplier, 0));
+                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * Math.Pow(multiplier, 2), 0));
                 chargeDifference = -Math.Abs(chargeStateMode - psm.ScanPrecursorCharge);
-                deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * 10.0, 0);
+                deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * multiplier, 0);
                 notch = notchToUse;
                 modCount = Math.Min((float)selectedPeptide.AllModsOneIsNterminus.Keys.Count(), 10);
                 if (psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide]?.Count() > 0)
@@ -795,10 +821,15 @@ namespace EngineLayer
                 }
 
                 ambiguity = Math.Min((float)(psm.BioPolymersWithSetModsToMatchingFragments.Keys.Count - 1), 10);
-                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
-                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * 10, 0);
+                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * multiplier, 0);
+                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * multiplier, 0);
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);
                 spectralAngle = (float)psm.SpectralAngle;
+                if (chimeraCountDictionary.TryGetValue(psm.ChimeraIdString, out int val))
+                    chimeraCount = val;
+                peaksInPrecursorEnvelope = psm.PrecursorScanEnvelopePeakCount;
+                mostAbundantPrecursorPeakIntensity = (float)Math.Round((float)psm.PrecursorScanIntensity / normalizationFactor * multiplier, 0);
+                fractionalIntensity = (float)psm.PrecursorFractionalIntensity;
 
                 if (PsmHasSpectralAngle(psm))
                 {
@@ -910,7 +941,12 @@ namespace EngineLayer
                 Label = label,
 
                 SpectralAngle = spectralAngle,
-                HasSpectralAngle = hasSpectralAngle
+                HasSpectralAngle = hasSpectralAngle,
+                PeaksInPrecursorEnvelope = peaksInPrecursorEnvelope,
+                ChimeraCount = chimeraCount,
+                MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
+                PrecursorFractionalIntensity = fractionalIntensity,
+                InternalIonCount = internalMatchingFragmentCount,
             };
 
             return psm.PsmData_forPEPandPercolator;
