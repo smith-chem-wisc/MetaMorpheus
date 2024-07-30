@@ -178,7 +178,7 @@ namespace MetaMorpheusCommandLine
 
             foreach (var db in settings.Databases)
             {
-                if (!Path.GetExtension(db).Equals(".fasta"))
+                if (Path.GetExtension(db).Equals(".xml"))
                 {
                     GlobalVariables.AddMods(UsefulProteomicsDatabases.ProteinDbLoader.GetPtmListFromProteinXml(db).OfType<Modification>(), true);
 
