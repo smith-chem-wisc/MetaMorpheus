@@ -13,12 +13,7 @@ using UsefulProteomicsDatabases;
 using Nett;
 using EngineLayer.GlycoSearch;
 using FlashLFQ;
-using NUnit.Framework.Internal;
 using SpectralAveraging;
-using Chemistry;
-using MzLibUtil;
-using Readers;
-using System.Text;
 using NUnit.Framework.Legacy;
 using Omics.Modifications;
 
