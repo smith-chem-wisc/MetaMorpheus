@@ -19,6 +19,9 @@ using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
+using Org.BouncyCastle.Utilities.Collections;
+using OxyPlot;
+using static iText.Svg.SvgConstants;
 
 namespace Test
 {
@@ -442,6 +445,25 @@ namespace Test
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
             };
+
+            // Set values within PEP_Analysis through reflection
+            PEP_Analysis_Cross_Validation.SetFileSpecificParameters(fsp);
+            Type pepType = typeof(PEP_Analysis_Cross_Validation);
+            foreach (var p in pepType.GetProperties())
+            {
+                switch (p.Name)
+                {
+                    case "ChargeStateMode":
+                        p.SetValue(pepType, chargeStateMode);
+                        break;
+                    case "FileSpecificMedianFragmentMassErrors":
+                        p.SetValue(pepType, massError);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
             var maxPsmData = PEP_Analysis_Cross_Validation.CreateOnePsmDataEntry("top-down", maxScorePsm, pwsm, notch, !pwsm.Parent.IsDecoy);
             Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = 1;
