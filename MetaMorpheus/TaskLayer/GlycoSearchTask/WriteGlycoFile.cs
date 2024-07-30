@@ -71,7 +71,11 @@ namespace TaskLayer
             }
         }
 
-        //The function is to summarize localized glycosylation of each protein site. 
+        /// <summary>
+        /// To summarize localized glycosylation of each protein site. The filter parameter is MinQValue <= 0.01 and IsLocalized = true.
+        /// </summary>
+        /// <param name="glycoProteinParsimony"></param>
+        /// <param name="outputPath"></param>
         public static void WriteProteinGlycoLocalization(Dictionary<(string proteinAccession, string proteinPosition, int glycanId), GlycoProteinParsimony> glycoProteinParsimony, string outputPath)
         {
             if (glycoProteinParsimony.Count == 0)
