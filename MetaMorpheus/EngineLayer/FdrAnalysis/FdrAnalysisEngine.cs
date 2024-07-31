@@ -74,12 +74,9 @@ namespace EngineLayer.FdrAnalysis
 
                 if (psms.Count > 100 & DoPEP)
                 {
-                    // Currently, inside PEP, we look at psm level Q-value when determining what should be used for training
-                    // It's not clear that this is the correct thing to do, but it's what we're doing for now
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
                     if (peptides.Count > 100 )
                     {
-                        // I think this call is unneccesary, as peptide level q-value isn't considered in PEP
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
                         //PEP will model will be developed using peptides and then applied to all PSMs. 
