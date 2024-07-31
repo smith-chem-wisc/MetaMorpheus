@@ -36,6 +36,21 @@ namespace EngineLayer
                 .ToList();
         }
 
+        public static List<PeptideMatchGroup> GroupByBaseSequence(List<SpectralMatch> spectralMatches)
+        {
+            // This groups psms by base sequence, ensuring that PSMs with the same base sequence but different modifications are grouped together when training.
+            return spectralMatches.GroupBy(p => p.BaseSequence)
+                .Select(group => new PeptideMatchGroup(group.Key, group.ToList()))
+                .OrderByDescending(matchGroup => matchGroup.Count())
+                .ThenByDescending(matchGroup => matchGroup.BestMatch.Score)
+                .ToList();
+        }
+
+        public IEnumerable<SpectralMatch> GetBestMatchByMod()
+        {
+            return SpectralMatches.GroupBy(p => p.FullSequence).Select(g => g.MaxBy(p => p));
+        }
+
         /// <summary>
         /// This function is called if there aren't enough peptides to train at the peptide level
         /// </summary>
@@ -47,25 +62,7 @@ namespace EngineLayer
                 .ToList();
         }
 
-        /// <summary>
-        /// Returns the number of full sequences that match to at least one target protein.
-        /// </summary>
-        public int TargetCount => SpectralMatches.Sum(p => p.BestMatchingBioPolymersWithSetMods
-            .Select(t => t.Peptide)
-            .GroupBy(peptide => peptide.FullSequence)
-            .Count(group => group.Any(p => !p.Parent.IsDecoy)));
-
-        /// <summary>
-        /// Returns the number of full sequences that match to at least one decoy protein.
-        /// </summary>
-        public int DecoyCount => SpectralMatches.Sum(p => p.BestMatchingBioPolymersWithSetMods
-            .Select(t => t.Peptide)
-            .GroupBy(peptide => peptide.FullSequence)
-            .Count(group => group.Any(p => p.Parent.IsDecoy)));
-
         public SpectralMatch BestMatch => SpectralMatches.MaxBy(match => match);
-
-        public SpectralMatch BestMatchByPep => SpectralMatches.MinBy(match => match.FdrInfo.PEP);
 
         public IEnumerator<SpectralMatch> GetEnumerator()
         {

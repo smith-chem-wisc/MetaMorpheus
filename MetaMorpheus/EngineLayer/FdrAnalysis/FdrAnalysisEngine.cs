@@ -129,8 +129,6 @@ namespace EngineLayer.FdrAnalysis
 
                 //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
                 peptides = psms
-                    //.OrderBy(psm => psm.FdrInfo.PEP)
-                    //.ThenByDescending(p => p)
                     .OrderByDescending(p => p)
                     .GroupBy(b => b.FullSequence)
                     .Select(b => b.FirstOrDefault())
