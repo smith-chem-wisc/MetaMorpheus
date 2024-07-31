@@ -29,24 +29,24 @@ namespace Test
             // The new PEP calculation method improves things, so all these numbers are increasing as of (7/17/24)
             // There is a discrepancy between the number of All target peptides and individual file target peptides, 
             // presumably due to the way protein inference is performed.
-            Assert.AreEqual("All target PSMs with q-value = 0.01: 431", allResults[10]);
+            Assert.AreEqual("All target PSMs with q-value = 0.01: 428", allResults[10]);
             Assert.AreEqual("All target peptides with q-value = 0.01: 174", allResults[11]);
             Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", allResults[12]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with q-value = 0.01: 215", allResults[14]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with q-value = 0.01: 214", allResults[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip - All target peptides with q-value = 0.01: 174", allResults[15]);
             Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165", allResults[16]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with q-value = 0.01: 215", allResults[18]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with q-value = 0.01: 214", allResults[18]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target peptides with q-value = 0.01: 174", allResults[19]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165", allResults[20]);
 
             string resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             string[] results = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("All target PSMs with q-value = 0.01: 431", results[5]);
+            Assert.AreEqual("All target PSMs with q-value = 0.01: 428", results[5]);
             Assert.AreEqual("All target peptides with q-value = 0.01: 174", results[6]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with q-value = 0.01: 215", results[9]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with q-value = 0.01: 214", results[9]);
             Assert.AreEqual("TaGe_SA_A549_3_snip - All target peptides with q-value = 0.01: 174", results[10]);
             Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165", results[11]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with q-value = 0.01: 215", results[13]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with q-value = 0.01: 214", results[13]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target peptides with q-value = 0.01: 174", results[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165", results[15]);
 
@@ -65,7 +65,7 @@ namespace Test
             // for both single-file and multi-file searches.
             // The number of protein groups will be different, because protein inference is performed once, using every peptide
             // identified across all files.
-            int TaGe_SA_A549_3_snip_2ExpectedPsms = 215;
+            int TaGe_SA_A549_3_snip_2ExpectedPsms = 214;
             int TaGe_SA_A549_3_snip_2ExpectedPeptides = 174;
             string[] singleFileResults = File.ReadAllLines(resultsFile);
             Assert.AreEqual("All target PSMs with q-value = 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, singleFileResults[5]);
@@ -80,17 +80,13 @@ namespace Test
 
             allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             allResults = File.ReadAllLines(allResultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 423", allResults[10]);
+            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 420", allResults[10]);
             Assert.AreEqual("All target peptides with pep q-value = 0.01: 172", allResults[11]);
             Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 155", allResults[12]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with pep q-value = 0.01: 211", allResults[14]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with pep q-value = 0.01: 210", allResults[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip - All target peptides with pep q-value = 0.01: 172", allResults[15]);
             Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 155", allResults[16]);
-
-            // The two files return different results
-            // this is because PSMs from each file are partitioned into different splits during PEP calculations, and as such, receive different PEP values
-            // currently, this is the intended behaviour, but this will be fixed in subsequent PRs
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with pep q-value = 0.01: 211", allResults[18]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with pep q-value = 0.01: 210", allResults[18]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target peptides with pep q-value = 0.01: 172", allResults[19]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 155", allResults[20]);
 
@@ -98,13 +94,13 @@ namespace Test
 
             resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             results = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 423", results[5]);
+            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 420", results[5]);
             Assert.AreEqual("All target peptides with pep q-value = 0.01: 172", results[6]);
             Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 155", results[7]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with pep q-value = 0.01: 211", results[9]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - All target PSMs with pep q-value = 0.01: 210", results[9]);
             Assert.AreEqual("TaGe_SA_A549_3_snip - All target peptides with pep q-value = 0.01: 172", results[10]);
             Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 155", results[11]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with pep q-value = 0.01: 211", results[13]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target PSMs with pep q-value = 0.01: 210", results[13]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - All target peptides with pep q-value = 0.01: 172", results[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 155", results[15]);
 

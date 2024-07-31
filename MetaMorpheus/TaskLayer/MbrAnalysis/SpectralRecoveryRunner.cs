@@ -144,7 +144,8 @@ namespace TaskLayer.MbrAnalysis
                 CommonParameters = commonParameters
             };
 
-            postProcessing.Filter(peptides,
+            FilteredPsms.Filter(peptides,
+                commonParameters,
                 includeDecoys: false,
                 includeContaminants: false,
                 includeAmbiguous: false,

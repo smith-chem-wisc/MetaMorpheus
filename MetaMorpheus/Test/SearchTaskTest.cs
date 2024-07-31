@@ -614,7 +614,7 @@ namespace Test
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
             Assert.AreEqual("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value.", results[6]);
-            Assert.AreEqual("All target PSMs with q-value = 1: 85", results[7]);
+            Assert.AreEqual("All target PSMs with q-value = 1: 84", results[7]);
 
             // clean up
             Directory.Delete(folderPath, true);
