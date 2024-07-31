@@ -36,7 +36,7 @@ namespace EngineLayer
         public Dictionary<string, CommonParameters> FileSpecificParametersDictionary { get; private set; }
         public int ChargeStateMode { get; private set; }
 
-        public double QValueCutoff = 0.005;
+        public double QValueCutoff { get; }
         public bool UsePeptideLevelQValueForTraining = true;
         public string[] TrainingVariables { get; }
         public string OutputFolder { get; }
@@ -66,7 +66,7 @@ namespace EngineLayer
             SearchType = searchType;
             SetFileSpecificParameters(fileSpecificParameters);
             BuildFileSpecificDictionaries(psms, TrainingVariables);
-            QValueCutoff = fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min();
+            QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), 0.01);
 
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Count(seq => seq.IsNotNullOrEmpty()) >= 100;
@@ -280,7 +280,7 @@ namespace EngineLayer
                                         peptideWithSetMods, notch, label);
                                 }
                                 else if (!peptideWithSetMods.Parent.IsDecoy
-                                    && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
+                                    && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff )
                                 {
                                     label = true;
                                     newPsmData = CreateOnePsmDataEntry(searchType, psm,
@@ -501,7 +501,8 @@ namespace EngineLayer
                     absoluteFragmentMassError = (float)Math.Min(100.0, Math.Round(10.0 * Math.Abs(GetAverageFragmentMassError(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide]) - FileSpecificMedianFragmentMassErrors[Path.GetFileName(psm.FullFilePath)])));
                 }
 
-                ambiguity = Math.Min((float)(psm.BioPolymersWithSetModsToMatchingFragments.Keys.Count - 1), 10);
+                //ambiguity = Math.Min((float)(psm.BioPolymersWithSetModsToMatchingFragments.Keys.Count - 1), 10);
+                ambiguity = 10; // I'm pretty sure that you shouldn't train on ambiguity and its skewing the results
                 longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * multiplier, 0);
                 complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * multiplier, 0);
                 isVariantPeptide = PeptideIsVariant(selectedPeptide);

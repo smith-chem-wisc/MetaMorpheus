@@ -89,7 +89,7 @@ namespace EngineLayer.FdrAnalysis
                         peptides = psms
                             .OrderByDescending(p => p)
                             .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault())
+                            .Select(g => g.FirstOrDefault())
                             .OrderBy(p => p.FdrInfo.PEP) // Then order by PEP (PSM PEP and Peptide PEP are the same)
                             .ThenByDescending(p => p)
                             .ToList();
@@ -116,7 +116,7 @@ namespace EngineLayer.FdrAnalysis
                     peptides = psms
                             .OrderByDescending(p => p)
                             .GroupBy(p => p.FullSequence)
-                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on MBR score
+                            .Select(g => g.FirstOrDefault())
                             .OrderBy(p => p.FdrInfo.PEP) // Then order by PEP (PSM PEP and Peptide PEP are the same)
                             .ThenByDescending(p => p)
                             .ToList();
@@ -132,6 +132,8 @@ namespace EngineLayer.FdrAnalysis
 
                 //we do this section last so that target and decoy counts written in the psmtsv files are appropriate for the sort order which is by MM score
                 peptides = psms
+                    //.OrderBy(psm => psm.FdrInfo.PEP)
+                    //.ThenByDescending(p => p)
                     .OrderByDescending(p => p)
                     .GroupBy(b => b.FullSequence)
                     .Select(b => b.FirstOrDefault())
