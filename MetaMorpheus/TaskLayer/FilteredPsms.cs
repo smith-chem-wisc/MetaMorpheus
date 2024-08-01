@@ -9,18 +9,19 @@ using System.Threading.Tasks;
 namespace TaskLayer
 {
     /// <summary>
-    /// Contains a filtered list of PSMs
+    /// Contains a filtered list of PSMs.
+    /// All properties within this class are read-only, and should only be set on object construction
     /// </summary>
     public class FilteredPsms : IEnumerable<SpectralMatch>
     {
-        public List<SpectralMatch> FilteredPsmsList { get; set; }
+        public List<SpectralMatch> FilteredPsmsList { get; private set; }
         /// <summary>
         /// Filter type can have only two values: "q-value" or "pep q-value"
         /// </summary>
-        public string FilterType { get; }
-        public double FilterThreshold { get; }
-        public bool FilteringNotPerformed { get; }
-        public bool PeptideLevelFiltering { get; }
+        public string FilterType { get; init; }
+        public double FilterThreshold { get; init; }
+        public bool FilteringNotPerformed { get; init; }
+        public bool PeptideLevelFiltering { get; init; }
         public FilteredPsms(List<SpectralMatch> filteredPsms, string filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
         {
             FilteredPsmsList = filteredPsms;
@@ -41,6 +42,15 @@ namespace TaskLayer
                 default:
                     return psm.GetFdrInfo(PeptideLevelFiltering).QValue <= FilterThreshold && psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch <= FilterThreshold;
             }
+        }
+
+        /// <summary>
+        /// This method should only be called when filtered PSMs are modified for the purpose of SILAC analysis
+        /// </summary>
+        /// <param name="silacPsms"></param>
+        public void SetSilacFilteredPsms(List<SpectralMatch> silacPsms)
+        {
+            FilteredPsmsList = silacPsms;
         }
 
         /// <summary>

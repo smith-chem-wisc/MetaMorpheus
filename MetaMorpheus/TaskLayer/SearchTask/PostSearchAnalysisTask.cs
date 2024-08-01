@@ -450,7 +450,7 @@ namespace TaskLayer
                 }
                 //update the list for FlashLFQ
                 silacPsms.ForEach(x => x.ResolveAllAmbiguities()); //update the monoisotopic mass
-                psmsForQuantification.FilteredPsmsList = silacPsms;
+                psmsForQuantification.SetSilacFilteredPsms(silacPsms);
             }
 
             //group psms by file
