@@ -728,6 +728,7 @@ namespace TaskLayer
             return spectrumFilePath;
         }
 
+<<<<<<< HEAD
         /// <summary>
         /// Returns a FilteredPsms object that holds every psm that passed the filtering criteria.
         /// Q-Value and PEP Q-Value thresholds are read from common parameters by default, but can be overridden
@@ -811,6 +812,8 @@ namespace TaskLayer
             return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
         }
 
+=======
+>>>>>>> ShortreedPep3
         protected void ReportProgress(ProgressEventArgs v)
         {
             OutProgressHandler?.Invoke(this, v);

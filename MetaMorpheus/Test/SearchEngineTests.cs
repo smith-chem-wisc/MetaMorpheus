@@ -99,7 +99,11 @@ namespace Test
             Assert.AreEqual("0", psm.Notch);
             Assert.AreEqual("Homo sapiens", psm.OrganismName);
             Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
+<<<<<<< HEAD
             Assert.That(0.0051, Is.EqualTo(psm.PEP_QValue).Within(1E-04));
+=======
+            Assert.That(0.005, Is.EqualTo(psm.PEP_QValue).Within(1E-03));
+>>>>>>> ShortreedPep3
             Assert.AreEqual("full", psm.PeptideDescription);
             Assert.AreEqual("2125.92875", psm.PeptideMonoMass);
             Assert.AreEqual(3, psm.PrecursorCharge);
@@ -145,11 +149,11 @@ namespace Test
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
             Assert.AreEqual(385, parsedPsms.Count); //total psm count
-            Assert.AreEqual(215, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv
+            Assert.AreEqual(215, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv, including decoys
             Assert.AreEqual(0, warnings.Count);
 
             int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
-            Assert.AreEqual(215, countFromResultsTxt);
+            Assert.AreEqual(214, countFromResultsTxt);
         }
 
         [Test]
