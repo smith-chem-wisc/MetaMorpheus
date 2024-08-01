@@ -8,7 +8,7 @@
             MinMS1IsotopicPeaksNeededForConfirmedIdentification = 3;
             MinMS2IsotopicPeaksNeededForConfirmedIdentification = 2;
             NumFragmentsNeededForEveryIdentification = 10;
-            QValueCutoffForCalibratingPSMs = 0.005;
+            QValueCutoffForCalibratingPSMs = 0.01;
             WriteIndexedMzml = true;
         }
 
