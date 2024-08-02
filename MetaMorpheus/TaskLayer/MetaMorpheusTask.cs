@@ -629,6 +629,7 @@ namespace TaskLayer
             }
 
             // Sanitize the decoys
+
             HashSet<string> targetPeptideSequences = new();
             foreach(var protein in proteinList.Where(p => !p.IsDecoy))
             {
