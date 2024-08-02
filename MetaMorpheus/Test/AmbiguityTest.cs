@@ -2,7 +2,7 @@ using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using MzLibUtil;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
