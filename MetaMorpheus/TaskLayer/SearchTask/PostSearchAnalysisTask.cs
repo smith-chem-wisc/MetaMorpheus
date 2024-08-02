@@ -64,8 +64,9 @@ namespace TaskLayer
             {
                 Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
                 Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
-                Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-                    .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                // The GroupBy statement below gets rid of duplicate PSMs that can occur when the same peptides is matched to the same spectrum multiple times,
+                // just with slightly different precursor masses.
+                Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b)
                     .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
                 CalculatePsmAndPeptideFdr(Parameters.AllPsms);
             }
