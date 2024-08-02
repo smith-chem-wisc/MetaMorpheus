@@ -620,6 +620,41 @@ namespace TaskLayer
             {
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
+
+            Status("Done loading proteins", new List<string> { taskId });
+
+            if (!proteinList.Any(p => p.IsDecoy))
+            {
+                return proteinList;
+            }
+
+            // Sanitize the decoys
+            HashSet<string> targetPeptideSequences = new();
+            foreach(var protein in proteinList.Where(p => !p.IsDecoy))
+            {
+                // When thinking about decoy collisions, we can ignore modifications
+                foreach(var peptide in protein.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
+                {
+                    targetPeptideSequences.Add(peptide.BaseSequence);
+                }
+            }
+            // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
+            for(int i = 0; i < proteinList.Count; i++)
+            {
+                if(proteinList[i].IsDecoy)
+                {
+                    var peptidesToReplace = proteinList[i]
+                        .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                        .Select(p => p.BaseSequence)
+                        .Where(targetPeptideSequences.Contains)
+                        .ToList();
+                    if(peptidesToReplace.Any())
+                    {
+                        proteinList[i] = Protein.ScrambleDecoyProteinSequence(proteinList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
+                    }
+                }
+            }
+
             return proteinList;
         }
 
