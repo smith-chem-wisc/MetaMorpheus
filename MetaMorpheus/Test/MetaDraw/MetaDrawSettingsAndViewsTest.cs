@@ -201,21 +201,24 @@ namespace Test.MetaDraw
             // Load in an outdated settings file and ensure no crashes occur
             string metaDrawSettingsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"105MetaDrawSettingsSaved.xml");
             MetaDrawSettingsViewModel model = new MetaDrawSettingsViewModel(false);
-            MetaDrawSettingsViewModel.SettingsPath = metaDrawSettingsPath;
+            Assert.That(!model.HasDefaultSaved);
 
+            MetaDrawSettingsViewModel.SettingsPath = metaDrawSettingsPath;
             Assert.That(model.HasDefaultSaved);
+
             model.LoadSettings();
 
             // In this case (6/27/24), the product type, beta product type, and spectrum descriptors will fail
-                
+            // As of (7/11/24), new modifications were added and now the modification type will fail when loading into MetaDrawSettings
+                // This is okay and working as intended. 
+
             // check that failed settings loaded to default
             CollectionAssert.AreEqual(defaultColorValues, MetaDrawSettings.ProductTypeToColor.Values);
             CollectionAssert.AreEqual(defaultBetaColorValues, MetaDrawSettings.BetaProductTypeToColor.Values);
             CollectionAssert.AreEqual(defaultSpectrumDescriptionValues, MetaDrawSettings.SpectrumDescription.Values);
+            CollectionAssert.AreEqual(defaultModificationColorValues, MetaDrawSettings.ModificationTypeToColor.Values);
 
             // check successful settings loaded correctly, in this case they were set to aqua
-            Assert.That(defaultModificationColorValues.First(), Is.Not.EqualTo(MetaDrawSettings.ModificationTypeToColor.First().Value));
-            Assert.That(MetaDrawSettings.ModificationTypeToColor.First().Value, Is.EqualTo(OxyColors.Aqua));
             Assert.That(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(0), Is.EqualTo(OxyColors.Aqua));
             Assert.That(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(0), Is.Not.EqualTo(defaultCoverageColors[0]));
             Assert.That(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(1), Is.EqualTo(OxyColors.Aqua));
