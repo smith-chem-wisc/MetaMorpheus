@@ -31,6 +31,9 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
 
+        /// <summary>
+        /// Used for storage of results for writing to Results.tsv. It is explained in the method ConstructResultsDictionary()
+        /// </summary>
         private Dictionary<(string,string),string> ResultsDictionary { get; set; }
 
         public PostSearchAnalysisTask()
@@ -1840,7 +1843,12 @@ namespace TaskLayer
                 FinishedWritingFile(filePath, nestedIds);
             }
         }
-
+        /// <summary>
+        /// This is a handy dictionary to keep track of the PSM, peptide and protein count results at the
+        ///  "All" level and at the individual raw file level.
+        ///  The keys are a tuple such as ("All", "PSMs") or ("RawFileName", "Peptides")
+        //   The values are the results as a string
+        /// </summary>
         private void ConstructResultsDictionary()
         {
             ResultsDictionary = new();
