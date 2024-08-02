@@ -198,33 +198,33 @@ namespace EngineLayer
             Notch = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Notch)).ResolvedValue;
 
             //if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
-            //if (IsDecoy)
-            //{
-            //    bool removedPeptides = false;
-            //    var hits = _BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Pwsm.FullSequence);
+            if (IsDecoy)
+            {
+                bool removedPeptides = false;
+                var hits = _BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Pwsm.FullSequence);
 
-            //    foreach (var hit in hits)
-            //    {
-            //        if (hit.Any(p => p.Pwsm.Parent.IsDecoy) && hit.Any(p => !p.Pwsm.Parent.IsDecoy))
-            //        {
-            //            // at least one peptide with this sequence is a target and at least one is a decoy
-            //            // remove the decoys with this sequence
-            //            var pwsmToRemove = _BestMatchingBioPolymersWithSetMods.Where(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Parent.IsDecoy).ToList();
-            //            _BestMatchingBioPolymersWithSetMods.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Parent.IsDecoy);
-            //            foreach ((int, IBioPolymerWithSetMods) pwsm in pwsmToRemove)
-            //            {
-            //                BioPolymersWithSetModsToMatchingFragments.Remove(pwsm.Item2);
-            //            }
+                foreach (var hit in hits)
+                {
+                    if (hit.Any(p => p.Pwsm.Parent.IsDecoy) && hit.Any(p => !p.Pwsm.Parent.IsDecoy))
+                    {
+                        // at least one peptide with this sequence is a target and at least one is a decoy
+                        // remove the decoys with this sequence
+                        var pwsmToRemove = _BestMatchingBioPolymersWithSetMods.Where(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Parent.IsDecoy).ToList();
+                        _BestMatchingBioPolymersWithSetMods.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Parent.IsDecoy);
+                        foreach ((int, IBioPolymerWithSetMods) pwsm in pwsmToRemove)
+                        {
+                            BioPolymersWithSetModsToMatchingFragments.Remove(pwsm.Item2);
+                        }
 
-            //            removedPeptides = true;
-            //        }
-            //    }
+                        removedPeptides = true;
+                    }
+                }
 
-            //    if (removedPeptides)
-            //    {
-            //        ResolveAllAmbiguities();
-            //    }
-            //}
+                if (removedPeptides)
+                {
+                    ResolveAllAmbiguities();
+                }
+            }
 
             // TODO: technically, different peptide options for this PSM can have different matched ions
             // we can write a Resolve method for this if we want...

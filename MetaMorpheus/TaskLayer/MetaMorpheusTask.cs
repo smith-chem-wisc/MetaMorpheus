@@ -622,10 +622,11 @@ namespace TaskLayer
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
 
-            Status("Done loading proteins", new List<string> { taskId });
+            
 
             if (!proteinList.Any(p => p.IsDecoy))
             {
+                Status("Done loading proteins", new List<string> { taskId });
                 return proteinList;
             }
 
@@ -657,6 +658,7 @@ namespace TaskLayer
                 }
             }
 
+            Status("Done loading proteins", new List<string> { taskId });
             return proteinList;
         }
 
