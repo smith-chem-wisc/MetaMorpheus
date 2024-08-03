@@ -68,6 +68,9 @@
     <None Update="Glycan_Mods\OGlycan\OGlycan.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="Glycan_Mods\OGlycan\OGlycan_withIsobaric.gdb">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Glycan_Mods\OGlycan\Olgycan Database 28 glycans plus Sodium 56 total.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

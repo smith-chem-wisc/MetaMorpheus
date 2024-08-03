@@ -80,7 +80,7 @@ namespace Test
         [Test]
         public static void GlyTest_GetKindString()
         {
-            byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
             string kindString = Glycan.GetKindString(kind);
             Assert.AreEqual("H3N4F1", kindString);
         }
@@ -288,19 +288,28 @@ namespace Test
         [Test]
         public static void GlyTest_NGlycanCompositionFragments()
         {
-            var kind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)");
+            var testKind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)Xylose(1)");
 
-            var ions = GlycanDatabase.NGlycanCompositionFragments(kind);
+            var ions_NotFucExtended = GlycanDatabase.NGlycanCompositionFragments(testKind);
+
+            var ions_fucExtended = GlycanDatabase.NGlycanCompositionFragments(testKind, true);
+
+            Assert.That(ions_fucExtended.Count >= ions_NotFucExtended.Count);
+            Assert.That(ions_NotFucExtended.Count == 35);
+            Assert.That(ions_fucExtended.Count == 43);
+
+
+            var kind = GlycanDatabase.String2Kind("HexNAc(3)Hex(4)Fuc(2)NeuAc(1)");
 
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H)(H(N(F)(H(A)))))))", 0);
 
-            var ionMass = ions.Select(p => p.IonMass).ToList();
+            var ionMass = ions_NotFucExtended.Select(p => p.IonMass).ToList();
 
             var glycanIonmass = glycan.Ions.Select(p => p.IonMass).ToList();
 
             var overlap = glycanIonmass.Intersect(ionMass).Count();
 
-            Assert.That(overlap == 13);
+            Assert.That(overlap == 15);
      
         }
     }
