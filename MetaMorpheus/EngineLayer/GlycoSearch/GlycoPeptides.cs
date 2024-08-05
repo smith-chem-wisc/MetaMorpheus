@@ -10,8 +10,14 @@ using Omics.Modifications;
 
 namespace EngineLayer.GlycoSearch
 {
-    public static class GlycoPeptides
+    public static class GlycoPeptides 
     {
+        /// <summary>
+        /// Generate a list of isotopic intesitry of the oxonium ions
+        /// </summary>
+        /// <param name="theScan"> The MS2 Scan</param>
+        /// <param name="massDiffAcceptor"></param>
+        /// <returns> int[], The intensity list </returns>
         public static double[] ScanOxoniumIonFilter(Ms2ScanWithSpecificMass theScan, MassDiffAcceptor massDiffAcceptor)
         {
             double[] oxoniumIonsintensities = new double[Glycan.AllOxoniumIons.Length];
@@ -180,7 +186,7 @@ namespace EngineLayer.GlycoSearch
                 return true;
             }
 
-            if (dissociationType == DissociationType.Custom )
+            if (dissociationType == DissociationType.Custom ) //Use the fragment type to determine the dissociation type.
             {
                 if (customIons.Contains(ProductType.zDot) || customIons.Contains(ProductType.c))
                 {
@@ -192,13 +198,22 @@ namespace EngineLayer.GlycoSearch
         }
 
         //TO THINK: filter reasonable fragments here. The final solution is to change mzLib.Proteomics.PeptideWithSetModifications.Fragment
+
+        /// <summary>
+        /// Get the theoretical fragments of the peptide with the glycan modification. With different dissociation type, the fragment ions are different.
+        /// </summary>
+        /// <param name="dissociationType"></param>
+        /// <param name="customIons"></param>
+        /// <param name="peptide"></param>
+        /// <param name="modPeptide"></param>
+        /// <returns> product[], Fragments list</returns>
         public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, List<ProductType> customIons, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
         {
             List<Product> theoreticalProducts = new List<Product>();        
             HashSet<double> masses = new HashSet<double>();
 
             List<Product> products = new List<Product>();
-            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)
+            if (dissociationType == DissociationType.HCD || dissociationType == DissociationType.CID)  
             {
                 List<Product> diag = new List<Product>();
                 modPeptide.Fragment(dissociationType, FragmentationTerminus.Both, diag);
@@ -241,7 +256,7 @@ namespace EngineLayer.GlycoSearch
 
             }
 
-            foreach (var fragment in products)
+            foreach (var fragment in products) //this part just for the unique fragment ions. (filter the fragment with the same neturalMass)
             {
                 if (!masses.Contains(fragment.NeutralMass))
                 {
@@ -253,23 +268,31 @@ namespace EngineLayer.GlycoSearch
             return theoreticalProducts;
         }
 
+        
+        /// <summary>
+        /// Generate the theroertical glycan modified peptide. With the glycanBox, modPos, and the peptide.
+        /// </summary>
+        /// <param name="theModPositions"></param>
+        /// <param name="peptide"></param>
+        /// <param name="glycanBox"></param>
+        /// <returns> A modfiied peptide.</returns>
         public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(int[] theModPositions, PeptideWithSetModifications peptide, GlycanBox glycanBox)
         {
             Modification[] modifications = new Modification[glycanBox.NumberOfMods];
             for (int i = 0; i < glycanBox.NumberOfMods; i++)
             {
-                modifications[i] = GlycanBox.GlobalOGlycanModifications[glycanBox.ModIds.ElementAt(i)];
+                modifications[i] = GlycanBox.GlobalOGlycanModifications[glycanBox.ModIds.ElementAt(i)]; // transfer the glycanBox information to a new list.
             }
 
             Dictionary<int, Modification> testMods = new Dictionary<int, Modification>();
             foreach (var mod in peptide.AllModsOneIsNterminus)
             {
-                testMods.Add(mod.Key, mod.Value);
+                testMods.Add(mod.Key, mod.Value);   // transfer the AllMod information to a new list.
             }
 
             for (int i = 0; i < theModPositions.Count(); i++)
             {
-                testMods.Add(theModPositions.ElementAt(i), modifications[i]);
+                testMods.Add(theModPositions.ElementAt(i), modifications[i]);  //combine the glycanBox information to the AllMod list
             }
 
             var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
@@ -278,6 +301,12 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
+        /// <summary>
+        /// Generate the theroertical glycan modified peptide. With the route the peptide. Because the route contains the glycanBox and modPos information.
+        /// </summary>
+        /// <param name="theModPositions"></param>
+        /// <param name="peptide"></param>
+        /// <returns> A modfiied peptide </returns>
         public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Route theModPositions, PeptideWithSetModifications peptide)
         {
             Modification[] modifications = new Modification[theModPositions.Mods.Count];
@@ -303,16 +332,24 @@ namespace EngineLayer.GlycoSearch
             return testPeptide;
         }
 
-        //The function here is to calculate permutation localization which could be used to compare with Graph-Localization.
+        //Should be revised for easier understanding.
+        /// <summary>
+        /// Generate all possible glycosite for the glycan set. Supposed we will put the glycan on the glycosite in sequence.
+        /// </summary>
+        /// <param name="allModPos"> Ex. [3,5,2,7]</param>
+        /// <param name="glycanBoxId"> Ex. [2,2,3] means id2 + id2 + id3 </param>
+        /// <returns> A glycosite set collection. Ex. ([2,5,7],[3,5,7]...), each one list means the glcosites for glycanBox. 
+        /// [2,5,7] means we will put the glycan on position 2, 5, 7. </returns>
+        /// </returns>
         public static List<int[]> GetPermutations(List<int> allModPos, int[] glycanBoxId)
         {
             var length = glycanBoxId.Length;
-            var indexes = Enumerable.Range(0, length).ToArray();
+            var indexes = Enumerable.Range(0, length).ToArray();  // just the index for the glycanBoxId to keep the order.
             int[] orderGlycan = new int[length];
 
-            List<int[]> permutateModPositions = new List<int[]>();
+            List<int[]> permutateModPositions = new List<int[]>(); //The list to store all possible permutation localization.
 
-            var combinations = Glycan.GetKCombs(allModPos, length);
+            var combinations = Glycan.GetKCombs(allModPos, length); //Get all possible combinations of the mod sites. ex. four site[1,2,3,4], length:3 -> combination [1,2,3], [1,2,4], [1,3,4], [2,3,4]
         
             foreach (var com in combinations)
             {
@@ -332,7 +369,7 @@ namespace EngineLayer.GlycoSearch
                         orderGlycan[i] = glycanBoxId[indexes[i]];
                     }
                     var key = string.Join(",", orderGlycan.Select(p => p.ToString()));
-                    if (!keys.Contains(key))
+                    if (!keys.Contains(key)) //Remove the duplicate permutation localization.
                     {
                         keys.Add(key);
                         permutateModPositions.Add(per.ToArray());
@@ -343,25 +380,32 @@ namespace EngineLayer.GlycoSearch
             return permutateModPositions;
         }
 
-        //The purpose of the funtion is to generate hash fragment ions without generate the PeptideWithMod. keyValuePair key:GlycanBoxId, Value:mod sites
+
+        /// <summary>
+        /// Generate the new fragment list, we add the glycan mass to the c ions and z ions from the peptide fragment list
+        /// </summary>
+        /// <param name="products"></param>
+        /// <param name="keyValuePair"></param>
+        /// <param name="OGlycanBoxes"></param>
+        /// <param name="FragmentBinsPerDalton"></param>
+        /// <returns></returns>
         public static int[] GetFragmentHash(List<Product> products, Tuple<int, int[]> keyValuePair, GlycanBox[] OGlycanBoxes, int FragmentBinsPerDalton)
         {
-            double[] newFragments = products.OrderBy(p=>p.ProductType).ThenBy(p=>p.FragmentNumber).Select(p => p.NeutralMass).ToArray();
+            double[] newFragments = products.OrderBy(p=>p.ProductType).ThenBy(p=>p.FragmentNumber).Select(p => p.NeutralMass).ToArray(); // store the fragment mass in the order of c1, c2, c3, y1, y2, y3, z1, z2, z3
             var len = products.Count / 3;
             if (keyValuePair.Item2!=null)
             {
-                for (int i = 0; i < keyValuePair.Item2.Length; i++)
-                {
+                for (int i = 0; i < keyValuePair.Item2.Length; i++) // we want to add the glycan mass to the c ions and z ions that contain the glycan.
+                {                                                   // y ions didn't change in EThcD for O-glyco, so we just need to deal with c ions and z ions.
                     var j = keyValuePair.Item2[i];
-                    while (j <= len + 1)
+                    while (j <= len + 1) // for c ions
                     {
                         newFragments[j - 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j++;
                     }
-                    j = keyValuePair.Item2[i];
-                    while (j >= 3)
+                    j = keyValuePair.Item2[i]; // reset the j to the position of the glycan
+                    while (j >= 3)             // for z ions
                     {
-                        //y ions didn't change in EThcD for O-glyco
                         newFragments[len * 3 - j + 2] += (double)GlycanBox.GlobalOGlycans[OGlycanBoxes[keyValuePair.Item1].ModIds[i]].Mass/1E5;
                         j--;
                     }
@@ -369,7 +413,7 @@ namespace EngineLayer.GlycoSearch
             }
 
 
-            int[] fragmentHash = new int[products.Count];
+            int[] fragmentHash = new int[products.Count]; // store the fragment mass in the order of c1, c2, c3, y1, y2, y3, z1, z2, z3 and with the umit of FragmentBinsPerDalton
             for (int i = 0; i < products.Count; i++)
             {
                 fragmentHash[i] = (int)Math.Round(newFragments[i] * FragmentBinsPerDalton);
@@ -377,8 +421,16 @@ namespace EngineLayer.GlycoSearch
             return fragmentHash;
         }
 
-        //Find FragmentHash for current box at modInd. 
-        //y-ion didn't change for O-Glycopeptide.
+ 
+        /// <summary>
+        /// Generate the fragment list with the specific childBox located on specific modPos. At here, the ModInd is the index for modPos. Not used in the current version.
+        /// </summary>
+        /// <param name="products"></param>
+        /// <param name="modPoses"> ModPos list </param>
+        /// <param name="modInd"> Specific ModPos, index in ModPos</param>
+        /// <param name="OGlycanBox"> Whole glycanBox</param>
+        /// <param name="localOGlycanBox">Partial glycanBox, at here is the childBox</param>
+        /// <returns></returns>
         public static List<double> GetLocalFragment(List<Product> products, int[] modPoses, int modInd, ModBox OGlycanBox, ModBox localOGlycanBox)
         {
             List<double> newFragments = new List<double>();
@@ -433,21 +485,38 @@ namespace EngineLayer.GlycoSearch
         }
 
 
-        //The oxoniumIonIntensities is related with Glycan.AllOxoniumIons. 
-        //Rules are coded in the function.    
-        public static bool OxoniumIonsAnalysis(double[] oxoniumIonsintensities, GlycanBox glycanBox)
+        /// <summary>
+        /// Use the oxonium ions to determine the glycan type.
+        /// </summary>
+        /// <param name="oxoniumIonsintensities"> From the Scan </param>
+        /// <param name="glycanBox"> The glycanBox to be tested </param>
+        /// <returns >True : The Oglycan pass the filter, False : The OGl</returns>
+        public static bool DiagonsticFilter(double[] oxoniumIonsintensities, GlycanBox glycanBox)
         {
+            double HexNAc_diagnostic = oxoniumIonsintensities[4];
+            double NeuAc_diagnostic1 = oxoniumIonsintensities[10];
+            double NeuAc_diagnostic2 = oxoniumIonsintensities[12];
+            double HexNAcPlusHex_diagnostic = oxoniumIonsintensities[14];
+
             //If a glycopeptide spectrum does not have 292.1027 or 274.0921, then remove all glycans that have sialic acids from the search.
-            if (oxoniumIonsintensities[10] <= 0 && oxoniumIonsintensities[12] <= 0)
+            if (NeuAc_diagnostic1 / HexNAc_diagnostic > 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic > 0.02)
             {
-                if (glycanBox.Kind[2] != 0 || glycanBox.Kind[3] != 0)
+                if (glycanBox.Kind[2] == 0 )
+                {
+                    return false;
+                }
+            }
+
+            if(NeuAc_diagnostic1 / HexNAc_diagnostic < 0.02 && NeuAc_diagnostic2 / HexNAc_diagnostic < 0.02)
+            {
+                if (glycanBox.Kind[2] != 0)
                 {
                     return false;
                 }
             }
 
             //If a spectrum has 366.1395, remove glycans that do not have HexNAc(1)Hex(1) or more. Here use the total glycan of glycanBox to calculate. 
-            if (oxoniumIonsintensities[14] > 0)
+            else if (HexNAcPlusHex_diagnostic / HexNAc_diagnostic > 0.02)
             {
                 if (glycanBox.Kind[0] < 1 && glycanBox.Kind[1] < 1)
                 {
@@ -458,6 +527,7 @@ namespace EngineLayer.GlycoSearch
             //Other rules:
             //A spectrum needs to have 204.0867 to be considered as a glycopeptide.              
             //Ratio of 138.055 to 144.0655 can seperate O/N glycan.
+            // use some other oxonium ions to determine the glycan type.
 
             return true;
         }
