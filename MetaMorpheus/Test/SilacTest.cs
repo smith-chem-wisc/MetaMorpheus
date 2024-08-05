@@ -459,7 +459,8 @@ namespace Test
 
             output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"/TestSilac/AllQuantifiedProteinGroups.tsv");
             //test sequence coverage and output worked from multiple labels
-            Assert.IsTrue(output[1].Contains("PEPTK(+8.014)IDEK(+8.014)|PEPEPEPTK(+1.994)"));
+            // Both labels should be included, but the order doesnt matter
+            Assert.IsTrue(output[1].Contains("PEPTK(+8.014)IDEK(+8.014)|PEPEPEPTK(+1.994)") | output[1].Contains("PEPEPEPTK(+1.994)|PEPTK(+8.014)IDEK(+8.014)"));
             Assert.IsTrue(output[1].Contains("PEPEPEPTKidekPEPTKIDEKa\tPEPEPEPTKidekPEPTKIDEKa\tPEPEPEPTKidekPEPTKIDEKa"));
 
             //try modern search (testing indexing)

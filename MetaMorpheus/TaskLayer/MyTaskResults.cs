@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
+using Easy.Common.Extensions;
+
 namespace TaskLayer
 {
     public class MyTaskResults
@@ -10,7 +12,7 @@ namespace TaskLayer
         public List<string> NewSpectra; // calibration writes new calibrated spectra
         public List<DbForTask> NewDatabases; // gptmd writes new annotated databases
         public List<string> NewFileSpecificTomls; // calibration writes suggested ppm tolerances
-        public TimeSpan Time; 
+        public TimeSpan Time;
 
         private readonly List<string> resultTexts;
 
@@ -27,11 +29,9 @@ namespace TaskLayer
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("Time to run task: " + Time);
             sb.AppendLine();
-            sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
             if ((NewSpectra != null && NewSpectra.Any()) || (NewDatabases != null && NewDatabases.Any()))
             {
-                sb.AppendLine();
                 sb.AppendLine();
                 sb.AppendLine("New files:");
                 if (NewSpectra != null && NewSpectra.Any())
@@ -46,17 +46,13 @@ namespace TaskLayer
                     sb.AppendLine(string.Join(Environment.NewLine + "\t", NewDatabases.Select(b => b.FilePath)).ToString());
                 }
                 sb.AppendLine();
-                sb.AppendLine();
                 sb.AppendLine("--------------------------------------------------");
             }
-            sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine(PsmPeptideProteinSummaryText.ToString());
             sb.AppendLine(TaskSummaryText.ToString());
             sb.AppendLine();
-            sb.AppendLine();
             sb.AppendLine("--------------------------------------------------");
-            sb.AppendLine();
             sb.AppendLine();
             sb.AppendLine("Engine Results:");
             sb.AppendLine();
