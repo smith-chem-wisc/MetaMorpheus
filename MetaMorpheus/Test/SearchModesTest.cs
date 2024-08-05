@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Collections.Generic;
 using System.Linq;

@@ -2,7 +2,7 @@
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModificationAnalysis;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;

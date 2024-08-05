@@ -4,7 +4,7 @@ using EngineLayer.ClassicSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;

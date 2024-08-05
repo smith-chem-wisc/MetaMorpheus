@@ -3,7 +3,7 @@ using EngineLayer;
 using EngineLayer.Calibration;
 using FlashLFQ;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

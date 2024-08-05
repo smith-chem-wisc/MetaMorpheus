@@ -1,5 +1,5 @@
 ﻿using GuiFunctions.Databases;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using System;
 using System.Collections.Generic;

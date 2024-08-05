@@ -1,4 +1,4 @@
-﻿using NUnit.Framework;
+﻿using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System.IO;
 using System;
 using System.Linq;

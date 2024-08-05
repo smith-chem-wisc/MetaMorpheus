@@ -6,7 +6,7 @@ using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Omics.Fragmentation;

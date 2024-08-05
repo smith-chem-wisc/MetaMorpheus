@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using EngineLayer;
 using Nett;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using TaskLayer;
 
 

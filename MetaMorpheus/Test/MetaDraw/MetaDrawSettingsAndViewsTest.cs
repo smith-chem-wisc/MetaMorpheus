@@ -8,6 +8,8 @@ using EngineLayer;
 using GuiFunctions;
 using GuiFunctions.ViewModels.Legends;
 using NUnit.Framework;
+using NUnit.Framework.Legacy;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using OxyPlot;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;

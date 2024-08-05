@@ -4,7 +4,7 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.Localization;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
