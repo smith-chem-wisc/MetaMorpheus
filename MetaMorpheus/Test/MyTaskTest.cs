@@ -2,7 +2,8 @@ using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -12,6 +13,7 @@ using System.Linq;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using NUnit.Framework.Legacy;
 
 namespace Test
 {
