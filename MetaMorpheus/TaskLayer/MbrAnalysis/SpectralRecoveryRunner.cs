@@ -117,12 +117,7 @@ namespace TaskLayer.MbrAnalysis
             if (bestMbrMatches.Any())
             {
                 List<SpectralMatch> allPsms = parameters.AllPsms.
-                    OrderByDescending(p => p.Score).
-                    ThenBy(p => p.FdrInfo.QValue).
-                    ThenBy(p => p.FullFilePath).
-                    ThenBy(x => x.ScanNumber).
-                    ThenBy(p => p.FullSequence).
-                    ThenBy(p => p.Accession).ToList();
+                    OrderByDescending(p => p).ToList();
 
                 AssignEstimatedPsmQvalue(bestMbrMatches, allPsms);
                 FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
@@ -141,29 +136,20 @@ namespace TaskLayer.MbrAnalysis
             CommonParameters commonParameters,
             List<(string, CommonParameters)> fileSpecificParameters)
         {
-            List<SpectralMatch> peptides = new();
-            peptides = parameters.AllPsms.Where(b => b.FullSequence != null).GroupBy(b => b.FullSequence).Select(b => b.FirstOrDefault()).ToList();
+            var peptides = parameters.AllPsms;
+            PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
+            {
+                Parameters = parameters,
+                FileSpecificParameters = fileSpecificParameters,
+                CommonParameters = commonParameters
+            };
 
-            new FdrAnalysisEngine(peptides, parameters.NumNotches, commonParameters, fileSpecificParameters, new List<string> { parameters.SearchTaskId }, "Peptide").Run();
-
-            if (!parameters.SearchParameters.WriteDecoys)
-            {
-                peptides.RemoveAll(b => b.IsDecoy);
-            }
-            if (!parameters.SearchParameters.WriteContaminants)
-            {
-                peptides.RemoveAll(b => b.IsContaminant);
-            }
-
-            double qValueCutoff = 0.01;
-            if (parameters.AllPsms.Count > 100)//PEP is not computed when there are fewer than 100 psms
-            {
-                peptides.RemoveAll(p => p.FdrInfo.PEP_QValue > qValueCutoff);
-            }
-            else
-            {
-                peptides.RemoveAll(p => p.FdrInfo.QValue > qValueCutoff);
-            }
+            FilteredPsms.Filter(peptides,
+                commonParameters,
+                includeDecoys: false,
+                includeContaminants: false,
+                includeAmbiguous: false,
+                includeHighQValuePsms: false);
 
             return peptides;
         }
@@ -178,6 +164,7 @@ namespace TaskLayer.MbrAnalysis
                 foreach (SpectralMatch psm in nonNullPsms)
                 {
                     psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                    psm.PeptideFdrInfo = psm.PsmFdrInfo;
                 }
                 if (nonNullPsms.Select(p => p.SpectralAngle).Any(g => g != double.NaN))
                 {
@@ -191,7 +178,7 @@ namespace TaskLayer.MbrAnalysis
         private static void AssignEstimatedPsmQvalue(ConcurrentDictionary<ChromatographicPeak, SpectralRecoveryPSM> bestMbrMatches, List<SpectralMatch> allPsms)
         {
             double[] allScores = allPsms.Select(s => s.Score).OrderByDescending(s => s).ToArray();
-            double[] allQValues = allPsms.OrderByDescending(s => s.Score).Select(q => q.FdrInfo.QValue).ToArray();
+            double[] allQValues = allPsms.OrderByDescending(s => s.Score).Select(q => q.PsmFdrInfo.QValue).ToArray();
 
             foreach (SpectralRecoveryPSM match in bestMbrMatches.Values)
             {
