@@ -7,10 +7,8 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -220,7 +218,8 @@ namespace Test
                     digestionParams: new DigestionParams(minPeptideLength: 2),
                     scoreCutoff: 1,
                     deconvolutionIntensityRatio: 999,
-                    deconvolutionMassTolerance: new PpmTolerance(50)
+                    deconvolutionMassTolerance: new PpmTolerance(50),
+                    maxThreadsToUsePerFile: 1
                 ),
                 SearchParameters = new SearchParameters
                 {
@@ -248,27 +247,30 @@ namespace Test
 
             TestDataFile myMsDataFile = new(new List<PeptideWithSetModifications> { targetGood });
 
-            var ii = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
+            var ms1IntensityList = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
 
-            ii.Add(1);
-            ii.Add(1);
-            ii.Add(1);
-            ii.Add(1);
+            ms1IntensityList.Add(1);
+            ms1IntensityList.Add(1);
+            ms1IntensityList.Add(1);
 
-            var intensities = ii.ToArray();
+            var newIntensityArray = ms1IntensityList.ToArray();
 
-            var mm = myMsDataFile.GetOneBasedScan(1).MassSpectrum.XArray.ToList();
+            var ms1MzList = myMsDataFile.GetOneBasedScan(1).MassSpectrum.XArray.ToList();
+            Assert.AreEqual(6,ms1MzList.Count);
 
-            var hah = 104.35352;
-            mm.Add(hah);
-            mm.Add(hah + 1);
-            mm.Add(hah + 2);
+            List<double> expectedMzList = new List<double>() { 69.70, 70.03, 70.37, 104.04, 104.55, 105.05 };
+            CollectionAssert.AreEquivalent(expectedMzList, ms1MzList.Select(m=>Math.Round(m,2)).ToList());
 
-            var mz = mm.ToArray();
+            var firstMz = 104.35352; //this mz is close to one of original mz values, but not exactly the same, it should not disrupt deconvolution
+            ms1MzList.Add(firstMz);
+            ms1MzList.Add(firstMz + 1);
+            ms1MzList.Add(firstMz + 2);
 
-            Array.Sort(mz, intensities);
+            var newMzArray = ms1MzList.ToArray();
 
-            myMsDataFile.ReplaceFirstScanArrays(mz, intensities);
+            Array.Sort(newMzArray, newIntensityArray);
+
+            myMsDataFile.ReplaceFirstMs1ScanArrays(newMzArray, newIntensityArray);
 
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMakeSureFdrDoesntSkip");
@@ -276,6 +278,11 @@ namespace Test
 
             // RUN!
             var theStringResult = task.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
+
+
+            //There is one PSM with close peptide mass (0 ppm difference) and one PSM with large mass difference (>1000 ppm difference)
+            //Since this is an open search, both PSMs should be reported because they share the exact same MS2 scan
+
             Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value = 0.01: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
@@ -425,7 +432,7 @@ namespace Test
             {
                 while ((line = file.ReadLine()) != null)
                 {
-                    if (line.Contains("All target peptides with q-value = 0.01 : 4"))
+                    if (line.Contains("All target peptides with q-value = 0.01: 4"))
                     {
                         foundD = true;
                     }
@@ -491,7 +498,7 @@ namespace Test
             missingFiles = expectedFiles.Except(files);
             extraFiles = files.Except(expectedFiles);
 
-            Assert.That(files.SetEquals(expectedFiles));
+            CollectionAssert.AreEquivalent(expectedFiles, files);
 
             files = new HashSet<string>(Directory.GetFiles(Path.Combine(thisTaskOutputFolder, "Task Settings")).Select(v => Path.GetFileName(v)));
             expectedFiles = new HashSet<string> {

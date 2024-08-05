@@ -436,6 +436,7 @@ namespace Test
             psm.AddOrReplace(pwsm, 1, 1, true, new List<MatchedFragmentIon>(), 0);
             psm.AddOrReplace(pwsm, 1, 2, true, new List<MatchedFragmentIon>(), 0);
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
+            psm.PeptideFdrInfo = new FdrInfo();
 
             List<int> indiciesOfPeptidesToRemove = new List<int>();
             List<(int notch, PeptideWithSetModifications pwsm)> bestMatchingPeptidesToRemove = new List<(int notch, PeptideWithSetModifications pwsm)>();

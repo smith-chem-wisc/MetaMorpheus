@@ -34,6 +34,7 @@ namespace EngineLayer
             int totalPartitions = 1, 
             double qValueThreshold = 0.01,
             double pepQValueThreshold = 1.0,
+            double qValueCutoffForPepCalculation = 0.005,
             double scoreCutoff = 5, 
             int? numberOfPeaksToKeepPerWindow = 200, 
             double? minimumAllowedIntensityRatioToBasePeak = 0.01, 
@@ -67,6 +68,7 @@ namespace EngineLayer
             TotalPartitions = totalPartitions;
             QValueThreshold = qValueThreshold;
             PepQValueThreshold = pepQValueThreshold;
+            QValueCutoffForPepCalculation = qValueCutoffForPepCalculation;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
             MinimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatioToBasePeak;
@@ -157,6 +159,11 @@ namespace EngineLayer
         /// </summary>
         public double PepQValueThreshold { get; private set; }
         public double ScoreCutoff { get; private set; }
+        /// <summary>
+        /// This parameter determines which PSMs/Peptides will be used as postive training examples
+        /// when training the GBDT model for PEP. 
+        /// </summary>
+        public double QValueCutoffForPepCalculation { get; private set; }
         public DigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
         public int? NumberOfPeaksToKeepPerWindow { get; private set; }
@@ -225,6 +232,7 @@ namespace EngineLayer
                                 TotalPartitions,
                                 QValueThreshold,
                                 PepQValueThreshold,
+                                QValueCutoffForPepCalculation,
                                 ScoreCutoff,
                                 NumberOfPeaksToKeepPerWindow,
                                 MinimumAllowedIntensityRatioToBasePeak,
