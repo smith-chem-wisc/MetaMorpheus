@@ -728,7 +728,8 @@ namespace TaskLayer
                 includeDecoys: false,
                 includeContaminants: false,
                 includeAmbiguous: false,
-                includeHighQValuePsms: false);
+                includeHighQValuePsms: false
+                );
 
 
             //group psms by peptide and charge, then write highest scoring PSM to dictionary
@@ -766,6 +767,10 @@ namespace TaskLayer
                     }
                     // once the spectrum is added, it is removed from the dictionary
                     psmSeqChargeDictionary.Remove((ogLibrarySpectrum.Sequence, ogLibrarySpectrum.ChargeState));
+                }
+                else // if the spectrum is not in the dictionary, we keep the original spectrum
+                {
+                    updatedLibrarySpectra.Add(ogLibrarySpectrum);
                 }
             }
 
