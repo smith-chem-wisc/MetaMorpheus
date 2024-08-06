@@ -86,8 +86,11 @@ namespace TaskLayer
             {
                 // create individual files subdirectory
                 Directory.CreateDirectory(Parameters.IndividualResultsOutputFolder);
-                WriteIndividualPsmResults();
-                WriteIndividualPeptideResults();
+                if (Parameters.SearchParameters.WriteIndividualFiles)
+                {
+                    WriteIndividualPsmResults();
+                    WriteIndividualPeptideResults();
+                }
             }
             WriteProteinResults();
             AddResultsTotalsToAllResultsTsv();
@@ -644,7 +647,7 @@ namespace TaskLayer
                 Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
                     "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." + Environment.NewLine);
             }
-            string peptideResultsText = "All target peptides with " + peptidesForPeptideResults.FilterType + " <= " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
+            string peptideResultsText = $"All target {GlobalVariables.AnalyteType.ToLower()}s with " + peptidesForPeptideResults.FilterType + " <= " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
                 peptidesForPeptideResults.TargetPsmsAboveThreshold;
             ResultsDictionary[("All", GlobalVariables.AnalyteType)] = peptideResultsText;
         }
@@ -712,12 +715,12 @@ namespace TaskLayer
                     filterAtPeptideLevel: true);
 
                 // write PSMs
-                string writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + "_Peptides.psmtsv");
+                string writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + $"_{GlobalVariables.AnalyteType}s.psmtsv");
                 WritePsmsToTsv(peptidesToWrite, writtenFile, writePeptideLevelResults: true);
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string peptideResultsText = strippedFileName + " - Target peptides with " + peptidesToWrite.FilterType + " <= " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
+                string peptideResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.ToLower()}s with " + peptidesToWrite.FilterType + " <= " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
                                         peptidesToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, GlobalVariables.AnalyteType)] = peptideResultsText;
             }
