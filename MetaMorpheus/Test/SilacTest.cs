@@ -213,7 +213,7 @@ namespace Test
             Assert.IsTrue(File.Exists(mzIDPath1));
             Assert.IsTrue(File.Exists(mzIDPath2));
 
-            Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value = 0.01: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
+            Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value <= 0.01: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
             ///Normal Peptide
             //test proteins
