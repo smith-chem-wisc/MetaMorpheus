@@ -30,6 +30,7 @@ namespace EngineLayer
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
             PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
+            PrecursorFractionalIntensity = scan.PrecursorFractionalIntensity;
             DigestionParams = commonParameters.DigestionParams;
             BioPolymersWithSetModsToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
@@ -67,11 +68,25 @@ namespace EngineLayer
         public double ScanPrecursorMonoisotopicPeakMz { get; }
         public double PrecursorScanIntensity { get; }
         public int PrecursorScanEnvelopePeakCount { get; }
+        public double PrecursorFractionalIntensity { get; }
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingBioPolymersWithSetMods.Count; } }
-        public FdrInfo FdrInfo { get; private set; }
+
+        public FdrInfo FdrInfo
+        {
+            get => PsmFdrInfo;
+            set => PsmFdrInfo = value;
+
+        }
+        public FdrInfo PsmFdrInfo { get;  set; }
+        public FdrInfo PeptideFdrInfo { get;  set; }
+        public FdrInfo GetFdrInfo(bool peptideLevel)
+        {
+            return peptideLevel ? PeptideFdrInfo : PsmFdrInfo;
+        }
+
         public PsmData PsmData_forPEPandPercolator { get; set; }
 
         public double Score { get; private set; }
@@ -264,18 +279,18 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned).Values);
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr).Values);
         }
 
-        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
-            PsmTsvWriter.AddMatchScoreData(s, psm);
+            PsmTsvWriter.AddMatchScoreData(s, psm, writePeptideLevelFdr);
             return s;
         }
 
@@ -366,7 +381,17 @@ namespace EngineLayer
 
         #endregion
 
+        #region FDR
 
+        private string _chimeraIdString;
+        public string ChimeraIdString => _chimeraIdString ??= $"{ScanNumber}{FullFilePath}{PrecursorScanNumber}";
+
+        /// <summary>
+        /// Returns an integer representing the longest continuous number of residues in the match covered on both sides by fragment ions
+        /// </summary>
+        /// <param name="PeptidesToMatchingFragments"></param>
+        /// <param name="peptide"></param>
+        /// <returns></returns>
         public static int GetLongestIonSeriesBidirectional(Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments, IBioPolymerWithSetMods peptide)
         {
             List<int> maxDiffs = new List<int> { 1 };
@@ -517,6 +542,8 @@ namespace EngineLayer
                 return 0;
             }
         }
+
+        #endregion
 
         /// <summary>
         /// There are a few key locations in MetaMorpheus where we want to have psms sorted in a consistent manner.

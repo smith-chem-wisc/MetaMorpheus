@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -1030,17 +1030,34 @@ namespace Test
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", new CommonParameters()) };
 
             new FdrAnalysisEngine(psms, 0, new CommonParameters(), fsp, new List<string>()).Run();
-            psms = psms.OrderByDescending(p => p.Score).ToList();
+            psms = psms.OrderByDescending(p => p).ToList();
 
+            //q-value is computed   as targetCount / (decoyCount + targetCount) for each protease separately
+            //once a higher q-value is found, it is used for all subsequent PSMs with the same protease even if increasing number of targets would lower the q-value
+
+            //	Row	t/d	score	protease	targetCount	decoyCount	q-value
+            //	0	t	20	tryp	1	0	0
+            //	1	t	19	gluC	1	0	0
+            //	2	t	18	tryp	2	0	0
+            //	3	t	17	gluC	2	0	0
+            //	4	d	16	gluC	2	1	0.5
+            //	5	t	15	gluC	3	1	0.5
+            //	6	t	14	tryp	3	0	0
+            //	7	d	13	tryp	3	1	0.333333333
+            //	8	d	12	tryp	3	2	0.666666667
+            //	9	t	11	tryp	4	2	0.666666667
+
+            Assert.AreEqual(0.00, Math.Round(psms[0].FdrInfo.QValue, 2));
             Assert.AreEqual(0.00, Math.Round(psms[1].FdrInfo.QValue, 2));
             Assert.AreEqual(0.00, Math.Round(psms[2].FdrInfo.QValue, 2));
             Assert.AreEqual(0.00, Math.Round(psms[3].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.5, Math.Round(psms[4].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[5].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.50, Math.Round(psms[4].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.50, Math.Round(psms[5].FdrInfo.QValue, 2));
             Assert.AreEqual(0.00, Math.Round(psms[6].FdrInfo.QValue, 2));
             Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
             Assert.AreEqual(0.67, Math.Round(psms[8].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.5, Math.Round(psms[9].FdrInfo.QValue, 2));
+            Assert.AreEqual(0.67, Math.Round(psms[9].FdrInfo.QValue, 2));
+
         }
     }
 }

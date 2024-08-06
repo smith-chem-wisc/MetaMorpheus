@@ -55,7 +55,7 @@ namespace EngineLayer.ClassicSearch
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            Status("Getting ms2 scans...");
+           Status("Getting ms2 scans...");
 
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
