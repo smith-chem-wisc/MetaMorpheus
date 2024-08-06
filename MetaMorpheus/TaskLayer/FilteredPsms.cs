@@ -24,7 +24,7 @@ namespace TaskLayer
         /// <summary>
         /// Filter type can have only two values: "q-value" or "pep q-value"
         /// </summary>
-        public string FilterType { get; init; }
+        public FilterType FilterType { get; init; }
         public double FilterThreshold { get; init; }
         public bool FilteringNotPerformed { get; init; }
         public bool PeptideLevelFiltering { get; init; }
