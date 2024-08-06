@@ -31,6 +31,9 @@ namespace TaskLayer
         private List<EngineLayer.ProteinGroup> ProteinGroups { get; set; }
         private SpectralRecoveryResults SpectralRecoveryResults { get; set; }
 
+        /// <summary>
+        /// Used for storage of results for writing to Results.tsv. It is explained in the method ConstructResultsDictionary()
+        /// </summary>
         private Dictionary<(string,string),string> ResultsDictionary { get; set; }
 
         public PostSearchAnalysisTask()
@@ -61,8 +64,9 @@ namespace TaskLayer
             {
                 Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
                 Parameters.AllPsms.ForEach(psm => psm.ResolveAllAmbiguities());
-                Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b.Score)
-                    .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
+                // The GroupBy statement below gets rid of duplicate PSMs that can occur when the same peptides is matched to the same spectrum multiple times,
+                // just with slightly different precursor masses.
+                Parameters.AllPsms = Parameters.AllPsms.OrderByDescending(b => b)
                     .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
                 CalculatePsmAndPeptideFdr(Parameters.AllPsms);
             }
@@ -611,10 +615,8 @@ namespace TaskLayer
                     "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." +
                     Environment.NewLine);
             }
-
-            string psmResultsText = "All target PSMs with " + psmsForPsmResults.GetFilterTypeString() + " = " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
+            string psmResultsText = "All target PSMs with " + psmsForPsmResults.FilterType + " = " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
                 psmsForPsmResults.TargetPsmsAboveThreshold;
-
             ResultsDictionary[("All", "PSMs")] = psmResultsText;
         }
         private void WritePeptideResults()
@@ -640,8 +642,7 @@ namespace TaskLayer
                 Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(
                     "PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value." + Environment.NewLine);
             }
-
-            string peptideResultsText = "All target peptides with " + peptidesForPeptideResults.GetFilterTypeString() + " = " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
+            string peptideResultsText = "All target peptides with " + peptidesForPeptideResults.FilterType + " = " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
                 peptidesForPeptideResults.TargetPsmsAboveThreshold;
             ResultsDictionary[("All", "Peptides")] = peptideResultsText;
         }
@@ -678,7 +679,7 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string psmResultsText = strippedFileName + " - All target PSMs with " + psmsToWrite.GetFilterTypeString() + " = " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " +
+                string psmResultsText = strippedFileName + " - All target PSMs with " + psmsToWrite.FilterType + " = " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " +
                                         psmsToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, "PSMs")] = psmResultsText;
             }
@@ -714,8 +715,8 @@ namespace TaskLayer
                 FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", psmFileGroup.Key });
 
                 // write summary text
-                string peptideResultsText = strippedFileName + " - All target peptides with " + peptidesToWrite.GetFilterTypeString() + " = " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " + peptidesToWrite.TargetPsmsAboveThreshold;
-
+                string peptideResultsText = strippedFileName + " - All target peptides with " + peptidesToWrite.FilterType + " = " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
+                                        peptidesToWrite.TargetPsmsAboveThreshold;
                 ResultsDictionary[(strippedFileName, "Peptides")] = peptideResultsText;
             }
                 
@@ -727,8 +728,7 @@ namespace TaskLayer
                 includeDecoys: false,
                 includeContaminants: false,
                 includeAmbiguous: false,
-                includeHighQValuePsms: false,
-                filterAtPeptideLevel: true);
+                includeHighQValuePsms: false);
 
 
             //group psms by peptide and charge, then write highest scoring PSM to dictionary
@@ -1848,7 +1848,12 @@ namespace TaskLayer
                 FinishedWritingFile(filePath, nestedIds);
             }
         }
-
+        /// <summary>
+        /// This is a handy dictionary to keep track of the PSM, peptide and protein count results at the
+        ///  "All" level and at the individual raw file level.
+        ///  The keys are a tuple such as ("All", "PSMs") or ("RawFileName", "Peptides")
+        //   The values are the results as a string
+        /// </summary>
         private void ConstructResultsDictionary()
         {
             ResultsDictionary = new();

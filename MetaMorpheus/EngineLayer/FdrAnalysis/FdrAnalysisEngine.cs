@@ -30,16 +30,14 @@ namespace EngineLayer.FdrAnalysis
 
         private void AddPsmAndPeptideFdrInfoIfNotPresent()
         {
-            foreach (var psm in AllPsms.Where(p => p.PsmFdrInfo == null))
+            foreach (var psm in AllPsms.Where(p=> p.PsmFdrInfo == null))
             {
-                psm.PsmFdrInfo = new FdrInfo();      
-                psm.PsmFdrInfo.PEP = 2; // If for some reason PEP is not calculated, we want to make sure it's put at the bottom of the list when sorting by PEP
+                psm.PsmFdrInfo = new FdrInfo();                
             }
 
             foreach (var psm in AllPsms.Where(p => p.PeptideFdrInfo == null))
             {
                 psm.PeptideFdrInfo = new FdrInfo();
-                psm.PeptideFdrInfo.PEP = 2; // If for some reason PEP is not calculated, we want to make sure it's put at the bottom of the list when sorting by PEP
             }
         }
 
@@ -86,7 +84,7 @@ namespace EngineLayer.FdrAnalysis
                         peptides = psms
                             .OrderByDescending(p => p)
                             .GroupBy(p => p.FullSequence)
-                            .Select(g => g.FirstOrDefault())
+                            .Select(p => p.FirstOrDefault())
                             .OrderBy(p => p.FdrInfo.PEP) // Then order by PEP (PSM PEP and Peptide PEP are the same)
                             .ThenByDescending(p => p)
                             .ToList();
@@ -104,7 +102,7 @@ namespace EngineLayer.FdrAnalysis
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
                 }
-                else
+                else if(psms.Any(psm => psm.FdrInfo.PEP > 0)) 
                 {
                     // If PEP's have been calculated, but doPEP = false, then we don't want to train another model,
                     // but we do want to calculate pep q-values
@@ -113,7 +111,7 @@ namespace EngineLayer.FdrAnalysis
                     peptides = psms
                             .OrderByDescending(p => p)
                             .GroupBy(p => p.FullSequence)
-                            .Select(g => g.FirstOrDefault())
+                            .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on MBR score
                             .OrderBy(p => p.FdrInfo.PEP) // Then order by PEP (PSM PEP and Peptide PEP are the same)
                             .ThenByDescending(p => p)
                             .ToList();
