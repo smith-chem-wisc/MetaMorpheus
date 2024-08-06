@@ -658,7 +658,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
-        [Test] 
+        [Test]
         public static void OGlycoTest_Run5_WriteContaminants()
         {
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
