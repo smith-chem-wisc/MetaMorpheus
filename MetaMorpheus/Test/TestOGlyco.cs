@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -22,6 +23,7 @@ using iText.IO.Font.Otf;
 using static Nett.TomlObjectFactory;
 using Omics.SpectrumMatch;
 using TopDownProteomics;
+using MzLibUtil;
 
 namespace Test
 {
