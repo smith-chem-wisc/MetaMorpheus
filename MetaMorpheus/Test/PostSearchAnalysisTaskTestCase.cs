@@ -66,7 +66,7 @@ public class PostSearchAnalysisTaskTestCase
     };
 
     private static PostSearchAnalysisTaskTestCase _bottomUpQValue;
-    public static PostSearchAnalysisTaskTestCase BottomUpQValue
+    internal static PostSearchAnalysisTaskTestCase BottomUpQValue
     {
         get
         {
