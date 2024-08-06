@@ -1,4 +1,5 @@
-﻿using System;
+﻿using EngineLayer.CrosslinkSearch;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -281,12 +282,13 @@ namespace EngineLayer.FdrAnalysis
                case "top-down":
                     searchType = "top-down";
                     break;
-                case "crosslink":
-                    searchType = "crosslink";
-                    break;
                 default:
                     searchType = "standard";
                     break;
+            }
+            if (psms[0] is CrosslinkSpectralMatch)
+            {
+                searchType = "crosslink";
             }
             myAnalysisResults.BinarySearchTreeMetrics = new PepAnalysisEngine(psms, searchType, FileSpecificParameters, OutputFolder).ComputePEPValuesForAllPSMs();
 

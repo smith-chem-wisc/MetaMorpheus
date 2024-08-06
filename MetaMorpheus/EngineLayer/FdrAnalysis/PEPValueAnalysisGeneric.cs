@@ -245,7 +245,7 @@ namespace EngineLayer
                         foreach (var psm in peptideGroups[peptideGroupIndices[i]].GetBestMatchByMod())
                         {
                             PsmData newPsmData = new PsmData();
-                            if (searchType == "crosslink")
+                            if (searchType == "crosslink" && ((CrosslinkSpectralMatch)psm).BetaPeptide != null)
                             {
                                 CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
 

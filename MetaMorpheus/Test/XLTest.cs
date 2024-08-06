@@ -417,14 +417,14 @@ namespace Test
             }
 
             MyFileManager myFileManager = new MyFileManager(true);
-            CommonParameters CommonParameters = new CommonParameters(digestionParams: new DigestionParams(), maxThreadsToUsePerFile: 1);
+            CommonParameters commonParameters2 = new CommonParameters(digestionParams: new DigestionParams(), maxThreadsToUsePerFile: 1);
 
             var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
-            fsp.Add((Path.GetFileName(newFileName), CommonParameters));
+            fsp.Add((Path.GetFileName(newFileName), commonParameters2));
 
-            var myMsDataFile = myFileManager.LoadFile(newFileName, CommonParameters);
+            var myMsDataFile = myFileManager.LoadFile(newFileName, commonParameters2);
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(myMsDataFile, newFileName, CommonParameters, out List<List<(double, int, double)>> precursorss).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = MetaMorpheusTask.GetMs2ScansWrapByScanNum(myMsDataFile, newFileName, commonParameters2, out List<List<(double, int, double)>> precursorss).ToArray();
 
             //Generate crosslinker, which is DSS here.
             Crosslinker crosslinker = GlobalVariables.Crosslinkers.Where(p => p.CrosslinkerName == "DSS").First();
@@ -529,9 +529,45 @@ namespace Test
             Assert.AreEqual(0, deadendTris);
             Assert.AreEqual(0, unnasignedCrossType);
 
-            var fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra).ToList<SpectralMatch>(), 1, CommonParameters, fsp, new List<string>(), "crosslink").Run();
+            // We have pretty high peptide-level q values for crosslinks, so we need to up the cut-off is we want PEP to run
+            commonParameters2.QValueCutoffForPepCalculation = 0.05;
+            var fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra).ToList<SpectralMatch>(), 1, commonParameters2, fsp, new List<string>(), "crosslink").Run();
 
-            fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType != PsmCrossType.Inter && c.CrossType != PsmCrossType.Intra).ToList<SpectralMatch>(), 1, CommonParameters, fsp, new List<string>(), "standard").Run();
+            unnasignedCrossType = 0;
+            inter = 0;
+            intra = 0;
+            single = 0;
+            loop = 0;
+            deadend = 0;
+            deadendH2O = 0;
+            deadendNH2 = 0;
+            deadendTris = 0;
+
+            foreach (CrosslinkSpectralMatch csm in firstCsmsFromListsOfCsms.Where(c => (c.CrossType == PsmCrossType.Inter || c.CrossType == PsmCrossType.Intra) && c.FdrInfo.PEP_QValue <= 0.02).ToList())
+            {
+                switch (csm.CrossType)
+                {
+                    case PsmCrossType.Inter:
+                        inter++;
+                        break;
+
+                    case PsmCrossType.Intra:
+                        intra++;
+                        break;
+
+                    default:
+                        unnasignedCrossType++;
+                        break;
+                }
+            }
+
+            Assert.AreEqual(35, inter);
+            Assert.AreEqual(70, intra);
+            Assert.AreEqual(0, unnasignedCrossType);
+
+
+            // We have pretty high peptide-level q values for crosslinks, so we need to up the cut-off is we want PEP to run
+            fdrResultsXLink = new FdrAnalysisEngine(firstCsmsFromListsOfCsms.Where(c => c.CrossType != PsmCrossType.Inter && c.CrossType != PsmCrossType.Intra).ToList<SpectralMatch>(), 1, commonParameters2, fsp, new List<string>(), "standard").Run();
 
             unnasignedCrossType = 0;
             inter = 0;
