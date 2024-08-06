@@ -632,7 +632,7 @@ namespace TaskLayer
                 filterAtPeptideLevel: true);
 
             // write PSMs
-            string writtenFile = Path.Combine(Parameters.OutputFolder, "AllPeptides.psmtsv");
+            string writtenFile = Path.Combine(Parameters.OutputFolder, $"All{GlobalVariables.AnalyteType}s.psmtsv");
             WritePsmsToTsv(peptidesForPeptideResults.OrderByDescending(p => p).ToList(), writtenFile, writePeptideLevelResults: true);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
@@ -644,7 +644,7 @@ namespace TaskLayer
             }
             string peptideResultsText = "All target peptides with " + peptidesForPeptideResults.FilterType + " = " + Math.Round(peptidesForPeptideResults.FilterThreshold, 2) + ": " +
                 peptidesForPeptideResults.TargetPsmsAboveThreshold;
-            ResultsDictionary[("All", "Peptides")] = peptideResultsText;
+            ResultsDictionary[("All", GlobalVariables.AnalyteType)] = peptideResultsText;
         }
 
         private void WriteIndividualPsmResults()
@@ -717,7 +717,7 @@ namespace TaskLayer
                 // write summary text
                 string peptideResultsText = strippedFileName + " - All target peptides with " + peptidesToWrite.FilterType + " = " + Math.Round(peptidesToWrite.FilterThreshold, 2) + ": " +
                                         peptidesToWrite.TargetPsmsAboveThreshold;
-                ResultsDictionary[(strippedFileName, "Peptides")] = peptideResultsText;
+                ResultsDictionary[(strippedFileName, GlobalVariables.AnalyteType)] = peptideResultsText;
             }
                 
         }
@@ -1851,18 +1851,19 @@ namespace TaskLayer
                 FinishedWritingFile(filePath, nestedIds);
             }
         }
+
         /// <summary>
         /// This is a handy dictionary to keep track of the PSM, peptide and protein count results at the
         ///  "All" level and at the individual raw file level.
         ///  The keys are a tuple such as ("All", "PSMs") or ("RawFileName", "Peptides")
-        //   The values are the results as a string
+        ///   The values are the results as a string
         /// </summary>
         private void ConstructResultsDictionary()
         {
             ResultsDictionary = new();
 
             ResultsDictionary.Add(("All", "PSMs"),"");
-            ResultsDictionary.Add(("All", "Peptides"), "");
+            ResultsDictionary.Add(("All", GlobalVariables.AnalyteType), "");
 
             if (Parameters.CurrentRawFileList.Count > 1 && Parameters.SearchParameters.WriteIndividualFiles)
             {
@@ -1870,7 +1871,7 @@ namespace TaskLayer
                 {
                     string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(rawFile);
                     ResultsDictionary.Add((fileNameWithoutExtension, "PSMs"), "");
-                    ResultsDictionary.Add((fileNameWithoutExtension, "Peptides"), "");
+                    ResultsDictionary.Add((fileNameWithoutExtension, GlobalVariables.AnalyteType), "");
                 }
             }
 
