@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -13,12 +14,8 @@ using UsefulProteomicsDatabases;
 using Nett;
 using EngineLayer.GlycoSearch;
 using FlashLFQ;
-using NUnit.Framework.Internal;
 using SpectralAveraging;
-using Chemistry;
-using MzLibUtil;
-using Readers;
-using System.Text;
+using NUnit.Framework.Legacy;
 using Omics.Modifications;
 using ThermoFisher.CommonCore.BackgroundSubtraction;
 using Easy.Common.Extensions;
@@ -26,6 +23,7 @@ using iText.IO.Font.Otf;
 using static Nett.TomlObjectFactory;
 using Omics.SpectrumMatch;
 using TopDownProteomics;
+using MzLibUtil;
 
 namespace Test
 {
