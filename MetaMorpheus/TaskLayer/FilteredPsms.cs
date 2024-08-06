@@ -114,7 +114,7 @@ namespace TaskLayer
 
             if (!includeHighQValuePsms)
             {
-                filteredPsms = filterType.Equals("q-value")
+                filteredPsms = filterType.Equals(FilterType.QValue)
                     ? psms.Where(p => p.GetFdrInfo(filterAtPeptideLevel) != null
                         && p.GetFdrInfo(filterAtPeptideLevel).QValue <= filterThreshold
                         && p.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= filterThreshold).ToList()
