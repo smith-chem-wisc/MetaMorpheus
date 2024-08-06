@@ -1,10 +1,7 @@
-﻿using Chemistry;
-using EngineLayer;
-using EngineLayer.CrosslinkSearch;
+﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
-using EngineLayer.Indexing;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -13,9 +10,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
-using UsefulProteomicsDatabases;
 using MzLibUtil;
 using Nett;
+using NUnit.Framework.Legacy;
 using Omics.Modifications;
 
 namespace Test
@@ -83,7 +80,7 @@ namespace Test
         [Test]
         public static void GlyTest_GetKindString()
         {
-            byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
             string kindString = Glycan.GetKindString(kind);
             Assert.AreEqual("H3N4F1", kindString);
         }

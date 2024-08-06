@@ -73,7 +73,20 @@ namespace EngineLayer
         public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingBioPolymersWithSetMods.Count; } }
-        public FdrInfo FdrInfo { get; private set; }
+
+        public FdrInfo FdrInfo
+        {
+            get => PsmFdrInfo;
+            set => PsmFdrInfo = value;
+
+        }
+        public FdrInfo PsmFdrInfo { get;  set; }
+        public FdrInfo PeptideFdrInfo { get;  set; }
+        public FdrInfo GetFdrInfo(bool peptideLevel)
+        {
+            return peptideLevel ? PeptideFdrInfo : PsmFdrInfo;
+        }
+
         public PsmData PsmData_forPEPandPercolator { get; set; }
 
         public double Score { get; private set; }
@@ -266,18 +279,18 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned).Values);
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr).Values);
         }
 
-        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned)
+        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
-            PsmTsvWriter.AddMatchScoreData(s, psm);
+            PsmTsvWriter.AddMatchScoreData(s, psm, writePeptideLevelFdr);
             return s;
         }
 

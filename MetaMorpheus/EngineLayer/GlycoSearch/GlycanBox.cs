@@ -125,9 +125,9 @@ namespace EngineLayer
         /// </summary>
         /// <param name="ids"> The glycanBox composition, each number represent one glycan index in the database</param>
         /// <param name="targetDecoy"></param>
-        public GlycanBox(int[] ids, bool targetDecoy = true):base(ids)
+        public GlycanBox(int[] ids, bool Istarget = true):base(ids)
         {
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
             foreach (var id in ModIds) //ModIds is the same as ids.
             {
                 for (int i = 0; i < kind.Length; i++)   
@@ -137,7 +137,7 @@ namespace EngineLayer
             }
             Kind = kind;
 
-            if (targetDecoy)
+            if (Istarget)
             {
                 Mass = (double)Glycan.GetMass(Kind) / 1E5;
             }

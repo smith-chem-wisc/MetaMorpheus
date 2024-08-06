@@ -2,12 +2,13 @@
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using TaskLayer;

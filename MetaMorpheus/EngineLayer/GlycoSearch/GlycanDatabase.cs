@@ -93,7 +93,7 @@ namespace EngineLayer
         /// <returns> The glycan Kind List ex. [2, 5, 0, 0, 1, 0, 0, 0, 0, 1] </returns>
         public static byte[] String2Kind(string line) 
         {
-            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+            byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
             var x = line.Split(new char[] { '(', ')' });
             int i = 0;
             while (i < x.Length - 1)
@@ -370,7 +370,7 @@ namespace EngineLayer
 
         private static GlycanIon GenerateGlycanIon(byte hexose_count, byte hexnac_count, byte fuc_count, byte xyl_count, int glycan_mass)
         {
-            byte[] ionKind = new byte[] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, 0, xyl_count };
+            byte[] ionKind = new byte[] { hexose_count, hexnac_count, 0, 0, fuc_count, 0, 0, 0, 0, xyl_count,0 };
 
             int ionMass = Glycan.GetMass(ionKind);
 

@@ -16,7 +16,7 @@ namespace EngineLayer.GlycoSearch
     {
         public static readonly double ToleranceForMassDifferentiation = 1e-9;
         private readonly int OxoniumIon204Index = 9;               // Check Glycan.AllOxoniumIons
-        protected readonly List<GlycoSpectralMatch>[] GlobalCsms;  // Why don't we call it GlobalGsms?
+        protected readonly List<GlycoSpectralMatch>[] GlobalGsms;  // Why don't we call it GlobalGsms?
 
         private GlycoSearchType GlycoSearchType;
         private readonly int TopN;              // DDA top Peak number.
@@ -36,7 +36,7 @@ namespace EngineLayer.GlycoSearch
              string oglycanDatabase, string nglycanDatabase, GlycoSearchType glycoSearchType, int glycoSearchTopNum, int maxOGlycanNum, bool oxoniumIonFilter, List<string> nestedIds)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
-            this.GlobalCsms = globalCsms;
+            this.GlobalGsms = globalCsms;
             this.GlycoSearchType = glycoSearchType;
             this.TopN = glycoSearchTopNum;
             this._maxOGlycanNum = maxOGlycanNum;
@@ -201,14 +201,14 @@ namespace EngineLayer.GlycoSearch
                             continue;
                         }
 
-                        if (GlobalCsms[scanIndex] == null)
+                        if (GlobalGsms[scanIndex] == null)
                         {
-                            GlobalCsms[scanIndex] = new List<GlycoSpectralMatch>(); //the first one finished task, create teh new gsms list.
+                            GlobalGsms[scanIndex] = new List<GlycoSpectralMatch>(); //the first one finished task, create teh new gsms list.
                         }
                         else
                         {
-                            gsms.AddRange(GlobalCsms[scanIndex]);
-                            GlobalCsms[scanIndex].Clear();                       
+                            gsms.AddRange(GlobalGsms[scanIndex]);
+                            GlobalGsms[scanIndex].Clear();                       
                         }
 
                         Add2GlobalGsms(ref gsms, scanIndex);
@@ -248,7 +248,7 @@ namespace EngineLayer.GlycoSearch
                         preScore = gsm.Score;
                         preString = gsm.FullSequence;
 
-                        GlobalCsms[scanIndex].Add(gsm);
+                        GlobalGsms[scanIndex].Add(gsm);
                         gsmsCount++;
                     }
                     else 
@@ -262,14 +262,14 @@ namespace EngineLayer.GlycoSearch
                             {
                                 foreach ((int, PeptideWithSetModifications Peptide) bestMatchPeptide in gsm.BestMatchingBioPolymersWithSetMods) // We should add tje new ProteinMatch to the gsm. 
                                 {                                                                                                               // Because the indentical sequence may from the different protein.
-                                    GlobalCsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide, gsm.BioPolymersWithSetModsToMatchingFragments[bestMatchPeptide.Peptide]);
+                                    GlobalGsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide, gsm.BioPolymersWithSetModsToMatchingFragments[bestMatchPeptide.Peptide]);
 
                                 }
                             }
                             else
                             {
                                 preString = currentString;
-                                GlobalCsms[scanIndex].Add(gsm);
+                                GlobalGsms[scanIndex].Add(gsm);
                                 gsmsCount++;
                             }
                         }
@@ -402,6 +402,9 @@ namespace EngineLayer.GlycoSearch
         /// <param name="possibleMatches"> The space to store the gsms </param>
         private void FindOGlycan(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications theScanBestPeptide, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<GlycoSpectralMatch> possibleMatches)
         {
+            // The glycanBoxes will be filtered by the oxonium ions. If the oxonium ions don't make sense, we will remove the glycanBox.
+
+
             int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
 
             int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray(); //list all of the possible glycoslation site/postition
@@ -437,7 +440,7 @@ namespace EngineLayer.GlycoSearch
 
             while (iDLow < GlycanBox.OGlycanBoxes.Count() && (PrecusorSearchMode.Within(theScan.PrecursorMass, theScanBestPeptide.MonoisotopicMass + GlycanBox.OGlycanBoxes[iDLow].Mass))) // verify the glycan mass is invaild (within the range and match with mass shift)
             {
-                if (OxoniumIonFilter && !GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow])) // if the filter is turned on, we need to check does the oxoiums make sense.
+                if (OxoniumIonFilter && !GlycoPeptides.DiagonsticFilter(oxoniumIonIntensities, GlycanBox.OGlycanBoxes[iDLow])) // if the filter is turned on, we need to check does the oxoiums make sense.
                 {
                     iDLow++; // if the oxonium ions don't make sense (there is no 204, or without their diagnostic ion), we can skip this glycan.
                     continue;
@@ -613,6 +616,7 @@ namespace EngineLayer.GlycoSearch
         private List<GlycoSpectralMatch> FindOGlycopeptideHashLocal(Ms2ScanWithSpecificMass theScan, List<int> idsOfPeptidesPossiblyObserved, int scanIndex, int scoreCutOff)
         {
             List<GlycoSpectralMatch> possibleMatches = new List<GlycoSpectralMatch>();
+
 
             for (int ind = 0; ind < idsOfPeptidesPossiblyObserved.Count; ind++)
             {
