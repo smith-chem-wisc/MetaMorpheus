@@ -33,7 +33,7 @@ namespace Test
             int missedCleavages = 0;
             CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full;
             string peptideDescription = null;
-            int? pairedTargetDecoyHash = null;
+            string? pairedTargetDecoyHash = null;
 
             PeptideWithSetModifications pwsmNoBaseSequence = new(sequence, allKnownMods, numFixedMods, digestionParams, myProtein,
                 oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, cleavageSpecificity,
