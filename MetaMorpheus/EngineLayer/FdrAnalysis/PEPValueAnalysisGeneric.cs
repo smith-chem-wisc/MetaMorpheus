@@ -242,30 +242,39 @@ namespace EngineLayer
                         if (GlobalVariables.StopLoops) { return; }
 
                         int modCount = 0;
-                        foreach (var psm in peptideGroups[peptideGroupIndices[i]].GetBestMatchByMod())
+                        foreach (var psm in peptideGroups[peptideGroupIndices[i]].GetBestMatchByMod().Where(psm => psm != null))
                         {
                             PsmData newPsmData = new PsmData();
-                            if (searchType == "crosslink" && ((CrosslinkSpectralMatch)psm).BetaPeptide != null)
+                            if (searchType == "crosslink" && ((CrosslinkSpectralMatch)psm)?.BetaPeptide != null)
                             {
-                                CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
+                                try
+                                {
+                                    CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
 
-                                bool label;
-                                if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
-                                {
-                                    label = false;
-                                    newPsmData = CreateOnePsmDataEntry(searchType, psm, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
+                                    bool label;
+                                    if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
+                                    {
+                                        label = false;
+                                        newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
+                                    }
+                                    else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && csm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
+                                    {
+                                        label = true;
+                                        newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
+                                    }
+                                    else
+                                    {
+                                        continue;
+                                    }
+                                    localPsmDataList.Add(newPsmData);
+                                    localPsmOrder.Add(i);
                                 }
-                                else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
+                                catch (Exception ex)
                                 {
-                                    label = true;
-                                    newPsmData = CreateOnePsmDataEntry(searchType, psm, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
+                                    string message = ex.Message;
                                 }
-                                else
-                                {
-                                    continue;
-                                }
-                                localPsmDataList.Add(newPsmData);
-                                localPsmOrder.Add(i);
+
+                                
                             }
                             else
                             {
@@ -572,7 +581,7 @@ namespace EngineLayer
                 }
                 int betaCount = 0;
                 float betaError = 0;
-                if (csm.BetaPeptide.BioPolymersWithSetModsToMatchingFragments[selectedBetaPeptide]?.Count > 0)
+                if (selectedBetaPeptide != null && csm.BetaPeptide.BioPolymersWithSetModsToMatchingFragments[selectedBetaPeptide]?.Count > 0)
                 {
                     betaCount = csm.BetaPeptide.BioPolymersWithSetModsToMatchingFragments[selectedBetaPeptide].Count;
                     betaError = Math.Abs(GetAverageFragmentMassError(csm.BetaPeptide.BioPolymersWithSetModsToMatchingFragments[selectedBetaPeptide]));
