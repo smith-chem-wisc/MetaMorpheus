@@ -33,11 +33,11 @@ namespace Test
             int missedCleavages = 0;
             CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full;
             string peptideDescription = null;
-            string? pairedTargetDecoyHash = null;
+            string pairedTargetDecoySequence = null;
 
             PeptideWithSetModifications pwsmNoBaseSequence = new(sequence, allKnownMods, numFixedMods, digestionParams, myProtein,
                 oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, cleavageSpecificity,
-                peptideDescription, pairedTargetDecoyHash);
+                peptideDescription, pairedTargetDecoySequence);
             PeptideSpectralMatch psmNoBaseSequenceNoMFI = new(pwsmNoBaseSequence, 0, 10, 0, ms2ScanOneMzTen, commonParams,
                 new List<MatchedFragmentIon>());
             psmNoBaseSequenceNoMFI.ResolveAllAmbiguities();
@@ -52,9 +52,10 @@ namespace Test
             sequence = "PEPTIDE";
             oneBasedEndResidueInProtein = Math.Max(sequence.Length, 0);
             myProtein = new Protein(sequence, "ACCESSION");
-            PeptideWithSetModifications pwsmBaseSequence = new(sequence, allKnownMods, numFixedMods, digestionParams, myProtein,
+            var test = new PeptideWithSetModifications(sequence, allKnownMods);
+            PeptideWithSetModifications pwsmBaseSequence = new PeptideWithSetModifications(sequence, allKnownMods, numFixedMods, digestionParams, myProtein,
                 oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, cleavageSpecificity,
-                peptideDescription, pairedTargetDecoyHash);
+                peptideDescription, pairedTargetDecoySequence);
             PeptideSpectralMatch psmBaseSequenceNoMFI = new(pwsmBaseSequence, 0, 10, 0, ms2ScanOneMzTen, commonParams,
                 new List<MatchedFragmentIon>());
 

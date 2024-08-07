@@ -29,6 +29,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="FdrAnalysis\PeptideMatchGroup.cs">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="Contaminants\MetaMorpheusContaminants.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

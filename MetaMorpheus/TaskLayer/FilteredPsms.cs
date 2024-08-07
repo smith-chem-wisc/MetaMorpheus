@@ -8,6 +8,12 @@ using System.Threading.Tasks;
 
 namespace TaskLayer
 {
+    public enum FilterType
+    {
+        QValue,
+        PepQValue
+    }
+
     /// <summary>
     /// Contains a filtered list of PSMs.
     /// All properties within this class are read-only, and should only be set on object construction
@@ -18,11 +24,11 @@ namespace TaskLayer
         /// <summary>
         /// Filter type can have only two values: "q-value" or "pep q-value"
         /// </summary>
-        public string FilterType { get; init; }
+        public FilterType FilterType { get; init; }
         public double FilterThreshold { get; init; }
         public bool FilteringNotPerformed { get; init; }
         public bool PeptideLevelFiltering { get; init; }
-        public FilteredPsms(List<SpectralMatch> filteredPsms, string filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
+        public FilteredPsms(List<SpectralMatch> filteredPsms, FilterType filterType, double filterThreshold, bool filteringNotPerformed, bool peptideLevelFiltering)
         {
             FilteredPsmsList = filteredPsms;
             FilterType = filterType;
@@ -37,11 +43,16 @@ namespace TaskLayer
 
             switch (FilterType)
             {
-                case "pep q-value":
+                case FilterType.PepQValue:
                     return psm.GetFdrInfo(PeptideLevelFiltering).PEP_QValue <= FilterThreshold;
                 default:
                     return psm.GetFdrInfo(PeptideLevelFiltering).QValue <= FilterThreshold && psm.GetFdrInfo(PeptideLevelFiltering).QValueNotch <= FilterThreshold;
             }
+        }
+
+        public string GetFilterTypeString()
+        {
+            return FilterType == FilterType.PepQValue ? "pep q-value" : "q-value";
         }
 
         /// <summary>
@@ -87,7 +98,7 @@ namespace TaskLayer
             List<SpectralMatch> filteredPsms = new List<SpectralMatch>();
 
             // set the filter type
-            string filterType = "q-value";
+            FilterType filterType = FilterType.QValue;
             if (pepQValueThreshold < qValueThreshold)
             {
                 if (psms.Count() < 100)
@@ -97,13 +108,13 @@ namespace TaskLayer
                 }
                 else
                 {
-                    filterType = "pep q-value";
+                    filterType = FilterType.PepQValue;
                 }
             }
 
             if (!includeHighQValuePsms)
             {
-                filteredPsms = filterType.Equals("q-value")
+                filteredPsms = filterType.Equals(FilterType.QValue)
                     ? psms.Where(p => p.GetFdrInfo(filterAtPeptideLevel) != null
                         && p.GetFdrInfo(filterAtPeptideLevel).QValue <= filterThreshold
                         && p.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= filterThreshold).ToList()

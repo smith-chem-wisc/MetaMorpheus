@@ -163,7 +163,7 @@ namespace EngineLayer
         /// This parameter determines which PSMs/Peptides will be used as postive training examples
         /// when training the GBDT model for PEP. 
         /// </summary>
-        public double QValueCutoffForPepCalculation { get; private set; }
+        public double QValueCutoffForPepCalculation { get; set; }
         public DigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
         public int? NumberOfPeaksToKeepPerWindow { get; private set; }
