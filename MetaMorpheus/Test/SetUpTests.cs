@@ -1,6 +1,6 @@
 ﻿// Copyright 2016 Stefan Solntsev
 using EngineLayer;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.IO;
 using TaskLayer;

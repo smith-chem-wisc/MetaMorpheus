@@ -17,8 +17,8 @@ namespace EngineLayer.GlycoSearch
         public ModBox ModBox { get; }
         public ModBox[] ChildModBoxes { get; set; }
 
-        public double NoLocalCost{get; set;} //Note that we have node for each glycosite, the matched ions before the first node and after the last node is scored here.
-        public double TotalScore { get; set; } //Total score is the score of matched ions that are used for localization. For O-glycan, it is the score of all matched c/zDot ions. 
+        public double NoLocalCost{get; set;}   // Note that we have node for each glycosite, the matched ions before the first node and after the last node is scored here.
+        public double TotalScore { get; set; } // Total score is the score of matched ions that are used for localization. For O-glycan, it is the score of all matched c/zDot ions. 
 
         public LocalizationGraph(int[] modPos, ModBox modBox, ModBox[] childModBoxes, int id)
         {
@@ -36,7 +36,13 @@ namespace EngineLayer.GlycoSearch
         }
 
         //The modification problem is turned into a Directed Acyclic Graph. The Graph was build with matrix, and dynamic programming is used.
-        //The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
+        /// <summary>
+        /// The function goes through the AdjNode[][] array from left to right, assign weight to each AdjNode, keep track of the heaviest previous AdjNode.
+        /// </summary>
+        /// <param name="localizationGraph"> The space to store the data </param>
+        /// <param name="theScan"> The MS2 scan</param>
+        /// <param name="productTolerance"></param>
+        /// <param name="products"></param>
         public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
         {
             var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
@@ -44,17 +50,17 @@ namespace EngineLayer.GlycoSearch
             for (int i = 0; i < localizationGraph.ModPos.Length; i++)
             {
                 //maxLength: the most mods we can have up to current mod pos; minlengtt: the least mods we can have up to current mod pos.
-                int maxLength = i + 1;
-                int minlength = localizationGraph.ModBox.ModIds.Length - (localizationGraph.ModPos.Length - 1 - i);
-
+                int maxLength = i + 1; //For the first node, the maxlength is 1. Means we max have one glycan in this positioin.
+                int minlength = localizationGraph.ModBox.ModIds.Length - (localizationGraph.ModPos.Length - 1 - i); //In order to get min number, the min = number of glycan in the box - number of node from the last.
+                                                                                                                    // Total 3 glycan in the box, end position is 7, then for position 5, the min = 3 - (7-5) = 1.
                 for (int j = 0; j < localizationGraph.ChildModBoxes.Length; j++)
                 {
                     if (localizationGraph.ChildModBoxes[j].NumberOfMods <= maxLength && localizationGraph.ChildModBoxes[j].NumberOfMods >= minlength)
                     {
-                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]);
+                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]); //chekc the num of glycan in this node is make sense.
 
                         double cost = 0;
-                        if (i != localizationGraph.ModPos.Length - 1)
+                        if (i != localizationGraph.ModPos.Length - 1) // check the node is not the last one.
                         {              
                             var fragments = GlycoPeptides.GetLocalFragment(products, localizationGraph.ModPos, i, localizationGraph.ModBox, localizationGraph.ChildModBoxes[j]);
                             cost = CalculateCost(theScan, productTolerance, fragments);
@@ -77,7 +83,7 @@ namespace EngineLayer.GlycoSearch
                                 {
                                     adjNode.AllSources.Add(prej);
 
-                                    var tempCost = cost + localizationGraph.array[i - 1][prej].maxCost;
+                                    var tempCost = cost + localizationGraph.array[i - 1][prej].maxCost; //Try to get the max cost from previous AdjNode.
                                     if (tempCost > maxCost)
                                     {
                                         adjNode.CummulativeSources.Clear();
@@ -110,7 +116,13 @@ namespace EngineLayer.GlycoSearch
             localizationGraph.TotalScore = localizationGraph.array[localizationGraph.ModPos.Length - 1][localizationGraph.ChildModBoxes.Length - 1].maxCost + noLocalScore;
         }
 
-        //Based on our implementation of Graph localization. We need to calculate cost between two nearby nodes (glycosites) 
+        /// <summary>
+        /// Calculate the cost/Score of the Scan.
+        /// </summary>
+        /// <param name="theScan"></param>
+        /// <param name="productTolerance"></param>
+        /// <param name="fragments"></param>
+        /// <returns> The Score </returns>
         public static double CalculateCost(Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<double> fragments)
         {
             double score = 0;
@@ -128,7 +140,12 @@ namespace EngineLayer.GlycoSearch
             return score;
         }
 
-        //Check if array1 contains array2 with repeats numbers.
+        /// <summary>
+        /// Check does the node1 contain everything in another node2? 
+        /// </summary>
+        /// <param name="array1"></param>
+        /// <param name="array2"></param>
+        /// <returns>Ture, False </returns>
         private static bool TryGetLeft(int[] array1, int[] array2)
         {
             //Get compliment box
@@ -148,9 +165,12 @@ namespace EngineLayer.GlycoSearch
             return true;
         }
 
-        //The Directed Acyclic Graph is build from left to right. In the process, we need to know which node can linked to nodes from its left. 
-        //Since node contains Childbox. We name this function as BoxSatisfyBox.
-        //The function defines how a childBox could be linked from all childBoxes.
+
+        /// <summary>
+        /// Build a chart for the node connection rule. Used the chart to check if the next node could be linked to the previous node.
+        /// </summary>
+        /// <param name="childBoxes"></param>
+        /// <returns> Chart (one column is previous, one column is current, the value is boolean)</returns>
         public static Dictionary<int, bool[]> BoxSatisfyBox(ModBox[] childBoxes)
         {
             Dictionary<int, bool[]> boxIdBoxes = new Dictionary<int, bool[]>();
@@ -160,7 +180,7 @@ namespace EngineLayer.GlycoSearch
                 for (int j = 0; j <= i; j++)
                 {
                     if (childBoxes[i].NumberOfMods <= childBoxes[j].NumberOfMods + 1 && (childBoxes[j].NumberOfMods ==0 || TryGetLeft(childBoxes[i].ModIds, childBoxes[j].ModIds)))
-                    {
+                    { //Check the next node could be the same or one more mod than the previous node. Besdies, the next node should contain all mods that the previous node has.
                         idBoxes[j] = true;
                     }
                 }
@@ -170,8 +190,13 @@ namespace EngineLayer.GlycoSearch
             return boxIdBoxes;
         }
 
-        //Get all path with hightest score of Directed Acyclic Graph by recursion. 
-        //Start from the last AdjNode[row-1 ][col-1], go back to it Sources, which contains the previous AdjNode with the highest cost.
+
+        /// <summary>
+        /// Try to ll the highest score path in the graph. Start from the last AdjNode[row-1 ][col-1], go back to it Sources, which contains the previous AdjNode with the highest cost.
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="boxes"></param>
+        /// <returns> The path (one or more) with the higgest Score</returns>
         public static List<int[]> GetAllHighestScorePaths(AdjNode[][] array, ModBox[] boxes)
         {
             List<int[]> allPaths = new List<int[]>();
@@ -207,7 +232,12 @@ namespace EngineLayer.GlycoSearch
             }
         }
 
-        //Get one path of Directed Acyclic Graph by recursion.
+        /// <summary>
+        /// Get The toppest position path of in the localGraph by recursion Method.
+        /// </summary>
+        /// <param name="array"></param>
+        /// <param name="boxes"></param>
+        /// <returns></returns>
         public static int[] GetFirstPath(AdjNode[][] array, ModBox[] boxes)
         {
 
@@ -216,7 +246,7 @@ namespace EngineLayer.GlycoSearch
 
             int[] temp = new int[xlength];
 
-            temp[xlength - 1] = ylength - 1;
+            temp[xlength - 1] = ylength - 1; // That is the last node in the graph, position is last one, and the childBpx is also the last one means the whole glycan.
 
             FirstPathHelper(array, xlength - 1, ylength - 1, temp);
 
@@ -225,26 +255,29 @@ namespace EngineLayer.GlycoSearch
 
         private static void FirstPathHelper(AdjNode[][] array, int xind, int yind, int[] temp)
         {
-            if (xind == 0)
+            if (xind == 0) //xind = 0 means, there is just one glycosite. So the node must be the last one in the childBox = whole glycan.
             {
-                return;
+                return; // temp[0] = last one in the childBox = length-1.
             }
 
-            var pre = array[xind][yind].CummulativeSources.First();
+            var pre = array[xind][yind].CummulativeSources.First(); // The first one in the CummulativeSources is the toppest previous node.
             xind--;
             yind = pre;
             temp[xind] = yind;
             FirstPathHelper(array, xind, yind, temp);
         }
 
-        //The original path we get is just an array of AdjNode positions. For example, path = [1, 1, 2, 2] means the best nodes are at array[0][1], array[1][1], array[2][2], array[3][2]
-        //This function here is to transfer the path into localized Route. Route contains each glycosite with glycanId.
-        //Basicly, any change from left to right of the path indicates a modification. For example, the path = [1, 1, 2, 2] which means there is a modification at ModPos[0] and ModPos[2]
+        /// <summary>
+        /// Convert the path inforation into Route object.
+        /// </summary>
+        /// <param name="localizationGraph"></param>
+        /// <param name="path"> ex.[1,1,2,2,5] means the node in the localGraph, first node is ModBox1...last Node is modBox5</param>
+        /// <returns> Route object, present in glycosite-glycan pait format </returns>
         public static Route GetLocalizedPath(LocalizationGraph localizationGraph, int[] path)
         {
             Route route = new Route();
 
-            if (path.Length == 1)
+            if (path.Length == 1) //If there is only one number in the path, we will assined "the first glycan in the childBox" to the glycosite.
             {
                 bool onlyOneLocalized = false;
                 if (localizationGraph.TotalScore > 0)
@@ -255,7 +288,8 @@ namespace EngineLayer.GlycoSearch
                 return route;
             }
 
-            //Add first mod. If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
+            //Add first mod in the first glycosite.
+            //If the childBoxes[path[0]].ModIds.Count == 0, means this is an empty childBox. 
             //Otherwise childBoxes[path[0]].ModIds.Count == 1 and childBoxes[path[0]].ModIds only contains one ModId.
             if (localizationGraph.ChildModBoxes[path[0]].ModIds.Count() != 0)
             {                
@@ -264,7 +298,8 @@ namespace EngineLayer.GlycoSearch
 
             for (int i = 1; i < path.Length; i++)
             {
-                //If there is a change of the path, get the difference between the two Adjnodes of the array.
+                // If there is a change of the path, get the difference between the two Adjnodes of the array.
+                // If the node is the same childBox as the previous node. That means there is no modification at this glycosite. We can move on to the next glycosite.
                 if (path[i] != path[i - 1])
                 {
                     var left = GetLeft(localizationGraph.array[i][path[i]].ModBox.ModIds, localizationGraph.array[i - 1][path[i - 1]].ModBox.ModIds).First();
@@ -277,7 +312,13 @@ namespace EngineLayer.GlycoSearch
             return route;
         }
 
-        //Get the difference between array 1 and array 2 with repeat numbers.
+
+        /// <summary>
+        /// Get the difference in glycan between two node.
+        /// </summary>
+        /// <param name="array1"> The composition in this node. Ex. (0,0,1,2) means the cumulative glycoBox is composed of glycan0 + glycan0 + glycan 1 + glycan 2 </param>
+        /// <param name="array2"></param>
+        /// <returns> The difference of the glycan composition between the two node.</returns>
         public static int[] GetLeft(int[] array1, int[] array2)
         {
             //Get compliment box
@@ -340,13 +381,19 @@ namespace EngineLayer.GlycoSearch
         }
 
         //Dictionary<int, List<Tuple<int, double>>> is <modPos, List<glycanId, site probability>>
+        /// <summary>
+        /// Generate the localization probability chart for each glycosite.
+        /// </summary>
+        /// <param name="routes"></param>
+        /// <param name="modPos"></param>
+        /// <returns> A dictionary represent the chart for glycosite Probility. Ex. key = 2 (ModPos), [(0,0.1),(1,0.3),(2,0.6)] means glycan 0 is 10 %, glycan 1 is 30%, glycan 2 is 60% </returns>
         public static Dictionary<int, List<Tuple<int, double>>> CalSiteSpecificLocalizationProbability(List<Route> routes, int[] modPos)
         {
             Dictionary<int, List<Tuple<int, double>>> probabilityMatrix = new Dictionary<int, List<Tuple<int, double>>>();
 
             Tuple<int, int, double>[][] matrix = new Tuple<int, int, double>[modPos.Length][];
 
-            for (int i = 0; i < modPos.Length; i++)
+            for (int i = 0; i < modPos.Length; i++) // There are all localization set in the route, we just try to sort the certain glycosite-glycan pairs into the corresponding glycosite.
             {
                 matrix[i] = new Tuple<int, int, double>[routes.Count];
                 for (int j = 0; j < routes.Count; j++)
