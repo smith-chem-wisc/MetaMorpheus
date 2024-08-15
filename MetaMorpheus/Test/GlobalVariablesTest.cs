@@ -8,17 +8,6 @@ using System.Threading;
 
 namespace Test
 {
-    [SetUpFixture]
-    public static class SetUpGlobalVariables
-    {
-        [OneTimeSetUp]
-        public static void LoadGlobalVariables()
-        {
-            // this loads the global variables once for all unit tests
-            GlobalVariables.SetUpGlobalVariables();
-        }
-    }
-
     [TestFixture]
     public static class GlobalVariablesTest
     {

@@ -1,40 +1,28 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
-using EngineLayer;
 using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Test
 {
+    /// <summary>
+    /// Uses test cases found in EverythingRunnerEngineTestCase.cs
+    /// </summary>
     [TestFixture]
     [ExcludeFromCodeCoverage]
     public static class PostSearchAnalysisTaskTests
     {
-        
-        [OneTimeSetUp]
-        public static void OneTimeSetUp()
-        {
-            if (GlobalVariables.AllModsKnown is null)
-                GlobalVariables.SetUpGlobalVariables();
+        public static Array GetTestCases() => Enum.GetValues(typeof(EverythingRunnerEngineTestCases));
 
-            if (!Directory.Exists(PostSearchAnalysisTaskTestCase.ResultDirectory))
-                Directory.CreateDirectory(PostSearchAnalysisTaskTestCase.ResultDirectory);
-        }
-
-        [OneTimeTearDown]
-        public static void OneTimeTearDown()
-        {
-            if (Directory.Exists(PostSearchAnalysisTaskTestCase.ResultDirectory))
-                Directory.Delete(PostSearchAnalysisTaskTestCase.ResultDirectory, true);
-        }
-
-        
         [Test]
         public static void AllResultsAndResultsTxtContainsCorrectValues_QValue_BottomUp()
         {
             //First test that AllResults and Results display correct numbers of peptides and psms with q-value filter on
-            var outputFolder = PostSearchAnalysisTaskTestCase.BottomUpQValue.OutputDirectory;
+
+            //var outputFolder = PostSearchAnalysisTaskTestCase.BottomUpQValue.OutputDirectory;
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out var testCase);
+            string outputFolder = testCase.OutputDirectory;
             string allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             string[] allResults = File.ReadAllLines(allResultsFile);
 
@@ -74,7 +62,9 @@ namespace Test
             int TaGe_SA_A549_3_snip_2ExpectedPsms = 214;
             int TaGe_SA_A549_3_snip_2ExpectedPeptides = 174;
 
-            outputFolder = PostSearchAnalysisTaskTestCase.BottomUpQValueSingle.OutputDirectory;
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValueSingle, out var testCaseSingle);
+            outputFolder = testCaseSingle.OutputDirectory;
+
             resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             string[] singleFileResults = File.ReadAllLines(resultsFile);
             Assert.AreEqual("All target PSMs with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, singleFileResults[5]);
@@ -86,7 +76,11 @@ namespace Test
         public static void AllResultsAndResultsTxtContainsCorrectValues_PepQValue_BottomUp()
         {
             //First test that AllResults and Results display correct numbers of peptides and psms with pep q-value filter on
-            var outputFolder = PostSearchAnalysisTaskTestCase.BottomUpPepQValue.OutputDirectory;
+
+            //var outputFolder = PostSearchAnalysisTaskTestCase.BottomUpPepQValue.OutputDirectory;
+
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
+            string outputFolder = testCase.OutputDirectory;
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             var allResults = File.ReadAllLines(allResultsFile);
             Assert.AreEqual("All target PSMs with pep q-value <= 0.01: 420", allResults[10]);
@@ -112,17 +106,16 @@ namespace Test
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 155", results[15]);
         }
 
-
         /// <summary>
         /// Ensures that there is the proper ratio of summary and individual lines in the result.txt file and that peptides and proteoforms are distinct
         /// </summary>
         [Test]
-        [TestCaseSource(typeof(PostSearchAnalysisTaskTestCase), nameof(PostSearchAnalysisTaskTestCase.AllTestCaseIdentifiers))]
-        public static void AllResultTxtContainsCorrectNumberOfResultLines(string testCaseIdentifier)
+        [TestCaseSource(nameof(GetTestCases))]
+        public static void AllResultTxtContainsCorrectNumberOfResultLines(EverythingRunnerEngineTestCases testCaseIdentifier)
         {
-            var testCase = PostSearchAnalysisTaskTestCase.TestCaseLocator(testCaseIdentifier);
+            var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
 
-            int expectedIndividualFileLines = testCase.SpectraFileCount == 1 ? 0 : testCase.SpectraFileCount;
+            int expectedIndividualFileLines = testCase.DataFileList.Count == 1 ? 0 : testCase.DataFileList.Count;
             int expectedSummaryLines = 1;
             var allResultTxtLines = File.ReadAllLines(Path.Combine(testCase.OutputDirectory, @"allResults.txt"));
 
@@ -160,14 +153,14 @@ namespace Test
         /// <summary>
         /// Ensures that the files written out with each search are correct according to the search parameters and data type
         /// </summary>
-        /// <param name="testCaseIdentifier">a string to use in PostSearchAnalysisTaskTestCase.TestCaseLocator</param>
         [Test]
-        [TestCaseSource(typeof(PostSearchAnalysisTaskTestCase), nameof(PostSearchAnalysisTaskTestCase.AllTestCaseIdentifiers))]
-        public static void CorrectFilesAreWrittenWithCorrectName(string testCaseIdentifier)
+        [TestCaseSource(nameof(GetTestCases))]
+        public static void CorrectFilesAreWrittenWithCorrectName(EverythingRunnerEngineTestCases testCaseIdentifier)
         {
-            var testCase = PostSearchAnalysisTaskTestCase.TestCaseLocator(testCaseIdentifier);
-            var expectedResultFileCount = testCase.WriteIndividualResults && testCase.SpectraFileCount > 1
-                ? testCase.SpectraFileCount + 1 : 1;
+            var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
+
+            var expectedResultFileCount = testCase.WriteIndividualResults && testCase.DataFileList.Count > 1
+                ? testCase.DataFileList.Count + 1 : 1;
 
             var psmFiles = Directory.GetFiles(testCase.OutputDirectory, "*PSMs.psmtsv", SearchOption.AllDirectories);
             var pepXmlFiles = Directory.GetFiles(testCase.OutputDirectory, "*.pep.xml", SearchOption.AllDirectories);
@@ -207,6 +200,5 @@ namespace Test
                 Assert.AreEqual(1, percolatorFiles.Length);
             }
         }
-
     }
 }
