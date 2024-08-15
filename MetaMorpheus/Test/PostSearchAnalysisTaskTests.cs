@@ -19,8 +19,6 @@ namespace Test
         public static void AllResultsAndResultsTxtContainsCorrectValues_QValue_BottomUp()
         {
             //First test that AllResults and Results display correct numbers of peptides and psms with q-value filter on
-
-            //var outputFolder = PostSearchAnalysisTaskTestCase.BottomUpQValue.OutputDirectory;
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out var testCase);
             string outputFolder = testCase.OutputDirectory;
             string allResultsFile = Path.Combine(outputFolder, "allResults.txt");
@@ -76,9 +74,6 @@ namespace Test
         public static void AllResultsAndResultsTxtContainsCorrectValues_PepQValue_BottomUp()
         {
             //First test that AllResults and Results display correct numbers of peptides and psms with pep q-value filter on
-
-            //var outputFolder = PostSearchAnalysisTaskTestCase.BottomUpPepQValue.OutputDirectory;
-
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
             string outputFolder = testCase.OutputDirectory;
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
@@ -115,7 +110,8 @@ namespace Test
         {
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
 
-            int expectedIndividualFileLines = testCase.DataFileList.Count == 1 ? 0 : testCase.DataFileList.Count;
+            int expectedIndividualFileLines = testCase.DataFileList.Count == 1 || !testCase.WriteIndividualResults 
+                ? 0 : testCase.DataFileList.Count;
             int expectedSummaryLines = 1;
             var allResultTxtLines = File.ReadAllLines(Path.Combine(testCase.OutputDirectory, @"allResults.txt"));
 
@@ -158,16 +154,17 @@ namespace Test
         public static void CorrectFilesAreWrittenWithCorrectName(EverythingRunnerEngineTestCases testCaseIdentifier)
         {
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
-
-            var expectedResultFileCount = testCase.WriteIndividualResults && testCase.DataFileList.Count > 1
-                ? testCase.DataFileList.Count + 1 : 1;
-
             var psmFiles = Directory.GetFiles(testCase.OutputDirectory, "*PSMs.psmtsv", SearchOption.AllDirectories);
             var pepXmlFiles = Directory.GetFiles(testCase.OutputDirectory, "*.pep.xml", SearchOption.AllDirectories);
             var percolatorFiles = Directory.GetFiles(testCase.OutputDirectory, "*Percolator.tab", SearchOption.AllDirectories);
             var proteinGroupFiles = Directory.GetFiles(testCase.OutputDirectory, "*ProteinGroups.tsv", SearchOption.AllDirectories);
             var peptideFiles = Directory.GetFiles(testCase.OutputDirectory, "*Peptides.psmtsv", SearchOption.AllDirectories);
             var proteoformFiles = Directory.GetFiles(testCase.OutputDirectory, "*Proteoforms.psmtsv", SearchOption.AllDirectories);
+            var mzidFiles = Directory.GetFiles(testCase.OutputDirectory, "*.mzid", SearchOption.AllDirectories);
+
+            int spectraFileCount = testCase.DataFileList.Count;
+            var expectedResultFileCount = testCase.WriteIndividualResults && testCase.DataFileList.Count > 1
+                ? testCase.DataFileList.Count + 1 : 1;
 
             Assert.AreEqual(expectedResultFileCount, psmFiles.Length);
             Assert.AreEqual(expectedResultFileCount, proteinGroupFiles.Length);
@@ -184,7 +181,7 @@ namespace Test
 
             if (testCase.WritePepXml)
             {
-                Assert.AreEqual(expectedResultFileCount, pepXmlFiles.Length);
+                Assert.AreEqual(spectraFileCount, pepXmlFiles.Length);
             }
             else
             {
@@ -198,6 +195,15 @@ namespace Test
             else
             {
                 Assert.AreEqual(1, percolatorFiles.Length);
+            }
+
+            if (testCase.WriteMzId)
+            {
+                Assert.AreEqual(spectraFileCount, mzidFiles.Length);
+            }
+            else
+            {
+                Assert.AreEqual(0, mzidFiles.Length);
             }
         }
     }

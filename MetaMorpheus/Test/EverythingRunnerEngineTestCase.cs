@@ -12,6 +12,8 @@ namespace Test
     public enum EverythingRunnerEngineTestCases
     {
         BottomUpQValue,
+        BottomUpQValueNoIndividualFilesWriteMzId,
+        BottomUpQValueNoIndividualFilesWritePepXml,
         BottomUpQValueSingle,
         BottomUpPepQValue,
         TopDownQValue,
@@ -35,6 +37,7 @@ namespace Test
         internal bool HasRun { get; private set; }
         internal bool WriteIndividualResults { get; init; }
         internal bool WritePepXml { get; init; }
+        internal bool WriteMzId { get; init; }
 
         internal EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases testCase,
             List<(string, MetaMorpheusTask)> taskList, List<string> dataFileList,
@@ -53,7 +56,9 @@ namespace Test
             var searchTask = (SearchTask)firstSearchTask;
             WriteIndividualResults = searchTask.SearchParameters.WriteIndividualFiles;
             WritePepXml = searchTask.SearchParameters.WritePepXml;
+            WriteMzId = searchTask.SearchParameters.WriteMzId;
         }
+
         internal void Run()
         {
             if (Directory.Exists(OutputDirectory))
@@ -121,7 +126,6 @@ namespace Test
                 @"TestData\TaGe_SA_A549_3_snip_2.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestData\TaGe_SA_A549_3_snip.fasta");
-
             _cases.Add(EverythingRunnerEngineTestCases.BottomUpQValue,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpQValue,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
@@ -133,13 +137,31 @@ namespace Test
                     new List<string> { myFile2 },
                     new List<DbForTask> { new DbForTask(myDatabase, false) }, false));
 
+            searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            searchTaskLoaded.SearchParameters.WriteIndividualFiles = false;
+            searchTaskLoaded.SearchParameters.WriteMzId = true;
+            searchTaskLoaded.SearchParameters.WritePepXml = false;
+            _cases.Add(EverythingRunnerEngineTestCases.BottomUpQValueNoIndividualFilesWriteMzId,
+                new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpQValueNoIndividualFilesWriteMzId,
+                    new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
+                    new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    false));
+
+            searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+            searchTaskLoaded.SearchParameters.WriteIndividualFiles = false;
+            searchTaskLoaded.SearchParameters.WriteMzId = false;
+            searchTaskLoaded.SearchParameters.WritePepXml = true;
+            _cases.Add(EverythingRunnerEngineTestCases.BottomUpQValueNoIndividualFilesWritePepXml,
+                new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpQValueNoIndividualFilesWritePepXml,
+                    new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
+                    new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) },
+                    false));
+
             myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestData\Task2-SearchTaskconfig.toml");
             searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
-
             // TODO: Uncomment this line and change values for PR 2394
             //searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
-
             _cases.Add(EverythingRunnerEngineTestCases.BottomUpPepQValue,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
@@ -152,13 +174,11 @@ namespace Test
             myFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
             myFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\slicedTDYeast.mzML");
             myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
-
             _cases.Add(EverythingRunnerEngineTestCases.TopDownQValue,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.TopDownQValue,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
                     new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) },
                     true));
-
             _cases.Add(EverythingRunnerEngineTestCases.TopDownQValueSingle,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.TopDownQValueSingle,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
