@@ -25,7 +25,7 @@ jobs:
       with:
         dotnet-version: 8.0.x
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore *\MetaMorpheus.sln
     - name: Build
       run: dotnet build --no-restore
     - name: Test
