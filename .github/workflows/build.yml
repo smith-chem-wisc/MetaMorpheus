@@ -36,4 +36,4 @@ jobs:
     - name: Build
       run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration ${{ matrix.configuration }}
     - name: Test
-      run: dotnet test ./MetaMorpheus/Test/Test.csproj --no-build --verbosity normal --configuration ${{ matrix.configuration }}
+      run: dotnet test ./MetaMorpheus/Test/Test.csproj --verbosity normal --configuration ${{ matrix.configuration }}
