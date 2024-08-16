@@ -5,6 +5,7 @@
     <IsPackable>false</IsPackable>
     <Configurations>Debug;Release</Configurations>
     <DebugType>full</DebugType>
+	<EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
