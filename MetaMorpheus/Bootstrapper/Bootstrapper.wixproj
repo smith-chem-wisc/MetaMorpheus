@@ -3,7 +3,6 @@
     <OutputName>MetaMorpheusInstaller</OutputName>
     <OutputType>Bundle</OutputType>
     <Platforms>x64;ARM64</Platforms>
-    <Configurations>Debug;Release;UbuntuMac</Configurations>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="WixToolset.Util.wixext" Version="5.0.1" />

@@ -6,7 +6,6 @@
     <Name>MetaMorpheusSetup</Name>
     <OutputPath>bin\$(Configuration)\</OutputPath>
     <Platforms>x64;ARM64</Platforms>
-    <Configurations>Debug;Release;UbuntuMac</Configurations>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <PlatformTarget>x64</PlatformTarget>
