@@ -27,6 +27,6 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
     - name: Build
-      run: dotnet build --no-restore
+      run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln
     - name: Test
       run: dotnet test --no-build --verbosity normal
