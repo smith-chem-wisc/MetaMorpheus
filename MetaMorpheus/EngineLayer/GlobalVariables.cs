@@ -16,8 +16,6 @@ using Omics.Modifications;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
 using Omics.Digestion;
-using static System.Net.Mime.MediaTypeNames;
-using System.Collections;
 
 namespace EngineLayer
 {
@@ -217,6 +215,10 @@ namespace EngineLayer
                 string[] proteaseToAdd = File.ReadAllLines(customProteasePath);
                 for (int i = 0; i < proteaseToAdd.Length; i++)
                 {
+                    if (string.IsNullOrEmpty(proteaseToAdd[i]))
+                    {
+                        continue;
+                    }
                     string[] array = proteaseToAdd[i].Split('\t');
                     List<DigestionMotif> motifList = DigestionMotif.ParseDigestionMotifsFromString(array[1]);
                     string name = array[0];
