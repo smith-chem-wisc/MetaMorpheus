@@ -17,7 +17,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        configuration: [UbuntuMac, Release, Debug]
+        include: 
+          - os: ubuntu-latest
+            configuration: UbuntuMac
+          - os: macos-latest
+            configuration: UbuntuMac
+          - os: windows-latest
+            configuration: Release
 
     steps:
     - uses: actions/checkout@v4
