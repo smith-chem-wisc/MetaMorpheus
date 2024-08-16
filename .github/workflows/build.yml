@@ -17,7 +17,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        configuration: [UbuntuMac, Release, UbuntuMac]
+        configuration: [UbuntuMac, Release, Debug]
 
     steps:
     - uses: actions/checkout@v4
@@ -30,4 +30,4 @@ jobs:
     - name: Build
       run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration ${{ matrix.configuration }}
     - name: Test
-      run: dotnet test ./MetaMorpheus/Test.csproj --no-build --verbosity normal --configuration ${{ matrix.configuration }}
+      run: dotnet test ./MetaMorpheus/Test/Test.csproj --no-build --verbosity normal --configuration ${{ matrix.configuration }}
