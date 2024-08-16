@@ -16,6 +16,7 @@
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
+	<EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -25,8 +26,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
+	
 
-  <ItemGroup>
+	<ItemGroup>
     <None Remove="Icons\Blogger.bmp" />
     <None Remove="Icons\Blogger_20.bmp" />
     <None Remove="Icons\git.bmp" />
