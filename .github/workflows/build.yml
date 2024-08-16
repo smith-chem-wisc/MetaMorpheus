@@ -24,8 +24,6 @@ jobs:
             configuration: UbuntuMac
           - os: windows-latest
             configuration: Release
-          - os: windows-latest
-            configuration: Debug
       
     steps:
       - uses: actions/checkout@v4
