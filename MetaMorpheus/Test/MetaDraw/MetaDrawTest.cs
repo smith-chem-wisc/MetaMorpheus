@@ -14,7 +14,7 @@ using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using OxyPlot.Series;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -696,12 +696,13 @@ namespace Test.MetaDraw
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_GlycoSearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\sliced_glyco_hcd_ethcd.raw");
-
+            
             // run task
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
 
             Directory.CreateDirectory(outputFolder);
             var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters };
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false; //turn off the diagnostic filter, because the case we use have 272,294 oxonium ions but assigned the N1H1 to that.
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
 
             var psmFile = Path.Combine(outputFolder, @"oglyco.psmtsv");

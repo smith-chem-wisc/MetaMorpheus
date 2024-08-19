@@ -7,7 +7,7 @@ using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using IO.MzML;
 using MzLibUtil;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
