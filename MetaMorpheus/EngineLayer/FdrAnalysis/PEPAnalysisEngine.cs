@@ -23,6 +23,16 @@ namespace EngineLayer
     public class PepAnalysisEngine
     {
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
+
+        //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
+        //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
+        //the z-score. That z-score is used as a feature for machine learning.
+        //Separate dictionaries are created for peptides with modifications because SSRcalc doesn't really do a good job predicting hyrophobicity
+
+        //The first string in the dictionary is the filename
+        //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior.
+        //Each key is a retention time rounded to the nearest minute.
+        //The value Tuple is the average and standard deviation, respectively, of the predicted hydrophobicities of the observed peptides eluting at that rounded retention time.
         public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified { get; private set; }
         public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified { get; private set; }
         public Dictionary<string, Dictionary<int, Tuple<double, double>>> FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE  { get; private set; }
@@ -31,7 +41,6 @@ namespace EngineLayer
         /// A dictionary which stores the chimeric ID string in the key and the number of chimeric identifications as the vale
         /// </summary>
         private Dictionary<string, int> chimeraCountDictionary = new Dictionary<string, int>();
-        
         public Dictionary<string, float> FileSpecificMedianFragmentMassErrors { get; private set; }
         public Dictionary<string, CommonParameters> FileSpecificParametersDictionary { get; private set; }
         public int ChargeStateMode { get; private set; }
@@ -69,7 +78,7 @@ namespace EngineLayer
             QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), 0.005);
 
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
-            UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Count(seq => seq.IsNotNullOrEmpty()) >= 100;
+            UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
         }
 
         public string ComputePEPValuesForAllPSMs()
@@ -144,19 +153,8 @@ namespace EngineLayer
             FileSpecificMedianFragmentMassErrors = GetFileSpecificMedianFragmentMassError(trainingData);
             ChargeStateMode = GetChargeStateMode(trainingData);
             
-            //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
-            //file separately. An individully measured hydrobophicty calculated for a specific PSM sequence is compared to these values by computing
-            //the z-score. That z-score is used as a feature for machine learning.
-            //Separate dictionaries are created for peptides with modifications because SSRcalc doesn't really do a good job predicting hyrophobicity
-
-            //The first string in the dictionary is the filename
-            //The value of the dictionary is another dictionary that profiles the hydrophobicity behavior.
-            //Each key is a retention time rounded to the nearest minute.
-            //The value Tuple is the average and standard deviation, respectively, of the predicted hydrophobicities of the observed peptides eluting at that rounded retention time.
-
             if (trainingVariables.Contains("HydrophobicityZScore"))
             {
-
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified = ComputeHydrophobicityValues(trainingData, false);
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified = ComputeHydrophobicityValues(trainingData,  true);
                 FileSpecificTimeDependantHydrophobicityAverageAndDeviation_CZE = ComputeMobilityValues(trainingData);
@@ -247,34 +245,24 @@ namespace EngineLayer
                             PsmData newPsmData = new PsmData();
                             if (searchType == "crosslink" && ((CrosslinkSpectralMatch)psm)?.BetaPeptide != null)
                             {
-                                try
-                                {
-                                    CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
+                                CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
 
-                                    bool label;
-                                    if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
-                                    {
-                                        label = false;
-                                        newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
-                                    }
-                                    else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && csm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
-                                    {
-                                        label = true;
-                                        newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
-                                    }
-                                    else
-                                    {
-                                        continue;
-                                    }
-                                    localPsmDataList.Add(newPsmData);
-                                    localPsmOrder.Add(i);
-                                }
-                                catch (Exception ex)
+                                bool label;
+                                if (csm.IsDecoy || csm.BetaPeptide.IsDecoy)
                                 {
-                                    string message = ex.Message;
+                                    label = false;
+                                    newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
                                 }
-
-                                
+                                else if (!csm.IsDecoy && !csm.BetaPeptide.IsDecoy && csm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
+                                {
+                                    label = true;
+                                    newPsmData = CreateOnePsmDataEntry(searchType, csm, csm.BestMatchingBioPolymersWithSetMods.First().Peptide, 0, label);
+                                }
+                                else
+                                {
+                                    continue;
+                                }
+                                localPsmDataList.Add(newPsmData);
                             }
                             else
                             {

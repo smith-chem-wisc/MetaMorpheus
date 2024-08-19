@@ -15,7 +15,7 @@ namespace EngineLayer
         public List<SpectralMatch> SpectralMatches { get; }
 
         /// <summary>
-        /// This class groups all spectra associated with a given peptide together,
+        /// This class groups all spectral matches associated with a given peptide together,
         /// to facilitate the calculation of PEP values.
         /// </summary>
         /// <param name="fullPeptideSeq"> The full sequence to be used for grouping</param>

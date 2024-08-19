@@ -277,6 +277,9 @@ namespace EngineLayer.FdrAnalysis
         public void Compute_PEPValue(FdrAnalysisResults myAnalysisResults, List<SpectralMatch> psms)
         {
             string searchType;
+            // Currently, searches of mixed data (bottom-up + top-down) are not supported
+            // PEP will be calculated based on the search type of the first file/PSM in the list, which isn't ideal
+            // This will be addressed in a future release
             switch(psms[0].DigestionParams.Protease.Name)
             {
                case "top-down":
