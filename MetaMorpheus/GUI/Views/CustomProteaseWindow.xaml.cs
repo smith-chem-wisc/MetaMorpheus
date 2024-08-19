@@ -7,18 +7,10 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.IO;
 using EngineLayer;
-using System.Xml;
-using Easy.Common.Extensions;
-using System.Linq;
-using MassSpectrometry;
 using Omics.Digestion;
+using Proteomics.AminoAcidPolymer;
 
 namespace MetaMorpheusGUI.Views
 {
@@ -58,13 +50,28 @@ namespace MetaMorpheusGUI.Views
             string psiMsAccessionNum = PsiMsAccessionNumTextBox.Text;
             string psiMsName = PsiNameTextBox.Text;
             string motifString = DigestionMotifTextBox.Text;
-            Dictionary<string, CleavageSpecificity> CleavageSpecDic = new Dictionary<string, CleavageSpecificity>();
-            foreach (CleavageSpecificity c in Enum.GetValues(typeof(CleavageSpecificity))) {
-                CleavageSpecDic.Add(c.ToString(), c);
-            }
-            CleavageSpecificity cleavageSpecificity = CleavageSpecDic[CleavageSpecComboBox.Text];
-            List<DigestionMotif> digestionMotifs;
 
+            CleavageSpecificity cleavageSpecificity;
+            if (Enum.TryParse(CleavageSpecComboBox.Text, out CleavageSpecificity _cleaveageSpec))
+            {
+                cleavageSpecificity = _cleaveageSpec;
+            }
+            else
+            {
+                MessageBox.Show("Please specify the digestion motif(s) of the protease");
+                return;
+            }
+
+            List<DigestionMotif> digestionMotifs;
+            var aminoAcidsInMotifString = motifString.Where(char.IsLetter).ToList();
+            foreach(var aa in aminoAcidsInMotifString)
+            {
+                if (!Residue.ResiduesDictionary.ContainsKey(aa.ToString()))
+                {
+                    MessageBox.Show("Motif(s) contains invalid amino acids.");
+                    return;
+                }
+            }
             try
             {
                 digestionMotifs = DigestionMotif.ParseDigestionMotifsFromString(motifString);
@@ -75,12 +82,6 @@ namespace MetaMorpheusGUI.Views
                 return;
             }
 
-            //load the default ProteaseDictionary
-            //string folderPath = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-            //string path = ((!string.IsNullOrWhiteSpace(folderPath) && AppDomain.CurrentDomain.BaseDirectory.Contains(folderPath) && !AppDomain.CurrentDomain.BaseDirectory.Contains("Jenkins")) ? System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MetaMorpheus") : AppDomain.CurrentDomain.BaseDirectory);
-            //string path2 = System.IO.Path.Combine(path, "ProteolyticDigestion", "proteases.tsv");
-            //ProteaseDictionary.LoadProteaseDictionary(path2);
-
             //create a new Protease and add to ProteaseDictionary
             Protease proteaseToAdd = new Protease(proteaseName, cleavageSpecificity, psiMsAccessionNum, psiMsName, digestionMotifs);
 
@@ -90,12 +91,14 @@ namespace MetaMorpheusGUI.Views
             }
             else
             {
-                ProteaseDictionary.Dictionary.Add(proteaseName, proteaseToAdd);
-            }
-
-            if (!ProteaseDictionary.Dictionary.TryAdd(proteaseName, proteaseToAdd))
-            {
-                MessageBox.Show("Success! Protease '" + proteaseName + "' has been added to the dictionary.");
+                if (ProteaseDictionary.Dictionary.TryAdd(proteaseName, proteaseToAdd))
+                {
+                    MessageBox.Show("Success! Protease '" + proteaseName + "' has been added to the dictionary.");
+                } 
+                else
+                {
+                    MessageBox.Show("Failed to add Protease '" + proteaseName + "' to the dictionary.");
+                }
             }
             
             //customProtease file path
