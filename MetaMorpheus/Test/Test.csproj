@@ -587,6 +587,9 @@
     <None Update="TopDownTestData\TDGPTMDSearchSingleSpectra.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TopDownTestData\TopDownSearchToml.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Transcriptomics\TestData\GUACUG_NegativeMode_Sliced.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
