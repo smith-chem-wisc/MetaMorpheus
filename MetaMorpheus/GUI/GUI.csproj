@@ -16,7 +16,6 @@
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <ApplicationIcon>Icons\MMnice.ico</ApplicationIcon>
-	<EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
