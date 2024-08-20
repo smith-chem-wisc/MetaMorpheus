@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0-windows</TargetFramework>
-    <Configurations>Debug;Release;UbuntuMac</Configurations>
+    <Configurations>Debug;Release</Configurations>
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <UseWPF>true</UseWPF>
