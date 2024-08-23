@@ -14,6 +14,12 @@
     <SuppressIces>
     </SuppressIces>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='UbuntuMac|x64'">
+    <PlatformTarget>x64</PlatformTarget>
+    <DefineConstants>Debug</DefineConstants>
+    <SuppressValidation>true</SuppressValidation>
+    <SuppressIces />
+  </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
     <PlatformTarget>x64</PlatformTarget>
     <SuppressValidation>true</SuppressValidation>
