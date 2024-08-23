@@ -6,6 +6,7 @@
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <UseWPF>true</UseWPF>
+	<EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
