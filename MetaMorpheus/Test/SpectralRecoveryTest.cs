@@ -285,6 +285,8 @@ namespace Test
         [Test]
         public static void SpectralWriterTest()
         {
+            foreach (var specLibPath in Directory.GetFiles(outputFolder, "*.msp", SearchOption.AllDirectories))
+                File.Delete(specLibPath);
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {

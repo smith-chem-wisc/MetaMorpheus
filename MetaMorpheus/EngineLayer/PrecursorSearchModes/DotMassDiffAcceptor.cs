@@ -55,7 +55,7 @@ namespace EngineLayer
 
         public override string ToProseString()
         {
-            return (Tolerance.ToString() + " around " + String.Join(",", AcceptableSortedMassShifts) + " Da");
+            return (Tolerance.ToString() + " around " + String.Join(", ", AcceptableSortedMassShifts) + " Da");
         }
     }
 }
