@@ -333,6 +333,8 @@ namespace Test
 
             testLibraryWithoutDecoy.CloseConnections();
 
+            // Get rid of this file so it doesn't interfere with the next test
+            File.Delete(Path.Combine(path, matchingvalue));
 
             // new task with less than 100 psms.
             postSearchTask = new PostSearchAnalysisTask()
@@ -367,11 +369,12 @@ namespace Test
                     (rawSlices[1], new CommonParameters())
                 }
             };
-
             postSearchTask.Run();
 
+            // Find and open the new spectral library
+            list = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
             testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
-
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
             // Test spectral library update
