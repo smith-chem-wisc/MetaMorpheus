@@ -340,7 +340,7 @@ namespace Test
                 Parameters = new PostSearchAnalysisParameters()
                 {
                     ProteinList = proteinList,
-                    AllPsms = psms.GetRange(0, 50),
+                    AllPsms = psms.GetRange(0, 80),
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
@@ -383,9 +383,8 @@ namespace Test
             var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
             Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
-            testLibraryWithoutDecoy.CloseConnections(); 
+            testLibraryWithoutDecoy.CloseConnections();
             updatedLibraryWithoutDecoy.CloseConnections();
-          
         }
 
         [Test]
