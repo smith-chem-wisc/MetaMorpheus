@@ -1,7 +1,8 @@
 ﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -17,6 +18,8 @@ using Omics;
 using UsefulProteomicsDatabases;
 using Nett;
 using System.DirectoryServices;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Test
 {
@@ -376,6 +379,10 @@ namespace Test
             matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
             testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
+
+            // When writing a new spectral library, we don't want it to have the exact same name as the old one.
+            // So, we make sure at least one second has passed
+            Thread.Sleep(new TimeSpan(0, 0, 1)); // Wait for the library to close
 
             // Test spectral library update
             postSearchTask.Parameters.SearchParameters.UpdateSpectralLibrary = true;
