@@ -29,6 +29,8 @@ namespace EngineLayer
         public static List<PeptideMatchGroup> GroupByBaseSequence(List<SpectralMatch> spectralMatches)
         {
             // This groups psms by base sequence, ensuring that PSMs with the same base sequence but different modifications are grouped together when training.
+
+            // TODO: Determine if it's better to group PSMs by base sequence or by full sequence.
             return spectralMatches.GroupBy(p => p.BaseSequence)
                 .Select(group => new PeptideMatchGroup(group.Key, group.ToList()))
                 .OrderByDescending(matchGroup => matchGroup.Count())

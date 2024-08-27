@@ -631,6 +631,8 @@ namespace TaskLayer
             }
 
             // Sanitize the decoys
+            // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
+            // when looking for target/decoy collisions
 
             HashSet<string> targetPeptideSequences = new();
             foreach(var protein in proteinList.Where(p => !p.IsDecoy))
