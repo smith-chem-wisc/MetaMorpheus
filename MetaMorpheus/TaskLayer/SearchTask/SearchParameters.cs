@@ -70,6 +70,7 @@ namespace TaskLayer
         public bool MatchBetweenRuns { get; set; }
         public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
+        public bool OnlyQuantifyConfidentPeptides { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
         public DecoyType DecoyType { get; set; }
@@ -79,7 +80,6 @@ namespace TaskLayer
         public bool DoLocalizationAnalysis { get; set; }
         public bool DoLabelFreeQuantification { get; set; }
         public bool UseSharedPeptidesForLFQ { get; set; }
-        public bool OnlyQuantifyConfidentPeptides { get; set; }
         public bool DoMultiplexQuantification { get; set; }
         public string MultiplexModId { get; set; }
         public bool DoSpectralRecovery { get; set; }
