@@ -622,6 +622,46 @@ namespace TaskLayer
             {
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
+
+            
+
+            if (!proteinList.Any(p => p.IsDecoy))
+            {
+                Status("Done loading proteins", new List<string> { taskId });
+                return proteinList;
+            }
+
+            // Sanitize the decoys
+            // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
+            // when looking for target/decoy collisions
+
+            HashSet<string> targetPeptideSequences = new();
+            foreach(var protein in proteinList.Where(p => !p.IsDecoy))
+            {
+                // When thinking about decoy collisions, we can ignore modifications
+                foreach(var peptide in protein.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
+                {
+                    targetPeptideSequences.Add(peptide.BaseSequence);
+                }
+            }
+            // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
+            for(int i = 0; i < proteinList.Count; i++)
+            {
+                if(proteinList[i].IsDecoy)
+                {
+                    var peptidesToReplace = proteinList[i]
+                        .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                        .Select(p => p.BaseSequence)
+                        .Where(targetPeptideSequences.Contains)
+                        .ToList();
+                    if(peptidesToReplace.Any())
+                    {
+                        proteinList[i] = Protein.ScrambleDecoyProteinSequence(proteinList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
+                    }
+                }
+            }
+
+            Status("Done loading proteins", new List<string> { taskId });
             return proteinList;
         }
 

@@ -160,8 +160,7 @@ namespace Test
             myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestData\Task2-SearchTaskconfig.toml");
             searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
-            // TODO: Uncomment this line and change values for PR 2394
-            //searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
+            searchTaskLoaded.CommonParameters.QValueCutoffForPepCalculation = 0.01;
             _cases.Add(EverythingRunnerEngineTestCases.BottomUpPepQValue,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
