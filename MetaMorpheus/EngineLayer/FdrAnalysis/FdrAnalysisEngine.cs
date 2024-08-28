@@ -38,6 +38,10 @@ namespace EngineLayer.FdrAnalysis
             foreach (var psm in AllPsms.Where(p => p.PeptideFdrInfo == null))
             {
                 psm.PeptideFdrInfo = new FdrInfo();
+                // If peptide level Q-values default to zero, it is hard to determine which PSMs have a legitimate peptide-level Q-value of zero and 
+                // which just weren't included in peptide-level calculations. Hence, we set q values to one here. 
+                psm.PeptideFdrInfo.QValue = 1;
+                psm.PeptideFdrInfo.PEP_QValue = 1;
             }
         }
 

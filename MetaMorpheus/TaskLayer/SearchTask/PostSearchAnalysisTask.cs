@@ -72,7 +72,6 @@ namespace TaskLayer
             }
             ConstructResultsDictionary();
             DoMassDifferenceLocalizationAnalysis();
-            PeptideAnalysis();
             ProteinAnalysis();
             QuantificationAnalysis();
 
@@ -502,8 +501,23 @@ namespace TaskLayer
                 }
             }
 
+            // Determine if only select, high confidence peptides will be used for quant
+            List<string> peptideSequencesForQuantification = null;
+            if (Parameters.SearchParameters.SilacLabels == null && Parameters.SearchParameters.OnlyQuantifyConfidentPeptides)
+            {
+                peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllPsms,
+                                CommonParameters,
+                                includeDecoys: false,
+                                includeContaminants: true,
+                                includeAmbiguous: false,
+                                includeAmbiguousMods: false,
+                                includeHighQValuePsms: false,
+                                filterAtPeptideLevel: true)
+                    .Select(pep => pep.FullSequence).Distinct().ToList();
+            }
+
             // run FlashLFQ
-            var flashLfqEngine = new FlashLfqEngine(
+                var flashLfqEngine = new FlashLfqEngine(
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
@@ -512,9 +526,7 @@ namespace TaskLayer
                 useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile,
-                peptideSequencesToUse: (Parameters.SearchParameters.SilacLabels == null && Parameters.SearchParameters.OnlyQuantifyConfidentPeptides)
-                    ? _filteredPeptides.Select(peptide => peptide.FullSequence).ToList() 
-                    : null);
+                peptideSequencesToUse: peptideSequencesForQuantification);
 
             if (flashLFQIdentifications.Any())
             {
@@ -588,7 +600,7 @@ namespace TaskLayer
                     .SelectMany(pwsm => pwsm.Peptide.AllModsOneIsNterminus.Values)
                     .Any(mod => mod.OriginalId.Equals(Parameters.MultiplexModification.OriginalId))))
             {
-                WritePsmPlusMultiplexIons(psms, filePath, asPeptide);
+                WritePsmPlusMultiplexIons(psms, filePath);
             }
             else
             {
@@ -1302,20 +1314,6 @@ namespace TaskLayer
             }
         }
 
-        private void PeptideAnalysis()
-        {
-            List<SpectralMatch> peptides = Parameters.AllPsms
-                .GroupBy(b => b.FullSequence)
-                .Select(b => b.FirstOrDefault()).ToList();
-
-            new FdrAnalysisEngine(peptides, Parameters.NumNotches, CommonParameters,
-                FileSpecificParameters, new List<string> { Parameters.SearchTaskId },
-                "Peptide", peptideLevelFdr: true, doPEP: false).Run(); 
-
-            FilterSpecificPsms(peptides, out int psmOrPeptideCountForResults, peptideLevelFiltering: true);
-            FilterAllPeptides(peptides); // This sets the _allPeptides field
-        }
-
         private void WritePsmPlusMultiplexIons(IEnumerable<SpectralMatch> psms, string filePath, bool writePeptideLevelResults = false)
         {
             PpmTolerance ionTolerance = new PpmTolerance(10);
@@ -1445,9 +1443,9 @@ namespace TaskLayer
                 new List<string> { Parameters.SearchTaskId }, "variant_PSMs", doPEP: false).Run();
 
             possibleVariantPsms
-                .OrderBy(p => p.PsmFdrInfo.QValue)
+                .OrderBy(p => p.FdrInfo.QValue)
                 .ThenByDescending(p => p.Score)
-                .ThenBy(p => p.PsmFdrInfo.CumulativeTarget)
+                .ThenBy(p => p.FdrInfo.CumulativeTarget)
                 .ToList();
 
             WritePsmsToTsv(possibleVariantPsms, variantPsmFile);

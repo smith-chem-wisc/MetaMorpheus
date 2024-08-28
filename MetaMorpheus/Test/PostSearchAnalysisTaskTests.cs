@@ -101,6 +101,16 @@ namespace Test
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 155", results[15]);
         }
 
+        [Test]
+        public static void TestPeptideQuantificationResults()
+        {
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out var testCase);
+
+            string peptideQuantFile = Path.Combine(testCase.OutputDirectory, @"postSearchAnalysisTaskTestOutput\AllQuantifiedPeptides.tsv");
+            string[] peptideQuant = File.ReadAllLines(peptideQuantFile);
+            Assert.AreEqual(175, peptideQuant.Length); // 174 peptides + header. Make sure that we're quantifying only those peptides with q-value <= 0.01
+        }
+
         /// <summary>
         /// Ensures that there is the proper ratio of summary and individual lines in the result.txt file and that peptides and proteoforms are distinct
         /// </summary>
@@ -114,10 +124,6 @@ namespace Test
                 ? 0 : testCase.DataFileList.Count;
             int expectedSummaryLines = 1;
             var allResultTxtLines = File.ReadAllLines(Path.Combine(testCase.OutputDirectory, @"allResults.txt"));
-
-            string peptideQuantFile = Path.Combine(outputFolder, "postSearchAnalysisTaskTestOutput", "AllQuantifiedPeptides.tsv");
-            string[] peptideQuant = File.ReadAllLines(peptideQuantFile);
-            Assert.AreEqual(175, peptideQuant.Length); // 174 peptides + header. Make sure that we're quantifying only those peptides with q-value <= 0.01
 
             var summaryPsmLines = allResultTxtLines.Where(p => p.Contains("All target PSMs")).ToArray();
             var individualPsmLines = allResultTxtLines.Where(p => p.Contains("Target PSMs")

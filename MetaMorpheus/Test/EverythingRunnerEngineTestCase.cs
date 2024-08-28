@@ -126,6 +126,7 @@ namespace Test
                 @"TestData\TaGe_SA_A549_3_snip_2.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestData\TaGe_SA_A549_3_snip.fasta");
+            searchTaskLoaded.SearchParameters.OnlyQuantifyConfidentPeptides = true;
             _cases.Add(EverythingRunnerEngineTestCases.BottomUpQValue,
                 new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpQValue,
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
