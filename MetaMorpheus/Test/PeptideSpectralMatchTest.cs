@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics.ProteolyticDigestion;
 using Proteomics;
 using System;
@@ -33,7 +33,7 @@ namespace Test
             int missedCleavages = 0;
             CleavageSpecificity cleavageSpecificity = CleavageSpecificity.Full;
             string peptideDescription = null;
-            int? pairedTargetDecoyHash = null;
+            string? pairedTargetDecoyHash = null;
 
             PeptideWithSetModifications pwsmNoBaseSequence = new(sequence, allKnownMods, numFixedMods, digestionParams, myProtein,
                 oneBasedStartResidueInProtein, oneBasedEndResidueInProtein, missedCleavages, cleavageSpecificity,

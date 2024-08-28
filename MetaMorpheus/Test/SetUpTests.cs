@@ -1,6 +1,6 @@
 ﻿// Copyright 2016 Stefan Solntsev
 using EngineLayer;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.IO;
 using TaskLayer;
@@ -16,15 +16,22 @@ namespace Test
         private const string elementsLocation = @"elements.dat";
 
         [OneTimeSetUp]
-        public static void Setup()
+        public static void GlobalSetup()
         {
             Environment.CurrentDirectory = TestContext.CurrentContext.TestDirectory;
             Loaders.LoadElements();
-            
+            GlobalVariables.SetUpGlobalVariables();
+
             MetaMorpheusEngine.WarnHandler += WarnStatusHandler;
             MetaMorpheusTask.WarnHandler += WarnStatusHandler;
 
             EverythingRunnerEngine.FinishedAllTasksEngineHandler += SuccessfullyFinishedAllTasks;
+        }
+
+        [OneTimeTearDown]
+        public static void GlobalTearDown()
+        {
+            EverythingRunnerEngineTestCase.DisposeAll();
         }
 
         private static void SuccessfullyFinishedAllTasks(object sender, StringEventArgs rootOutputFolderPath)

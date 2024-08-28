@@ -30,6 +30,7 @@ namespace EngineLayer
             ScanPrecursorMonoisotopicPeakMz = scan.PrecursorMonoisotopicPeakMz;
             ScanPrecursorMass = scan.PrecursorMass;
             PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
+            PrecursorFractionalIntensity = scan.PrecursorFractionalIntensity;
             DigestionParams = commonParameters.DigestionParams;
             BioPolymersWithSetModsToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
@@ -67,14 +68,25 @@ namespace EngineLayer
         public double ScanPrecursorMonoisotopicPeakMz { get; }
         public double PrecursorScanIntensity { get; }
         public int PrecursorScanEnvelopePeakCount { get; }
+        public double PrecursorFractionalIntensity { get; }
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; private set; }
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingBioPolymersWithSetMods.Count; } }
 
-        public FdrInfo FdrInfo => PsmFdrInfo;
-        public FdrInfo PsmFdrInfo { get; private set; }
-        public FdrInfo PeptideFdrInfo { get; private set; }
+        public FdrInfo FdrInfo
+        {
+            get => PsmFdrInfo;
+            set => PsmFdrInfo = value;
+
+        }
+        public FdrInfo PsmFdrInfo { get;  set; }
+        public FdrInfo PeptideFdrInfo { get;  set; }
+        public FdrInfo GetFdrInfo(bool peptideLevel)
+        {
+            return peptideLevel ? PeptideFdrInfo : PsmFdrInfo;
+        }
+
         public PsmData PsmData_forPEPandPercolator { get; set; }
 
         public double Score { get; private set; }
@@ -219,13 +231,9 @@ namespace EngineLayer
             MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments.First().Value;
         }
 
-        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy,
-            double qValue, double cumulativeTargetNotch,
-            double cumulativeDecoyNotch, double qValueNotch,
-            double pep, double pepQValue,
-            bool peptideFdr = false)
+        public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
         {
-            var fdrInfo = new FdrInfo
+            FdrInfo = new FdrInfo
             {
                 CumulativeTarget = cumulativeTarget,
                 CumulativeDecoy = cumulativeDecoy,
@@ -236,22 +244,7 @@ namespace EngineLayer
                 PEP = pep,
                 PEP_QValue = pepQValue
             };
-
-            if (peptideFdr)
-            {
-                PeptideFdrInfo = fdrInfo;
-            }
-            else
-            {
-                PsmFdrInfo = fdrInfo;
-            }
         }
-
-        public FdrInfo GetFdrInfo(bool peptideFdr = false)
-        {
-            return peptideFdr ? PeptideFdrInfo : PsmFdrInfo;
-        }
-
         /// <summary>
         /// This method is used to compute qValue etc for the inverted set of psms
         /// We neither compute nor calculated cumulativeTarget, cumulativeDecoy, etc for the inverted set.
@@ -262,23 +255,12 @@ namespace EngineLayer
         /// <param name="qValueNotch"></param>
         /// <param name="pep"></param>
         /// <param name="pepQValue"></param>
-        public void SetQandPEPvalues(double qValue, double qValueNotch, double pep, double pepQValue, bool peptideLevelFdr = false)
+        public void SetQandPEPvalues(double qValue, double qValueNotch, double pep, double pepQValue)
         {
-            if(peptideLevelFdr)
-            {
-                PeptideFdrInfo.QValue = qValue;
-                PeptideFdrInfo.QValueNotch = qValueNotch;
-                PeptideFdrInfo.PEP = pep;
-                PeptideFdrInfo.PEP_QValue = pepQValue;
-            }
-            else
-            {
-                PsmFdrInfo.QValue = qValue;
-                PsmFdrInfo.QValueNotch = qValueNotch;
-                PsmFdrInfo.PEP = pep;
-                PsmFdrInfo.PEP_QValue = pepQValue;
-            }
-            
+            FdrInfo.QValue = qValue;
+            FdrInfo.QValueNotch = qValueNotch;
+            FdrInfo.PEP = pep;
+            FdrInfo.PEP_QValue = pepQValue;
         }
 
 
@@ -297,18 +279,18 @@ namespace EngineLayer
             return ToString(new Dictionary<string, int>());
         }
 
-        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool asPeptide = false)
+        public string ToString(IReadOnlyDictionary<string, int> ModstoWritePruned, bool writePeptideLevelFdr = false)
         {
-            return string.Join("\t", DataDictionary(this, ModstoWritePruned, asPeptide).Values);
+            return string.Join("\t", DataDictionary(this, ModstoWritePruned, writePeptideLevelFdr).Values);
         }
 
-        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool asPeptide = false)
+        public static Dictionary<string, string> DataDictionary(SpectralMatch psm, IReadOnlyDictionary<string, int> ModsToWritePruned, bool writePeptideLevelFdr = false)
         {
             Dictionary<string, string> s = new Dictionary<string, string>();
             PsmTsvWriter.AddBasicMatchData(s, psm);
             PsmTsvWriter.AddPeptideSequenceData(s, psm, ModsToWritePruned);
             PsmTsvWriter.AddMatchedIonsData(s, psm?.MatchedFragmentIons);
-            PsmTsvWriter.AddMatchScoreData(s, psm, asPeptide);
+            PsmTsvWriter.AddMatchScoreData(s, psm, writePeptideLevelFdr);
             return s;
         }
 
@@ -386,7 +368,7 @@ namespace EngineLayer
             ScanPrecursorMass = psm.ScanPrecursorMass;
             FullFilePath = psm.FullFilePath;
             ScanIndex = psm.ScanIndex;
-            PsmFdrInfo = psm.PsmFdrInfo;
+            FdrInfo = psm.FdrInfo;
             Score = psm.Score;
             Xcorr = psm.Xcorr;
             RunnerUpScore = psm.RunnerUpScore;
@@ -399,7 +381,17 @@ namespace EngineLayer
 
         #endregion
 
+        #region FDR
 
+        private string _chimeraIdString;
+        public string ChimeraIdString => _chimeraIdString ??= $"{ScanNumber}{FullFilePath}{PrecursorScanNumber}";
+
+        /// <summary>
+        /// Returns an integer representing the longest continuous number of residues in the match covered on both sides by fragment ions
+        /// </summary>
+        /// <param name="PeptidesToMatchingFragments"></param>
+        /// <param name="peptide"></param>
+        /// <returns></returns>
         public static int GetLongestIonSeriesBidirectional(Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments, IBioPolymerWithSetMods peptide)
         {
             List<int> maxDiffs = new List<int> { 1 };
@@ -550,6 +542,8 @@ namespace EngineLayer
                 return 0;
             }
         }
+
+        #endregion
 
         /// <summary>
         /// There are a few key locations in MetaMorpheus where we want to have psms sorted in a consistent manner.

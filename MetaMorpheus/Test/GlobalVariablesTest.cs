@@ -1,5 +1,5 @@
 ﻿using EngineLayer;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,17 +8,6 @@ using System.Threading;
 
 namespace Test
 {
-    [SetUpFixture]
-    public static class SetUpGlobalVariables
-    {
-        [OneTimeSetUp]
-        public static void LoadGlobalVariables()
-        {
-            // this loads the global variables once for all unit tests
-            GlobalVariables.SetUpGlobalVariables();
-        }
-    }
-
     [TestFixture]
     public static class GlobalVariablesTest
     {

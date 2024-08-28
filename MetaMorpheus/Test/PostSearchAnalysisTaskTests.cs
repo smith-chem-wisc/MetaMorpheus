@@ -1,37 +1,56 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using EngineLayer;
-using Nett;
-using NUnit.Framework;
-using TaskLayer;
+using System.Linq;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Test
 {
+    /// <summary>
+    /// Uses test cases found in EverythingRunnerEngineTestCase.cs
+    /// </summary>
     [TestFixture]
+    [ExcludeFromCodeCoverage]
     public static class PostSearchAnalysisTaskTests
     {
+        public static Array GetTestCases() => Enum.GetValues(typeof(EverythingRunnerEngineTestCases));
+
         [Test]
-        public static void AllResultsAndResultsTxtTests()
+        public static void AllResultsAndResultsTxtContainsCorrectValues_QValue_BottomUp()
         {
             //First test that AllResults and Results display correct numbers of peptides and psms with q-value filter on
-            string myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
-            SearchTask searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PostSearchAnalysisTaskTest");
-            string myFile1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
-            string myFile2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip_2.mzML");
-            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.fasta");
-            ExperimentalDesign.WriteExperimentalDesignToFile( new List<FlashLFQ.SpectraFileInfo>
-            {
-                new FlashLFQ.SpectraFileInfo(myFile1, "A", 0, 0, 0),
-                new FlashLFQ.SpectraFileInfo(myFile2, "A", 1, 0, 0)
-            });
-
-            EverythingRunnerEngine engineToml = new(new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) }, new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
-            engineToml.Run();
-
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out var testCase);
+            string outputFolder = testCase.OutputDirectory;
             string allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             string[] allResults = File.ReadAllLines(allResultsFile);
 
+            // The new PEP calculation method improves things, so all these numbers are increasing as of (7/17/24)
+            // There is a discrepancy between the number of All target peptides and individual file target peptides, 
+            // presumably due to the way protein inference is performed.
+            Assert.AreEqual("All target PSMs with q-value <= 0.01: 428", allResults[10]);
+            Assert.AreEqual("All target peptides with q-value <= 0.01: 174", allResults[11]);
+            Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 165", allResults[12]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target PSMs with q-value <= 0.01: 214", allResults[14]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target peptides with q-value <= 0.01: 174", allResults[15]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165", allResults[16]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214", allResults[18]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174", allResults[19]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165", allResults[20]);
+
+
+            string resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
+            string[] results = File.ReadAllLines(resultsFile);
+
+            Assert.AreEqual("All target PSMs with q-value <= 0.01: 428", results[5]);
+            Assert.AreEqual("All target peptides with q-value <= 0.01: 174", results[6]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target PSMs with q-value <= 0.01: 214", results[9]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target peptides with q-value <= 0.01: 174", results[10]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165", results[11]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214", results[13]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174", results[14]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165", results[15]);
+            
+            // Search TaGe_SA_A549_3_snip_2 by itself. The results from this should be identical to the file specific results above
             // TaGe_SA_A549_3_snip_2 is searched twice. First with two files being searched simultaneously, then with TaGe_SA_A549_3_snip_2 by itself
             // This allows us to compare the file specific results produced by in the two file search to the output
             // produced by searching the file by itself. The number of PSMs and Peptides observed should be the same
@@ -41,82 +60,155 @@ namespace Test
             int TaGe_SA_A549_3_snip_2ExpectedPsms = 214;
             int TaGe_SA_A549_3_snip_2ExpectedPeptides = 174;
 
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValueSingle, out var testCaseSingle);
+            outputFolder = testCaseSingle.OutputDirectory;
 
-            Assert.AreEqual("All target PSMs with q-value = 0.01: 428", allResults[12]);
-            Assert.AreEqual("All target peptides with q-value = 0.01 : 174", allResults[13]);
-            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", allResults[14]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip target PSMs with q-value = 0.01: 214", allResults[18]);
-            Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip: 165", allResults[24]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip Target peptides with q-value = 0.01 : 174", allResults[26]);
+            resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
+            string[] singleFileResults = File.ReadAllLines(resultsFile);
+            Assert.AreEqual("All target PSMs with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, singleFileResults[5]);
+            Assert.AreEqual("All target peptides with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPeptides, singleFileResults[6]);
+            Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 165", singleFileResults[7]);
+        }
 
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 target PSMs with q-value = 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, allResults[22]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 Target peptides with q-value = 0.01 : " + TaGe_SA_A549_3_snip_2ExpectedPeptides, allResults[28]);
-            Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip_2: 165", allResults[25]);
+        [Test]
+        public static void AllResultsAndResultsTxtContainsCorrectValues_PepQValue_BottomUp()
+        {
+            //First test that AllResults and Results display correct numbers of peptides and psms with pep q-value filter on
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
+            string outputFolder = testCase.OutputDirectory;
+            var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
+            var allResults = File.ReadAllLines(allResultsFile);
+            Assert.AreEqual("All target PSMs with pep q-value <= 0.01: 420", allResults[10]);
+            Assert.AreEqual("All target peptides with pep q-value <= 0.01: 172", allResults[11]);
+            Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 155", allResults[12]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 210", allResults[14]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 172", allResults[15]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 155", allResults[16]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 210", allResults[18]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 172", allResults[19]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 155", allResults[20]);
 
-            string resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
-            string[] results = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("All target PSMs with q-value = 0.01: 428", results[7]);
-            Assert.AreEqual("All target peptides with q-value = 0.01 : 174", results[8]);
-            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", results[9]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip target PSMs with q-value = 0.01: 214", results[13]);
-            Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip: 165", results[19]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip Target peptides with q-value = 0.01 : 174", results[21]);
-            Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip_2: 165", results[20]);
+            var resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
+            var results = File.ReadAllLines(resultsFile);
+            Assert.AreEqual("All target PSMs with pep q-value <= 0.01: 420", results[5]);
+            Assert.AreEqual("All target peptides with pep q-value <= 0.01: 172", results[6]);
+            Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 155", results[7]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 210", results[9]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 172", results[10]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 155", results[11]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 210", results[13]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 172", results[14]);
+            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 155", results[15]);
+        }
 
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 target PSMs with q-value = 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, results[17]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 Target peptides with q-value = 0.01 : " + TaGe_SA_A549_3_snip_2ExpectedPeptides, results[23]);
+        /// <summary>
+        /// Ensures that there is the proper ratio of summary and individual lines in the result.txt file and that peptides and proteoforms are distinct
+        /// </summary>
+        [Test]
+        [TestCaseSource(nameof(GetTestCases))]
+        public static void AllResultTxtContainsCorrectNumberOfResultLines(EverythingRunnerEngineTestCases testCaseIdentifier)
+        {
+            var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
+
+            int expectedIndividualFileLines = testCase.DataFileList.Count == 1 || !testCase.WriteIndividualResults 
+                ? 0 : testCase.DataFileList.Count;
+            int expectedSummaryLines = 1;
+            var allResultTxtLines = File.ReadAllLines(Path.Combine(testCase.OutputDirectory, @"allResults.txt"));
 
             string peptideQuantFile = Path.Combine(outputFolder, "postSearchAnalysisTaskTestOutput", "AllQuantifiedPeptides.tsv");
             string[] peptideQuant = File.ReadAllLines(peptideQuantFile);
             Assert.AreEqual(175, peptideQuant.Length); // 174 peptides + header. Make sure that we're quantifying only those peptides with q-value <= 0.01
 
-            Directory.Delete(outputFolder, true);
+            var summaryPsmLines = allResultTxtLines.Where(p => p.Contains("All target PSMs")).ToArray();
+            var individualPsmLines = allResultTxtLines.Where(p => p.Contains("Target PSMs")
+                                                                  && !p.Contains("All")).ToArray();
+            Assert.AreEqual(expectedSummaryLines, summaryPsmLines.Length);
+            Assert.AreEqual(expectedIndividualFileLines, individualPsmLines.Length);
 
-            // Search TaGe_SA_A549_3_snip_2 by itself. The results from this should be identical to the file specific results above
-            engineToml = new(new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
-                new List<string> { myFile2 },
-                new List<DbForTask> { new DbForTask(myDatabase, false) },
-                outputFolder);
-            engineToml.Run();
+            if (testCase.IsTopDown)
+            {
+                var summaryProteoformLines =
+                    allResultTxtLines.Where(p => p.Contains("All target proteoforms")).ToArray();
+                var individualProteoformLines = allResultTxtLines.Where(p => p.Contains("Target proteoforms")
+                                                                             && !p.Contains("All")).ToArray();
+                Assert.AreEqual(expectedSummaryLines, summaryProteoformLines.Length);
+                Assert.AreEqual(expectedIndividualFileLines, individualProteoformLines.Length);
+            }
+            else
+            {
+                var summaryPeptideLines = allResultTxtLines.Where(p => p.Contains("All target peptides")).ToArray();
+                var individualPeptideLines = allResultTxtLines.Where(p => p.Contains("Target peptides")
+                                                                          && !p.Contains("All")).ToArray();
+                Assert.AreEqual(expectedSummaryLines, summaryPeptideLines.Length);
+                Assert.AreEqual(expectedIndividualFileLines, individualPeptideLines.Length);
+            }
 
-            string[] singleFileResults = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("All target PSMs with q-value = 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, singleFileResults[7]);
-            Assert.AreEqual("All target peptides with q-value = 0.01 : " + TaGe_SA_A549_3_snip_2ExpectedPeptides, singleFileResults[8]);
-            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", singleFileResults[9]);
+            var summaryProteinLines = allResultTxtLines.Where(p => p.Contains("All target protein groups")).ToArray();
+            var individualProteinLines = allResultTxtLines.Where(p => p.Contains("Target protein groups")
+                                                                      && !p.Contains("All")).ToArray();
+            Assert.AreEqual(expectedSummaryLines, summaryProteinLines.Length);
+            Assert.AreEqual(expectedIndividualFileLines, individualProteinLines.Length);
+        }
 
-            //Second test that AllResults and Results display correct numbers of peptides and psms with PEP q-value filter on
-            myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task2-SearchTaskconfig.toml");
-            searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
-            engineToml = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) }, new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) }, outputFolder);
-            engineToml.Run();
+        /// <summary>
+        /// Ensures that the files written out with each search are correct according to the search parameters and data type
+        /// </summary>
+        [Test]
+        [TestCaseSource(nameof(GetTestCases))]
+        public static void CorrectFilesAreWrittenWithCorrectName(EverythingRunnerEngineTestCases testCaseIdentifier)
+        {
+            var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
+            var psmFiles = Directory.GetFiles(testCase.OutputDirectory, "*PSMs.psmtsv", SearchOption.AllDirectories);
+            var pepXmlFiles = Directory.GetFiles(testCase.OutputDirectory, "*.pep.xml", SearchOption.AllDirectories);
+            var percolatorFiles = Directory.GetFiles(testCase.OutputDirectory, "*Percolator.tab", SearchOption.AllDirectories);
+            var proteinGroupFiles = Directory.GetFiles(testCase.OutputDirectory, "*ProteinGroups.tsv", SearchOption.AllDirectories);
+            var peptideFiles = Directory.GetFiles(testCase.OutputDirectory, "*Peptides.psmtsv", SearchOption.AllDirectories);
+            var proteoformFiles = Directory.GetFiles(testCase.OutputDirectory, "*Proteoforms.psmtsv", SearchOption.AllDirectories);
+            var mzidFiles = Directory.GetFiles(testCase.OutputDirectory, "*.mzid", SearchOption.AllDirectories);
 
-            allResultsFile = Path.Combine(outputFolder, "allResults.txt");
-            allResults = File.ReadAllLines(allResultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 485", allResults[12]);
-            Assert.AreEqual("All target peptides with pep q-value = 0.01 : 196", allResults[13]);
-            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", allResults[14]);
-            
-            Assert.AreEqual("TaGe_SA_A549_3_snip target PSMs with pep q-value = 0.01: 242", allResults[18]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 target PSMs with pep q-value = 0.01: 242", allResults[22]);
-            Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip: 165", allResults[24]);
-            Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip_2: 165", allResults[25]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip Target peptides with pep q-value = 0.01 : 196", allResults[26]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 Target peptides with pep q-value = 0.01 : 195", allResults[28]);
+            int spectraFileCount = testCase.DataFileList.Count;
+            var expectedResultFileCount = testCase.WriteIndividualResults && testCase.DataFileList.Count > 1
+                ? testCase.DataFileList.Count + 1 : 1;
 
+            Assert.AreEqual(expectedResultFileCount, psmFiles.Length);
+            Assert.AreEqual(expectedResultFileCount, proteinGroupFiles.Length);
+            if (testCase.IsTopDown)
+            {
+                Assert.AreEqual(expectedResultFileCount, proteoformFiles.Length);
+                Assert.AreEqual(0, peptideFiles.Length);
+            }
+            else
+            {
+                Assert.AreEqual(expectedResultFileCount, peptideFiles.Length);
+                Assert.AreEqual(0, proteoformFiles.Length);
+            }
 
-            resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
-            results = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value = 0.01: 485", results[7]);
-            Assert.AreEqual("All target peptides with pep q-value = 0.01 : 196", results[8]);
-            Assert.AreEqual("All target protein groups with q-value = 0.01 (1% FDR): 165", results[9]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip target PSMs with pep q-value = 0.01: 242", results[13]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 target PSMs with pep q-value = 0.01: 242", results[17]);
-            Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip: 165", results[19]);
-            Assert.AreEqual("Target protein groups within 1 % FDR in TaGe_SA_A549_3_snip_2: 165", results[20]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip Target peptides with pep q-value = 0.01 : 196", results[21]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 Target peptides with pep q-value = 0.01 : 195", results[23]);
+            if (testCase.WritePepXml)
+            {
+                Assert.AreEqual(spectraFileCount, pepXmlFiles.Length);
+            }
+            else
+            {
+                Assert.AreEqual(0, pepXmlFiles.Length);
+            }
 
-            Directory.Delete(outputFolder, true);
+            if (testCase.WriteIndividualResults)
+            {
+                Assert.AreEqual(expectedResultFileCount, percolatorFiles.Length);
+            }
+            else
+            {
+                Assert.AreEqual(1, percolatorFiles.Length);
+            }
+
+            if (testCase.WriteMzId)
+            {
+                Assert.AreEqual(spectraFileCount, mzidFiles.Length);
+            }
+            else
+            {
+                Assert.AreEqual(0, mzidFiles.Length);
+            }
         }
     }
 }

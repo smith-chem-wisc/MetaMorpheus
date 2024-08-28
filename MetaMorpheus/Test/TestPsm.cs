@@ -4,7 +4,7 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.Localization;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -436,8 +436,8 @@ namespace Test
 
             List<string> results = File.ReadAllLines(Path.Combine(outputFolder, @"results.txt")).ToList();
 
-            string peptideCountFromResultsString = results.Where(r => r.Contains("All target peptides with q-value = 0.01 : ")).FirstOrDefault();
-            double peptideCountFromResults = Convert.ToDouble(peptideCountFromResultsString.Split(':')[1].ToString());
+            string peptideCountFromResultsString = results.FirstOrDefault(r => r.Contains("All target peptides with q-value <= 0.01: "));
+            double peptideCountFromResults = Convert.ToDouble(peptideCountFromResultsString?.Split(':')[1].ToString());
             Assert.AreEqual(allPeptidesQvalueBelowCutoff, peptideCountFromResults);
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
