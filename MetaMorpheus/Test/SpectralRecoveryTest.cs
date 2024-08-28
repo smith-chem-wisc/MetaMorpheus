@@ -283,6 +283,8 @@ namespace Test
         [Test]
         public static void SpectralWriterTest()
         {
+            foreach (var specLibPath in Directory.GetFiles(outputFolder, "*.msp", SearchOption.AllDirectories))
+                File.Delete(specLibPath);
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {
@@ -375,7 +377,7 @@ namespace Test
             postSearchTask.Run();
 
             var libraryList = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
-            string updateLibraryPath = libraryList.First(p => p.Contains("SpectralLibrary") && !p.Contains(matchingvalue)).ToString();
+            string updateLibraryPath = libraryList.First(p => p.Contains("updateSpectralLibrary") && !p.Contains(matchingvalue)).ToString();
             var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
             Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
