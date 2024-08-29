@@ -490,9 +490,9 @@ namespace EngineLayer
                     normalizationFactor = 1.0;
                 }
                 // count only terminal fragment ions
-                totalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count(p => p.NeutralTheoreticalProduct.SecondaryProductType == null) / normalizationFactor * multiplier, 0));
+                totalMatchingFragmentCount = (float)psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count();
                 internalMatchingFragmentCount = (float)(Math.Round(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide].Count(p => p.NeutralTheoreticalProduct.SecondaryProductType != null) / normalizationFactor * multiplier, 0));
-                intensity = (float)Math.Min(50, Math.Round((psm.Score - (int)psm.Score) / normalizationFactor * Math.Pow(multiplier, 2), 0));
+                intensity = (float)(psm.Score - (int)psm.Score);
                 chargeDifference = -Math.Abs(ChargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * multiplier, 0);
                 notch = notchToUse;
