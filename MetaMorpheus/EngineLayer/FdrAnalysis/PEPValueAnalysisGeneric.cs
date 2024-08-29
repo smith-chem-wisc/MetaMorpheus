@@ -683,6 +683,38 @@ namespace EngineLayer
             return (float)mobilityZScore;
         }
 
+        public static float GetFraggerHyperScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        {
+            var peptideFragmentIons = psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide];
+            var nIons = peptideFragmentIons.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).ToList();
+            var cIons = peptideFragmentIons.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).ToList();
+            double nIonIntensitySum = nIons.Sum(f => f.Intensity);
+            double cIonIntensitySum = cIons.Sum(f => f.Intensity);
+            float nIon = GetLog10Factorial((int)nIons.Count);
+            float cIon = GetLog10Factorial((int)cIons.Count);
+
+            return (float)((nIon + cIon + Math.Log10(nIonIntensitySum * cIonIntensitySum)));
+        }
+
+        private static ulong GetFactorial(ulong n)
+        {
+            if (n == 0)
+            {
+                return 1;
+            }
+            return n * GetFactorial(n - 1);
+        }
+
+        public static float GetLog10Factorial(int n)
+        {
+            double log10Factorial = 0.0;
+            for (int i = 1; i <= n; i++)
+            {
+                log10Factorial += Math.Log10(i);
+            }
+            return (float)log10Factorial;
+        }
+
         public static IEnumerable<PsmData> CreatePsmData(string searchType, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             List<SpectralMatch> psms, List<int> psmIndicies,
             Dictionary<string, Dictionary<int, Tuple<double, double>>> timeDependantHydrophobicityAverageAndDeviation_unmodified,
@@ -790,6 +822,7 @@ namespace EngineLayer
             float peaksInPrecursorEnvelope = 0;
             float mostAbundantPrecursorPeakIntensity = 0;
             float fractionalIntensity = 0;
+            float fraggerHyperScore = 0;
 
             float missedCleavages = 0;
             float longestSeq = 0;
@@ -837,6 +870,7 @@ namespace EngineLayer
                 peaksInPrecursorEnvelope = psm.PrecursorScanEnvelopePeakCount;
                 mostAbundantPrecursorPeakIntensity = (float)Math.Round((float)psm.PrecursorScanIntensity / normalizationFactor * multiplier, 0);
                 fractionalIntensity = (float)psm.PrecursorFractionalIntensity;
+                fraggerHyperScore = GetFraggerHyperScore(psm, selectedPeptide);
 
                 if (PsmHasSpectralAngle(psm))
                 {
@@ -954,6 +988,7 @@ namespace EngineLayer
                 MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
                 PrecursorFractionalIntensity = fractionalIntensity,
                 InternalIonCount = internalMatchingFragmentCount,
+                FraggerHyperScore = fraggerHyperScore
             };
 
             return psm.PsmData_forPEPandPercolator;
