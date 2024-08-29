@@ -197,7 +197,7 @@ namespace EngineLayer
             ModsChemicalFormula = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
             Notch = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Notch)).ResolvedValue;
 
-            // if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
+            //if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
             if (IsDecoy)
             {
                 bool removedPeptides = false;
