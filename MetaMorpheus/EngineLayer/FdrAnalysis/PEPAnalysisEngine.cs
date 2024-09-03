@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Omics.Modifications;
 using Omics;
 using Easy.Common.Extensions;
+using MathNet.Numerics.LinearAlgebra.Solvers;
 
 namespace EngineLayer
 {
@@ -1042,15 +1043,25 @@ namespace EngineLayer
             var peptideFragmentIons = psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide];
             var nIons = peptideFragmentIons.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).ToList();
             var cIons = peptideFragmentIons.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).ToList();
-            double nIonIntensitySum = nIons.Sum(f => f.Intensity);
-            double cIonIntensitySum = cIons.Sum(f => f.Intensity);
-            float nIon = GetLog10Factorial((int)nIons.Count);
-            float cIon = GetLog10Factorial((int)cIons.Count);
+            float nIonIntensitySum = 0;
+            if(nIons.Any())
+            {
+                nIons.Sum(f => f.Intensity);
+            }
+            float cIonIntensitySum = 0;
+            if (cIons.Any())
+            {
+                cIons.Sum(f => f.Intensity);
+            }
+            float nIon = GetLog10Factorial((int)nIons.Count) ?? 0;
+            float cIon = GetLog10Factorial((int)cIons.Count) ?? 0;
+            var log10IntensitySum = Math.Log10(nIonIntensitySum * cIonIntensitySum);
+            log10IntensitySum = log10IntensitySum ?? log10IntensitySum ?? 0;
 
-            return (float)((nIon + cIon + Math.Log10(nIonIntensitySum * cIonIntensitySum)));
+            return (float)((nIon + cIon + log10IntensitySum));
         }
 
-        public static float GetLog10Factorial(int n)
+        public static float? GetLog10Factorial(int n)
         {
             double log10Factorial = 0.0;
             for (int i = 1; i <= n; i++)
