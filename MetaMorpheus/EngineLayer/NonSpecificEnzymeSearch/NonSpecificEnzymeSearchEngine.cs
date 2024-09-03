@@ -374,12 +374,26 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                             if (mod.Key > indexShift + 1) //check if we cleaved it off, +1 for N-terminus being mod 1 and first residue being 2
                             {
                                 int key = mod.Key - indexShift;
-                                updatedMods.Add(key, mod.Value);
+                                if(updatedMods.ContainsKey(key))
+                                {
+                                    updatedMods[key] = mod.Value;
+                                }
+                                else
+                                {
+                                    updatedMods.Add(key, mod.Value);
+                                }
                             }
                         }
                         if (terminalMod != null)
                         {
-                            updatedMods.Add(startResidue - 1, terminalMod);
+                            if (updatedMods.ContainsKey(startResidue - 1))
+                            {
+                                updatedMods[startResidue - 1] = terminalMod;
+                            }
+                            else
+                            {
+                                updatedMods.Add(startResidue - 1, terminalMod);
+                            }
                         }
                         updatedPwsm = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, startResidue, peptide.OneBasedEndResidue, CleavageSpecificity.Unknown, "", 0, updatedMods, 0);
                     }
