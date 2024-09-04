@@ -22,6 +22,29 @@ namespace EngineLayer
 {
     public class PepAnalysisEngine
     {
+        /// <summary>
+        /// This method contains the hyper-parameters that will be used when training the machine learning model
+        /// </summary>
+        /// <param name="maxThreads">Maximum number of threads to use in training</param>
+        /// <returns> Options object to be passed in to the FastTree constructor </returns>
+        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options GetFastTreeOptions(int maxThreads)
+        {
+            return new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
+            {
+                NumberOfThreads = maxThreads,
+                NumberOfTrees = 400, 
+                MinimumExampleCountPerLeaf = 10,
+                MaximumBinCountPerFeature = 255,
+                LearningRate = 0.2,
+                Shrinkage = 0.1,
+                LabelColumnName = "Label",
+                FeatureColumnName = "Features",
+                UnbalancedSets = true,
+                Seed = 42,
+                FeatureSelectionSeed = 42
+            };
+        }
+            
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
 
         //These two dictionaries contain the average and standard deviations of hydrophobicitys measured in 1 minute increments accross each raw
@@ -108,7 +131,8 @@ namespace EngineLayer
             MLContext mlContext = new MLContext();
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
+            var binaryTreeOptions = GetFastTreeOptions(maxThreads: FileSpecificParametersDictionary.Max(kvp => kvp.Value.MaxThreadsToUsePerFile));
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(binaryTreeOptions);
             var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
                 .Append(trainer);
 
