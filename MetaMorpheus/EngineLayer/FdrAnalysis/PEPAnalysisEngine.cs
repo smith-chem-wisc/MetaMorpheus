@@ -34,14 +34,13 @@ namespace EngineLayer
                 NumberOfThreads = maxThreads,
                 NumberOfTrees = 400, 
                 MinimumExampleCountPerLeaf = 10,
-                MaximumBinCountPerFeature = 255,
+                NumberOfLeaves = 20,
                 LearningRate = 0.2,
-                Shrinkage = 0.1,
                 LabelColumnName = "Label",
                 FeatureColumnName = "Features",
-                UnbalancedSets = true,
                 Seed = 42,
-                FeatureSelectionSeed = 42
+                FeatureSelectionSeed = 42,
+                UnbalancedSets = false // You might think this should be set to true, but you'd be wrong
             };
         }
             
