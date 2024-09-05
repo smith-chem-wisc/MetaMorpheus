@@ -553,13 +553,13 @@ namespace Test
             // Single search mode
             Assert.AreEqual(12, allPsmsArray.Length);
 
-            var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
+            var goodPsm = nonNullPsms.Where(p => p.PsmFdrInfo.QValue <= 0.01).ToList();
 
             var myMatchedIons = goodPsm[0].MatchedFragmentIons;
 
             Assert.AreEqual(47, myMatchedIons.Count());
 
-            var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
+            var goodScore = nonNullPsms.Where(p => p.PsmFdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
             goodScore.Sort();
             Assert.AreEqual(2, goodPsm.Count());
         }
@@ -656,7 +656,7 @@ namespace Test
             // Single search mode
             Assert.AreEqual(535, allPsmsArray.Length);
 
-            var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
+            var goodScore = nonNullPsms.Where(p => p.PsmFdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
             Assert.AreEqual(181, goodScore.Count());
             Directory.Delete(outputFolder, true);
@@ -748,7 +748,7 @@ namespace Test
             // Single search mode
             Assert.AreEqual(535, allPsmsArray.Length);
 
-            var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
+            var goodScore = nonNullPsms.Where(p => p.PsmFdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
             Assert.AreEqual(181, goodScore.Count());
         }

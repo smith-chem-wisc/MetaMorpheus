@@ -167,10 +167,8 @@ namespace Test
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
             List<string> expectedMatches = mbrPsms.Select(p => p.BaseSeq).Intersect(expectedMbrPsms.Select(p => p.BaseSeq).ToList()).ToList();
 
-            // Changing Q-value calculation methods results in more PSMs being discovered, and so fewer spectra are available to be "recovered"
-            // (as they were identified in the orignal search)
-            Assert.That(matches2ng.Count >= 3);
-            Assert.That(matches02ng.Count >= 10);
+            Assert.That(matches2ng.Count >= 2);
+            Assert.That(matches02ng.Count >= 7); // AS: 6/17/24 - Fewer quantification events (8 -> 7) because one of the peptides doesn't clear peptide level FDR threshold
             Assert.That(expectedMatches.Count >= 2); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
 
             //TODO: Add test for recovering fdrInfo from original. Currently, PsmTsvReader doesn't support the new columns, so it's hard to test

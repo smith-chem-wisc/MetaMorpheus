@@ -17,6 +17,7 @@ namespace TaskLayer
             ModPeptidesAreDifferent = false;
             DoLabelFreeQuantification = true;
             UseSharedPeptidesForLFQ = false;
+            OnlyQuantifyConfidentPeptides = true;
             DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
             SearchTarget = true;
@@ -69,6 +70,7 @@ namespace TaskLayer
         public bool MatchBetweenRuns { get; set; }
         public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
+        public bool OnlyQuantifyConfidentPeptides { get; set; }
         public bool DoHistogramAnalysis { get; set; }
         public bool SearchTarget { get; set; }
         public DecoyType DecoyType { get; set; }

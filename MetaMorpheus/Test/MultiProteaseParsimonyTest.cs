@@ -710,7 +710,7 @@ namespace Test
             var fdrFilteredPsms = new List<SpectralMatch>();
             foreach (SpectralMatch psm in psms)
             {
-                if (psm != null && psm.FdrInfo.QValue <= 0.0100 && psm.FdrInfo.QValueNotch <= 0.0100)
+                if (psm != null && psm.PsmFdrInfo.QValue <= 0.0100 && psm.PsmFdrInfo.QValueNotch <= 0.0100)
                 {
                     fdrFilteredPsms.Add(psm);
                 }

@@ -501,8 +501,23 @@ namespace TaskLayer
                 }
             }
 
+            // Determine if only select, high confidence peptides will be used for quant
+            List<string> peptideSequencesForQuantification = null;
+            if (Parameters.SearchParameters.SilacLabels == null && Parameters.SearchParameters.OnlyQuantifyConfidentPeptides)
+            {
+                peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllPsms,
+                                CommonParameters,
+                                includeDecoys: false,
+                                includeContaminants: true,
+                                includeAmbiguous: false,
+                                includeAmbiguousMods: false,
+                                includeHighQValuePsms: false,
+                                filterAtPeptideLevel: true)
+                    .Select(pep => pep.FullSequence).Distinct().ToList();
+            }
+
             // run FlashLFQ
-            var flashLfqEngine = new FlashLfqEngine(
+                var flashLfqEngine = new FlashLfqEngine(
                 allIdentifications: flashLFQIdentifications,
                 normalize: Parameters.SearchParameters.Normalize,
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
@@ -510,7 +525,8 @@ namespace TaskLayer
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
                 useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
                 silent: true,
-                maxThreads: CommonParameters.MaxThreadsToUsePerFile);
+                maxThreads: CommonParameters.MaxThreadsToUsePerFile,
+                peptideSequencesToUse: peptideSequencesForQuantification);
 
             if (flashLFQIdentifications.Any())
             {

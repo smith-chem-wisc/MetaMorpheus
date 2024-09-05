@@ -95,7 +95,7 @@ namespace TaskLayer
             pepQValueThreshold ??= commonParams.PepQValueThreshold;
             double filterThreshold = Math.Min((double)qValueThreshold, (double)pepQValueThreshold);
             bool filteringNotPerformed = false;
-            List<SpectralMatch> filteredPsms = new List<SpectralMatch>();
+            List<SpectralMatch> filteredPsms = new();
 
             // set the filter type
             FilterType filterType = FilterType.QValue;
