@@ -1,7 +1,8 @@
 ﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -17,6 +18,8 @@ using Omics;
 using UsefulProteomicsDatabases;
 using Nett;
 using System.DirectoryServices;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace Test
 {
@@ -285,6 +288,8 @@ namespace Test
         [Test]
         public static void SpectralWriterTest()
         {
+            foreach (var specLibPath in Directory.GetFiles(outputFolder, "*.msp", SearchOption.AllDirectories))
+                File.Delete(specLibPath);
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {
@@ -312,7 +317,7 @@ namespace Test
                         QuantifyPpmTol = 25
                     }
                 },
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, qValueCutoffForPepCalculation: 0.01),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters())
@@ -331,13 +336,16 @@ namespace Test
 
             testLibraryWithoutDecoy.CloseConnections();
 
+            // Get rid of this file so it doesn't interfere with the next test
+            File.Delete(Path.Combine(path, matchingvalue));
+
             // new task with less than 100 psms.
             postSearchTask = new PostSearchAnalysisTask()
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
                     ProteinList = proteinList,
-                    AllPsms = psms.GetRange(0, 50),
+                    AllPsms = psms.GetRange(0, 80),
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
@@ -358,32 +366,35 @@ namespace Test
                         QuantifyPpmTol = 25
                     }
                 },
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, qValueCutoffForPepCalculation: 0.01),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters())
                 }
             };
-
             postSearchTask.Run();
 
+            // Find and open the new spectral library
+            list = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
             testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
-
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
+
+            // When writing a new spectral library, we don't want it to have the exact same name as the old one.
+            // So, we make sure at least one second has passed
+            Thread.Sleep(new TimeSpan(0, 0, 1)); // Wait for the library to close
 
             // Test spectral library update
             postSearchTask.Parameters.SearchParameters.UpdateSpectralLibrary = true;
             postSearchTask.Parameters.SpectralLibrary = testLibraryWithoutDecoy;
             postSearchTask.Run();
-
             var libraryList = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
-            string updateLibraryPath = libraryList.First(p => p.Contains("SpectralLibrary") && !p.Contains(matchingvalue)).ToString();
+            string updateLibraryPath = libraryList.First(p => p.Contains("updateSpectralLibrary") && !p.Contains(matchingvalue)).ToString();
             var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
             Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
-            testLibraryWithoutDecoy.CloseConnections(); 
+            testLibraryWithoutDecoy.CloseConnections();
             updatedLibraryWithoutDecoy.CloseConnections();
-          
         }
 
         [Test]

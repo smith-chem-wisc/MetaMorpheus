@@ -572,12 +572,13 @@ namespace TaskLayer
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
                     file.WriteLine("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
+		    file.WriteLine();
                     file.Write(ProseCreatedWhileRunning.ToString());
                     file.WriteLine(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
+		    file.WriteLine();
                     file.WriteLine("The total time to perform the " + TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
-                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMorpheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
-
+                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite the appropriate publications listed in the reference guide, found here: https://github.com/smith-chem-wisc/MetaMorpheus/blob/master/README.md.");
                     file.WriteLine();
                     file.WriteLine("Spectra files: ");
                     file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
@@ -621,6 +622,46 @@ namespace TaskLayer
             {
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
+
+            
+
+            if (!proteinList.Any(p => p.IsDecoy))
+            {
+                Status("Done loading proteins", new List<string> { taskId });
+                return proteinList;
+            }
+
+            // Sanitize the decoys
+            // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
+            // when looking for target/decoy collisions
+
+            HashSet<string> targetPeptideSequences = new();
+            foreach(var protein in proteinList.Where(p => !p.IsDecoy))
+            {
+                // When thinking about decoy collisions, we can ignore modifications
+                foreach(var peptide in protein.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
+                {
+                    targetPeptideSequences.Add(peptide.BaseSequence);
+                }
+            }
+            // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
+            for(int i = 0; i < proteinList.Count; i++)
+            {
+                if(proteinList[i].IsDecoy)
+                {
+                    var peptidesToReplace = proteinList[i]
+                        .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                        .Select(p => p.BaseSequence)
+                        .Where(targetPeptideSequences.Contains)
+                        .ToList();
+                    if(peptidesToReplace.Any())
+                    {
+                        proteinList[i] = Protein.ScrambleDecoyProteinSequence(proteinList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
+                    }
+                }
+            }
+
+            Status("Done loading proteins", new List<string> { taskId });
             return proteinList;
         }
 
