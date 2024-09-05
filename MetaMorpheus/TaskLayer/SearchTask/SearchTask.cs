@@ -199,7 +199,7 @@ namespace TaskLayer
             object indexLock = new object();
             object psmLock = new object();
 
-            Status("Searching files...", taskId);
+            Status("Searching files...", new List<string> { taskId } );
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
