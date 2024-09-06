@@ -22,27 +22,27 @@ namespace EngineLayer
 {
     public class PepAnalysisEngine
     {
+        private int _randomSeed = 42;
+
         /// <summary>
         /// This method contains the hyper-parameters that will be used when training the machine learning model
         /// </summary>
         /// <param name="maxThreads">Maximum number of threads to use in training</param>
         /// <returns> Options object to be passed in to the FastTree constructor </returns>
-        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options GetFastTreeOptions(int maxThreads)
-        {
-            return new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
+        public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions =>
+            new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
             {
-                NumberOfThreads = maxThreads,
-                NumberOfTrees = 400, 
+                NumberOfThreads = 1,
+                NumberOfTrees = 400,
                 MinimumExampleCountPerLeaf = 10,
                 NumberOfLeaves = 20,
                 LearningRate = 0.2,
                 LabelColumnName = "Label",
                 FeatureColumnName = "Features",
-                Seed = 42,
-                FeatureSelectionSeed = 42,
-                UnbalancedSets = false // You might think this should be set to true, but you'd be wrong
+                Seed = _randomSeed,
+                FeatureSelectionSeed = _randomSeed,
+                UnbalancedSets = true
             };
-        }
             
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;
 
@@ -127,11 +127,10 @@ namespace EngineLayer
                 }
             }
 
-            MLContext mlContext = new MLContext();
+            MLContext mlContext = new MLContext(seed: _randomSeed);
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
-            var binaryTreeOptions = GetFastTreeOptions(maxThreads: FileSpecificParametersDictionary.Max(kvp => kvp.Value.MaxThreadsToUsePerFile));
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(binaryTreeOptions);
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(BGDTreeOptions);
             var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
                 .Append(trainer);
 
