@@ -503,6 +503,7 @@ namespace EngineLayer
                     absoluteFragmentMassError = (float)Math.Min(100.0, Math.Round(10.0 * Math.Abs(GetAverageFragmentMassError(psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide]) - FileSpecificMedianFragmentMassErrors[Path.GetFileName(psm.FullFilePath)])));
                 }
 
+
                 ambiguity = Math.Min((float)(psm.BioPolymersWithSetModsToMatchingFragments.Keys.Count - 1), 10);
                 //ambiguity = 10; // I'm pretty sure that you shouldn't train on ambiguity and its skewing the results
                 longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, selectedPeptide) / normalizationFactor * multiplier, 0);
@@ -514,7 +515,8 @@ namespace EngineLayer
                 peaksInPrecursorEnvelope = psm.PrecursorScanEnvelopePeakCount;
                 mostAbundantPrecursorPeakIntensity = (float)Math.Round((float)psm.PrecursorScanIntensity / normalizationFactor * multiplier, 0);
                 fractionalIntensity = (float)psm.PrecursorFractionalIntensity;
-                fraggerHyperScore = GetFraggerHyperScore(psm, selectedPeptide);
+                float[] fragerHyperScoreByLength = new float[75];
+                fragerHyperScoreByLength[selectedPeptide.BaseSequence.Length - 1] = GetFraggerHyperScore(psm, selectedPeptide);
 
                 if (PsmHasSpectralAngle(psm))
                 {
@@ -632,7 +634,7 @@ namespace EngineLayer
                 MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
                 PrecursorFractionalIntensity = fractionalIntensity,
                 InternalIonCount = internalMatchingFragmentCount,
-                FraggerHyperScore = fraggerHyperScore
+                FraggerHyperScorebyLength = fraggerHyperScore
             };
 
             return psm.PsmData_forPEPandPercolator;
@@ -1055,8 +1057,8 @@ namespace EngineLayer
             }
             float nIon = GetLog10Factorial((int)nIons.Count) ?? 0;
             float cIon = GetLog10Factorial((int)cIons.Count) ?? 0;
-            var log10IntensitySum = Math.Log10(nIonIntensitySum * cIonIntensitySum);
-            log10IntensitySum = log10IntensitySum ?? log10IntensitySum ?? 0;
+            double log10IntensitySum = 0;
+            log10IntensitySum = Math.Log10(nIonIntensitySum * cIonIntensitySum);
 
             return (float)((nIon + cIon + log10IntensitySum));
         }
