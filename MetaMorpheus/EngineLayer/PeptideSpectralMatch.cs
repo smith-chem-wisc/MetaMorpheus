@@ -47,6 +47,10 @@ namespace EngineLayer
             : base(psm, bestMatchingPeptides)
         {
         }
+
+        public PeptideSpectralMatch(SpectralMatch psm) : base(psm)
+        {
+        }
         #endregion
 
 

@@ -27,7 +27,6 @@ namespace EngineLayer
         /// <summary>
         /// This method contains the hyper-parameters that will be used when training the machine learning model
         /// </summary>
-        /// <param name="maxThreads">Maximum number of threads to use in training</param>
         /// <returns> Options object to be passed in to the FastTree constructor </returns>
         public Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options BGDTreeOptions =>
             new Microsoft.ML.Trainers.FastTree.FastTreeBinaryTrainer.Options
@@ -41,7 +40,7 @@ namespace EngineLayer
                 FeatureColumnName = "Features",
                 Seed = _randomSeed,
                 FeatureSelectionSeed = _randomSeed,
-                UnbalancedSets = true
+                RandomStart = false
             };
             
         private static readonly double AbsoluteProbabilityThatDistinguishesPeptides = 0.05;

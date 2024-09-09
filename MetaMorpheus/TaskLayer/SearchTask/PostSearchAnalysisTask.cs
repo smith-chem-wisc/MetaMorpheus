@@ -137,9 +137,36 @@ namespace TaskLayer
             // this could cause weird PSM FDR issues
 
             Status("Estimating PSM FDR...", Parameters.SearchTaskId);
-            new FdrAnalysisEngine(psms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters,
-                new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder).Run();
-          
+
+            List<int> psmsAboveQ = new List<int>();
+            List<int> peptidesAboveQ = new List<int>();
+            List<int> psmsAbovePepQ = new List<int>();
+            List<int> peptidesAbovePepQ = new List<int>();
+
+            for (int i = 0; i < 10; i++)
+            {
+                var tempPsms = psms
+                    .Select(p => new PeptideSpectralMatch(p))
+                    .Cast<SpectralMatch>()
+                    .ToList(); 
+                new FdrAnalysisEngine(tempPsms, Parameters.NumNotches, CommonParameters, this.FileSpecificParameters,
+                    new List<string> { Parameters.SearchTaskId }, analysisType: analysisType, doPEP: doPep, outputFolder: Parameters.OutputFolder).Run();
+                psmsAboveQ.Add(tempPsms.Count(p => p.FdrInfo.QValue <= 0.01));
+                peptidesAboveQ.Add(tempPsms.Count(p => p.PeptideFdrInfo.QValue <= 0.01));
+                psmsAbovePepQ.Add(tempPsms.Count(p => p.FdrInfo.PEP_QValue <= 0.01));
+                peptidesAbovePepQ.Add(tempPsms.Count(p => p.PeptideFdrInfo.PEP_QValue <= 0.01));
+            }
+            
+            // write summary text
+            using(StreamWriter writer = new StreamWriter(@"C:\Users\Alex\PEP_NoRandomOrdering.tsv"))
+            {
+                writer.WriteLine("PSMs Q\tPeptides Q\tPSMs PEP-Q\tPeptides PEP-Q");
+                for(int i = 0; i < 10; i++)
+                {
+                    writer.WriteLine(String.Join('\t', psmsAboveQ[i], peptidesAboveQ[i], psmsAbovePepQ[i], peptidesAbovePepQ[i]));
+                }
+            }
+            throw new Exception("PEP Seed Results written to file");
             Status("Done estimating PSM FDR!", Parameters.SearchTaskId);
         }
 
