@@ -515,7 +515,7 @@ namespace EngineLayer
                 peaksInPrecursorEnvelope = psm.PrecursorScanEnvelopePeakCount;
                 mostAbundantPrecursorPeakIntensity = (float)Math.Round((float)psm.PrecursorScanIntensity / normalizationFactor * multiplier, 0);
                 fractionalIntensity = (float)psm.PrecursorFractionalIntensity;
-                float[] fragerHyperScoreByLength = new float[75];
+                float[] fragerHyperScoreByLength = new float[150];
                 fragerHyperScoreByLength[selectedPeptide.BaseSequence.Length - 1] = GetFraggerHyperScore(psm, selectedPeptide);
 
                 if (PsmHasSpectralAngle(psm))

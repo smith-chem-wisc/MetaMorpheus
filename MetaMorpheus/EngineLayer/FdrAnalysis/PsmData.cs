@@ -181,7 +181,7 @@ namespace EngineLayer.FdrAnalysis
         [LoadColumn(28)]
         public float InternalIonCount { get; set; }
         
-        [LoadColumn(29,103)]
+        [LoadColumn(29,178)]
         public float FraggerHyperScorebyLength { get; set; }
     }
 }
