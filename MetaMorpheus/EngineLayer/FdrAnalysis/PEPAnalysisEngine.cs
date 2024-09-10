@@ -109,7 +109,7 @@ namespace EngineLayer
             MLContext mlContext = new MLContext();
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
 
-            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400);
+            var trainer = mlContext.BinaryClassification.Trainers.FastTree(labelColumnName: "Label", featureColumnName: "Features", numberOfTrees: 400, numberOfLeaves: 20, minimumExampleCountPerLeaf: 10);
             var pipeline = mlContext.Transforms.Concatenate("Features", TrainingVariables)
                 .Append(trainer);
 
@@ -1078,7 +1078,7 @@ namespace EngineLayer
             {
                 log10IntensitySum = Math.Log10(nIonIntensitySum * cIonIntensitySum); 
             }
-            
+
             return (float)((matched_n_IonCountFactorial + matched_c_IonCountFactorial + log10IntensitySum));;
         }
 

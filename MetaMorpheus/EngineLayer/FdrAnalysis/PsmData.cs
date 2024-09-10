@@ -83,13 +83,25 @@ namespace EngineLayer.FdrAnalysis
             StringBuilder sb = new StringBuilder();
             var variablesToOutput = PsmData.trainingInfos[searchType];
 
-            //foreach (var variable in variablesToOutput)
-            //{
-            //    var property = typeof(PsmData).GetProperty(variable).GetValue(this, null);
-            //    var floatValue = (float)property;
-            //    sb.Append("\t");
-            //    sb.Append(floatValue.ToString());
-            //}
+            foreach (var variable in variablesToOutput)
+            {
+                var property = typeof(PsmData).GetProperty(variable).GetValue(this, null);
+                if(property is float[])
+                {
+                    foreach (var value in (float[])property)
+                    {
+                        sb.Append("\t");
+                        sb.Append(value.ToString());
+                    }
+                    continue;
+                }
+                else
+                {
+                    var floatValue = (float)property;
+                    sb.Append("\t");
+                    sb.Append(floatValue.ToString());
+                } 
+            }
 
             return sb.ToString();
         }
