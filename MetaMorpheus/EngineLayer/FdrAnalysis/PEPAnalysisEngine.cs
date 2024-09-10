@@ -465,7 +465,7 @@ namespace EngineLayer
             float peaksInPrecursorEnvelope = 0;
             float mostAbundantPrecursorPeakIntensity = 0;
             float fractionalIntensity = 0;
-            float fraggerHyperScore = 0;
+            float[] fragerHyperScoreByLength = new float[150];
 
             float missedCleavages = 0;
             float longestSeq = 0;
@@ -515,7 +515,6 @@ namespace EngineLayer
                 peaksInPrecursorEnvelope = psm.PrecursorScanEnvelopePeakCount;
                 mostAbundantPrecursorPeakIntensity = (float)Math.Round((float)psm.PrecursorScanIntensity / normalizationFactor * multiplier, 0);
                 fractionalIntensity = (float)psm.PrecursorFractionalIntensity;
-                float[] fragerHyperScoreByLength = new float[150];
                 fragerHyperScoreByLength[selectedPeptide.BaseSequence.Length - 1] = GetFraggerHyperScore(psm, selectedPeptide);
 
                 if (PsmHasSpectralAngle(psm))
@@ -634,7 +633,7 @@ namespace EngineLayer
                 MostAbundantPrecursorPeakIntensity = mostAbundantPrecursorPeakIntensity,
                 PrecursorFractionalIntensity = fractionalIntensity,
                 InternalIonCount = internalMatchingFragmentCount,
-                FraggerHyperScorebyLength = fraggerHyperScore
+                FraggerHyperScorebyLength = fragerHyperScoreByLength
             };
 
             return psm.PsmData_forPEPandPercolator;
@@ -1040,6 +1039,14 @@ namespace EngineLayer
 
             return massErrors.Average();
         }
+        /// <summary>
+        /// Taken from Nat. Methods.https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5409104/
+        /// "MSFragger: ultrafast and comprehensive peptide identification in shotgun proteomics"
+        /// Andy T. Kong,1,2 Felipe V. Leprevost,2 Dmitry M. Avtonomov,2 Dattatreya Mellacheruvu,2 and Alexey I. Nesvizhskii1,2,*
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="selectedPeptide"></param>
+        /// <returns></returns>
         public static float GetFraggerHyperScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
         {
             var peptideFragmentIons = psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide];
@@ -1048,19 +1055,31 @@ namespace EngineLayer
             float nIonIntensitySum = 0;
             if(nIons.Any())
             {
-                nIons.Sum(f => f.Intensity);
+                nIonIntensitySum = (float)nIons.Sum(f => f.Intensity);
             }
             float cIonIntensitySum = 0;
             if (cIons.Any())
             {
-                cIons.Sum(f => f.Intensity);
+                cIonIntensitySum = (float)cIons.Sum(f => f.Intensity);
             }
-            float nIon = GetLog10Factorial((int)nIons.Count) ?? 0;
-            float cIon = GetLog10Factorial((int)cIons.Count) ?? 0;
-            double log10IntensitySum = 0;
-            log10IntensitySum = Math.Log10(nIonIntensitySum * cIonIntensitySum);
+            float matched_n_IonCountFactorial = 0;
+            if(nIons.Count > 0)
+            {
+                matched_n_IonCountFactorial = GetLog10Factorial((int)nIons.Count).Value;
+            }
+            float matched_c_IonCountFactorial = 0;
+            if (nIons.Count > 0)
+            {
+                matched_c_IonCountFactorial = GetLog10Factorial((int)cIons.Count).Value;
+            }
 
-            return (float)((nIon + cIon + log10IntensitySum));
+            double log10IntensitySum = 0.1;
+            if(nIonIntensitySum > 0 && cIonIntensitySum > 0)
+            {
+                log10IntensitySum = Math.Log10(nIonIntensitySum * cIonIntensitySum); 
+            }
+            
+            return (float)((matched_n_IonCountFactorial + matched_c_IonCountFactorial + log10IntensitySum));;
         }
 
         public static float? GetLog10Factorial(int n)

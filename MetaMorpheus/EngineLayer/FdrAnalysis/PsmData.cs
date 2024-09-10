@@ -83,13 +83,13 @@ namespace EngineLayer.FdrAnalysis
             StringBuilder sb = new StringBuilder();
             var variablesToOutput = PsmData.trainingInfos[searchType];
 
-            foreach (var variable in variablesToOutput)
-            {
-                var property = typeof(PsmData).GetProperty(variable).GetValue(this, null);
-                var floatValue = (float)property;
-                sb.Append("\t");
-                sb.Append(floatValue.ToString());
-            }
+            //foreach (var variable in variablesToOutput)
+            //{
+            //    var property = typeof(PsmData).GetProperty(variable).GetValue(this, null);
+            //    var floatValue = (float)property;
+            //    sb.Append("\t");
+            //    sb.Append(floatValue.ToString());
+            //}
 
             return sb.ToString();
         }
@@ -182,6 +182,7 @@ namespace EngineLayer.FdrAnalysis
         public float InternalIonCount { get; set; }
         
         [LoadColumn(29,178)]
-        public float FraggerHyperScorebyLength { get; set; }
+        [VectorType(150)]
+        public float[] FraggerHyperScorebyLength { get; set; }
     }
 }
