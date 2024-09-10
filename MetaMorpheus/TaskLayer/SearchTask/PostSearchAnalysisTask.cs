@@ -1778,19 +1778,39 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
-                string searchType;
+                string searchType = "standard";
                 if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
                 {
                     searchType = "top-down";
                 }
-                else
+
+                string header = "SpecId\tLabel\tScanNr";
+
+                header += "\tPeptide\tProteins";
+
+                StringBuilder sb = new StringBuilder();
+                var variablesToOutput = PsmData.trainingInfos[searchType];
+
+                foreach (var variable in variablesToOutput)
                 {
-                    searchType = "standard";
+                    if (variable is "FraggerHyperScorebyLength")
+                    {
+                        for(int i = 0; i < 150; i++)
+                        {
+                            sb.Append("\t");
+                            sb.Append("Length " + (i + 1).ToString());
+                        }
+                        continue;
+                    }
+                    else
+                    {
+                        sb.Append("\t");
+                        sb.Append(variable.ToString());
+                    }
                 }
 
-                string header = "SpecId\tLabel\tScanNr\t";
-                header += String.Join("\t", PsmData.trainingInfos[searchType]);
-                header += "\tPeptide\tProteins";
+                header += sb.ToString();
+
 
                 output.WriteLine(header);
 
@@ -1799,6 +1819,15 @@ namespace TaskLayer
 
                 foreach (var headerVariable in PsmData.trainingInfos[searchType])
                 {
+                    if(headerVariable is "FraggerHyperScorebyLength")
+                    {
+                        for (int i = 0; i < 150; i++)
+                        {
+                            directions.Append("\t");
+                            directions.Append(PsmData.assumedAttributeDirection[headerVariable]);
+                        }
+                        continue;
+                    }
                     directions.Append("\t");
                     directions.Append(PsmData.assumedAttributeDirection[headerVariable]);
                 }
@@ -1814,9 +1843,9 @@ namespace TaskLayer
                         output.Write(idNumber.ToString());
                         output.Write('\t' + (peptide.Peptide.Parent.IsDecoy ? -1 : 1).ToString());
                         output.Write('\t' + psm.ScanNumber.ToString());
-                        output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
                         output.Write('\t' + (peptide.Peptide.PreviousResidue + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextResidue).ToString());
                         output.Write('\t' + (peptide.Peptide.Parent.Accession).ToString());
+                        output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
                         output.WriteLine();
                     }
                     idNumber++;
