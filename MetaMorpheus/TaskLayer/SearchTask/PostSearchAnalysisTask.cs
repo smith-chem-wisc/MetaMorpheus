@@ -1815,7 +1815,7 @@ namespace TaskLayer
                 output.WriteLine(header);
 
                 StringBuilder directions = new StringBuilder();
-                directions.Append("DefaultDirection\t-\t-");
+                directions.Append("DefaultDirection\t-\t-\t\t");
 
                 foreach (var headerVariable in PsmData.trainingInfos[searchType])
                 {
