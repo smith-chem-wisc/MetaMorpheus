@@ -24,6 +24,7 @@ using OxyPlot;
 using static iText.Svg.SvgConstants;
 using System.Reflection;
 using UsefulProteomicsDatabases.Generated;
+using Easy.Common.Extensions;
 
 namespace Test
 {
@@ -805,5 +806,45 @@ namespace Test
             Assert.AreEqual(expected, result);
         }
 
+        [Test]
+        public static void TestGetFraggerHyperScore()
+        {
+            MassDiffAcceptor searchModes = new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5));
+
+            var p = new Protein("PEPTIDE", "accession");
+            var d = p.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ToList();
+            PeptideWithSetModifications pep = d.First();
+
+            CommonParameters commonParameters = new CommonParameters();
+
+            var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
+
+            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep});
+
+            MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
+
+            var peptideFragmentIons = new List<MatchedFragmentIon>
+            {
+                new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 100, 1, 1, 0), 100, 100, 1),
+                new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 200, 2, 2, 0), 200, 200, 2),
+                new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 300, 3, 3, 0), 300, 300, 3),
+                new MatchedFragmentIon(new Product(ProductType.y, FragmentationTerminus.C, 100, 1, 1, 0), 100, 100, 1),
+                new MatchedFragmentIon(new Product(ProductType.y, FragmentationTerminus.C, 200, 2, 2, 0), 200, 200, 1),
+                new MatchedFragmentIon(new Product(ProductType.y, FragmentationTerminus.C, 300, 3, 3, 0), 300, 300, 1)
+            };
+
+            SpectralMatch psm1 = new PeptideSpectralMatch(pep, 0, 3, 0, scan1, commonParameters, peptideFragmentIons);
+
+            psm1.ResolveAllAmbiguities();
+
+            // Act
+
+            float hyperScore = PepAnalysisEngine.GetFraggerHyperScore(psm1, psm1.BestMatchingBioPolymersWithSetMods.First().Peptide);
+
+
+            // Assert
+            Assert.AreEqual(7.112605f, hyperScore, 0.000001f);
+        }
     }
 }
