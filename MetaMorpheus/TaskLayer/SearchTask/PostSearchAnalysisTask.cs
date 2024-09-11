@@ -1798,7 +1798,7 @@ namespace TaskLayer
                         for(int i = 0; i < 150; i++)
                         {
                             sb.Append("\t");
-                            sb.Append("Length " + (i + 1).ToString());
+                            sb.Append("Length" + (i + 1).ToString());
                         }
                         continue;
                     }
