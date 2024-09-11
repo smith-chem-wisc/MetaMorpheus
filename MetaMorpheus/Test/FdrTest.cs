@@ -791,5 +791,19 @@ namespace Test
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
             Assert.AreEqual(topDownToString, pd.ToString("top-down"));
         }
+
+        [TestCase(5, 2.07918119f)]
+        [TestCase(0, 0.0f)]
+        [TestCase(-5, 0.0f)]
+        [Test]
+        public static void GetLog10Factorial_ReturnsCorrectValue(int n, float? expected)
+        {
+            // Act
+            float? result = PepAnalysisEngine.GetLog10Factorial(n);
+
+            // Assert
+            Assert.AreEqual(expected, result);
+        }
+
     }
 }
