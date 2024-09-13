@@ -379,46 +379,6 @@ namespace EngineLayer
             SpectralAngle = psm.SpectralAngle;
         }
 
-        public SpectralMatch(SpectralMatch psm)
-        {
-            _BestMatchingBioPolymersWithSetMods = psm._BestMatchingBioPolymersWithSetMods;
-            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.BaseSequence)).ResolvedValue;
-            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.FullSequence)).ResolvedValue;
-
-            ModsChemicalFormula = psm.ModsChemicalFormula;
-            Notch = psm.Notch;
-            BioPolymerWithSetModsLength = psm.BioPolymerWithSetModsLength;
-            OneBasedStartResidue = psm.OneBasedStartResidue;
-            OneBasedEndResidue = psm.OneBasedEndResidue;
-            BioPolymerWithSetModsMonoisotopicMass = psm.BioPolymerWithSetModsMonoisotopicMass;
-            ParentLength = psm.ParentLength;
-            Accession = psm.Accession;
-            Organism = psm.Organism;
-            MatchedFragmentIons = psm.MatchedFragmentIons;
-            PsmCount = psm.PsmCount;
-            ModsIdentified = psm.ModsIdentified;
-            LocalizedScores = psm.LocalizedScores;
-            ScanNumber = psm.ScanNumber;
-            PrecursorScanNumber = psm.PrecursorScanNumber;
-            ScanRetentionTime = psm.ScanRetentionTime;
-            ScanExperimentalPeaks = psm.ScanExperimentalPeaks;
-            TotalIonCurrent = psm.TotalIonCurrent;
-            ScanPrecursorCharge = psm.ScanPrecursorCharge;
-            ScanPrecursorMonoisotopicPeakMz = psm.ScanPrecursorMonoisotopicPeakMz;
-            ScanPrecursorMass = psm.ScanPrecursorMass;
-            FullFilePath = psm.FullFilePath;
-            ScanIndex = psm.ScanIndex;
-            FdrInfo = psm.FdrInfo;
-            Score = psm.Score;
-            Xcorr = psm.Xcorr;
-            RunnerUpScore = psm.RunnerUpScore;
-            IsDecoy = psm.IsDecoy;
-            IsContaminant = psm.IsContaminant;
-            DigestionParams = psm.DigestionParams;
-            BioPolymersWithSetModsToMatchingFragments = psm.BioPolymersWithSetModsToMatchingFragments;
-            SpectralAngle = psm.SpectralAngle;
-        }
-
         #endregion
 
         #region FDR
