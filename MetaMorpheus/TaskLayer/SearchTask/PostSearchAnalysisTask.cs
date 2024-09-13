@@ -1784,68 +1784,49 @@ namespace TaskLayer
                     searchType = "top-down";
                 }
 
+                //header
                 string header = "SpecId\tLabel\tScanNr";
-
-                header += "\tPeptide\tProteins";
 
                 StringBuilder sb = new StringBuilder();
                 var variablesToOutput = PsmData.trainingInfos[searchType];
 
                 foreach (var variable in variablesToOutput)
                 {
-                    if (variable is "FraggerHyperScorebyLength")
-                    {
-                        for(int i = 0; i < 150; i++)
-                        {
-                            sb.Append("\t");
-                            sb.Append("Length" + (i + 1).ToString());
-                        }
-                        continue;
-                    }
-                    else
-                    {
-                        sb.Append("\t");
-                        sb.Append(variable.ToString());
-                    }
+                    sb.Append("\t");
+                    sb.Append(variable.ToString());
                 }
-
                 header += sb.ToString();
-
-
+                header += "\tPeptide\tProteins";
                 output.WriteLine(header);
 
-                StringBuilder directions = new StringBuilder();
-                directions.Append("DefaultDirection\t-\t-\t\t");
+                //direction
+                string direction = "DefaultDirection\t\t";
 
-                foreach (var headerVariable in PsmData.trainingInfos[searchType])
+                sb = new StringBuilder();
+                variablesToOutput = PsmData.trainingInfos[searchType];
+
+                foreach (var variable in variablesToOutput)
                 {
-                    if(headerVariable is "FraggerHyperScorebyLength")
-                    {
-                        for (int i = 0; i < 150; i++)
-                        {
-                            directions.Append("\t");
-                            directions.Append(PsmData.assumedAttributeDirection[headerVariable]);
-                        }
-                        continue;
-                    }
-                    directions.Append("\t");
-                    directions.Append(PsmData.assumedAttributeDirection[headerVariable]);
+                    sb.Append("\t");
+                    sb.Append(PsmData.assumedAttributeDirection[variable]);
                 }
+                direction += sb.ToString();
+                direction += "\t\t";
+                output.WriteLine(direction);
 
-                output.WriteLine(directions.ToString());
-
+                //psmdata lines
                 int idNumber = 0;
-                psmList.OrderByDescending(p => p.Score);
+                psmList.OrderByDescending(p => p);
                 foreach (SpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
                 {
                     foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        output.Write(idNumber.ToString());
-                        output.Write('\t' + (peptide.Peptide.Parent.IsDecoy ? -1 : 1).ToString());
-                        output.Write('\t' + psm.ScanNumber.ToString());
-                        output.Write('\t' + (peptide.Peptide.PreviousResidue + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextResidue).ToString());
-                        output.Write('\t' + (peptide.Peptide.Parent.Accession).ToString());
-                        output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
+                        output.Write(idNumber.ToString()); //id number
+                        output.Write('\t' + (peptide.Peptide.Parent.IsDecoy ? -1 : 1).ToString()); //label
+                        output.Write('\t' + psm.ScanNumber.ToString()); //scan number
+                        output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));//psmdata
+                        output.Write('\t' + (peptide.Peptide.PreviousResidue + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextResidue).ToString());//peptide
+                        output.Write('\t' + (peptide.Peptide.Parent.Accession).ToString());//proteins
                         output.WriteLine();
                     }
                     idNumber++;

@@ -465,7 +465,7 @@ namespace EngineLayer
             float peaksInPrecursorEnvelope = 0;
             float mostAbundantPrecursorPeakIntensity = 0;
             float fractionalIntensity = 0;
-            float[] fragerHyperScoreByLength = new float[150];
+            float fragerHyperScoreByLength = 0;
 
             float missedCleavages = 0;
             float longestSeq = 0;
@@ -515,7 +515,7 @@ namespace EngineLayer
                 peaksInPrecursorEnvelope = psm.PrecursorScanEnvelopePeakCount;
                 mostAbundantPrecursorPeakIntensity = (float)Math.Round((float)psm.PrecursorScanIntensity / normalizationFactor * multiplier, 0);
                 fractionalIntensity = (float)psm.PrecursorFractionalIntensity;
-                fragerHyperScoreByLength[selectedPeptide.BaseSequence.Length - 1] = GetFraggerHyperScore(psm, selectedPeptide);
+                fragerHyperScoreByLength = GetFraggerHyperScore(psm, selectedPeptide);
 
                 if (PsmHasSpectralAngle(psm))
                 {
