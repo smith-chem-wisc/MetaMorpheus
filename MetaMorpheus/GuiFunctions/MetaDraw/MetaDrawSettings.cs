@@ -452,8 +452,9 @@ namespace GuiFunctions
         /// <summary>
         /// Loads in settings based upon SettingsSnapshot parameter
         /// </summary>
-        public static void LoadSettings(MetaDrawSettingsSnapshot settings)
+        public static void LoadSettings(MetaDrawSettingsSnapshot settings, out bool flaggedErrorOnRead)
         {
+            flaggedErrorOnRead = false;
             DisplayIonAnnotations = settings.DisplayIonAnnotations;
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
@@ -479,7 +480,6 @@ namespace GuiFunctions
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
 
-            bool flaggedError = false;
             try // Product Type Colors
             {
                 var firstSplit = settings.ProductTypeToColorValues.First().Split(',');
@@ -513,7 +513,7 @@ namespace GuiFunctions
             {
                 Debugger.Break();
                 SetDefaultProductTypeColors();
-                flaggedError = true;
+                flaggedErrorOnRead = true;
             }
 
             try // Beta Product Type Colors
@@ -550,7 +550,7 @@ namespace GuiFunctions
             {
                 Debugger.Break();
                 SetDefaultBetaProductTypeColors();
-                flaggedError = true;
+                flaggedErrorOnRead = true;
             }
 
             try // Modification Type Colors
@@ -586,7 +586,7 @@ namespace GuiFunctions
             {
                 Debugger.Break();
                 SetDefaultModificationColors();
-                flaggedError = true;
+                flaggedErrorOnRead = true;
             }
 
             try // Coverage Type Colors
@@ -622,7 +622,7 @@ namespace GuiFunctions
             {
                 Debugger.Break(); 
                 SetDefaultCoverageTypeColors();
-                flaggedError = true;
+                flaggedErrorOnRead = true;
             }
 
             try // Spectrum Descriptors
@@ -661,7 +661,7 @@ namespace GuiFunctions
             {
                 Debugger.Break();
                 SetDefaultProductTypeColors();
-                flaggedError = true;
+                flaggedErrorOnRead = true;
             }
         }
 

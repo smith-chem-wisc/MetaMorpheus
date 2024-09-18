@@ -82,7 +82,8 @@ namespace Test.MetaDraw
             snapshot.ShowLegend = false;
             snapshot.DrawNumbersUnderStationary = false;
             snapshot.SubAndSuperScriptIons = false;
-            MetaDrawSettings.LoadSettings(snapshot);
+            MetaDrawSettings.LoadSettings(snapshot, out bool flaggedError);
+            Assert.That(!flaggedError);
             Assert.That(snapshot.DisplayIonAnnotations.Equals(MetaDrawSettings.DisplayIonAnnotations));
             Assert.That(snapshot.AnnotateMzValues.Equals(MetaDrawSettings.AnnotateMzValues));
             Assert.That(snapshot.AnnotateCharges.Equals(MetaDrawSettings.AnnotateCharges));
@@ -115,7 +116,8 @@ namespace Test.MetaDraw
             snapshot.AxisTitleTextSize = 0;
             snapshot.StrokeThicknessAnnotated = 0;
             snapshot.StrokeThicknessUnannotated = 0;
-            MetaDrawSettings.LoadSettings(snapshot);
+            MetaDrawSettings.LoadSettings(snapshot, out flaggedError);
+            Assert.That(!flaggedError);
             Assert.That(MetaDrawSettings.AnnotatedFontSize, Is.EqualTo(14));
             Assert.That(MetaDrawSettings.AxisLabelTextSize, Is.EqualTo(12));
             Assert.That(MetaDrawSettings.AxisTitleTextSize, Is.EqualTo(14));
@@ -188,6 +190,79 @@ namespace Test.MetaDraw
             Assert.That(BlankSettingsView.CanOpen);
         }
 
+
+        [Test]
+        public static void TestLoadMetaDrawSettings()
+        {
+            // Set up testing environment
+            var metaDrawTestingDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw");
+            var testingDir = Path.Combine(metaDrawTestingDirectory, "TempTestData");
+            if (Directory.Exists(testingDir))
+                Directory.Delete(testingDir, true);
+            Directory.CreateDirectory(testingDir);
+
+            var masterSettings = Path.Combine(metaDrawTestingDirectory, @"105MetaDrawSettingsSaved.xml");
+            string outdatedSettingsPath = Path.Combine(testingDir, @"105MetaDrawSettingsSaved_COPY.xml");
+            File.Copy(masterSettings, outdatedSettingsPath);
+
+            // Save default values currently stored in MetaDrawSettings
+            var defaultCoverageColors = MetaDrawSettings.CoverageTypeToColor.Values.ToList();
+            var defaultColorValues = MetaDrawSettings.ProductTypeToColor.Values.ToList();
+
+            // CASE: user does not have a settings config file stored
+            // Desired outcome: All default values are used
+            MetaDrawSettingsViewModel viewModel = new MetaDrawSettingsViewModel(false);
+            var modelSettingsPath = MetaDrawSettingsViewModel.SettingsPath;
+            Assert.False(File.Exists(modelSettingsPath));
+            NUnit.Framework.Assert.That(!viewModel.HasDefaultSaved);
+
+            Assert.AreEqual(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(0), defaultCoverageColors[0]);
+            Assert.AreEqual(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(1), defaultCoverageColors[1]);
+            Assert.AreEqual(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(2), defaultCoverageColors[2]);
+
+                // Make one change and save this viewModel as a modern settings config for next test case
+            viewModel.CoverageColors.First().SelectionChanged("Yellow");
+            string modernSettingsPath = Path.Combine(testingDir, "temporaryCurrentSettingsConfig.xml");
+            MetaDrawSettingsViewModel.SettingsPath = modernSettingsPath;
+            viewModel.SaveAsDefault();
+
+            // CASE: user has modern settings config file stored
+            // Desired outcome: Read in correctly 
+            modelSettingsPath = MetaDrawSettingsViewModel.SettingsPath;
+            Assert.True(File.Exists(modelSettingsPath));
+            var creationTime = File.GetLastWriteTime(modernSettingsPath);
+            viewModel = new MetaDrawSettingsViewModel(false);
+                // check that no new file was generated
+            var creationTimeAfterLoad = File.GetLastWriteTime(modernSettingsPath);
+            Assert.AreEqual(creationTimeAfterLoad, creationTime);
+            
+            Assert.AreNotEqual(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(0), defaultCoverageColors[0]);
+            Assert.AreEqual(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(0), OxyColors.Yellow);
+            Assert.AreEqual(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(1), defaultCoverageColors[1]);
+            Assert.AreEqual(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(2), defaultCoverageColors[2]);
+
+
+            // CASE: user has old settings config file stored
+            // Desired outcome: We use what we can salvage, default the rest, delete old file, replace with modern
+            MetaDrawSettingsViewModel.SettingsPath = outdatedSettingsPath;
+
+            // Ensure settings are in outdated format
+            int commaCount = File.ReadLines(outdatedSettingsPath).Sum(p => p.Count(m => m.Equals(',')));
+            Assert.AreEqual(0, commaCount);
+
+            creationTime = File.GetLastWriteTime(outdatedSettingsPath);
+            viewModel = new MetaDrawSettingsViewModel(false);
+            creationTimeAfterLoad = File.GetLastWriteTime(outdatedSettingsPath);
+            Assert.AreNotEqual(creationTimeAfterLoad, creationTime);
+
+            Assert.AreEqual(MetaDrawSettings.ProductTypeToColor.Values.ElementAt(0), defaultColorValues[0]);
+            Assert.AreEqual(MetaDrawSettings.ProductTypeToColor.Values.ElementAt(1), defaultColorValues[1]);
+            Assert.AreEqual(MetaDrawSettings.ProductTypeToColor.Values.ElementAt(2), defaultColorValues[2]);
+
+            Directory.Delete(testingDir, true);
+        }
+
+
         [Test]
         public static void TestOldMetaDrawSettingsFileDoesNotCrash()
         {
@@ -227,16 +302,24 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(2), Is.Not.EqualTo(defaultCoverageColors[2]));
         }
 
+        [Test]
+        public static void TestMetaDrawSettingsLoadSettingsCases2()
+        {
+
+        }
+
         [Test] // This test passes by not crashing
         public static void TestMetaDrawSettingsLoadSettingsCases()
         {
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"105MetaDrawSettingsSavedEditedForTestCoverageFailures.xml");
             var snapShot = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(path);
-            MetaDrawSettings.LoadSettings(snapShot);
+            MetaDrawSettings.LoadSettings(snapShot, out bool flaggedError);
+            Assert.That(flaggedError);
 
             path = Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", @"105MetaDrawSettingsSavedEditedForTestCoverageSuccess.xml");
             snapShot = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(path);
-            MetaDrawSettings.LoadSettings(snapShot);
+            MetaDrawSettings.LoadSettings(snapShot, out flaggedError);
+            Assert.That(flaggedError);
         }
 
         [Test]
