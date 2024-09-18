@@ -479,6 +479,7 @@ namespace GuiFunctions
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
 
+            bool flaggedError = false;
             try // Product Type Colors
             {
                 var firstSplit = settings.ProductTypeToColorValues.First().Split(',');
@@ -504,11 +505,15 @@ namespace GuiFunctions
 
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Product Ion Color values");
                 }
             }
             catch (Exception e)
             {
                 Debugger.Break();
+                SetDefaultProductTypeColors();
+                flaggedError = true;
             }
 
             try // Beta Product Type Colors
@@ -537,11 +542,15 @@ namespace GuiFunctions
 
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Beta Product Ion Color values");
                 }
             }
             catch (Exception e)
             {
                 Debugger.Break();
+                SetDefaultBetaProductTypeColors();
+                flaggedError = true;
             }
 
             try // Modification Type Colors
@@ -569,11 +578,15 @@ namespace GuiFunctions
 
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Modification Color values");
                 }
             }
             catch (Exception e)
             {
                 Debugger.Break();
+                SetDefaultModificationColors();
+                flaggedError = true;
             }
 
             try // Coverage Type Colors
@@ -598,18 +611,25 @@ namespace GuiFunctions
                             if (CoverageTypeToColor.ContainsKey(key))
                                 CoverageTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
                         }
-
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Sequence Coverage color values");
+
                 }
             }
             catch (Exception e)
             {
-                Debugger.Break();
+                Debugger.Break(); 
+                SetDefaultCoverageTypeColors();
+                flaggedError = true;
             }
 
             try // Spectrum Descriptors
             {
+                if (!settings.SpectrumDescriptionValues.Any())
+                    throw new MetaMorpheusException("Cannot parse Spectrum Descriptor values");
+
                 var firstSplit = settings.SpectrumDescriptionValues.First().Split(',');
                 switch (firstSplit.Length)
                 {
@@ -633,11 +653,15 @@ namespace GuiFunctions
 
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Spectrum Descriptor values");
                 }
             }
             catch (Exception e)
             {
                 Debugger.Break();
+                SetDefaultProductTypeColors();
+                flaggedError = true;
             }
         }
 
