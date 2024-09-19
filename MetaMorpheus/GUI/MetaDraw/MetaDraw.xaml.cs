@@ -915,11 +915,19 @@ namespace MetaMorpheusGUI
                     MetaDrawSettings.DrawMatchedIons = false;
                 }
             }
+
             SetSequenceDrawingPositionSettings(true);
             object obj = new object();
             if (AmbiguousSequenceOptionBox.Items.Count > 0)
+            {
                 dataGridScanNums_SelectedCellsChanged(obj, null);
-            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
+                MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas,
+                    sequenceAnnotationCanvas, psm);
+            }
+            else
+            {
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Hidden;
+            }
         }
 
         /// <summary>

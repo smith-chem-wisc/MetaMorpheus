@@ -302,12 +302,6 @@ namespace Test.MetaDraw
             Assert.That(MetaDrawSettings.CoverageTypeToColor.Values.ElementAt(2), Is.Not.EqualTo(defaultCoverageColors[2]));
         }
 
-        [Test]
-        public static void TestMetaDrawSettingsLoadSettingsCases2()
-        {
-
-        }
-
         [Test] // This test passes by not crashing
         public static void TestMetaDrawSettingsLoadSettingsCases()
         {
