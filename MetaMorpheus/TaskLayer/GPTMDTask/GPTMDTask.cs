@@ -110,18 +110,8 @@ namespace TaskLayer
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            //allPsms = allPsms.OrderByDescending(b => b.Score)
-            //    .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
-            //    .GroupBy(b => new Tuple<string, int, double?>(b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass))
-            //    .Select(b => b.First()).ToList();
-
             new FdrAnalysisEngine(allPsms.OrderBy(p=>p).ToList(), tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }).Run();
 
-            //var writtenFile = Path.Combine(OutputFolder, "GPTMD_Candidates.psmtsv");
-            //WritePsmsToTsv(allPsms, writtenFile, new Dictionary<string, int>());
-            //FinishedWritingFile(writtenFile, new List<string> { taskId });
-
-            // get file-specific precursor mass tolerances for the GPTMD engine
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
             for (int i = 0; i < currentRawFileList.Count; i++)
             {
