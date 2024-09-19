@@ -13,6 +13,7 @@ using UsefulProteomicsDatabases;
 using Proteomics.ProteolyticDigestion;
 using System.Globalization;
 using Omics.Modifications;
+using System.Threading.Tasks;
 
 namespace TaskLayer
 {
@@ -30,14 +31,29 @@ namespace TaskLayer
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
+            MyFileManager myFileManager = new MyFileManager(true);
+            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
+
+            // start loading first spectra file in the background
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            nextFileLoadingTask.Start();
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // TODO: print error messages loading GPTMD mods
             List<Modification> gptmdModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
-            // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
+            // start loading proteins in the background
+            List<Protein> proteinList = null;
+            Task<List<Protein>> proteinLoadingTask = new(() =>
+            {
+                var proteins = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse,
+                    localizeableModificationTypes,
+                    CommonParameters);
+                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
+                return proteins;
+            });
+            proteinLoadingTask.Start();
 
             List<SpectralMatch> allPsms = new List<SpectralMatch>();
 
@@ -62,7 +78,6 @@ namespace TaskLayer
             ProseCreatedWhileRunning.Append("precursor mass tolerance(s) = {" + tempSearchMode.ToProseString() + "}; ");
 
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + ". ");
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             // start the G-PTM-D task
             Status("Running G-PTM-D...", new List<string> { taskId });
@@ -70,10 +85,6 @@ namespace TaskLayer
             {
                 NewDatabases = new List<DbForTask>()
             };
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
-            HashSet<DigestionParams> ListOfDigestionParams = new HashSet<DigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams));
-
-            MyFileManager myFileManager = new MyFileManager(true);
 
             object lock1 = new object();
             object lock2 = new object();
@@ -94,7 +105,18 @@ namespace TaskLayer
                 NewCollection(Path.GetFileName(origDataFile), new List<string> { taskId, "Individual Spectra Files", origDataFile });
 
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
-                MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
+
+                // ensure that the next file has finished loading from the async method
+                nextFileLoadingTask.Wait();
+                var myMsDataFile = nextFileLoadingTask.Result;
+                // if another file exists, then begin loading it in while the previous is being searched
+                if (origDataFile != currentRawFileList.Last())
+                {
+                    int nextFileIndex = spectraFileIndex + 1;
+                    nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
+                    nextFileLoadingTask.Start();
+                }
+                //MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
@@ -102,6 +124,21 @@ namespace TaskLayer
 
                 //spectral Library search and library generation have't applied to GPTMD yet
                 bool writeSpctralLibrary = false;
+
+                // ensure proteins are loaded in before proceeding with search
+                switch (proteinLoadingTask.IsCompleted)
+                {
+                    case true when proteinList is null: // has finished loading but not been set
+                        proteinList = proteinLoadingTask.Result;
+                        break;
+                    case true when proteinList.Any(): // has finished loading and already been set
+                        break;
+                    case false: // has not finished loading
+                        proteinLoadingTask.Wait();
+                        proteinList = proteinLoadingTask.Result;
+                        break;
+                }
+
                 new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, null, null, 
                     proteinList, searchMode, combinedParams, this.FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", origDataFile }, writeSpctralLibrary).Run();
                 allPsms.AddRange(allPsmsArray.Where(p => p != null));
