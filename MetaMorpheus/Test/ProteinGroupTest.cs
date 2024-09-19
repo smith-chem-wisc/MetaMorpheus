@@ -222,8 +222,8 @@ namespace Test
             List<string> proteinGroupsOutput = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllQuantifiedProteinGroups.tsv")).ToList();
             string firstDataLine = proteinGroupsOutput[2];
             string modInfoListProteinTwo = firstDataLine.Split('\t')[14];
-            Assert.AreEqual("#aa66[Hydroxylation on K,info:occupancy=0.33(1/3)];#aa71[Oxidation on S,info:occupancy=0.67(2/3)]", modInfoListProteinTwo);
 
+            Assert.AreEqual("#aa66[Hydroxylation on K,info:occupancy=0.40(2/5)];#aa71[Oxidation on S,info:occupancy=0.40(2/5)];#aa72[Didehydro on Y,info:occupancy=0.40(2/5)]", modInfoListProteinTwo);
             Directory.Delete(outputFolder, true);
         }
     }
