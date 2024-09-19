@@ -937,7 +937,6 @@ namespace MetaMorpheusGUI
                     MetaDrawSettings.DrawMatchedIons = false;
                 }
             }
-
             SetSequenceDrawingPositionSettings(true);
             object obj = new object();
             if (AmbiguousSequenceOptionBox.Items.Count > 0)

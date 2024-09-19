@@ -262,7 +262,6 @@ namespace Test.MetaDraw
             Directory.Delete(testingDir, true);
         }
 
-
         [Test]
         public static void TestOldMetaDrawSettingsFileDoesNotCrash()
         {
