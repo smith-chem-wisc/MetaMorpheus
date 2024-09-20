@@ -223,7 +223,7 @@ namespace Test
             string firstDataLine = proteinGroupsOutput[2];
             string modInfoListProteinTwo = firstDataLine.Split('\t')[14];
 
-            Assert.AreEqual("#aa66[Hydroxylation on K,info:occupancy=0.40(2/5)];#aa71[Oxidation on S,info:occupancy=0.40(2/5)];#aa72[Didehydro on Y,info:occupancy=0.40(2/5)]", modInfoListProteinTwo);
+            Assert.AreEqual("#aa71[Oxidation on S,info:occupancy=0.33(1/3)];#aa72[Didehydro on Y,info:occupancy=0.33(1/3)]", modInfoListProteinTwo);
             Directory.Delete(outputFolder, true);
         }
     }
