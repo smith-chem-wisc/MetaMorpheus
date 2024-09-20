@@ -64,9 +64,9 @@ namespace Test
         }
 
         [Test]
-        [TestCase("NNNPPP", "accession", "A", @"not applied", 1, 6, 3, 3, 0)]
-        [TestCase("NNNPPP", "accession", "A", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 1, 5, 2, 3, 0)]
-        [TestCase("NNNPPP", "accession", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 2, 5, 2, 3, 1)]
+        [TestCase("NNNPPP", "accession", "A", @"not applied", 1, 3, 0, 3, 0)]
+        [TestCase("NNNPPP", "accession", "A", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 1, 3, 0, 3, 0)]
+        [TestCase("NNNPPP", "accession", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 2, 3, 0, 3, 1)]
         public static void TestCombos(string proteinSequence, string accession, string variantAA, string sequenceVariantDescription, int numModHashes, int numModifiedResidues, int numModifiedResiduesN, int numModifiedResiduesP, int numModifiedResiduesNP)
         {
             List<SpectralMatch> allIdentifications = null;
@@ -104,15 +104,6 @@ namespace Test
             res.Mods.TryGetValue("accession_N1P", out var hash);
             Assert.AreEqual(numModifiedResiduesNP, (hash ?? new HashSet<Tuple<int, Modification>>()).Count);
         }
-
-        //[Test]
-        //public static void LoadOriginalMismatchedModifications()
-        //{
-        //    var protein = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, "oblm.xml"), true, DecoyType.Reverse, null, false, null, out var unknownModifications);
-        //    Assert.AreEqual(0, protein[0].OneBasedPossibleLocalizedModifications.Count);
-        //    protein[0].RestoreUnfilteredModifications();
-        //    Assert.AreEqual(1, protein[0].OneBasedPossibleLocalizedModifications.Count);
-        //}
 
         [Test]
         public static void TestSearchPtmVariantDatabase()

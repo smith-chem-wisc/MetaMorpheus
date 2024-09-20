@@ -117,22 +117,13 @@ namespace EngineLayer.Gptmd
                                         var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
                                             psms[i].MsDataScan.DissociationType.Value : CommonParameters.DissociationType;
 
-                                        foreach (var peptide in newPeptides)
-                                        {
-                                            var peptideTheorProducts = new List<Product>();
-                                            peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                                        scores = CalculatePeptideScores(newPeptides, dissociationType, psms[i]);
 
-                                            var scan = psms[i].MsDataScan;
-                                            var precursorMass = psms[i].ScanPrecursorMass;
-                                            var precursorCharge = psms[i].ScanPrecursorCharge;
-                                            var fileName = psms[i].FullFilePath;
-                                            List<MatchedFragmentIon> matchedIons = MatchFragmentIons(new Ms2ScanWithSpecificMass(scan, precursorMass, precursorCharge, fileName, CommonParameters), peptideTheorProducts, CommonParameters, matchAllCharges: false);
-
-                                            scores.Add(CalculatePeptideScore(psms[i].MsDataScan, matchedIons, false));
-                                        }
-
+                                        // If the score is within tolerance of the highest score, add the mod to the peptide
+                                        // If the tolerance is too tight, then the number of identifications in subsequent searches will be reduced
+                                        double scoreTolerance = 0.1;
                                         var highScoreIndices = scores.Select((item, index) => new { item, index })
-                                            .Where(x => x.item > (scores.Max() - SpectralMatch.ToleranceForScoreDifferentiation))
+                                            .Where(x => x.item > (scores.Max() - scoreTolerance))
                                             .Select(x => x.index)
                                             .ToList();
 
@@ -207,7 +198,26 @@ namespace EngineLayer.Gptmd
 
             return new GptmdResults(this, modDict.ToDictionary(kvp => kvp.Key, kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)), modsAdded);
         }
+        private ConcurrentBag<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
+        {
+            var scores = new ConcurrentBag<double>();
 
+            foreach (var peptide in newPeptides)
+            {
+                var peptideTheorProducts = new List<Product>();
+                peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+
+                var scan = psm.MsDataScan;
+                var precursorMass = psm.ScanPrecursorMass;
+                var precursorCharge = psm.ScanPrecursorCharge;
+                var fileName = psm.FullFilePath;
+                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(new Ms2ScanWithSpecificMass(scan, precursorMass, precursorCharge, fileName, CommonParameters), peptideTheorProducts, CommonParameters, matchAllCharges: false);
+
+                scores.Add(CalculatePeptideScore(psm.MsDataScan, matchedIons, false));
+            }
+
+            return scores;
+        }
         private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
         {
             modDict.AddOrUpdate(proteinAccession, new ConcurrentBag<Tuple<int, Modification>> { indexedMod }, (key, existingBag) =>

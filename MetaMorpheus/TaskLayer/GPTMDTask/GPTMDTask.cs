@@ -162,6 +162,7 @@ namespace TaskLayer
             }
 
             // run GPTMD engine
+            Status("Creating the GPTMD Database", new List<string> { taskId });
             var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }).Run();
 
             // Stop if canceled
@@ -215,6 +216,7 @@ namespace TaskLayer
                 MyTaskResults.AddTaskSummaryText("Mods types and counts:");
                 MyTaskResults.AddTaskSummaryText(string.Join(Environment.NewLine, newModsActuallyWritten.OrderByDescending(b => b.Value).Select(b => "\t" + b.Key + "\t" + b.Value)));
             }
+            Status("Done", new List<string> { taskId });
             return MyTaskResults;
         }
 
