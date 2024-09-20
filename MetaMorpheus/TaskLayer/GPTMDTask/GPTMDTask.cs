@@ -147,7 +147,7 @@ namespace TaskLayer
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
-            new FdrAnalysisEngine(allPsms.OrderBy(p=>p).ToList(), tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }).Run();
+            new FdrAnalysisEngine(allPsms.OrderBy(p=>p).ToList(), tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
 
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
             for (int i = 0; i < currentRawFileList.Count; i++)
