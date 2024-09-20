@@ -39,10 +39,6 @@ namespace TaskLayer
             nextFileLoadingTask.Start();
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
-            // TODO: print error messages loading GPTMD mods
-            List<Modification> gptmdModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
-
             // start loading proteins in the background
             List<Protein> proteinList = null;
             Task<List<Protein>> proteinLoadingTask = new(() =>
@@ -54,6 +50,11 @@ namespace TaskLayer
                 return proteins;
             });
             proteinLoadingTask.Start();
+
+            // TODO: print error messages loading GPTMD mods
+            List<Modification> gptmdModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
+
 
             List<SpectralMatch> allPsms = new List<SpectralMatch>();
 
@@ -116,7 +117,6 @@ namespace TaskLayer
                     nextFileLoadingTask = new Task<MsDataFile>(() => myFileManager.LoadFile(currentRawFileList[nextFileIndex], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[nextFileIndex])));
                     nextFileLoadingTask.Start();
                 }
-                //MsDataFile myMsDataFile = myFileManager.LoadFile(origDataFile, combinedParams);
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);

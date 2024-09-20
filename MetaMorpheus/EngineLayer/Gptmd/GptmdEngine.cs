@@ -99,7 +99,7 @@ namespace EngineLayer.Gptmd
 
                                     if (newPeptides.Any())
                                     {
-                                        var scores = new ConcurrentBag<double>();
+                                        var scores = new List<double>();
                                         var targetFragmentsForEachDissociationType = new ConcurrentDictionary<DissociationType, List<Product>>();
 
                                         if (CommonParameters.DissociationType == DissociationType.Autodetect)
@@ -198,9 +198,9 @@ namespace EngineLayer.Gptmd
 
             return new GptmdResults(this, modDict.ToDictionary(kvp => kvp.Key, kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)), modsAdded);
         }
-        private ConcurrentBag<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
+        private List<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
         {
-            var scores = new ConcurrentBag<double>();
+            var scores = new List<double>();
 
             foreach (var peptide in newPeptides)
             {
