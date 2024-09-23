@@ -13,6 +13,12 @@ using System.Linq;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using EngineLayer.FdrAnalysis;
+using System.Threading.Tasks;
+using EngineLayer.ClassicSearch;
+using System.IO;
+using System.Globalization;
+using NUnit.Framework.Internal;
 
 namespace Test
 {
@@ -62,6 +68,54 @@ namespace Test
             Assert.AreEqual(1, res.Mods.Count);
             Assert.AreEqual(numModifiedResidues, res.Mods["accession"].Count);
         }
+
+        [Test]
+        public static void TestGptmdEngineDissociationTypeAutodetect()
+        {
+            string origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory,
+                @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            //var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
+            MyFileManager myFileManager = new MyFileManager(true);
+            CommonParameters cp = new CommonParameters(maxThreadsToUsePerFile: 1, digestionParams: new DigestionParams());
+            var commonParameters = cp.CloneWithNewDissociationType(DissociationType.Autodetect);
+            SearchParameters SearchParameters = new SearchParameters();
+            var fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
+            fsp.Add(("SmallCalibratible_Yeast.mzML", commonParameters));
+            Tolerance precursorMassTolerance = new PpmTolerance(20);
+            var myMsDataFile = myFileManager.LoadFile(origDataFile, commonParameters);
+            List<double> acceptableMassShifts = new List<double> { 0.984015583, 0.984015583 };
+            MassDiffAcceptor searchModes = new DotMassDiffAcceptor("", acceptableMassShifts, precursorMassTolerance);
+            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse, false, out var dbErrors, ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
+                    ProteinDbLoader.UniprotOrganismRegex, -1);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, @"TestData\SmallCalibratible_Yeast.mzML", commonParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, commonParameters, fsp, null, new List<string>(), SearchParameters.WriteSpectralLibrary).Run();
+            FdrAnalysisResults fdrResultsClassicDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(allPsmsArray.Where(p => p != null).ToList(), 1,
+                commonParameters, fsp, new List<string>()).Run());
+
+            var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
+            GptmdParameters g = new GptmdParameters();
+            List<Modification> gptmdModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => g.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
+            var reducedMods = new List<Modification>();
+            foreach (var mod in gptmdModifications)
+            {
+                if (mod.IdWithMotif == "Deamidation on N" || mod.IdWithMotif == "Citrullination on R")
+                {
+                    reducedMods.Add(mod);
+                }
+            }
+
+            
+            var engine = new GptmdEngine(nonNullPsms, reducedMods, new List<Tuple<double, double>>(), new Dictionary<string, Tolerance> { { @"TestData\SmallCalibratible_Yeast.mzML", precursorMassTolerance } }, commonParameters, fsp, new List<string>());
+            var res = (GptmdResults)engine.Run();
+            Assert.AreEqual(8, res.Mods.Count);
+        }
+
 
         [Test]
         [TestCase("NNNPPP", "accession", "A", @"not applied", 1, 3, 0, 3, 0)]
