@@ -285,6 +285,19 @@
       <Component Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Guid="F5EDAA70-06CD-49E7-932F-016C679B07C7">
         <File Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Name="ThermoFisher.CommonCore.RawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.RawFileReader.dll" />
       </Component>
+
+		<Component Id="src_System.Data.SQLite.dll" Guid="b447a0f4-4f79-45aa-a225-069c27912fe3">
+			<File Id="src_System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.dll" />
+		</Component>
+		<Component Id="src_System.Data.SQLite.EF6.dll" Guid="287eac83-051e-491f-8f75-f28cb742c35c">
+			<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />
+		</Component>
+		
+		<Component Id="src_timsdata.dll" Guid="c40543fb-86cc-4fcc-a4f8-d7c536cab5ec">
+			<File Id="src_timsdata.dll" Name="timsdata.dll" Source="$(var.GUI_TargetDir)timsdata.dll" />
+		</Component>
+		
+		
       <Component Id="src_BayesianEstimation.dll" Guid="100F4A2E-F4FE-4D25-8C5F-66A7092A2622">
         <File Id="src_BayesianEstimation.dll" Name="BayesianEstimation.dll" Source="$(var.GUI_TargetDir)BayesianEstimation.dll" />
       </Component>
