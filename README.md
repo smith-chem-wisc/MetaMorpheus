@@ -29,11 +29,11 @@ Check out the [wiki page](https://github.com/smith-chem-wisc/MetaMorpheus/wiki) 
 
 * Environment:
   * 64-bit operating system
-  * .NET Core 6.0:
-     * Windows: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-desktop-6.0.27-windows-x64-installer
-     * macOS, x64 Intel processor: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-6.0.27-macos-x64-installer
-     * macOS, ARM Apple Silicon processor: https://dotnet.microsoft.com/download/dotnet/thank-you/runtime-6.0.27-macos-arm64-installer
-     * Linux: https://docs.microsoft.com/dotnet/core/install/linux-package-managers
+  * .NET Core 8.0:
+     * Windows: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.401-windows-x64-installer
+     * macOS, x64 Intel processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.401-macos-x64-installer
+     * macOS, ARM Apple Silicon processor: https://dotnet.microsoft.com/en-us/download/dotnet/thank-you/sdk-8.0.401-macos-arm64-installer
+     * Linux: https://learn.microsoft.com/dotnet/core/install/linux?WT.mc_id=dotnet-35129-website
 * Note that the installer (MetaMorpheusInstaller.msi) only works on Windows. The command-line version of MetaMorpheus supports any operating system that supports .NET Core (Windows, MacOS, Linux)
 * 8 GB RAM recommended
 
@@ -88,6 +88,8 @@ Proteogenomic database searches with Spritz: [Spritz: A Proteogenomic Database E
 Long-read proteogenomic characterization: [Enhanced protein isoform characterization through long-read proteogenomics, Genome Biology **2022**, _23_, 69.](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02624-y)
 
 Spectral library GPTMD search: [A Hybrid Spectral Library and Protein Sequence Database Search Strategy for Bottom-Up and Top-Down Proteomic Data Analysis, J of Proteome Res **2022**, _21_, 2609-2618](https://pubs.acs.org/doi/10.1021/acs.jproteome.2c00305)
+
+Spectral Averaging: [Spectral averaging with outlier rejection algorithms to increase identifications in top-down proteomics](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11216233/)
 
 ## mzLib, an all-purpose mass spectrometry toolchest implemented by MetaMorpheus
 
