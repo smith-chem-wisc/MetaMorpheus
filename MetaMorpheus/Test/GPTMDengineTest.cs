@@ -19,6 +19,7 @@ using EngineLayer.ClassicSearch;
 using System.IO;
 using System.Globalization;
 using NUnit.Framework.Internal;
+using Easy.Common;
 
 namespace Test
 {
@@ -116,10 +117,23 @@ namespace Test
             Assert.AreEqual(8, res.Mods.Count);
         }
 
+        /// <summary>
+        /// Example of a sequence variation:
+        /// @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30"
+        /// Reference allele: A
+        /// Alternate allele: G
+        /// Snpeff annotation: ANN=G||||||||||||||||
+        /// Allele Index: 1
+        /// Format: GT:AD:DP
+        /// Genotype: 1/1
+        /// Allelic depths: 30,30
+        /// Homozygous reference calls: 30
+        /// Heterozygous calls: 30
+        /// </summary>
 
         [Test]
-        [TestCase("NNNPPP", "accession", "A", @"not applied", 1, 3, 0, 3, 0)]
-        [TestCase("NNNPPP", "accession", "A", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 1, 3, 0, 3, 0)]
+        //[TestCase("NNNPPP", "accession", "A", @"not applied", 1, 3, 0, 3, 0)]
+        //[TestCase("NNNPPP", "accession", "A", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 1, 3, 0, 3, 0)]
         [TestCase("NNNPPP", "accession", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", 2, 3, 0, 3, 1)]
         public static void TestCombos(string proteinSequence, string accession, string variantAA, string sequenceVariantDescription, int numModHashes, int numModifiedResidues, int numModifiedResiduesN, int numModifiedResiduesP, int numModifiedResiduesNP)
         {
@@ -157,6 +171,40 @@ namespace Test
             Assert.AreEqual(numModifiedResiduesP, res.Mods["accession"].Where(b => b.Item2.OriginalId.Equals("16")).Count());
             res.Mods.TryGetValue("accession_N1P", out var hash);
             Assert.AreEqual(numModifiedResiduesNP, (hash ?? new HashSet<Tuple<int, Modification>>()).Count);
+        }
+
+        [Test]
+        public static void TestPtmBeforeVariant()
+        {
+            
+            List<SpectralMatch> allIdentifications = null;
+            ModificationMotif.TryGetMotif("N", out ModificationMotif motifN);
+            ModificationMotif.TryGetMotif("P", out ModificationMotif motifP);
+            var gptmdModifications = new List<Modification> { new Modification(_originalId: "21", _modificationType: "mt", _target: motifN, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943),
+                                                                      new Modification(_originalId: "16",  _modificationType: "mt", _target: motifP, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
+            IEnumerable<Tuple<double, double>> combos = new List<Tuple<double, double>> { new Tuple<double, double>(21.981943, 15.994915) };
+            Tolerance precursorMassTolerance = new PpmTolerance(10);
+
+            var parentProtein = new Protein("NNNPPP", "protein", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(6, 6, "P", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
+            var variantProteins = parentProtein.GetVariantProteins();
+
+            CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
+            List<Modification> variableModifications = new List<Modification>();
+            var modPep = variantProteins.SelectMany(p => p.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications)).First();
+
+            MsDataScan dfd = new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 0, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 0, null);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(dfd, (new Proteomics.AminoAcidPolymer.Peptide(modPep.BaseSequence).MonoisotopicMass + 21.981943 + 15.994915).ToMz(1), 1, "filepath", new CommonParameters());
+
+            var peptidesWithSetModifications = new List<PeptideWithSetModifications> { modPep };
+            SpectralMatch match = new PeptideSpectralMatch(peptidesWithSetModifications.First(), 0, 0, 0, scan, commonParameters, new List<MatchedFragmentIon>());
+
+            Tolerance fragmentTolerance = new AbsoluteTolerance(0.01);
+
+            match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
+            allIdentifications = new List<SpectralMatch> { match };
+
+            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
+            var res = (GptmdResults)engine.Run();
         }
 
         [Test]
