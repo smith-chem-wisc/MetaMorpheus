@@ -18,7 +18,7 @@ namespace EngineLayer.Gptmd
         private readonly List<SpectralMatch> AllIdentifications;
         private readonly IEnumerable<Tuple<double, double>> Combos;
         private readonly List<Modification> GptmdModifications;
-        private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance;
+        private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
 
         public GptmdEngine(List<SpectralMatch> allIdentifications, List<Modification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
@@ -34,14 +34,14 @@ namespace EngineLayer.Gptmd
             var hehe = motif.ToString().IndexOf(motif.ToString().First(b => char.IsUpper(b)));
             var proteinToMotifOffset = proteinOneBasedIndex - hehe - 1;
             var indexUp = 0;
-
+            // Look up starting at and including the capital letter
             while (indexUp < motif.ToString().Length)
             {
                 if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= protein.Length || (!char.ToUpper(motif.ToString()[indexUp]).Equals('X') && !char.ToUpper(motif.ToString()[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))
                     return false;
                 indexUp++;
             }
-
+            // if a UniProt mod already exists at this location with the same mass, don't annotate the GPTMD mod
             if (protein.OneBasedPossibleLocalizedModifications.TryGetValue(proteinOneBasedIndex, out List<Modification> modsAtThisLocation)
                 && modsAtThisLocation.Any(m => m.ModificationType == "UniProt" && Math.Abs(m.MonoisotopicMass.Value - attemptToLocalize.MonoisotopicMass.Value) < 0.005))
             {
@@ -74,6 +74,9 @@ namespace EngineLayer.Gptmd
                 var localModDict = new ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>>();
                 int localModsAdded = 0;
 
+                //foreach peptide in each psm and for each modification that matches the notch,
+                //add that modification to every allowed residue
+                //return those matches that give the highest score
                 for (; i < psms.Count(); i += maxThreadsPerFile)
                 {
                     foreach (var pepWithSetMods in psms[i].BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications))
@@ -136,6 +139,7 @@ namespace EngineLayer.Gptmd
                                 }
                             }
                         }
+                        // if a variant protein, index to variant protein if on variant, or to the original protein if not
                         else
                         {
                             foreach (var mod in possibleModifications)
@@ -153,6 +157,7 @@ namespace EngineLayer.Gptmd
                                             bool modIsBeforeVariant = indexInProtein < variant.OneBasedBeginPosition + offset;
                                             bool modIsOnVariant = variant.OneBasedBeginPosition + offset <= indexInProtein && indexInProtein <= variant.OneBasedEndPosition + offset;
 
+                                            // if a variant protein and the mod is on the variant, index to the variant protein sequence
                                             if (modIsOnVariant)
                                             {
                                                 AddIndexedMod(localModDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod));
@@ -161,6 +166,7 @@ namespace EngineLayer.Gptmd
                                                 break;
                                             }
 
+                                            // otherwise back calculate the index to the original protein sequence
                                             if (modIsBeforeVariant)
                                             {
                                                 AddIndexedMod(localModDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
@@ -231,6 +237,8 @@ namespace EngineLayer.Gptmd
         {
             foreach (var Mod in allMods.Where(b => b.ValidModification == true))
             {
+                //TODO: not necessarily here. I think we're creating ambiguity. If we're going to add a gptmd mod to a peptide that already has that mod, then we need info
+                // to suggest that it is at a postion other than that in the database. could be presence of frag for unmodified or presence of frag with modified at alternative location.
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + (double)Mod.MonoisotopicMass))
                     yield return Mod;
                 foreach (var modOnPsm in peptideWithSetModifications.AllModsOneIsNterminus.Values.Where(b => b.ValidModification == true))
