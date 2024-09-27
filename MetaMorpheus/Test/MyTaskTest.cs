@@ -354,6 +354,69 @@ namespace Test
             File.Delete(mzmlName);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
+        [Test]
+        public static void TestGptmdTaskWithContaminantDatabase()
+        {
+            MetaMorpheusTask task1;
+
+            {
+                ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
+                Modification myNewMod = new(_originalId: "ok", _modificationType: "okType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 229);
+
+                GlobalVariables.AddMods(new List<Modification> { myNewMod }, false);
+                task1 = new GptmdTask
+                {
+                    CommonParameters = new CommonParameters
+                    (
+                        digestionParams: new DigestionParams(initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain),
+                        listOfModsVariable: new List<(string, string)>(),
+                        listOfModsFixed: new List<(string, string)>(),
+                        scoreCutoff: 1,
+                        precursorMassTolerance: new AbsoluteTolerance(1)
+                    ),
+
+                    GptmdParameters = new GptmdParameters
+                    {
+                        ListOfModsGptmd = new List<(string, string)> { ("okType", "ok on T") },
+                    }
+                };
+            }
+
+            string xmlName = "sweetness.xml";
+
+            {
+                Protein theProtein = new Protein("MPEPTIDEKANTHE", "accession1", isContaminant: true);
+                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein }, xmlName);
+            }
+
+            string mzmlName = @"ok.mzML";
+
+            {
+                var theProteins = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
+
+                List<Modification> fixedModifications = new List<Modification>();
+
+                var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => b.OriginalId.Equals("ok")).ToList()).ToList();
+
+                ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
+                PeptideWithSetModifications targetGood = targetDigested[0];
+
+                PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
+                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod });
+
+                Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            }
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMakeSureGptmdTaskMatchesExactMatchesTest");
+            Directory.CreateDirectory(outputFolder);
+
+            // RUN!
+            var theContaminantDbResult = task1.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, true) }, new List<string> { mzmlName }, "taskId1").ToString();
+            Assert.IsTrue(theContaminantDbResult.Contains("Contaminant modifications added: 1"));
+            Directory.Delete(outputFolder, true);
+            File.Delete(xmlName);
+            File.Delete(mzmlName);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
 
         [Test]
         public static void TestPeptideCount()
