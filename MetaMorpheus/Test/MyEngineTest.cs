@@ -6,6 +6,7 @@ using Chemistry;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics.Fragmentation;
+using System;
 
 namespace Test
 {
@@ -23,9 +24,8 @@ namespace Test
         }
 
         [Test]
-        public static void MetaMorpheusEngineMatchFragmentIons()
+        public static void MetaMorpheusEngineMatchFragmentIonsWithUnknownMass()
         {
-
             TestDataFile t = new TestDataFile();
             Tolerance productMassTolerance = new AbsoluteTolerance(0.01);
             double precursorMass = 300;
@@ -36,22 +36,18 @@ namespace Test
             {
                 productsWithLocalizedMassDiff.Add(new Product(ProductType.b, FragmentationTerminus.Both, d, 1, 1, 0));
             }
+
+            Product productWithUnknownMass = new Product(ProductType.b, FragmentationTerminus.Both, Double.NaN, 1, 1, 0);
+            productsWithLocalizedMassDiff.Add(productWithUnknownMass);
+
             CommonParameters commonParametersNoComp = new CommonParameters { ProductMassTolerance = new AbsoluteTolerance(0.01) };
-            CommonParameters commonParametersWithComp = new CommonParameters(productMassTolerance: new AbsoluteTolerance(0.01), addCompIons: true);
 
             MsDataScan scan = t.GetOneBasedScan(2);
+            scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, precursorMass.ToMz(1));
             var scanWithMass = new Ms2ScanWithSpecificMass(scan, precursorMass.ToMz(1), 1, "", new CommonParameters());
             List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, productsWithLocalizedMassDiff, commonParametersNoComp);
-             
-            List<MatchedFragmentIon> matchedCompIons = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, productsWithLocalizedMassDiff, commonParametersWithComp);
-            matchedCompIons.AddRange(matchedIons);
 
-            // score when the mass-diff is on this residue
-            double localizedScore = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
-            double scoreNormal = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
-            double scoreComp = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedCompIons);
-            Assert.IsTrue(scoreNormal * 2 == scoreComp && scoreComp > scoreNormal + 1);
-            
+            Assert.AreEqual(1, matchedIons.Count);
         }
 
         private class TestEngine : MetaMorpheusEngine
