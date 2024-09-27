@@ -452,8 +452,9 @@ namespace GuiFunctions
         /// <summary>
         /// Loads in settings based upon SettingsSnapshot parameter
         /// </summary>
-        public static void LoadSettings(MetaDrawSettingsSnapshot settings)
+        public static void LoadSettings(MetaDrawSettingsSnapshot settings, out bool flaggedErrorOnRead)
         {
+            flaggedErrorOnRead = false;
             DisplayIonAnnotations = settings.DisplayIonAnnotations;
             AnnotateMzValues = settings.AnnotateMzValues;
             AnnotateCharges = settings.AnnotateCharges;
@@ -504,11 +505,15 @@ namespace GuiFunctions
 
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Product Ion Color values");
                 }
             }
             catch (Exception e)
             {
                 Debugger.Break();
+                SetDefaultProductTypeColors();
+                flaggedErrorOnRead = true;
             }
 
             try // Beta Product Type Colors
@@ -537,11 +542,15 @@ namespace GuiFunctions
 
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Beta Product Ion Color values");
                 }
             }
             catch (Exception e)
             {
                 Debugger.Break();
+                SetDefaultBetaProductTypeColors();
+                flaggedErrorOnRead = true;
             }
 
             try // Modification Type Colors
@@ -569,11 +578,15 @@ namespace GuiFunctions
 
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Modification Color values");
                 }
             }
             catch (Exception e)
             {
                 Debugger.Break();
+                SetDefaultModificationColors();
+                flaggedErrorOnRead = true;
             }
 
             try // Coverage Type Colors
@@ -598,18 +611,25 @@ namespace GuiFunctions
                             if (CoverageTypeToColor.ContainsKey(key))
                                 CoverageTypeToColor[key] = DrawnSequence.ParseOxyColorFromName(savedProductType.Split(',')[1]);
                         }
-
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Sequence Coverage color values");
+
                 }
             }
             catch (Exception e)
             {
-                Debugger.Break();
+                Debugger.Break(); 
+                SetDefaultCoverageTypeColors();
+                flaggedErrorOnRead = true;
             }
 
             try // Spectrum Descriptors
             {
+                if (!settings.SpectrumDescriptionValues.Any())
+                    throw new MetaMorpheusException("Cannot parse Spectrum Descriptor values");
+
                 var firstSplit = settings.SpectrumDescriptionValues.First().Split(',');
                 switch (firstSplit.Length)
                 {
@@ -633,11 +653,15 @@ namespace GuiFunctions
 
                         break;
                     }
+                    default:
+                        throw new MetaMorpheusException("Cannot parse Spectrum Descriptor values");
                 }
             }
             catch (Exception e)
             {
                 Debugger.Break();
+                SetDefaultProductTypeColors();
+                flaggedErrorOnRead = true;
             }
         }
 
