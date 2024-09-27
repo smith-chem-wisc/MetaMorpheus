@@ -137,11 +137,6 @@ namespace EngineLayer
 
             if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length != 0)
             {
-                // if the spectrum has no peaks
-                if (scan.TheScan.MassSpectrum.XArray.Length == 0)
-                {
-                    return matchedFragmentIons;
-                }
 
                 for (int i = 0; i < theoreticalProducts.Count; i++)
                 {
