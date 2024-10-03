@@ -13,7 +13,7 @@ namespace EngineLayer
             List<PsmFromTsv> psms = new List<PsmFromTsv>();
             warnings = new List<string>();
 
-            StreamReader reader = null;
+            StreamReader reader;
             try
             {
                 reader = new StreamReader(filePath);
