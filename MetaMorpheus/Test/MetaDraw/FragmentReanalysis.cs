@@ -29,11 +29,12 @@ namespace Test.MetaDraw
             var viewModel = new FragmentationReanalysisViewModel();
 
             // check default parameters on loading
-            Assert.That(viewModel.SelectedDissociationType, Is.EqualTo(DissociationType.HCD));
+            Assert.AreEqual(DissociationType.HCD, viewModel.SelectedDissociationType);
             Assert.False(viewModel.Persist);
             Assert.False(viewModel.UseInternalIons);
-            Assert.That(viewModel.MinInternalIonLength, Is.EqualTo(10));
-            Assert.That(viewModel.DissociationTypes.Count(), Is.EqualTo(7));
+            Assert.AreEqual(10, viewModel.MinInternalIonLength);
+            Assert.AreEqual(7, viewModel.DissociationTypes.Count());
+            Assert.AreEqual(20, viewModel.ProductIonMassTolerance);
 
             var productsToUse = viewModel.PossibleProducts.Where(p => p.Use).Select(p => p.ProductType).ToList();
             var hcdProducts = Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.HCD];
@@ -97,13 +98,24 @@ namespace Test.MetaDraw
             var psmToResearch = parsedPsms.First();
             var scan = dataFile.GetOneBasedScan(psmToResearch.Ms2ScanNumber);
 
+            // increase product ion tolerance and ensure more ions are found
+            viewModel.ProductIonMassTolerance = 200;
+            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            Assert.Less(psmToResearch.MatchedIons.Count, newMatchedIons.Count);
+
+            // decrease product ion tolerance and ensure fewer ions are found
+            viewModel.ProductIonMassTolerance = 2;
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            Assert.Less(newMatchedIons.Count, psmToResearch.MatchedIons.Count);
+            viewModel.ProductIonMassTolerance = 20;
+
             // ensure ambiguous psms get kicked out before reanalysis
             var ambiguousPsm = parsedPsms.First(p => p.FullSequence.Contains('|'));
             var newIons = viewModel.MatchIonsWithNewTypes(scan, ambiguousPsm);
             CollectionAssert.AreEqual(ambiguousPsm.MatchedIons, newIons);
 
             viewModel.PossibleProducts.ForEach(p => p.Use = true);
-            var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
+            newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
 
             // searching with additional ions should yield more 
             Assert.That(psmToResearch.MatchedIons.Count, Is.LessThan(newMatchedIons.Count));
