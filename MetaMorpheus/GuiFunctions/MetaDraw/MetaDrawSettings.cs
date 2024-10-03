@@ -15,12 +15,12 @@ namespace GuiFunctions
     {
         #region Constants 
 
-        public static char[] SubScriptNumbers = {
+        public static readonly char[] SubScriptNumbers = {
             '\u2080', '\u2081', '\u2082', '\u2083', '\u2084',
             '\u2085', '\u2086', '\u2087', '\u2088', '\u2089'
         };
 
-        public static char[] SuperScriptNumbers = {
+        public static readonly char[] SuperScriptNumbers = {
             '\u2070', '\u00b9', '\u00b2', '\u00b3', '\u2074',
             '\u2075', '\u2076', '\u2077', '\u2078', '\u2079'
         }; 
@@ -509,7 +509,7 @@ namespace GuiFunctions
                         throw new MetaMorpheusException("Cannot parse Product Ion Color values");
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Debugger.Break();
                 SetDefaultProductTypeColors();
@@ -546,7 +546,7 @@ namespace GuiFunctions
                         throw new MetaMorpheusException("Cannot parse Beta Product Ion Color values");
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Debugger.Break();
                 SetDefaultBetaProductTypeColors();
@@ -582,7 +582,7 @@ namespace GuiFunctions
                         throw new MetaMorpheusException("Cannot parse Modification Color values");
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Debugger.Break();
                 SetDefaultModificationColors();
@@ -618,7 +618,7 @@ namespace GuiFunctions
 
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Debugger.Break(); 
                 SetDefaultCoverageTypeColors();
@@ -627,7 +627,7 @@ namespace GuiFunctions
 
             try // Spectrum Descriptors
             {
-                if (!settings.SpectrumDescriptionValues.Any())
+                if (settings.SpectrumDescriptionValues.Count == 0)
                     throw new MetaMorpheusException("Cannot parse Spectrum Descriptor values");
 
                 var firstSplit = settings.SpectrumDescriptionValues.First().Split(',');
@@ -657,7 +657,7 @@ namespace GuiFunctions
                         throw new MetaMorpheusException("Cannot parse Spectrum Descriptor values");
                 }
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 Debugger.Break();
                 SetDefaultProductTypeColors();

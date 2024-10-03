@@ -419,7 +419,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public string FilePath
+        public new string FilePath
         {
             get
             {
