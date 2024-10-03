@@ -46,7 +46,7 @@ namespace EngineLayer
                 }
                 catch (Exception e)
                 {
-                    warnings.Add("Could not read line: " + lineCount);
+                    warnings.Add($"Could not read line: {lineCount} with error message: {e.Message}");
                 }
             }
 

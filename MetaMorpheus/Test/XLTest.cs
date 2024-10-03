@@ -1636,7 +1636,7 @@ namespace Test
                 Scans = ScansHere.ToArray();
             }
 
-            public static string FilePath
+            public new static string FilePath
             {
                 get
                 {
@@ -1718,7 +1718,7 @@ namespace Test
                 Scans = ScansHere.ToArray();
             }
 
-            public string FilePath
+            public new string FilePath
             {
                 get
                 {

@@ -97,7 +97,6 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\K13_20ng_1min_frac1.mzML") };
             databaseList = new List<DbForTask>() {new DbForTask(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta"), false) };
-            outputFolder = outputFolder;
 
             SearchTask searchTask = new SearchTask
             {
