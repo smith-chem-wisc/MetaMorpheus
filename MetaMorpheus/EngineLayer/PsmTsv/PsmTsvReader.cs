@@ -13,7 +13,7 @@ namespace EngineLayer
             List<PsmFromTsv> psms = new List<PsmFromTsv>();
             warnings = new List<string>();
 
-            StreamReader reader = null;
+            StreamReader reader;
             try
             {
                 reader = new StreamReader(filePath);
@@ -46,7 +46,7 @@ namespace EngineLayer
                 }
                 catch (Exception e)
                 {
-                    warnings.Add("Could not read line: " + lineCount);
+                    warnings.Add($"Could not read line: {lineCount} with error message: {e.Message}");
                 }
             }
 
