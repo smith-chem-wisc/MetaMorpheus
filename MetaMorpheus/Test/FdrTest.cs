@@ -24,6 +24,7 @@ using OxyPlot;
 using static iText.Svg.SvgConstants;
 using System.Reflection;
 using UsefulProteomicsDatabases.Generated;
+using Easy.Common.Extensions;
 
 namespace Test
 {
@@ -247,7 +248,7 @@ namespace Test
             double normalizationFactor = (double)pwsm.BaseSequence.Length;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
-            float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
+            float maxPsmIntensity = (float)(maxScorePsm.Score - (int)maxScorePsm.Score);
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(52.0).Within(0.05));
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
@@ -479,7 +480,7 @@ namespace Test
             double normalizationFactor = 1;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
-            float maxPsmIntensity = (float)Math.Min(50, Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
+            float maxPsmIntensity = (float)(maxScorePsm.Score - (int)maxScorePsm.Score);
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.AreEqual(maxPsmData.HydrophobicityZScore, float.NaN);
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
@@ -715,7 +716,7 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
                 "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity",
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide",
-                "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle"
+                "SpectralAngle", "HasSpectralAngle", "FraggerHyperScorebyLength"
             };
             Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
 
@@ -726,7 +727,7 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch",
                 "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries",
                 "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope",
-                "ChimeraCount", "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
+                "ChimeraCount", "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount", "FraggerHyperScorebyLength"
             };
             Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
 
@@ -735,7 +736,7 @@ namespace Test
                 "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore",
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "AlphaIntensity", "BetaIntensity",
                 "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "PeaksInPrecursorEnvelope",
-                "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
+                "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount", "FraggerHyperScorebyLength"
             };
             List<string> negativeAttributes = new List<string>
             {
@@ -783,13 +784,68 @@ namespace Test
                 MostAbundantPrecursorPeakIntensity = 25,
                 PrecursorFractionalIntensity = 26,
                 InternalIonCount = 27,
+                FraggerHyperScorebyLength = 29
             };
 
-            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22";
+            string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t21\t22\t29";
             Assert.AreEqual(standardToString, pd.ToString("standard"));
 
-            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
+            string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27\t29";
             Assert.AreEqual(topDownToString, pd.ToString("top-down"));
+        }
+
+        [TestCase(5, 2.07918119f)]
+        [TestCase(0, 0.0f)]
+        [TestCase(-5, 0.0f)]
+        [Test]
+        public static void GetLog10Factorial_ReturnsCorrectValue(int n, float? expected)
+        {
+            // Act
+            float? result = PepAnalysisEngine.GetLog10Factorial(n);
+
+            // Assert
+            Assert.AreEqual(expected, result);
+        }
+
+        [Test]
+        public static void TestGetFraggerHyperScore()
+        {
+            MassDiffAcceptor searchModes = new DotMassDiffAcceptor(null, new List<double> { 0, 1.0029 }, new PpmTolerance(5));
+
+            var p = new Protein("PEPTIDE", "accession");
+            var d = p.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).ToList();
+            PeptideWithSetModifications pep = d.First();
+
+            CommonParameters commonParameters = new CommonParameters();
+
+            var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
+
+            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep});
+
+            MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
+            Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
+
+            var peptideFragmentIons = new List<MatchedFragmentIon>
+            {
+                new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 100, 1, 1, 0), 100, 100, 1),
+                new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 200, 2, 2, 0), 200, 200, 2),
+                new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 300, 3, 3, 0), 300, 300, 3),
+                new MatchedFragmentIon(new Product(ProductType.y, FragmentationTerminus.C, 100, 1, 1, 0), 100, 100, 1),
+                new MatchedFragmentIon(new Product(ProductType.y, FragmentationTerminus.C, 200, 2, 2, 0), 200, 200, 1),
+                new MatchedFragmentIon(new Product(ProductType.y, FragmentationTerminus.C, 300, 3, 3, 0), 300, 300, 1)
+            };
+
+            SpectralMatch psm1 = new PeptideSpectralMatch(pep, 0, 3, 0, scan1, commonParameters, peptideFragmentIons);
+
+            psm1.ResolveAllAmbiguities();
+
+            // Act
+
+            float hyperScore = PepAnalysisEngine.GetFraggerHyperScore(psm1, psm1.BestMatchingBioPolymersWithSetMods.First().Peptide);
+
+
+            // Assert
+            Assert.AreEqual(7.112605f, hyperScore, 0.000001f);
         }
     }
 }

@@ -726,7 +726,7 @@ namespace Test
             Assert.That(singleCsmPsmData.ComplementaryIonCount, Is.EqualTo(2).Within(0.1));
             Assert.That(singleCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
             Assert.That(singleCsmPsmData.HydrophobicityZScore, Is.EqualTo(5).Within(0.1));
-            Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0).Within(0.1));
+            Assert.That(singleCsmPsmData.Intensity, Is.EqualTo(0.168412149f).Within(0.1));
             Assert.AreEqual(singleCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(singleCsmPsmData.IsInter, 0);
             Assert.AreEqual(singleCsmPsmData.IsIntra, 0);
@@ -740,7 +740,7 @@ namespace Test
             Assert.AreEqual(singleCsmPsmData.ModsCount, 1);
             Assert.AreEqual(singleCsmPsmData.Notch, 0);
             Assert.AreEqual(singleCsmPsmData.PrecursorChargeDiffToMode, -1);
-            Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(8).Within(0.1));
+            Assert.That(singleCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(30).Within(0.1));
 
             CrosslinkSpectralMatch loopCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Loop).OrderBy(c => -c.Score).First();
             var loopCsmPsmData = pepEngine.CreateOnePsmDataEntry("standard", loopCsm, loopCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, loopCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !loopCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy); Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(6).Within(0.1));
@@ -750,7 +750,7 @@ namespace Test
             Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(3).Within(0.1));
             Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
             Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(1).Within(0.1));
-            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(1).Within(0.1));
+            Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(0.205627412f).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(loopCsmPsmData.IsInter, 0);
             Assert.AreEqual(loopCsmPsmData.IsIntra, 0);
@@ -764,7 +764,7 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.ModsCount, 2);
             Assert.AreEqual(loopCsmPsmData.Notch, 0);
             Assert.AreEqual(loopCsmPsmData.PrecursorChargeDiffToMode, -1);
-            Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(8).Within(0.1));
+            Assert.That(loopCsmPsmData.TotalMatchingFragmentCount, Is.EqualTo(22).Within(0.1));
 
             unnasignedCrossType = 0;
             inter = 0;
