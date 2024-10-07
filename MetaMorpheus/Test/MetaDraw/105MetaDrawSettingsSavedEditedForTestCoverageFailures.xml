@@ -24,6 +24,7 @@
 	<string>true</string>
     <string>true</string>
     <string>true</string>
+    <string>gobbledygook</string>
   </SpectrumDescriptionValues>
   <ProductTypeToColorValues>
     <string>Aqua</string>
@@ -3823,6 +3824,7 @@
     <string>Hullabaloo</string>
     <string>Aqua</string>
     <string>Aqua</string>
+    <string>Claptrap</string>
   </CoverageTypeToColorValues>
   <UnannotatedPeakColor>LightGray</UnannotatedPeakColor>
   <InternalIonColor>Purple</InternalIonColor>
