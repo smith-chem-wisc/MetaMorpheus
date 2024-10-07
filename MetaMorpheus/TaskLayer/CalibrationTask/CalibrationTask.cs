@@ -145,12 +145,12 @@ namespace TaskLayer
                 double precursorTolerance = 40;
                 if (aR.PsmPrecursorIqrPpmError > 0) 
                 {
-                    precursorTolerance = Math.Min(40, aR.PsmPrecursorIqrPpmError * 4);
+                    precursorTolerance = Math.Min(40, aR.PsmPrecursorIqrPpmError * 4) + Math.Abs(aR.PsmPrecursorMedianPpmError);
                 }
                 double productTolerance = 150;
                 if (aR.PsmProductIqrPpmError > 0)
                 {
-                    productTolerance = Math.Min(40, aR.PsmProductIqrPpmError * 4);
+                    productTolerance = Math.Min(40, aR.PsmProductIqrPpmError * 4) + Math.Abs(aR.PsmProductMedianPpmError);
                 }
                 acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
 
