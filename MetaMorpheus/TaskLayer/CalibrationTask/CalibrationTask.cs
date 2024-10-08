@@ -93,7 +93,7 @@ namespace TaskLayer
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults aR = null;
                 CalibrationParameters.QValueCutoffForCalibratingPSMs = 0.05;
-                aR = GetDataAcquisitionResultsSkinny(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(40), new PpmTolerance(150));
+                aR = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(40), new PpmTolerance(150), 10);
 
                 if (aR.Psms.Count(p=>!p.IsDecoy) > NumRequiredPsms && aR.Ms1List.Count < NumRequiredMs1Datapoints && aR.Ms2List.Count < NumRequiredMs2Datapoints)
                 {
@@ -142,8 +142,8 @@ namespace TaskLayer
                 }
 
                 DataPointAquisitionResults acquisitionResults = null;
-                double precursorTolerance = Math.Min(40, aR.PsmPrecursorIqrPpmError * 4) + Math.Abs(aR.PsmPrecursorMedianPpmError);
-                double productTolerance = Math.Min(40, aR.PsmProductIqrPpmError * 4) + Math.Abs(aR.PsmProductMedianPpmError);
+                double precursorTolerance = Math.Min(40, aR.PsmPrecursorIqrPpmError * 5 + Math.Abs(aR.PsmPrecursorMedianPpmError));
+                double productTolerance = Math.Min(40, aR.PsmProductIqrPpmError * 5 + Math.Abs(aR.PsmProductMedianPpmError));
                 acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
 
                 // stats before calibration
@@ -159,6 +159,10 @@ namespace TaskLayer
                 //update file
                 myMsDataFile = engine.CalibratedDataFile;
 
+                precursorTolerance = Math.Min(40, acquisitionResults.PsmPrecursorIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
+                productTolerance = Math.Min(40, acquisitionResults.PsmProductIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
+
                 //generate calibration function and shift data points AGAIN because it's fast and contributes new data
                 Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                 engine = new CalibrationEngine(myMsDataFile, acquisitionResults, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
@@ -166,6 +170,10 @@ namespace TaskLayer
 
                 //update file
                 myMsDataFile = engine.CalibratedDataFile;
+
+                precursorTolerance = Math.Min(40, acquisitionResults.PsmPrecursorIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
+                productTolerance = Math.Min(40, acquisitionResults.PsmProductIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
 
                 // write the calibrated mzML file
                 myMsDataFile.ExportAsMzML(calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
@@ -227,33 +235,14 @@ namespace TaskLayer
         private readonly int NumRequiredMs2Datapoints = 100;
         public const string CalibSuffix = "-calib";
 
-        private static bool ImprovGlobal(double prevPrecTol, double prevProdTol, int prevPsmCount, int thisRoundPsmCount, double thisRoundPrecTol, double thisRoundProdTol)
-        {
-            if (thisRoundPsmCount > prevPsmCount)
-            {
-                return true;
-            }
-
-            double precRatio = thisRoundPrecTol / prevPrecTol;
-            double prodRatio = thisRoundProdTol / prevProdTol;
-
-            if (thisRoundPsmCount == prevPsmCount)
-            {
-                return precRatio + prodRatio < 2; // Take any improvement in ratios
-            }
-
-            var countRatio = (double)thisRoundPsmCount / prevPsmCount;
-            return countRatio > 0.9 && precRatio + prodRatio < 1.8;
-        }
-
-        private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
+        private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol, int ms2Fraction = 1)
         {
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
             MassDiffAcceptor searchMode = initPrecTol is PpmTolerance ?
                 (MassDiffAcceptor)new SinglePpmAroundZeroSearchMode(initPrecTol.Value) :
                 new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
 
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).ToArray();
+            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).Where((x, i) => i % ms2Fraction == 0).ToArray();
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
 
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
@@ -272,62 +261,6 @@ namespace TaskLayer
 
             List<SpectralMatch> goodIdentifications = allPsms.Where(b => 
                 b.FdrInfo.QValueNotch < CalibrationParameters.QValueCutoffForCalibratingPSMs 
-                && b.FullSequence != null
-                && !b.IsDecoy).ToList();
-
-            if (!goodIdentifications.Any())
-            {
-                return new DataPointAquisitionResults(null, new List<SpectralMatch>(), new List<LabeledDataPoint>(), new List<LabeledDataPoint>(), 0, 0, 0, 0);
-            }
-
-            //get the deconvoluted ms2scans for the good identifications
-            List<Ms2ScanWithSpecificMass> goodScans = new List<Ms2ScanWithSpecificMass>();
-            List<SpectralMatch> unfilteredPsms = allPsmsArray.ToList();
-            foreach (SpectralMatch psm in goodIdentifications)
-            {
-                goodScans.Add(listOfSortedms2Scans[unfilteredPsms.IndexOf(psm)]);
-            }
-
-            DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
-                    goodIdentifications,
-                    goodScans,
-                    myMsDataFile,
-                    initPrecTol,
-                    initProdTol,
-                    CalibrationParameters.MinMS1IsotopicPeaksNeededForConfirmedIdentification,
-                    CommonParameters,
-                    FileSpecificParameters,
-                    new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }).Run();
-
-            return currentResult;
-        }
-
-        private DataPointAquisitionResults GetDataAcquisitionResultsSkinny(MsDataFile myMsDataFile, string currentDataFile, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
-        {
-            string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
-            MassDiffAcceptor searchMode = initPrecTol is PpmTolerance ?
-                (MassDiffAcceptor)new SinglePpmAroundZeroSearchMode(initPrecTol.Value) :
-                new SingleAbsoluteAroundZeroSearchMode(initPrecTol.Value);
-
-            Ms2ScanWithSpecificMass[] listOfSortedms2Scans = GetMs2Scans(myMsDataFile, currentDataFile, combinedParameters).OrderBy(b => b.PrecursorMass).Where((x,i) => i % 10 == 0).ToArray();
-            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
-
-            Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
-            Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
-
-            bool writeSpectralLibrary = false;
-            _ = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters,
-                FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }, writeSpectralLibrary).Run();
-            List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
-
-            allPsms = allPsms.OrderByDescending(b => b.Score)
-                .ThenBy(b => b.BioPolymerWithSetModsMonoisotopicMass.HasValue ? Math.Abs(b.ScanPrecursorMass - b.BioPolymerWithSetModsMonoisotopicMass.Value) : double.MaxValue)
-                .GroupBy(b => (b.FullFilePath, b.ScanNumber, b.BioPolymerWithSetModsMonoisotopicMass)).Select(b => b.First()).ToList();
-
-            _ = new FdrAnalysisEngine(allPsms, searchMode.NumNotches, CommonParameters, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }, doPEP: false).Run();
-
-            List<SpectralMatch> goodIdentifications = allPsms.Where(b =>
-                b.FdrInfo.QValueNotch < CalibrationParameters.QValueCutoffForCalibratingPSMs
                 && b.FullSequence != null
                 && !b.IsDecoy).ToList();
 
