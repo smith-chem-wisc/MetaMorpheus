@@ -161,7 +161,10 @@ namespace EngineLayer
                 sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
             }
 
-            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved);
+            int positiveTrainingCount = PSMDataGroups.SelectMany(p => p).Count(p => p.Label);
+            int negativeTrainingcount = PSMDataGroups.SelectMany(p => p).Count(p => !p.Label);
+
+            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
         }
 
         /// <summary>
@@ -331,7 +334,8 @@ namespace EngineLayer
             return pda.AsEnumerable();
         }
 
-        public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved)
+        public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved,
+                    int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff)
         {
             List<double> accuracy = allMetrics.Select(m => m.Accuracy).ToList();
             List<double> areaUnderRocCurve = allMetrics.Select(m => m.AreaUnderRocCurve).ToList();
@@ -381,6 +385,9 @@ namespace EngineLayer
             s.AppendLine("*       NegativePrecision:  " + negativePrecision.Average().ToString());
             s.AppendLine("*       NegativeRecall:  " + negativeRecall.Average().ToString());
             s.AppendLine("*       Count of Ambiguous Peptides Removed:  " + sumOfAllAmbiguousPeptidesResolved.ToString());
+            s.AppendLine("*       Q-Value Cutoff for Training Targets:  " + qValueCutoff);
+            s.AppendLine("*       Targets Used for Training:  " + positiveTrainingCount.ToString());
+            s.AppendLine("*       Decoys Used for Training:  " + negativeTrainingCount.ToString());
             s.AppendLine("************************************************************");
             return s.ToString();
         }
