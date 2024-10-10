@@ -22,8 +22,6 @@ namespace TaskLayer
         public CalibrationTask() : base(MyTask.Calibrate)
         {
             CommonParameters = new CommonParameters(
-                productMassTolerance: new PpmTolerance(25),
-                precursorMassTolerance: new PpmTolerance(15),
                 trimMsMsPeaks: false,
                 doPrecursorDeconvolution: false
                 );
@@ -32,7 +30,12 @@ namespace TaskLayer
         }
 
         public CalibrationParameters CalibrationParameters { get; set; }
-
+        private readonly int NumRequiredPsms = 20;
+        private readonly int NumRequiredMs1Datapoints = 50;
+        private readonly int NumRequiredMs2Datapoints = 100;
+        double MaxPrecursorTolerance = 40;
+        double MaxProductTolerance = 150;
+        public const string CalibSuffix = "-calib";
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
@@ -72,8 +75,6 @@ namespace TaskLayer
             {
                 if (GlobalVariables.StopLoops) { break; }
 
-                bool couldNotFindEnoughDatapoints = false;
-
                 // get filename stuff
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
@@ -91,128 +92,109 @@ namespace TaskLayer
 
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
-                DataPointAquisitionResults aR = null;
-                CalibrationParameters.QValueCutoffForCalibratingPSMs = 0.05;
-                aR = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(40), new PpmTolerance(150), 10);
 
-                if (aR.Psms.Count(p=>!p.IsDecoy) > NumRequiredPsms && aR.Ms1List.Count < NumRequiredMs1Datapoints && aR.Ms2List.Count < NumRequiredMs2Datapoints)
-                {
-                    var qValueNotchForMaxRequiredPsm = aR.Psms.Where(p => !p.IsDecoy).Select(p=>p.FdrInfo.QValueNotch).ToList()[NumRequiredPsms];
-                    CalibrationParameters.QValueCutoffForCalibratingPSMs = Math.Max(0.005, qValueNotchForMaxRequiredPsm);
-                }
-                else
-                {
-                    aR = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(40), new PpmTolerance(150));
-                    if (aR.Psms.Count(p => !p.IsDecoy) > NumRequiredPsms && aR.Ms1List.Count < NumRequiredMs1Datapoints && aR.Ms2List.Count < NumRequiredMs2Datapoints)
-                    {
-                        var qValueNotchForMaxRequiredPsm = aR.Psms.Where(p => !p.IsDecoy).Select(p => p.FdrInfo.QValueNotch).ToList()[NumRequiredPsms];
-                        CalibrationParameters.QValueCutoffForCalibratingPSMs = Math.Max(0.005, qValueNotchForMaxRequiredPsm);
-                    }
-                    else if (aR.Psms.Count(p => !p.IsDecoy) > 0 && aR.Ms1List.Count < 0 && aR.Ms2List.Count < 0)
-                    {
-                        var qValueNotchForMaxRequiredPsm = aR.Psms.Where(p => !p.IsDecoy).Select(p=>p.FdrInfo.QValueNotch).Max();
-                        CalibrationParameters.QValueCutoffForCalibratingPSMs = Math.Max(0.005, qValueNotchForMaxRequiredPsm);
-                    }
-                    else
-                    {
-                        couldNotFindEnoughDatapoints = true;
-                    }
-                }
-
-                if(couldNotFindEnoughDatapoints == true)
-                {
-                    if (aR.Psms.Count < NumRequiredPsms)
-                    {
-                        Warn("Calibration failure! Could not find enough high-quality PSMs. Required " + NumRequiredPsms + ", saw " + aR.Psms.Count);
-                        FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        continue;
-                    }
-                    else if (aR.Ms1List.Count < NumRequiredMs1Datapoints)
-                    {
-                        Warn("Calibration failure! Could not find enough MS1 datapoints. Required " + NumRequiredMs1Datapoints + ", saw " + aR.Ms1List.Count);
-                        FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        continue;
-                    }
-                    else if (aR.Ms2List.Count < NumRequiredMs2Datapoints)
-                    {
-                        Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + NumRequiredMs2Datapoints + ", saw " + aR.Ms2List.Count);
-                        FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        continue;
-                    }
-                }
-
+                // We first run get acquisition results with a high q-value cutoff to get a rough estimate of the precursor and product mass errors and the q-value cuttoff for calibrating PSMs
+                // We then use these errors to set the precursor and product tolerances for the next round of acquisition results
+                // We then run get acquisition results again with the new tolerances to get the final calibration data points
                 DataPointAquisitionResults acquisitionResults = null;
-                double precursorTolerance = Math.Min(40, aR.PsmPrecursorIqrPpmError * 5 + Math.Abs(aR.PsmPrecursorMedianPpmError));
-                double productTolerance = Math.Min(40, aR.PsmProductIqrPpmError * 5 + Math.Abs(aR.PsmProductMedianPpmError));
-                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
-
-                // stats before calibration
-                int prevPsmCount = acquisitionResults.Psms.Count;
-                double preCalibrationPrecursorErrorIqr = acquisitionResults.PsmPrecursorIqrPpmError;
-                double preCalibrationProductErrorIqr = acquisitionResults.PsmProductIqrPpmError;
-
-                // generate calibration function and shift data points
-                Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                CalibrationEngine engine = new(myMsDataFile, acquisitionResults, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                _ = engine.Run();
-
-                //update file
-                myMsDataFile = engine.CalibratedDataFile;
-
-                precursorTolerance = Math.Min(40, acquisitionResults.PsmPrecursorIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
-                productTolerance = Math.Min(40, acquisitionResults.PsmProductIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
-                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
-
-                //generate calibration function and shift data points AGAIN because it's fast and contributes new data
-                Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                engine = new CalibrationEngine(myMsDataFile, acquisitionResults, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                _ = engine.Run();
-
-                //update file
-                myMsDataFile = engine.CalibratedDataFile;
-
-                precursorTolerance = Math.Min(40, acquisitionResults.PsmPrecursorIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
-                productTolerance = Math.Min(40, acquisitionResults.PsmProductIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
-                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
-
-                // write the calibrated mzML file
-                myMsDataFile.ExportAsMzML(calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
-                myFileManager.DoneWithFile(originalUncalibratedFilePath);
-
-                // stats after calibration
-                int postCalibrationPsmCount = acquisitionResults.Psms.Count;
-                double postCalibrationPrecursorErrorIqr = acquisitionResults.PsmPrecursorIqrPpmError;
-                double postCalibrationProductErrorIqr = acquisitionResults.PsmProductIqrPpmError;
-
-                //// did the data improve? (not used for anything yet...)
-                //bool improvement = ImprovGlobal(preCalibrationPrecursorErrorIqr, preCalibrationProductErrorIqr, prevPsmCount, postCalibrationPsmCount, postCalibrationPrecursorErrorIqr, postCalibrationProductErrorIqr);
-
-                // write toml settings for the calibrated file
-                string newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
-
-                FileSpecificParameters fileSpecificParams = new();
-
-                // carry over file-specific parameters from the uncalibrated file to the calibrated one
-                if (fileSettingsList[spectraFileIndex] != null)
+                double precursorTolerance = MaxPrecursorTolerance;
+                double productTolerance = MaxProductTolerance;
+                CalibrationParameters.QValueCutoffForCalibratingPSMs = 0.05;
+                // get acquisition results with a subset of the data if possible to set the initital tolerances
+                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(150), 10);
+                if (acquisitionResults.Psms.Count(p=>!p.IsDecoy) > NumRequiredPsms && acquisitionResults.Ms1List.Count > NumRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > NumRequiredMs2Datapoints)
                 {
-                    fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
+                    //set initial tolerances and q-value cutoff for GetAcquisitionResults
+                    var qValueNotchForMaxRequiredPsm = acquisitionResults.Psms.Where(p => !p.IsDecoy).Select(p=>p.FdrInfo.QValueNotch).ToList()[NumRequiredPsms];
+                    CalibrationParameters.QValueCutoffForCalibratingPSMs = (0 < qValueNotchForMaxRequiredPsm && qValueNotchForMaxRequiredPsm < MaxPrecursorTolerance) ? qValueNotchForMaxRequiredPsm : 0.05;
+                    var potentialNewPrecursorTolerance = acquisitionResults.PsmPrecursorIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError);
+                    var potentialNewProductTolerance = acquisitionResults.PsmProductIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmProductMedianPpmError);
+                    precursorTolerance = (0 < potentialNewPrecursorTolerance && potentialNewPrecursorTolerance < MaxPrecursorTolerance) ? potentialNewPrecursorTolerance : MaxPrecursorTolerance;
+                    productTolerance = (0 < potentialNewProductTolerance && potentialNewProductTolerance < MaxProductTolerance) ? potentialNewProductTolerance : MaxProductTolerance;
                 }
 
-                //suggest 4 * interquartile range as the ppm tolerance
-                fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((4.0 * postCalibrationPrecursorErrorIqr) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
-                fileSpecificParams.ProductMassTolerance = new PpmTolerance((4.0 * postCalibrationProductErrorIqr) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+                // This is the first set of acquisition results that will be used to calibrate the file
+                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
+                if (acquisitionResults.Psms.Count(p => !p.IsDecoy) > NumRequiredPsms && acquisitionResults.Ms1List.Count > NumRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > NumRequiredMs2Datapoints)
+                {
+                    //set next tolerances and q-value cutoff for GetAcquisitionResults
+                    if(acquisitionResults.Psms.Count(p => !p.IsDecoy && p.FdrInfo.QValueNotch > 0.005) > 1000) // it is okay to reduce the threshold for the q-value cutoff if there are a lot of PSMs
+                    {
+                        CalibrationParameters.QValueCutoffForCalibratingPSMs = 0.005;
+                    }
+                    else if (acquisitionResults.Psms.Count(p => !p.IsDecoy && p.FdrInfo.QValueNotch > 0.01) > 1000) // we didn't have a ton of PSMs at 0.005, so let's try 0.01
+                    {
+                        CalibrationParameters.QValueCutoffForCalibratingPSMs = 0.01;
+                    }
+                    var potentialNewPrecursorTolerance = acquisitionResults.PsmPrecursorIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError);
+                    var potentialNewProductTolerance = acquisitionResults.PsmProductIqrPpmError * 5 + Math.Abs(acquisitionResults.PsmProductMedianPpmError);
+                    precursorTolerance = (0 < potentialNewPrecursorTolerance && potentialNewPrecursorTolerance < MaxPrecursorTolerance) ? potentialNewPrecursorTolerance : MaxPrecursorTolerance;
+                    productTolerance = (0 < potentialNewProductTolerance && potentialNewProductTolerance < MaxProductTolerance) ? potentialNewProductTolerance : MaxProductTolerance;
 
-                Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
+                    // generate calibration function and shift data points
+                    Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
+                    CalibrationEngine engine = new(myMsDataFile, acquisitionResults, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                    _ = engine.Run();
 
-                FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                    //update file
+                    myMsDataFile = engine.CalibratedDataFile;
 
-                // finished calibrating this file
-                FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                MyTaskResults.NewSpectra.Add(calibratedFilePath);
-                MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
-                FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
-                
+                    // use the tolereances and cuttoffs defined above to get acquisition results that will be used to calibrate the file
+                    // using 5x the interquartile range of the ppm errors as the tolerance to have more data points for calibration
+                    acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
+
+                    if (acquisitionResults.Psms.Count(p => !p.IsDecoy) > NumRequiredPsms && acquisitionResults.Ms1List.Count > NumRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > NumRequiredMs2Datapoints)
+                    {
+
+                        //generate calibration function and shift data points AGAIN because it's fast and contributes new data
+                        Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
+                        engine = new CalibrationEngine(myMsDataFile, acquisitionResults, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                        _ = engine.Run();
+
+                        //update file
+                        // repeat GetAcquisitionResults which will provide the ultimate precursor and product tolerances for the toml
+                        myMsDataFile = engine.CalibratedDataFile;
+
+                        // write the calibrated mzML file
+                        myMsDataFile.ExportAsMzML(calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
+                        myFileManager.DoneWithFile(originalUncalibratedFilePath);
+
+                        // write toml settings for the calibrated file
+                        string newTomlFileName = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".toml");
+
+                        FileSpecificParameters fileSpecificParams = new();
+
+                        // carry over file-specific parameters from the uncalibrated file to the calibrated one
+                        if (fileSettingsList[spectraFileIndex] != null)
+                        {
+                            fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
+                        }
+
+                        //suggest 4 * interquartile range as the ppm tolerance
+                        fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((4.0 * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
+                        fileSpecificParams.ProductMassTolerance = new PpmTolerance((4.0 * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+
+                        Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
+
+                        FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+
+                        // finished calibrating this file
+                        FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                        MyTaskResults.NewSpectra.Add(calibratedFilePath);
+                        MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
+                        FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+                        ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
+                    }
+
+                }
+                else // give up
+                {
+                    // provide a message indicating why we couldn't calibrate
+                    CalibrationWarnMessage(acquisitionResults);
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
+                    continue;
+                }
             }
 
             // re-write experimental design (if it has been defined) with new calibrated file names
@@ -230,10 +212,24 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        private readonly int NumRequiredPsms = 20;
-        private readonly int NumRequiredMs1Datapoints = 50;
-        private readonly int NumRequiredMs2Datapoints = 100;
-        public const string CalibSuffix = "-calib";
+
+
+        private void CalibrationWarnMessage(DataPointAquisitionResults acquisitionResults)
+        {
+            // provide a message indicating why we couldn't calibrate
+            if (acquisitionResults.Psms.Count < NumRequiredPsms)
+            {
+                Warn("Calibration failure! Could not find enough high-quality PSMs. Required " + NumRequiredPsms + ", saw " + acquisitionResults.Psms.Count);
+            }
+            else if (acquisitionResults.Ms1List.Count < NumRequiredMs1Datapoints)
+            {
+                Warn("Calibration failure! Could not find enough MS1 datapoints. Required " + NumRequiredMs1Datapoints + ", saw " + acquisitionResults.Ms1List.Count);
+            }
+            else if (acquisitionResults.Ms2List.Count < NumRequiredMs2Datapoints)
+            {
+                Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + NumRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
+            }
+        }
 
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol, int ms2Fraction = 1)
         {
