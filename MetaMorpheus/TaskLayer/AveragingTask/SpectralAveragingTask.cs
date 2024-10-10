@@ -81,15 +81,14 @@ namespace TaskLayer
                 }
                 catch (Exception e)
                 {
-                    Warn($"Averaging Failure! Could not average spectra for file {originalUnaveragedFilepathWithoutExtenstion}");
+                    Warn($"Averaging Failure! Could not average spectra for file {originalUnaveragedFilepathWithoutExtenstion} with exception {e.Message}");
                 }
                 myFileManager.DoneWithFile(originalUnaveragedFilepath);
 
                 // carry over file-specific parameters from the unaveraged file to the averaged one
-                var fileSpecificParams = new FileSpecificParameters();
                 if (fileSettingsList[spectraFileIndex] != null)
                 {
-                    fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();// write toml settings for the averaged file if there are file specific parameters
+                    var fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();// write toml settings for the averaged file if there are file specific parameters
                     var newTomlFileName = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".toml");
                     Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
                     FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });
