@@ -141,9 +141,13 @@ namespace TaskLayer
                         precursors.Clear();
                         MsDataScan ms2scan = ms2Scans[i];
 
+                        PrecursorFromDeconvolution:
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                         {
                             MsDataScan precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
+
+                            if (precursorSpectrum is null)
+                                goto PrecursorFromScanHeader;
 
                             try
                             {
@@ -191,6 +195,7 @@ namespace TaskLayer
                         }
 
                         //if use precursor info from scan header and scan header has charge state
+                        PrecursorFromScanHeader:
                         if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue) 
                         {
                             int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
