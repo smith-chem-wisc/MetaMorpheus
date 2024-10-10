@@ -236,6 +236,9 @@ namespace EngineLayer.Calibration
                 double theoreticalMass = matchedIon.NeutralTheoreticalProduct.NeutralMass;
                 //get envelopes that match
                 var envelopesThatMatch = isotopicEnvelopes.Where(x => ms2Tolerance.Within(x.MonoisotopicMass, theoreticalMass)).OrderBy(x => Math.Abs(x.MonoisotopicMass - theoreticalMass)).ToList();
+                
+                if(envelopesThatMatch.Count == 0)
+                    continue;
                 //only allow one envelope per charge state
                 bool[] chargeStateFound = new bool[envelopesThatMatch.Max(x => x.Charge) + 1];
 

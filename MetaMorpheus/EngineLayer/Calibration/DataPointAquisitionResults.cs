@@ -7,6 +7,9 @@ using MathNet.Numerics.Statistics;
 
 namespace EngineLayer.Calibration
 {
+    /// <summary>
+    /// Returns PSMs that can be used for calibration based on tolerance limits passed from the calibration task
+    /// </summary>
     public class DataPointAquisitionResults : MetaMorpheusEngineResults
     {
         public DataPointAquisitionResults(
