@@ -21,6 +21,7 @@ using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
 using Easy.Common.Extensions;
+using Readers;
 
 namespace TaskLayer
 {
@@ -129,6 +130,50 @@ namespace TaskLayer
                 return scansWithPrecursors;
             }
 
+            // short circuit for already deconvoluted files
+            if (myMSDataFile is MsAlign align)
+            {
+                if (align.All(scan => scan.MsnOrder == 2))
+                {
+                    for (int i = 0; i < ms2Scans.Length; i++)
+                    {
+                        scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>()
+                        {
+                            new Ms2ScanWithSpecificMass(ms2Scans[i], ms2Scans[i].SelectedIonMZ.Value,
+                                ms2Scans[i].SelectedIonChargeStateGuess.Value, fullFilePath, commonParameters, null,
+                                ms2Scans[i].SelectedIonIntensity ?? 1)
+                        };
+                    }
+                    return scansWithPrecursors;
+                }
+
+                int groups = align.Scans.Select(p => p.OneBasedPrecursorScanNumber).Distinct().Count() - 1;
+                foreach (var kvp in align.Scans.GroupBy(p => p.OneBasedPrecursorScanNumber))
+                {
+                    var localScansWithPrecursors = new List<Ms2ScanWithSpecificMass>(kvp.Count());
+                    // no precursor scan
+                    if (kvp.Key is null)
+                    {
+                        for (int i = 0; i < kvp.Count(); i++)
+                        {
+                            localScansWithPrecursors[i] = new Ms2ScanWithSpecificMass(ms2Scans[i], ms2Scans[i].SelectedIonMZ.Value,
+                                ms2Scans[i].SelectedIonChargeStateGuess.Value, fullFilePath, commonParameters, null,
+                                ms2Scans[i].SelectedIonIntensity ?? 1);
+                        }
+                    }
+                    else
+                    {
+                        double sumOfIntensity = kvp.Sum(p => p.SelectedIonIntensity ?? 1);
+                        for (int i = 0; i < kvp.Count(); i++)
+                        {
+                            localScansWithPrecursors[i] = new Ms2ScanWithSpecificMass(ms2Scans[i], ms2Scans[i].SelectedIonMZ.Value,
+                                ms2Scans[i].SelectedIonChargeStateGuess.Value, fullFilePath, commonParameters, null,
+                                ms2Scans[i].SelectedIonIntensity ?? 1, null, ms2Scans[i].SelectedIonIntensity / sumOfIntensity);
+                        }
+                    }
+                }
+            }
+
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
@@ -141,7 +186,6 @@ namespace TaskLayer
                         precursors.Clear();
                         MsDataScan ms2scan = ms2Scans[i];
 
-                        PrecursorFromDeconvolution:
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                         {
                             MsDataScan precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
