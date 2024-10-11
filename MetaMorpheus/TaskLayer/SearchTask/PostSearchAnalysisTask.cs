@@ -1778,45 +1778,55 @@ namespace TaskLayer
         {
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
-                string searchType;
+                string searchType = "standard";
                 if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
                 {
                     searchType = "top-down";
                 }
-                else
+
+                //header
+                string header = "SpecId\tLabel\tScanNr";
+
+                StringBuilder sb = new StringBuilder();
+                var variablesToOutput = PsmData.trainingInfos[searchType];
+
+                foreach (var variable in variablesToOutput)
                 {
-                    searchType = "standard";
+                    sb.Append("\t");
+                    sb.Append(variable.ToString());
                 }
-
-                string header = "SpecId\tLabel\tScanNr\t";
-                header += String.Join("\t", PsmData.trainingInfos[searchType]);
+                header += sb.ToString();
                 header += "\tPeptide\tProteins";
-
                 output.WriteLine(header);
 
-                StringBuilder directions = new StringBuilder();
-                directions.Append("DefaultDirection\t-\t-");
+                //direction
+                string direction = "DefaultDirection\t\t";
 
-                foreach (var headerVariable in PsmData.trainingInfos[searchType])
+                sb = new StringBuilder();
+                variablesToOutput = PsmData.trainingInfos[searchType];
+
+                foreach (var variable in variablesToOutput)
                 {
-                    directions.Append("\t");
-                    directions.Append(PsmData.assumedAttributeDirection[headerVariable]);
+                    sb.Append("\t");
+                    sb.Append(PsmData.assumedAttributeDirection[variable]);
                 }
+                direction += sb.ToString();
+                direction += "\t\t";
+                output.WriteLine(direction);
 
-                output.WriteLine(directions.ToString());
-
+                //psmdata lines
                 int idNumber = 0;
-                psmList.OrderByDescending(p => p.Score);
+                psmList.OrderByDescending(p => p);
                 foreach (SpectralMatch psm in psmList.Where(p => p.PsmData_forPEPandPercolator != null))
                 {
                     foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        output.Write(idNumber.ToString());
-                        output.Write('\t' + (peptide.Peptide.Parent.IsDecoy ? -1 : 1).ToString());
-                        output.Write('\t' + psm.ScanNumber.ToString());
-                        output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
-                        output.Write('\t' + (peptide.Peptide.PreviousResidue + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextResidue).ToString());
-                        output.Write('\t' + (peptide.Peptide.Parent.Accession).ToString());
+                        output.Write(idNumber.ToString()); //id number
+                        output.Write('\t' + (peptide.Peptide.Parent.IsDecoy ? -1 : 1).ToString()); //label
+                        output.Write('\t' + psm.ScanNumber.ToString()); //scan number
+                        output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));//psmdata
+                        output.Write('\t' + (peptide.Peptide.PreviousResidue + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextResidue).ToString());//peptide
+                        output.Write('\t' + (peptide.Peptide.Parent.Accession).ToString());//proteins
                         output.WriteLine();
                     }
                     idNumber++;

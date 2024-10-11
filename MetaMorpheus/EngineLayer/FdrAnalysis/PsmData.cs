@@ -15,7 +15,7 @@ namespace EngineLayer.FdrAnalysis
                     "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore",
                     "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", 
                     "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore",
-                    "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle", 
+                    "IsVariantPeptide", "SpectralAngle", "HasSpectralAngle", "FraggerHyperScorebyLength"
                 }
             },
 
@@ -26,7 +26,7 @@ namespace EngineLayer.FdrAnalysis
                     "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", 
                     "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle",
                     "HasSpectralAngle", "PeaksInPrecursorEnvelope", "ChimeraCount",
-                    "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
+                    "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount", "FraggerHyperScorebyLength"
                 }
             },
 
@@ -75,6 +75,7 @@ namespace EngineLayer.FdrAnalysis
             { "MostAbundantPrecursorPeakIntensity", 1 },
             { "PrecursorFractionalIntensity", 1 },
             { "InternalIonCount", 1},
+            { "FraggerHyperScorebyLength", 1},
             }.ToImmutableDictionary();
 
         public string ToString(string searchType)
@@ -92,6 +93,11 @@ namespace EngineLayer.FdrAnalysis
 
             return sb.ToString();
         }
+
+        //If you need to add an array instead of just one feature you can use the following code
+        //[LoadColumn(29, 103)]
+        //[VectorType(75)]
+        //public float[] FraggerHyperScorebyLength { get; set; }
 
         [LoadColumn(0)]
         public float Intensity { get; set; }
@@ -179,5 +185,8 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(28)]
         public float InternalIonCount { get; set; }
+        
+        [LoadColumn(29)]
+        public float FraggerHyperScorebyLength { get; set; }
     }
 }
