@@ -92,19 +92,12 @@ namespace TaskLayer
 
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
-
-                // We first run get acquisition results with a high q-value cutoff to get a rough estimate of the precursor and product mass errors and the q-value cuttoff for calibrating PSMs
-                // We then use these errors to set the precursor and product tolerances for the next round of acquisition results
-                // We then run get acquisition results again with the new tolerances to get the final calibration data points
                 DataPointAquisitionResults acquisitionResults = null;
-                double precursorTolerance = MaxPrecursorTolerance;
-                double productTolerance = MaxProductTolerance;
-                CalibrationParameters.QValueCutoffForCalibratingPSMs = 0.005;
 
-                // This is the first set of acquisition results that will be used to calibrate the file
-                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(precursorTolerance), new PpmTolerance(productTolerance));
-                if (acquisitionResults.Psms.Count(p => !p.IsDecoy) > NumRequiredPsms && acquisitionResults.Ms1List.Count > NumRequiredMs1Datapoints && acquisitionResults.Ms2List.Count > NumRequiredMs2Datapoints)
+                acquisitionResults = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(MaxPrecursorTolerance), new PpmTolerance(MaxProductTolerance));
+                if(acquisitionResults.Psms.Count >= NumRequiredPsms && acquisitionResults.Ms1List.Count >= NumRequiredMs1Datapoints && acquisitionResults.Ms2List.Count >= NumRequiredMs2Datapoints)
                 {
+
                     // generate calibration function and shift data points
                     Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                     CalibrationEngine engine = new(myMsDataFile, acquisitionResults, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
@@ -136,15 +129,23 @@ namespace TaskLayer
 
                     FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
+                    // re-write experimental design (if it has been defined) with new calibrated file names
+                    string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
+                    assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
+
+                    if (File.Exists(assumedPathToExperDesign))
+                    {
+                        WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, currentRawFileList, unsuccessfullyCalibratedFilePaths);
+                    }
+
                     // finished calibrating this file
                     FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                     MyTaskResults.NewSpectra.Add(calibratedFilePath);
                     MyTaskResults.NewFileSpecificTomls.Add(newTomlFileName);
                     FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
-                        ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
-
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
                 }
-                else // give up
+                else
                 {
                     // provide a message indicating why we couldn't calibrate
                     CalibrationWarnMessage(acquisitionResults);
@@ -153,23 +154,11 @@ namespace TaskLayer
                     continue;
                 }
             }
-
-            // re-write experimental design (if it has been defined) with new calibrated file names
-            string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
-            assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
-
-            if (File.Exists(assumedPathToExperDesign))
-            {
-                WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, currentRawFileList, unsuccessfullyCalibratedFilePaths);
-            }
-
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
             return MyTaskResults;
         }
-
-
 
         private void CalibrationWarnMessage(DataPointAquisitionResults acquisitionResults)
         {
