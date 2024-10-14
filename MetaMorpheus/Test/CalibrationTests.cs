@@ -76,6 +76,41 @@ namespace Test
             Directory.Delete(unitTestFolder, true);
         }
 
+        [Test]
+        public static void CalibrationTestNoPsms()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(unitTestFolder, "filename1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePath, true);
+
+            // protein db for a non-matching organism
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\gapdh.fa");
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+            // run calibration
+            CalibrationTask calibrationTask = new();
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
+
+            // test new experimental design written by calibration
+            var newExpDesignPath = Path.Combine(outputFolder, @"ExperimentalDesign.tsv");
+            string expectedCalibratedFileName = Path.GetFileNameWithoutExtension(nonCalibratedFilePath) + "-calib.mzML";
+            var expectedCalibratedFilePath = Path.Combine(outputFolder, expectedCalibratedFileName);
+            var newExperDesign = ExperimentalDesign.ReadExperimentalDesign(newExpDesignPath, new List<string> { expectedCalibratedFilePath }, out var errors);
+
+            Assert.That(errors.Any());
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
 
         [Test]
         public static void CalibrationTestLowRes()
