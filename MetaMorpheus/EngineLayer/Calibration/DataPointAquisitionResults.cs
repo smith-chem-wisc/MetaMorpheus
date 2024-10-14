@@ -30,19 +30,9 @@ namespace EngineLayer.Calibration
 
             var ms1Range = Ms1List.Select(b => b.ExperimentalMz - b.TheoreticalMz).ToArray();
             var ms2Range = Ms2List.Select(b => b.ExperimentalMz - b.TheoreticalMz).ToArray();
-            Ms1InfoTh = new Tuple<double, double>(ArrayStatistics.Mean(ms1Range), ArrayStatistics.StandardDeviation(ms1Range));
-            Ms2InfoTh = new Tuple<double, double>(ArrayStatistics.Mean(ms2Range), ArrayStatistics.StandardDeviation(ms2Range));
-
 
             var ms1PpmRange = Ms1List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
             var ms2PpmRange = Ms2List.Select(b => (b.ExperimentalMz - b.TheoreticalMz) / b.TheoreticalMz).ToArray();
-            Ms1InfoPpm = new Tuple<double, double>(ArrayStatistics.Mean(ms1PpmRange), ArrayStatistics.StandardDeviation(ms1PpmRange));
-            Ms2InfoPpm = new Tuple<double, double>(ArrayStatistics.Mean(ms2PpmRange), ArrayStatistics.StandardDeviation(ms2PpmRange));
-
-            NumMs1MassChargeCombinationsConsidered = numMs1MassChargeCombinationsConsidered;
-            NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
-            NumMs2MassChargeCombinationsConsidered = numMs2MassChargeCombinationsConsidered;
-            NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks;
 
             var precursorErrors = psms.Select(p => (p.ScanPrecursorMass - p.BioPolymerWithSetModsMonoisotopicMass.Value) / p.BioPolymerWithSetModsMonoisotopicMass.Value * 1e6).ToList();
             PsmPrecursorIqrPpmError = precursorErrors.InterquartileRange();
@@ -53,16 +43,6 @@ namespace EngineLayer.Calibration
             PsmProductMedianPpmError = productErrors.Median();
         }
 
-        public Tuple<double, double> Ms1InfoTh { get; }
-        public Tuple<double, double> Ms2InfoTh { get; }
-        public Tuple<double, double> Ms1InfoPpm { get; }
-        public Tuple<double, double> Ms2InfoPpm { get; }
-
-        public int NumMs1MassChargeCombinationsConsidered { get; }
-        public int NumMs1MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks { get; }
-        public int NumMs2MassChargeCombinationsConsidered { get; }
-        public int NumMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks { get; }
-
         public List<LabeledDataPoint> Ms1List { get; }
         public List<LabeledDataPoint> Ms2List { get; }
 
@@ -71,8 +51,6 @@ namespace EngineLayer.Calibration
         public readonly double PsmPrecursorIqrPpmError;
         public readonly double PsmProductIqrPpmError;
         public readonly List<SpectralMatch> Psms;
-
-        public int Count { get { return Ms1List.Count + Ms2List.Count; } }
 
         public override string ToString()
         {
