@@ -1,20 +1,12 @@
-﻿using Easy.Common.Extensions;
-using EngineLayer;
-using EngineLayer.Calibration;
+﻿using EngineLayer;
 using FlashLFQ;
 using MassSpectrometry;
 using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text.RegularExpressions;
 using TaskLayer;
-using ThermoFisher.CommonCore.Data;
-using ThermoFisher.CommonCore.Data.Business;
-using static iText.StyledXmlParser.Jsoup.Select.Evaluator;
 
 namespace Test
 {
@@ -175,6 +167,49 @@ namespace Test
 
             // test to see if quantification ran correctly
             Assert.That(File.Exists(Path.Combine(outputFolder, @"AllQuantifiedPeptides.tsv")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"ExperimentalDesign.tsv")));
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+        }
+
+        [Test]
+        public static void ExperimentalDesignCalibrationAndSearchWithOneCalibratibleAndOneNoncalibratible()
+        {
+            // set up output directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationAndSearch");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePathOne = Path.Combine(unitTestFolder, "filename1.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML"), nonCalibratedFilePathOne, true);
+            string nonCalibratedFilePathTwo = Path.Combine(unitTestFolder, "filename2.mzML");
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML"), nonCalibratedFilePathTwo, true);
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfoOne = new(nonCalibratedFilePathOne, "condition1", 0, 0, 0);
+            SpectraFileInfo fileInfoTwo = new(nonCalibratedFilePathTwo, "condition2", 0, 0, 0);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfoOne, fileInfoTwo });
+
+            // set up tasks (calibration + search)
+            CalibrationTask calibrationTask = new CalibrationTask();
+            SearchTask searchTask = new SearchTask();
+
+            // protein db
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+
+            // run the tasks
+            EverythingRunnerEngine a = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("", calibrationTask), ("", searchTask) },
+                new List<string> { nonCalibratedFilePathOne, nonCalibratedFilePathTwo },
+                new List<DbForTask> { new DbForTask(myDatabase, false) },
+                outputFolder);
+
+            a.Run();
+
+            // test to see if quantification ran correctly
             Assert.That(File.Exists(Path.Combine(outputFolder, @"ExperimentalDesign.tsv")));
 
             // clean up

@@ -70,6 +70,9 @@ namespace TaskLayer
 
             MyFileManager myFileManager = new MyFileManager(true);
             List<string> unsuccessfullyCalibratedFilePaths = new List<string>();
+            // re-write experimental design (if it has been defined) with new calibrated file names
+            string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
+            assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -129,15 +132,6 @@ namespace TaskLayer
 
                     FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
 
-                    // re-write experimental design (if it has been defined) with new calibrated file names
-                    string assumedPathToExperDesign = Directory.GetParent(currentRawFileList.First()).FullName;
-                    assumedPathToExperDesign = Path.Combine(assumedPathToExperDesign, GlobalVariables.ExperimentalDesignFileName);
-
-                    if (File.Exists(assumedPathToExperDesign))
-                    {
-                        WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, currentRawFileList, unsuccessfullyCalibratedFilePaths);
-                    }
-
                     // finished calibrating this file
                     FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                     MyTaskResults.NewSpectra.Add(calibratedFilePath);
@@ -147,12 +141,17 @@ namespace TaskLayer
                 }
                 else
                 {
+                    unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
                     // provide a message indicating why we couldn't calibrate
                     CalibrationWarnMessage(acquisitionResults);
                     FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
                     continue;
                 }
+            }
+            if (File.Exists(assumedPathToExperDesign))
+            {
+                WriteNewExperimentalDesignFile(assumedPathToExperDesign, OutputFolder, currentRawFileList, unsuccessfullyCalibratedFilePaths);
             }
             // finished calibrating all files for the task
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
