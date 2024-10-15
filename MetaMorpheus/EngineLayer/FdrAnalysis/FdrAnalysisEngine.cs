@@ -14,6 +14,7 @@ namespace EngineLayer.FdrAnalysis
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
+        private readonly int PsmCountThresholdForInvertedQvalue = 1000;
 
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", 
@@ -71,10 +72,10 @@ namespace EngineLayer.FdrAnalysis
                         .Select(b => b.FirstOrDefault())
                         .ToList();
 
-                if (psms.Count > 100 & DoPEP)
+                if (psms.Count > PsmCountThresholdForInvertedQvalue & DoPEP)
                 {
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
-                    if (peptides.Count > 100 )
+                    if (peptides.Count > PsmCountThresholdForInvertedQvalue)
                     {
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
@@ -199,7 +200,7 @@ namespace EngineLayer.FdrAnalysis
             }
             else
             {
-                if(psms.Count < 100)
+                if(psms.Count < PsmCountThresholdForInvertedQvalue)
                 {
 
                    QValueTraditional(psms, peptideLevelAnalysis: peptideLevelCalculation);
