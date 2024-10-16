@@ -459,6 +459,7 @@ namespace Test
         [Test]
         public static void TestModernSearchEngineLowResOneRealSpectrum()
         {
+            EngineLayer.FdrAnalysis.FdrAnalysisEngine.QvalueThresholdOverride = false;
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
                 maxThreadsToUsePerFile: 1,

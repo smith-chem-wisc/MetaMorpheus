@@ -15,6 +15,7 @@ using Omics.Fragmentation;
 using SpectralAveraging;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
@@ -136,6 +137,7 @@ namespace Test
         [Test]
         public static void TestBadFileSpecificProtease()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             //this test checks for a catch statement (or some other handling) for file-specific toml loading
             //create a toml with a protease that doesn't exist in the protease.tsv dictionary
             string proteaseNotInDictionary = "aaa"; //arbitrary. If somebody adds a protease with this name, use a different name

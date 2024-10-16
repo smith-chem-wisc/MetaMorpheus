@@ -108,6 +108,7 @@ namespace Test
         [Test]
         public static void TestPpmAndDaMassErrors()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
