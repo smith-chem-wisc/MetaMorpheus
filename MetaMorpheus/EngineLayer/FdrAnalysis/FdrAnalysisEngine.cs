@@ -209,7 +209,7 @@ namespace EngineLayer.FdrAnalysis
             }
             else
             {
-                if(psms.Count < PsmCountThresholdForInvertedQvalue || qvalueThresholdOverride)
+                if(psms.Count < PsmCountThresholdForInvertedQvalue)
                 {
 
                    QValueTraditional(psms, peptideLevelAnalysis: peptideLevelCalculation);
@@ -250,7 +250,6 @@ namespace EngineLayer.FdrAnalysis
             //this calculation is performed from bottom up. So, we begin the loop by computing qValue
             //and qValueNotch for the last/lowest scoring psm in the bunch
             double qValue = (psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoy + 1) / psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeTarget;
-            //double qValueNotch = (psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoyNotch + 1) / psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeTargetNotch;
 
             //Assign FDR values to PSMs
             for (int i = 0; i < psms.Count; i++)
