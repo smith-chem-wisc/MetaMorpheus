@@ -754,7 +754,7 @@ namespace Test
 
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
-            Assert.AreEqual(181, goodScore.Count());
+            Assert.AreEqual(185, goodScore.Count());
         }
 
         [Test]
