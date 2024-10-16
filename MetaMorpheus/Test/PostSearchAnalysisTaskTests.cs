@@ -71,6 +71,7 @@ namespace Test
             Assert.AreEqual("All target PSMs with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, singleFileResults[5]);
             Assert.AreEqual("All target peptides with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPeptides, singleFileResults[6]);
             Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 166", singleFileResults[7]);
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
         }
 
         [Test]
@@ -103,6 +104,7 @@ namespace Test
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 192", results[13]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 155", results[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 141", results[15]);
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
         }
 
         /// <summary>
@@ -112,7 +114,6 @@ namespace Test
         [TestCaseSource(nameof(GetTestCases))]
         public static void AllResultTxtContainsCorrectNumberOfResultLines(EverythingRunnerEngineTestCases testCaseIdentifier)
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = true;
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
 
             int expectedIndividualFileLines = testCase.DataFileList.Count == 1 || !testCase.WriteIndividualResults 
@@ -158,7 +159,6 @@ namespace Test
         [TestCaseSource(nameof(GetTestCases))]
         public static void CorrectFilesAreWrittenWithCorrectName(EverythingRunnerEngineTestCases testCaseIdentifier)
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = true;
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
             var psmFiles = Directory.GetFiles(testCase.OutputDirectory, "*PSMs.psmtsv", SearchOption.AllDirectories);
             var pepXmlFiles = Directory.GetFiles(testCase.OutputDirectory, "*.pep.xml", SearchOption.AllDirectories);

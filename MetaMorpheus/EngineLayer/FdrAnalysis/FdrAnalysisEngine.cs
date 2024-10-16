@@ -21,7 +21,6 @@ namespace EngineLayer.FdrAnalysis
         /// </summary>
         public static bool QvalueThresholdOverride   // property
         {
-            get { return qvalueThresholdOverride; }   // get method
             set { qvalueThresholdOverride = value; }  // set method
         }
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
@@ -209,6 +208,7 @@ namespace EngineLayer.FdrAnalysis
             }
             else
             {
+                //we don't want to apply the QValueThreshod
                 if(psms.Count < PsmCountThresholdForInvertedQvalue)
                 {
 

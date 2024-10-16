@@ -1,11 +1,8 @@
-﻿using Chemistry;
-using EngineLayer;
-using EngineLayer.ClassicSearch;
+﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +11,6 @@ using Omics.Digestion;
 using Omics.Fragmentation;
 using SpectralAveraging;
 using TaskLayer;
-using UsefulProteomicsDatabases;
 using EngineLayer.FdrAnalysis;
 
 namespace Test

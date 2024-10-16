@@ -111,8 +111,8 @@ namespace Test
             Assert.AreEqual("K", psm.PreviousAminoAcid);
             Assert.AreEqual("P46013", psm.ProteinAccession);
             Assert.AreEqual("Proliferation marker protein Ki-67", psm.ProteinName);
-            Assert.That(0.0, Is.EqualTo(psm.QValue).Within(1E-04));
-            Assert.That(0.0, Is.EqualTo(psm.QValueNotch).Within(1E-04));
+            Assert.That(0, Is.EqualTo(psm.QValue).Within(1E-04));
+            Assert.That(0, Is.EqualTo(psm.QValueNotch).Within(1E-04));
             Assert.AreEqual(45.59512, psm.RetentionTime);
             Assert.AreEqual(662.486, psm.Score);
             Assert.AreEqual("[2742 to 2761]", psm.StartAndEndResiduesInProtein);
