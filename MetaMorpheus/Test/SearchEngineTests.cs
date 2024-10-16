@@ -22,6 +22,7 @@ using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
+using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
@@ -68,6 +69,7 @@ namespace Test
         [Test]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
@@ -109,8 +111,8 @@ namespace Test
             Assert.AreEqual("K", psm.PreviousAminoAcid);
             Assert.AreEqual("P46013", psm.ProteinAccession);
             Assert.AreEqual("Proliferation marker protein Ki-67", psm.ProteinName);
-            Assert.That(0.004739, Is.EqualTo(psm.QValue).Within(1E-04));
-            Assert.That(0.004739, Is.EqualTo(psm.QValueNotch).Within(1E-04));
+            Assert.That(0.0, Is.EqualTo(psm.QValue).Within(1E-04));
+            Assert.That(0.0, Is.EqualTo(psm.QValueNotch).Within(1E-04));
             Assert.AreEqual(45.59512, psm.RetentionTime);
             Assert.AreEqual(662.486, psm.Score);
             Assert.AreEqual("[2742 to 2761]", psm.StartAndEndResiduesInProtein);
@@ -145,11 +147,11 @@ namespace Test
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
             Assert.AreEqual(385, parsedPsms.Count); //total psm count
-            Assert.AreEqual(215, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv, including decoys
+            Assert.AreEqual(218, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv, including decoys
             Assert.AreEqual(0, warnings.Count);
 
             int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
-            Assert.AreEqual(214, countFromResultsTxt);
+            Assert.AreEqual(216, countFromResultsTxt);
         }
 
         [Test]
@@ -567,6 +569,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngineLowResSimple()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -658,13 +661,14 @@ namespace Test
 
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
-            Assert.AreEqual(181, goodScore.Count());
+            Assert.AreEqual(185, goodScore.Count());
             Directory.Delete(outputFolder, true);
         }
 
         [Test]
         public static void TestModernSearchEngineLowResSimple()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 

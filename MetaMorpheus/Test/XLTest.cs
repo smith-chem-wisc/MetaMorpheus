@@ -368,6 +368,7 @@ namespace Test
         [Test]
         public static void XlTest_MoreComprehensive()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             //Generate parameters
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.HCD,
                 scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10), maxThreadsToUsePerFile: 1);
@@ -561,8 +562,8 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(53, inter);
-            Assert.AreEqual(81, intra);
+            Assert.AreEqual(47, inter);
+            Assert.AreEqual(74, intra);
             Assert.AreEqual(0, unnasignedCrossType);
 
 
@@ -621,10 +622,10 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(55, inter);
+            Assert.AreEqual(56, inter);
             Assert.AreEqual(83, intra);
-            Assert.AreEqual(229, single);
-            Assert.AreEqual(8, loop);
+            Assert.AreEqual(230, single);
+            Assert.AreEqual(9, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(62, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
@@ -821,7 +822,7 @@ namespace Test
             Assert.AreEqual(0, unnasignedCrossType);
             Assert.AreEqual(40, inter);
             Assert.AreEqual(49, intra);
-            Assert.AreEqual(231, single);
+            Assert.AreEqual(234, single);
             Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(61, deadendH2O);

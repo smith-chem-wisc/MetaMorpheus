@@ -1,9 +1,7 @@
 ﻿using EngineLayer.CrosslinkSearch;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace EngineLayer.FdrAnalysis
 {
@@ -14,12 +12,21 @@ namespace EngineLayer.FdrAnalysis
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
-        private readonly bool QvalueThresholdOverride;
+        private static bool qvalueThresholdOverride;
         private readonly int PsmCountThresholdForInvertedQvalue = 1000;
-
+        /// <summary>
+        /// This is to be used only for unit testing. Threshold for q-value calculation is set to 1000
+        /// However, many unit tests don't generate that many PSMs. Therefore, this property is used to override the threshold
+        /// to enable PEP calculation in unit tests with lower number of PSMs
+        /// </summary>
+        public static bool QvalueThresholdOverride   // property
+        {
+            get { return qvalueThresholdOverride; }   // get method
+            set { qvalueThresholdOverride = value; }  // set method
+        }
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", 
-            bool doPEP = true, string outputFolder = null, bool qvalueThresholdOverride = false) : base(commonParameters, fileSpecificParameters, nestedIds)
+            bool doPEP = true, string outputFolder = null) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllPsms = psms.OrderByDescending(p => p).ToList();
             MassDiffAcceptorNumNotches = massDiffAcceptorNumNotches;
@@ -29,7 +36,6 @@ namespace EngineLayer.FdrAnalysis
             if (AllPsms.Any())
                 AddPsmAndPeptideFdrInfoIfNotPresent();
             if (fileSpecificParameters == null) throw new ArgumentNullException("file specific parameters cannot be null");
-            QvalueThresholdOverride = qvalueThresholdOverride;
         }
 
         private void AddPsmAndPeptideFdrInfoIfNotPresent()
@@ -74,10 +80,10 @@ namespace EngineLayer.FdrAnalysis
                         .Select(b => b.FirstOrDefault())
                         .ToList();
 
-                if ((psms.Count > PsmCountThresholdForInvertedQvalue || QvalueThresholdOverride) & DoPEP)
+                if ((psms.Count > PsmCountThresholdForInvertedQvalue || qvalueThresholdOverride) & DoPEP)
                 {
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
-                    if (peptides.Count > PsmCountThresholdForInvertedQvalue || QvalueThresholdOverride)
+                    if (peptides.Count > PsmCountThresholdForInvertedQvalue || qvalueThresholdOverride)
                     {
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
@@ -203,7 +209,7 @@ namespace EngineLayer.FdrAnalysis
             }
             else
             {
-                if(psms.Count < PsmCountThresholdForInvertedQvalue || QvalueThresholdOverride)
+                if(psms.Count < PsmCountThresholdForInvertedQvalue || qvalueThresholdOverride)
                 {
 
                    QValueTraditional(psms, peptideLevelAnalysis: peptideLevelCalculation);
