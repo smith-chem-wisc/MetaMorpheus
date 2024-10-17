@@ -2,7 +2,9 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using EngineLayer.FdrAnalysis;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Test
 {
@@ -18,6 +20,7 @@ namespace Test
         [Test]
         public static void AllResultsAndResultsTxtContainsCorrectValues_QValue_BottomUp()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             //First test that AllResults and Results display correct numbers of peptides and psms with q-value filter on
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out var testCase);
             string outputFolder = testCase.OutputDirectory;
@@ -68,11 +71,13 @@ namespace Test
             Assert.AreEqual("All target PSMs with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, singleFileResults[5]);
             Assert.AreEqual("All target peptides with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPeptides, singleFileResults[6]);
             Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 165", singleFileResults[7]);
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
         }
 
         [Test]
         public static void AllResultsAndResultsTxtContainsCorrectValues_PepQValue_BottomUp()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             //First test that AllResults and Results display correct numbers of peptides and psms with pep q-value filter on
             EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
             string outputFolder = testCase.OutputDirectory;
@@ -99,6 +104,7 @@ namespace Test
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 190", results[13]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 153", results[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 140", results[15]);
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
         }
 
         /// <summary>
@@ -108,6 +114,7 @@ namespace Test
         [TestCaseSource(nameof(GetTestCases))]
         public static void AllResultTxtContainsCorrectNumberOfResultLines(EverythingRunnerEngineTestCases testCaseIdentifier)
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false; 
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
 
             int expectedIndividualFileLines = testCase.DataFileList.Count == 1 || !testCase.WriteIndividualResults 
@@ -153,6 +160,7 @@ namespace Test
         [TestCaseSource(nameof(GetTestCases))]
         public static void CorrectFilesAreWrittenWithCorrectName(EverythingRunnerEngineTestCases testCaseIdentifier)
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false; 
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
             var psmFiles = Directory.GetFiles(testCase.OutputDirectory, "*PSMs.psmtsv", SearchOption.AllDirectories);
             var pepXmlFiles = Directory.GetFiles(testCase.OutputDirectory, "*.pep.xml", SearchOption.AllDirectories);

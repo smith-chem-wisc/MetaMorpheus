@@ -22,6 +22,7 @@ using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
+using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
@@ -68,6 +69,7 @@ namespace Test
         [Test]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
@@ -457,6 +459,7 @@ namespace Test
         [Test]
         public static void TestModernSearchEngineLowResOneRealSpectrum()
         {
+            EngineLayer.FdrAnalysis.FdrAnalysisEngine.QvalueThresholdOverride = false;
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
                 maxThreadsToUsePerFile: 1,
@@ -567,6 +570,7 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngineLowResSimple()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -665,6 +669,7 @@ namespace Test
         [Test]
         public static void TestModernSearchEngineLowResSimple()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 

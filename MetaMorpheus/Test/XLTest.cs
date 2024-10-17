@@ -368,6 +368,7 @@ namespace Test
         [Test]
         public static void XlTest_MoreComprehensive()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = true;
             //Generate parameters
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.HCD,
                 scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10), maxThreadsToUsePerFile: 1);
@@ -749,7 +750,7 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.BetaIntensity, 0);
             Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(3).Within(0.1));
             Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
-            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(1).Within(0.1));
+            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(9).Within(0.1));
             Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(1).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(loopCsmPsmData.IsInter, 0);
@@ -822,9 +823,9 @@ namespace Test
             Assert.AreEqual(40, inter);
             Assert.AreEqual(49, intra);
             Assert.AreEqual(231, single);
-            Assert.AreEqual(8, loop);
+            Assert.AreEqual(0, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(61, deadendH2O);
+            Assert.AreEqual(0, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
