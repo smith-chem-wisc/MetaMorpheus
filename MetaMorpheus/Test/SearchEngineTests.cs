@@ -67,6 +67,7 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
             FdrAnalysisEngine.QvalueThresholdOverride = true;
@@ -568,6 +569,7 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestClassicSearchEngineLowResSimple()
         {
             FdrAnalysisEngine.QvalueThresholdOverride = true;
@@ -667,6 +669,7 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestModernSearchEngineLowResSimple()
         {
             FdrAnalysisEngine.QvalueThresholdOverride = true;

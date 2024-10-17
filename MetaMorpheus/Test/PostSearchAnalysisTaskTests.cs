@@ -18,6 +18,7 @@ namespace Test
         public static Array GetTestCases() => Enum.GetValues(typeof(EverythingRunnerEngineTestCases));
 
         [Test]
+        [NonParallelizable]
         public static void AllResultsAndResultsTxtContainsCorrectValues_QValue_BottomUp()
         {
             FdrAnalysisEngine.QvalueThresholdOverride = true;
@@ -75,6 +76,7 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void AllResultsAndResultsTxtContainsCorrectValues_PepQValue_BottomUp()
         {
             FdrAnalysisEngine.QvalueThresholdOverride = true;

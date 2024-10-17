@@ -366,6 +366,7 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void XlTest_MoreComprehensive()
         {
             FdrAnalysisEngine.QvalueThresholdOverride = true;
