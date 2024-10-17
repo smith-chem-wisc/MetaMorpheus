@@ -191,14 +191,16 @@ namespace MetaMorpheusGUI
             // Chimera plotter
             if (MetaDrawTabControl.SelectedContent is Grid { Name: "chimeraPlotGrid" })
             {
+                ClearPresentationArea();
+                chimeraPlot.Visibility = Visibility.Visible;
                 List<PsmFromTsv> chimericPsms = MetaDrawLogic.FilteredListOfPsms
                     .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
                 MetaDrawLogic.DisplayChimeraSpectra(chimeraPlot, chimericPsms, out List<string> error);
                 if (error != null && error.Count > 0)
                     Debugger.Break();
-                ClearPresentationArea();
                 wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
-
+                AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Collapsed;
 
                 if (MetaDrawSettings.ShowLegend)
                 {
@@ -217,7 +219,27 @@ namespace MetaMorpheusGUI
             // Clicking the research button on an ambiguous psm => research with new ions
             if (psm.FullSequence.Contains('|') && (sender.ToString() == "System.Object" || sender is FragmentationReanalysisViewModel))
             {
-                psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                // From chimeric scan view to child scan view with ambiguous selected
+                if (AmbiguousSequenceOptionBox.SelectedItem == null) 
+                {
+                    // set to first and break the loop if casted successfully
+                    foreach (var ambiguousResult in AmbiguousSequenceOptionBox.Items)
+                    {
+                        psm = ambiguousResult as PsmFromTsv;
+                        if (psm != null)
+                            break;
+                    }
+
+                    AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
+                    AmbiguousSequenceOptionBox.Visibility = Visibility.Visible;
+                    AmbiguousSequenceOptionBox.SelectedItem = psm;
+                }
+                // selecting a different ambiguous result from the combobox in child scan view
+                else
+                {
+                    psm = (PsmFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                }
+
                 if (FragmentationReanalysisViewModel.Persist || sender is FragmentationReanalysisViewModel)
                 {
                     oldMatchedIons = psm.MatchedIons;
@@ -918,8 +940,15 @@ namespace MetaMorpheusGUI
             SetSequenceDrawingPositionSettings(true);
             object obj = new object();
             if (AmbiguousSequenceOptionBox.Items.Count > 0)
+            {
                 dataGridScanNums_SelectedCellsChanged(obj, null);
-            MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas, sequenceAnnotationCanvas, psm);
+                MetaDrawLogic.DisplaySequences(stationarySequenceCanvas, scrollableSequenceCanvas,
+                    sequenceAnnotationCanvas, psm);
+            }
+            else
+            {
+                AmbiguousSequenceOptionBox.Visibility = Visibility.Hidden;
+            }
         }
 
         /// <summary>
@@ -1033,6 +1062,7 @@ namespace MetaMorpheusGUI
             if (e.RemovedItems.Count > 0 && ((TabItem)e.RemovedItems[0]).Name == "ChimeraScanPlot")
             {
                 MetaDrawLogic.FilterPsms();
+                ClearPresentationArea();
 
                 // reselect what was selected
                 if (selectedPsm != null && MetaDrawLogic.FilteredListOfPsms.Contains(selectedPsm))
@@ -1047,12 +1077,15 @@ namespace MetaMorpheusGUI
             if (e.AddedItems.Count > 0 && ((TabItem)e.AddedItems[0]).Name == "ChimeraScanPlot")
             {
                 MetaDrawLogic.FilterPsmsToChimerasOnly();
+                ClearPresentationArea();
 
-                // reselect what was selected
-                if (selectedPsm == null || !MetaDrawLogic.FilteredListOfPsms.Contains(selectedPsm)) return;
-                int psmIndex = MetaDrawLogic.FilteredListOfPsms.IndexOf(selectedPsm);
-                dataGridScanNums.SelectedIndex = psmIndex;
-                dataGridScanNums_SelectedCellsChanged(new object(), null);
+                // reselect what was selected if possible
+                if (selectedPsm != null && MetaDrawLogic.FilteredListOfPsms.Contains(selectedPsm))
+                {
+                    int psmIndex = MetaDrawLogic.FilteredListOfPsms.IndexOf(selectedPsm);
+                    dataGridScanNums.SelectedIndex = psmIndex;
+                    dataGridScanNums_SelectedCellsChanged(new object(), null);
+                }
             }
         }
 
@@ -1066,11 +1099,11 @@ namespace MetaMorpheusGUI
             DrawnSequence.ClearCanvas(map);
             DrawnSequence.ClearCanvas(sequenceText);
             DrawnSequence.ClearCanvas(sequenceAnnotationCanvas);
-            plotView.Visibility = Visibility.Hidden;
             GrayBox.Opacity = 0;
             wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
             AmbiguousSequenceOptionBox.Items.Clear();
             plotView.Visibility = Visibility.Hidden;
+            chimeraPlot.Visibility = Visibility.Hidden;
 
             if (ChimeraLegend != null)
                 ChimeraLegend.Visibility = false;
