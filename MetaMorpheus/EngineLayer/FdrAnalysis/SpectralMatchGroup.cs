@@ -38,15 +38,13 @@ namespace EngineLayer
                 .ToList();
         }
 
-        public IEnumerable<SpectralMatch> GetMatches(string searchType)
-        {
-            switch (searchType)
-            {
-                case "top-down":
-                    return SpectralMatches;
-                default:
-                    return SpectralMatches.GroupBy(p => p.FullSequence).Select(g => g.MaxBy(p => p));
-            }
+        /// <summary>
+        /// Returns the top-scoring PSM for each full sequence in the spectral match group.
+        /// i.e., if the same base sequence has multiple modifications, this function will return the PSM with the highest score for each modification.
+        /// </summary>
+        public IEnumerable<SpectralMatch> GetBestMatches()
+        { 
+            return SpectralMatches.GroupBy(p => p.FullSequence).Select(g => g.MaxBy(p => p));
         }
 
         /// <summary>

@@ -96,9 +96,7 @@ namespace EngineLayer
             SearchType = searchType;
             SetFileSpecificParameters(fileSpecificParameters);
             BuildFileSpecificDictionaries(psms, TrainingVariables);
-            //QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), 0.005);
-            var qArray = psms.Select(p => p.GetFdrInfo(peptideLevel: true).QValue).OrderBy(q => q).ToArray();
-            double minQ = qArray[qArray.Length / 10];
+            double minQ = searchType == "top-down" ? 0.025 : 0.005; // Less stringent FDR cut-off for top-down
             QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), minQ);
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
@@ -270,7 +268,7 @@ namespace EngineLayer
                         if (GlobalVariables.StopLoops) { return; }
 
                         int modCount = 0;
-                        foreach (var psm in peptideGroups[peptideGroupIndices[i]].GetMatches(searchType).Where(psm => psm != null))
+                        foreach (var psm in peptideGroups[peptideGroupIndices[i]].GetBestMatches().Where(psm => psm != null))
                         {
                             PsmData newPsmData = new PsmData();
                             if (searchType == "crosslink" && ((CrosslinkSpectralMatch)psm)?.BetaPeptide != null)
