@@ -258,8 +258,6 @@ namespace EngineLayer
                 new ParallelOptions { MaxDegreeOfParallelism = maxThreads },
                 (range, loopState) =>
                 {
-
-                    Random rng = new();
                     List<PsmData> localPsmDataList = new List<PsmData>();
                     List<double> localPsmOrder = new List<double>();
                     for (int i = range.Item1; i < range.Item2; i++)
@@ -299,7 +297,7 @@ namespace EngineLayer
                                 {
                                     bool label;
                                     double bmpc = psm.BestMatchingBioPolymersWithSetMods.Count();
-                                    if (peptideWithSetMods.Parent.IsDecoy) // && rng.Next(10) < 1)
+                                    if (peptideWithSetMods.Parent.IsDecoy)
                                     {
                                         label = false;
                                         newPsmData = CreateOnePsmDataEntry(searchType, psm,
