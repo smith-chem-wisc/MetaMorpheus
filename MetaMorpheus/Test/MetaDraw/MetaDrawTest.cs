@@ -1085,7 +1085,6 @@ namespace Test.MetaDraw
         }
 
         [Test]
-        [NonParallelizable]
         public static void TestMetaDrawLoadingWithWeirdFileNames()
         {
             FdrAnalysisEngine.QvalueThresholdOverride = false;
