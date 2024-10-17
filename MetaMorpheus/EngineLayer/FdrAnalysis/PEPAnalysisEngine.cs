@@ -340,6 +340,7 @@ namespace EngineLayer
 
         public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved,
             int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff)
+
         {
             List<double> accuracy = allMetrics.Select(m => m.Accuracy).ToList();
             List<double> areaUnderRocCurve = allMetrics.Select(m => m.AreaUnderRocCurve).ToList();

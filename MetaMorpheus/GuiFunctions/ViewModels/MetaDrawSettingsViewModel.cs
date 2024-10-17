@@ -182,7 +182,10 @@ namespace GuiFunctions
         {
             MetaDrawSettingsSnapshot settings = null;
             settings = XmlReaderWriter.ReadFromXmlFile<MetaDrawSettingsSnapshot>(SettingsPath);
-            MetaDrawSettings.LoadSettings(settings);
+            MetaDrawSettings.LoadSettings(settings, out bool flaggedErrorOnRead);
+
+            if (flaggedErrorOnRead)
+                SaveAsDefault();
         }
 
       
