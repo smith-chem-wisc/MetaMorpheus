@@ -409,6 +409,7 @@ namespace Test
 
         public static void TestLibraryUpdate()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary");
             _ = Directory.CreateDirectory(thisTaskOutputFolder);
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
@@ -426,7 +427,6 @@ namespace Test
 
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary\rawCopy.mzML");
             System.IO.File.Copy(raw1, rawCopy);
-            FdrAnalysisEngine.QvalueThresholdOverride = true;
             EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw1, raw2 }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db1,false), new DbForTask(db2, false) }, thisTaskOutputFolder);
 
             UpdateLibrary.Run();
@@ -453,7 +453,6 @@ namespace Test
 
             updatedLib.CloseConnections();
             Directory.Delete(thisTaskOutputFolder, true);
-            FdrAnalysisEngine.QvalueThresholdOverride = false;
         }
 
         [Test]

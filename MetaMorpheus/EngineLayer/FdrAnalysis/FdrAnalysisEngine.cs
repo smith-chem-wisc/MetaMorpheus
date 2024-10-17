@@ -209,7 +209,7 @@ namespace EngineLayer.FdrAnalysis
             else
             {
                 //we don't want to apply the QValueThreshod
-                if(psms.Count < PsmCountThresholdForInvertedQvalue)
+                if(psms.Count < PsmCountThresholdForInvertedQvalue && !qvalueThresholdOverride)
                 {
 
                    QValueTraditional(psms, peptideLevelAnalysis: peptideLevelCalculation);

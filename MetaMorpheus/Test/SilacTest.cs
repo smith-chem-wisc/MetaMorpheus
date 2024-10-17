@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;
@@ -10,6 +11,7 @@ using System.IO;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
@@ -19,6 +21,7 @@ namespace Test
         [Test]
         public static void TestSilacNoLightProtein()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             //The concern with multiple mods per label is the conversions back and forth between "light" and "heavy" labels
             Residue heavyArginine = new("c", 'c', "c", Chemistry.ChemicalFormula.ParseFormula("C6H12N{15}4O"), ModificationSites.All); //+4 arginine
             Residue heavierArginine = new("d", 'd', "d", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}4O"), ModificationSites.All); //+10 arginine
@@ -89,6 +92,7 @@ namespace Test
         [Test]
         public static void TestSilacMultipleModsPerCondition()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             //The concern with multiple mods per label is the conversions back and forth between "light" and "heavy" labels
             Residue heavyLysine = new("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue heavyArginine = new("b", 'b', "b", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N4O"), ModificationSites.All); //+6 arginine
@@ -176,6 +180,7 @@ namespace Test
         [Test]
         public static void TestSilacQuantification()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             //make heavy residue and add to search task
             Residue heavyLysine = new("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue lightLysine = Residue.GetResidue('K');
@@ -333,6 +338,7 @@ namespace Test
         [Test]
         public static void TestSilacTurnover()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             //make heavy residue and add to search task
             Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
@@ -485,6 +491,7 @@ namespace Test
         [Test]
         public static void TestSilacMissingPeaks()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             //make heavy residue and add to search task
             Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue.AddNewResiduesToDictionary(new List<Residue> { heavyLysine });
@@ -534,6 +541,7 @@ namespace Test
         [Test]
         public static void TestSilacTurnoverLabelSites()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             //this tests for handling of no labels on a peptide, one label, six labels, and seven labels.
             //also tests for decoy handling (no protein group)
             //make heavy residue and add to search task
@@ -583,6 +591,7 @@ namespace Test
         [Test]
         public static void TestSilacPeakComparisons()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             //make heavy residue and add to search task
             Residue heavyLysine = new Residue("a", 'a', "a", Chemistry.ChemicalFormula.ParseFormula("C{13}6H12N{15}2O"), ModificationSites.All); //+8 lysine
             Residue lightLysine = Residue.GetResidue('K');

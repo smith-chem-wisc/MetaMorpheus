@@ -20,6 +20,7 @@ using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using TaskLayer;
+using EngineLayer.FdrAnalysis;
 
 namespace Test.MetaDraw
 {
@@ -229,6 +230,7 @@ namespace Test.MetaDraw
         [Test]
         public static void MetaDraw_SearchTaskTest()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false; 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
@@ -693,6 +695,7 @@ namespace Test.MetaDraw
         [Test]
         public static void MetaDraw_GlycoSearchTaskWithChildScansTest()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_GlycoSearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\sliced_glyco_hcd_ethcd.raw");
@@ -854,6 +857,7 @@ namespace Test.MetaDraw
         [Test]
         public static void MetaDraw_TestChimeraScanSpectrumDisplay()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
@@ -1084,6 +1088,7 @@ namespace Test.MetaDraw
         [NonParallelizable]
         public static void TestMetaDrawLoadingWithWeirdFileNames()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             // test loading when the file has a periods, commas, spaces in the name
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawLoadingWithWeirdFileNames");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
@@ -1133,6 +1138,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestMetaDrawWithSpectralLibrary()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
             string library1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_target.msp");
@@ -1210,6 +1216,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestPsmFromTsvIonParsing()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPsmFromTsvIonParsing");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\slicedMouse.raw");
@@ -1318,6 +1325,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestMetaDrawLogicCleanUp()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawWithSpectraLibrary");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858.fasta");
             string library1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\P16858_target.msp");
@@ -1400,6 +1408,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestMetaDrawOutputFormats()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
@@ -1509,6 +1518,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestMetaDrawSequenceDisplayOutputs()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_SearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");

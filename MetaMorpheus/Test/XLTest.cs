@@ -562,8 +562,8 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(47, inter);
-            Assert.AreEqual(74, intra);
+            Assert.AreEqual(53, inter);
+            Assert.AreEqual(81, intra);
             Assert.AreEqual(0, unnasignedCrossType);
 
 
@@ -622,10 +622,10 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(56, inter);
+            Assert.AreEqual(55, inter);
             Assert.AreEqual(83, intra);
-            Assert.AreEqual(230, single);
-            Assert.AreEqual(9, loop);
+            Assert.AreEqual(229, single);
+            Assert.AreEqual(8, loop);
             Assert.AreEqual(0, deadend);
             Assert.AreEqual(62, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
@@ -750,7 +750,7 @@ namespace Test
             Assert.AreEqual(loopCsmPsmData.BetaIntensity, 0);
             Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(3).Within(0.1));
             Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
-            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(1).Within(0.1));
+            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(9).Within(0.1));
             Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(1).Within(0.1));
             Assert.AreEqual(loopCsmPsmData.IsDeadEnd, 0);
             Assert.AreEqual(loopCsmPsmData.IsInter, 0);
@@ -822,10 +822,10 @@ namespace Test
             Assert.AreEqual(0, unnasignedCrossType);
             Assert.AreEqual(40, inter);
             Assert.AreEqual(49, intra);
-            Assert.AreEqual(234, single);
-            Assert.AreEqual(8, loop);
+            Assert.AreEqual(231, single);
+            Assert.AreEqual(0, loop);
             Assert.AreEqual(0, deadend);
-            Assert.AreEqual(61, deadendH2O);
+            Assert.AreEqual(0, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
         }
