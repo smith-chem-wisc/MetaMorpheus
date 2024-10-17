@@ -1,7 +1,8 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -14,6 +15,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
 using Org.BouncyCastle.Asn1.X509;
+using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
@@ -88,6 +90,7 @@ namespace Test
         [Test]
         public static void SemiSpecificFullAndSmallMatches()
         {
+            FdrAnalysisEngine.QvalueThresholdOverride = false;
             SearchTask searchTask = new SearchTask()
             {
 

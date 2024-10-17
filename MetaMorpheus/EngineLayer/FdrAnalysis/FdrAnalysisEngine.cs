@@ -208,8 +208,9 @@ namespace EngineLayer.FdrAnalysis
             }
             else
             {
-                //we don't want to apply the QValueThreshod
-                if(psms.Count < PsmCountThresholdForInvertedQvalue && !qvalueThresholdOverride)
+                //the QValueThreshodOverride condition here can be problematic in unit tests. If tests fail unexpectedly,
+                //try setting FdrAnalysisEngine.QvalueThresholdOverride = false; in the test method
+                if (psms.Count < PsmCountThresholdForInvertedQvalue && !qvalueThresholdOverride)
                 {
 
                    QValueTraditional(psms, peptideLevelAnalysis: peptideLevelCalculation);
