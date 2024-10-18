@@ -117,7 +117,7 @@ namespace EngineLayer.ModificationAnalysis
                 if (unlocalizedFormulas.ContainsKey(representativePsm.ModsChemicalFormula))
                     unlocalizedFormulas[representativePsm.ModsChemicalFormula] += 1;
                 else
-                    unlocalizedFormulas.Add(representativePsm.ModsChemicalFormula, 1);
+                    unlocalizedFormulas.Add(representativePsm.ModsChemicalFormula, 1); 
             }
 
             myAnalysisResults.CountOfEachModSeenOnProteins = modsOnProteins.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());
