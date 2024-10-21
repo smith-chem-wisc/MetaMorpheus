@@ -343,6 +343,9 @@
     <None Update="TestData\SmallCalibratible_Yeast.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SmallCalibratible_Yeast.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\smalldb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
