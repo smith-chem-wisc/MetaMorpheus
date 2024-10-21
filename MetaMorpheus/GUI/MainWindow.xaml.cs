@@ -27,7 +27,7 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly ObservableCollection<RawDataForDataGrid> SpectraFiles = new ObservableCollection<RawDataForDataGrid>();
+       private readonly ObservableCollection<RawDataForDataGrid> SpectraFiles = new ObservableCollection<RawDataForDataGrid>();
         private ObservableCollection<ProteinDbForDataGrid> ProteinDatabases = new ObservableCollection<ProteinDbForDataGrid>();
         private readonly ObservableCollection<PreRunTask> PreRunTasks = new ObservableCollection<PreRunTask>();
         private readonly ObservableCollection<RawDataForDataGrid> SelectedSpectraFiles = new ObservableCollection<RawDataForDataGrid>();
