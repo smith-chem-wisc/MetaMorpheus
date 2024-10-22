@@ -19,6 +19,7 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using Omics.Modifications;
 using TaskLayer;
+using System.Text.RegularExpressions;
 
 namespace MetaMorpheusGUI
 {
@@ -1513,14 +1514,14 @@ namespace MetaMorpheusGUI
         {
             foreach (string path in paths.OrderBy(p => Path.GetFileName(p)))
             {
-                if (Directory.Exists(path))
+                if (Directory.Exists(path) & !Regex.IsMatch(path, @".d$")) // don't add directories that end in ".d" (bruker data files)
                 {
                     foreach (string file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
                     {
                         AddPreRunFile(file);
                     }
                 }
-                else if (File.Exists(path))
+                else if (File.Exists(path) || Regex.IsMatch(path, @".d$"))
                 {
                     AddPreRunFile(path);
                 }
@@ -1571,13 +1572,13 @@ namespace MetaMorpheusGUI
                             return;
                         }
                     }
-
                     goto case ".mzml";
-
                 case ".mgf":
                     NotificationHandler(null, new StringEventArgs(".mgf files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
                     goto case ".mzml";
-
+                case ".d": // Bruker data files are directories that contain .d files
+                    NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
+                    goto case ".mzml";
                 case ".mzml":
                     if (compressed) // not implemented yet
                     {
@@ -1592,7 +1593,6 @@ namespace MetaMorpheusGUI
                     UpdateFileSpecificParamsDisplay(Path.ChangeExtension(filePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
-
                 case ".xml":
                 case ".fasta":
                 case ".fa":
