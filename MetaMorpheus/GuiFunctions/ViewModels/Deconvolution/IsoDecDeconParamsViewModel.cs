@@ -7,7 +7,7 @@ using MassSpectrometry;
 
 namespace GuiFunctions
 {
-    public class IsoDecDeconParamsViewModel : DeconParamsViewModel
+    public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
     {
         public override DeconvolutionParameters Parameters { get; protected set; }
     }
