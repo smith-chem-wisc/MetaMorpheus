@@ -2,44 +2,101 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using Easy.Common.Extensions;
 using EngineLayer;
 using MassSpectrometry;
 
 namespace GuiFunctions;
 
+/// <summary>
+/// This class holds all of the information in the Deconvolution tab of the GUI
+/// One instance will be create per Task Window
+///
+/// The Task window will populate this view model with the appropriate parameters from <see cref="CommonParameters"/>
+/// The user can then modify these parameters as needed via the gui
+/// The Task window will use the PrecursorDeconvolutionParameters and teh ProductDeconvolutionParameters to create a new <see cref="CommonParameters"/> object
+/// </summary>
 public class DeconHostViewModel : BaseViewModel
 {
 
-    public DeconHostViewModel(DeconvolutionParameters? initialPrecursorParameters = null, DeconvolutionParameters? initialFragmentParameters = null,
+    /// <summary>
+    ///
+    ///
+    /// This is where default deconvolution parameters are set for GUI display
+    /// </summary>
+    /// <param name="initialPrecursorParameters"></param>
+    /// <param name="initialProductParameters"></param>
+    /// <param name="useProvidedPrecursor"></param>
+    /// <param name="deconvolutePrecursors"></param>
+    /// <exception cref="ArgumentOutOfRangeException"></exception>
+    public DeconHostViewModel(DeconvolutionParameters? initialPrecursorParameters = null, DeconvolutionParameters? initialProductParameters = null,
         bool useProvidedPrecursor = false, bool deconvolutePrecursors = true)
     {
-        // Always the same
-        DeconvolutionTypes = new ObservableCollection<DeconvolutionType>
-        {
-            DeconvolutionType.ClassicDeconvolution
-        };
 
-        // Parameter Dependent
         UseProvidedPrecursors = useProvidedPrecursor;
         DoPrecursorDeconvolution = deconvolutePrecursors;
 
-        initialPrecursorParameters ??= GlobalVariables.AnalyteType switch
-        {
-            "Peptide" => new ClassicDeconvolutionParameters(1, 12, 4, 3),
-            "Proteoform" => new ClassicDeconvolutionParameters(1, 60, 4, 3),
-            "Oligo" => new ClassicDeconvolutionParameters(-20, -1, 4, 3),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-        PrecursorDeconvolutionParameters = initialPrecursorParameters.ToViewModel();
+        // Order matters here, construct the lists before setting the selected parameters
+        PrecursorDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
+        ProductDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
 
-        initialFragmentParameters ??= GlobalVariables.AnalyteType switch
+        
+
+        // populate the lists by adding the default parameters for each deconvolution type or the provided parameters
+        foreach (var deconType in Enum.GetValues<DeconvolutionType>())
         {
-            "Peptide" => new ClassicDeconvolutionParameters(1, 12, 4, 3),
-            "Proteoform" => new ClassicDeconvolutionParameters(1, 60, 4, 3),
-            "Oligo" => new ClassicDeconvolutionParameters(-20, -1, 4, 3),
-            _ => throw new ArgumentOutOfRangeException()
-        };
-        ProductDeconvolutionParameters = initialFragmentParameters.ToViewModel();
+            switch (deconType)
+            {
+                case DeconvolutionType.ExampleNewDeconvolutionTemplate:
+                    continue;
+
+                case DeconvolutionType.ClassicDeconvolution:
+
+                    if (initialPrecursorParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
+                        PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel());
+                    else
+                    {
+                        var toAdd = GlobalVariables.AnalyteType switch
+                        {
+                            "Peptide" => new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                            "Proteoform" => new ClassicDeconvolutionParameters(1, 60, 4, 3),
+                            "Oligo" => new ClassicDeconvolutionParameters(-20, -1, 4, 3),
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                        PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
+                    }
+                    
+                    if (initialProductParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
+                        ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
+                    else
+                    {
+                        var toAdd = GlobalVariables.AnalyteType switch
+                        {
+                            "Peptide" => new ClassicDeconvolutionParameters(1, 10, 4, 3),
+                            "Proteoform" => new ClassicDeconvolutionParameters(1, 10, 4, 3),
+                            "Oligo" => new ClassicDeconvolutionParameters(-10, -1, 4, 3),
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                        ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());
+                    }
+
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
+        }
+
+        // If deconvolution parameters are not set, default to MetaMorpheus defaults
+        if (initialPrecursorParameters is null)
+            PrecursorDeconvolutionParameters = PrecursorDeconvolutionParametersList.First();
+        else
+            PrecursorDeconvolutionParameters = PrecursorDeconvolutionParametersList.First(x => x.Parameters == initialPrecursorParameters);
+
+        if (initialProductParameters is null)
+            ProductDeconvolutionParameters = ProductDeconvolutionParametersList.First();
+        else
+            ProductDeconvolutionParameters = ProductDeconvolutionParametersList.First(x => x.Parameters == initialProductParameters);
     }
 
     #region Common Parameters
@@ -68,24 +125,22 @@ public class DeconHostViewModel : BaseViewModel
 
     #endregion
 
-    public ObservableCollection<DeconvolutionType> DeconvolutionTypes { get; private set; }
+    /// <summary>
+    /// All of the possible precursor deconvolution parameters that can be selected
+    /// 
+    /// Their ToString() method sets the name of the combo box
+    /// Stored in memory while task window is open, only the selected one is used for <See cref="CommonParameters"/>
+    /// This enables the user to set parameters, switch to another, and switch back without losing their settings
+    /// </summary>
+    public ObservableCollection<DeconParamsViewModel> PrecursorDeconvolutionParametersList { get; protected set; }
+    private DeconParamsViewModel? _precursorDeconvolutionParameters;
 
-    private DeconvolutionType _selectedDeconvolutionType;
-    public DeconvolutionType SelectedDeconvolutionType
-    {
-        get => _selectedDeconvolutionType;
-        set
-        {
-            _selectedDeconvolutionType = value;
-            OnPropertyChanged(nameof(SelectedDeconvolutionType));
-        }
-    }
-
-
-    private DeconParamsViewModel _precursorDeconvolutionParameters;
+    /// <summary>
+    /// The selected precursor deconvolution parameters
+    /// </summary>
     public DeconParamsViewModel PrecursorDeconvolutionParameters
     {
-        get => _precursorDeconvolutionParameters;
+        get => _precursorDeconvolutionParameters!;
         set
         {
             _precursorDeconvolutionParameters = value;
@@ -93,10 +148,23 @@ public class DeconHostViewModel : BaseViewModel
         }
     }
 
-    private DeconParamsViewModel _productDeconvolutionParameters;
+
+    /// <summary>
+    /// All of the possible product deconvolution parameters that can be selected
+    /// 
+    /// Their ToString() method sets the name of the combo box
+    /// Stored in memory while task window is open, only the selected one is used for <See cref="CommonParameters"/>
+    /// This enables the user to set parameters, switch to another, and switch back without losing their settings
+    /// </summary>
+    public ObservableCollection<DeconParamsViewModel> ProductDeconvolutionParametersList { get; protected set; }
+    private DeconParamsViewModel? _productDeconvolutionParameters;
+
+    /// <summary>
+    /// The selected product deconvolution parameters
+    /// </summary>
     public DeconParamsViewModel ProductDeconvolutionParameters
     {
-        get => _productDeconvolutionParameters;
+        get => _productDeconvolutionParameters!;
         set
         {
             _productDeconvolutionParameters = value;

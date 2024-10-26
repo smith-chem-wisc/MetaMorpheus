@@ -10,5 +10,8 @@ namespace GuiFunctions
     public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
     {
         public override DeconvolutionParameters Parameters { get; protected set; }
+
+
+        public override string ToString() => "IsoDec";
     }
 }

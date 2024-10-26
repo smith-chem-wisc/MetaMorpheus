@@ -114,7 +114,7 @@ namespace EngineLayer
             {
                 PrecursorDeconvolutionParameters = precursorDeconParams ?? new ClassicDeconvolutionParameters(deconvolutionMaxAssumedChargeState,
                     -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
-                ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-20,
+                ProductDeconvolutionParameters = productDeconParams ?? new ClassicDeconvolutionParameters(-10,
                     -1, DeconvolutionMassTolerance.Value, deconvolutionIntensityRatio, Polarity.Negative);
             }
         }

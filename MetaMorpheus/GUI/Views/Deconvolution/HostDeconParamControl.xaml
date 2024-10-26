@@ -8,9 +8,12 @@
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="600">
 
+    <UserControl.Resources>
+        <local:DeconvolutionTypeToControlConverter x:Key="DeconTypeToControlConverter"/>
+    </UserControl.Resources>
+
     <Grid d:DataContext="{x:Static guiFunctions:DeconHostModel.Instance}">
-        
-        
+
         <Grid.RowDefinitions>
 
             <!-- Generalized Parameters -->
@@ -60,7 +63,7 @@
 
             <!-- Decon Type ComboBox -->
             <ComboBox Grid.Column="1" x:Name="DeconvolutionTypeComboBox" Width ="140" Height="35"  VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
-                      ItemsSource="{Binding DeconvolutionTypes}"  SelectedItem="{Binding SelectedDeconvolutionType}" 
+                      ItemsSource="{Binding PrecursorDeconvolutionParametersList}"  SelectedItem="{Binding PrecursorDeconvolutionParameters}" 
                       ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                 <ComboBox.ToolTip>
                     <TextBlock>
@@ -71,7 +74,20 @@
         </Grid>
 
         <!-- Specific Parameters -->
-        <local:ClassicDeconParamsControl Grid.Row="1" x:Name="SpecificDeconParamsControl" DataContext="{Binding PrecursorDeconvolutionParameters}" />
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
+            <ItemsControl ItemsSource="{Binding PrecursorDeconvolutionParametersList}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <ContentControl Content="{
+                            Binding RelativeSource={RelativeSource AncestorType=Grid, Mode=FindAncestor}, 
+                            Path=DataContext.PrecursorDeconvolutionParameters,
+                            Converter={StaticResource DeconTypeToControlConverter }}"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!--<local:ClassicDeconParamsControl x:Name="SpecificDeconParamsControl" DataContext="{Binding PrecursorDeconvolutionParameters}" />-->
+        </StackPanel>
 
 
     </Grid>

@@ -39,4 +39,6 @@ public sealed class ClassicDeconParamsViewModel : DeconParamsViewModel
             OnPropertyChanged(nameof(IntensityRatioLimit));
         }
     }
+
+    public override string ToString() => "Classic";
 }

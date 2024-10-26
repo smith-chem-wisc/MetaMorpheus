@@ -15,7 +15,7 @@
                                         Text="{Binding MaxAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
                 <TextBox.ToolTip>
                     <TextBlock>
-                        The maximum charge state that deconvolution should allow. Minimum is 1.
+                        The maximum charge state that deconvolution should allow. Minimum is 1 for positive mode.
                     </TextBlock>
                 </TextBox.ToolTip>
             </local:DoubleTextBoxControl>
