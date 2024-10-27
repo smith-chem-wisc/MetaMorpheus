@@ -10,85 +10,104 @@
 
     <UserControl.Resources>
         <local:DeconvolutionTypeToControlConverter x:Key="DeconTypeToControlConverter"/>
+        <Style TargetType="GroupBox">
+            <Setter Property="BorderThickness" Value="3 1 1 1"/>
+            <Setter Property="Padding" Value="5"/>
+            <Setter Property="BorderBrush" Value="DarkSlateGray"/>
+            <Setter Property="HeaderTemplate">
+                <Setter.Value>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Foreground="Black" FontWeight="Bold"/>
+                    </DataTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
     </UserControl.Resources>
 
-    <Grid d:DataContext="{x:Static guiFunctions:DeconHostModel.Instance}">
+    <GroupBox Header="Deisotoping" > 
+        <Grid d:DataContext="{x:Static guiFunctions:DeconHostModel.Instance}">
 
-        <Grid.RowDefinitions>
+            <Grid.RowDefinitions>
+
+                <!-- Generalized Parameters -->
+                <RowDefinition Height="Auto" />
+
+                <!-- Specific Precursor Parameters -->
+                <RowDefinition Height="*" />
+
+                <!-- Specific Fragment Parameters -->
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
 
             <!-- Generalized Parameters -->
-            <RowDefinition Height="Auto"/>
+            <Grid Grid.Row="0">
+                <Grid.ColumnDefinitions>
 
-            <!-- Specific Parameters -->
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+                    <!-- Checkboxes -->
+                    <ColumnDefinition Width="*" />
 
-
-        <!-- Generalized Parameters -->
-        <Grid Grid.Row="0">
-            <Grid.ColumnDefinitions>
+                    <!-- Decon Type ComboBox -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
                 <!-- Checkboxes -->
-                <ColumnDefinition Width="*"/>
+                <StackPanel Grid.Column="0">
+                    <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
+                        <CheckBox x:Name="UseProvidedPrecursor" Content="Use Provided Precursor"
+                                  IsChecked="{Binding UseProvidedPrecursors}" ToolTipService.ShowDuration="999999"
+                                  ToolTipService.InitialShowDelay="500">
+                            <CheckBox.ToolTip>
+                                <TextBlock>
+                                    Use the charge states and precursor masses determined by the instrument controller.
+                                </TextBlock>
+                            </CheckBox.ToolTip>
+                        </CheckBox>
+                    </StackPanel>
+
+                    <!-- Deconvolute precursors -->
+                    <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
+                        <CheckBox x:Name="DeconvolutePrecursors" Content="Deconvolute Precursors"
+                                  IsChecked="{Binding DoPrecursorDeconvolution}" ToolTipService.ShowDuration="999999"
+                                  ToolTipService.InitialShowDelay="500">
+                            <CheckBox.ToolTip>
+                                <TextBlock>
+                                    Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
+                                </TextBlock>
+                            </CheckBox.ToolTip>
+                        </CheckBox>
+                    </StackPanel>
+                </StackPanel>
+
 
                 <!-- Decon Type ComboBox -->
-                <ColumnDefinition Width="Auto"/>
-            </Grid.ColumnDefinitions>
+                <ComboBox Grid.Column="1" x:Name="DeconvolutionTypeComboBox" Width="140" Height="35"
+                          VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                          ItemsSource="{Binding PrecursorDeconvolutionParametersList}"
+                          SelectedItem="{Binding PrecursorDeconvolutionParameters}"
+                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                    <ComboBox.ToolTip>
+                        <TextBlock>
+                            The type of deconvolution to perform.
+                        </TextBlock>
+                    </ComboBox.ToolTip>
+                </ComboBox>
+            </Grid>
 
-
-            <!-- Checkboxes -->
-            <StackPanel Grid.Column="0" >
-                <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                    <CheckBox x:Name="UseProvidedPrecursor" Content="Use Provided Precursor" IsChecked="{Binding UseProvidedPrecursors}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                        <CheckBox.ToolTip>
-                            <TextBlock>
-                                Use the charge states and precursor masses determined by the instrument controller.
-                            </TextBlock>
-                        </CheckBox.ToolTip>
-                    </CheckBox>
-                </StackPanel>
-
-                <!-- Deconvolute precursors -->
-                <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                    <CheckBox x:Name="DeconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="{Binding DoPrecursorDeconvolution}" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                        <CheckBox.ToolTip>
-                            <TextBlock>
-                                Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
-                            </TextBlock>
-                        </CheckBox.ToolTip>
-                    </CheckBox>
-                </StackPanel>
-            </StackPanel>
-
-
-            <!-- Decon Type ComboBox -->
-            <ComboBox Grid.Column="1" x:Name="DeconvolutionTypeComboBox" Width ="140" Height="35"  VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
-                      ItemsSource="{Binding PrecursorDeconvolutionParametersList}"  SelectedItem="{Binding PrecursorDeconvolutionParameters}" 
-                      ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                <ComboBox.ToolTip>
-                    <TextBlock>
-                        The type of deconvolution to perform.
-                    </TextBlock>
-                </ComboBox.ToolTip>
-            </ComboBox>
-        </Grid>
-
-        <!-- Specific Parameters -->
-        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="5">
-            <ItemsControl ItemsSource="{Binding PrecursorDeconvolutionParametersList}">
+            <!-- Specific Precursor Parameters -->
+            <ItemsControl Grid.Row="1" Margin="5"
+                          ItemsSource="{Binding PrecursorDeconvolutionParametersList}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <ContentControl Content="{
-                            Binding RelativeSource={RelativeSource AncestorType=Grid, Mode=FindAncestor}, 
-                            Path=DataContext.PrecursorDeconvolutionParameters,
-                            Converter={StaticResource DeconTypeToControlConverter }}"/>
+                        <ContentControl
+                            Content="{
+                        Binding RelativeSource={RelativeSource AncestorType=Grid, Mode=FindAncestor}, 
+                        Path=DataContext.PrecursorDeconvolutionParameters,
+                        Converter={StaticResource DeconTypeToControlConverter }}" />
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <!--<local:ClassicDeconParamsControl x:Name="SpecificDeconParamsControl" DataContext="{Binding PrecursorDeconvolutionParameters}" />-->
-        </StackPanel>
 
-
-    </Grid>
+        </Grid>
+    </GroupBox>
 </UserControl>

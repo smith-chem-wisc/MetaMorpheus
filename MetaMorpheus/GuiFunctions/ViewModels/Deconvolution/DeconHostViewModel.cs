@@ -1,5 +1,6 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -19,29 +20,23 @@ namespace GuiFunctions;
 /// </summary>
 public class DeconHostViewModel : BaseViewModel
 {
-
     /// <summary>
-    ///
-    ///
     /// This is where default deconvolution parameters are set for GUI display
     /// </summary>
-    /// <param name="initialPrecursorParameters"></param>
-    /// <param name="initialProductParameters"></param>
+    /// <param name="initialPrecursorParameters">precursor params to display first</param>
+    /// <param name="initialProductParameters">product params to display first</param>
     /// <param name="useProvidedPrecursor"></param>
     /// <param name="deconvolutePrecursors"></param>
     /// <exception cref="ArgumentOutOfRangeException"></exception>
     public DeconHostViewModel(DeconvolutionParameters? initialPrecursorParameters = null, DeconvolutionParameters? initialProductParameters = null,
         bool useProvidedPrecursor = false, bool deconvolutePrecursors = true)
     {
-
         UseProvidedPrecursors = useProvidedPrecursor;
         DoPrecursorDeconvolution = deconvolutePrecursors;
 
         // Order matters here, construct the lists before setting the selected parameters
         PrecursorDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
         ProductDeconvolutionParametersList = new ObservableCollection<DeconParamsViewModel>();
-
-        
 
         // populate the lists by adding the default parameters for each deconvolution type or the provided parameters
         foreach (var deconType in Enum.GetValues<DeconvolutionType>())
@@ -88,15 +83,13 @@ public class DeconHostViewModel : BaseViewModel
         }
 
         // If deconvolution parameters are not set, default to MetaMorpheus defaults
-        if (initialPrecursorParameters is null)
-            PrecursorDeconvolutionParameters = PrecursorDeconvolutionParametersList.First();
-        else
-            PrecursorDeconvolutionParameters = PrecursorDeconvolutionParametersList.First(x => x.Parameters == initialPrecursorParameters);
+        PrecursorDeconvolutionParameters = initialPrecursorParameters is null 
+            ? PrecursorDeconvolutionParametersList.First(x => x.DeconvolutionType == DeconvolutionType.ClassicDeconvolution) 
+            : PrecursorDeconvolutionParametersList.First(x => x.Parameters == initialPrecursorParameters);
 
-        if (initialProductParameters is null)
-            ProductDeconvolutionParameters = ProductDeconvolutionParametersList.First();
-        else
-            ProductDeconvolutionParameters = ProductDeconvolutionParametersList.First(x => x.Parameters == initialProductParameters);
+        ProductDeconvolutionParameters = initialProductParameters is null 
+            ? ProductDeconvolutionParametersList.First(x => x.DeconvolutionType == DeconvolutionType.ClassicDeconvolution)
+            : ProductDeconvolutionParametersList.First(x => x.Parameters == initialProductParameters);
     }
 
     #region Common Parameters
@@ -175,7 +168,7 @@ public class DeconHostViewModel : BaseViewModel
 
 
 
-[ExcludeFromCodeCoverage] // Model used only for visualizing the view
+[ExcludeFromCodeCoverage] // Model used only for visualizing the view in visual studio
 public class DeconHostModel : DeconHostViewModel
 {
     public static DeconHostModel Instance => new DeconHostModel();

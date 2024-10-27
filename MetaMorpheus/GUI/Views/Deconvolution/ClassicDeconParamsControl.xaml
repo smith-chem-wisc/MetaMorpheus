@@ -6,19 +6,36 @@
              xmlns:local="clr-namespace:MetaMorpheusGUI"
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              mc:Ignorable="d" 
-             d:DesignHeight="200" d:DesignWidth="600">
-    <Grid d:DataContext="{x:Static guiFunctions:DeconParamsModel.Instance}">
+             d:DesignHeight="60" d:DesignWidth="600">
 
-        <StackPanel Orientation="Horizontal" Margin="5" Height="30" VerticalAlignment="Top">
-            <Label Content="Deconvolution Max Assumed Charge State:" />
-            <local:DoubleTextBoxControl x:Name="DeconvolutionMaxAssumedChargeStateTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                                        Text="{Binding MaxAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
-                <TextBox.ToolTip>
-                    <TextBlock>
-                        The maximum charge state that deconvolution should allow. Minimum is 1 for positive mode.
-                    </TextBlock>
-                </TextBox.ToolTip>
-            </local:DoubleTextBoxControl>
-        </StackPanel>
+    <Grid d:DataContext="{x:Static guiFunctions:DeconParamsModel.Instance}" >
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="2*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <Label Content="Max Assumed Charge State:" Grid.Column="0" />
+        <local:IntegerTexBoxControl Grid.Column="1" x:Name="DeconvolutionMaxAssumedChargeStateTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+                                    Text="{Binding MaxAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+            <TextBox.ToolTip>
+                <TextBlock>
+                    The maximum charge state that deconvolution should allow. Minimum is 1 for positive mode and -1 for negative mode. 
+                </TextBlock>
+            </TextBox.ToolTip>
+        </local:IntegerTexBoxControl>
+
+        <Label Content="Min Assumed Charge State:" Grid.Column="2" />
+        <local:IntegerTexBoxControl Grid.Column="3"   Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" HorizontalAlignment="Left"
+                                    Text="{Binding MinAssumedChargeState}" HorizontalContentAlignment="Center" VerticalContentAlignment="Center">
+            <TextBox.ToolTip>
+                <TextBlock>
+                    The minimum charge state that deconvolution should allow.
+                </TextBlock>
+            </TextBox.ToolTip>
+        </local:IntegerTexBoxControl>
+
     </Grid>
 </UserControl>

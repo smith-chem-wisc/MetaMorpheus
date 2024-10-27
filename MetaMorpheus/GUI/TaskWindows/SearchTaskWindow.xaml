@@ -660,9 +660,7 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
-                                    <GroupBox Header="Deisotoping">
-                                        <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
-                                    </GroupBox>
+                                    <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
                                     <GroupBox Header="Peak Trimming">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
