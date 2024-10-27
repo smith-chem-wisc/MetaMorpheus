@@ -117,33 +117,57 @@ public class DeconParamsViewModelTest
     }
 
     [Test]
-    public void TestPolaritySwitchWithPreviousValues()
+    public void TestPolaritySwitchWithPreviousValues_PositiveMode()
     {
         // Initial setup with positive polarity
         var parameters = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
         var viewModel = new TestDeconParamsViewModel(parameters);
 
+        // Set previous values
+        viewModel.MinAssumedChargeState = 5;
+        viewModel.MaxAssumedChargeState = 10;
+
         // Change to negative polarity
         viewModel.Polarity = Polarity.Negative;
 
-        // Set previous values
-        viewModel.MinAssumedChargeState = -10;
-        viewModel.MaxAssumedChargeState = -5;
+        // Check that defaults got set properly
+        Assert.That(viewModel.MinAssumedChargeState, Is.EqualTo(-20));
+        Assert.That(viewModel.MaxAssumedChargeState, Is.EqualTo(-1));
 
         // Change back to positive polarity
         viewModel.Polarity = Polarity.Positive;
 
         // Assert that previous values are restored correctly
+        Assert.That(viewModel.MinAssumedChargeState, Is.EqualTo(5));
+        Assert.That(viewModel.MaxAssumedChargeState, Is.EqualTo(10));
+    }
+
+    [Test]
+    public void TestPolaritySwitchWithPreviousValues_NegativeMode()
+    {
+        // Initial setup with negative polarity
+        var parameters = new ClassicDeconvolutionParameters(-20, -1, 5, 3, Polarity.Negative);
+        var viewModel = new TestDeconParamsViewModel(parameters);
+
+        // Set previous values
+        viewModel.MinAssumedChargeState = -10;
+        viewModel.MaxAssumedChargeState = -5;
+
+        // Change to positive polarity
+        viewModel.Polarity = Polarity.Positive;
+
+        // Check that defaults got set properly
         Assert.That(viewModel.MinAssumedChargeState, Is.EqualTo(1));
         Assert.That(viewModel.MaxAssumedChargeState, Is.EqualTo(12));
 
-        // Change to negative polarity again
+        // Change back to negative polarity
         viewModel.Polarity = Polarity.Negative;
 
-        // Assert that previous negative values are restored correctly
+        // Assert that previous values are restored correctly
         Assert.That(viewModel.MinAssumedChargeState, Is.EqualTo(-10));
         Assert.That(viewModel.MaxAssumedChargeState, Is.EqualTo(-5));
     }
+
     [Test]
     public void TestToString()
     {

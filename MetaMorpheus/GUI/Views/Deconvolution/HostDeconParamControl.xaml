@@ -10,6 +10,7 @@
 
     <UserControl.Resources>
         <local:DeconvolutionTypeToControlConverter x:Key="DeconTypeToControlConverter"/>
+        <local:BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>
             <Setter Property="Padding" Value="5"/>
@@ -78,13 +79,13 @@
                     </StackPanel>
                 </StackPanel>
 
-
                 <!-- Decon Type ComboBox -->
                 <ComboBox Grid.Column="1" x:Name="DeconvolutionTypeComboBox" Width="140" Height="35"
                           VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
                           ItemsSource="{Binding PrecursorDeconvolutionParametersList}"
                           SelectedItem="{Binding PrecursorDeconvolutionParameters}"
-                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
+                          Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <ComboBox.ToolTip>
                         <TextBlock>
                             The type of deconvolution to perform.
@@ -106,8 +107,6 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
-
-
         </Grid>
     </GroupBox>
 </UserControl>

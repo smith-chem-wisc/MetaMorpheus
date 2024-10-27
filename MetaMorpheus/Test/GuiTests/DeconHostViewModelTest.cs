@@ -7,7 +7,7 @@ using NUnit.Framework;
 namespace Test.GuiTests;
 
 [TestFixture]
-public class TestDeconHostViewModel
+public class DeconHostViewModelTests
 {
     internal ClassicDeconvolutionParameters ClassicPrecursorDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 12, 4, 3);
     internal ClassicDeconvolutionParameters ClassicProductDeconvolutionParameters = new ClassicDeconvolutionParameters(1, 10, 4, 3);
@@ -156,5 +156,46 @@ public class TestDeconHostViewModel
 
         // Revert back to default
         GlobalVariables.AnalyteType = "Peptide";
+    }
+
+    [Test]
+    public void TestDisplayDeconSelectionComboBox_MultipleOptions_Precursor()
+    {
+        // Arrange
+        var viewModel = new DeconHostViewModel();
+        viewModel.PrecursorDeconvolutionParametersList.Add(ClassicPrecursorDeconvolutionParameters.ToViewModel());
+        
+        // Act
+        var result = viewModel.DisplayDeconSelectionComboBox;
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void TestDisplayDeconSelectionComboBox_MultipleOptions_Product()
+    {
+        // Arrange
+        var viewModel = new DeconHostViewModel();
+        viewModel.ProductDeconvolutionParametersList.Add(ClassicProductDeconvolutionParameters.ToViewModel());
+
+        // Act
+        var result = viewModel.DisplayDeconSelectionComboBox;
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void TestDisplayDeconSelectionComboBox_SingleOption()
+    {
+        // Arrange
+        var viewModel = new DeconHostViewModel();
+       
+        // Act
+        var result = viewModel.DisplayDeconSelectionComboBox;
+
+        // Assert
+        Assert.That(result, Is.False);
     }
 }

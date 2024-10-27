@@ -141,7 +141,6 @@ public class DeconHostViewModel : BaseViewModel
         }
     }
 
-
     /// <summary>
     /// All of the possible product deconvolution parameters that can be selected
     /// 
@@ -164,9 +163,12 @@ public class DeconHostViewModel : BaseViewModel
             OnPropertyChanged(nameof(ProductDeconvolutionParameters));
         }
     }
+
+    /// <summary>
+    /// Hides the decon type selection combo box if only one options is present
+    /// </summary>
+    public bool DisplayDeconSelectionComboBox => PrecursorDeconvolutionParametersList.Count > 1 || ProductDeconvolutionParametersList.Count > 1;
 }
-
-
 
 [ExcludeFromCodeCoverage] // Model used only for visualizing the view in visual studio
 public class DeconHostModel : DeconHostViewModel

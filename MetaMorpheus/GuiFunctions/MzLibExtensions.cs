@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using MassSpectrometry;
 
 namespace GuiFunctions
 {
+    /// <summary>
+    /// Provides additional functionality for the MzLib library.
+    /// </summary>
     public static class MzLibExtensions
     {
 

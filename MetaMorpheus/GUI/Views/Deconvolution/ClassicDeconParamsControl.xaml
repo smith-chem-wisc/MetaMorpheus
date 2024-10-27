@@ -36,6 +36,5 @@
                 </TextBlock>
             </TextBox.ToolTip>
         </local:IntegerTexBoxControl>
-
     </Grid>
 </UserControl>

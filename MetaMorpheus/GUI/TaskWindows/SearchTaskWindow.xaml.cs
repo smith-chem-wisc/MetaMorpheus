@@ -302,13 +302,9 @@ namespace MetaMorpheusGUI
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
 
-
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
                 TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
-            //DeconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
-            //UseProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            //DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -587,13 +583,10 @@ namespace MetaMorpheusGUI
             bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
             bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
             
-
-
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 reportAllAmbiguity: AllAmbiguity.IsChecked.Value,
-                //deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
                 doPrecursorDeconvolution: doPrecursorDeconvolution,
                 useProvidedPrecursorInfo: useProvidedPrecursorInfo,

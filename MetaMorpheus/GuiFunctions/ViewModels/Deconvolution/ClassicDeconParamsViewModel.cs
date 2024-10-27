@@ -17,7 +17,7 @@ public sealed class ClassicDeconParamsViewModel : DeconParamsViewModel
 
     public ClassicDeconParamsViewModel(ClassicDeconvolutionParameters parameters)
     {
-        _parameters = parameters;
+        Parameters = parameters;
     }
 
     public double DeconvolutionTolerancePpm

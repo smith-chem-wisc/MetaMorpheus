@@ -6,7 +6,7 @@ using MassSpectrometry;
 namespace GuiFunctions;
 
 /// <summary>
-/// Base Deconovolution Parameters view model
+/// Base Deconvolution Parameters view model
 /// Used to wrap the DeconvolutionParameters object
 /// Contains only shared information between different DeconvolutionParameters
 /// </summary>
@@ -73,7 +73,6 @@ public abstract class DeconParamsViewModel : BaseViewModel, IEquatable<DeconPara
                     Parameters.MaxAssumedChargeState = value;
                     OnPropertyChanged(nameof(MaxAssumedChargeState));
                     break;
-
             }
         }
     }
