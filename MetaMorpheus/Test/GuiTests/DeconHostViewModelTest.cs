@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
@@ -108,7 +109,7 @@ public class DeconHostViewModelTests
         
     [Test]
     [NonParallelizable]
-    public void TestDeconHostViewModel_GlobalVariablesProteoform()
+    public void TestDeconHostViewModel_GlobalVariables_Proteoform()
     {
         // Arrange
         GlobalVariables.AnalyteType = "Proteoform";
@@ -134,7 +135,7 @@ public class DeconHostViewModelTests
 
     [Test]
     [NonParallelizable]
-    public void TestDeconHostViewModel_GlobalVariablesOligo()
+    public void TestDeconHostViewModel_GlobalVariables_Oligo()
     {
         // Arrange
         GlobalVariables.AnalyteType = "Oligo";
@@ -153,6 +154,28 @@ public class DeconHostViewModelTests
         Assert.That(productParams.Parameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
         Assert.That(((ClassicDeconvolutionParameters)precursorParams.Parameters).MinAssumedChargeState, Is.EqualTo(-20));
         Assert.That(((ClassicDeconvolutionParameters)productParams.Parameters).MinAssumedChargeState, Is.EqualTo(-10));
+
+        // Revert back to default
+        GlobalVariables.AnalyteType = "Peptide";
+    }
+
+    [Test]
+    [NonParallelizable]
+    public void TestDeconHostViewModel_GlobalVariables_Unknown()
+    {
+        // Arrange
+        GlobalVariables.AnalyteType = "ThisWasSetWrong";
+
+        // Act & Assert
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
+            var deconHostViewModel = new DeconHostViewModel(null, null);
+        });
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
+            var deconHostViewModel = new DeconHostViewModel(ClassicPrecursorDeconvolutionParameters, null);
+        });
 
         // Revert back to default
         GlobalVariables.AnalyteType = "Peptide";

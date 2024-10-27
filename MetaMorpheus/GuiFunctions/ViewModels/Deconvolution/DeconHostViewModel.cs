@@ -77,7 +77,8 @@ public class DeconHostViewModel : BaseViewModel
                     }
 
                     break;
-                default:
+
+                default: // This will only be hit if a new deconvolution type is added to mzlib and not handled here
                     throw new ArgumentOutOfRangeException();
             }
         }
