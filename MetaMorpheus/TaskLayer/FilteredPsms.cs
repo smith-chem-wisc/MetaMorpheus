@@ -112,45 +112,41 @@ namespace TaskLayer
                 }
             }
 
-            if (!includeHighQValuePsms)
-            {
-                filteredPsms = filterType.Equals(FilterType.QValue)
-                    ? psms.Where(p => p.GetFdrInfo(filterAtPeptideLevel) != null
-                        && p.GetFdrInfo(filterAtPeptideLevel).QValue <= filterThreshold
-                        && p.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= filterThreshold).ToList()
-                    : psms.Where(p => p.GetFdrInfo(filterAtPeptideLevel) != null && p.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= filterThreshold).ToList();
-            }
-            else
-            {
-                filteredPsms = psms.ToList();
-            }
-
-            if (!includeDecoys)
-            {
-                filteredPsms.RemoveAll(p => p.IsDecoy);
-            }
-            if (!includeContaminants)
-            {
-                filteredPsms.RemoveAll(p => p.IsContaminant);
-            }
-            if (!includeAmbiguous)
-            {
-                filteredPsms.RemoveAll(p => p.BaseSequence.IsNullOrEmpty());
-            }
-            if (!includeAmbiguousMods)
-            {
-                filteredPsms.RemoveAll(p => p.FullSequence.IsNullOrEmpty());
-            }
-            if (filterAtPeptideLevel)
-            {
-                //Choose the top scoring PSM for each peptide
-                filteredPsms = filteredPsms
-                    .OrderByDescending(p => p)
-                    .GroupBy(b => b.FullSequence)
-                    .Select(b => b.FirstOrDefault()).ToList();
-            }
+            filteredPsms = FilterByQValue(psms, includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType)
+                .Where(psm => 
+                    (includeDecoys || !psm.IsDecoy) 
+                    && (includeContaminants || !psm.IsContaminant)
+                    && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
+                    && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
+                .CollapseToPeptides(filterAtPeptideLevel)
+                .ToList();
 
             return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
+        }
+
+        public static IEnumerable<SpectralMatch> FilterByQValue(IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType)
+        {
+            foreach(var psm in psms)
+            {
+                if(includeHighQValuePsms)
+                {
+                   yield return psm;
+                }
+                else if (filterType == FilterType.PepQValue)
+                {
+                    if (psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= qValueThreshold)
+                    {
+                        yield return psm;
+                    }
+                }
+                else
+                {
+                    if (psm.GetFdrInfo(filterAtPeptideLevel).QValue <= qValueThreshold && psm.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= qValueThreshold)
+                    {
+                        yield return psm;
+                    }
+                }
+            }
         }
 
         public IEnumerator<SpectralMatch> GetEnumerator()
@@ -161,6 +157,24 @@ namespace TaskLayer
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
         {
             return FilteredPsmsList.GetEnumerator();
+        }
+    }
+
+    public static class FilteredPsmsExtensions
+    {
+        public static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
+        {
+            if(!filterAtPeptideLevel)
+            {
+                return psms;
+            }
+            else
+            {
+                return psms
+                    .OrderByDescending(p => p)
+                    .GroupBy(b => b.FullSequence)
+                    .Select(b => b.FirstOrDefault());
+            }
         }
     }
 }
