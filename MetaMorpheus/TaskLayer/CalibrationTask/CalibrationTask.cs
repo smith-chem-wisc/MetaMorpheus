@@ -30,11 +30,11 @@ namespace TaskLayer
         }
 
         public CalibrationParameters CalibrationParameters { get; set; }
-        private readonly int NumRequiredPsms = 20;
-        private readonly int NumRequiredMs1Datapoints = 50;
-        private readonly int NumRequiredMs2Datapoints = 100;
-        private readonly double PrecursorMultiplier = 4.0;
-        private readonly double ProductMultiplier = 4.0;
+        private readonly int NumRequiredPsms = 16;
+        private readonly int NumRequiredMs1Datapoints = 40;
+        private readonly int NumRequiredMs2Datapoints = 80;
+        private readonly double PrecursorMultiplier = 3.0;
+        private readonly double ProductMultiplier = 6.0;
         double MaxPrecursorTolerance = 40;
         double MaxProductTolerance = 150;
         public const string CalibSuffix = "-calib";
@@ -113,8 +113,10 @@ namespace TaskLayer
                     {
                         fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
                     }
-                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
-                    fileSpecificParams.ProductMassTolerance = new PpmTolerance((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+                    // set the mass tolerances for the file specific parameters
+                    // we use a multiplier of 4 for the tolerance for files that are not calibrated
+                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((4 * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
+                    fileSpecificParams.ProductMassTolerance = new PpmTolerance((4 * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
                     // generate calibration function and shift data points
                     Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                     CalibrationEngine engine = new(myMsDataFile, acquisitionResults, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
