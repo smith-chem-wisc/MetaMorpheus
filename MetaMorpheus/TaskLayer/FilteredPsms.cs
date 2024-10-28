@@ -121,7 +121,6 @@ namespace TaskLayer
                 .CollapseToPeptides(filterAtPeptideLevel, filterType)
                 .ToList();
 
-
             return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
         }
 
