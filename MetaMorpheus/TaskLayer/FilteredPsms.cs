@@ -112,41 +112,16 @@ namespace TaskLayer
                 }
             }
 
-            filteredPsms = FilterByQValue(psms, includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType)
-                .Where(psm => 
+            filteredPsms = psms.Where(psm => 
                     (includeDecoys || !psm.IsDecoy) 
                     && (includeContaminants || !psm.IsContaminant)
                     && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
                     && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
+                .FilterByQValue(includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType)
                 .CollapseToPeptides(filterAtPeptideLevel)
                 .ToList();
 
             return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
-        }
-
-        public static IEnumerable<SpectralMatch> FilterByQValue(IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType)
-        {
-            foreach(var psm in psms)
-            {
-                if(includeHighQValuePsms)
-                {
-                   yield return psm;
-                }
-                else if (filterType == FilterType.PepQValue)
-                {
-                    if (psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= qValueThreshold)
-                    {
-                        yield return psm;
-                    }
-                }
-                else
-                {
-                    if (psm.GetFdrInfo(filterAtPeptideLevel).QValue <= qValueThreshold && psm.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= qValueThreshold)
-                    {
-                        yield return psm;
-                    }
-                }
-            }
         }
 
         public IEnumerator<SpectralMatch> GetEnumerator()
@@ -174,6 +149,31 @@ namespace TaskLayer
                     .OrderByDescending(p => p)
                     .GroupBy(b => b.FullSequence)
                     .Select(b => b.FirstOrDefault());
+            }
+        }
+
+        public static IEnumerable<SpectralMatch> FilterByQValue(this IEnumerable<SpectralMatch> psms, bool includeHighQValuePsms, double qValueThreshold, bool filterAtPeptideLevel, FilterType filterType)
+        {
+            foreach (var psm in psms)
+            {
+                if (includeHighQValuePsms)
+                {
+                    yield return psm;
+                }
+                else if (filterType == FilterType.PepQValue)
+                {
+                    if (psm.GetFdrInfo(filterAtPeptideLevel).PEP_QValue <= qValueThreshold)
+                    {
+                        yield return psm;
+                    }
+                }
+                else
+                {
+                    if (psm.GetFdrInfo(filterAtPeptideLevel).QValue <= qValueThreshold && psm.GetFdrInfo(filterAtPeptideLevel).QValueNotch <= qValueThreshold)
+                    {
+                        yield return psm;
+                    }
+                }
             }
         }
     }
