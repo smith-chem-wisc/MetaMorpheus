@@ -83,7 +83,7 @@ namespace EngineLayer.FdrAnalysis
 
                         // peptides are ordered by MM score from good to bad in order to select the best PSM for each peptide
                         peptides = psms
-                            .OrderByDescending(p => p)
+                            .OrderBy(p => p.FdrInfo.PEP)
                             .GroupBy(p => p.FullSequence)
                             .Select(p => p.FirstOrDefault())
                             .OrderBy(p => p.FdrInfo.PEP) // Then order by PEP (PSM PEP and Peptide PEP are the same)
@@ -110,7 +110,7 @@ namespace EngineLayer.FdrAnalysis
                     // really, in this case, we only need to run one or the other (i.e., only peptides or psms are passed in)
                     // but there's no mechanism to pass that info to the FDR analysis engine, so we'll do this for now
                     peptides = psms
-                            .OrderByDescending(p => p)
+                            .OrderByDescending(p => p.FdrInfo.PEP)
                             .GroupBy(p => p.FullSequence)
                             .Select(p => p.FirstOrDefault()) // Get the best psm for each peptide based on MBR score
                             .OrderBy(p => p.FdrInfo.PEP) // Then order by PEP (PSM PEP and Peptide PEP are the same)

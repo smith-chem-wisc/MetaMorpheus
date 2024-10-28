@@ -143,11 +143,24 @@ namespace TaskLayer
             }
             if (filterAtPeptideLevel)
             {
-                //Choose the top scoring PSM for each peptide
-                filteredPsms = filteredPsms
-                    .OrderByDescending(p => p)
-                    .GroupBy(b => b.FullSequence)
-                    .Select(b => b.FirstOrDefault()).ToList();
+                if(filterType.Equals(FilterType.PepQValue))
+                {
+                    // Choose the PSM with the lowest PEP for each peptide
+                    filteredPsms = filteredPsms
+                        .OrderBy(p => p.PeptideFdrInfo.PEP)
+                        .ThenByDescending(p => p)
+                        .GroupBy(b => b.FullSequence)
+                        .Select(b => b.FirstOrDefault()).ToList();
+                }
+                else
+                {
+                    //Choose the top scoring PSM for each peptide
+                    filteredPsms = filteredPsms
+                        .OrderByDescending(p => p)
+                        .GroupBy(b => b.FullSequence)
+                        .Select(b => b.FirstOrDefault()).ToList();
+                }
+                
             }
 
             return new FilteredPsms(filteredPsms, filterType, filterThreshold, filteringNotPerformed, filterAtPeptideLevel);
