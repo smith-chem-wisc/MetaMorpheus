@@ -118,7 +118,7 @@ namespace TaskLayer
                     && (includeAmbiguous || !psm.BaseSequence.IsNullOrEmpty())
                     && (includeAmbiguousMods || !psm.FullSequence.IsNullOrEmpty()))
                 .FilterByQValue(includeHighQValuePsms, filterThreshold, filterAtPeptideLevel, filterType)
-                .CollapseToPeptides(filterAtPeptideLevel, filterType)
+                .CollapseToPeptides(filterAtPeptideLevel)
                 .ToList();
 
 
@@ -138,26 +138,19 @@ namespace TaskLayer
 
     public static class FilteredPsmsExtensions
     {
-        public static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel, FilterType filterType)
+        public static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
         {
-            if(!filterAtPeptideLevel)
+            if (!filterAtPeptideLevel)
             {
                 return psms;
             }
-            else if (filterType.Equals(FilterType.PepQValue))
-            {
-                // Choose the PSM with the lowest PEP for each peptide
-                return psms.OrderBy(p => p.PeptideFdrInfo.PEP)
-                    .ThenByDescending(p => p)
-                    .GroupBy(b => b.FullSequence)
-                    .Select(b => b.FirstOrDefault());
-            }
             else
             {
-                //Choose the top scoring PSM for each peptide
-                return psms.OrderByDescending(p => p)
-                    .GroupBy(b => b.FullSequence)
-                    .Select(b => b.FirstOrDefault());
+                return psms.OrderBy(p => p.PeptideFdrInfo.PEP) // Order by PEP first
+                    .ThenByDescending(p => p) // Use the default comparer to break ties
+                    .GroupBy(p => p.FullSequence) // Choose the PSM with the lowest PEP for each peptide
+                    .OrderByDescending(p => p) // Use the default comparer to order the resulting list, so that the output is ordered by MetaMorpheus Score
+                    .Select(p => p.FirstOrDefault());
             }
         }
 
