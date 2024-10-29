@@ -146,11 +146,12 @@ namespace TaskLayer
             }
             else
             {
-                return psms.OrderBy(p => p.PeptideFdrInfo.PEP) // Order by PEP first
+                return psms
+                    .OrderBy(p => p.FdrInfo.PEP) // Order by PEP first
                     .ThenByDescending(p => p) // Use the default comparer to break ties
-                    .GroupBy(p => p.FullSequence) // Choose the PSM with the lowest PEP for each peptide
-                    .OrderByDescending(p => p) // Use the default comparer to order the resulting list, so that the output is ordered by MetaMorpheus Score
-                    .Select(p => p.FirstOrDefault());
+                    .GroupBy(p => p.FullSequence) 
+                    .Select(p => p.FirstOrDefault()) // Choose the PSM with the lowest PEP for each peptide
+                    .OrderByDescending(p => p); // Use the default comparer to order the resulting list, so that the output is ordered by MetaMorpheus Score
             }
         }
 
