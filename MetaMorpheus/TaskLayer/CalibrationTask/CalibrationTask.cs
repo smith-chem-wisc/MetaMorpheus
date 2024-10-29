@@ -33,8 +33,8 @@ namespace TaskLayer
         private readonly int NumRequiredPsms = 16;
         private readonly int NumRequiredMs1Datapoints = 40;
         private readonly int NumRequiredMs2Datapoints = 80;
-        private readonly double PrecursorMultiplier = 3.0;
-        private readonly double ProductMultiplier = 6.0;
+        private readonly double PrecursorMultiplier = 3;
+        private readonly double ProductMultiplier = 6;
         double MaxPrecursorTolerance = 40;
         double MaxProductTolerance = 150;
         public const string CalibSuffix = "-calib";
