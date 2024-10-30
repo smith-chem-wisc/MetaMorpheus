@@ -117,6 +117,7 @@ namespace TaskLayer
                     // we use a multiplier of 4 for the tolerance for files that are not calibrated
                     fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((4 * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
                     fileSpecificParams.ProductMassTolerance = new PpmTolerance((4 * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+
                     // generate calibration function and shift data points
                     Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
                     CalibrationEngine engine = new(myMsDataFile, acquisitionResults, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
@@ -199,7 +200,6 @@ namespace TaskLayer
 
             return MyTaskResults;
         }
-
 
         private void CalibrationWarnMessage(DataPointAquisitionResults acquisitionResults)
         {
