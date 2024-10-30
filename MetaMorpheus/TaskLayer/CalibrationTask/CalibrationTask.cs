@@ -158,7 +158,7 @@ namespace TaskLayer
                     myFileManager.DoneWithFile(originalUncalibratedFilePath);
                     if(!calibrated)
                     {
-                        gsd myMsDataFile.ExportAsMzML(calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
+                        myMsDataFile.ExportAsMzML(calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
                     }
                     Toml.WriteFile(fileSpecificParams, newTomlFileName, tomlConfig);
                     FinishedWritingFile(newTomlFileName, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
