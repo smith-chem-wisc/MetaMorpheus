@@ -1,9 +1,11 @@
-﻿using MassSpectrometry;
+﻿using System.Diagnostics.CodeAnalysis;
+using MassSpectrometry;
 
 namespace GuiFunctions;
 
 public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
 {
+    public static IsoDecDeconParamsViewModel Instance => new (new IsoDecDeconvolutionParameters());
     private IsoDecDeconvolutionParameters _parameters;
     public override DeconvolutionParameters Parameters
     {
