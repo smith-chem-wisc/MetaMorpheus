@@ -139,16 +139,18 @@ namespace TaskLayer
     {
         public static IEnumerable<SpectralMatch> CollapseToPeptides(this IEnumerable<SpectralMatch> psms, bool filterAtPeptideLevel)
         {
-            if(!filterAtPeptideLevel)
+            if (!filterAtPeptideLevel)
             {
                 return psms;
             }
             else
             {
                 return psms
-                    .OrderByDescending(p => p)
-                    .GroupBy(b => b.FullSequence)
-                    .Select(b => b.FirstOrDefault());
+                    .OrderBy(p => p.FdrInfo.PEP) // Order by PEP first
+                    .ThenByDescending(p => p) // Use the default comparer to break ties
+                    .GroupBy(p => p.FullSequence) 
+                    .Select(p => p.FirstOrDefault()) // Choose the PSM with the lowest PEP for each peptide
+                    .OrderByDescending(p => p); // Use the default comparer to order the resulting list, so that the output is ordered by MetaMorpheus Score
             }
         }
 
