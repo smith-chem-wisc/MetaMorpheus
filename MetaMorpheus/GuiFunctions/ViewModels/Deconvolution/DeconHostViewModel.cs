@@ -12,7 +12,7 @@ namespace GuiFunctions;
 
 /// <summary>
 /// This class holds all of the information in the Deconvolution tab of the GUI
-/// One instance will be create per Task Window
+/// One instance will be created per Task Window
 ///
 /// The Task window will populate this view model with the appropriate parameters from <see cref="CommonParameters"/>
 /// The user can then modify these parameters as needed via the gui
@@ -21,7 +21,7 @@ namespace GuiFunctions;
 public class DeconHostViewModel : BaseViewModel
 {
     /// <summary>
-    /// This is where default deconvolution parameters are set for GUI display
+    /// This is where default deconvolution parameters are set for GUI display 
     /// </summary>
     /// <param name="initialPrecursorParameters">precursor params to display first</param>
     /// <param name="initialProductParameters">product params to display first</param>
@@ -48,6 +48,7 @@ public class DeconHostViewModel : BaseViewModel
 
                 case DeconvolutionType.ClassicDeconvolution:
 
+                    // Precursor
                     if (initialPrecursorParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
                         PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel());
                     else
@@ -61,7 +62,8 @@ public class DeconHostViewModel : BaseViewModel
                         };
                         PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
                     }
-                    
+
+                    // Product
                     if (initialProductParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
                         ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
                     else
@@ -71,6 +73,40 @@ public class DeconHostViewModel : BaseViewModel
                             "Peptide" => new ClassicDeconvolutionParameters(1, 10, 4, 3),
                             "Proteoform" => new ClassicDeconvolutionParameters(1, 10, 4, 3),
                             "Oligo" => new ClassicDeconvolutionParameters(-10, -1, 4, 3),
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                        ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());
+                    }
+
+                    break;
+
+                case DeconvolutionType.IsoDecDeconvolution:
+
+                    // Precursor
+                    if (initialPrecursorParameters is { DeconvolutionType: DeconvolutionType.IsoDecDeconvolution })
+                        PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel());
+                    else
+                    {
+                        var toAdd = GlobalVariables.AnalyteType switch
+                        {
+                            "Peptide" => new IsoDecDeconvolutionParameters(),
+                            "Proteoform" => new IsoDecDeconvolutionParameters(),
+                            "Oligo" => new IsoDecDeconvolutionParameters(Polarity.Negative),
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                        PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
+                    }
+
+                    // Product
+                    if (initialProductParameters is { DeconvolutionType: DeconvolutionType.IsoDecDeconvolution })
+                        ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
+                    else
+                    {
+                        var toAdd = GlobalVariables.AnalyteType switch
+                        {
+                            "Peptide" => new IsoDecDeconvolutionParameters(),
+                            "Proteoform" => new IsoDecDeconvolutionParameters(),
+                            "Oligo" => new IsoDecDeconvolutionParameters(Polarity.Negative),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());

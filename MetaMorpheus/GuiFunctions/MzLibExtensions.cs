@@ -8,7 +8,6 @@ namespace GuiFunctions
     /// </summary>
     public static class MzLibExtensions
     {
-
         /// <summary>
         /// Converts the given <see cref="DeconvolutionParameters"/> to a <see cref="DeconParamsViewModel"/>.
         /// </summary>
@@ -23,10 +22,10 @@ namespace GuiFunctions
             {
                 return new ClassicDeconParamsViewModel(classicParams);
             }
-            //else if (parameters is IsoDeconvolutionParameters isoParams)
-            //{
-            //    return new IsoDecDeconParamsViewModel(isoParams);
-            //}
+            else if (parameters is IsoDecDeconvolutionParameters isoParams)
+            {
+                return new IsoDecDeconParamsViewModel(isoParams);
+            }
             else
             {
                 throw new NotImplementedException();

@@ -15,6 +15,11 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
+    public IsoDecDeconParamsViewModel(IsoDecDeconvolutionParameters parameters)
+    {
+        Parameters = parameters;
+    }
+
     public int PhaseRes
     {
         get => _parameters.PhaseRes;

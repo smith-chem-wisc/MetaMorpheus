@@ -195,6 +195,15 @@ public class DeconParamsViewModelTest
     }
 
     [Test]
+    public void TestEquals_DifferentDeconTypes()
+    {
+        var classic = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive).ToViewModel();
+        var isoDec = new IsoDecDeconvolutionParameters().ToViewModel();
+        Assert.That(classic.Equals(isoDec), Is.False);
+        Assert.That(classic.Equals((object)isoDec), Is.False);
+    }
+
+    [Test]
     public void TestEquals_DifferentType()
     {
         var parameters = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
