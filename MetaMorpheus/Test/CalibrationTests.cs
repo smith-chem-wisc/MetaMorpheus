@@ -1,12 +1,14 @@
 ﻿using EngineLayer;
 using FlashLFQ;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TaskLayer;
+using System;
 
 namespace Test
 {
@@ -102,6 +104,53 @@ namespace Test
 
             // clean up
             Directory.Delete(unitTestFolder, true);
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static void CalibrationTooFewMS1DataPoints()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML");
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+            // protein db for a non-matching organism
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.xml");
+
+            CalibrationTask calibrationTask = new();
+
+            calibrationTask.CommonParameters = new CommonParameters(
+                               trimMsMsPeaks: true,
+                                              doPrecursorDeconvolution: true);
+            var wasCalled = false;
+
+            EventHandler<StringEventArgs> handler = (o, e) => CalibrationWarnHandler(o, e, ref wasCalled);
+            MetaMorpheusTask.WarnHandler += handler;
+
+            MetaMorpheusTask.WarnHandler -= (o, e) =>
+            {
+                wasCalled = true;
+                Assert.That(e.S, Does.Contain("Calibration failure! Could not find enough MS1 datapoints."));
+            };
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+            MetaMorpheusTask.WarnHandler -= handler;
+        }
+
+        private static void CalibrationWarnHandler(object sender, StringEventArgs e, ref bool wasCalled)
+        {
+            wasCalled = true;
+            Assert.That(e.S, Does.Contain("Calibration failure! Could not find enough MS1 datapoints."));
         }
 
         [Test]
