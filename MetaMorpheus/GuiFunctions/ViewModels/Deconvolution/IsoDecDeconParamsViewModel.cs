@@ -1,7 +1,12 @@
-﻿using System.Diagnostics.CodeAnalysis;
-using MassSpectrometry;
+﻿using MassSpectrometry;
 
 namespace GuiFunctions;
+
+// TODO: Allow loading in from toml (aw geez)
+
+// TODO: Carry Precursor ID throughout the search
+
+// TODO: Collapse duplicate precursor IDs
 
 public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
 {
@@ -22,19 +27,27 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         Parameters = parameters;
     }
 
-    public int PhaseRes
+    public bool PhaseResIsFour
     {
-        get => _parameters.PhaseRes;
+        get => _parameters.PhaseRes == 4;
         set
         {
-            if (value != 4 && value != 8)
-                return;
-
-            _parameters.PhaseRes = value;
-            OnPropertyChanged(nameof(PhaseRes));
+            if (value)
+            {
+                _parameters.PhaseRes = 4;
+                OnPropertyChanged(nameof(PhaseResIsFour));
+            }
+            else
+            {
+                _parameters.PhaseRes = 8;
+                OnPropertyChanged(nameof(PhaseResIsFour));
+            }
         }
     }
 
+    /// <summary>
+    /// Minimum cosine similarity score for isotope distribution
+    /// </summary>
     public float CssThreshold
     {
         get => _parameters.CssThreshold;
@@ -48,6 +61,9 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
+    /// <summary>
+    /// Match Tolerance for peak detection in ppm
+    /// </summary>
     public float MatchTolerance
     {
         get => _parameters.MatchTolerance;
@@ -61,6 +77,9 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
+    /// <summary>
+    /// Maximum shift allowed for isotope distribution
+    /// </summary>
     public int MaximumShift
     {
         get => _parameters.MaxShift;
@@ -100,12 +119,15 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
+    /// <summary>
+    /// Number of knockdown rounds
+    /// </summary>
     public int KnockdownRounds
     {
         get => _parameters.KnockdownRounds;
         set
         {
-            if (value <0)
+            if (value < 0)
                 return;
 
             _parameters.KnockdownRounds = value;
@@ -113,6 +135,9 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
+    /// <summary>
+    /// Minimum area covered by isotope distribution. Use in or with css_thresh
+    /// </summary>
     public float MinAreaCovered
     {
         get => _parameters.MinAreaCovered;
@@ -126,6 +151,9 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
+    /// <summary>
+    /// Threshold for data. Will remove relative intensities below this relative to max intensity in each cluster
+    /// </summary>
     public float DataThreshold
     {
         get => _parameters.DataThreshold;
@@ -139,11 +167,15 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
+    /// <summary>
+    /// Report multiple monoisotopic peaks
+    /// </summary>
     public bool ReportMultipleMonoisotopicMasses
     {
         get => _parameters.ReportMulitpleMonoisos;
         set
         {
+            // TODO: Reconcile this with other parameters within MetaMorpheus (Mass diff acceptor). 
             _parameters.ReportMulitpleMonoisos = value;
             OnPropertyChanged(nameof(ReportMultipleMonoisotopicMasses));
         }

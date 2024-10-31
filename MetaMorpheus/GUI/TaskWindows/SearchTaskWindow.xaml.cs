@@ -898,6 +898,7 @@ namespace MetaMorpheusGUI
                         if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
+                            DeconHostViewModel.UseProvidedPrecursors = false;
                             DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 60;
                             TrimMsMs.IsChecked = false;
                             CheckBoxNoQuant.IsChecked = true;

@@ -95,18 +95,11 @@
             </Grid>
 
             <!-- Specific Precursor Parameters -->
-            <ItemsControl Grid.Row="1" Margin="5"
-                          ItemsSource="{Binding PrecursorDeconvolutionParametersList}">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <ContentControl
+            <ContentControl Grid.Row="1" Margin="5"
                             Content="{
-                        Binding RelativeSource={RelativeSource AncestorType=Grid, Mode=FindAncestor}, 
-                        Path=DataContext.PrecursorDeconvolutionParameters,
+                        Binding PrecursorDeconvolutionParameters,
                         Converter={StaticResource DeconTypeToControlConverter }}" />
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
+
         </Grid>
     </GroupBox>
 </UserControl>
