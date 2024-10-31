@@ -660,41 +660,7 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
-                                    <GroupBox Header="Deisotoping">
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="UseProvidedPrecursor" Content="Use Provided Precursor" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                                Use the charge states and precursor masses determined by the instrument controller.
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                            </StackPanel>
-
-                                            <!-- Deconvolute precursors -->
-                                            <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
-                                                <CheckBox x:Name="DeconvolutePrecursors" Content="Deconvolute Precursors" IsChecked="True" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <CheckBox.ToolTip>
-                                                        <TextBlock>
-                                            Additionally searches for coisolated peptides, allowing for multiple peptides to be identified from a single MS2.
-                                                        </TextBlock>
-                                                    </CheckBox.ToolTip>
-                                                </CheckBox>
-                                            </StackPanel>
-
-                                            <StackPanel Orientation="Horizontal" Margin="5">
-                                                <Label Content="Deconvolution Max Assumed Charge State:" />
-                                                <TextBox x:Name="DeconvolutionMaxAssumedChargeStateTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                    <TextBox.ToolTip>
-                                                        <TextBlock>
-                                                    The maximum charge state that deconvolution should allow. Minimum is 1.
-                                                        </TextBlock>
-                                                    </TextBox.ToolTip>
-                                                </TextBox>
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </GroupBox>
+                                    <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
                                     <GroupBox Header="Peak Trimming">
                                         <StackPanel>
                                             <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
