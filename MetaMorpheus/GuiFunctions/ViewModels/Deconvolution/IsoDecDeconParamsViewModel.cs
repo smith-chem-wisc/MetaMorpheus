@@ -85,7 +85,7 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         get => _parameters.MaxShift;
         set
         {
-            if (value < 0)
+            if (value is < 0 or > 8)
                 return;
 
             _parameters.MaxShift = value;

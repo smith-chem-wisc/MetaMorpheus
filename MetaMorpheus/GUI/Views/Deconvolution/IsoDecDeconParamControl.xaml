@@ -7,16 +7,13 @@
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="600">
-
     <Grid d:DataContext="{x:Static guiFunctions:IsoDecDeconParamsViewModel.Instance}" Background="White">
-
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="2*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
-
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="10" />
@@ -25,146 +22,162 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-
-        <CheckBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Report All Potential Missed Monoisotopics" IsChecked="{Binding ReportMultipleMonoisotopicMasses}"
-                  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Margin="5 0" VerticalContentAlignment="Center">
+        <CheckBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Report All Potential Missed Monoisotopics"
+                  IsChecked="{Binding ReportMultipleMonoisotopicMasses}"
+                  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Margin="5 0">
             <CheckBox.ToolTip>
                 <TextBlock>
-                    IsoDec can return all plausible Missed Monoisotopic masses. The correct mass will be resolved after the database search. 
+                    IsoDec can return all plausible Missed Monoisotopic masses. The correct mass will be resolved after the database search.
+                    <LineBreak /> 
                     CAREFUL! Having both this checked and missed monoisotipics in the Mass Difference Acceptor Criterion may result in redundant searches
                 </TextBlock>
             </CheckBox.ToolTip>
         </CheckBox>
-
-        <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2"  Orientation="Horizontal" VerticalAlignment="Center">
+        <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    VerticalAlignment="Center">
             <Label Content="Phase Resolution"></Label>
-            <RadioButton Content="4 (Quick)" IsChecked="{Binding PhaseResIsFour}" VerticalContentAlignment="Center" Margin="0 0 5 0"/>
-            <RadioButton Content="8 (Depth)" IsChecked="{Binding PhaseResIsFour, Converter={local:BooleanInverter}}" VerticalContentAlignment="Center" />
+            <RadioButton Content="4 (Quick)" IsChecked="{Binding PhaseResIsFour}" VerticalContentAlignment="Center"
+                         Margin="0 0 5 0" />
+            <RadioButton Content="8 (Depth)" IsChecked="{Binding PhaseResIsFour, Converter={local:BooleanInverter}}"
+                         VerticalContentAlignment="Center" />
         </StackPanel>
-
-        <Label Grid.Row="2" Grid.Column="0"  Content="Max Assumed Charge State:" />
-        <local:IntegerTexBoxControl Grid.Row="2" Grid.Column="1" x:Name="DeconvolutionMaxAssumedChargeStateTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                                    Text="{Binding MaxAssumedChargeState}"  >
+        <Label Grid.Row="2" Grid.Column="0" Content="Max Assumed Charge State:" />
+        <local:IntegerTexBoxControl Grid.Row="2" Grid.Column="1" x:Name="DeconvolutionMaxAssumedChargeStateTextBox"
+                                    Width="45" ToolTipService.ShowDuration="999999"
+                                    ToolTipService.InitialShowDelay="500"
+                                    Text="{Binding MaxAssumedChargeState}">
             <TextBox.ToolTip>
                 <TextBlock>
-                    The maximum charge state that deconvolution should allow. Minimum is 1 for positive mode and -1 for negative mode.
+                    The maximum charge state that should be reported. 
+                    <LineBreak />
+                    NOTICE! Changing the maximum/minimum charge state does not impact the IsoDec deconvolution algorithm itself.
+                    <LineBreak />
+                    Doing this will only filter out results after deconvolution. Minimum is 1 for positive mode and -1 for negative mode.
                 </TextBlock>
             </TextBox.ToolTip>
         </local:IntegerTexBoxControl>
-
-        <Label  Grid.Row="2" Grid.Column="2"  Content="Min Assumed Charge State:"/>
-        <local:IntegerTexBoxControl Grid.Row="2"  Grid.Column="3"   Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                                    Text="{Binding MinAssumedChargeState}" >
+        <Label Grid.Row="2" Grid.Column="2" Content="Min Assumed Charge State:" />
+        <local:IntegerTexBoxControl Grid.Row="2" Grid.Column="3" Width="45" ToolTipService.ShowDuration="999999"
+                                    ToolTipService.InitialShowDelay="500"
+                                    Text="{Binding MinAssumedChargeState}">
             <TextBox.ToolTip>
                 <TextBlock>
-                    The minimum charge state that deconvolution should allow.
+                    The minimum charge state that deconvolution should allow. 
+                    <LineBreak />
+                    NOTICE! Changing the maximum/minimum charge state does not impact the IsoDec deconvolution algorithm itself.
+                    <LineBreak />
+                    Doing this will only filter out results after deconvolution. Minimum is 1 for positive mode and -1 for negative mode.
                 </TextBlock>
             </TextBox.ToolTip>
         </local:IntegerTexBoxControl>
-
-        <Label  Grid.Row="3" Grid.Column="0"  Content="Minimum Relative Intensity:"/>
-        <local:IntegerTexBoxControl Grid.Row="3"  Grid.Column="1"   Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                                    Text="{Binding DataThreshold}" >
+        <Label Grid.Row="3" Grid.Column="0" Content="Minimum Relative Intensity:" />
+        <local:IntegerTexBoxControl Grid.Row="3" Grid.Column="1" Width="45" ToolTipService.ShowDuration="999999"
+                                    ToolTipService.InitialShowDelay="500"
+                                    Text="{Binding DataThreshold}">
             <TextBox.ToolTip>
                 <TextBlock>
-                    The minimum relative intensity of a peak to be considered for deconvolution.
+                    The minimum relative intensity of a peak to be considered for charge state assignment.
+                    <LineBreak />
+                    Peaks below this threshold may still be considered in envelope scoring.
                 </TextBlock>
             </TextBox.ToolTip>
         </local:IntegerTexBoxControl>
-
-        <Label  Grid.Row="3" Grid.Column="2"  Content="Knockdown Rounds:"/>
-        <local:IntegerTexBoxControl Grid.Row="3"  Grid.Column="3"   Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                                    Text="{Binding KnockdownRounds}" >
+        <Label Grid.Row="3" Grid.Column="2" Content="Knockdown Rounds:" />
+        <local:IntegerTexBoxControl Grid.Row="3" Grid.Column="3" Width="45" ToolTipService.ShowDuration="999999"
+                                    ToolTipService.InitialShowDelay="500"
+                                    Text="{Binding KnockdownRounds}">
             <TextBox.ToolTip>
                 <TextBlock>
-                    Idk what is being knocked up and how many rounds it takes. 
+                    IsoDec works by iteratively finding peak clusters, assigning the charge, scoring the clusters, then knocking down matched peaks, and subsequently repeating this process.
+                    <LineBreak />
+                    The number of knockdown rounds corresponds to how many times this loop is repeated. More KD rounds => more depth.
                 </TextBlock>
             </TextBox.ToolTip>
         </local:IntegerTexBoxControl>
-
         <!-- Isotopic Distribution Detection -->
-        <GroupBox  Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" Header="Isotopic Distribution Detection">
+        <GroupBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" Header="Isotopic Distribution Detection">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="2*"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="2*" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
-
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-
                 <Label Grid.Row="0" Grid.Column="0" Content="Distance Below Apex (m/z):" />
-                <local:DoubleTextBoxControl Grid.Row="0" Grid.Column="1" x:Name="MzWindowForIsotopeDistributionMinimum" Width="45"
+                <local:DoubleTextBoxControl Grid.Row="0" Grid.Column="1" x:Name="MzWindowForIsotopeDistributionMinimum"
+                                            Width="45"
                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                                             Text="{Binding MzWindowForIsotopeDistributionMinimum}">
                     <TextBox.ToolTip>
                         <TextBlock>
-                            The maximum distance peaks from the same isotopic distribution can be found below the most intense peak. 
+                            Range (in m/z) below the most intense peak that is encoded for charge state assignment.
                         </TextBlock>
                     </TextBox.ToolTip>
                 </local:DoubleTextBoxControl>
-
                 <Label Grid.Row="0" Grid.Column="2" Content="Distance Above Apex (m/z):" />
-                <local:DoubleTextBoxControl Grid.Row="0" Grid.Column="3" x:Name="MzWindowForIsotopeDistributionMaximum" Width="45"
+                <local:DoubleTextBoxControl Grid.Row="0" Grid.Column="3" x:Name="MzWindowForIsotopeDistributionMaximum"
+                                            Width="45"
                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                                             Text="{Binding MzWindowForIsotopeDistributionMaximum}">
                     <TextBox.ToolTip>
                         <TextBlock>
-                            The maximum distance peaks from the same isotopic distribution can be found above the most intense peak.
+                            Range (in m/z) above the most intense peak that is encoded for charge state assignment.
                         </TextBlock>
                     </TextBox.ToolTip>
                 </local:DoubleTextBoxControl>
-
                 <Label Grid.Row="1" Grid.Column="0" Content="Minimum Cosine Similarity:" />
                 <local:DoubleTextBoxControl Grid.Row="1" Grid.Column="1" x:Name="MinCssTextBox" Width="45"
                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                                             Text="{Binding CssThreshold}">
                     <TextBox.ToolTip>
                         <TextBlock>
-                            The minimum cosine similarity of an isotopic distribution when compared to XXXXXXXX
+                            The minimum cosine similarity score of an experimental isotopic distribution when compared to a theoretical distribution.
                         </TextBlock>
                     </TextBox.ToolTip>
                 </local:DoubleTextBoxControl>
-
                 <Label Grid.Row="1" Grid.Column="2" Content="Match Tolerance (ppm):" />
                 <local:DoubleTextBoxControl Grid.Row="1" Grid.Column="3" x:Name="MatchTolerance" Width="45"
                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                                             Text="{Binding MatchTolerance}">
                     <TextBox.ToolTip>
                         <TextBlock>
-                            The Match tolerance of some peak to what???
+                            Mass tolerance for matching experimental peaks to the theoretical isotope distribution.
+                            NOTE! A wider tolerance (probably up to 10 ppm) may be necessary for ToF data.
                         </TextBlock>
                     </TextBox.ToolTip>
                 </local:DoubleTextBoxControl>
-
                 <Label Grid.Row="2" Grid.Column="0" Content="Minimum Area Covered:" />
                 <local:DoubleTextBoxControl Grid.Row="2" Grid.Column="1" x:Name="MinAreaCovered" Width="45"
                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                                             Text="{Binding MinAreaCovered}">
                     <TextBox.ToolTip>
                         <TextBlock>
-                            What does area mean in this context? 
+                            A segment of the original spectrum is isolated for each selected cluster.
+                            This threshold is the minimum fraction of the total isolated intensity that must be matched to theoretical isotope peaks for a peak cluster to be accepted.
+                            <LineBreak />
+                            NOTE! Higher thresholds are useful in the case of noisy data.
                         </TextBlock>
                     </TextBox.ToolTip>
                 </local:DoubleTextBoxControl>
-
                 <Label Grid.Row="2" Grid.Column="2" Content="Maximum Shift:" />
                 <local:DoubleTextBoxControl Grid.Row="2" Grid.Column="3" x:Name="MaximumShift" Width="45"
                                             ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
                                             Text="{Binding MaximumShift}">
                     <TextBox.ToolTip>
                         <TextBlock>
-                            Idk man
+                            This parameter is somewhat akin to a maximum number of missed monoisotopics. 
+                            <LineBreak />
+                            Initially, the most intense peak in the theoretical distribution and the experimental data are aligned and scored (css and areacovered).
+                            <LineBreak />
+                            The theoretical distribution is then shifted up to MaximumShift isotope peaks to the left and right of the most intense experimental peak and the best match(es) are retained.
                         </TextBlock>
                     </TextBox.ToolTip>
                 </local:DoubleTextBoxControl>
-
-
             </Grid>
         </GroupBox>
     </Grid>
