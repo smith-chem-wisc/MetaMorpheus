@@ -25,7 +25,7 @@
         </Style>
     </UserControl.Resources>
 
-    <GroupBox Header="Deisotoping" > 
+    <GroupBox Header="MS1 Deconvolution" > 
         <Grid d:DataContext="{x:Static guiFunctions:DeconHostModel.Instance}">
 
             <Grid.RowDefinitions>
@@ -66,7 +66,7 @@
                     </StackPanel>
 
                     <!-- Deconvolute precursors -->
-                    <StackPanel Orientation="Horizontal" Margin="10,5,5,5">
+                    <StackPanel Orientation="Horizontal" Margin="10,10,5,5">
                         <CheckBox x:Name="DeconvolutePrecursors" Content="Deconvolute Precursors"
                                   IsChecked="{Binding DoPrecursorDeconvolution}" ToolTipService.ShowDuration="999999"
                                   ToolTipService.InitialShowDelay="500">
@@ -79,13 +79,13 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- Decon Type ComboBox -->
-                <ComboBox Grid.Column="1" x:Name="DeconvolutionTypeComboBox" Width="140" Height="35"
-                          VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+                <!-- Precursor Decon Type ComboBox -->
+                <ComboBox Grid.Column="1" x:Name="DeconvolutionTypeComboBox" Width="100" Height="35"
+                          VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
                           ItemsSource="{Binding PrecursorDeconvolutionParametersList}"
                           SelectedItem="{Binding PrecursorDeconvolutionParameters}"
-                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"
-                          Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}">
+                          Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}"
+                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                     <ComboBox.ToolTip>
                         <TextBlock>
                             The type of deconvolution to perform.
@@ -95,11 +95,34 @@
             </Grid>
 
             <!-- Specific Precursor Parameters -->
-            <ContentControl Grid.Row="1" Margin="5"
-                            Content="{
+            <ContentControl Grid.Row="1" Margin="5" Content="{
                         Binding PrecursorDeconvolutionParameters,
                         Converter={StaticResource DeconTypeToControlConverter }}" />
 
+            <!-- Specific Product Parameters -->
+            <Expander Grid.Row="2" Header="MSn Deconvolution" >
+                <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="10">
+                    <StackPanel>
+                        <ComboBox  x:Name="ProductDeconvolutionTypeComboBox" Width="100" Height="35" Margin="5 5 5 -5"
+                                   VerticalContentAlignment="Center" HorizontalContentAlignment="Center" HorizontalAlignment="Right"
+                                   ItemsSource="{Binding ProductDeconvolutionParametersList}"
+                                   SelectedItem="{Binding ProductDeconvolutionParameters}"
+                                   Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                   ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" >
+                            <ComboBox.ToolTip>
+                                <TextBlock>
+                                    The type of deconvolution to perform.
+                                </TextBlock>
+                            </ComboBox.ToolTip>
+                        </ComboBox>
+
+                        <ContentControl Margin="5"  Content="{
+                        Binding ProductDeconvolutionParameters,
+                        Converter={StaticResource DeconTypeToControlConverter }}" />
+                    </StackPanel>
+
+                </Border>
+            </Expander>
         </Grid>
     </GroupBox>
 </UserControl>

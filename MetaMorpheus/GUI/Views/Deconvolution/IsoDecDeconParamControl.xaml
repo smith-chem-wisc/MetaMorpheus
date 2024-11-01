@@ -7,7 +7,7 @@
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
              mc:Ignorable="d" 
              d:DesignHeight="400" d:DesignWidth="600">
-    <Grid d:DataContext="{x:Static guiFunctions:IsoDecDeconParamsViewModel.Instance}" Background="White">
+    <Grid d:DataContext="{x:Static guiFunctions:IsoDecDeconParamsViewModel.Instance}" >
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="2*"/>
             <ColumnDefinition Width="*"/>
@@ -23,7 +23,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <CheckBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Report All Potential Missed Monoisotopics"
-                  IsChecked="{Binding ReportMultipleMonoisotopicMasses}"
+                  IsChecked="{Binding ReportMultipleMonoisotopicMasses}" VerticalAlignment="Center"
                   ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Margin="5 0">
             <CheckBox.ToolTip>
                 <TextBlock>
@@ -33,8 +33,7 @@
                 </TextBlock>
             </CheckBox.ToolTip>
         </CheckBox>
-        <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal"
-                    VerticalAlignment="Center">
+        <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Top" >
             <Label Content="Phase Resolution"></Label>
             <RadioButton Content="4 (Quick)" IsChecked="{Binding PhaseResIsFour}" VerticalContentAlignment="Center"
                          Margin="0 0 5 0" />
@@ -95,7 +94,8 @@
             </TextBox.ToolTip>
         </local:IntegerTexBoxControl>
         <!-- Isotopic Distribution Detection -->
-        <GroupBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" Header="Isotopic Distribution Detection">
+        <GroupBox Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="4" Header="Isotopic Distribution Detection"
+                  BorderBrush="{StaticResource ForegroundDarkBrush}" Background="{StaticResource DataGridBackgroundColor}">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="2*" />

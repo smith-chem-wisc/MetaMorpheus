@@ -104,9 +104,9 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            "Peptide" => new IsoDecDeconvolutionParameters(),
-                            "Proteoform" => new IsoDecDeconvolutionParameters(),
-                            "Oligo" => new IsoDecDeconvolutionParameters(Polarity.Negative),
+                            "Peptide" => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false),
+                            "Proteoform" => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false),
+                            "Oligo" => new IsoDecDeconvolutionParameters(Polarity.Negative, reportMultipleMonoisos: false),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());

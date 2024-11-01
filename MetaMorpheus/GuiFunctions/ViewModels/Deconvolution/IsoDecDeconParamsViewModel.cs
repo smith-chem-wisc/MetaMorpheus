@@ -6,6 +6,8 @@ namespace GuiFunctions;
 
 // TODO: Collapse duplicate precursor IDs
 
+// TODO: Figure out how isodec multiple precursors plays with MS2 decon
+
 public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
 {
     public static IsoDecDeconParamsViewModel Instance => new (new IsoDecDeconvolutionParameters());
