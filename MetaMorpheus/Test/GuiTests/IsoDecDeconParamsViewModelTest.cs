@@ -20,18 +20,7 @@ namespace Test.GuiTests
             _viewModel = new IsoDecDeconParamsViewModel(new IsoDecDeconvolutionParameters());
         }
 
-        [Test]
-        public void TestPhaseRes()
-        {
-            _viewModel.PhaseRes = 4;
-            Assert.That(_viewModel.PhaseRes, Is.EqualTo(4));
-
-            _viewModel.PhaseRes = 8;
-            Assert.That(_viewModel.PhaseRes, Is.EqualTo(8));
-
-            _viewModel.PhaseRes = 5;
-            Assert.That(_viewModel.PhaseRes, Is.EqualTo(8)); // Should not change
-        }
+       
 
         [Test]
         public void TestCssThreshold()
@@ -130,6 +119,18 @@ namespace Test.GuiTests
 
             _viewModel.ReportMultipleMonoisotopicMasses = false;
             Assert.That(_viewModel.ReportMultipleMonoisotopicMasses, Is.False);
+        }
+
+        [Test]
+        public void TestPhaseResIsFour()
+        {
+            _viewModel.PhaseResIsFour = true;
+            Assert.That(_viewModel.PhaseResIsFour, Is.True);
+            Assert.That((_viewModel.Parameters as IsoDecDeconvolutionParameters)!.PhaseRes, Is.EqualTo(4));
+
+            _viewModel.PhaseResIsFour = false;
+            Assert.That(_viewModel.PhaseResIsFour, Is.False);
+            Assert.That((_viewModel.Parameters as IsoDecDeconvolutionParameters)!.PhaseRes, Is.EqualTo(8));
         }
     }
 }

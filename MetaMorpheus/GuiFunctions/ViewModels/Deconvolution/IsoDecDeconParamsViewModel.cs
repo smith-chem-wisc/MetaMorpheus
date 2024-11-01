@@ -2,8 +2,6 @@
 
 namespace GuiFunctions;
 
-// TODO: Allow loading in from toml (aw geez)
-
 // TODO: Carry Precursor ID throughout the search
 
 // TODO: Collapse duplicate precursor IDs
