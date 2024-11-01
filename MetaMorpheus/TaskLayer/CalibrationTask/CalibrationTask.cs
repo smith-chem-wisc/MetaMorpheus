@@ -14,6 +14,7 @@ using System.Linq;
 using Omics.Modifications;
 using Readers;
 using UsefulProteomicsDatabases;
+using System.Threading.Tasks;
 
 namespace TaskLayer
 {
@@ -153,25 +154,13 @@ namespace TaskLayer
                             fileSpecificParams.ProductMassTolerance = new PpmTolerance((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
                         }
                     }
-                    if (calibrated)
+                    if (calibrated) // write the calibrated mzML file
                     {
-                        // write the calibrated mzML file
-                        myMsDataFile.ExportAsMzML(calibratedFilePath, CalibrationParameters.WriteIndexedMzml);
-                        MyTaskResults.NewSpectra.Add(calibratedFilePath);
-                        Toml.WriteFile(fileSpecificParams, calibratedTomlFilename, tomlConfig);
-                        FinishedWritingFile(calibratedTomlFilename, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                        FinishedWritingFile(calibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                        MyTaskResults.NewFileSpecificTomls.Add(calibratedTomlFilename);
+                        CalibrationOutput(myMsDataFile, calibratedFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
                     }
                     else //calibration failed but we still want to write the toml file
                     {
-                        // write the uncalibrated mzML file
-                        myMsDataFile.ExportAsMzML(uncalibratedFilePath, CalibrationParameters.WriteIndexedMzml);
-                        MyTaskResults.NewSpectra.Add(uncalibratedFilePath);
-                        Toml.WriteFile(fileSpecificParams, uncalibratedTomlFilename, tomlConfig);
-                        FinishedWritingFile(uncalibratedTomlFilename, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                        FinishedWritingFile(uncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
-                        MyTaskResults.NewFileSpecificTomls.Add(uncalibratedTomlFilename);
+                        CalibrationOutput(myMsDataFile, uncalibratedFilePath, fileSpecificParams, uncalibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
                     }
 
                     myFileManager.DoneWithFile(originalUncalibratedFilePath);
@@ -216,6 +205,16 @@ namespace TaskLayer
             {
                 Warn("Calibration failure! Could not find enough MS2 datapoints. Required " + NumRequiredMs2Datapoints + ", saw " + acquisitionResults.Ms2List.Count);
             }
+        }
+
+        private void CalibrationOutput(MsDataFile msDataFile, string mzFilePath, FileSpecificParameters fileParams, string tomlName, string taskId, string mzFilenameNoExtension)
+        {
+            msDataFile.ExportAsMzML(mzFilePath, CalibrationParameters.WriteIndexedMzml);
+            MyTaskResults.NewSpectra.Add(mzFilePath);
+            Toml.WriteFile(fileParams, tomlName, tomlConfig);
+            FinishedWritingFile(tomlName, new List<string> { taskId, "Individual Spectra Files", mzFilenameNoExtension });
+            FinishedWritingFile(mzFilePath, new List<string> { taskId, "Individual Spectra Files", mzFilenameNoExtension });
+            MyTaskResults.NewFileSpecificTomls.Add(tomlName);
         }
 
         private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
