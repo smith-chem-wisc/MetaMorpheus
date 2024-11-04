@@ -172,7 +172,6 @@ namespace Test
         [TestCaseSource(nameof(GetTestCases))]
         public static void CorrectFilesAreWrittenWithCorrectName(EverythingRunnerEngineTestCases testCaseIdentifier)
         {
-             
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
             var psmFiles = Directory.GetFiles(testCase.OutputDirectory, "*PSMs.psmtsv", SearchOption.AllDirectories);
             var pepXmlFiles = Directory.GetFiles(testCase.OutputDirectory, "*.pep.xml", SearchOption.AllDirectories);
