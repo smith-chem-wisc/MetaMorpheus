@@ -23,7 +23,7 @@
                         </ToolTipService.ToolTip>
                     </CheckBox>
                     <Label Content="Precursor Mass Tolerance" Width="150" Margin="20,0,0,0" IsEnabled="{Binding IsChecked, ElementName=fileSpecificPrecursorMassTolEnabled}" />
-                    <TextBox x:Name="precursorMassToleranceTextBox" PreviewTextInput="CheckIfNumber" Height="26" Width="45" HorizontalAlignment="Left" TextWrapping="Wrap" IsEnabled="{Binding IsChecked, ElementName=fileSpecificPrecursorMassTolEnabled}" />
+                    <local:DoubleTextBoxControl x:Name="precursorMassToleranceTextBox" Height="26" Width="45" HorizontalAlignment="Left" TextWrapping="Wrap" IsEnabled="{Binding IsChecked, ElementName=fileSpecificPrecursorMassTolEnabled}" />
                     <ComboBox x:Name="precursorMassToleranceComboBox" Height="26" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=fileSpecificPrecursorMassTolEnabled}"  />
                 </StackPanel>
                 <!-- File-specific Product Tolerance -->
@@ -34,7 +34,7 @@
                         </ToolTipService.ToolTip>
                     </CheckBox>
                     <Label Content="Product Mass Tolerance" Width="150"  Margin="20,0,0,0" IsEnabled="{Binding IsChecked, ElementName=fileSpecificProductMassTolEnabled}"  />
-                    <TextBox x:Name="productMassToleranceTextBox" PreviewTextInput="CheckIfNumber" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificProductMassTolEnabled}" />
+                    <local:DoubleTextBoxControl x:Name="productMassToleranceTextBox" HorizontalAlignment="Left" TextWrapping="Wrap" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificProductMassTolEnabled}" />
                     <ComboBox x:Name="productMassToleranceComboBox" HorizontalAlignment="Left" IsEnabled="{Binding IsChecked, ElementName=fileSpecificProductMassTolEnabled}"  />
                 </StackPanel>
                 <!-- File-specific Protease -->
@@ -55,7 +55,7 @@
                         </ToolTipService.ToolTip>
                     </CheckBox>
                     <Label x:Name="lblMinPeptideLength" Margin="20,0,0,0" Width="100" Content="Min Peptide Len" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMinPeptideLengthEnabled}" />
-                    <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMinPeptideLengthEnabled}" />
+                    <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMinPeptideLengthEnabled}" />
                 </StackPanel>
                 <!-- File-specific Max Peptide Length -->
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
@@ -65,7 +65,7 @@
                         </ToolTipService.ToolTip>
                     </CheckBox>
                     <Label x:Name="lblMaxPeptideLength" Margin="20,0,0,0" Width="100"  Content="Max Peptide Len" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxPeptideLengthEnabled}" />
-                    <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxPeptideLengthEnabled}" />
+                    <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxPeptideLengthEnabled}" />
                 </StackPanel>
                 <!-- File-specific Max Missed Cleavages -->
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
@@ -75,7 +75,7 @@
                         </ToolTipService.ToolTip>
                     </CheckBox>
                     <Label x:Name="maxMissedCleavagesLabel" Margin="20,0,0,0" Width="130" Content="Max Missed Cleavages" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMissedCleavagesEnabled}"  />
-                    <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMissedCleavagesEnabled}" />
+                    <local:IntegerTexBoxControl x:Name="missedCleavagesTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMissedCleavagesEnabled}" />
                 </StackPanel>
                 <!-- File-specific Max Mods per Peptide -->
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,8">
@@ -85,7 +85,7 @@
                         </ToolTipService.ToolTip>
                     </CheckBox>
                     <Label x:Name="lbMaxModNum" Margin="20,0,0,0" Width="130" Content="Max mods per peptide" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
-                    <TextBox x:Name="MaxModNumTextBox" PreviewTextInput="CheckIfNumber" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
+                    <local:IntegerTexBoxControl x:Name="MaxModNumTextBox" Width="45" IsEnabled="{Binding IsChecked, ElementName=fileSpecificMaxModNumEnabled}" />
                 </StackPanel>
                 <!-- File-specific Dissociation Type -->
                 <StackPanel Orientation="Horizontal" Margin="10,0,0,8">

@@ -1,4 +1,5 @@
-﻿using System.Windows.Controls;
+﻿using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace MetaMorpheusGUI
@@ -8,6 +9,16 @@ namespace MetaMorpheusGUI
     /// </summary>
     public class IntegerTexBoxControl : TextBox
     {
+        public IntegerTexBoxControl()
+        {
+            HorizontalContentAlignment = HorizontalAlignment.Center;
+            VerticalContentAlignment = VerticalAlignment.Center;
+        }
+
+        /// <summary>
+        /// Ensures only integers can be inputted into the text box
+        /// </summary>
+        /// <param name="e"></param>
         protected override void OnPreviewTextInput(TextCompositionEventArgs e)
         {
             foreach (var character in e.Text)
@@ -19,6 +30,17 @@ namespace MetaMorpheusGUI
                 }
             }
             e.Handled = false;
+        }
+
+        /// <summary>
+        /// Cursor is removed from text box on pressing Return
+        /// </summary>
+        /// <param name="e"></param>
+        protected override void OnKeyDown(KeyEventArgs e)
+        {
+            base.OnKeyDown(e);
+            if (e.Key == Key.Return)
+                Keyboard.ClearFocus();
         }
     }
 }
