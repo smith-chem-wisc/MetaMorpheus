@@ -58,11 +58,6 @@ namespace MetaMorpheusGUI
 
         internal GlycoSearchTask TheTask { get; private set; }
 
-        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
-        }
-
         private void PopulateChoices()
         {
             ChildScanDissociationTypeComboBox.Items.Add("Null");
