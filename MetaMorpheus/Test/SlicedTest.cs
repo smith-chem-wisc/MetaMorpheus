@@ -42,7 +42,7 @@ namespace Test
         [Test]
         public static void FaFormatTest()
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = false;
+            
             var task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"SlicedSearchTaskConfig.toml"), MetaMorpheusTask.tomlConfig);
 
             DbForTask db = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"sliced-db.fa"), false);

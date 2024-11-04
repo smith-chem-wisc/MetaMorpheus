@@ -12,7 +12,6 @@ namespace EngineLayer.FdrAnalysis
         private readonly string AnalysisType;
         private readonly string OutputFolder; // used for storing PEP training models  
         private readonly bool DoPEP;
-        private static bool qvalueThresholdOverride;
         private readonly int PsmCountThresholdForInvertedQvalue = 1000;
         /// <summary>
         /// This is to be used only for unit testing. Threshold for q-value calculation is set to 1000
@@ -21,7 +20,7 @@ namespace EngineLayer.FdrAnalysis
         /// </summary>
         public static bool QvalueThresholdOverride   // property
         {
-            set { qvalueThresholdOverride = value; }  // set method
+            get; private set;
         }
         public FdrAnalysisEngine(List<SpectralMatch> psms, int massDiffAcceptorNumNotches, CommonParameters commonParameters,
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds, string analysisType = "PSM", 
@@ -79,10 +78,10 @@ namespace EngineLayer.FdrAnalysis
                         .Select(b => b.FirstOrDefault())
                         .ToList();
 
-                if ((psms.Count > PsmCountThresholdForInvertedQvalue || qvalueThresholdOverride) & DoPEP)
+                if ((psms.Count > PsmCountThresholdForInvertedQvalue || QvalueThresholdOverride) & DoPEP)
                 {
                     CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: false);
-                    if (peptides.Count > PsmCountThresholdForInvertedQvalue || qvalueThresholdOverride)
+                    if (peptides.Count > PsmCountThresholdForInvertedQvalue || QvalueThresholdOverride)
                     {
                         CalculateQValue(peptides, peptideLevelCalculation: true, pepCalculation: false);
 
@@ -208,9 +207,8 @@ namespace EngineLayer.FdrAnalysis
             }
             else
             {
-                //the QValueThreshodOverride condition here can be problematic in unit tests. If tests fail unexpectedly,
-                //try setting FdrAnalysisEngine.QvalueThresholdOverride = false; in the test method
-                if (psms.Count < PsmCountThresholdForInvertedQvalue && !qvalueThresholdOverride)
+                //the QValueThreshodOverride condition here can be problematic in unit tests. 
+                if (psms.Count < PsmCountThresholdForInvertedQvalue && !QvalueThresholdOverride)
                 {
 
                    QValueTraditional(psms, peptideLevelAnalysis: peptideLevelCalculation);

@@ -32,7 +32,7 @@ namespace Test.MetaDraw
         [OneTimeSetUp]
         public void Setup()
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = false;
+            
             outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_PeakAnnotaitonTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");

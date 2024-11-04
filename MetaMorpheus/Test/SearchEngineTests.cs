@@ -67,9 +67,14 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = true;
+            // only for unit test. must set to false at the end of each tests
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true); 
+
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
@@ -118,6 +123,7 @@ namespace Test
             Assert.AreEqual("[2742 to 2761]", psm.StartAndEndResiduesInProtein);
             Assert.AreEqual(159644.25225, psm.TotalIonCurrent);
             Assert.AreEqual(0, psm.VariantCrossingIons.Count);
+            property.SetValue(null, false);
         }
 
         //tests a weird crash from ms2 scans that had experimental peaks but they were all removed from the xarray by XCorr processing
@@ -459,7 +465,6 @@ namespace Test
         [Test]
         public static void TestModernSearchEngineLowResOneRealSpectrum()
         {
-            EngineLayer.FdrAnalysis.FdrAnalysisEngine.QvalueThresholdOverride = false;
             CommonParameters CommonParameters = new CommonParameters(
                 dissociationType: DissociationType.LowCID,
                 maxThreadsToUsePerFile: 1,
@@ -568,9 +573,15 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestClassicSearchEngineLowResSimple()
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = true;
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -663,13 +674,19 @@ namespace Test
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
             Assert.AreEqual(181, goodScore.Count());
-            Directory.Delete(outputFolder, true);
+            property.SetValue(null, false);
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestModernSearchEngineLowResSimple()
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = true;
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -756,6 +773,7 @@ namespace Test
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
             Assert.AreEqual(181, goodScore.Count());
+            property.SetValue(null, false);
         }
 
         [Test]

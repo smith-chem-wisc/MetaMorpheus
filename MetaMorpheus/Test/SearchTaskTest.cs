@@ -90,7 +90,7 @@ namespace Test
         [Test]
         public static void SemiSpecificFullAndSmallMatches()
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = false;
+            
             SearchTask searchTask = new SearchTask()
             {
 

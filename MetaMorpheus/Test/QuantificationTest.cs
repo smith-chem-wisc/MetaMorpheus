@@ -225,7 +225,7 @@ namespace Test
             }
 
             // run the search/quantification
-            FdrAnalysisEngine.QvalueThresholdOverride = false;
+            
             SearchTask task = new SearchTask();
             task.RunTask(unitTestFolder, new List<DbForTask> { new DbForTask(dbName, false) }, fileInfos.Select(p => p.FullFilePathWithExtension).ToList(), "");
 

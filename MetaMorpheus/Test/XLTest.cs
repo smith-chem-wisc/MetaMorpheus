@@ -366,9 +366,15 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void XlTest_MoreComprehensive()
         {
-            FdrAnalysisEngine.QvalueThresholdOverride = true;
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
             //Generate parameters
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.HCD,
                 scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10), maxThreadsToUsePerFile: 1);
@@ -828,6 +834,7 @@ namespace Test
             Assert.AreEqual(0, deadendH2O);
             Assert.AreEqual(0, deadendNH2);
             Assert.AreEqual(0, deadendTris);
+            property.SetValue(null, false);
         }
 
         [Test]
