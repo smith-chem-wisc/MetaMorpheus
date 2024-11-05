@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using EngineLayer.FdrAnalysis;
 using Nett;
 using NUnit.Framework;
 using TaskLayer;
@@ -59,13 +60,25 @@ namespace Test
             WriteMzId = searchTask.SearchParameters.WriteMzId;
         }
 
+        public static Object myLock = new();
         internal void Run()
         {
             if (Directory.Exists(OutputDirectory))
                 Directory.Delete(OutputDirectory, true);
 
-            var runner = new EverythingRunnerEngine(TaskList, DataFileList, DatabaseList, OutputDirectory);
-            runner.Run();
+            lock (myLock)
+            {
+                System.Reflection.PropertyInfo property = null;
+                if (TestCase != EverythingRunnerEngineTestCases.TopDownQValue && TestCase != EverythingRunnerEngineTestCases.TopDownQValueSingle)
+                {
+                    var type = typeof(FdrAnalysisEngine);
+                    property = type.GetProperty("QvalueThresholdOverride");
+                    property.SetValue(null, true);
+                }
+                var runner = new EverythingRunnerEngine(TaskList, DataFileList, DatabaseList, OutputDirectory);
+                runner.Run();
+                if (TestCase != EverythingRunnerEngineTestCases.TopDownQValue && TestCase != EverythingRunnerEngineTestCases.TopDownQValueSingle) property.SetValue(null, false);
+            }
             HasRun = true;
         }
 
