@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 using EngineLayer;
 using GuiFunctions;
@@ -14,7 +12,6 @@ using OxyPlot.Annotations;
 using Omics.Fragmentation;
 using Readers;
 using TaskLayer;
-using EngineLayer.FdrAnalysis;
 
 namespace Test.MetaDraw
 {

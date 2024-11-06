@@ -8,14 +8,11 @@ using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
-using Org.BouncyCastle.Asn1.X509;
-using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
