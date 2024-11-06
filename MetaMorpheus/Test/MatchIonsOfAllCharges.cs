@@ -14,13 +14,10 @@ using Chemistry;
 using System;
 using MassSpectrometry;
 using Nett;
-using EngineLayer.Gptmd;
 using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using static System.Net.WebRequestMethods;
-using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
