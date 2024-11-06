@@ -11,7 +11,6 @@ using Omics.Digestion;
 using Omics.Fragmentation;
 using SpectralAveraging;
 using TaskLayer;
-using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
