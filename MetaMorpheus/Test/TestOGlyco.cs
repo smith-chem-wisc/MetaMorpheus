@@ -868,7 +868,6 @@ namespace Test
         [Test]
         public static void GlycoTestWithBadExperimentalDesignFile()
         {
-            
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
@@ -902,7 +901,6 @@ namespace Test
             Assert.That(errors[0].Contains("Condition \"condition1\" biorep 1 fraction 1 techrep 1 is missing!"));
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -916,7 +914,6 @@ namespace Test
                 "results.txt",
                 "seen_oglyco_localization.tsv"
             };
-
 
             List<string> expectedIndividualFileOutput = new()
             {
@@ -1086,7 +1083,6 @@ namespace Test
         [Test]
         public static void GlycoSearchIndividualFileFolderOutputTest()
         {
-            
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\\FourMucins_NoSigPeps_FASTA.fasta");
             string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
@@ -1136,8 +1132,6 @@ namespace Test
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968seen_oglyco_localization.tsv"
             };
 
-
-
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolder).ToList();
             List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
@@ -1156,7 +1150,6 @@ namespace Test
         [Test]
         public static void NandO_GlycoSearchIndividualFileFolderOutputTest()
         {
-            
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\\FourMucins_NoSigPeps_FASTA.fasta");
             string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
@@ -1206,8 +1199,6 @@ namespace Test
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968seen_no_glyco_localization.tsv"
             };
 
-
-
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolder).ToList();
             List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
@@ -1227,7 +1218,6 @@ namespace Test
         [Test]
         public static void N_GlycoSearchIndividualFileFolderOutputTest()
         {
-            
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific\\FourMucins_NoSigPeps_FASTA.fasta");
             string spectraFileDirctory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\N_O_glycoWithFileSpecific");
@@ -1330,7 +1320,6 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -1348,7 +1337,6 @@ namespace Test
                 "seen_oglyco_localization.tsv"
             };
 
-
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllProteinGroups.tsv",
@@ -1360,7 +1348,6 @@ namespace Test
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
-
 
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
@@ -1410,7 +1397,6 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -1427,7 +1413,6 @@ namespace Test
                 "seen_oglyco_localization.tsv"
             };
 
-
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllPSMs.psmtsv",
@@ -1438,7 +1423,6 @@ namespace Test
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
-
 
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
@@ -1456,7 +1440,6 @@ namespace Test
         [Test]
         public static void GlycoQuantWithNoExperimentalDesignFileTest()
         {
-            
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 

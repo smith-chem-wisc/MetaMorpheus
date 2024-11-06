@@ -666,7 +666,7 @@ namespace Test
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             Assert.AreEqual(432, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
-            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
             Assert.AreEqual(535, allPsmsArray.Length);
@@ -674,6 +674,7 @@ namespace Test
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
             Assert.AreEqual(181, goodScore.Count());
+            Directory.Delete(outputFolder, true);
             property.SetValue(null, false);
         }
 
