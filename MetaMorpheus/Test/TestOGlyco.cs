@@ -1539,7 +1539,7 @@ namespace Test
             string[] proteinGroupFields = allProteinGroups[2].Split('\t');
 
             Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
-
+            Assert.That("Q9GZM5".Equals(proteinGroupFields[0]));
             Directory.Delete(outputFolder, true);
         }
 
