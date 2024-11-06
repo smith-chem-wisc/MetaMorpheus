@@ -17,14 +17,10 @@ using FlashLFQ;
 using SpectralAveraging;
 using NUnit.Framework.Legacy;
 using Omics.Modifications;
-using ThermoFisher.CommonCore.BackgroundSubtraction;
 using Easy.Common.Extensions;
-using iText.IO.Font.Otf;
 using static Nett.TomlObjectFactory;
-using Omics.SpectrumMatch;
 using TopDownProteomics;
 using MzLibUtil;
-using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
@@ -32,7 +28,6 @@ namespace Test
     public class TestOGlyco
     {
         private static GlycanBox[] OGlycanBoxes { get; set; }
-
 
         [OneTimeSetUp]
         public static void Setup()
@@ -58,7 +53,6 @@ namespace Test
             var group_target = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == true);
             var group_decoy = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == false);
             Assert.That(group_target.Count() == group_decoy.Count());
-
         }
 
         [Test]
@@ -91,7 +85,6 @@ namespace Test
         [Test]
         public static void OGlycanTest_IsobaricCase()
         {
-             
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
             Directory.CreateDirectory(outputFolder);
 
@@ -119,13 +112,10 @@ namespace Test
             var glycanLevel_filterON = PsmTsvReader.ReadTsv(oGlycoPath, out var error) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
 
-
             Assert.That(glycanLevel_filterON == EngineLayer.GlycoSearch.LocalizationLevel.Level1);
             Directory.Delete(outputFolder, true);
 
         }
-
-
 
         [Test]
         public static void GlycoSpectralHeader()
@@ -202,7 +192,6 @@ namespace Test
             var testKind_smallGlycan = GlycanDatabase.String2Kind("HexNAc(1)");
 
             var testGlycanIons_smallGlycan = GlycanDatabase.OGlycanCompositionFragments(testKind_smallGlycan);
-
 
         }
 
@@ -488,7 +477,6 @@ namespace Test
                 }
             }
             HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
-
 
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
