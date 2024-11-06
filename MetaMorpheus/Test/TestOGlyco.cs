@@ -17,11 +17,8 @@ using FlashLFQ;
 using SpectralAveraging;
 using NUnit.Framework.Legacy;
 using Omics.Modifications;
-using ThermoFisher.CommonCore.BackgroundSubtraction;
 using Easy.Common.Extensions;
-using iText.IO.Font.Otf;
 using static Nett.TomlObjectFactory;
-using Omics.SpectrumMatch;
 using TopDownProteomics;
 using MzLibUtil;
 
@@ -654,7 +651,6 @@ namespace Test
             Assert.That(glycoPsmCount, Is.EqualTo(readInGlycoPsmCount));
             Assert.That(level1Psmcount, Is.EqualTo(readInLevel1GlycoPsmCount));
 
-
             Directory.Delete(outputFolder, true);
         }
 
@@ -735,7 +731,6 @@ namespace Test
             Assert.That(proteinGroupCount, Is.EqualTo(readInProteinCount));
             Assert.That(glycoPsmCount, Is.EqualTo(readInGlycoPsmCount));
             Assert.That(level1Psmcount, Is.EqualTo(readInLevel1GlycoPsmCount));
-
 
             Directory.Delete(outputFolder, true);
         }
