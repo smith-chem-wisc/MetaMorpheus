@@ -281,7 +281,7 @@
                     <!--Text content-->
                     <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
                         MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
-                        as input,as well as spectra files in .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
+                        as input,as well as spectra files in ms2.msalign, .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
                         (.msp) can be used to improve search results.
                         
                         <LineBreak />
@@ -458,7 +458,7 @@
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
-                        Add spectra file(s) in .mzML, .mgf, or Thermo .raw format.
+                        Add spectra file(s) in ms2.msalign .mzML, .mgf, or Thermo .raw format.
                     </TextBlock>
 
                     <!--Button to add spectra files-->
