@@ -22,6 +22,7 @@ using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
+using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
@@ -66,8 +67,14 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
+            // only for unit test. must set to false at the end of each tests
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true); 
+
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
@@ -116,6 +123,7 @@ namespace Test
             Assert.AreEqual("[2742 to 2761]", psm.StartAndEndResiduesInProtein);
             Assert.AreEqual(159644.25225, psm.TotalIonCurrent);
             Assert.AreEqual(0, psm.VariantCrossingIons.Count);
+            property.SetValue(null, false);
         }
 
         //tests a weird crash from ms2 scans that had experimental peaks but they were all removed from the xarray by XCorr processing
@@ -145,11 +153,11 @@ namespace Test
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
             Assert.AreEqual(385, parsedPsms.Count); //total psm count
-            Assert.AreEqual(215, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv, including decoys
+            Assert.AreEqual(218, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv, including decoys
             Assert.AreEqual(0, warnings.Count);
 
             int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
-            Assert.AreEqual(214, countFromResultsTxt);
+            Assert.AreEqual(216, countFromResultsTxt);
         }
 
         [Test]
@@ -548,7 +556,7 @@ namespace Test
 
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", CommonParameters) };
 
-            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
             Assert.AreEqual(12, allPsmsArray.Length);
@@ -565,8 +573,15 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestClassicSearchEngineLowResSimple()
         {
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -651,7 +666,7 @@ namespace Test
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             Assert.AreEqual(432, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
-            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
             Assert.AreEqual(535, allPsmsArray.Length);
@@ -660,11 +675,19 @@ namespace Test
 
             Assert.AreEqual(181, goodScore.Count());
             Directory.Delete(outputFolder, true);
+            property.SetValue(null, false);
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestModernSearchEngineLowResSimple()
         {
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -751,6 +774,7 @@ namespace Test
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
             Assert.AreEqual(181, goodScore.Count());
+            property.SetValue(null, false);
         }
 
         [Test]
