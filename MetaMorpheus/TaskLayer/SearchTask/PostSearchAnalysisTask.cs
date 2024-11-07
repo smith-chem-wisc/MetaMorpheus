@@ -622,11 +622,11 @@ namespace TaskLayer
             }
             string psmResultsText = $"All target {GlobalVariables.AnalyteType.SpectralMatchLabel}s with " + psmsForPsmResults.GetFilterTypeString() + " <= " + Math.Round(psmsForPsmResults.FilterThreshold, 2) + ": " +
                 psmsForPsmResults.TargetPsmsAboveThreshold;
-            ResultsDictionary[("All", GlobalVariables.AnalyteType.SpectralMatchLabel)] = psmResultsText;
+            ResultsDictionary[("All", $"{GlobalVariables.AnalyteType.SpectralMatchLabel}s")] = psmResultsText;
         }
         private void WritePeptideResults()
         {
-            Status($"Writing {GlobalVariables.AnalyteType.UniqueFormLabel} results...", Parameters.SearchTaskId);
+            Status($"Writing {GlobalVariables.AnalyteType.UniqueFormLabel.ToLower()} results...", Parameters.SearchTaskId);
 
             var peptidesForPeptideResults = FilteredPsms.Filter(Parameters.AllPsms,
                 CommonParameters,
@@ -686,7 +686,7 @@ namespace TaskLayer
                 // write summary text
                 string psmResultsText = strippedFileName + $" - Target {GlobalVariables.AnalyteType.SpectralMatchLabel}s with " + psmsToWrite.GetFilterTypeString() + " <= " + Math.Round(psmsToWrite.FilterThreshold, 2) + ": " +
                                         psmsToWrite.TargetPsmsAboveThreshold;
-                ResultsDictionary[(strippedFileName, GlobalVariables.AnalyteType.SpectralMatchLabel)] = psmResultsText;
+                ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.SpectralMatchLabel}s")] = psmResultsText;
             }
         }
         private void WriteIndividualPeptideResults()
@@ -909,7 +909,7 @@ namespace TaskLayer
                 {
                     // write summary text
                     string proteinResultsText = strippedFileName + " - Target protein groups within 1 % FDR: " + subsetProteinGroupsForThisFile.Count(b => b.QValue <= 0.01 && !b.IsDecoy);
-                    ResultsDictionary[(strippedFileName, GlobalVariables.AnalyteType.BioPolymerLabel)] = proteinResultsText;
+                    ResultsDictionary[(strippedFileName, $"{GlobalVariables.AnalyteType.BioPolymerLabel}s")] = proteinResultsText;
 
                     // write result files
                     writtenFile = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + $"_{GlobalVariables.AnalyteType.BioPolymerLabel}Groups.tsv");
