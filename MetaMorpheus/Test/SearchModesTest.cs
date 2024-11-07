@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,12 +14,12 @@ namespace Test
         public static void TestSearchModeTest()
         {
             MassDiffAcceptor sm = new TestSearchMode("My custom");
-            Assert.IsTrue(sm.Accepts(2, 2) >= 0);
-            Assert.IsTrue(sm.Accepts(0.5, 4) >= 0);
-            Assert.IsFalse(sm.Accepts(0.5, 0.5) >= 0);
-            Assert.IsTrue(sm.Accepts(1, 1) >= 0);
-            Assert.AreEqual(2, sm.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(0.5).First().AllowedInterval.Minimum);
-            Assert.AreEqual(0.5, sm.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(2).First().AllowedInterval.Minimum);
+            Assert.That(sm.Accepts(2, 2) >= 0);
+            Assert.That(sm.Accepts(0.5, 4) >= 0);
+            Assert.That(sm.Accepts(0.5, 0.5) >= 0, Is.False);
+            Assert.That(sm.Accepts(1, 1) >= 0);
+            Assert.That(sm.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(0.5).First().AllowedInterval.Minimum, Is.EqualTo(2));
+            Assert.That(sm.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(2).First().AllowedInterval.Minimum, Is.EqualTo(0.5));
         }
 
         [Test]
@@ -27,48 +27,48 @@ namespace Test
         {
             var dsm1 = new DotMassDiffAcceptor("test1", new double[] { 0, 1 }, new AbsoluteTolerance(0.1));
 
-            Assert.IsTrue(dsm1.Accepts(1000, 1000) >= 0);
-            Assert.IsTrue(dsm1.Accepts(1000, 1000 + 0.1 / 2) >= 0);
-            Assert.IsFalse(dsm1.Accepts(1000, 1000 + 0.1 * 2) >= 0);
-            Assert.IsTrue(dsm1.Accepts(1000 + 0.1 / 2, 1000) >= 0);
-            Assert.IsFalse(dsm1.Accepts(1000 + 0.1 * 2, 1000) >= 0);
+            Assert.That(dsm1.Accepts(1000, 1000) >= 0);
+            Assert.That(dsm1.Accepts(1000, 1000 + 0.1 / 2) >= 0);
+            Assert.That(dsm1.Accepts(1000, 1000 + 0.1 * 2) >= 0, Is.False);
+            Assert.That(dsm1.Accepts(1000 + 0.1 / 2, 1000) >= 0);
+            Assert.That(dsm1.Accepts(1000 + 0.1 * 2, 1000) !>= 0, Is.False);
 
-            Assert.IsTrue(dsm1.Accepts(1000 + 1, 1000 + 0.1 / 2) >= 0);
-            Assert.IsFalse(dsm1.Accepts(1000 + 1, 1000 + 0.1 * 2) >= 0);
-            Assert.IsTrue(dsm1.Accepts(1000 + 1 + 0.1 / 2, 1000) >= 0);
-            Assert.IsFalse(dsm1.Accepts(1000 + 1 + 0.1 * 2, 1000) >= 0);
+            Assert.That(dsm1.Accepts(1000 + 1, 1000 + 0.1 / 2) >= 0);
+            Assert.That(dsm1.Accepts(1000 + 1, 1000 + 0.1 * 2) >= 0, Is.False);
+            Assert.That(dsm1.Accepts(1000 + 1 + 0.1 / 2, 1000) >= 0);
+            Assert.That(dsm1.Accepts(1000 + 1 + 0.1 * 2, 1000)! >= 0, Is.False);
 
             var theList = dsm1.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(100).ToList();
 
-            Assert.AreEqual(99.9, theList[0].AllowedInterval.Minimum);
-            Assert.AreEqual(100.1, theList[0].AllowedInterval.Maximum);
-            Assert.AreEqual(100.9, theList[1].AllowedInterval.Minimum);
-            Assert.AreEqual(101.1, theList[1].AllowedInterval.Maximum);
+            Assert.That(theList[0].AllowedInterval.Minimum, Is.EqualTo(99.9));
+            Assert.That(theList[0].AllowedInterval.Maximum, Is.EqualTo(100.1));
+            Assert.That(theList[1].AllowedInterval.Minimum, Is.EqualTo(100.9));
+            Assert.That(theList[1].AllowedInterval.Maximum, Is.EqualTo(101.1));
 
             var dsm2 = new DotMassDiffAcceptor("test2", new double[] { 0, 1 }, new PpmTolerance(5));
 
-            Assert.IsTrue(dsm2.Accepts(1000, 1000) >= 0);
+            Assert.That(dsm2.Accepts(1000, 1000) >= 0);
 
-            Assert.IsTrue(dsm2.Accepts(1000 * (1 + 5.0 / 1e6 / 1.0000001), 1000) >= 0); // FIRST VARIES WITHIN 5 PPM OF SECOND
-            Assert.IsTrue(dsm2.Accepts(1000 * (1 - 5.0 / 1e6 / 1.0000001), 1000) >= 0); // FIRST VARIES WITHIN 5 PPM OF SECOND
+            Assert.That(dsm2.Accepts(1000 * (1 + 5.0 / 1e6 / 1.0000001), 1000) >= 0); // FIRST VARIES WITHIN 5 PPM OF SECOND
+            Assert.That(dsm2.Accepts(1000 * (1 - 5.0 / 1e6 / 1.0000001), 1000) >= 0); // FIRST VARIES WITHIN 5 PPM OF SECOND
 
-            Assert.IsFalse(dsm2.Accepts(1000, 1000 * (1 - 5.0 / 1e6 / 1.0000001)) >= 0); // VERY CAREFUL
+            Assert.That(dsm2.Accepts(1000, 1000 * (1 - 5.0 / 1e6 / 1.0000001)) >= 0, Is.False); // VERY CAREFUL
 
-            Assert.IsFalse(dsm2.Accepts(1000 * (1 + 5.0 / 1e6 * 1.0000001), 1000) >= 0); // FIRST VARIES WITHIN 5 PPM OF SECOND
-            Assert.IsFalse(dsm2.Accepts(1000 * (1 - 5.0 / 1e6 * 1.0000001), 1000) >= 0); // FIRST VARIES WITHIN 5 PPM OF SECOND
+            Assert.That(dsm2.Accepts(1000 * (1 + 5.0 / 1e6 * 1.0000001), 1000) >= 0, Is.False); // FIRST VARIES WITHIN 5 PPM OF SECOND
+            Assert.That(dsm2.Accepts(1000 * (1 - 5.0 / 1e6 * 1.0000001), 1000) >= 0, Is.False); // FIRST VARIES WITHIN 5 PPM OF SECOND
 
-            Assert.IsTrue(dsm2.Accepts(1000, 1000 * (1 + 5.0 / 1e6 * 1.0000001)) >= 0); // VERY CAREFUL
+            Assert.That(dsm2.Accepts(1000, 1000 * (1 + 5.0 / 1e6 * 1.0000001)) >= 0); // VERY CAREFUL
 
             var theList2 = dsm2.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(1000).ToList();
 
-            Assert.IsTrue(theList2[0].AllowedInterval.Contains(1000));
+            Assert.That(theList2[0].AllowedInterval.Contains(1000));
 
-            Assert.IsTrue(1000 * (1 + 5.0 / 1e6 / 1.0000001) < theList2[0].AllowedInterval.Maximum);
-            Assert.IsTrue(1000 * (1 - 5.0 / 1e6 / 1.0000001) > theList2[0].AllowedInterval.Minimum);
-            Assert.IsTrue(1000 * (1 + 5.0 / 1e6 * 1.0000001) > theList2[0].AllowedInterval.Maximum);
-            Assert.IsTrue(1000 * (1 - 5.0 / 1e6 * 1.0000001) < theList2[0].AllowedInterval.Minimum);
+            Assert.That(1000 * (1 + 5.0 / 1e6 / 1.0000001) < theList2[0].AllowedInterval.Maximum);
+            Assert.That(1000 * (1 - 5.0 / 1e6 / 1.0000001) > theList2[0].AllowedInterval.Minimum);
+            Assert.That(1000 * (1 + 5.0 / 1e6 * 1.0000001) > theList2[0].AllowedInterval.Maximum);
+            Assert.That(1000 * (1 - 5.0 / 1e6 * 1.0000001) < theList2[0].AllowedInterval.Minimum);
 
-            Assert.IsTrue(theList2[1].AllowedInterval.Contains(1001));
+            Assert.That(theList2[1].AllowedInterval.Contains(1001));
         }
 
         // Accept if scanPrecursorMass*peptideMass>=1.

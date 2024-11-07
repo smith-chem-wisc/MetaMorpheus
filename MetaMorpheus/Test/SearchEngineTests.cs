@@ -7,7 +7,7 @@ using EngineLayer.NonSpecificEnzymeSearch;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Omics.Fragmentation;
@@ -54,15 +54,15 @@ namespace Test
                 proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
             // One scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
 
-            Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQ"));
         }
 
         [Test]
@@ -82,40 +82,40 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
-            Assert.AreEqual("FTQTSGETTDADKEPAGEDK", psm.BaseSeq);
-            Assert.AreEqual("T", psm.DecoyContamTarget);
-            Assert.AreEqual(541.386, psm.DeltaScore);
-            Assert.AreEqual("FTQTSGETTDADKEPAGEDK", psm.EssentialSeq);
-            Assert.AreEqual("TaGe_SA_A549_3_snip", psm.FileNameWithoutExtension);
-            Assert.AreEqual("FTQTSGETTDADKEPAGEDK", psm.FullSequence);
-            Assert.AreEqual("primary:MKI67", psm.GeneName);
-            Assert.AreEqual("", psm.IdentifiedSequenceVariations);
-            Assert.AreEqual("-0.00544", psm.MassDiffDa);
-            Assert.AreEqual("-2.56000", psm.MassDiffPpm);
-            Assert.AreEqual(40, psm.MatchedIons.Count);
-            Assert.AreEqual("1", psm.MissedCleavage);
-            Assert.AreEqual(56, psm.Ms2ScanNumber);
-            Assert.AreEqual("G", psm.NextAminoAcid);
-            Assert.AreEqual("0", psm.Notch);
-            Assert.AreEqual("Homo sapiens", psm.OrganismName);
+            Assert.That("FTQTSGETTDADKEPAGEDK", Is.EqualTo(psm.BaseSeq));
+            Assert.That("T", Is.EqualTo(psm.DecoyContamTarget));
+            Assert.That(541.386, Is.EqualTo(psm.DeltaScore));
+            Assert.That("FTQTSGETTDADKEPAGEDK", Is.EqualTo(psm.EssentialSeq));
+            Assert.That("TaGe_SA_A549_3_snip", Is.EqualTo(psm.FileNameWithoutExtension));
+            Assert.That("FTQTSGETTDADKEPAGEDK", Is.EqualTo(psm.FullSequence));
+            Assert.That("primary:MKI67", Is.EqualTo(psm.GeneName));
+            Assert.That("", Is.EqualTo(psm.IdentifiedSequenceVariations));
+            Assert.That("-0.00544", Is.EqualTo(psm.MassDiffDa));
+            Assert.That("-2.56000", Is.EqualTo(psm.MassDiffPpm));
+            Assert.That(40, Is.EqualTo(psm.MatchedIons.Count));
+            Assert.That("1", Is.EqualTo(psm.MissedCleavage));
+            Assert.That(56, Is.EqualTo(psm.Ms2ScanNumber));
+            Assert.That("G", Is.EqualTo(psm.NextAminoAcid));
+            Assert.That("0", Is.EqualTo(psm.Notch));
+            Assert.That("Homo sapiens", Is.EqualTo(psm.OrganismName));
             Assert.That(0, Is.EqualTo(psm.PEP).Within(1E-04));
             Assert.That(0.005, Is.EqualTo(psm.PEP_QValue).Within(1E-03));
-            Assert.AreEqual("full", psm.PeptideDescription);
-            Assert.AreEqual("2125.92875", psm.PeptideMonoMass);
-            Assert.AreEqual(3, psm.PrecursorCharge);
-            Assert.AreEqual(2125.92331, psm.PrecursorMass);
-            Assert.AreEqual(709.64838, psm.PrecursorMz);
-            Assert.AreEqual(49, psm.PrecursorScanNum);
-            Assert.AreEqual("K", psm.PreviousAminoAcid);
-            Assert.AreEqual("P46013", psm.ProteinAccession);
-            Assert.AreEqual("Proliferation marker protein Ki-67", psm.ProteinName);
+            Assert.That("full", Is.EqualTo(psm.PeptideDescription));
+            Assert.That("2125.92875", Is.EqualTo(psm.PeptideMonoMass));
+            Assert.That(3, Is.EqualTo(psm.PrecursorCharge));
+            Assert.That(2125.92331, Is.EqualTo(psm.PrecursorMass));
+            Assert.That(709.64838, Is.EqualTo(psm.PrecursorMz));
+            Assert.That(49, Is.EqualTo(psm.PrecursorScanNum));
+            Assert.That("K", Is.EqualTo(psm.PreviousAminoAcid));
+            Assert.That("P46013", Is.EqualTo(psm.ProteinAccession));
+            Assert.That("Proliferation marker protein Ki-67", Is.EqualTo(psm.ProteinName));
             Assert.That(0.004739, Is.EqualTo(psm.QValue).Within(1E-04));
             Assert.That(0.004739, Is.EqualTo(psm.QValueNotch).Within(1E-04));
-            Assert.AreEqual(45.59512, psm.RetentionTime);
-            Assert.AreEqual(662.486, psm.Score);
-            Assert.AreEqual("[2742 to 2761]", psm.StartAndEndResiduesInProtein);
-            Assert.AreEqual(159644.25225, psm.TotalIonCurrent);
-            Assert.AreEqual(0, psm.VariantCrossingIons.Count);
+            Assert.That(45.59512, Is.EqualTo(psm.RetentionTime));
+            Assert.That(662.486, Is.EqualTo(psm.Score));
+            Assert.That("[2742 to 2761]", Is.EqualTo(psm.StartAndEndResiduesInProtein));
+            Assert.That(159644.25225, Is.EqualTo(psm.TotalIonCurrent));
+            Assert.That(0, Is.EqualTo(psm.VariantCrossingIons.Count));
         }
 
         //tests a weird crash from ms2 scans that had experimental peaks but they were all removed from the xarray by XCorr processing
@@ -144,12 +144,12 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(385, parsedPsms.Count); //total psm count
-            Assert.AreEqual(215, parsedPsms.Count(p => p.QValue < 0.01)); //psms with q-value < 0.01 as read from psmtsv, including decoys
-            Assert.AreEqual(0, warnings.Count);
+            Assert.That(385, Is.EqualTo(parsedPsms.Count)); //total psm count
+            Assert.That(215, Is.EqualTo(parsedPsms.Count(p => p.QValue < 0.01))); //psms with q-value < 0.01 as read from psmtsv, including decoys
+            Assert.That(0, Is.EqualTo(warnings.Count));
 
             int countFromResultsTxt = Convert.ToInt32(File.ReadAllLines(Path.Combine(outputFolder, @"SearchTOML\results.txt")).ToList().FirstOrDefault(l=>l.Contains("All target")).Split(":")[1].Trim());
-            Assert.AreEqual(214, countFromResultsTxt);
+            Assert.That(214, Is.EqualTo(countFromResultsTxt));
         }
 
         [Test]
@@ -231,7 +231,7 @@ namespace Test
 
             var scans = MyMsDataFiles[origDataFile].GetAllScansList();
 
-            Assert.AreEqual(912, scans[1].MassSpectrum.XArray.Count());
+            Assert.That(912, Is.EqualTo(scans[1].MassSpectrum.XArray.Count()));
             Assert.That(200.33052062988281, Is.EqualTo(scans[1].MassSpectrum.XArray[0]).Within(0.00001));
 
             foreach (MsDataScan scan in scans.Where(s => s.MsnOrder > 1))
@@ -244,13 +244,13 @@ namespace Test
                 scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
             }
 
-            Assert.IsTrue(scans[1].MassSpectrum.XcorrProcessed);
-            Assert.AreEqual(220, scans[1].MassSpectrum.XArray.Count());
+            Assert.That(scans[1].MassSpectrum.XcorrProcessed);
+            Assert.That(220, Is.EqualTo(scans[1].MassSpectrum.XArray.Count()));
             Assert.That(201.1020879, Is.EqualTo(scans[1].MassSpectrum.XArray[0]).Within(0.00001));
 
             var bubba = scans[239];
 
-            Assert.AreEqual(459, bubba.MassSpectrum.XArray.Count());
+            Assert.That(459, Is.EqualTo(bubba.MassSpectrum.XArray.Count()));
             Assert.That(201.102, Is.EqualTo(bubba.MassSpectrum.XArray[0]).Within(0.01));
             Assert.That(203.1031037, Is.EqualTo(bubba.MassSpectrum.XArray[1]).Within(0.01));
         }
@@ -289,7 +289,7 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray, listOfSortedXcorrms2Scans, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
-            Assert.IsTrue(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
+            Assert.That(listOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XcorrProcessed);
 
             List<double> expectedXarray = copyOflistOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
             List<double> expectedYarray = copyOflistOfSortedXcorrms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
@@ -301,20 +301,20 @@ namespace Test
             Assert.That(expectedXarray.SequenceEqual(processedXarray));
             Assert.That(expectedYarray.SequenceEqual(processedYarray));
 
-            Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).ToList().Count);
-            Assert.AreEqual(5, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.bWaterLoss).ToList().Count);
-            Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).ToList().Count);
-            Assert.AreEqual(6, allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yWaterLoss).ToList().Count);
+            Assert.That(5, Is.EqualTo(allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).ToList().Count));
+            Assert.That(5, Is.EqualTo(allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.bWaterLoss).ToList().Count));
+            Assert.That(6, Is.EqualTo(allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).ToList().Count));
+            Assert.That(6, Is.EqualTo(allPsmsArray[0].MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.yWaterLoss).ToList().Count));
 
-            Assert.AreEqual(518.2, Math.Round(allPsmsArray[0].Score, 1));
+            Assert.That(518.2, Is.EqualTo(Math.Round(allPsmsArray[0].Score, 1)));
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // One scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].Score > 1);
         }
 
         [Test]
@@ -343,15 +343,15 @@ namespace Test
                 proteinList, searchModes, CommonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // One Scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
 
-            Assert.AreEqual("QXQ", allPsmsArray[0].BaseSequence);
+            Assert.That("QXQ", Is.EqualTo(allPsmsArray[0].BaseSequence));
         }
 
         [Test]
@@ -388,16 +388,16 @@ namespace Test
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
             Assert.That(allPsmsArray[0] != null);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
 
-            Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
+            Assert.That("QQQ", Is.EqualTo(allPsmsArray[0].BaseSequence));
         }
 
         [Test]
@@ -442,16 +442,16 @@ namespace Test
             new ModernSearchEngine(allPsmsArray, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
             Assert.That(allPsmsArray[0] != null);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
 
-            Assert.AreEqual("QQQ", allPsmsArray[0].BaseSequence);
+            Assert.That("QQQ", Is.EqualTo(allPsmsArray[0].BaseSequence));
         }
 
         [Test]
@@ -483,7 +483,7 @@ namespace Test
 
             foreach (var scan in myMsDataFile.GetAllScansList().Where(p => p.MsnOrder > 1))
             {
-                Assert.AreEqual(984, scan.MassSpectrum.XArray.Count());
+                Assert.That(984, Is.EqualTo(scan.MassSpectrum.XArray.Count()));
                 scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, scan.IsolationMz.Value);
             }
 
@@ -500,7 +500,7 @@ namespace Test
 
             var remainingMasses = listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray;
 
-            Assert.AreEqual(195, listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.Count());
+            Assert.That(195, Is.EqualTo(listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.Count()));
 
             var mzs = listOfSortedms2Scans[0].TheScan.MassSpectrum.XArray.ToList();
             List<int> mzsRounded = new List<int>();
@@ -515,7 +515,7 @@ namespace Test
                 650, 652, 655, 657, 658, 664, 670, 672, 674, 676, 679, 682, 688, 690, 691, 694, 697, 698, 700, 704, 708, 722, 745, 747, 755, 763, 765, 771, 772, 773, 782, 789, 795, 805, 809, 823, 828, 831, 839, 866, 867, 868, 874, 876,
                 885, 886, 906, 914, 916, 924, 951, 959, 965, 966, 973, 977, 982, 983, 988, 996, 1006, 1023, 1024, 1040, 1041, 1137, 1152, 1170};
 
-            Assert.AreEqual(mzsExpected, mzsRounded);
+            Assert.That(mzsExpected, Is.EqualTo(mzsRounded));
 
             Ms2ScanWithSpecificMass[] losm2 = listOfSortedms2Scans.Where(mass => mass.PrecursorMass > 1410 && mass.PrecursorMass < 1411).ToArray();
 
@@ -536,7 +536,7 @@ namespace Test
                 570290, 571290, 576293, 588299, 604307, 622316, 671341, 672341, 675343, 689350, 703357, 721366, 770391, 771392, 776394, 788400, 804408, 822417, 867440, 868441, 877445, 885449, 905460, 923469, 964490, 965490, 976496,
                 982499, 1004510, 1021519, 1022519, 1039528, 1089553, 1117567, 1135576, 1150584, 1151585, 1168593, 1190604, 1218619, 1236628, 1279650, 1280650, 1297659};
 
-            Assert.AreEqual(expectedIndicies, filledIndicies);
+            Assert.That(expectedIndicies, Is.EqualTo(filledIndicies));
 
             MassDiffAcceptor massDiffAcceptor = SearchTask.GetMassDiffAcceptor(CommonParameters.PrecursorMassTolerance, SearchParameters.MassDiffAcceptorType, SearchParameters.CustomMdac);
 
@@ -551,17 +551,17 @@ namespace Test
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(12, allPsmsArray.Length);
+            Assert.That(12, Is.EqualTo(allPsmsArray.Length));
 
             var goodPsm = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).ToList();
 
             var myMatchedIons = goodPsm[0].MatchedFragmentIons;
 
-            Assert.AreEqual(47, myMatchedIons.Count());
+            Assert.That(47, Is.EqualTo(myMatchedIons.Count()));
 
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
             goodScore.Sort();
-            Assert.AreEqual(2, goodPsm.Count());
+            Assert.That(2, Is.EqualTo(goodPsm.Count()));
         }
 
         [Test]
@@ -596,11 +596,11 @@ namespace Test
 
             Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, CommonParameters).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(535, arrayOfMs2ScansSortedByMass.Count());
+            Assert.That(535, Is.EqualTo(arrayOfMs2ScansSortedByMass.Count()));
 
             int numSpectra = myMsDataFile.GetAllScansList().Count(p => p.MsnOrder == 2);
 
-            Assert.AreEqual(147, numSpectra);
+            Assert.That(147, Is.EqualTo(numSpectra));
 
             SpectralMatch[] fileSpecificPsms = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
@@ -637,7 +637,7 @@ namespace Test
 
             var listOfSortedXcorrms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, origDataFile, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
-            Assert.AreEqual(535, listOfSortedXcorrms2Scans.Count());
+            Assert.That(535, Is.EqualTo(listOfSortedXcorrms2Scans.Count()));
 
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedXcorrms2Scans.Length];
 
@@ -649,16 +649,16 @@ namespace Test
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
-            Assert.AreEqual(432, nonNullPsms.Count); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
+            Assert.That(432, Is.EqualTo(nonNullPsms.Count)); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(535, allPsmsArray.Length);
+            Assert.That(535, Is.EqualTo(allPsmsArray.Length));
 
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
-            Assert.AreEqual(181, goodScore.Count());
+            Assert.That(181, Is.EqualTo(goodScore.Count()));
             Directory.Delete(outputFolder, true);
         }
 
@@ -746,11 +746,11 @@ namespace Test
             EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
-            Assert.AreEqual(535, allPsmsArray.Length);
+            Assert.That(535, Is.EqualTo(allPsmsArray.Length));
 
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
 
-            Assert.AreEqual(181, goodScore.Count());
+            Assert.That(181, Is.EqualTo(goodScore.Count()));
         }
 
         [Test]
@@ -870,16 +870,16 @@ namespace Test
             var searchResults = engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
             Assert.That(allPsmsArray[0] != null);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
 
-            Assert.AreEqual(3, allPsmsArray[0].NumDifferentMatchingPeptides);
+            Assert.That(3, Is.EqualTo(allPsmsArray[0].NumDifferentMatchingPeptides));
         }
 
         [Test]
@@ -941,20 +941,20 @@ namespace Test
             new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
             CommonParameters = new CommonParameters(
                  digestionParams: new DigestionParams("singleN", minPeptideLength: 1),
                  precursorMassTolerance: new PpmTolerance(5),
                  scoreCutoff: 1);
 
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That("QQQGGGG", Is.EqualTo(allPsmsArray[0].BaseSequence));
         }
 
 
@@ -1017,20 +1017,20 @@ namespace Test
             new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, peptideIndex, fragmentIndexDict, fragmentIndexDict, 0, CommonParameters, null, variableModifications, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
             CommonParameters = new CommonParameters(
                  digestionParams: new DigestionParams("singleN", minPeptideLength: 1),
                  precursorMassTolerance: new PpmTolerance(5),
                  scoreCutoff: 1);
 
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That("QQQGGGG", Is.EqualTo(allPsmsArray[0].BaseSequence));
         }
 
 
@@ -1097,7 +1097,7 @@ namespace Test
 
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is no modification hanging out on the n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
             proteinList = new List<Protein> { new Protein("CDQPKLLGIETPLPKKEGGGGG", null) };
             guiltyPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]DQPKLLGIETPLPKKE", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
@@ -1123,7 +1123,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the protein n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
             proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGG", null) };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
@@ -1138,7 +1138,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the peptide n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
         }
 
         [Test]
@@ -1203,7 +1203,7 @@ namespace Test
 
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is no modification hanging out on the n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
             proteinList = new List<Protein> { new Protein("GGGGGDQPKLLGIETPLPKKEC", null) };
             guiltyPwsm = new PeptideWithSetModifications("GGDQPKLLGIETPLPKKEC[Common Fixed:Carbamidomethyl on C]", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
@@ -1230,7 +1230,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the protein n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
             proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
@@ -1245,7 +1245,7 @@ namespace Test
             searchResults = engine.Run();
             allPsmsArray[0].ResolveAllAmbiguities();
             //Check that there is a modification hanging out on the peptide n-terminus
-            Assert.AreEqual(allPsmsArray[0].FullSequence, guiltyPwsm.FullSequence);
+            Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
         }
 
         [Test]
@@ -1279,7 +1279,7 @@ namespace Test
             NonSpecificEnzymeSearchEngine searchEngine = new NonSpecificEnzymeSearchEngine(allPsmsArrays, listOfSortedms2Scans, coisolationIndex, indexingResults.PeptideIndex, indexingResults.FragmentIndex, indexingResults.PrecursorIndex, 1, cp, null, null, massDiffAcceptor, 0, new List<string>());
 
             searchEngine.Run();
-            Assert.IsTrue(allPsmsArrays[2][0] != null);
+            Assert.That(allPsmsArrays[2][0] != null);
         }
 
         [Test]
@@ -1347,16 +1347,16 @@ namespace Test
             var searchResults = engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             //Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
             Assert.That(allPsmsArray[0] != null);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 7);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 7);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That("QQQGGGG", Is.EqualTo(allPsmsArray[0].BaseSequence));
         }
 
         [Test]
@@ -1383,11 +1383,11 @@ namespace Test
             var variableModifications = new List<Modification> { new Modification(_originalId: "16", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 3);
             var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(ListOfModifiedPeptides.Count, 192);
+            Assert.That(ListOfModifiedPeptides.Count, Is.EqualTo(192));
 
             var protein2 = new Protein(new string("MGGGGGMNNNKQQQMGGGGMGM".ToCharArray().Reverse().ToArray()), "TestProtein");
             var ListOfModifiedPeptides2 = protein2.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(ListOfModifiedPeptides2.Count, 132);
+            Assert.That(ListOfModifiedPeptides2.Count, Is.EqualTo(132));
         }
 
         [Test]
@@ -1413,11 +1413,11 @@ namespace Test
             var variableModifications = new List<Modification> { new Modification(_originalId: "16", _target: motifM, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.994915) };
             DigestionParams digestionParams = new DigestionParams(protease: protease.Name, minPeptideLength: 5, maxModsForPeptides: 3);
             var ListOfModifiedPeptides = protein.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(ListOfModifiedPeptides.Count, 132);
+            Assert.That(ListOfModifiedPeptides.Count, Is.EqualTo(132));
 
             var protein2 = new Protein(new string("MGGGGGMNNNKQQQMGGGGMGM".ToCharArray().Reverse().ToArray()), "TestProtein");
             var ListOfModifiedPeptides2 = protein2.Digest(digestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(ListOfModifiedPeptides2.Count, 192);
+            Assert.That(ListOfModifiedPeptides2.Count, Is.EqualTo(192));
         }
 
         [Test]
@@ -1489,15 +1489,15 @@ namespace Test
             var searchResults = engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That("QQQGGGG", Is.EqualTo(allPsmsArray[0].BaseSequence));
         }
 
         [Test]
@@ -1564,15 +1564,15 @@ namespace Test
             var searchResults = engine.Run();
 
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray.Length));
 
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(2, Is.EqualTo(allPsmsArray[0].ScanNumber));
             allPsmsArray[0].ResolveAllAmbiguities();
-            Assert.AreEqual("QQQGGGG", allPsmsArray[0].BaseSequence);
+            Assert.That("QQQGGGG", Is.EqualTo(allPsmsArray[0].BaseSequence));
         }
 
         [Test]
@@ -1653,20 +1653,20 @@ namespace Test
             new ClassicSearchEngine(allPsmsArray2, listOfSortedms2Scans2, variableModifications, fixedModifications, null, null, null, 
                 proteinList, searchModes, CommonParameters2, null, null, new List<string>(), writeSpectralLibrary).Run();
             // Single search mode
-            Assert.AreEqual(1, allPsmsArray2.Length);
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray2.Length));
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(1, allPsmsArray2.Length);
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(1, Is.EqualTo(allPsmsArray2.Length));
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
-            Assert.IsTrue(allPsmsArray2[0].Score > 4);
-            Assert.IsTrue(allPsmsArray[0].Score > 4);
-            Assert.AreEqual(2, allPsmsArray2[0].ScanNumber);
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
+            Assert.That(allPsmsArray2[0].Score > 4);
+            Assert.That(allPsmsArray[0].Score > 4);
+            Assert.That(2, Is.EqualTo(allPsmsArray2[0].ScanNumber));
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
 
-            Assert.AreEqual("QQQGGGG", allPsmsArray2[0].BaseSequence);
-            Assert.AreEqual(allPsmsArray[0].BaseSequence, allPsmsArray2[0].BaseSequence);
+            Assert.That("QQQGGGG", Is.EqualTo(allPsmsArray2[0].BaseSequence));
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo(allPsmsArray2[0].BaseSequence));
         }
 
         [Test]
@@ -1723,7 +1723,7 @@ namespace Test
             }
             foreach (KeyValuePair<string, bool> kvp in found)
             {
-                Assert.IsTrue(kvp.Value);
+                Assert.That(kvp.Value);
             }
         }
 
@@ -1783,7 +1783,7 @@ namespace Test
             {
                 massToCharges.Add(mass.ToMz(1));
             }
-            Assert.AreEqual(20, massToCharges.Count());
+            Assert.That(20, Is.EqualTo(massToCharges.Count()));
         }
 
         [Test]
@@ -1792,7 +1792,7 @@ namespace Test
             CommonParameters commonParams = new CommonParameters(digestionParams: new DigestionParams(protease: "Arg-C", searchModeType: CleavageSpecificity.None));
             FileSpecificParameters fileSpecificParams = new FileSpecificParameters();
             CommonParameters updatedCommonParams = MetaMorpheusTask.SetAllFileSpecificCommonParams(commonParams, fileSpecificParams);
-            Assert.AreEqual(updatedCommonParams.DigestionParams.SpecificProtease, commonParams.DigestionParams.SpecificProtease);
+            Assert.That(updatedCommonParams.DigestionParams.SpecificProtease, Is.EqualTo(commonParams.DigestionParams.SpecificProtease));
         }
 
         [Test]
@@ -1857,9 +1857,9 @@ namespace Test
                     for (int i = 0; i < listOfSortedms2Scans.Length; i++)
                     {
                         SpectralMatch testPsm = allPsmsArrays[2][i];
-                        Assert.IsTrue(testPsm != null);
+                        Assert.That(testPsm != null);
                         testPsm.ResolveAllAmbiguities();
-                        Assert.IsTrue(psmAnswer[1 - i].Equals(testPsm.FullSequence));
+                        Assert.That(psmAnswer[1 - i].Equals(testPsm.FullSequence));
                     }
                 }
             }

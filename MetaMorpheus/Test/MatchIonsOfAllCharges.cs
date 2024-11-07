@@ -5,7 +5,7 @@ using EngineLayer;
 using EngineLayer.ClassicSearch;
 using IO.MzML;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -14,12 +14,10 @@ using Chemistry;
 using System;
 using MassSpectrometry;
 using Nett;
-using EngineLayer.Gptmd;
 using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using static System.Net.WebRequestMethods;
 
 namespace Test
 {
@@ -71,8 +69,8 @@ namespace Test
 
             //compare 2 scores , they should have same integer part but new search has a little higher score than old search
             Assert.That(psm[1].Score > psm_oneCharge[1].Score);
-            Assert.AreEqual(Math.Truncate(psm[1].Score), 12);
-            Assert.AreEqual(Math.Truncate(psm_oneCharge[1].Score), 12);
+            Assert.That(Math.Truncate(psm[1].Score), Is.EqualTo(12));
+            Assert.That(Math.Truncate(psm_oneCharge[1].Score), Is.EqualTo(12));
 
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
@@ -120,7 +118,7 @@ namespace Test
                 proteinList1, searchModes, CommonParameters1, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             var psm1 = allPsmsArray1.Where(p => p != null).ToList();
-            Assert.AreEqual(psm1.Count, 222);
+            Assert.That(psm1.Count, Is.EqualTo(222));
         }
 
         [Test]
@@ -170,8 +168,8 @@ namespace Test
 
             //compare 2 scores , they should have same integer but new search has a little higher score than old search
             Assert.That(psm.Score > psm_oneCharge.Score);
-            Assert.AreEqual(Math.Truncate(psm.Score), 47);
-            Assert.AreEqual(Math.Truncate(psm_oneCharge.Score), 47);
+            Assert.That(47, Is.EqualTo(Math.Truncate(psm.Score)));
+            Assert.That(47, Is.EqualTo(Math.Truncate(psm_oneCharge.Score)));
 
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
@@ -219,14 +217,14 @@ namespace Test
 
             //test1 when all the masses are too small
             var test1 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(50, 95);
-            Assert.AreEqual(test1, null);
+            Assert.That(null, Is.EqualTo(test1));
             //test2 when all the masses are too big
             var test2 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(582, 682);
-            Assert.AreEqual(test2, null);
+            Assert.That(null, Is.EqualTo(test2));
             //test3 when the mass which is bigger than given min mass is bigger than the mass which is smaller than the given max mass
             //for example: the mass array is [1,2,3,4,5], the given min mass is 2.2, the given max mass is 2.8
             var test3 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(110, 111);
-            Assert.AreEqual(test3, null);
+            Assert.That(null, Is.EqualTo(test3));
 
 
             //test normal conditions:look for IsotopicEnvelopes which are in the range of acceptable mass 
@@ -234,13 +232,13 @@ namespace Test
             IsotopicEnvelope[] expected4 = ms2ScanTest.ExperimentalFragments.Skip(15).Take(9).ToArray();
             Assert.That(ms2ScanTest.ExperimentalFragments[15].MonoisotopicMass > 120 && ms2ScanTest.ExperimentalFragments[14].MonoisotopicMass < 120);
             Assert.That(ms2ScanTest.ExperimentalFragments[23].MonoisotopicMass < 130 && ms2ScanTest.ExperimentalFragments[24].MonoisotopicMass > 130);
-            Assert.AreEqual(test4, expected4);
+            Assert.That(expected4, Is.EqualTo(test4));
 
             var test5 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(400, 500);
             IsotopicEnvelope[] expected5 = ms2ScanTest.ExperimentalFragments.Skip(150).Take(7).ToArray();
             Assert.That(ms2ScanTest.ExperimentalFragments[150].MonoisotopicMass > 400 && ms2ScanTest.ExperimentalFragments[149].MonoisotopicMass < 400);
             Assert.That(ms2ScanTest.ExperimentalFragments[156].MonoisotopicMass < 500 && ms2ScanTest.ExperimentalFragments[157].MonoisotopicMass > 500);
-            Assert.AreEqual(test5, expected5);
+            Assert.That(expected5, Is.EqualTo(test5));
         }
 
         [Test]
@@ -515,10 +513,9 @@ namespace Test
 
             var computedSpectralSimilarity = spectrum.CalculateSpectralAngleOnTheFly(psms[0].MatchedIons);
 
-            Assert.AreEqual(1,Convert.ToDouble(computedSpectralSimilarity),0.01);
+            Assert.That(1, Is.EqualTo(Convert.ToDouble(computedSpectralSimilarity)).Within(0.01));
 
-
-            Assert.AreEqual("N/A", spectrum.CalculateSpectralAngleOnTheFly(new List<MatchedFragmentIon>()));
+            Assert.That(spectrum.CalculateSpectralAngleOnTheFly(new List<MatchedFragmentIon>()), Is.EqualTo("N/A"));
         }
 
 
