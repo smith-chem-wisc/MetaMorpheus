@@ -1,4 +1,4 @@
-﻿using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+﻿using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using TaskLayer;
@@ -28,7 +28,7 @@ namespace Test
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
             var sections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length > 1);
-            Assert.AreEqual(sections.Length, 48);
+            Assert.That(48, Is.EqualTo(sections.Length));
 
             var resultsPath_Inter = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Interlinks.tsv"));
             Assert.That(resultsPath_Inter.Length > 1);
@@ -67,7 +67,7 @@ namespace Test
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
             var sections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length > 1);
-            Assert.AreEqual(sections.Length, 48);
+            Assert.That(48, Is.EqualTo(sections.Length));
 
             var resultsPath_Inter = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Interlinks.tsv"));
             Assert.That(resultsPath_Inter.Length > 1);
@@ -97,9 +97,9 @@ namespace Test
             Assert.That(interLinkSpectrum is CrosslinkLibrarySpectrum);
             CrosslinkLibrarySpectrum interSpectrum = (CrosslinkLibrarySpectrum)interLinkSpectrum;
             Assert.That(interSpectrum.BetaPeptideSpectrum.MatchedFragmentIons.Count, Is.EqualTo(13));
-            Assert.AreEqual(interSpectrum.AlphaPeptideSequence, "GVTVDKMTELR");
-            Assert.AreEqual(interSpectrum.BetaPeptideSequence, "SFTFVTKTPPAAVLLK");
-            Assert.True(interSpectrum.BetaPeptideSpectrum.IsBetaPeptide);
+            Assert.That("GVTVDKMTELR", Is.EqualTo(interSpectrum.AlphaPeptideSequence));
+            Assert.That("SFTFVTKTPPAAVLLK", Is.EqualTo(interSpectrum.BetaPeptideSequence));
+            Assert.That(interSpectrum.BetaPeptideSpectrum.IsBetaPeptide);
             interLinkSpectrum.MatchedFragmentIons.Add(new MatchedFragmentIon(productWithNeutralLoss, 100, 100, 1));
             CrosslinkLibrarySpectrum spectrumDup = (CrosslinkLibrarySpectrum)interLinkSpectrum;
             spectrumDup.BetaPeptideSpectrum.MatchedFragmentIons.Add(new MatchedFragmentIon(productWithNeutralLoss20, 100, 100, 1));

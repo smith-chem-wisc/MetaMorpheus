@@ -1,11 +1,8 @@
-﻿using Chemistry;
-using EngineLayer;
-using EngineLayer.ClassicSearch;
+﻿using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using Proteomics;
+using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +11,6 @@ using Omics.Digestion;
 using Omics.Fragmentation;
 using SpectralAveraging;
 using TaskLayer;
-using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -34,18 +30,18 @@ namespace Test
             Toml.WriteFile(searchTask, "SearchTask.toml", MetaMorpheusTask.tomlConfig);
             var searchTaskLoaded = Toml.ReadFile<SearchTask>("SearchTask.toml", MetaMorpheusTask.tomlConfig);
 
-            Assert.AreEqual(searchTask.CommonParameters.DeconvolutionMassTolerance.ToString(), searchTaskLoaded.CommonParameters.DeconvolutionMassTolerance.ToString());
-            Assert.AreEqual(searchTask.CommonParameters.ProductMassTolerance.ToString(), searchTaskLoaded.CommonParameters.ProductMassTolerance.ToString());
-            Assert.AreEqual(searchTask.CommonParameters.PrecursorMassTolerance.ToString(), searchTaskLoaded.CommonParameters.PrecursorMassTolerance.ToString());
+            Assert.That(searchTask.CommonParameters.DeconvolutionMassTolerance.ToString(), Is.EqualTo(searchTaskLoaded.CommonParameters.DeconvolutionMassTolerance.ToString()));
+            Assert.That(searchTask.CommonParameters.ProductMassTolerance.ToString(), Is.EqualTo(searchTaskLoaded.CommonParameters.ProductMassTolerance.ToString()));
+            Assert.That(searchTask.CommonParameters.PrecursorMassTolerance.ToString(), Is.EqualTo(searchTaskLoaded.CommonParameters.PrecursorMassTolerance.ToString()));
 
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.Count(), searchTaskLoaded.CommonParameters.ListOfModsFixed.Count());
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.First().Item1, searchTaskLoaded.CommonParameters.ListOfModsFixed.First().Item1);
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsFixed.First().Item2, searchTaskLoaded.CommonParameters.ListOfModsFixed.First().Item2);
+            Assert.That(searchTask.CommonParameters.ListOfModsFixed.Count(), Is.EqualTo(searchTaskLoaded.CommonParameters.ListOfModsFixed.Count()));
+            Assert.That(searchTask.CommonParameters.ListOfModsFixed.First().Item1, Is.EqualTo(searchTaskLoaded.CommonParameters.ListOfModsFixed.First().Item1));
+            Assert.That(searchTask.CommonParameters.ListOfModsFixed.First().Item2, Is.EqualTo(searchTaskLoaded.CommonParameters.ListOfModsFixed.First().Item2));
 
-            Assert.AreEqual(searchTask.CommonParameters.ListOfModsVariable.Count(), searchTaskLoaded.CommonParameters.ListOfModsVariable.Count());
+            Assert.That(searchTask.CommonParameters.ListOfModsVariable.Count(), Is.EqualTo(searchTaskLoaded.CommonParameters.ListOfModsVariable.Count()));
 
-            Assert.AreEqual(searchTask.SearchParameters.MassDiffAcceptorType, searchTaskLoaded.SearchParameters.MassDiffAcceptorType);
-            Assert.AreEqual(searchTask.SearchParameters.CustomMdac, searchTaskLoaded.SearchParameters.CustomMdac);
+            Assert.That(searchTask.SearchParameters.MassDiffAcceptorType, Is.EqualTo(searchTaskLoaded.SearchParameters.MassDiffAcceptorType));
+            Assert.That(searchTask.SearchParameters.CustomMdac, Is.EqualTo(searchTaskLoaded.SearchParameters.CustomMdac));
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestConsistency");
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
@@ -115,22 +111,22 @@ namespace Test
         {
             var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
-            Assert.AreEqual(tomlSettingsList["Protease"].Value.Get<string>(), "Asp-N");
-            Assert.AreEqual(tomlSettingsList["DissociationType"].Value.Get<string>(), "ETD");
-            Assert.IsFalse(tomlSettingsList.ContainsKey("maxMissedCleavages"));
-            Assert.IsFalse(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
+            Assert.That(tomlSettingsList["Protease"].Value.Get<string>(), Is.EqualTo("Asp-N"));
+            Assert.That(tomlSettingsList["DissociationType"].Value.Get<string>(), Is.EqualTo("ETD"));
+            Assert.That(tomlSettingsList.ContainsKey("maxMissedCleavages"), Is.False);
+            Assert.That(tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"), Is.False);
 
             FileSpecificParameters f = new(fileSpecificToml);
 
-            Assert.AreEqual("Asp-N", f.Protease.Name);
-            Assert.AreEqual(DissociationType.ETD, f.DissociationType);
-            Assert.IsNull(f.MaxMissedCleavages);
+            Assert.That("Asp-N", Is.EqualTo(f.Protease.Name));
+            Assert.That(DissociationType.ETD, Is.EqualTo(f.DissociationType));
+            Assert.That(f.MaxMissedCleavages, Is.Null);
 
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
-            Assert.AreEqual("Asp-N", c.DigestionParams.Protease.Name);
-            Assert.AreEqual(DissociationType.ETD, c.DissociationType);
-            Assert.AreEqual(2, c.DigestionParams.MaxMissedCleavages);
+            Assert.That("Asp-N", Is.EqualTo(c.DigestionParams.Protease.Name));
+            Assert.That(DissociationType.ETD, Is.EqualTo(c.DissociationType));
+            Assert.That(2, Is.EqualTo(c.DigestionParams.MaxMissedCleavages));
         }
 
         [Test]
@@ -140,8 +136,8 @@ namespace Test
             //create a toml with a protease that doesn't exist in the protease.tsv dictionary
             string proteaseNotInDictionary = "aaa"; //arbitrary. If somebody adds a protease with this name, use a different name
             string proteaseInDictionary = "trypsin"; //just make sure we are doing this right
-            Assert.IsTrue(!ProteaseDictionary.Dictionary.ContainsKey(proteaseNotInDictionary));
-            Assert.IsTrue(ProteaseDictionary.Dictionary.ContainsKey(proteaseInDictionary));
+            Assert.That(!ProteaseDictionary.Dictionary.ContainsKey(proteaseNotInDictionary));
+            Assert.That(ProteaseDictionary.Dictionary.ContainsKey(proteaseInDictionary));
 
             //write the toml
             //let's use the datafile ok.mgf (arbitrary)
@@ -203,7 +199,7 @@ namespace Test
             Directory.Delete(folderPath, true);
 
             //
-            Assert.IsTrue(wasCalled);
+            Assert.That(wasCalled);
         }
 
         [Test]
@@ -214,15 +210,15 @@ namespace Test
             var fileSpecificToml = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
             FileSpecificParameters fsp = new(fileSpecificToml);
-            Assert.AreEqual(DissociationType.CID, fsp.DissociationType);
-            Assert.AreEqual(0, fsp.MaxMissedCleavages);
-            Assert.AreEqual(0, fsp.MaxModsForPeptide);
-            Assert.AreEqual(0, fsp.MaxPeptideLength);
-            Assert.AreEqual(0, fsp.MinPeptideLength);
-            Assert.AreEqual(5.0d, fsp.PrecursorMassTolerance.Value);
-            Assert.AreEqual(5.0d, fsp.ProductMassTolerance.Value);
-            Assert.AreEqual("Asp-N", fsp.Protease.Name);
-            Assert.AreEqual("HPLC", fsp.SeparationType.ToString());
+            Assert.That(DissociationType.CID, Is.EqualTo(fsp.DissociationType));
+            Assert.That(0, Is.EqualTo(fsp.MaxMissedCleavages));
+            Assert.That(0, Is.EqualTo(fsp.MaxModsForPeptide));
+            Assert.That(0, Is.EqualTo(fsp.MaxPeptideLength));
+            Assert.That(0, Is.EqualTo(fsp.MinPeptideLength));
+            Assert.That(5.0d, Is.EqualTo(fsp.PrecursorMassTolerance.Value));
+            Assert.That(5.0d, Is.EqualTo(fsp.ProductMassTolerance.Value));
+            Assert.That("Asp-N", Is.EqualTo(fsp.Protease.Name));
+            Assert.That("HPLC", Is.EqualTo(fsp.SeparationType.ToString()));
 
             filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams_bad.toml");
 

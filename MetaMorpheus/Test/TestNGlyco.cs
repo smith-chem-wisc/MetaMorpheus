@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.GlycoSearch;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -82,7 +82,7 @@ namespace Test
         {
             byte[] kind = new byte[] {3, 4, 0, 0, 1, 0, 0, 0, 0, 0, 0 };
             string kindString = Glycan.GetKindString(kind);
-            Assert.AreEqual("H3N4F1", kindString);
+            Assert.That("H3N4F1", Is.EqualTo(kindString));
         }
 
         [Test]
@@ -131,15 +131,15 @@ namespace Test
 
             var glycanYIons = GlycoPeptides.GetGlycanYIons(listOfSortedms2Scans[0].PrecursorMass, glycan);
             var matchedGlycanYIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], glycanYIons, commonParameters);
-            Assert.AreEqual(matchedGlycanYIons.Count, 14);
+            Assert.That(matchedGlycanYIons.Count, Is.EqualTo(14));
 
             //TO DO: The neutroloss is not annotated well.
             var matchedFragmentIons = MetaMorpheusEngine.MatchFragmentIons(listOfSortedms2Scans[0], fragmentIons, commonParameters);
 
             var coreIons = GlycoPeptides.ScanGetTrimannosylCore(matchedFragmentIons, glycan);
-            Assert.AreEqual(coreIons.Count, 6);
+            Assert.That(coreIons.Count, Is.EqualTo(6));
             var filter = GlycoPeptides.ScanTrimannosylCoreFilter(matchedFragmentIons, glycan);
-            Assert.AreEqual(filter, true);
+            Assert.That(filter, Is.EqualTo(true));
             var NGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.NGlycanLocations[0], true, false);
             var bestGlycans = GlycoPeptides.MatchBestGlycan(listOfSortedms2Scans[0], NGlycans.ToArray(), commonParameters).Where(p => p != null && p.Item2 >= 2).OrderByDescending(p => p.Item2).Take(100).OrderBy(p => p.Item3).ToArray(); ;
 
@@ -183,7 +183,7 @@ namespace Test
 
             var XLPrecusorSearchMode = new SinglePpmAroundZeroSearchMode(commonParameters.PrecursorMassTolerance.Value);
             var precusorMatched = XLPrecusorSearchMode.Accepts(aPeptideWithSetModifications.Last().MonoisotopicMass + (double)glycan.Mass/1E5, listOfSortedms2Scans[0].PrecursorMass);
-            Assert.AreEqual(precusorMatched, 0);
+            Assert.That(precusorMatched, Is.EqualTo(0));
 
             var glycanMod = Glycan.NGlycanToModification(glycan);
             var glycopep = GlycoPeptides.GenerateGlycopeptide(sites[0], aPeptideWithSetModifications.Last(), glycan);
@@ -213,7 +213,7 @@ namespace Test
             //Tips: Using debug mode to check the number of oxoniumIons, in this case will be 7.
             MassDiffAcceptor massDiffAcceptor = new SinglePpmAroundZeroSearchMode(20);
             var oxoinumIonsExist = GlycoPeptides.ScanOxoniumIonFilter(listOfSortedms2Scans[0], massDiffAcceptor);
-            Assert.AreEqual(oxoinumIonsExist.Where(p=>p>0).Count(), 9);
+            Assert.That(oxoinumIonsExist.Where(p => p > 0).Count(), Is.EqualTo(9));
         }
 
         [Test]
@@ -223,7 +223,7 @@ namespace Test
             Glycan glycan2 = Glycan.Struct2Glycan("(N(N(H(H(H))(H(H(H))(H(H(H(H(H)))))))))", 0);
 
             var test = Glycan.Equals(glycan, glycan2);
-            Assert.AreEqual(test, true);
+            Assert.That(test, Is.EqualTo(true));
 
             //TO DO: Test the glycan ions. 
             Glycan glycan3 = Glycan.Struct2Glycan("(N(F)(N(H(H(N(H(N(H(N(H))))))(N(H(N(H(N(F)(H(G))))))))(H(N(H(N(H(N(H(A)))))))(N(F)(H(N(F)(H(N(H)(F))))))))))", 8086);
@@ -238,7 +238,7 @@ namespace Test
             Assert.That(node.LeftChild.LeftChild.MiddleChild!=null);
 
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
-            Assert.AreEqual(glycan.Ions.Count, 18);
+            Assert.That(glycan.Ions.Count, Is.EqualTo(18));
         }
 
         [Test]
@@ -246,10 +246,10 @@ namespace Test
         {
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(N)(H(N)(N))(H(N(H))))))", 0);
             var test = Glycan.BuildTargetDecoyGlycans(new Glycan[] { glycan });
-            Assert.AreEqual(test.Last().Decoy, true);
+            Assert.That(test.Last().Decoy, Is.EqualTo(true));
             foreach (var ion in test.Last().Ions)
             {
-                Assert.AreEqual(ion.IonMass + ion.LossIonMass, test.Last().Mass);
+                Assert.That(ion.IonMass + ion.LossIonMass, Is.EqualTo(test.Last().Mass));
             }
         }
 
@@ -278,11 +278,11 @@ namespace Test
             var tid = GlycoPeptides.BinarySearchGetIndex(array, t);
             var tid1 = GlycoPeptides.BinarySearchGetIndex(array, t1);
 
-            Assert.AreEqual(xid, 0);
-            Assert.AreEqual(yid, 2);
-            Assert.AreEqual(zid, 10); //Index out range
-            Assert.AreEqual(did, 2);
-            Assert.AreEqual(tid, 9);          
+            Assert.That(xid, Is.EqualTo(0));
+            Assert.That(yid, Is.EqualTo(2));
+            Assert.That(zid, Is.EqualTo(10)); //Index out range
+            Assert.That(did, Is.EqualTo(2));
+            Assert.That(tid, Is.EqualTo(9));          
         }         
 
         [Test]

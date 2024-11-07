@@ -1,10 +1,9 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Omics.Modifications;
@@ -144,10 +143,10 @@ namespace Test
             // because modified peptides were NOT considered as unique, 
             // then there should be one ambiguous protein group after parsimony, 
             // and two protein accessions for each peptide
-            Assert.AreEqual(1, countOfProteinGroups);
-            Assert.AreEqual(2, results.SortedAndScoredProteinGroups.First().Proteins.Count);
-            Assert.IsNull(psm1.Accession);
-            Assert.IsNull(psm2.Accession);
+            Assert.That(1, Is.EqualTo(countOfProteinGroups));
+            Assert.That(results.SortedAndScoredProteinGroups.First().Proteins.Count, Is.EqualTo(2));
+            Assert.That(psm1.Accession, Is.Null);
+            Assert.That(psm2.Accession, Is.Null);
         }
 
         [Test]
@@ -238,8 +237,8 @@ namespace Test
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
             ProteinScoringAndFdrResults results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
-            Assert.IsTrue(results.SortedAndScoredProteinGroups.Count == 3);
-            Assert.IsTrue(results.SortedAndScoredProteinGroups[1].QValue == 0.5);
+            Assert.That(results.SortedAndScoredProteinGroups.Count == 3);
+            Assert.That(results.SortedAndScoredProteinGroups[1].QValue == 0.5);
         }
     }
 }
