@@ -148,7 +148,6 @@ namespace Test
             engineToml.Run();
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
-
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
 
             Assert.That(385, Is.EqualTo(parsedPsms.Count)); //total psm count
