@@ -22,6 +22,7 @@ using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
+using EngineLayer.FdrAnalysis;
 
 namespace Test
 {
@@ -66,8 +67,14 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
+            // only for unit test. must set to false at the end of each tests
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true); 
+
             var myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\Task1-SearchTaskconfig.toml");
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TestConsistency");
@@ -548,7 +555,7 @@ namespace Test
 
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", CommonParameters) };
 
-            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
             Assert.That(12, Is.EqualTo(allPsmsArray.Length));
@@ -565,8 +572,15 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestClassicSearchEngineLowResSimple()
         {
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -651,7 +665,7 @@ namespace Test
             var nonNullPsms = allPsmsArray.Where(p => p != null).ToList();
             Assert.That(432, Is.EqualTo(nonNullPsms.Count)); //if you run the test separately, it will be 111 because mods won't have been read in a previous test...
 
-            EngineLayer.FdrAnalysis.FdrAnalysisResults fdrResultsModernDelta = (EngineLayer.FdrAnalysis.FdrAnalysisResults)(new EngineLayer.FdrAnalysis.FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
+            FdrAnalysisResults fdrResultsModernDelta = (FdrAnalysisResults)(new FdrAnalysisEngine(nonNullPsms, 1, CommonParameters, fsp, new List<string>()).Run());
 
             // Single search mode
             Assert.That(535, Is.EqualTo(allPsmsArray.Length));
@@ -660,11 +674,19 @@ namespace Test
 
             Assert.That(181, Is.EqualTo(goodScore.Count()));
             Directory.Delete(outputFolder, true);
+            property.SetValue(null, false);
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestModernSearchEngineLowResSimple()
         {
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             MyFileManager myFileManager = new MyFileManager(true);
 
@@ -749,8 +771,8 @@ namespace Test
             Assert.That(535, Is.EqualTo(allPsmsArray.Length));
 
             var goodScore = nonNullPsms.Where(p => p.FdrInfo.QValue <= 0.01).Select(s => s.Score).ToList();
-
             Assert.That(181, Is.EqualTo(goodScore.Count()));
+            property.SetValue(null, false);
         }
 
         [Test]

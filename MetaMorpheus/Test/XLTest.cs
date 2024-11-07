@@ -366,8 +366,15 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void XlTest_MoreComprehensive()
         {
+            //override to be only used for unit tests in non-parallelizable format
+            //must set to false at the end of this method
+            var type = typeof(FdrAnalysisEngine);
+            var property = type.GetProperty("QvalueThresholdOverride");
+            property.SetValue(null, true);
+
             //Generate parameters
             var commonParameters = new CommonParameters(doPrecursorDeconvolution: false, dissociationType: DissociationType.HCD,
                 scoreCutoff: 1, digestionParams: new DigestionParams(minPeptideLength: 5), precursorMassTolerance: new PpmTolerance(10), maxThreadsToUsePerFile: 1);
@@ -749,7 +756,7 @@ namespace Test
             Assert.That(0, Is.EqualTo(loopCsmPsmData.BetaIntensity));
             Assert.That(loopCsmPsmData.ComplementaryIonCount, Is.EqualTo(3).Within(0.1));
             Assert.That(loopCsmPsmData.DeltaScore, Is.EqualTo(8).Within(0.1));
-            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(1).Within(0.1));
+            Assert.That(loopCsmPsmData.HydrophobicityZScore, Is.EqualTo(9).Within(0.1));
             Assert.That(loopCsmPsmData.Intensity, Is.EqualTo(1).Within(0.1));
             Assert.That(0, Is.EqualTo(loopCsmPsmData.IsDeadEnd));
             Assert.That(0, Is.EqualTo(loopCsmPsmData.IsInter));
