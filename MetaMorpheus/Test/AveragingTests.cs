@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using EngineLayer;
 using FlashLFQ;
-using GuiFunctions;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using Readers;
+using NUnit.Framework;
 using SpectralAveraging;
 using TaskLayer;
 using Mzml = IO.MzML.Mzml;
