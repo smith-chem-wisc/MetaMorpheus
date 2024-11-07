@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -56,14 +56,14 @@ namespace Test
 
             foreach (FileInfo file in testDirectory.GetFiles())
             {
-                Assert.AreEqual(".gz", file.Extension);
+                Assert.That(file.Extension, Is.EqualTo(".gz"));
             }
 
             MyFileManager.DecompressDirectory(testDirectory);
 
             foreach (FileInfo file in testDirectory.GetFiles())
             {
-                Assert.AreNotEqual(".gz", file.Extension);
+                Assert.That(file.Extension, !Is.EqualTo(".gz"));
             }
         }
 
@@ -78,7 +78,7 @@ namespace Test
 
             var closestExperimentalMassB = scanB.GetClosestExperimentalIsotopicEnvelope(10);
 
-            Assert.IsNull(closestExperimentalMassB);
+            Assert.That(closestExperimentalMassB, Is.Null);
         }
     }
 }
