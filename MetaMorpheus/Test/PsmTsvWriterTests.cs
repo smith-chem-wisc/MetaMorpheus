@@ -1,7 +1,7 @@
 ﻿using Chemistry;
 using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -65,7 +65,7 @@ namespace Test
             myPsm.ResolveAllAmbiguities();
 
             //Here we have a situation where there are two mods at the same position with different chemical formuala. They cannot be resolved and so the return value is null.
-            Assert.IsNull(myPsm.ModsChemicalFormula);
+            Assert.That(myPsm.ModsChemicalFormula, Is.Null);
             var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
 
             string myPsmString = myPsm.ToString();
@@ -74,12 +74,12 @@ namespace Test
             string ppmErrorString = myPsmStringSplit[ppmErrorIndex];
 
             //The two different mods produce two separate mass errors, which are both then reported
-            Assert.AreEqual("0.00000|11801.30000", ppmErrorString);
+            Assert.That(ppmErrorString, Is.EqualTo("0.00000|11801.30000"));
 
             //Make sure we see produt ion neutral losses in the output.
             var matchedIonSeriesIndex = headerSplits.IndexOf(PsmTsvHeader.MatchedIonSeries);
             string matchedIonSeries = myPsmStringSplit[matchedIonSeriesIndex];
-            Assert.AreEqual("[(b1-5.00)+1]", matchedIonSeries);
+            Assert.That(matchedIonSeries, Is.EqualTo("[(b1-5.00)+1]"));
 
 
             //removing one of the peptides to reset for the next test
@@ -92,13 +92,13 @@ namespace Test
 
             //Now we have removed one of the peptides with a different chemical formual and replaced it with a mod that has the same chemical formula as the remaining original best peptide
             //Here we have a situation where there are two mods at the same position have the same chemical formuala and they can be resolved and so the return value the chemical formual of the mod.
-            Assert.AreEqual("C", myPsm.ModsChemicalFormula.Formula.ToString());
+            Assert.That(myPsm.ModsChemicalFormula.Formula.ToString(), Is.EqualTo("C"));
 
             myPsmString = myPsm.ToString();
             myPsmStringSplit = myPsmString.Split('\t');
             ppmErrorString = myPsmStringSplit[24];
 
-            Assert.AreEqual("0.00000", ppmErrorString);
+            Assert.That(ppmErrorString, Is.EqualTo("0.00000"));
         }
     }
 }
