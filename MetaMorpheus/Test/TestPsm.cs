@@ -174,7 +174,7 @@ namespace Test
                     }
                 }
             }
-            Assert.IsTrue(longestSeriesExpected.SequenceEqual(longestSeriesObserved));
+            Assert.That(longestSeriesExpected.SequenceEqual(longestSeriesObserved));
         }
 
         [Test]
@@ -579,17 +579,17 @@ namespace Test
             psm1.ResolveAllAmbiguities();
             psm1.GetAminoAcidCoverage();
             //First amino acid
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(1));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(1));
             //sequential N term Frags
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(4));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(4));
             //Last amino acid
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(14));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(14));
             //Covered from both directions inclusive
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(8));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(8));
             //Covered from both directions exclusive
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(7));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(7));
             //Sequential C term Frags
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(11));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(11));
             //Not coveredRT
             Assert.IsFalse(psm1.FragmentCoveragePositionInPeptide.Contains(5));
 
@@ -615,13 +615,13 @@ namespace Test
 
             var scansWithPrecursors = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters);
             var Ms2Scan1 = scansWithPrecursors[17][1];
-            Assert.IsTrue(Math.Abs(2889051 - Ms2Scan1.PrecursorIntensity) <= 10);
+            Assert.That(Math.Abs(2889051 - Ms2Scan1.PrecursorIntensity) <= 10);
             Assert.That(Ms2Scan1.PrecursorEnvelopePeakCount, Is.EqualTo(2)); //might not be the correct number of peaks but use it for now
 
             CommonParameters CommonParameters1 = new CommonParameters(useMostAbundantPrecursorIntensity: false);
             var scansWithPrecursors1 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters1);
             var Ms2Scan1_2 = scansWithPrecursors1[17][1];
-            Assert.IsTrue(Math.Abs(3405218 - Ms2Scan1_2.PrecursorIntensity) <= 10);
+            Assert.That(Math.Abs(3405218 - Ms2Scan1_2.PrecursorIntensity) <= 10);
 
             //just to look at the envelopes, not relavent to the test
             var msNScans = myMsDataFile.GetAllScansList().ToArray();
@@ -633,7 +633,7 @@ namespace Test
             CommonParameters CommonParameters2 = new CommonParameters(doPrecursorDeconvolution: false, useProvidedPrecursorInfo: true);
             var scansWithPrecursors2 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters2);
             var Ms2Scan2 = scansWithPrecursors2[17][0];
-            Assert.IsTrue(Math.Abs(1.14554e7 - Ms2Scan2.PrecursorIntensity) <= 1000);
+            Assert.That(Math.Abs(1.14554e7 - Ms2Scan2.PrecursorIntensity) <= 1000);
             Assert.That(Ms2Scan2.PrecursorEnvelopePeakCount, Is.EqualTo(1));
 
             //3: use scan header (selectedIonIntensity) to find precursor info 

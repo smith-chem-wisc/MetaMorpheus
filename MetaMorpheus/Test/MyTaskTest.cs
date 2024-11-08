@@ -285,7 +285,7 @@ namespace Test
             //There is one PSM with close peptide mass (0 ppm difference) and one PSM with large mass difference (>1000 ppm difference)
             //Since this is an open search, both PSMs should be reported because they share the exact same MS2 scan
 
-            Assert.IsTrue(theStringResult.Contains("All target PSMs with q-value <= 0.01: 1"));
+            Assert.That(theStringResult.Contains("All target PSMs with q-value <= 0.01: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
@@ -348,7 +348,7 @@ namespace Test
 
             // RUN!
             var theStringResult = task1.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "taskId1").ToString();
-            Assert.IsTrue(theStringResult.Contains("Modifications added: 1"));
+            Assert.That(theStringResult.Contains("Modifications added: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
@@ -440,7 +440,7 @@ namespace Test
                     }
                 }
             }
-            Assert.IsTrue(foundD);
+            Assert.That(foundD);
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
             File.Delete(xmlName);

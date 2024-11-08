@@ -117,7 +117,7 @@ namespace Test
 
             string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\AllPSMs.psmtsv");
             var output = File.ReadAllLines(outputPath);
-            Assert.IsTrue(output.Length == 3);
+            Assert.That(output.Length == 3);
 
             var mzId = File.ReadAllLines(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSemiSpecificSmall\tinySemi.mzID"));
             Assert.That(mzId[115].Equals("          <cvParam name=\"mzML format\" cvRef=\"PSI-MS\" accession=\"MS:1000584\" />"));
@@ -205,7 +205,7 @@ namespace Test
             //var output = File.ReadAllLines(outputPath);
             //read the psmtsv
             List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(outputPath, out var warning);
-            Assert.IsTrue(psms.Count == 1);
+            Assert.That(psms.Count == 1);
             //check that it's been disambiguated
             Assert.IsFalse(psms[0].FullSequence.Contains("|"));
             Assert.AreEqual(psms[0].MatchedIons.First().Intensity, 161210);
@@ -234,8 +234,8 @@ namespace Test
             engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
             engine.Run();
             psms = PsmTsvReader.ReadTsv(outputPath, out warning);
-            Assert.IsTrue(psms.Count == 1);
-            Assert.IsTrue(psms[0].MatchedIons.Count == numTotalFragments);
+            Assert.That(psms.Count == 1);
+            Assert.That(psms[0].MatchedIons.Count == numTotalFragments);
 
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestInternal"), true);
         }

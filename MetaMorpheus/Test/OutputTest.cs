@@ -65,25 +65,25 @@ namespace Test
             };
             HashSet<string> writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "allowFiles", "Individual File Results")).Select(v => Path.GetFileName(v).Substring(7)));
             //check they're the same
-            Assert.IsTrue(expectedFiles.Except(writtenFiles).Count() == 0);
+            Assert.That(expectedFiles.Except(writtenFiles).Count() == 0);
 
             //check the second one is compressed and contains all the information
             writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "compressFiles")).Select(v => Path.GetFileName(v)));
             //check the zip exists
-            Assert.IsTrue(writtenFiles.Contains("Individual File Results.zip"));
+            Assert.That(writtenFiles.Contains("Individual File Results.zip"));
             //check the original folder does not exist
             string[] subfolders = Directory.GetDirectories(Path.Combine(outputFolder, "compressFiles"));
-            Assert.IsTrue(subfolders.Length == 0);
+            Assert.That(subfolders.Length == 0);
             ZipFile.ExtractToDirectory(Path.Combine(outputFolder, "compressFiles", "Individual File Results.zip"), Path.Combine(outputFolder, "compressFiles", "Individual File Results"));
             //read the extracted files
             writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "compressFiles", "Individual File Results")).Select(v => Path.GetFileName(v).Substring(7)));
             //check they're the same
-            Assert.IsTrue(expectedFiles.Except(writtenFiles).Count() == 0);
+            Assert.That(expectedFiles.Except(writtenFiles).Count() == 0);
 
             //check the last one to make sure nothing was written except for the mzID files
             writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "noFiles", "Individual File Results")).Select(v => Path.GetFileName(v).Substring(7)));
-            Assert.IsTrue(writtenFiles.Count == 1);
-            Assert.IsTrue(writtenFiles.Contains(".mzID"));
+            Assert.That(writtenFiles.Count == 1);
+            Assert.That(writtenFiles.Contains(".mzID"));
 
             Directory.Delete(outputFolder, true);
 

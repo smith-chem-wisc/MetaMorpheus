@@ -31,11 +31,11 @@ namespace Test
         [Test]
         public static void TestDissociationTypeGenerateSameTypeOfIons()
         {
-            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.CID));
-            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.HCD));
-            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.HCD, DissociationType.CID));
-            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.ETD, DissociationType.ECD));
-            Assert.IsTrue(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.ECD, DissociationType.ETD));
+            Assert.That(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.CID));
+            Assert.That(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.HCD));
+            Assert.That(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.HCD, DissociationType.CID));
+            Assert.That(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.ETD, DissociationType.ECD));
+            Assert.That(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.ECD, DissociationType.ETD));
             Assert.IsFalse(CrosslinkSearchEngine.DissociationTypeGenerateSameTypeOfIons(DissociationType.CID, DissociationType.ETD));
         }
 

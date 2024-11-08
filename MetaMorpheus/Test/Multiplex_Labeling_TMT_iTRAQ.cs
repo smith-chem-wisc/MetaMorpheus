@@ -511,7 +511,7 @@ namespace Test
             scan.MassSpectrum.XCorrPrePreprocessing(1.0,500.0,300.0);
 
             //check that the scan is noted as xcorr processed
-            Assert.IsTrue(scan.MassSpectrum.XcorrProcessed);
+            Assert.That(scan.MassSpectrum.XcorrProcessed);
 
             Tolerance tolerance = new AbsoluteTolerance(1.0);
             CommonParameters commonParams = new(productMassTolerance: tolerance);

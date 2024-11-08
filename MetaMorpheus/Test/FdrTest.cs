@@ -37,7 +37,7 @@ namespace Test
             Modification am = new Modification(_originalId: "Ammonia loss");
             List<Modification> real = new List<Modification> { ac, am };
 
-            Assert.IsTrue(PepAnalysisEngine.ContainsModificationsThatShiftMobility(real));
+            Assert.That(PepAnalysisEngine.ContainsModificationsThatShiftMobility(real));
             Assert.AreEqual(2, PepAnalysisEngine.CountModificationsThatShiftMobility(real));
 
             Modification fac = new Modification(_originalId: "fake Acetylation");
@@ -47,7 +47,7 @@ namespace Test
             Assert.IsFalse(PepAnalysisEngine.ContainsModificationsThatShiftMobility(fake));
             Assert.AreEqual(0, PepAnalysisEngine.CountModificationsThatShiftMobility(fake));
 
-            Assert.IsTrue(PepAnalysisEngine.ContainsModificationsThatShiftMobility(real.Concat(fake)));
+            Assert.That(PepAnalysisEngine.ContainsModificationsThatShiftMobility(real.Concat(fake)));
             Assert.AreEqual(2, PepAnalysisEngine.CountModificationsThatShiftMobility(real.Concat(fake)));
         }
 

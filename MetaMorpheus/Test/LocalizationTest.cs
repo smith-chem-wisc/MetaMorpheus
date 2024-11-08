@@ -62,7 +62,7 @@ namespace Test
             Assert.AreEqual(1, newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).Count());
 
             // when localizing, three peaks match
-            Assert.IsTrue(newPsm.LocalizedScores[1] > 4 && newPsm.LocalizedScores[1] < 5);//we have another matched ion
+            Assert.That(newPsm.LocalizedScores[1] > 4 && newPsm.LocalizedScores[1] < 5);//we have another matched ion
         }
 
         [Test]
@@ -70,23 +70,23 @@ namespace Test
         {
             List<ProductType> allIonTypes = new List<ProductType> { ProductType.b, ProductType.c, ProductType.zPlusOne, ProductType.y };
             List<List<ProductType>> separated = ProductTypeMethods.SeparateIonsByTerminus(allIonTypes);
-            Assert.IsTrue(separated.Count == 2);
-            Assert.IsTrue(separated[0].Count == 2);
-            Assert.IsTrue(separated[1].Count == 2);
-            Assert.IsTrue(separated[0].Contains(ProductType.b));
-            Assert.IsTrue(separated[0].Contains(ProductType.c));
-            Assert.IsTrue(separated[1].Contains(ProductType.y));
-            Assert.IsTrue(separated[1].Contains(ProductType.zPlusOne));
+            Assert.That(separated.Count == 2);
+            Assert.That(separated[0].Count == 2);
+            Assert.That(separated[1].Count == 2);
+            Assert.That(separated[0].Contains(ProductType.b));
+            Assert.That(separated[0].Contains(ProductType.c));
+            Assert.That(separated[1].Contains(ProductType.y));
+            Assert.That(separated[1].Contains(ProductType.zPlusOne));
             List<List<ProductType>> nOnly = ProductTypeMethods.SeparateIonsByTerminus(separated[0]);
-            Assert.IsTrue(nOnly.Count == 1);
-            Assert.IsTrue(nOnly[0].Count == 2);
-            Assert.IsTrue(nOnly[0].Contains(ProductType.b));
-            Assert.IsTrue(nOnly[0].Contains(ProductType.c));
+            Assert.That(nOnly.Count == 1);
+            Assert.That(nOnly[0].Count == 2);
+            Assert.That(nOnly[0].Contains(ProductType.b));
+            Assert.That(nOnly[0].Contains(ProductType.c));
             List<List<ProductType>> cOnly = ProductTypeMethods.SeparateIonsByTerminus(separated[1]);
-            Assert.IsTrue(cOnly.Count == 1);
-            Assert.IsTrue(cOnly[0].Count == 2);
-            Assert.IsTrue(cOnly[0].Contains(ProductType.y));
-            Assert.IsTrue(cOnly[0].Contains(ProductType.zPlusOne));
+            Assert.That(cOnly.Count == 1);
+            Assert.That(cOnly[0].Count == 2);
+            Assert.That(cOnly[0].Contains(ProductType.y));
+            Assert.That(cOnly[0].Contains(ProductType.zPlusOne));
         }
     }
 }

@@ -95,7 +95,7 @@ namespace Test
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
 
-            Assert.IsTrue(psms.Any(line => line.Contains(containsVariant ? variantPsmShort : "\t")));
+            Assert.That(psms.Any(line => line.Contains(containsVariant ? variantPsmShort : "\t")));
 
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
@@ -137,7 +137,7 @@ namespace Test
             st.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, false) }, new List<string> { mzmlName }, "");
             var psms = File.ReadAllLines(Path.Combine(outputFolder, "AllPSMs.psmtsv"));
 
-            //Assert.IsTrue(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
+            //Assert.That(psms.Any(line => line.Contains($"\t{variantPsmShort}\t" + (containsVariant ? variantPsmShort : "\t"))));
 
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);

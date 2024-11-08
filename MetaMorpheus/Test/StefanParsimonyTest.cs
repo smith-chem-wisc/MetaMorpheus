@@ -238,8 +238,8 @@ namespace Test
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
             ProteinScoringAndFdrResults results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
-            Assert.IsTrue(results.SortedAndScoredProteinGroups.Count == 3);
-            Assert.IsTrue(results.SortedAndScoredProteinGroups[1].QValue == 0.5);
+            Assert.That(results.SortedAndScoredProteinGroups.Count == 3);
+            Assert.That(results.SortedAndScoredProteinGroups[1].QValue == 0.5);
         }
     }
 }

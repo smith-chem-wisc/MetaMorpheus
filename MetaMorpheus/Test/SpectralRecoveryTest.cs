@@ -255,9 +255,9 @@ namespace Test
 
             // Single search mode
             Assert.AreEqual(7, allPsmsArray.Length);
-            Assert.IsTrue(allPsmsArray[5].Score > 38);
+            Assert.That(allPsmsArray[5].Score > 38);
             Assert.AreEqual("VIHDNFGIVEGLMTTVHAITATQK", allPsmsArray[5].BaseSequence);
-            Assert.IsTrue(!allPsmsArray[5].IsDecoy);
+            Assert.That(!allPsmsArray[5].IsDecoy);
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));

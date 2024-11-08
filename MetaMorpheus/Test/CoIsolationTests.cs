@@ -72,7 +72,7 @@ namespace Test
             // Two matches for this single scan! Corresponding to two co-isolated masses
             Assert.AreEqual(2, allPsmsArray.Length);
 
-            Assert.IsTrue(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].Score > 1);
             Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
 
             Assert.AreEqual("NNNK", allPsmsArray[0].BaseSequence);

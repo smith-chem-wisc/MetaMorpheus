@@ -31,7 +31,7 @@ namespace Test
                 new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
 
             //two protein groups with the same protein should be equal
-            Assert.IsTrue(proteinGroup1.Equals(proteinGroup2));
+            Assert.That(proteinGroup1.Equals(proteinGroup2));
 
             Protein prot3 = new Protein("EDEEK", "prot3");
             List<Protein> proteinList3 = new List<Protein> { prot3 };
@@ -49,7 +49,7 @@ namespace Test
                 new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
 
             //protein groups with the same proteins but in different order should be equal
-            Assert.IsTrue(proteinGroup4.Equals(proteinGroup5));
+            Assert.That(proteinGroup4.Equals(proteinGroup5));
 
             PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1,new DigestionParams(),1,3,CleavageSpecificity.Full,"",0,new Dictionary<int, Modification>(),0);
             PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(prot1, new DigestionParams(), 4, 6, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
@@ -59,7 +59,7 @@ namespace Test
                 new HashSet<PeptideWithSetModifications>() { pwsm2 });
 
             //protein groups with the same proteins but different peptides should be equal
-            Assert.IsTrue(proteinGroup6.Equals(proteinGroup7));
+            Assert.That(proteinGroup6.Equals(proteinGroup7));
 
             //a protein group that is null should not be equal to a protein group that is not null
             ProteinGroup nullProteinGroup = null;
@@ -117,10 +117,10 @@ namespace Test
             proteinGroup1.MergeProteinGroupWith(proteinGroup2);
 
             //protein group 3 should have all proteins from protein group 1 and 2
-            Assert.IsTrue(proteinGroup1.Proteins.Contains(prot1));
-            Assert.IsTrue(proteinGroup1.Proteins.Contains(prot2));
-            Assert.IsTrue(proteinGroup1.Proteins.Contains(prot3));
-            Assert.IsTrue(proteinGroup1.Proteins.Contains(prot4));
+            Assert.That(proteinGroup1.Proteins.Contains(prot1));
+            Assert.That(proteinGroup1.Proteins.Contains(prot2));
+            Assert.That(proteinGroup1.Proteins.Contains(prot3));
+            Assert.That(proteinGroup1.Proteins.Contains(prot4));
 
             //protein group 3 should have no peptides
             Assert.AreEqual(4, proteinGroup1.AllPeptides.Count);

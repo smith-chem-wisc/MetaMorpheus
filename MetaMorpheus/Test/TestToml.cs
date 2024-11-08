@@ -137,8 +137,8 @@ namespace Test
             //create a toml with a protease that doesn't exist in the protease.tsv dictionary
             string proteaseNotInDictionary = "aaa"; //arbitrary. If somebody adds a protease with this name, use a different name
             string proteaseInDictionary = "trypsin"; //just make sure we are doing this right
-            Assert.IsTrue(!ProteaseDictionary.Dictionary.ContainsKey(proteaseNotInDictionary));
-            Assert.IsTrue(ProteaseDictionary.Dictionary.ContainsKey(proteaseInDictionary));
+            Assert.That(!ProteaseDictionary.Dictionary.ContainsKey(proteaseNotInDictionary));
+            Assert.That(ProteaseDictionary.Dictionary.ContainsKey(proteaseInDictionary));
 
             //write the toml
             //let's use the datafile ok.mgf (arbitrary)
@@ -200,7 +200,7 @@ namespace Test
             Directory.Delete(folderPath, true);
 
             //
-            Assert.IsTrue(wasCalled);
+            Assert.That(wasCalled);
         }
 
         [Test]

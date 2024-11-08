@@ -345,8 +345,8 @@ namespace Test
             Assert.AreEqual(6, orderedPsms[5].RunnerUpScore);
             Assert.AreEqual(6, orderedPsms[6].RunnerUpScore);
 
-            Assert.IsTrue(Math.Abs(orderedPsms[3].PrecursorMassErrorPpm.First()) < Math.Abs(orderedPsms[4].PrecursorMassErrorPpm.First()));
-            Assert.IsTrue(orderedPsms[5].ScanNumber < orderedPsms[6].ScanNumber);
+            Assert.That(Math.Abs(orderedPsms[3].PrecursorMassErrorPpm.First()) < Math.Abs(orderedPsms[4].PrecursorMassErrorPpm.First()));
+            Assert.That(orderedPsms[5].ScanNumber < orderedPsms[6].ScanNumber);
         }
     }
 }

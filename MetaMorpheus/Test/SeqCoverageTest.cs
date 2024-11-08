@@ -98,12 +98,12 @@ namespace Test
             Assert.AreEqual("[mod1 on M]-MM[mod3 on M]KM[mod3 on M]MK-[mod5 on K]", firstSequenceCoverageDisplayListWithMods);
 
             var firstModInfo = fjkd.ProteinGroups.First().ModsInfo.First();
-            Assert.IsTrue(firstModInfo.Contains(@"#aa1[mod1 on M,info:occupancy=1.00(2/2)]"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa2[mod3 on M,info:occupancy=0.50(1/2)]"));
+            Assert.That(firstModInfo.Contains(@"#aa1[mod1 on M,info:occupancy=1.00(2/2)]"));
+            Assert.That(firstModInfo.Contains(@"#aa2[mod3 on M,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa3"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa4[mod3 on M,info:occupancy=0.50(1/2)]"));
+            Assert.That(firstModInfo.Contains(@"#aa4[mod3 on M,info:occupancy=0.50(1/2)]"));
             Assert.IsFalse(firstModInfo.Contains(@"#aa5"));
-            Assert.IsTrue(firstModInfo.Contains(@"#aa6[mod5 on K,info:occupancy=1.00(2/2)]"));
+            Assert.That(firstModInfo.Contains(@"#aa6[mod5 on K,info:occupancy=1.00(2/2)]"));
             Console.WriteLine("Test output: " + firstSequenceCoverageDisplayList);
         }
 
@@ -163,7 +163,7 @@ namespace Test
 
             var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().FragmentSequenceCoverageDisplayList.First();
             
-            Assert.IsTrue(firstSequenceCoverageDisplayList == "MmkMMK");
+            Assert.That(firstSequenceCoverageDisplayList == "MmkMMK");
         }
     }
 }

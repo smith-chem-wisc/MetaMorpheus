@@ -99,7 +99,7 @@ namespace Test.MetaDraw
         {
             string baseSequence = "ASDF(+8.01)ASDF";
             string cleanedSequence = PsmFromTsv.RemoveParentheses(baseSequence);
-            Assert.IsTrue(cleanedSequence.Equals("ASDFASDF"));
+            Assert.That(cleanedSequence.Equals("ASDFASDF"));
         }
 
         [Test]
@@ -162,10 +162,10 @@ namespace Test.MetaDraw
             {
                 IEnumerable<string> actualIons = psms[i].VariantCrossingIons.Select(p => p.NeutralTheoreticalProduct.Annotation);
                 foreach (string expectedIon in expected[i])
-                    Assert.IsTrue(actualIons.Contains(expectedIon),
+                    Assert.That(actualIons.Contains(expectedIon),
                        "VariantCrossingIons should contain ion " + expectedIon + " in file " + psms[i].FileNameWithoutExtension + ".");
                 foreach (string actualIon in actualIons)
-                    Assert.IsTrue(expected[i].Contains(actualIon),
+                    Assert.That(expected[i].Contains(actualIon),
                         "VariantCrossingIons should not contain ion " + actualIon + " in file " + psms[i].FileNameWithoutExtension + ".");
             }
         }
@@ -1258,7 +1258,7 @@ namespace Test.MetaDraw
             }
 
             //check that the proteoform classification was correct
-            Assert.IsTrue(metadrawLogic.FilteredListOfPsms[0].AmbiguityLevel.Equals("1"));
+            Assert.That(metadrawLogic.FilteredListOfPsms[0].AmbiguityLevel.Equals("1"));
 
             // delete output
             Directory.Delete(outputFolder, true);
