@@ -81,7 +81,7 @@
                             </Grid>
                             <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
                                 <Label Content="Keep top N candidates" />
-                                <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
+                                <local:IntegerTexBoxControl x:Name="txtXLTopNum" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
                                 <Label x:Name="ionsToSearchLabel" Content="MS2 Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -167,11 +167,11 @@
                                     <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks"/>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
+                                        <local:IntegerTexBoxControl x:Name="TopNPeaksTextBox" Width="45" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum ratio" />
-                                        <TextBox x:Name="MinRatioTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
+                                        <local:DoubleTextBoxControl x:Name="MinRatioTextBox" Width="45" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -185,7 +185,7 @@
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber"  Width="45" TextChanged="NonSpecificUpdate"/>
+                                            <local:IntegerTexBoxControl x:Name="missedCleavagesTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label_Copy" Content="Protease" />
@@ -193,7 +193,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="numberOfDatabaseSearchesTextBox" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -207,13 +207,13 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="maxModificationIsoformsTextBox" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" />
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" TextChanged="NonSpecificUpdate"/>
+                                            <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -241,11 +241,11 @@
                                     <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
-                                            <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="minScoreAllowed" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
-                                            <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <local:IntegerTexBoxControl x:Name="maxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
@@ -253,7 +253,7 @@
                                                         Enter a lower number to limit CPU usage.
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
-                                            </TextBox>
+                                            </local:IntegerTexBoxControl>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
