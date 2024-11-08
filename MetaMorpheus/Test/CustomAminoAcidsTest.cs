@@ -1,7 +1,7 @@
 ﻿using Chemistry;
 using Proteomics.AminoAcidPolymer;
 using System.IO;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using EngineLayer;
 using System.Collections.Generic;
 

@@ -3,7 +3,7 @@ using EngineLayer;
 using EngineLayer.ClassicSearch;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -70,13 +70,13 @@ namespace Test
                 proteinList, searchModes, CommonParameters, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             // Two matches for this single scan! Corresponding to two co-isolated masses
-            Assert.AreEqual(2, allPsmsArray.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(2));
 
             Assert.That(allPsmsArray[0].Score > 1);
-            Assert.AreEqual(2, allPsmsArray[0].ScanNumber);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
 
-            Assert.AreEqual("NNNK", allPsmsArray[0].BaseSequence);
-            Assert.AreEqual("NDNK", allPsmsArray[1].BaseSequence);
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("NNNK"));
+            Assert.That(allPsmsArray[1].BaseSequence, Is.EqualTo("NDNK"));
         }
     }
 }

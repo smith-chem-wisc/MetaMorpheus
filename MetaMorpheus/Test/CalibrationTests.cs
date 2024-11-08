@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using FlashLFQ;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
