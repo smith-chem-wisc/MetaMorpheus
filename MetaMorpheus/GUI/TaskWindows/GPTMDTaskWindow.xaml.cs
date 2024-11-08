@@ -29,6 +29,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForTreeViewModel> GptmdModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForTreeViewModel>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private DeconHostViewModel DeconHostViewModel;
 
         public GptmdTaskWindow(GptmdTask myGPTMDtask)
         {
@@ -39,6 +40,7 @@ namespace MetaMorpheusGUI
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             if (myGPTMDtask == null)
             {
@@ -62,10 +64,10 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(GptmdTask task)
         {
+            DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
+                TheTask.CommonParameters.ProductDeconvolutionParameters,
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
             ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings
-            UseProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
-            DeconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
-            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             MissedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
             MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
@@ -260,8 +262,8 @@ namespace MetaMorpheusGUI
                     case "top-down":
                         if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
-                            UseProvidedPrecursor.IsChecked = false;
-                            DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                            DeconHostViewModel.UseProvidedPrecursors = false;
+                            DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 60;
                             TrimMsMs.IsChecked = false;
                             //uncheck all variable mods
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
@@ -354,7 +356,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                fieldNotUsed, fieldNotUsed, DeconvolutionMaxAssumedChargeStateTextBox.Text, NumberOfPeaksToKeepPerWindowTextBox.Text, MinimumAllowedIntensityRatioToBasePeakTexBox.Text, 
+                fieldNotUsed, fieldNotUsed, DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), NumberOfPeaksToKeepPerWindowTextBox.Text, MinimumAllowedIntensityRatioToBasePeakTexBox.Text, 
                 null, null, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, null))
             {
                 return;
@@ -441,10 +443,14 @@ namespace MetaMorpheusGUI
             }
             bool parseMaxThreadsPerFile = int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
 
+            DeconvolutionParameters precursorDeconvolutionParameters = DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
+            DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
+            bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
+            bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
+
             CommonParameters commonParamsToSave = new CommonParameters(
-                useProvidedPrecursorInfo: UseProvidedPrecursor.IsChecked.Value,
-                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
-                doPrecursorDeconvolution: DeconvolutePrecursors.IsChecked.Value,
+                useProvidedPrecursorInfo: useProvidedPrecursorInfo,
+                doPrecursorDeconvolution: doPrecursorDeconvolution,
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "GPTMDTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 digestionParams: new DigestionParams(
@@ -468,7 +474,9 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     addCompIons: AddCompIonCheckBox.IsChecked.Value,
                     minVariantDepth: minVariantDepth,
-                    maxHeterozygousVariants: maxHeterozygousVariants);
+                    maxHeterozygousVariants: maxHeterozygousVariants,
+                    precursorDeconParams: precursorDeconvolutionParameters,
+                    productDeconParams: productDeconvolutionParameters);
 
             TheTask.GptmdParameters.ListOfModsGptmd = new List<(string, string)>();
             foreach (var heh in GptmdModTypeForTreeViewObservableCollection)

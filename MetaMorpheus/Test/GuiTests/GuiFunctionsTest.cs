@@ -1,5 +1,6 @@
 ﻿using GuiFunctions.Databases;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -8,7 +9,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 
-namespace Test
+namespace Test.GuiTests
 {
     [TestFixture]
     public static class GuiFunctionsTest
@@ -28,7 +29,7 @@ namespace Test
         [TestCase("UP000000625", false, false, false, false, "\\UP000000625_withUnreviewed.fasta")]
         public static void TestGetUniprotFilename(string proteomeID, bool reviewed, bool isoforms, bool xmlFormat, bool compressed, string expectedResult)
         {
-            if(expectedResult.Equals("\\UP000000625_reviewed.xml.gz") && isoforms) // This should only be written once, during the first test case
+            if (expectedResult.Equals("\\UP000000625_reviewed.xml.gz") && isoforms) // This should only be written once, during the first test case
             {
                 Console.WriteLine("Beginning Uniprot database test.");
             }
@@ -101,12 +102,12 @@ namespace Test
 
             File.Delete(filePath);
 
-            if(testName.Equals("11.fasta")) // only triggers for last test cases
+            if (testName.Equals("11.fasta")) // only triggers for last test cases
             {
                 Console.WriteLine("Finished with Uniprot HTML query test.");
             }
 
-            Assert.That(reader.Count == listCount);
+            NUnit.Framework.Assert.That(reader.Count == listCount);
         }
     }
 }

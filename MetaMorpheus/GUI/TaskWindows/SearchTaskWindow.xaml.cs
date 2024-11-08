@@ -39,6 +39,7 @@ namespace MetaMorpheusGUI
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
         private string _defaultMultiplexType = "TMT10";
+        private DeconHostViewModel DeconHostViewModel;
 
         internal SearchTask TheTask { get; private set; }
 
@@ -51,6 +52,7 @@ namespace MetaMorpheusGUI
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             if (task == null)
             {
@@ -285,17 +287,18 @@ namespace MetaMorpheusGUI
             PrecursorMassToleranceComboBox.SelectedIndex = task.CommonParameters.PrecursorMassTolerance is AbsoluteTolerance ? 0 : 1;
             AddCompIonCheckBox.IsChecked = task.CommonParameters.AddCompIons;
             NumberOfDatabaseSearchesTextBox.Text = task.CommonParameters.TotalPartitions.ToString(CultureInfo.InvariantCulture);
-            DeconvolutePrecursors.IsChecked = task.CommonParameters.DoPrecursorDeconvolution;
-            UseProvidedPrecursor.IsChecked = task.CommonParameters.UseProvidedPrecursorInfo;
             RemoveContaminantRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveContaminant;
             RemoveTargetRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RemoveTarget;
             RenameTCProteinsRadioBox.IsChecked = task.SearchParameters.TCAmbiguity == TargetContaminantAmbiguity.RenameProtein;
             AllAmbiguity.IsChecked = task.CommonParameters.ReportAllAmbiguity;
-            DeconvolutionMaxAssumedChargeStateTextBox.Text = task.CommonParameters.DeconvolutionMaxAssumedChargeState.ToString();
             MinScoreAllowed.Text = task.CommonParameters.ScoreCutoff.ToString(CultureInfo.InvariantCulture);
             TrimMs1.IsChecked = task.CommonParameters.TrimMs1Peaks;
             TrimMsMs.IsChecked = task.CommonParameters.TrimMsMsPeaks;
             AddTruncationsCheckBox.IsChecked = task.CommonParameters.AddTruncations;
+
+            DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
+                TheTask.CommonParameters.ProductDeconvolutionParameters,
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -425,6 +428,7 @@ namespace MetaMorpheusGUI
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
             SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
 
+            // TODO: Reconcile Isodec params with Mass difference acceptor
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(
                 PrecursorMassToleranceTextBox.Text, 
                 ProductMassToleranceTextBox.Text, 
@@ -436,7 +440,7 @@ namespace MetaMorpheusGUI
                 MinScoreAllowed.Text,
                 PeakFindingToleranceTextBox.Text, 
                 HistogramBinWidthTextBox.Text, 
-                DeconvolutionMaxAssumedChargeStateTextBox.Text, 
+                DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), 
                 NumberOfPeaksToKeepPerWindowTextBox.Text,
                 MinimumAllowedIntensityRatioToBasePeakTexBox.Text, 
                 WindowWidthThomsonsTextBox.Text, 
@@ -567,14 +571,19 @@ namespace MetaMorpheusGUI
 
             bool parseMaxThreadsPerFile = !MaxThreadsTextBox.Text.Equals("") && (int.Parse(MaxThreadsTextBox.Text) <= Environment.ProcessorCount && int.Parse(MaxThreadsTextBox.Text) > 0);
 
+
+            DeconvolutionParameters precursorDeconvolutionParameters = DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
+            DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
+            bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
+            bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
+            
             CommonParameters commonParamsToSave = new CommonParameters(
                 taskDescriptor: OutputFileNameTextBox.Text != "" ? OutputFileNameTextBox.Text : "SearchTask",
                 maxThreadsToUsePerFile: parseMaxThreadsPerFile ? int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) : new CommonParameters().MaxThreadsToUsePerFile,
                 reportAllAmbiguity: AllAmbiguity.IsChecked.Value,
-                deconvolutionMaxAssumedChargeState: int.Parse(DeconvolutionMaxAssumedChargeStateTextBox.Text, CultureInfo.InvariantCulture),
                 totalPartitions: int.Parse(NumberOfDatabaseSearchesTextBox.Text, CultureInfo.InvariantCulture),
-                doPrecursorDeconvolution: DeconvolutePrecursors.IsChecked.Value,
-                useProvidedPrecursorInfo: UseProvidedPrecursor.IsChecked.Value,
+                doPrecursorDeconvolution: doPrecursorDeconvolution,
+                useProvidedPrecursorInfo: useProvidedPrecursorInfo,
                 qValueThreshold: !PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(QValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 pepQValueThreshold: PepQValueThresholdCheckbox.IsChecked.Value ? double.Parse(PepQValueThresholdTextBox.Text, CultureInfo.InvariantCulture) : 1.0,
                 scoreCutoff: double.Parse(MinScoreAllowed.Text, CultureInfo.InvariantCulture),
@@ -596,7 +605,9 @@ namespace MetaMorpheusGUI
                 addCompIons: AddCompIonCheckBox.IsChecked.Value,
                 assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                 minVariantDepth: MinVariantDepth,
-                maxHeterozygousVariants: MaxHeterozygousVariants);
+                maxHeterozygousVariants: MaxHeterozygousVariants,
+                precursorDeconParams: precursorDeconvolutionParameters,
+                productDeconParams: productDeconvolutionParameters);
 
             if (ClassicSearchRadioButton.IsChecked.Value)
             {
@@ -880,8 +891,8 @@ namespace MetaMorpheusGUI
                     case "top-down":
                         if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
-                            UseProvidedPrecursor.IsChecked = false;
-                            DeconvolutionMaxAssumedChargeStateTextBox.Text = "60";
+                            DeconHostViewModel.DoPrecursorDeconvolution = true;
+                            DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 60;
                             TrimMsMs.IsChecked = false;
                             CheckBoxNoQuant.IsChecked = true;
                             MassDiffAccept3mm.IsChecked = true;
