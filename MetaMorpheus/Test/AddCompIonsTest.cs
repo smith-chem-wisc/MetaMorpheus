@@ -140,17 +140,14 @@ namespace Test
             new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, fspComp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
             Assert.That(allPsmsArray[0] != null);
             Assert.That(allPsmsArray2[0] != null);
-
             Assert.That(allPsmsArray2[0].Score > 1);
-
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
-
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
             Assert.That(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 3);
             ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
@@ -218,16 +215,16 @@ namespace Test
             new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, fspComp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
             Assert.That(allPsmsArray[0] != null);
             Assert.That(allPsmsArray2[0] != null);
 
             Assert.That(allPsmsArray2[0].Score > 1);
 
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
             Assert.That(allPsmsArray2[0].Score, Is.EqualTo(7.007).Within(0.001));
             ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
@@ -295,16 +292,16 @@ namespace Test
             new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, fspComp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
             Assert.That(allPsmsArray[0] != null);
             Assert.That(allPsmsArray2[0] != null);
 
             Assert.That(allPsmsArray2[0].Score > 1);
 
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
             Assert.That(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 2);
             ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
