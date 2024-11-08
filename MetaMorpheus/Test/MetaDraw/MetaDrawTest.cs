@@ -1028,8 +1028,6 @@ namespace Test.MetaDraw
             Directory.Delete(outputFolder, true);
         }
 
-  
-
         [Test]
         public static void TestMetaDrawErrors()
         {
@@ -1081,7 +1079,6 @@ namespace Test.MetaDraw
         }
 
         [Test]
-        [NonParallelizable]
         public static void TestMetaDrawLoadingWithWeirdFileNames()
         {
             // test loading when the file has a periods, commas, spaces in the name
