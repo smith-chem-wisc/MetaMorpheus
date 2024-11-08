@@ -3,7 +3,7 @@ using EngineLayer;
 using EngineLayer.Localization;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -58,8 +58,8 @@ namespace Test
             f.Run();
 
             // single peak matches
-            Assert.AreEqual(1, newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).Count());//including b1 now
-            Assert.AreEqual(1, newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).Count());
+            Assert.That(newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).Count(), Is.EqualTo(1));//including b1 now
+            Assert.That(newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).Count(), Is.EqualTo(1));
 
             // when localizing, three peaks match
             Assert.That(newPsm.LocalizedScores[1] > 4 && newPsm.LocalizedScores[1] < 5);//we have another matched ion

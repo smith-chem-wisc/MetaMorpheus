@@ -2,21 +2,18 @@
 using EngineLayer;
 using IO.MzML;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using MzLibUtil;
 using ClassExtensions = Chemistry.ClassExtensions;
 using Nett;
 using TaskLayer;
-using UsefulProteomicsDatabases;
-using System.Threading.Tasks;
 using Omics.Modifications;
 
 namespace Test
@@ -46,7 +43,7 @@ namespace Test
         public static void TestChemicalFormulaWithIsotopesTMT(string formula, double mass)
         {
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
-            Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass));
+            Assert.That(ClassExtensions.RoundedDouble(cf.MonoisotopicMass), Is.EqualTo(mass));
         }
 
         [Test]
@@ -67,8 +64,8 @@ namespace Test
             List<double> productMasses = f.Select(m => m.NeutralMass.ToMz(1)).ToList();
             productMasses.Distinct();
             productMasses.Sort();
-           
-            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+
+            Assert.That(ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4), Is.EqualTo(totalMass));
         }
 
         [Test]
@@ -92,7 +89,7 @@ namespace Test
             productMasses.Distinct();
             productMasses.Sort();
 
-            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+            Assert.That(ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4), Is.EqualTo(totalMass));
         }
 
         [Test]
@@ -106,27 +103,21 @@ namespace Test
                 mz: new double[] { 1, 2, 3, 4, 5 },
                 intensities: new double[] { 2, 4, 6, 8, 10 },
                 shouldCopy: false);
-            Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
-                fakeSpectrum.YArray);
+            Assert.That(PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol), Is.EqualTo(fakeSpectrum.YArray));
 
             // Every other diagnostic ion is present in spectrum
             fakeSpectrum = new MzSpectrum(
                 mz: new double[] { 1, 2.5, 3, 4.5, 5 },
                 intensities: new double[] { 2, 4, 6, 8, 10 },
                 shouldCopy: false);
-            Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
-                new double[] { 2, 0, 6, 0, 10 });
+            Assert.That(PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol), Is.EqualTo(new double[] { 2, 0, 6, 0, 10 }));
 
             // Last two diagnostic ions (highest m/z) are not observed
             fakeSpectrum = new MzSpectrum(
                 mz: new double[] { 1, 2, 3 },
                 intensities: new double[] { 2, 4, 6 },
                 shouldCopy: false);
-            Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
-                new double[] { 2, 4, 6, 0, 0 });
+            Assert.That(PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol), Is.EqualTo(new double[] { 2, 4, 6, 0, 0 }));
 
             // This test uses values from a 12-plex DiLeu experiment
             ionMzs = new double[] { 117.13147, 117.13731, 117.14363, 118.14067, 118.14699, 118.15283 };
@@ -159,9 +150,7 @@ namespace Test
                     0
                 },
                 shouldCopy: false);
-            Assert.AreEqual(
-                PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol),
-                new double[] { 1, 2, 3, 4, 5, 6 });
+            Assert.That(PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol), Is.EqualTo(new double[] { 1, 2, 3, 4, 5, 6 }));
         }
 
         [Test]
@@ -197,7 +186,7 @@ namespace Test
                 }
             }
             // will pass if all diagnostic ions are found in scans
-            Assert.AreEqual(0, diagnosticIons.Count());
+            Assert.That(diagnosticIons.Count(), Is.EqualTo(0));
         }
 
         [Test]
@@ -310,7 +299,7 @@ namespace Test
             productMasses.Distinct();
             productMasses.Sort();
 
-            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+            Assert.That(ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4), Is.EqualTo(totalMass));
         }
 
         [Test]
@@ -332,7 +321,7 @@ namespace Test
             productMasses.Distinct();
             productMasses.Sort();
 
-            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+            Assert.That(ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4), Is.EqualTo(totalMass));
         }
 
         [Test]
@@ -354,7 +343,7 @@ namespace Test
             productMasses.Distinct();
             productMasses.Sort();
 
-            Assert.AreEqual(totalMass, ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4));
+            Assert.That(ClassExtensions.RoundedDouble(p.MonoisotopicMass.ToMz(1), 4), Is.EqualTo(totalMass));
         }
 
         [Test]
@@ -372,11 +361,11 @@ namespace Test
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
             if (mz)
             {
-                Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass.ToMz(1)));
+                Assert.That(ClassExtensions.RoundedDouble(cf.MonoisotopicMass.ToMz(1)), Is.EqualTo(mass));
             }
             else
             {
-                Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass));
+                Assert.That(ClassExtensions.RoundedDouble(cf.MonoisotopicMass), Is.EqualTo(mass));
             }
         }
 
@@ -394,11 +383,11 @@ namespace Test
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
             if (mz)
             {
-                Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass.ToMz(1)));
+                Assert.That(ClassExtensions.RoundedDouble(cf.MonoisotopicMass.ToMz(1)), Is.EqualTo(mass));
             }
             else
             {
-                Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass));
+                Assert.That(ClassExtensions.RoundedDouble(cf.MonoisotopicMass), Is.EqualTo(mass));
             }
         }
         [Test]
@@ -433,11 +422,11 @@ namespace Test
             ChemicalFormula cf = ChemicalFormula.ParseFormula(formula);
             if (mz)
             {
-                Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass.ToMz(1), 5));
+                Assert.That(ClassExtensions.RoundedDouble(cf.MonoisotopicMass.ToMz(1), 5), Is.EqualTo(mass));
             }
             else
             {
-                Assert.AreEqual(mass, ClassExtensions.RoundedDouble(cf.MonoisotopicMass));
+                Assert.That(ClassExtensions.RoundedDouble(cf.MonoisotopicMass), Is.EqualTo(mass));
             }
         }
         /// <summary>
@@ -463,20 +452,19 @@ namespace Test
 
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
-            
 
-            Assert.AreEqual(38, psm.MatchedIons.Count); //matched ions include b, y and D (diagnostic ions in TMT search)
-            Assert.AreEqual(8,psm.MatchedIons.Where(i=>i.NeutralTheoreticalProduct.ProductType == ProductType.D).Count()); //There are 8 discovered diagnostic ions
-            Assert.AreEqual(30, psm.MatchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType != ProductType.D).Count()); //There are 30 b and y ions (excluding diagnostic ions)
-            Assert.AreEqual(30.273, psm.Score); //score should only use non-diagnostic ions (start with 30 in this case).
-            Assert.AreEqual((int)psm.Score, psm.MatchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType != ProductType.D).Count()); //integer part of the MM score should match the count of non-diagnostic ions
+            Assert.That(psm.MatchedIons.Count, Is.EqualTo(38)); //matched ions include b, y and D (diagnostic ions in TMT search)
+            Assert.That(psm.MatchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType == ProductType.D).Count(), Is.EqualTo(8)); //There are 8 discovered diagnostic ions
+            Assert.That(psm.MatchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType != ProductType.D).Count(), Is.EqualTo(30)); //There are 30 b and y ions (excluding diagnostic ions)
+            Assert.That(psm.Score, Is.EqualTo(30.273)); //score should only use non-diagnostic ions (start with 30 in this case).
+            Assert.That((int)psm.Score, Is.EqualTo(psm.MatchedIons.Where(i => i.NeutralTheoreticalProduct.ProductType != ProductType.D).Count())); //integer part of the MM score should match the count of non-diagnostic ions
 
-            Assert.AreEqual("VFNTTPDDLDLHVIYDVSHNIAK", psm.BaseSeq);
-            Assert.AreEqual("T", psm.DecoyContamTarget);
-            Assert.AreEqual("[Multiplex Label:TMT11 on X]VFNTTPDDLDLHVIYDVSHNIAK[Multiplex Label:TMT11 on K]", psm.FullSequence);
-            Assert.AreEqual("Mus musculus", psm.OrganismName);
-            Assert.AreEqual("full", psm.PeptideDescription);
-            Assert.AreEqual("Q99LF4", psm.ProteinAccession);
+            Assert.That(psm.BaseSeq, Is.EqualTo("VFNTTPDDLDLHVIYDVSHNIAK"));
+            Assert.That(psm.DecoyContamTarget, Is.EqualTo("T"));
+            Assert.That(psm.FullSequence, Is.EqualTo("[Multiplex Label:TMT11 on X]VFNTTPDDLDLHVIYDVSHNIAK[Multiplex Label:TMT11 on K]"));
+            Assert.That(psm.OrganismName, Is.EqualTo("Mus musculus"));
+            Assert.That(psm.PeptideDescription, Is.EqualTo("full"));
+            Assert.That(psm.ProteinAccession, Is.EqualTo("Q99LF4"));
 
             Directory.Delete(outputFolder,true);
         }
@@ -502,13 +490,13 @@ namespace Test
             }
 
             //ensure there is only one diagnostic ion
-            Assert.AreEqual(1, productsWithLocalizedMassDiff.Where(p => p.ProductType == ProductType.D).Count());
+            Assert.That(productsWithLocalizedMassDiff.Where(p => p.ProductType == ProductType.D).Count(), Is.EqualTo(1));
 
             //Check total ion count
-            Assert.AreEqual(14, productsWithLocalizedMassDiff.Count);
+            Assert.That(productsWithLocalizedMassDiff.Count, Is.EqualTo(14));
 
             MsDataScan scan = testDataFile.GetOneBasedScan(2);
-            scan.MassSpectrum.XCorrPrePreprocessing(1.0,500.0,300.0);
+            scan.MassSpectrum.XCorrPrePreprocessing(1.0, 500.0, 300.0);
 
             //check that the scan is noted as xcorr processed
             Assert.That(scan.MassSpectrum.XcorrProcessed);
@@ -521,7 +509,7 @@ namespace Test
             // score when the mass-diff is on this residue
             double score = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
 
-            Assert.AreEqual(0, (int)score);
+            Assert.That((int)score, Is.EqualTo(0));
         }
     }
 }
