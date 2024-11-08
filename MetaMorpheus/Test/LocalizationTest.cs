@@ -25,7 +25,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(protease: p.Name, maxMissedCleavages: 8, minPeptideLength: 1, maxPeptideLength: 9, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var peps = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9, peps.Count);
+            Assert.That(peps.Count, Is.EqualTo(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9));
         }
 
         [Test]
@@ -39,7 +39,7 @@ namespace Test
             List<Modification> variableModifications = new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
+            Assert.That(allPeptidesWithSetModifications.Count(), Is.EqualTo(4));
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];
