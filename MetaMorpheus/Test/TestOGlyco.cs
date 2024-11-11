@@ -1,7 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework; 
-using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -40,7 +39,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            Assert.AreEqual(OGlycanBoxes.Count(), 454);
+            Assert.That(OGlycanBoxes.Count(), Is.EqualTo(454));
         }
 
         [Test]
@@ -133,34 +132,34 @@ namespace Test
             //Combination test
             var kcombs = Glycan.GetKCombs(input, 3);
 
-            Assert.AreEqual(kcombs.Count(), 10);
+            Assert.That(kcombs.Count(), Is.EqualTo(10));
 
             var allcombs = Glycan.GetKCombs(input, 5);
 
-            Assert.AreEqual(allcombs.Count(), 1);
+            Assert.That(allcombs.Count(), Is.EqualTo(1));
 
             //Combination test with repetition
             var kcombs_rep = Glycan.GetKCombsWithRept(input, 3);
 
-            Assert.AreEqual(kcombs_rep.Count(), 35);
+            Assert.That(kcombs_rep.Count(), Is.EqualTo(35));
 
             var allcombs_rep = Glycan.GetKCombsWithRept(input, 5);
 
-            Assert.AreEqual(allcombs_rep.Count(), 126);
+            Assert.That(allcombs_rep.Count(), Is.EqualTo(126));
 
             //Permutation test
             var kperm = Glycan.GetPermutations(input, 3);
 
-            Assert.AreEqual(kperm.Count(), 60);
+            Assert.That(kperm.Count(), Is.EqualTo(60));
 
             var allperm = Glycan.GetPermutations(input, 5).ToList();
 
-            Assert.AreEqual(allperm.Count(), 120);
+            Assert.That(allperm.Count(), Is.EqualTo(120));
 
             //Permutation test with repetition
             var kperm_rep = Glycan.GetPermutationsWithRept(input, 3);
 
-            Assert.AreEqual(kperm_rep.Count(), 125);
+            Assert.That(kperm_rep.Count(), Is.EqualTo(125));
         }
 
         [Test]
@@ -220,14 +219,14 @@ namespace Test
             var kind = new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2 };
             double mass = Glycan.GetMass(kind) / 1E5;
             string name = Glycan.GetKindString(kind);
-            Assert.AreEqual(name, "H1N1K2");
-            Assert.AreEqual(mass, 865.27013);
+            Assert.That(name, Is.EqualTo("H1N1K2"));
+            Assert.That(mass, Is.EqualTo(865.27013));
 
             string kdnGlycan = "HexNAc(2)Hex(2)Kdn(1)";
             string kdnGlycan2 = "N(H)H(N)K";
             var expectedKind = new byte[] { 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
-            Assert.AreEqual(GlycanDatabase.String2Kind(kdnGlycan), expectedKind);
-            Assert.AreEqual(Glycan.GetKind(kdnGlycan2), expectedKind);
+            Assert.That(GlycanDatabase.String2Kind(kdnGlycan), Is.EqualTo(expectedKind));
+            Assert.That(Glycan.GetKind(kdnGlycan2), Is.EqualTo(expectedKind));
         }
 
         [Test]
@@ -936,7 +935,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1076,7 +1075,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1143,7 +1142,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1210,7 +1209,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1284,7 +1283,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1361,7 +1360,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             File.Delete(experimentalDesignFilePath);
             Directory.Delete(outputFolder, true);
@@ -1516,7 +1515,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "AllQuantifiedProteins.tsv"));
             string[] proteinGroupFields = allProteinGroups[2].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             Directory.Delete(outputFolder, true);
         }

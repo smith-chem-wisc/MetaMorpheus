@@ -6,7 +6,7 @@ using System.Threading;
 using System.Windows.Controls;
 using EngineLayer;
 using GuiFunctions;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using OxyPlot;
 using OxyPlot.Annotations;
 using Omics.Fragmentation;
