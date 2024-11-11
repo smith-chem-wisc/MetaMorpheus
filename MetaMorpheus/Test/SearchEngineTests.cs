@@ -44,9 +44,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
-
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
-
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
             SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
