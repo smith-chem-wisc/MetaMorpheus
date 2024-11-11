@@ -3,7 +3,6 @@ using MassSpectrometry;
 using MzLibUtil;
 using Nett;
 using NUnit.Framework; 
-using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -78,7 +77,7 @@ namespace Test
 
             var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-            Assert.AreEqual(3, digestedList.Count);
+            Assert.That(digestedList.Count, Is.EqualTo(3));
 
             PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
 
@@ -171,7 +170,7 @@ namespace Test
 
             var digestedList = ParentProtein.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-            Assert.AreEqual(3, digestedList.Count);
+            Assert.That(digestedList.Count, Is.EqualTo(3));
 
             PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
 
@@ -182,7 +181,7 @@ namespace Test
             dictHere.Add(3, new List<Modification> { new Modification(_originalId: "21", _modificationType: "myModType", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) });
             Protein ParentProteinToNotInclude = new("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
-            Assert.AreEqual(4, digestedList.Count);
+            Assert.That(digestedList.Count, Is.EqualTo(4));
 
             MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
@@ -258,7 +257,7 @@ namespace Test
             var newIntensityArray = ms1IntensityList.ToArray();
 
             var ms1MzList = myMsDataFile.GetOneBasedScan(1).MassSpectrum.XArray.ToList();
-            Assert.AreEqual(6,ms1MzList.Count);
+            Assert.That(ms1MzList.Count, Is.EqualTo(6));
 
             List<double> expectedMzList = new List<double>() { 69.70, 70.03, 70.37, 104.04, 104.55, 105.05 };
             CollectionAssert.AreEquivalent(expectedMzList, ms1MzList.Select(m=>Math.Round(m,2)).ToList());
@@ -416,7 +415,7 @@ namespace Test
             //now write MZML file
             var protein = ProteinDbLoader.LoadProteinXML(xmlName, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var setList1 = protein[0].Digest(testPeptides.CommonParameters.DigestionParams, new List<Modification> { }, variableModifications).ToList();
-            Assert.AreEqual(4, setList1.Count);
+            Assert.That(setList1.Count, Is.EqualTo(4));
 
             //Finally Write MZML file
             MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
@@ -622,8 +621,7 @@ namespace Test
 
             List<string> warnings = engine.Warnings;
 
-
-            Assert.AreEqual("Cannot proceed. No protein database files selected.", warnings[0]);
+            Assert.That(warnings[0], Is.EqualTo("Cannot proceed. No protein database files selected."));
         }
     }
 }

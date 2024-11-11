@@ -1,10 +1,5 @@
-﻿using EngineLayer;
-using IO.MzML;
-using MassSpectrometry;
-using MzLibUtil;
-using Nett;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using Proteomics;
+﻿using Nett;
+using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -14,7 +9,6 @@ using System.Linq;
 using NUnit.Framework.Legacy;
 using Readers;
 using TaskLayer;
-using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -94,7 +88,7 @@ namespace Test
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("weird", weirdTask) }, new List<string> { pathOne }, new List<DbForTask> { db }, outputFolder).Run();
             //check that a zip was not created
             writtenFiles = new HashSet<string>(Directory.GetFiles(Path.Combine(outputFolder, "weird")));
-            Assert.IsFalse(writtenFiles.Contains("Individual File Results.zip"));
+            Assert.That(!writtenFiles.Contains("Individual File Results.zip"));
             Directory.Delete(subFolder, true);
         }
 
