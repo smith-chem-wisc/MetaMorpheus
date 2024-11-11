@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -24,7 +24,7 @@ namespace Test
         {
             string psmFile = @"TestData\oglycoSinglePsms.psmtsv";
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-            Assert.AreEqual(2, parsedPsms.Count);
+            Assert.That(parsedPsms.Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -32,7 +32,7 @@ namespace Test
         {
             string psmFile = @"TestData\oglyco.psmtsv";
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-            Assert.AreEqual(9, parsedPsms.Count);
+            Assert.That(parsedPsms.Count, Is.EqualTo(9));
         }
 
         [Test]
@@ -40,7 +40,7 @@ namespace Test
         {
             string psmFile = @"TestData\ExcelEditedPeptide.psmtsv";
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-            Assert.AreEqual(1, parsedPsms.Count);
+            Assert.That(parsedPsms.Count, Is.EqualTo(1));
             IEnumerable<string> expectedIons = new string[] { "y3+1", "y4+1", "b4+1", "b5+1", "b6+1", "b8+1" };
             Assert.That(6 == parsedPsms[0].MatchedIons.Select(p => p.Annotation).Intersect(expectedIons).Count());
             Assert.That("TADDYTWEGDVGNDNAYQKFVK", Is.EqualTo(parsedPsms[0].FullSequence));
@@ -62,7 +62,7 @@ namespace Test
         {
             string psmFile = @"XlTestData\XL_Intralinks_MIons.tsv";
             List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-            Assert.AreEqual(1, parsedPsms.Count);
+            Assert.That(parsedPsms.Count, Is.EqualTo(1));
             Assert.That(parsedPsms[0].UniqueSequence, Is.EqualTo("EKVLTSSAR(2)SLGKVGTR(4)"));
         }
 
@@ -75,8 +75,8 @@ namespace Test
             Assert.That(warnings.Count == 0);
 
             CrosslinkLibrarySpectrum librarySpectrum = psms[0].ToLibrarySpectrum() as CrosslinkLibrarySpectrum;
-            Assert.IsNotNull(librarySpectrum);
-            Assert.AreEqual("Name: EKVLTSSAR(2)SLGKVGTR(4)/4", librarySpectrum.ToString().Split('\n')[0].Trim());
+            Assert.That(librarySpectrum, !Is.Null);
+            Assert.That(librarySpectrum.ToString().Split('\n')[0].Trim(), Is.EqualTo("Name: EKVLTSSAR(2)SLGKVGTR(4)/4"));
 
             // This test would be better if MatchedIon.equals method worked, but it breaks because the mz comparison is implemented incorrectly.
             CollectionAssert.AreEquivalent(librarySpectrum.MatchedFragmentIons.Select(ion => ion.Annotation), psms[0].MatchedIons.Select(ion => ion.Annotation));
@@ -241,8 +241,7 @@ namespace Test
             string expectedLibrarySpectrum = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\simple.msp"));
 
             //not a great way to test equality but we are experiencing a great deal of 10th digit rounding differences
-            Assert.AreEqual(Regex.Matches(expectedLibrarySpectrum, "ppm").Count, Regex.Matches(librarySpectrum, "ppm").Count);
-
+            Assert.That(Regex.Matches(expectedLibrarySpectrum, "ppm").Count, Is.EqualTo(Regex.Matches(librarySpectrum, "ppm").Count));
 
             //the code below tests the addition and correct output for neutral loss fragments
             Product p = new Product(ProductType.bWaterLoss, FragmentationTerminus.N, 1, 1, 1, 18);
@@ -329,21 +328,21 @@ namespace Test
 
             List<PeptideSpectralMatch> orderedPsms = psms.OrderByDescending(p => p).ToList();
 
-            Assert.AreEqual(10, orderedPsms[0].Score);
-            Assert.AreEqual(9, orderedPsms[1].Score);
-            Assert.AreEqual(9, orderedPsms[2].Score);
-            Assert.AreEqual(8, orderedPsms[3].Score);
-            Assert.AreEqual(8, orderedPsms[4].Score);
-            Assert.AreEqual(7, orderedPsms[5].Score);
-            Assert.AreEqual(7, orderedPsms[6].Score);
+            Assert.That(orderedPsms[0].Score, Is.EqualTo(10));
+            Assert.That(orderedPsms[1].Score, Is.EqualTo(9));
+            Assert.That(orderedPsms[2].Score, Is.EqualTo(9));
+            Assert.That(orderedPsms[3].Score, Is.EqualTo(8));
+            Assert.That(orderedPsms[4].Score, Is.EqualTo(8));
+            Assert.That(orderedPsms[5].Score, Is.EqualTo(7));
+            Assert.That(orderedPsms[6].Score, Is.EqualTo(7));
 
-            Assert.AreEqual(5, orderedPsms[0].RunnerUpScore);
-            Assert.AreEqual(8.9, orderedPsms[1].RunnerUpScore);
-            Assert.AreEqual(8, orderedPsms[2].RunnerUpScore);
-            Assert.AreEqual(7, orderedPsms[3].RunnerUpScore);
-            Assert.AreEqual(7, orderedPsms[4].RunnerUpScore);
-            Assert.AreEqual(6, orderedPsms[5].RunnerUpScore);
-            Assert.AreEqual(6, orderedPsms[6].RunnerUpScore);
+            Assert.That(orderedPsms[0].RunnerUpScore, Is.EqualTo(5));
+            Assert.That(orderedPsms[1].RunnerUpScore, Is.EqualTo(8.9));
+            Assert.That(orderedPsms[2].RunnerUpScore, Is.EqualTo(8));
+            Assert.That(orderedPsms[3].RunnerUpScore, Is.EqualTo(7));
+            Assert.That(orderedPsms[4].RunnerUpScore, Is.EqualTo(7));
+            Assert.That(orderedPsms[5].RunnerUpScore, Is.EqualTo(6));
+            Assert.That(orderedPsms[6].RunnerUpScore, Is.EqualTo(6));
 
             Assert.That(Math.Abs(orderedPsms[3].PrecursorMassErrorPpm.First()) < Math.Abs(orderedPsms[4].PrecursorMassErrorPpm.First()));
             Assert.That(orderedPsms[5].ScanNumber < orderedPsms[6].ScanNumber);
