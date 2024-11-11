@@ -1,6 +1,6 @@
 ﻿using System;
 using EngineLayer;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -93,16 +93,16 @@ namespace Test
             fjkd.ProteinGroups.First().CalculateSequenceCoverage();
 
             var firstSequenceCoverageDisplayList = fjkd.ProteinGroups.First().SequenceCoverageDisplayList.First();
-            Assert.AreEqual("MMKMMK", firstSequenceCoverageDisplayList);
+            Assert.That(firstSequenceCoverageDisplayList, Is.EqualTo("MMKMMK"));
             var firstSequenceCoverageDisplayListWithMods = fjkd.ProteinGroups.First().SequenceCoverageDisplayListWithMods.First();
-            Assert.AreEqual("[mod1 on M]-MM[mod3 on M]KM[mod3 on M]MK-[mod5 on K]", firstSequenceCoverageDisplayListWithMods);
+            Assert.That(firstSequenceCoverageDisplayListWithMods, Is.EqualTo("[mod1 on M]-MM[mod3 on M]KM[mod3 on M]MK-[mod5 on K]"));
 
             var firstModInfo = fjkd.ProteinGroups.First().ModsInfo.First();
             Assert.That(firstModInfo.Contains(@"#aa1[mod1 on M,info:occupancy=1.00(2/2)]"));
             Assert.That(firstModInfo.Contains(@"#aa2[mod3 on M,info:occupancy=0.50(1/2)]"));
-            Assert.IsFalse(firstModInfo.Contains(@"#aa3"));
+            Assert.That(!(firstModInfo.Contains(@"#aa3")));
             Assert.That(firstModInfo.Contains(@"#aa4[mod3 on M,info:occupancy=0.50(1/2)]"));
-            Assert.IsFalse(firstModInfo.Contains(@"#aa5"));
+            Assert.That(!(firstModInfo.Contains(@"#aa5")));
             Assert.That(firstModInfo.Contains(@"#aa6[mod5 on K,info:occupancy=1.00(2/2)]"));
             Console.WriteLine("Test output: " + firstSequenceCoverageDisplayList);
         }

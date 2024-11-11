@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -144,10 +144,10 @@ namespace Test
             // because modified peptides were NOT considered as unique, 
             // then there should be one ambiguous protein group after parsimony, 
             // and two protein accessions for each peptide
-            Assert.AreEqual(1, countOfProteinGroups);
-            Assert.AreEqual(2, results.SortedAndScoredProteinGroups.First().Proteins.Count);
-            Assert.IsNull(psm1.Accession);
-            Assert.IsNull(psm2.Accession);
+            Assert.That(countOfProteinGroups, Is.EqualTo(1));
+            Assert.That(results.SortedAndScoredProteinGroups.First().Proteins.Count, Is.EqualTo(2));
+            Assert.That(psm1.Accession, Is.Null);
+            Assert.That(psm2.Accession, Is.Null);
         }
 
         [Test]

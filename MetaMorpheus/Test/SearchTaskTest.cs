@@ -2,7 +2,6 @@
 using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework; 
-using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -207,14 +206,15 @@ namespace Test
             List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(outputPath, out var warning);
             Assert.That(psms.Count == 1);
             //check that it's been disambiguated
-            Assert.IsFalse(psms[0].FullSequence.Contains("|"));
-            Assert.AreEqual(psms[0].MatchedIons.First().Intensity, 161210);
-            Assert.AreEqual(psms[0].MatchedIons.First().Mz, 585.25292);
-            Assert.AreEqual(psms[0].MatchedIons.First().Charge, 1);
-            Assert.AreEqual(psms[0].MatchedIons[4].Intensity, 131546);
-            Assert.AreEqual(psms[0].MatchedIons[4].Mz, 782.84816);
-            Assert.AreEqual(psms[0].MatchedIons[4].Charge, 2);
+            Assert.That(!(psms[0].FullSequence.Contains("|")));
+            Assert.That(psms[0].MatchedIons.First().Intensity, Is.EqualTo(161210));
+            Assert.That(psms[0].MatchedIons.First().Mz, Is.EqualTo(585.25292));
+            Assert.That(psms[0].MatchedIons.First().Charge, Is.EqualTo(1));
+            Assert.That(psms[0].MatchedIons[4].Intensity, Is.EqualTo(131546));
+            Assert.That(psms[0].MatchedIons[4].Mz, Is.EqualTo(782.84816));
+            Assert.That(psms[0].MatchedIons[4].Charge, Is.EqualTo(2));
             int numTotalFragments = psms[0].MatchedIons.Count;
+
 
             //test again but no variable acetyl on K. Make sure that internal fragments are still searched even without ambiguity
             searchTask = new SearchTask()
@@ -374,11 +374,11 @@ namespace Test
                     // if peptide FDR is calculated, they will be 1,2,3,4, etc. as expected
                     if (lineline[columns.IndexOf("Decoy/Contaminant/Target")] == "D")
                     {
-                        Assert.AreEqual(++cumDecoys, int.Parse(lineline[columns.IndexOf("Cumulative Decoy")]));
+                        Assert.That(++cumDecoys, Is.EqualTo(int.Parse(lineline[columns.IndexOf("Cumulative Decoy")])));
                     }
                     else
                     {
-                        Assert.AreEqual(++cumTargets, int.Parse(lineline[columns.IndexOf("Cumulative Target")]));
+                        Assert.That(++cumTargets, Is.EqualTo(int.Parse(lineline[columns.IndexOf("Cumulative Target")])));
                     }
 
                     finalQValue = Math.Max(finalQValue, (double)cumDecoys / (double)cumTargets);
@@ -613,8 +613,8 @@ namespace Test
 
             string resultsFile = Path.Combine(pepTaskFolder, "results.txt");
             string[] results = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value.", results[6]);
-            Assert.AreEqual("All target PSMs with q-value <= 1: 84", results[7]);
+            Assert.That(results[6], Is.EqualTo("PEP could not be calculated due to an insufficient number of PSMs. Results were filtered by q-value."));
+            Assert.That(results[7], Is.EqualTo("All target PSMs with q-value <= 1: 84"));
 
             // clean up
             Directory.Delete(folderPath, true);
