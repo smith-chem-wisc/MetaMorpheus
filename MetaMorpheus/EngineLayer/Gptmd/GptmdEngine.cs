@@ -102,20 +102,6 @@ namespace EngineLayer.Gptmd
                                     if (newPeptides.Any())
                                     {
                                         var scores = new List<double>();
-                                        var targetFragmentsForEachDissociationType = new ConcurrentDictionary<DissociationType, List<Product>>();
-
-                                        if (CommonParameters.DissociationType == DissociationType.Autodetect)
-                                        {
-                                            foreach (var item in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
-                                            {
-                                                targetFragmentsForEachDissociationType.TryAdd(item.Value, new List<Product>());
-                                            }
-                                        }
-                                        else
-                                        {
-                                            targetFragmentsForEachDissociationType.TryAdd(CommonParameters.DissociationType, new List<Product>());
-                                        }
-
                                         var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
                                             psms[i].MsDataScan.DissociationType.Value : CommonParameters.DissociationType;
 
