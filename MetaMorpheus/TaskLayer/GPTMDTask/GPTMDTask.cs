@@ -147,6 +147,9 @@ namespace TaskLayer
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
 
+            //Move this text after search because proteins don't get loaded until search begins.
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+
             new FdrAnalysisEngine(allPsms.OrderBy(p=>p).ToList(), tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
 
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();

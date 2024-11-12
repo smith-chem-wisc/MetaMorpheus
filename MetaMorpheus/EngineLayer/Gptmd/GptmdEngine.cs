@@ -9,7 +9,6 @@ using MassSpectrometry;
 using Omics.Fragmentation;
 using System.Collections.Concurrent;
 using System.Threading.Tasks;
-using Proteomics;
 
 namespace EngineLayer.Gptmd
 {
