@@ -62,9 +62,9 @@ namespace Test
 
             TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
 
-            MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
+            MassSpectrometry.MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
-            SpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 3, 0, scan1, commonParameters, new List<MatchedFragmentIon>());
+            EngineLayer.SpectralMatch psm1 = new PeptideSpectralMatch(pep1, 0, 3, 0, scan1, commonParameters, new List<MatchedFragmentIon>());
 
             MsDataScan mzLibScan2 = t.GetOneBasedScan(4);
             Ms2ScanWithSpecificMass scan2 = new Ms2ScanWithSpecificMass(mzLibScan2, pep2.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
