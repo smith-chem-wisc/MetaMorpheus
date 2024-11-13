@@ -31,7 +31,7 @@ namespace GuiFunctions
             if (isProtein)
             {
                 DissociationTypes = new ObservableCollection<DissociationType>(Enum.GetValues<DissociationType>()
-                    .Where(p => p != DissociationType.AnyActivationType && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) && prod.Any()));
+                    .Where(p => p != DissociationType.AnyActivationType && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) && prod.Count != 0));
                 PossibleProducts = new ObservableCollection<FragmentViewModel>(GetPossibleProducts(_isProtein));
                 SelectedDissociationType = DissociationType.HCD;
             }
@@ -187,7 +187,7 @@ namespace GuiFunctions
                     Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[dissociationType].ToArray()
                     : Omics.Fragmentation.Oligo.DissociationTypeCollection.GetRnaProductTypesFromDissociationType(dissociationType).ToArray();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 _selectedDissociationType = DissociationType.HCD;
                 dissociationTypeProducts = isProtein ?

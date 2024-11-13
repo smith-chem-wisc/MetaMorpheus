@@ -31,8 +31,6 @@ namespace TaskLayer
 
         public MyTaskResults Run(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList, List<GlycoSpectralMatch> allPsms, CommonParameters commonParameters, GlycoSearchParameters glycoSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {
-            List<ProteinGroup> proteinGroups = null;
-
             if (!Parameters.GlycoSearchParameters.WriteDecoys)
             {
                 allPsms.RemoveAll(b => b.IsDecoy);
