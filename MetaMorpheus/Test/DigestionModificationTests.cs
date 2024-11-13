@@ -1,12 +1,10 @@
 ﻿using EngineLayer;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using Proteomics;
+using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
 
@@ -29,11 +27,11 @@ namespace Test
             var proteinList = ProteinDbLoader.LoadProteinFasta(databasePath1, true, DecoyType.None, false, out List<string> errors);
             var protein = proteinList[0];
             var peptides = protein.Digest(param, new List<Modification>(), new List<Modification>()).ToList();
-            Assert.AreEqual(2, peptides.Count());
-            Assert.AreNotEqual(peptides[0].FullSequence, peptides[1].FullSequence);
-            Assert.AreEqual(882.39707781799996, peptides[0].MonoisotopicMass);
-            Assert.AreEqual(930.400449121, peptides[1].MonoisotopicMass);
-           
+            Assert.That(peptides.Count(), Is.EqualTo(2));
+            Assert.That(peptides[0].FullSequence, !Is.EqualTo(peptides[1].FullSequence));
+            Assert.That(peptides[0].MonoisotopicMass, Is.EqualTo(882.39707781799996));
+            Assert.That(peptides[1].MonoisotopicMass, Is.EqualTo(930.400449121));
+
         }
 
        

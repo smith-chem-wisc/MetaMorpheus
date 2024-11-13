@@ -2,7 +2,7 @@
 using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -127,13 +127,13 @@ namespace Test
             List<string> parsimonyProteinSequences = psms.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide.Parent)).Select(v => v.BaseSequence).Distinct().ToList();
 
             // check that correct proteins are in parsimony list
-            Assert.Contains("AB--------", parsimonyProteinSequences);
-            Assert.Contains("--C-------", parsimonyProteinSequences);
-            Assert.Contains("-B-D---HHH--", parsimonyProteinSequences);
-            Assert.Contains("-B------I-", parsimonyProteinSequences);
-            Assert.Contains("----EFG---", parsimonyProteinSequences);
-            Assert.Contains("----EFG--J", parsimonyProteinSequences);
-            Assert.AreEqual(6, parsimonyProteinSequences.Count);
+            Assert.That(parsimonyProteinSequences.Contains("AB--------"));
+            Assert.That(parsimonyProteinSequences.Contains("--C-------"));
+            Assert.That(parsimonyProteinSequences.Contains("-B-D---HHH--"));
+            Assert.That(parsimonyProteinSequences.Contains("-B------I-"));
+            Assert.That(parsimonyProteinSequences.Contains("----EFG---"));
+            Assert.That(parsimonyProteinSequences.Contains("----EFG--J"));
+            Assert.That(parsimonyProteinSequences.Count, Is.EqualTo(6));
 
             // sequence coverage test
             foreach (var proteinGroup in proteinGroups)
@@ -145,11 +145,11 @@ namespace Test
             }
 
             // test protein groups
-            Assert.AreEqual(4, proteinGroups.Count);
-            Assert.AreEqual(1, proteinGroups.First().Proteins.Count);
-            Assert.AreEqual("AB--------", proteinGroups.First().Proteins.First().BaseSequence);
-            Assert.AreEqual(2, proteinGroups.First().AllPsmsBelowOnePercentFDR.Count);
-            Assert.AreEqual(2, proteinGroups.First().ProteinGroupScore);
+            Assert.That(proteinGroups.Count, Is.EqualTo(4));
+            Assert.That(proteinGroups.First().Proteins.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.First().Proteins.First().BaseSequence, Is.EqualTo("AB--------"));
+            Assert.That(proteinGroups.First().AllPsmsBelowOnePercentFDR.Count, Is.EqualTo(2));
+            Assert.That(proteinGroups.First().ProteinGroupScore, Is.EqualTo(2));
         }
 
         [Test]
@@ -179,25 +179,25 @@ namespace Test
             int idx = 0;
 
             var pep1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("MNNNSK", pep1.Single().FullSequence);//this might be base
+            Assert.That(pep1.Single().FullSequence, Is.EqualTo("MNNNSK"));//this might be base
 
             var pep1mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("MNNNS[HaHa:resMod on S]K", pep1mod.Single().FullSequence);//this might be base
+            Assert.That(pep1mod.Single().FullSequence, Is.EqualTo("MNNNS[HaHa:resMod on S]K"));//this might be base
 
             var pep3 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("NNNSK", pep3.Single().FullSequence);//this might be base
+            Assert.That(pep3.Single().FullSequence, Is.EqualTo("NNNSK"));//this might be base
 
             var pep3mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("NNNS[HaHa:resMod on S]K", pep3mod.Single().FullSequence);//this might be base
+            Assert.That(pep3mod.Single().FullSequence, Is.EqualTo("NNNS[HaHa:resMod on S]K"));//this might be base
 
             var pep4 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("QQQI", pep4.Single().FullSequence);//this might be base
+            Assert.That(pep4.Single().FullSequence, Is.EqualTo("QQQI"));//this might be base
 
             var pep4mod1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("QQQI[HaHa:iModOne on I]", pep4mod1.Single().FullSequence);//this might be base
+            Assert.That(pep4mod1.Single().FullSequence, Is.EqualTo("QQQI[HaHa:iModOne on I]"));//this might be base
 
             var pep4mod2 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
-            Assert.AreEqual("QQQI[HaHa:iModTwo on I]", pep4mod2.Single().FullSequence);//this might be base
+            Assert.That(pep4mod2.Single().FullSequence, Is.EqualTo("QQQI[HaHa:iModTwo on I]"));//this might be base
 
             var peptideList = new HashSet<PeptideWithSetModifications>();
             foreach (var peptide in proteinList.SelectMany(protein => protein.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications)))
@@ -252,7 +252,7 @@ namespace Test
             ProteinScoringAndFdrEngine f = new ProteinScoringAndFdrEngine(proteinGroups, psms, false, false, true, new CommonParameters(), null, new List<string>());
             f.Run();
 
-            Assert.AreEqual("#aa5[resMod on S,info:occupancy=0.67(2/3)];#aa10[iModOne on I,info:occupancy=0.33(2/6)];#aa10[iModTwo on I,info:occupancy=0.33(2/6)]", proteinGroups.First().ModsInfo[0]);
+            Assert.That(proteinGroups.First().ModsInfo[0], Is.EqualTo("#aa5[resMod on S,info:occupancy=0.67(2/3)];#aa10[iModOne on I,info:occupancy=0.33(2/6)];#aa10[iModTwo on I,info:occupancy=0.33(2/6)]"));
         }
 
         [Test]
