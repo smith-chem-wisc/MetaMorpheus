@@ -1102,6 +1102,53 @@ namespace EngineLayer
 
             return (float)((matched_n_IonCountFactorial + matched_c_IonCountFactorial + log10IntensitySum));;
         }
+        /// <summary>
+        /// https://willfondrie.com/2019/02/an-intuitive-look-at-the-xcorr-score-function-in-proteomics/
+        /// 
+        /// A mass spectrum can be preprocessed by subtracting the mean intensities at all of the offsets. 
+        /// Then a single dot product between the preprocessed mass spectrum and the theoretical peptide 
+        /// mass spectrum yields the xcorr score, which is made possible because of the distributive 
+        /// property of the dot product.
+        /// 
+        /// Since we have already chosen the match for this scan, we can use the matched ions to calculate the
+        /// xcorr and skip the dot product step.
+        /// 
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="selectedPeptide"></param>
+        /// <returns></returns>
+        public static float Xcorr(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        {
+            double xcorr = 0;
+            var xArray = psm.MsDataScan.MassSpectrum.XArray;
+            var yArray = psm.MsDataScan.MassSpectrum.YArray;
+
+            foreach (var peptideFragmentIon in psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide])
+            {
+                int startIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz - 75);
+                int endIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz + 75);
+
+                // Ensure valid indices
+                startIndex = startIndex < 0 ? ~startIndex : startIndex;
+                endIndex = endIndex < 0 ? ~endIndex - 1 : endIndex;
+
+                double sum = 0;
+                for (int i = startIndex; i <= endIndex; i++)
+                {
+                    sum += yArray[i];
+                }
+                sum -= peptideFragmentIon.Intensity;
+                double range = xArray[endIndex] - xArray[startIndex];
+                if (range > 0)
+                {
+                    sum /= range;
+                }
+
+                xcorr += Math.Max(peptideFragmentIon.Intensity - sum, 0);
+            }
+
+            return (float)xcorr;
+        }
 
         public static float? GetLog10Factorial(int n)
         {
