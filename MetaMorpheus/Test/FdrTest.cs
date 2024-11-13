@@ -796,7 +796,7 @@ namespace Test
             float? result = PepAnalysisEngine.GetLog10Factorial(n);
 
             // Assert
-            Assert.AreEqual(expected, result);
+            Assert.That(expected, Is.EqualTo(result));
         }
 
         [Test]
@@ -837,7 +837,44 @@ namespace Test
 
 
             // Assert
-            Assert.AreEqual(7.112605f, hyperScore, 0.000001f);
+            Assert.That(7.112605f, Is.EqualTo(hyperScore).Within(0.000001f));
+        }
+
+        [Test]
+        public static void GetLog10Factorial_NegativeInput_ThrowsArgumentOutOfRangeException()
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => PepAnalysisEngine.GetLog10Factorial(-1));
+        }
+
+        [Test]
+        [TestCase(0, 0.0)]
+        [TestCase(1, 0.0)]
+        [TestCase(2, 0.3010)]
+        [TestCase(3, 0.7782)]
+        [TestCase(4, 1.2553)]
+        [TestCase(5, 1.7324)]
+        [TestCase(6, 2.2095)]
+        [TestCase(7, 2.6866)]
+        [TestCase(8, 3.1637)]
+        [TestCase(9, 3.6408)]
+        [TestCase(10, 4.1179)]
+        public static void GetLog10Factorial_PrecomputedValues_ReturnsExpectedResult(int n, double expected)
+        {
+            float? result = PepAnalysisEngine.GetLog10Factorial(n);
+            Assert.That((float)expected, Is.EqualTo(result));
+        }
+
+        [Test]
+        public static void GetLog10Factorial_LargeInput_ReturnsExpectedResult()
+        {
+            int n = 20;
+            float? result = PepAnalysisEngine.GetLog10Factorial(n);
+            double expected = 0.0;
+            for (int i = 1; i <= n; i++)
+            {
+                expected += Math.Log10(i);
+            }
+            Assert.That((float)expected, Is.EqualTo(result).Within(4)); // Allowing a small tolerance for floating-point comparison
         }
     }
 }
