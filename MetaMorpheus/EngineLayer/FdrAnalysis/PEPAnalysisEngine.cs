@@ -97,21 +97,23 @@ namespace EngineLayer
             SearchType = searchType;
             SetFileSpecificParameters(fileSpecificParameters);
             BuildFileSpecificDictionaries(psms, TrainingVariables);
-            QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), 0.005);
-
+            double minQ = searchType == "top-down" ? 0.025 : 0.005; // Less stringent FDR cut-off for top-down
+            QValueCutoff = Math.Max(fileSpecificParameters.Select(t => t.fileSpecificParameters.QValueCutoffForPepCalculation).Min(), minQ);
             // If we have more than 100 peptides, we will train on the peptide level. Otherwise, we will train on the PSM level
             UsePeptideLevelQValueForTraining = psms.Select(psm => psm.FullSequence).Distinct().Count(seq => seq.IsNotNullOrEmpty()) >= 100;
         }
 
         public string ComputePEPValuesForAllPSMs()
         {
-            List<PeptideMatchGroup> peptideGroups = UsePeptideLevelQValueForTraining
-                ? PeptideMatchGroup.GroupByBaseSequence(AllPsms)
-                : PeptideMatchGroup.GroupByIndividualPsm(AllPsms);
+            List<SpectralMatchGroup> peptideGroups = UsePeptideLevelQValueForTraining
+                ? SpectralMatchGroup.GroupByBaseSequence(AllPsms)
+                : SpectralMatchGroup.GroupByIndividualPsm(AllPsms);
 
             if (UsePeptideLevelQValueForTraining && (peptideGroups.Count(g => g.BestMatch.IsDecoy) < 4 || peptideGroups.Count(g => !g.BestMatch.IsDecoy) < 4))
             {
-                peptideGroups = PeptideMatchGroup.GroupByIndividualPsm(AllPsms);
+                // If we don't have enough peptides to train at the peptide level, we will train at the PSM level
+                peptideGroups = SpectralMatchGroup.GroupByIndividualPsm(AllPsms);
+                UsePeptideLevelQValueForTraining = false;
             }
 
             int numGroups = 4;
@@ -162,7 +164,10 @@ namespace EngineLayer
                 sumOfAllAmbiguousPeptidesResolved += ambiguousPeptidesResolved;
             }
 
-            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved);
+            int positiveTrainingCount = PSMDataGroups.SelectMany(p => p).Count(p => p.Label);
+            int negativeTrainingcount = PSMDataGroups.SelectMany(p => p).Count(p => !p.Label);
+
+            return AggregateMetricsForOutput(allMetrics, sumOfAllAmbiguousPeptidesResolved, positiveTrainingCount, negativeTrainingcount, QValueCutoff);
         }
 
         /// <summary>
@@ -183,7 +188,7 @@ namespace EngineLayer
             }
         }
 
-        public static List<int>[] GetPeptideGroupIndices(List<PeptideMatchGroup> peptides, int numGroups)
+        public static List<int>[] GetPeptideGroupIndices(List<SpectralMatchGroup> peptides, int numGroups)
         {
             List<int>[] groupsOfIndices = new List<int>[numGroups];
 
@@ -242,7 +247,7 @@ namespace EngineLayer
         }
 
         public IEnumerable<PsmData> CreatePsmData(string searchType,
-            List<PeptideMatchGroup> peptideGroups, List<int> peptideGroupIndices)
+            List<SpectralMatchGroup> peptideGroups, List<int> peptideGroupIndices)
         {
             object psmDataListLock = new object();
             List<PsmData> psmDataList = new List<PsmData>();
@@ -262,7 +267,7 @@ namespace EngineLayer
                         if (GlobalVariables.StopLoops) { return; }
 
                         int modCount = 0;
-                        foreach (var psm in peptideGroups[peptideGroupIndices[i]].GetBestMatchByMod().Where(psm => psm != null))
+                        foreach (var psm in peptideGroups[peptideGroupIndices[i]].GetBestMatches().Where(psm => psm != null))
                         {
                             PsmData newPsmData = new PsmData();
                             if (searchType == "crosslink" && ((CrosslinkSpectralMatch)psm)?.BetaPeptide != null)
@@ -332,7 +337,9 @@ namespace EngineLayer
             return pda.AsEnumerable();
         }
 
-        public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved)
+        public static string AggregateMetricsForOutput(List<CalibratedBinaryClassificationMetrics> allMetrics, int sumOfAllAmbiguousPeptidesResolved,
+            int positiveTrainingCount, int negativeTrainingCount, double qValueCutoff)
+
         {
             List<double> accuracy = allMetrics.Select(m => m.Accuracy).ToList();
             List<double> areaUnderRocCurve = allMetrics.Select(m => m.AreaUnderRocCurve).ToList();
@@ -382,11 +389,14 @@ namespace EngineLayer
             s.AppendLine("*       NegativePrecision:  " + negativePrecision.Average().ToString());
             s.AppendLine("*       NegativeRecall:  " + negativeRecall.Average().ToString());
             s.AppendLine("*       Count of Ambiguous Peptides Removed:  " + sumOfAllAmbiguousPeptidesResolved.ToString());
+            s.AppendLine("*       Q-Value Cutoff for Training Targets:  " + qValueCutoff);
+            s.AppendLine("*       Targets Used for Training:  " + positiveTrainingCount.ToString());
+            s.AppendLine("*       Decoys Used for Training:  " + negativeTrainingCount.ToString());
             s.AppendLine("************************************************************");
             return s.ToString();
         }
 
-        public int Compute_PSM_PEP(List<PeptideMatchGroup> peptideGroups,
+        public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
             MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
         {

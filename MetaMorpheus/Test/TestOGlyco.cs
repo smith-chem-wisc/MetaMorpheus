@@ -1,7 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using NUnit.Framework; 
-using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -17,11 +16,8 @@ using FlashLFQ;
 using SpectralAveraging;
 using NUnit.Framework.Legacy;
 using Omics.Modifications;
-using ThermoFisher.CommonCore.BackgroundSubtraction;
 using Easy.Common.Extensions;
-using iText.IO.Font.Otf;
 using static Nett.TomlObjectFactory;
-using Omics.SpectrumMatch;
 using TopDownProteomics;
 using MzLibUtil;
 
@@ -31,7 +27,6 @@ namespace Test
     public class TestOGlyco
     {
         private static GlycanBox[] OGlycanBoxes { get; set; }
-
 
         [OneTimeSetUp]
         public static void Setup()
@@ -44,7 +39,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            Assert.AreEqual(OGlycanBoxes.Count(), 454);
+            Assert.That(OGlycanBoxes.Count(), Is.EqualTo(454));
         }
 
         [Test]
@@ -57,7 +52,6 @@ namespace Test
             var group_target = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == true);
             var group_decoy = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == false);
             Assert.That(group_target.Count() == group_decoy.Count());
-
         }
 
         [Test]
@@ -117,13 +111,10 @@ namespace Test
             var glycanLevel_filterON = PsmTsvReader.ReadTsv(oGlycoPath, out var error) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
 
-
             Assert.That(glycanLevel_filterON == EngineLayer.GlycoSearch.LocalizationLevel.Level1);
             Directory.Delete(outputFolder, true);
 
         }
-
-
 
         [Test]
         public static void GlycoSpectralHeader()
@@ -141,34 +132,34 @@ namespace Test
             //Combination test
             var kcombs = Glycan.GetKCombs(input, 3);
 
-            Assert.AreEqual(kcombs.Count(), 10);
+            Assert.That(kcombs.Count(), Is.EqualTo(10));
 
             var allcombs = Glycan.GetKCombs(input, 5);
 
-            Assert.AreEqual(allcombs.Count(), 1);
+            Assert.That(allcombs.Count(), Is.EqualTo(1));
 
             //Combination test with repetition
             var kcombs_rep = Glycan.GetKCombsWithRept(input, 3);
 
-            Assert.AreEqual(kcombs_rep.Count(), 35);
+            Assert.That(kcombs_rep.Count(), Is.EqualTo(35));
 
             var allcombs_rep = Glycan.GetKCombsWithRept(input, 5);
 
-            Assert.AreEqual(allcombs_rep.Count(), 126);
+            Assert.That(allcombs_rep.Count(), Is.EqualTo(126));
 
             //Permutation test
             var kperm = Glycan.GetPermutations(input, 3);
 
-            Assert.AreEqual(kperm.Count(), 60);
+            Assert.That(kperm.Count(), Is.EqualTo(60));
 
             var allperm = Glycan.GetPermutations(input, 5).ToList();
 
-            Assert.AreEqual(allperm.Count(), 120);
+            Assert.That(allperm.Count(), Is.EqualTo(120));
 
             //Permutation test with repetition
             var kperm_rep = Glycan.GetPermutationsWithRept(input, 3);
 
-            Assert.AreEqual(kperm_rep.Count(), 125);
+            Assert.That(kperm_rep.Count(), Is.EqualTo(125));
         }
 
         [Test]
@@ -201,7 +192,6 @@ namespace Test
 
             var testGlycanIons_smallGlycan = GlycanDatabase.OGlycanCompositionFragments(testKind_smallGlycan);
 
-
         }
 
         [Test]
@@ -229,14 +219,14 @@ namespace Test
             var kind = new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2 };
             double mass = Glycan.GetMass(kind) / 1E5;
             string name = Glycan.GetKindString(kind);
-            Assert.AreEqual(name, "H1N1K2");
-            Assert.AreEqual(mass, 865.27013);
+            Assert.That(name, Is.EqualTo("H1N1K2"));
+            Assert.That(mass, Is.EqualTo(865.27013));
 
             string kdnGlycan = "HexNAc(2)Hex(2)Kdn(1)";
             string kdnGlycan2 = "N(H)H(N)K";
             var expectedKind = new byte[] { 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
-            Assert.AreEqual(GlycanDatabase.String2Kind(kdnGlycan), expectedKind);
-            Assert.AreEqual(Glycan.GetKind(kdnGlycan2), expectedKind);
+            Assert.That(GlycanDatabase.String2Kind(kdnGlycan), Is.EqualTo(expectedKind));
+            Assert.That(Glycan.GetKind(kdnGlycan2), Is.EqualTo(expectedKind));
         }
 
         [Test]
@@ -486,7 +476,6 @@ namespace Test
                 }
             }
             HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
-
 
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
@@ -911,7 +900,6 @@ namespace Test
             Assert.That(errors[0].Contains("Condition \"condition1\" biorep 1 fraction 1 techrep 1 is missing!"));
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -925,7 +913,6 @@ namespace Test
                 "results.txt",
                 "seen_oglyco_localization.tsv"
             };
-
 
             List<string> expectedIndividualFileOutput = new()
             {
@@ -948,7 +935,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1088,7 +1075,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1144,8 +1131,6 @@ namespace Test
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968seen_oglyco_localization.tsv"
             };
 
-
-
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolder).ToList();
             List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
@@ -1157,7 +1142,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1213,8 +1198,6 @@ namespace Test
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968seen_no_glyco_localization.tsv"
             };
 
-
-
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolder).ToList();
             List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
@@ -1226,7 +1209,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1300,7 +1283,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1336,7 +1319,6 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -1354,7 +1336,6 @@ namespace Test
                 "seen_oglyco_localization.tsv"
             };
 
-
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllProteinGroups.tsv",
@@ -1366,7 +1347,6 @@ namespace Test
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
-
 
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
@@ -1380,7 +1360,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             File.Delete(experimentalDesignFilePath);
             Directory.Delete(outputFolder, true);
@@ -1416,7 +1396,6 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -1433,7 +1412,6 @@ namespace Test
                 "seen_oglyco_localization.tsv"
             };
 
-
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllPSMs.psmtsv",
@@ -1444,7 +1422,6 @@ namespace Test
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
-
 
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
@@ -1538,7 +1515,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "AllQuantifiedProteins.tsv"));
             string[] proteinGroupFields = allProteinGroups[2].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             Directory.Delete(outputFolder, true);
         }
