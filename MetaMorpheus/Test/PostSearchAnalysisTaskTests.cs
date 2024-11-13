@@ -2,7 +2,8 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 
 namespace Test
 {
@@ -49,7 +50,7 @@ namespace Test
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214", results[13]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174", results[14]);
             Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165", results[15]);
-            
+
             // Search TaGe_SA_A549_3_snip_2 by itself. The results from this should be identical to the file specific results above
             // TaGe_SA_A549_3_snip_2 is searched twice. First with two files being searched simultaneously, then with TaGe_SA_A549_3_snip_2 by itself
             // This allows us to compare the file specific results produced by in the two file search to the output
@@ -110,7 +111,7 @@ namespace Test
         {
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
 
-            int expectedIndividualFileLines = testCase.DataFileList.Count == 1 || !testCase.WriteIndividualResults 
+            int expectedIndividualFileLines = testCase.DataFileList.Count == 1 || !testCase.WriteIndividualResults
                 ? 0 : testCase.DataFileList.Count;
             int expectedSummaryLines = 1;
             var allResultTxtLines = File.ReadAllLines(Path.Combine(testCase.OutputDirectory, @"allResults.txt"));

@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Dynamic;
+using Microsoft.ML.Trainers;
 
 namespace EngineLayer
 {
@@ -15,11 +17,11 @@ namespace EngineLayer
     public static class AnalyteTypeExtensions
     {
         private static readonly Dictionary<AnalyteType, AnalyteTypeData> AnalyteTypes = new Dictionary<AnalyteType, AnalyteTypeData>
-        {
+            {
             { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv") },
             { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv") },
             { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv") },
-        };
+            };
 
         public static string GetSpectralMatchLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchLabel;
         public static string GetSpectralMatchExtension(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchExtension;
@@ -35,7 +37,13 @@ namespace EngineLayer
         string uniqueFormLabel,
         string bioPolymerLabel,
         string spectralMatchExtension)
-    {
+        {
+            SpectralMatchLabel = spectralMatchLabel;
+            UniqueFormLabel = uniqueFormLabel;
+            BioPolymerLabel = bioPolymerLabel;
+            SpectralMatchExtension = spectralMatchExtension;
+        }
+
         /// <summary>
         /// Gets or sets the label for spectral matches (e.g. PSM).
         /// </summary>
@@ -64,6 +72,19 @@ namespace EngineLayer
         public override string ToString()
         {
             return UniqueFormLabel;
+        }
+
+        /// <summary>
+        /// Gets the AnalyteType based on the specified analyte type label.
+        /// </summary>
+        /// <param name="analyteTypeLabel">The analyte type label.</param>
+        /// <returns>The AnalyteType.</returns>
+        public static AnalyteType GetAnalyteType(string analyteTypeLabel)
+        {
+            if (AnalyteTypes.TryGetValue(analyteTypeLabel, out AnalyteType type))
+                return type;
+            else
+                throw new MetaMorpheusException("Unrecognized analyte type: " + analyteTypeLabel);
         }
     }
 }
