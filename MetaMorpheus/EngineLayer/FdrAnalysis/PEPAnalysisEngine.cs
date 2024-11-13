@@ -1071,36 +1071,31 @@ namespace EngineLayer
         public static float GetFraggerHyperScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
         {
             var peptideFragmentIons = psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide];
-            var nIons = peptideFragmentIons.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).ToList();
-            var cIons = peptideFragmentIons.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).ToList();
             float nIonIntensitySum = 0;
-            if(nIons.Any())
-            {
-                nIonIntensitySum = (float)nIons.Sum(f => f.Intensity);
-            }
             float cIonIntensitySum = 0;
-            if (cIons.Any())
+            int nIonCount = 0;
+            int cIonCount = 0;
+
+            foreach (var ion in peptideFragmentIons)
             {
-                cIonIntensitySum = (float)cIons.Sum(f => f.Intensity);
-            }
-            float matched_n_IonCountFactorial = 0;
-            if(nIons.Count > 0)
-            {
-                matched_n_IonCountFactorial = GetLog10Factorial((int)nIons.Count).Value;
-            }
-            float matched_c_IonCountFactorial = 0;
-            if (nIons.Count > 0)
-            {
-                matched_c_IonCountFactorial = GetLog10Factorial((int)cIons.Count).Value;
+                if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                {
+                    nIonIntensitySum += (float)ion.Intensity;
+                    nIonCount++;
+                }
+                else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                {
+                    cIonIntensitySum += (float)ion.Intensity;
+                    cIonCount++;
+                }
             }
 
-            double log10IntensitySum = 0.1;
-            if(nIonIntensitySum > 0 && cIonIntensitySum > 0)
-            {
-                log10IntensitySum = Math.Log10(nIonIntensitySum * cIonIntensitySum); 
-            }
+            float matched_n_IonCountFactorial = nIonCount > 0 ? GetLog10Factorial(nIonCount).Value : 0;
+            float matched_c_IonCountFactorial = cIonCount > 0 ? GetLog10Factorial(cIonCount).Value : 0;
 
-            return (float)((matched_n_IonCountFactorial + matched_c_IonCountFactorial + log10IntensitySum));;
+            double log10IntensitySum = (nIonIntensitySum > 0 && cIonIntensitySum > 0) ? Math.Log10(nIonIntensitySum * cIonIntensitySum) : 0.1;
+
+            return matched_n_IonCountFactorial + matched_c_IonCountFactorial + (float)log10IntensitySum;
         }
         /// <summary>
         /// https://willfondrie.com/2019/02/an-intuitive-look-at-the-xcorr-score-function-in-proteomics/
@@ -1122,8 +1117,9 @@ namespace EngineLayer
             double xcorr = 0;
             var xArray = psm.MsDataScan.MassSpectrum.XArray;
             var yArray = psm.MsDataScan.MassSpectrum.YArray;
+            var fragments = psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide];
 
-            foreach (var peptideFragmentIon in psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide])
+            foreach (var peptideFragmentIon in fragments)
             {
                 int startIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz - 75);
                 int endIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz + 75);
@@ -1132,12 +1128,14 @@ namespace EngineLayer
                 startIndex = startIndex < 0 ? ~startIndex : startIndex;
                 endIndex = endIndex < 0 ? ~endIndex - 1 : endIndex;
 
+                // Sum yArray values between startIndex and endIndex
                 double sum = 0;
                 for (int i = startIndex; i <= endIndex; i++)
                 {
                     sum += yArray[i];
                 }
-                sum -= peptideFragmentIon.Intensity;
+                sum -= peptideFragmentIon.Intensity; // Subtract the intensity of the current ion
+
                 double range = xArray[endIndex] - xArray[startIndex];
                 if (range > 0)
                 {
@@ -1152,11 +1150,38 @@ namespace EngineLayer
 
         public static float? GetLog10Factorial(int n)
         {
-            double log10Factorial = 0.0;
-            for (int i = 1; i <= n; i++)
+            if (n < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(n), "Input must be non-negative.");
+            }
+
+            // Use a precomputed array for small values of n
+            double[] precomputedLog10Factorials = new double[]
+            {
+                0.0, // 0!
+                0.0, // 1!
+                0.3010, // 2!
+                0.7782, // 3!
+                1.2553, // 4!
+                1.7324, // 5!
+                2.2095, // 6!
+                2.6866, // 7!
+                3.1637, // 8!
+                3.6408, // 9!
+                4.1179  // 10!
+            };
+
+            if (n < precomputedLog10Factorials.Length)
+            {
+                return (float)precomputedLog10Factorials[n];
+            }
+
+            double log10Factorial = precomputedLog10Factorials[precomputedLog10Factorials.Length - 1];
+            for (int i = precomputedLog10Factorials.Length; i <= n; i++)
             {
                 log10Factorial += Math.Log10(i);
             }
+
             return (float)log10Factorial;
         }
         #endregion
