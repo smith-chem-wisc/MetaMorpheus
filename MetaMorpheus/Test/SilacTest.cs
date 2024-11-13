@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework; 
+using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.AminoAcidPolymer;
 using Proteomics.ProteolyticDigestion;

@@ -17,11 +17,8 @@ using FlashLFQ;
 using SpectralAveraging;
 using NUnit.Framework.Legacy;
 using Omics.Modifications;
-using ThermoFisher.CommonCore.BackgroundSubtraction;
 using Easy.Common.Extensions;
-using iText.IO.Font.Otf;
 using static Nett.TomlObjectFactory;
-using Omics.SpectrumMatch;
 using TopDownProteomics;
 using MzLibUtil;
 
@@ -31,7 +28,6 @@ namespace Test
     public class TestOGlyco
     {
         private static GlycanBox[] OGlycanBoxes { get; set; }
-
 
         [OneTimeSetUp]
         public static void Setup()
@@ -57,7 +53,6 @@ namespace Test
             var group_target = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == true);
             var group_decoy = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == false);
             Assert.That(group_target.Count() == group_decoy.Count());
-
         }
 
         [Test]
@@ -117,13 +112,10 @@ namespace Test
             var glycanLevel_filterON = PsmTsvReader.ReadTsv(oGlycoPath, out var error) //load the PSMs data from the "csv file" and bulid the objects
                 .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
 
-
             Assert.That(glycanLevel_filterON == EngineLayer.GlycoSearch.LocalizationLevel.Level1);
             Directory.Delete(outputFolder, true);
 
         }
-
-
 
         [Test]
         public static void GlycoSpectralHeader()
@@ -200,7 +192,6 @@ namespace Test
             var testKind_smallGlycan = GlycanDatabase.String2Kind("HexNAc(1)");
 
             var testGlycanIons_smallGlycan = GlycanDatabase.OGlycanCompositionFragments(testKind_smallGlycan);
-
 
         }
 
@@ -486,7 +477,6 @@ namespace Test
                 }
             }
             HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
-
 
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
@@ -911,7 +901,6 @@ namespace Test
             Assert.That(errors[0].Contains("Condition \"condition1\" biorep 1 fraction 1 techrep 1 is missing!"));
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -925,7 +914,6 @@ namespace Test
                 "results.txt",
                 "seen_oglyco_localization.tsv"
             };
-
 
             List<string> expectedIndividualFileOutput = new()
             {
@@ -1144,8 +1132,6 @@ namespace Test
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968seen_oglyco_localization.tsv"
             };
 
-
-
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolder).ToList();
             List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
@@ -1212,8 +1198,6 @@ namespace Test
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968protein_no_glyco_localization.tsv",
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968seen_no_glyco_localization.tsv"
             };
-
-
 
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolder).ToList();
@@ -1336,7 +1320,6 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -1354,7 +1337,6 @@ namespace Test
                 "seen_oglyco_localization.tsv"
             };
 
-
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllProteinGroups.tsv",
@@ -1366,7 +1348,6 @@ namespace Test
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
-
 
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
@@ -1416,7 +1397,6 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -1433,7 +1413,6 @@ namespace Test
                 "seen_oglyco_localization.tsv"
             };
 
-
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllPSMs.psmtsv",
@@ -1444,7 +1423,6 @@ namespace Test
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
-
 
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();

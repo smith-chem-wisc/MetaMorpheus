@@ -14,12 +14,12 @@ namespace EngineLayer
     /// </summary>
     public static class AnalyteTypeExtensions
     {
-        private static readonly Dictionary<AnalyteType, AnalyteTypeData> AnalyteTypes = new Dictionary<AnalyteType, AnalyteTypeData>
-        {
-            { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv") },
-            { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv") },
-            { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv") },
-        };
+        private static readonly Dictionary<AnalyteType, AnalyteTypeData> AnalyteTypes = new()
+            {
+                { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv") },
+                { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv") },
+                { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv") },
+            };
 
         public static string GetSpectralMatchLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchLabel;
         public static string GetSpectralMatchExtension(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchExtension;
@@ -30,11 +30,7 @@ namespace EngineLayer
     /// <summary>
     /// Represents an analyte type and is used to determine the output format of the analyte type.
     /// </summary>
-    internal class AnalyteTypeData(
-        string spectralMatchLabel,
-        string uniqueFormLabel,
-        string bioPolymerLabel,
-        string spectralMatchExtension)
+    internal class AnalyteTypeData(string spectralMatchLabel, string uniqueFormLabel, string bioPolymerLabel, string spectralMatchExtension)
     {
         /// <summary>
         /// Gets or sets the label for spectral matches (e.g. PSM).
@@ -67,3 +63,4 @@ namespace EngineLayer
         }
     }
 }
+
