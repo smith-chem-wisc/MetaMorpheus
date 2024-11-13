@@ -301,6 +301,15 @@
     <None Update="TestData\MbrAnalysisTest\MsMsids.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\mouseOne.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\mouseOne.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\mouseTwo.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\myPrositLib.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

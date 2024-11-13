@@ -1,12 +1,13 @@
 ﻿using EngineLayer;
 using FlashLFQ;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using TaskLayer;
+using System;
 
 namespace Test
 {
@@ -102,6 +103,53 @@ namespace Test
 
             // clean up
             Directory.Delete(unitTestFolder, true);
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static void CalibrationTooFewMS1DataPoints()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"ExperimentalDesignCalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.mzML");
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo = new(nonCalibratedFilePath, "condition", 0, 0, 0);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+            // protein db for a non-matching organism
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\mouseOne.xml");
+
+            CalibrationTask calibrationTask = new();
+
+            calibrationTask.CommonParameters = new CommonParameters(
+                               trimMsMsPeaks: true,
+                                              doPrecursorDeconvolution: true);
+            var wasCalled = false;
+
+            EventHandler<StringEventArgs> handler = (o, e) => CalibrationWarnHandler(o, e, ref wasCalled);
+            MetaMorpheusTask.WarnHandler += handler;
+
+            MetaMorpheusTask.WarnHandler -= (o, e) =>
+            {
+                wasCalled = true;
+                Assert.That(e.S, Does.Contain("Calibration failure! Could not find enough MS1 datapoints."));
+            };
+
+            // clean up
+            Directory.Delete(unitTestFolder, true);
+            MetaMorpheusTask.WarnHandler -= handler;
+        }
+
+        private static void CalibrationWarnHandler(object sender, StringEventArgs e, ref bool wasCalled)
+        {
+            wasCalled = true;
+            Assert.That(e.S, Does.Contain("Calibration failure! Could not find enough MS1 datapoints."));
         }
 
         [Test]
@@ -228,7 +276,7 @@ namespace Test
             string experimentalDesignPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData", @"TestExperimentalDesign", experimentalFolder, "ExperimentalDesign.tsv");
             List<string> rawFilePaths = new() { Path.Combine(experimentalDesignPath, rawFile) };
             _ = ExperimentalDesign.ReadExperimentalDesign(experimentalDesignPath, rawFilePaths, out var errors);
-            Assert.IsTrue(errors[0].ToString().Contains(expectedError));
+            Assert.That(errors[0].ToString().Contains(expectedError));
         }
 
         [Test]
@@ -263,7 +311,7 @@ namespace Test
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
             
             //The original experimental design file is bad so we expect Warn event in "WriteNewExperimentalDesignFile"
-            Assert.IsTrue(wasCalled);
+            Assert.That(wasCalled);
             
 
             // clean up
