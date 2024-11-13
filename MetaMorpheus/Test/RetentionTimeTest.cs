@@ -1,5 +1,4 @@
-﻿using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using Proteomics;
+﻿using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
 using Proteomics.RetentionTimePrediction;
 using System.Collections.Generic;

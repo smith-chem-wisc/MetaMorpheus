@@ -5,12 +5,10 @@ using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using Proteomics.RetentionTimePrediction;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -70,16 +68,13 @@ namespace Test
             double scoreF = allPsmsArray[0].Score;
 
             // Single search mode
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
-
-            Assert.IsTrue(scoreT > 1);
-
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
-
-            Assert.IsTrue(scoreT == scoreF * 3 && scoreT > scoreF + 2);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
+            Assert.That(scoreT > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
+            Assert.That(scoreT == scoreF * 3 && scoreT > scoreF + 2);
         }
 
         [Test]
@@ -145,18 +140,15 @@ namespace Test
             new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, fspComp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
             Assert.That(allPsmsArray[0] != null);
             Assert.That(allPsmsArray2[0] != null);
-
-            Assert.IsTrue(allPsmsArray2[0].Score > 1);
-
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
-
-            Assert.IsTrue(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 3);
+            Assert.That(allPsmsArray2[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
+            Assert.That(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 3);
             ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
 
@@ -223,16 +215,16 @@ namespace Test
             new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, fspComp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
             Assert.That(allPsmsArray[0] != null);
             Assert.That(allPsmsArray2[0] != null);
 
-            Assert.IsTrue(allPsmsArray2[0].Score > 1);
+            Assert.That(allPsmsArray2[0].Score > 1);
 
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
             Assert.That(allPsmsArray2[0].Score, Is.EqualTo(7.007).Within(0.001));
             ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
@@ -300,17 +292,17 @@ namespace Test
             new ModernSearchEngine(allPsmsArray2, listOfSortedms2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, withCompIons, fspComp, massDiffAcceptor, SearchParameters.MaximumMassThatFragmentIonScoreIsDoubled, new List<string>()).Run();
 
             // Single search mode
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
 
             // Single ms2 scan
-            Assert.AreEqual(allPsmsArray.Length, allPsmsArray2.Length);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(allPsmsArray2.Length));
             Assert.That(allPsmsArray[0] != null);
             Assert.That(allPsmsArray2[0] != null);
 
-            Assert.IsTrue(allPsmsArray2[0].Score > 1);
+            Assert.That(allPsmsArray2[0].Score > 1);
 
-            Assert.AreEqual(allPsmsArray[0].ScanNumber, allPsmsArray2[0].ScanNumber);
-            Assert.IsTrue(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 2);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(allPsmsArray2[0].ScanNumber));
+            Assert.That(allPsmsArray2[0].Score <= allPsmsArray[0].Score * 2 && allPsmsArray2[0].Score > allPsmsArray[0].Score + 2);
             ProteaseDictionary.Dictionary.Remove(protease.Name);
         }
 
@@ -340,7 +332,7 @@ namespace Test
             double localizedScore = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
             double scoreNormal = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedIons);
             double scoreComp = MetaMorpheusEngine.CalculatePeptideScore(scan, matchedCompIons);
-            Assert.IsTrue(scoreNormal * 2 == scoreComp && scoreComp > scoreNormal + 1);
+            Assert.That(scoreNormal * 2 == scoreComp && scoreComp > scoreNormal + 1);
         }
 
         [Test]
@@ -367,23 +359,23 @@ namespace Test
             //MetaMorpheusEngine.MatchIons(t.GetOneBasedScan(2), productMassTolerance, sorted_theoretical_product_masses_for_this_peptide, matchedIonSeriesF, matchedIonMassesF, matchedDaErrorF, matchedPpmErrorF, matchedIonIntensityF, precursorMass, ProductType.B, false);
 
             //Test the number of series is doubled
-            Assert.IsTrue(matchedIonSeriesT.Count == matchedIonSeriesF.Count * 2);
+            Assert.That(matchedIonSeriesT.Count == matchedIonSeriesF.Count * 2);
             //Test the number of ions is doubled
-            Assert.IsTrue(matchedIonMassesT.Count == matchedIonMassesF.Count * 2);
+            Assert.That(matchedIonMassesT.Count == matchedIonMassesF.Count * 2);
             //Test the number of da errors is doubled
-            Assert.IsTrue(matchedDaErrorT.Count == matchedDaErrorF.Count * 2);
+            Assert.That(matchedDaErrorT.Count == matchedDaErrorF.Count * 2);
             //test the number of ppm errors is doubled
-            Assert.IsTrue(matchedPpmErrorT.Count == matchedPpmErrorF.Count * 2);
+            Assert.That(matchedPpmErrorT.Count == matchedPpmErrorF.Count * 2);
             //test the number of the intensity values is doubled
-            Assert.IsTrue(matchedIonIntensityT.Count == matchedIonIntensityF.Count * 2);
+            Assert.That(matchedIonIntensityT.Count == matchedIonIntensityF.Count * 2);
             foreach (double d in matchedDaErrorF)
             {
-                Assert.IsTrue(d <= 0.01);
+                Assert.That(d <= 0.01);
             }
 
             foreach (double d in matchedDaErrorT)
             {
-                Assert.IsTrue(d <= 0.01);
+                Assert.That(d <= 0.01);
             }
         }
 
@@ -460,8 +452,8 @@ namespace Test
             //A fix was introduced to save a "fake" m/z for the added ion
             foreach(MatchedFragmentIon ion in matchedIons)
             {
-                Assert.IsTrue(ion.NeutralTheoreticalProduct.NeutralMass < ion.Mz);
-                Assert.IsTrue(ion.NeutralTheoreticalProduct.NeutralMass + 2 > ion.Mz);
+                Assert.That(ion.NeutralTheoreticalProduct.NeutralMass < ion.Mz);
+                Assert.That(ion.NeutralTheoreticalProduct.NeutralMass + 2 > ion.Mz);
             }
 
         }

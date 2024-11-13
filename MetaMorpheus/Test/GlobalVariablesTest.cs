@@ -1,10 +1,7 @@
 ﻿using EngineLayer;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Threading;
 
 namespace Test
 {

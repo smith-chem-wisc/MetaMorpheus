@@ -3,14 +3,13 @@ using EngineLayer;
 using EngineLayer.Localization;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Omics.Modifications;
 
 namespace Test
@@ -31,7 +30,7 @@ namespace Test
             List<Modification> variableModifications = new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
 
             List<PeptideWithSetModifications> allPeptidesWithSetModifications = parentProteinForMatch.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
+            Assert.That(allPeptidesWithSetModifications.Count(), Is.EqualTo(4));
             PeptideWithSetModifications ps = allPeptidesWithSetModifications.First();
 
             PeptideWithSetModifications pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];

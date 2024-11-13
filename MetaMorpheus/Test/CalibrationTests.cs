@@ -1,8 +1,7 @@
 ﻿using EngineLayer;
 using FlashLFQ;
 using MassSpectrometry;
-using NUnit.Framework; 
-using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -277,7 +276,7 @@ namespace Test
             string experimentalDesignPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData", @"TestExperimentalDesign", experimentalFolder, "ExperimentalDesign.tsv");
             List<string> rawFilePaths = new() { Path.Combine(experimentalDesignPath, rawFile) };
             _ = ExperimentalDesign.ReadExperimentalDesign(experimentalDesignPath, rawFilePaths, out var errors);
-            Assert.IsTrue(errors[0].ToString().Contains(expectedError));
+            Assert.That(errors[0].ToString().Contains(expectedError));
         }
 
         [Test]
@@ -312,7 +311,7 @@ namespace Test
             calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { nonCalibratedFilePath }, "test");
             
             //The original experimental design file is bad so we expect Warn event in "WriteNewExperimentalDesignFile"
-            Assert.IsTrue(wasCalled);
+            Assert.That(wasCalled);
             
 
             // clean up
