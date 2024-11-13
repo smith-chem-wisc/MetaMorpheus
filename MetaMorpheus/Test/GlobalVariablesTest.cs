@@ -82,5 +82,37 @@ namespace Test
             Assert.That(GlobalVariables.GetFileExtension(test7, getUncompressedExtension: true) == ".fasta");
             Assert.That(GlobalVariables.GetFilenameWithoutExtension(test7) == "my.Fi.le");
         }
+
+        [Test]
+        public static void TestGetSpectralMatchLabel()
+        {
+            Assert.AreEqual("PSM", AnalyteType.Peptide.GetSpectralMatchLabel());
+            Assert.AreEqual("PSM", AnalyteType.Proteoform.GetSpectralMatchLabel());
+            Assert.AreEqual("OSM", AnalyteType.Oligo.GetSpectralMatchLabel());
+        }
+
+        [Test]
+        public static void TestGetSpectralMatchExtension()
+        {
+            Assert.AreEqual("psmtsv", AnalyteType.Peptide.GetSpectralMatchExtension());
+            Assert.AreEqual("psmtsv", AnalyteType.Proteoform.GetSpectralMatchExtension());
+            Assert.AreEqual("osmtsv", AnalyteType.Oligo.GetSpectralMatchExtension());
+        }
+
+        [Test]
+        public static void TestGetUniqueFormLabel()
+        {
+            Assert.AreEqual("Peptide", AnalyteType.Peptide.GetUniqueFormLabel());
+            Assert.AreEqual("Proteoform", AnalyteType.Proteoform.GetUniqueFormLabel());
+            Assert.AreEqual("Oligo", AnalyteType.Oligo.GetUniqueFormLabel());
+        }
+
+        [Test]
+        public static void TestGetBioPolymerLabel()
+        {
+            Assert.AreEqual("Protein", AnalyteType.Peptide.GetBioPolymerLabel());
+            Assert.AreEqual("Protein", AnalyteType.Proteoform.GetBioPolymerLabel());
+            Assert.AreEqual("Transcript", AnalyteType.Oligo.GetBioPolymerLabel());
+        }
     }
 }
