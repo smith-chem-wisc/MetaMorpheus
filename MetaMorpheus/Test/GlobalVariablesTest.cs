@@ -100,8 +100,11 @@ namespace Test
         public static void TestGetUniqueFormLabel()
         {
             Assert.That(AnalyteType.Peptide.GetUniqueFormLabel(), Is.EqualTo("Peptide"));
+            Assert.That(AnalyteType.Peptide.ToString(), Is.EqualTo("Peptide"));
             Assert.That(AnalyteType.Proteoform.GetUniqueFormLabel(), Is.EqualTo("Proteoform"));
+            Assert.That(AnalyteType.Proteoform.ToString(), Is.EqualTo("Proteoform"));
             Assert.That(AnalyteType.Oligo.GetUniqueFormLabel(), Is.EqualTo("Oligo"));
+            Assert.That(AnalyteType.Oligo.ToString(), Is.EqualTo("Oligo"));
         }
 
         [Test]
