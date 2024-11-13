@@ -154,10 +154,10 @@ namespace Test
 
             var k = allResultsText.ToString();
 
-            Assert.IsTrue(k.Contains("Localized mods seen below q-value 0.01:\r\n\tCarbamidomethyl on C\t84"));
-            Assert.IsTrue(k.Contains("(Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:\r\n\tCarbamidomethyl on C\t9"));
-            Assert.IsTrue(k.Contains("(Approx) Additional unlocalized mods seen below q-value 0.01:\r\n\tDecarboxylation on E\t2"));
-            Assert.IsTrue(k.Contains("(Approx) Additional unlocalized modification formulas seen below q-value 0.01:\r\n\tO3\t4"));
+            Assert.That(k.Contains("Localized mods seen below q-value 0.01:\r\n\tCarbamidomethyl on C\t84"));
+            Assert.That(k.Contains("(Approx) Additional localized but protein ambiguous mods seen below q-value 0.01:\r\n\tCarbamidomethyl on C\t9"));
+            Assert.That(k.Contains("(Approx) Additional unlocalized mods seen below q-value 0.01:\r\n\tDecarboxylation on E\t2"));
+            Assert.That(k.Contains("(Approx) Additional unlocalized modification formulas seen below q-value 0.01:\r\n\tO3\t4"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -464,7 +464,7 @@ namespace Test
 
             // RUN!
             var theContaminantDbResult = task1.RunTask(outputFolder, new List<DbForTask> { new DbForTask(xmlName, true) }, new List<string> { mzmlName }, "taskId1").ToString();
-            Assert.IsTrue(theContaminantDbResult.Contains("Contaminant modifications added: 1"));
+            Assert.That(theContaminantDbResult.Contains("Contaminant modifications added: 1"));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);

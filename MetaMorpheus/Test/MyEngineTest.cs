@@ -47,13 +47,13 @@ namespace Test
             scan.MassSpectrum.XCorrPrePreprocessing(0, 1969, precursorMass.ToMz(1));
             var scanWithMass = new Ms2ScanWithSpecificMass(scan, precursorMass.ToMz(1), 1, "", new CommonParameters());
             List<MatchedFragmentIon> matchedIons = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, productsWithLocalizedMassDiff, commonParametersNoComp);
-            Assert.AreEqual(1, matchedIons.Count);
+            Assert.That(1, Is.EqualTo(matchedIons.Count));
 
             //test what happens when the scan has no peaks
             scan.MassSpectrum.XCorrPrePreprocessing(0, 1, precursorMass.ToMz(1));
             scanWithMass = new Ms2ScanWithSpecificMass(scan, precursorMass.ToMz(1), 1, "", new CommonParameters());
             matchedIons = MetaMorpheusEngine.MatchFragmentIons(scanWithMass, productsWithLocalizedMassDiff, commonParametersNoComp);
-            Assert.AreEqual(0, matchedIons.Count);
+            Assert.That(0, Is.EqualTo(matchedIons.Count));
         }
 
         private class TestEngine : MetaMorpheusEngine

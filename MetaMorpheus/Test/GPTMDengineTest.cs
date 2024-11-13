@@ -114,7 +114,7 @@ namespace Test
             
             var engine = new GptmdEngine(nonNullPsms, reducedMods, new List<Tuple<double, double>>(), new Dictionary<string, Tolerance> { { @"TestData\SmallCalibratible_Yeast.mzML", precursorMassTolerance } }, commonParameters, fsp, new List<string>());
             var res = (GptmdResults)engine.Run();
-            Assert.AreEqual(8, res.Mods.Count);
+            Assert.That(8, Is.EqualTo(res.Mods.Count));
         }
 
         /// <summary>
