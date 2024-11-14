@@ -1157,7 +1157,7 @@ namespace EngineLayer
 
         public static float? GetLog10Factorial(int n)
         {
-            if (n < 0)
+            if (n < 1)
             {
                 return null;
             }
