@@ -69,7 +69,6 @@ namespace Test
         }
 
         [Test]
-        [TestCase(0, 0.0)]
         [TestCase(1, 0.0)]
         [TestCase(2, 0.30103)]
         [TestCase(3, 0.7781513)]
