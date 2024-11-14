@@ -51,16 +51,6 @@ namespace EngineLayer
         /// Gets or sets the label for grouped forms (e.g. Protein).
         /// </summary>
         internal string BioPolymerLabel { get; init; } = bioPolymerLabel;
-
-        /// <summary>
-        /// Returns the string representation of the AnalyteType.
-        /// This is used to determine the output format of the AnalyteType.
-        /// </summary>
-        /// <returns>The unique form label.</returns>
-        public override string ToString()
-        {
-            return UniqueFormLabel;
-        }
     }
 }
 
