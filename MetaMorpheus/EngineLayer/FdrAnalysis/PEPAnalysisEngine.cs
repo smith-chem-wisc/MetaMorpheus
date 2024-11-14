@@ -1066,6 +1066,131 @@ namespace EngineLayer
             return massErrors.Average();
         }
 
+        /// <summary>
+        /// Taken from Nat. Methods.https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5409104/
+        /// "MSFragger: ultrafast and comprehensive peptide identification in shotgun proteomics"
+        /// Andy T. Kong,1,2 Felipe V. Leprevost,2 Dmitry M. Avtonomov,2 Dattatreya Mellacheruvu,2 and Alexey I. Nesvizhskii1,2,*
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="selectedPeptide"></param>
+        /// <returns></returns>
+        public static float GetFraggerHyperScore(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        {
+            var peptideFragmentIons = psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide];
+            float nIonIntensitySum = 0;
+            float cIonIntensitySum = 0;
+            int nIonCount = 0;
+            int cIonCount = 0;
+
+            foreach (var ion in peptideFragmentIons)
+            {
+                if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N)
+                {
+                    nIonIntensitySum += (float)ion.Intensity;
+                    nIonCount++;
+                }
+                else if (ion.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C)
+                {
+                    cIonIntensitySum += (float)ion.Intensity;
+                    cIonCount++;
+                }
+            }
+
+            float matched_n_IonCountFactorial = nIonCount > 0 ? GetLog10Factorial(nIonCount).Value : 0;
+            float matched_c_IonCountFactorial = cIonCount > 0 ? GetLog10Factorial(cIonCount).Value : 0;
+
+            double log10IntensitySum = (nIonIntensitySum > 0 && cIonIntensitySum > 0) ? Math.Log10(nIonIntensitySum * cIonIntensitySum) : 0.1;
+
+            return matched_n_IonCountFactorial + matched_c_IonCountFactorial + (float)log10IntensitySum;
+        }
+
+        /// <summary>
+        /// https://willfondrie.com/2019/02/an-intuitive-look-at-the-xcorr-score-function-in-proteomics/
+        /// 
+        /// A mass spectrum can be preprocessed by subtracting the mean intensities at all of the offsets. 
+        /// Then a single dot product between the preprocessed mass spectrum and the theoretical peptide 
+        /// mass spectrum yields the xcorr score, which is made possible because of the distributive 
+        /// property of the dot product.
+        /// 
+        /// Since we have already chosen the match for this scan, we can use the matched ions to calculate the
+        /// xcorr and skip the dot product step.
+        /// 
+        /// </summary>
+        /// <param name="psm"></param>
+        /// <param name="selectedPeptide"></param>
+        /// <returns></returns>
+        public static float Xcorr(SpectralMatch psm, IBioPolymerWithSetMods selectedPeptide)
+        {
+            double xcorr = 0;
+            var xArray = psm.MsDataScan.MassSpectrum.XArray;
+            var yArray = psm.MsDataScan.MassSpectrum.YArray;
+            var fragments = psm.BioPolymersWithSetModsToMatchingFragments[selectedPeptide];
+
+            foreach (var peptideFragmentIon in fragments)
+            {
+                int startIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz - 75);
+                int endIndex = Array.BinarySearch(xArray, peptideFragmentIon.Mz + 75);
+
+                // Ensure valid indices
+                startIndex = startIndex < 0 ? ~startIndex : startIndex;
+                endIndex = endIndex < 0 ? ~endIndex - 1 : endIndex;
+
+                // Sum yArray values between startIndex and endIndex
+                double sum = 0;
+                for (int i = startIndex; i <= endIndex; i++)
+                {
+                    sum += yArray[i];
+                }
+                sum -= peptideFragmentIon.Intensity; // Subtract the intensity of the current ion
+
+                double range = xArray[endIndex] - xArray[startIndex];
+                if (range > 0)
+                {
+                    sum /= range;
+                }
+
+                xcorr += Math.Max(peptideFragmentIon.Intensity - sum, 0);
+            }
+
+            return (float)xcorr;
+        }
+
+        public static float? GetLog10Factorial(int n)
+        {
+            if (n < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(n), "Input must be non-negative.");
+            }
+
+            // Use a precomputed array for small values of n
+            double[] precomputedLog10Factorials = new double[]
+            {
+                0.0, // 0!
+                0.0, // 1!
+                0.3010, // 2!
+                0.7782, // 3!
+                1.2553, // 4!
+                1.7324, // 5!
+                2.2095, // 6!
+                2.6866, // 7!
+                3.1637, // 8!
+                3.6408, // 9!
+                4.1179  // 10!
+            };
+
+            if (n < precomputedLog10Factorials.Length)
+            {
+                return (float)precomputedLog10Factorials[n];
+            }
+
+            double log10Factorial = precomputedLog10Factorials[precomputedLog10Factorials.Length - 1];
+            for (int i = precomputedLog10Factorials.Length; i <= n; i++)
+            {
+                log10Factorial += Math.Log10(i);
+            }
+
+            return (float)log10Factorial;
+        }
         #endregion
     }
 }
