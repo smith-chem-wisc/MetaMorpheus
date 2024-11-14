@@ -1159,37 +1159,17 @@ namespace EngineLayer
         {
             if (n < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(n), "Input must be non-negative.");
+                return null;
             }
-
-            // Use a precomputed array for small values of n
-            double[] precomputedLog10Factorials = new double[]
+            else
             {
-                0.0, // 0!
-                0.0, // 1!
-                0.3010, // 2!
-                0.7782, // 3!
-                1.2553, // 4!
-                1.7324, // 5!
-                2.2095, // 6!
-                2.6866, // 7!
-                3.1637, // 8!
-                3.6408, // 9!
-                4.1179  // 10!
-            };
-
-            if (n < precomputedLog10Factorials.Length)
-            {
-                return (float)precomputedLog10Factorials[n];
+                double log10Factorial = 0.0;
+                for (int i = 1; i <= n; i++)
+                {
+                    log10Factorial += Math.Log10(i);
+                }
+                return (float)log10Factorial;
             }
-
-            double log10Factorial = precomputedLog10Factorials[precomputedLog10Factorials.Length - 1];
-            for (int i = precomputedLog10Factorials.Length; i <= n; i++)
-            {
-                log10Factorial += Math.Log10(i);
-            }
-
-            return (float)log10Factorial;
         }
         #endregion
     }

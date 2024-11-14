@@ -17,8 +17,6 @@ namespace Test
     public class PepAnalysisEngineTests
     {
         [TestCase(5, 2.07918119f)]
-        [TestCase(0, 0.0f)]
-        [TestCase(-5, 0.0f)]
         [Test]
         public static void GetLog10Factorial_ReturnsCorrectValue(int n, float? expected)
         {
@@ -70,29 +68,28 @@ namespace Test
             Assert.That(7.112605f, Is.EqualTo(hyperScore).Within(0.000001f));
         }
 
-
-        [Test]
-        public static void GetLog10Factorial_NegativeInput_ThrowsArgumentOutOfRangeException()
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(() => PepAnalysisEngine.GetLog10Factorial(-1));
-        }
-
         [Test]
         [TestCase(0, 0.0)]
         [TestCase(1, 0.0)]
-        [TestCase(2, 0.3010)]
-        [TestCase(3, 0.7782)]
-        [TestCase(4, 1.2553)]
-        [TestCase(5, 1.7324)]
-        [TestCase(6, 2.2095)]
-        [TestCase(7, 2.6866)]
-        [TestCase(8, 3.1637)]
-        [TestCase(9, 3.6408)]
-        [TestCase(10, 4.1179)]
-        public static void GetLog10Factorial_PrecomputedValues_ReturnsExpectedResult(int n, double expected)
+        [TestCase(2, 0.30103)]
+        [TestCase(3, 0.7781513)]
+        [TestCase(4, 1.38021123)]
+        [TestCase(5, 2.07918119)]
+        [TestCase(6, 2.85733247)]
+        [TestCase(7, 3.70243049)]
+        [TestCase(8, 4.60552073)]
+        [TestCase(9, 5.559763)]
+        [TestCase(10, 6.559763)]
+        public static void GetLog10Factorial_ReturnsExpectedResult(int n, double? expected)
         {
             float? result = PepAnalysisEngine.GetLog10Factorial(n);
-            Assert.That((float)expected, Is.EqualTo(result));
+            Assert.That((float)expected, Is.EqualTo(result).Within(0.0001));
+        }
+
+        [Test]
+        public static void GetLog10Factorial_NegativeInputReturnsNull()
+        {
+            Assert.That(PepAnalysisEngine.GetLog10Factorial(-1), Is.Null);
         }
 
         [Test]
@@ -100,7 +97,7 @@ namespace Test
         {
             int n = 20;
             float? result = PepAnalysisEngine.GetLog10Factorial(n);
-            double expected = 0.0;
+            double? expected = 0.0;
             for (int i = 1; i <= n; i++)
             {
                 expected += Math.Log10(i);
