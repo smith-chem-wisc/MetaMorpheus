@@ -65,7 +65,7 @@ namespace EngineLayer
             Loaders.LoadElements();
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
-            AnalyteType = AnalyteType.GetAnalyteType("Peptide");
+            AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };

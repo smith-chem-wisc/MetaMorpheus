@@ -2,7 +2,7 @@
 using EngineLayer.FdrAnalysis;
 using EngineLayer.ModificationAnalysis;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -93,18 +93,18 @@ namespace Test
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(newPsms, new CommonParameters(), fsp, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins.Count());
-            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.IdWithMotif]);
-            Assert.AreEqual(1, res.CountOfEachModSeenOnProteins[mod2.IdWithMotif]);
+            Assert.That(res.CountOfEachModSeenOnProteins.Count(), Is.EqualTo(2));
+            Assert.That(res.CountOfEachModSeenOnProteins[mod1.IdWithMotif], Is.EqualTo(2));
+            Assert.That(res.CountOfEachModSeenOnProteins[mod2.IdWithMotif], Is.EqualTo(1));
 
-            Assert.AreEqual(1, res.CountOfModsSeenAndLocalized.Count());
-            Assert.AreEqual(2, res.CountOfModsSeenAndLocalized[mod1.IdWithMotif]);
+            Assert.That(res.CountOfModsSeenAndLocalized.Count(), Is.EqualTo(1));
+            Assert.That(res.CountOfModsSeenAndLocalized[mod1.IdWithMotif], Is.EqualTo(2));
 
-            Assert.AreEqual(0, res.CountOfAmbiguousButLocalizedModsSeen.Count());
+            Assert.That(res.CountOfAmbiguousButLocalizedModsSeen.Count(), Is.EqualTo(0));
 
-            Assert.AreEqual(0, res.CountOfUnlocalizedMods.Count());
+            Assert.That(res.CountOfUnlocalizedMods.Count(), Is.EqualTo(0));
 
-            Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
+            Assert.That(res.CountOfUnlocalizedFormulas.Count(), Is.EqualTo(0));
         }
 
         [Test]
@@ -152,12 +152,12 @@ namespace Test
             ModificationAnalysisEngine modificationAnalysisEngine = new ModificationAnalysisEngine(new List<SpectralMatch> { myPsm }, new CommonParameters(), fsp, new List<string>());
             var res = (ModificationAnalysisResults)modificationAnalysisEngine.Run();
 
-            Assert.AreEqual(1, res.CountOfEachModSeenOnProteins.Count());
-            Assert.AreEqual(2, res.CountOfEachModSeenOnProteins[mod1.IdWithMotif]);
-            Assert.AreEqual(0, res.CountOfModsSeenAndLocalized.Count());
-            Assert.AreEqual(0, res.CountOfAmbiguousButLocalizedModsSeen.Count);
-            Assert.AreEqual(1, res.CountOfUnlocalizedMods[mod1.IdWithMotif]); // Saw it, but not sure where!
-            Assert.AreEqual(0, res.CountOfUnlocalizedFormulas.Count());
+            Assert.That(res.CountOfEachModSeenOnProteins.Count(), Is.EqualTo(1));
+            Assert.That(res.CountOfEachModSeenOnProteins[mod1.IdWithMotif], Is.EqualTo(2));
+            Assert.That(res.CountOfModsSeenAndLocalized.Count(), Is.EqualTo(0));
+            Assert.That(res.CountOfAmbiguousButLocalizedModsSeen.Count, Is.EqualTo(0));
+            Assert.That(res.CountOfUnlocalizedMods[mod1.IdWithMotif], Is.EqualTo(1)); // Saw it, but not sure where!
+            Assert.That(res.CountOfUnlocalizedFormulas.Count(), Is.EqualTo(0));
         }
     }
 }

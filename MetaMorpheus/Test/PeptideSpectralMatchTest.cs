@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
 using Proteomics;
 using System;
@@ -44,9 +44,9 @@ namespace Test
 
             //PSM has neither sequence nor matched fragment ions
             var b = psmNoBaseSequenceNoMFI.BaseSequence;
-            Assert.AreEqual("", b);
+            Assert.That(b, Is.EqualTo(""));
             var m = psmNoBaseSequenceNoMFI.MatchedFragmentIons;
-            Assert.AreEqual(0, m.Count);
+            Assert.That(m.Count, Is.EqualTo(0));
             psmNoBaseSequenceNoMFI.GetAminoAcidCoverage();
 
             sequence = "PEPTIDE";
@@ -62,9 +62,9 @@ namespace Test
             //PSM has sequence but does not have matched fragment ions
             psmBaseSequenceNoMFI.ResolveAllAmbiguities();
             b = psmBaseSequenceNoMFI.BaseSequence;
-            Assert.AreEqual(sequence, b);
+            Assert.That(b, Is.EqualTo(sequence));
             m = psmBaseSequenceNoMFI.MatchedFragmentIons;
-            Assert.AreEqual(0, m.Count);
+            Assert.That(m.Count, Is.EqualTo(0));
             psmBaseSequenceNoMFI.GetAminoAcidCoverage();
 
             //PSM has no sequence but does have matched fragment ions
@@ -76,9 +76,9 @@ namespace Test
             psmNoBaseSequenceMFI.ResolveAllAmbiguities();
 
             b = psmNoBaseSequenceMFI.BaseSequence;
-            Assert.AreEqual("", b);
+            Assert.That(b, Is.EqualTo(""));
             m = psmNoBaseSequenceMFI.MatchedFragmentIons;
-            Assert.AreEqual(1, m.Count);
+            Assert.That(m.Count, Is.EqualTo(1));
             psmNoBaseSequenceMFI.GetAminoAcidCoverage();
 
             //PSM has sequence and matched fragment ions
@@ -87,9 +87,9 @@ namespace Test
             psmBaseSequenceMFI.ResolveAllAmbiguities();
 
             b = psmBaseSequenceMFI.BaseSequence;
-            Assert.AreEqual("PEPTIDE", b);
+            Assert.That(b, Is.EqualTo("PEPTIDE"));
             m = psmBaseSequenceMFI.MatchedFragmentIons;
-            Assert.AreEqual(1, m.Count);
+            Assert.That(m.Count, Is.EqualTo(1));
             psmBaseSequenceMFI.GetAminoAcidCoverage();
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch>() { psmNoBaseSequenceNoMFI, psmBaseSequenceNoMFI, psmNoBaseSequenceMFI, psmBaseSequenceMFI };

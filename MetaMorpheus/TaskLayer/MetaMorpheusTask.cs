@@ -1143,11 +1143,11 @@ namespace TaskLayer
                 && commonParameters.DigestionParams.Protease != null
                 && commonParameters.DigestionParams.Protease.Name == "top-down")
             {
-                GlobalVariables.AnalyteType = AnalyteType.GetAnalyteType("Proteoform");
+                GlobalVariables.AnalyteType = AnalyteType.Proteoform;
             }
             else
             {
-                GlobalVariables.AnalyteType = AnalyteType.GetAnalyteType("Peptide");
+                GlobalVariables.AnalyteType = AnalyteType.Peptide;
             }
         }
 

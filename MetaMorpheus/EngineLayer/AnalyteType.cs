@@ -1,49 +1,56 @@
 ﻿using System.Collections.Generic;
-using System.Dynamic;
-using Microsoft.ML.Trainers;
 
 namespace EngineLayer
 {
+    public enum AnalyteType
+    {
+        Peptide,
+        Proteoform,
+        Oligo
+    }
+
+    /// <summary>
+    /// Accessor methods for specific information about certain analyte types
+    /// </summary>
+    public static class AnalyteTypeExtensions
+    {
+        private static readonly Dictionary<AnalyteType, AnalyteTypeData> AnalyteTypes = new()
+            {
+                { AnalyteType.Peptide, new AnalyteTypeData("PSM", "Peptide", "Protein", "psmtsv") },
+                { AnalyteType.Proteoform, new AnalyteTypeData("PSM", "Proteoform", "Protein", "psmtsv") },
+                { AnalyteType.Oligo, new AnalyteTypeData("OSM", "Oligo", "Transcript", "osmtsv") },
+            };
+
+        public static string GetSpectralMatchLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchLabel;
+        public static string GetSpectralMatchExtension(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchExtension;
+        public static string GetUniqueFormLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].UniqueFormLabel;
+        public static string GetBioPolymerLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].BioPolymerLabel;
+    }
+
     /// <summary>
     /// Represents an analyte type and is used to determine the output format of the analyte type.
     /// </summary>
-    public class AnalyteType
+    internal class AnalyteTypeData(string spectralMatchLabel, string uniqueFormLabel, string bioPolymerLabel, string spectralMatchExtension)
     {
-        public static Dictionary<string, AnalyteType> AnalyteTypes = new Dictionary<string, AnalyteType>
-            {
-                { "Peptide", new AnalyteType("PSM", "Peptide", "Protein", "psmtsv") },
-                { "Proteoform", new AnalyteType("PSM", "Proteoform", "Protein", "psmtsv") },
-                { "Oligo", new AnalyteType("OSM", "Oligo", "Transcript", "osmtsv") },
-            };
-
-
-        public AnalyteType(string spectralMatchLabel, string uniqueFormLabel, string bioPolymerLabel, string spectralMatchExtension)
-        {
-            SpectralMatchLabel = spectralMatchLabel;
-            UniqueFormLabel = uniqueFormLabel;
-            BioPolymerLabel = bioPolymerLabel;
-            SpectralMatchExtension = spectralMatchExtension;
-        }
-
         /// <summary>
         /// Gets or sets the label for spectral matches (e.g. PSM).
         /// </summary>
-        public string SpectralMatchLabel { get; init; }
+        internal string SpectralMatchLabel { get; init; } = spectralMatchLabel;
 
         /// <summary>
-        /// Extension for spectral matches (e.g. .psmtsv).
+        /// Extension for spectral matches (e.g. psmtsv).
         /// </summary>
-        public string SpectralMatchExtension { get; init; }
+        internal string SpectralMatchExtension { get; init; } = spectralMatchExtension;
 
         /// <summary>
         /// Gets or sets the label for unique forms (e.g. Peptide).
         /// </summary>
-        public string UniqueFormLabel { get; init; }
+        internal string UniqueFormLabel { get; init; } = uniqueFormLabel;
 
         /// <summary>
         /// Gets or sets the label for grouped forms (e.g. Protein).
         /// </summary>
-        public string BioPolymerLabel { get; init; }
+        internal string BioPolymerLabel { get; init; } = bioPolymerLabel;
 
         /// <summary>
         /// Returns the string representation of the AnalyteType.
@@ -54,18 +61,6 @@ namespace EngineLayer
         {
             return UniqueFormLabel;
         }
-
-        /// <summary>
-        /// Gets the AnalyteType based on the specified analyte type label.
-        /// </summary>
-        /// <param name="analyteTypeLabel">The analyte type label.</param>
-        /// <returns>The AnalyteType.</returns>
-        public static AnalyteType GetAnalyteType(string analyteTypeLabel)
-        {
-            if (AnalyteTypes.TryGetValue(analyteTypeLabel, out AnalyteType type))
-                return type;
-            else
-                throw new MetaMorpheusException("Unrecognized analyte type: " + analyteTypeLabel);
-        }
     }
 }
+
