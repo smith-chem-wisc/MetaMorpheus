@@ -24,6 +24,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
+    <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="mzLib" Version="1.0.552" />
     <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
