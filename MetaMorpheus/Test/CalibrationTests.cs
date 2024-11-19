@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using TaskLayer;
 using System;
+using MzLibUtil;
 
 namespace Test
 {
@@ -67,6 +68,186 @@ namespace Test
 
             // clean up
             Directory.Delete(unitTestFolder, true);
+        }
+
+        //[Test]
+        public static void LocalCalibrationTest()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(@"D:\MetaMorpheusVignette", @"CalibrationTest");
+            string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput");
+            Directory.CreateDirectory(unitTestFolder);
+            Directory.CreateDirectory(outputFolder);
+
+            // set up original spectra file (input to calibration)
+            string file1Path = Path.Combine(@"D:\MetaMorpheusVignette\04-30-13_CAST_Frac4_6uL.raw");
+            string file2Path = Path.Combine(@"D:\MetaMorpheusVignette\04-30-13_CAST_Frac5_4uL.raw");
+
+            // protein db
+            string myDatabase = @"D:\MetaMorpheusVignette\uniprot-mouse-reviewed-1-24-2018.xml.gz";
+            string contamDb = @"D:\MetaMorpheusVignette\uniprot-cRAP-1-24-2018.xml.gz";
+
+            // set up original experimental design (input to calibration)
+            SpectraFileInfo fileInfo = new(Path.GetFileName(file1Path), "condition", 0, 0, 0);
+            SpectraFileInfo file2Info = new(Path.GetFileName(file2Path), "condition", 1, 0, 0);
+            _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo, file2Info });
+
+            // run calibration
+            CalibrationTask calibrationTask = new();
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(contamDb, true) },
+                new List<string> { file1Path, file2Path }, "test");
+
+            // test file-specific toml written by calibration w/ suggested ppm tolerances
+            string expectedTomlName = Path.GetFileNameWithoutExtension(file1Path) + "-calib.toml";
+
+            Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)));
+
+            var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
+            var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+            var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+
+            Assert.That(double.TryParse(tolerance, out double tol) == true);
+            Assert.That(double.TryParse(tolerance1, out double tol1) == true);
+            Assert.That(lines[0].Contains("PrecursorMassTolerance"));
+            Assert.That(lines[1].Contains("ProductMassTolerance"));
+
+            Console.WriteLine("Tol1 = ", tol);
+            Console.WriteLine("Tol2 = ", tol1);
+
+        }
+
+        //[Test]
+        public static void LocalCalibrationTestSmall()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(@"D:\MetaMorpheusVignette", @"CalibrationTest");
+            Directory.CreateDirectory(unitTestFolder);
+            string file1Path = Path.Combine(@"D:\MetaMorpheusVignette\04-30-13_CAST_Frac4_6uL.raw");
+
+            for (int i = 1; i <= 3; i++)
+            {
+                string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput" + i);
+                Directory.CreateDirectory(outputFolder);
+
+                // set up original spectra file (input to calibration)
+                
+                //string file2Path = Path.Combine(@"D:\MetaMorpheusVignette\04-30-13_CAST_Frac5_4uL.raw");
+
+                // protein db
+                string myDatabase = @"D:\MetaMorpheusVignette\uniprot-mouse-reviewed-1-24-2018.xml.gz";
+                string contamDb = @"D:\MetaMorpheusVignette\uniprot-cRAP-1-24-2018.xml.gz";
+
+                // set up original experimental design (input to calibration)
+                SpectraFileInfo fileInfo = new(Path.GetFileName(file1Path), "condition", 0, 0, 0);
+                //SpectraFileInfo file2Info = new(Path.GetFileName(file2Path), "condition", 1, 0, 0);
+                _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+                // run calibration
+                CalibrationTask calibrationTask = new();
+                calibrationTask.CommonParameters = new CommonParameters(trimMsMsPeaks: true, doPrecursorDeconvolution: true,
+                    useProvidedPrecursorInfo: false,
+                    productMassTolerance: new PpmTolerance(25),
+                    precursorMassTolerance: new PpmTolerance(15),
+                    deconvolutionMassTolerance: new PpmTolerance(4)
+                    );
+                calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(contamDb, true) },
+                    new List<string> { file1Path }, "test");
+            }
+
+            // test file-specific toml written by calibration w/ suggested ppm tolerances
+            string expectedTomlName = Path.GetFileNameWithoutExtension(file1Path) + "-calib.toml";
+
+            
+            string outputFolder2 = Path.Combine(unitTestFolder, @"TaskOutput" + 2);
+            string outputFolder3 = Path.Combine(unitTestFolder, @"TaskOutput" + 3);
+            
+            Assert.That(File.Exists(Path.Combine(outputFolder2, expectedTomlName)));
+            Assert.That(File.Exists(Path.Combine(outputFolder3, expectedTomlName)));
+
+            double[] precursorTols = new double[3];
+            double[] productTols = new double[3];
+            for(int i = 1; i <=3; i++)
+            {
+                string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput" + i);
+                Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)));
+                var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
+                var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+                var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+
+                precursorTols[i-1] = double.Parse(tolerance);
+                productTols[i-1] = double.Parse(tolerance1);
+            }
+
+            Console.WriteLine("Precursor Tolerances: ", string.Join(", ", precursorTols));
+            Console.WriteLine("Product Tolerances: ", string.Join(", ", productTols));
+        }
+
+        //[Test]
+        public static void LocalCalibrationTestLarge()
+        {
+            // set up directories
+            string unitTestFolder = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData", @"CalibrationTest");
+            Directory.CreateDirectory(unitTestFolder);
+            string file1Path = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData\04-12-24_Human_Ecoli_10to1_C18_3mm_50msec_stnd-60min_6.raw");
+
+            for (int i = 1; i <= 3; i++)
+            {
+                string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput" + i);
+                Directory.CreateDirectory(outputFolder);
+
+                // set up original spectra file (input to calibration)
+
+                //string file2Path = Path.Combine(@"D:\MetaMorpheusVignette\04-30-13_CAST_Frac5_4uL.raw");
+
+                // protein db
+                string myDatabase = @"C:\Users\Alex\Documents\Proteomes\MBR_Proteomes_March_2024\uniprot_HSapiens_80k_03_2024.fasta";
+                string ecoliDb = @"C:\Users\Alex\Documents\Proteomes\MBR_Proteomes_March_2024\uniprot_Ecoli_4k_03_2024.fasta";
+                string contamDb = @"D:\MetaMorpheusVignette\uniprot-cRAP-1-24-2018.xml.gz";
+
+                // set up original experimental design (input to calibration)
+                SpectraFileInfo fileInfo = new(Path.GetFileName(file1Path), "condition", 0, 0, 0);
+                //SpectraFileInfo file2Info = new(Path.GetFileName(file2Path), "condition", 1, 0, 0);
+                _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
+
+                // run calibration
+                CalibrationTask calibrationTask = new();
+                calibrationTask.CommonParameters = new CommonParameters(trimMsMsPeaks: true, doPrecursorDeconvolution: true,
+                    useProvidedPrecursorInfo: false,
+                    productMassTolerance: new PpmTolerance(25),
+                    precursorMassTolerance: new PpmTolerance(15),
+                    deconvolutionMassTolerance: new PpmTolerance(4)
+                    );
+                calibrationTask.RunTask(outputFolder,
+                    new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(ecoliDb, false ),new DbForTask(contamDb, true) },
+                    new List<string> { file1Path }, "test");
+            }
+
+            // test file-specific toml written by calibration w/ suggested ppm tolerances
+            string expectedTomlName = Path.GetFileNameWithoutExtension(file1Path) + "-calib.toml";
+
+
+            string outputFolder2 = Path.Combine(unitTestFolder, @"TaskOutput" + 2);
+            string outputFolder3 = Path.Combine(unitTestFolder, @"TaskOutput" + 3);
+
+            Assert.That(File.Exists(Path.Combine(outputFolder2, expectedTomlName)));
+            Assert.That(File.Exists(Path.Combine(outputFolder3, expectedTomlName)));
+
+            double[] precursorTols = new double[3];
+            double[] productTols = new double[3];
+            for (int i = 1; i <= 3; i++)
+            {
+                string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput" + i);
+                Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)));
+                var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
+                var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+                var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+
+                precursorTols[i - 1] = double.Parse(tolerance);
+                productTols[i - 1] = double.Parse(tolerance1);
+            }
+
+            Console.WriteLine("Precursor Tolerances: ", string.Join(", ", precursorTols));
+            Console.WriteLine("Product Tolerances: ", string.Join(", ", productTols));
         }
 
         [Test]
