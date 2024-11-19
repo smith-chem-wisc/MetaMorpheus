@@ -146,6 +146,7 @@ namespace EngineLayer
                 {
                     RunnerUpScore = Score;
                 }
+
                 Score = newScore;
                 Xcorr = newXcorr;
 
