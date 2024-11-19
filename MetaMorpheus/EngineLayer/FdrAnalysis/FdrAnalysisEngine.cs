@@ -109,7 +109,7 @@ namespace EngineLayer.FdrAnalysis
                         CalculateQValue(psms, peptideLevelCalculation: false, pepCalculation: true);
                     }
                 }
-                else if(psms.Any(psm => psm.FdrInfo.PEP < 2)) 
+                else if(psms.Any(psm => psm.FdrInfo.PEP > 0)) 
                 {
                     // If PEP's have been calculated, but doPEP = false, then we don't want to train another model,
                     // but we do want to calculate pep q-values
