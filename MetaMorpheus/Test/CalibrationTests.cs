@@ -182,11 +182,11 @@ namespace Test
             Console.WriteLine("Product Tolerances: ", string.Join(", ", productTols));
         }
 
-        //[Test]
+        [Test]
         public static void LocalCalibrationTestLarge()
         {
             // set up directories
-            string unitTestFolder = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData", @"CalibrationTest");
+            string unitTestFolder = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData", @"CalibrationTest2");
             Directory.CreateDirectory(unitTestFolder);
             string file1Path = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData\04-12-24_Human_Ecoli_10to1_C18_3mm_50msec_stnd-60min_6.raw");
 
