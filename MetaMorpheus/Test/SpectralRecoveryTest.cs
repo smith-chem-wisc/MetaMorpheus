@@ -163,7 +163,7 @@ namespace Test
 
             // Changing Q-value calculation methods results in more PSMs being discovered, and so fewer spectra are available to be "recovered"
             // (as they were identified in the orignal search)
-            Assert.That(matches2ng.Count >= 3);
+            Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 10);
             Assert.That(expectedMatches.Count >= 2); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
 
