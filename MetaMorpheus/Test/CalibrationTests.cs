@@ -116,11 +116,11 @@ namespace Test
 
         }
 
-        //[Test]
+        [Test]
         public static void LocalCalibrationTestSmall()
         {
             // set up directories
-            string unitTestFolder = Path.Combine(@"D:\MetaMorpheusVignette", @"CalibrationTest");
+            string unitTestFolder = Path.Combine(@"D:\MetaMorpheusVignette", @"SearchTest");
             Directory.CreateDirectory(unitTestFolder);
             string file1Path = Path.Combine(@"D:\MetaMorpheusVignette\04-30-13_CAST_Frac4_6uL.raw");
 
@@ -143,21 +143,22 @@ namespace Test
                 _ = ExperimentalDesign.WriteExperimentalDesignToFile(new List<SpectraFileInfo> { fileInfo });
 
                 // run calibration
-                CalibrationTask calibrationTask = new();
-                calibrationTask.CommonParameters = new CommonParameters(trimMsMsPeaks: true, doPrecursorDeconvolution: true,
+                //CalibrationTask calibrationTask = new();
+                SearchTask searchTask = new SearchTask();
+                searchTask.CommonParameters = new CommonParameters(trimMsMsPeaks: true, doPrecursorDeconvolution: true,
                     useProvidedPrecursorInfo: false,
                     productMassTolerance: new PpmTolerance(25),
                     precursorMassTolerance: new PpmTolerance(15),
                     deconvolutionMassTolerance: new PpmTolerance(4)
                     );
-                calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(contamDb, true) },
+                searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(contamDb, true) },
                     new List<string> { file1Path }, "test");
+                
             }
 
             // test file-specific toml written by calibration w/ suggested ppm tolerances
             string expectedTomlName = Path.GetFileNameWithoutExtension(file1Path) + "-calib.toml";
 
-            
             string outputFolder2 = Path.Combine(unitTestFolder, @"TaskOutput" + 2);
             string outputFolder3 = Path.Combine(unitTestFolder, @"TaskOutput" + 3);
             
