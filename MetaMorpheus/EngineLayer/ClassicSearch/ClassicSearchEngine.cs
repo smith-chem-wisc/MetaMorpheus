@@ -73,94 +73,94 @@ namespace EngineLayer.ClassicSearch
             {
                 int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
                 int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
-                Parallel.ForEach(threads, (i) =>
+                //Parallel.ForEach(threads, (i) =>
+                //for (int i = 0; i < Proteins.Count; i ++)
+                //{
+                var targetFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
+                var decoyFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
+
+                // check if we're supposed to autodetect dissociation type from the scan header or not
+                if (CommonParameters.DissociationType == DissociationType.Autodetect)
                 {
-                    var targetFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
-                    var decoyFragmentsForEachDissociationType = new Dictionary<DissociationType, List<Product>>();
-
-                    // check if we're supposed to autodetect dissociation type from the scan header or not
-                    if (CommonParameters.DissociationType == DissociationType.Autodetect)
+                    foreach (var item in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
                     {
-                        foreach (var item in GlobalVariables.AllSupportedDissociationTypes.Where(p => p.Value != DissociationType.Autodetect))
+                        targetFragmentsForEachDissociationType.Add(item.Value, new List<Product>());
+                        decoyFragmentsForEachDissociationType.Add(item.Value, new List<Product>());
+                    }
+                }
+                else
+                {
+                    targetFragmentsForEachDissociationType.Add(CommonParameters.DissociationType, new List<Product>());
+                    decoyFragmentsForEachDissociationType.Add(CommonParameters.DissociationType, new List<Product>());
+                }
+
+                for (int i = 0; i < Proteins.Count; i++)
+                {
+                    // Stop loop if canceled
+                    //if (GlobalVariables.StopLoops) { return; }
+
+                    // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
+                    foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
+                    {
+                        PeptideWithSetModifications reversedOnTheFlyDecoy = null;
+
+                        if (SpectralLibrary != null)
                         {
-                            targetFragmentsForEachDissociationType.Add(item.Value, new List<Product>());
-                            decoyFragmentsForEachDissociationType.Add(item.Value, new List<Product>());
+                            int[] newAAlocations = new int[peptide.BaseSequence.Length];
+                            reversedOnTheFlyDecoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
                         }
-                    }
-                    else
-                    {
-                        targetFragmentsForEachDissociationType.Add(CommonParameters.DissociationType, new List<Product>());
-                        decoyFragmentsForEachDissociationType.Add(CommonParameters.DissociationType, new List<Product>());
-                    }
 
-                    for (; i < Proteins.Count; i += maxThreadsPerFile)
-                    {
-                        // Stop loop if canceled
-                        if (GlobalVariables.StopLoops) { return; }
-
-                        // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
-                        foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
+                        // clear fragments from the last peptide
+                        foreach (var fragmentSet in targetFragmentsForEachDissociationType)
                         {
-                            PeptideWithSetModifications reversedOnTheFlyDecoy = null;
+                            fragmentSet.Value.Clear();
+                            decoyFragmentsForEachDissociationType[fragmentSet.Key].Clear();
+                        }
+
+                        // score each scan that has an acceptable precursor mass
+                        foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
+                        {
+                            var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
+                                scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
+
+                            if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var peptideTheorProducts))
+                            {
+                                //TODO: print some kind of warning here. the scan header dissociation type was unknown
+                                continue;
+                            }
+
+                            // check if we've already generated theoretical fragments for this peptide+dissociation type
+                            if (peptideTheorProducts.Count == 0)
+                            {
+                                peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                            }
+
+                            // match theoretical target ions to spectrum
+                            List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters,
+                                    matchAllCharges: WriteSpectralLibrary);
+
+                            // calculate the peptide's score
+                            double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+
+                            AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
 
                             if (SpectralLibrary != null)
                             {
-                                int[] newAAlocations = new int[peptide.BaseSequence.Length];
-                                reversedOnTheFlyDecoy = peptide.GetReverseDecoyFromTarget(newAAlocations);
+                                DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
                             }
-
-                            // clear fragments from the last peptide
-                            foreach (var fragmentSet in targetFragmentsForEachDissociationType)
-                            {
-                                fragmentSet.Value.Clear();
-                                decoyFragmentsForEachDissociationType[fragmentSet.Key].Clear();
-                            }
-
-                            // score each scan that has an acceptable precursor mass
-                            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
-                            {
-                                var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                                    scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
-
-                                if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var peptideTheorProducts))
-                                {
-                                    //TODO: print some kind of warning here. the scan header dissociation type was unknown
-                                    continue;
-                                }
-
-                                // check if we've already generated theoretical fragments for this peptide+dissociation type
-                                if (peptideTheorProducts.Count == 0)
-                                {
-                                    peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
-                                }
-
-                                // match theoretical target ions to spectrum
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters,
-                                        matchAllCharges: WriteSpectralLibrary);
-
-                                // calculate the peptide's score
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
-
-                                AddPeptideCandidateToPsm(scan, myLocks, thisScore, peptide, matchedIons);
-
-                                if (SpectralLibrary != null)
-                                {
-                                    DecoyScoreForSpectralLibrarySearch(scan, reversedOnTheFlyDecoy, decoyFragmentsForEachDissociationType, dissociationType, myLocks);
-                                }
-                            }
-                        }
-
-                        // report search progress (proteins searched so far out of total proteins in database)
-                        proteinsSearched++;
-                        var percentProgress = (int)((proteinsSearched / Proteins.Count) * 100);
-
-                        if (percentProgress > oldPercentProgress)
-                        {
-                            oldPercentProgress = percentProgress;
-                            ReportProgress(new ProgressEventArgs(percentProgress, "Performing classic search... ", NestedIds));
                         }
                     }
-                });
+
+                    // report search progress (proteins searched so far out of total proteins in database)
+                    proteinsSearched++;
+                    var percentProgress = (int)((proteinsSearched / Proteins.Count) * 100);
+
+                    if (percentProgress > oldPercentProgress)
+                    {
+                        oldPercentProgress = percentProgress;
+                        ReportProgress(new ProgressEventArgs(percentProgress, "Performing classic search... ", NestedIds));
+                    }
+                }
             }
 
             foreach (SpectralMatch psm in PeptideSpectralMatches.Where(p => p != null))
