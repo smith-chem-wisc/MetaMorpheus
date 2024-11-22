@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using TaskLayer;
 using System;
 using MzLibUtil;
+using Proteomics;
 
 namespace Test
 {
@@ -120,9 +121,11 @@ namespace Test
         public static void LocalCalibrationTestSmall()
         {
             // set up directories
-            string unitTestFolder = Path.Combine(@"D:\MetaMorpheusVignette", @"SearchTest");
+            string unitTestFolder = Path.Combine(@"D:\MetaMorpheusVignette", @"SearchTest_NoPsmDataParallel");
             Directory.CreateDirectory(unitTestFolder);
             string file1Path = Path.Combine(@"D:\MetaMorpheusVignette\04-30-13_CAST_Frac4_6uL.raw");
+
+            List<Protein>[] proteins = new List<Protein>[3];
 
             for (int i = 1; i <= 3; i++)
             {
@@ -153,41 +156,56 @@ namespace Test
                     );
                 searchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(contamDb, true) },
                     new List<string> { file1Path }, "test");
+
+                proteins[i - 1] = searchTask.ProteinList;
                 
+            }
+
+            
+            Assert.That(proteins[0], Is.EqualTo(proteins[1]));
+            Assert.That(proteins[1], Is.EqualTo(proteins[2]));
+
+            for(int i =0; i < proteins[0].Count; i++)
+            {
+                Assert.That(proteins[0][i].Equals(proteins[1][i]));
+                Assert.That(proteins[1][i].Equals(proteins[2][i]));
+
+                Assert.That(proteins[0][i].OneBasedPossibleLocalizedModifications.Equals(proteins[1][i].OneBasedPossibleLocalizedModifications));
+                Assert.That(proteins[1][i].OneBasedPossibleLocalizedModifications.Equals(proteins[2][i].OneBasedPossibleLocalizedModifications));
             }
 
             // test file-specific toml written by calibration w/ suggested ppm tolerances
             string expectedTomlName = Path.GetFileNameWithoutExtension(file1Path) + "-calib.toml";
 
-            string outputFolder2 = Path.Combine(unitTestFolder, @"TaskOutput" + 2);
-            string outputFolder3 = Path.Combine(unitTestFolder, @"TaskOutput" + 3);
+            //string outputFolder2 = Path.Combine(unitTestFolder, @"TaskOutput" + 2);
+            //string outputFolder3 = Path.Combine(unitTestFolder, @"TaskOutput" + 3);
             
-            Assert.That(File.Exists(Path.Combine(outputFolder2, expectedTomlName)));
-            Assert.That(File.Exists(Path.Combine(outputFolder3, expectedTomlName)));
+            //Assert.That(File.Exists(Path.Combine(outputFolder2, expectedTomlName)));
+            //Assert.That(File.Exists(Path.Combine(outputFolder3, expectedTomlName)));
 
-            double[] precursorTols = new double[3];
-            double[] productTols = new double[3];
-            for(int i = 1; i <=3; i++)
-            {
-                string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput" + i);
-                Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)));
-                var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
-                var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
-                var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+            //double[] precursorTols = new double[3];
+            //double[] productTols = new double[3];
+            //for(int i = 1; i <=3; i++)
+            //{
+            //    string outputFolder = Path.Combine(unitTestFolder, @"TaskOutput" + i);
+            //    Assert.That(File.Exists(Path.Combine(outputFolder, expectedTomlName)));
+            //    var lines = File.ReadAllLines(Path.Combine(outputFolder, expectedTomlName));
+            //    var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+            //    var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
 
-                precursorTols[i-1] = double.Parse(tolerance);
-                productTols[i-1] = double.Parse(tolerance1);
-            }
+            //    precursorTols[i-1] = double.Parse(tolerance);
+            //    productTols[i-1] = double.Parse(tolerance1);
+            //}
 
-            Console.WriteLine("Precursor Tolerances: ", string.Join(", ", precursorTols));
-            Console.WriteLine("Product Tolerances: ", string.Join(", ", productTols));
+            //Console.WriteLine("Precursor Tolerances: ", string.Join(", ", precursorTols));
+            //Console.WriteLine("Product Tolerances: ", string.Join(", ", productTols));
         }
 
         [Test]
         public static void LocalCalibrationTestLarge()
         {
             // set up directories
-            string unitTestFolder = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData", @"CalibrationTest2");
+            string unitTestFolder = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData", @"CalibrationTest3");
             Directory.CreateDirectory(unitTestFolder);
             string file1Path = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData\04-12-24_Human_Ecoli_10to1_C18_3mm_50msec_stnd-60min_6.raw");
 

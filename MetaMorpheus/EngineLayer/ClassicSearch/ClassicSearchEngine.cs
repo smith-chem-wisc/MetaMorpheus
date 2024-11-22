@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Threading;
 using Omics.Modifications;
 
 namespace EngineLayer.ClassicSearch
@@ -60,6 +61,7 @@ namespace EngineLayer.ClassicSearch
             double proteinsSearched = 0;
             int oldPercentProgress = 0;
 
+            
             // one lock for each MS2 scan; a scan can only be accessed by one thread at a time
             var myLocks = new object[PeptideSpectralMatches.Length];
             for (int i = 0; i < myLocks.Length; i++)
