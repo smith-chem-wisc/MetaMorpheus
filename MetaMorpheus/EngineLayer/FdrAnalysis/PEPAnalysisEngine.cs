@@ -135,15 +135,6 @@ namespace EngineLayer
             {
                 return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
             }
-            //for (int i = 0; i < numGroups; i++)
-            //{
-            //    PSMDataGroups[i] = CreatePsmData(SearchType,  peptideGroups, peptideGroupIndices[i]);
-
-            //    if(!PSMDataGroups[i].Any(p => p.Label) || !PSMDataGroups[i].Any(p => !p.Label))
-            //    {
-            //        return "Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.";
-            //    }
-            //}
 
             MLContext mlContext = new MLContext(seed: _randomSeed);
             TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[] trainedModels = new TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>>[numGroups];
