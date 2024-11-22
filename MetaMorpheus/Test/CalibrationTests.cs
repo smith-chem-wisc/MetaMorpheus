@@ -121,7 +121,7 @@ namespace Test
         public static void LocalCalibrationTestSmall()
         {
             // set up directories
-            string unitTestFolder = Path.Combine(@"D:\MetaMorpheusVignette", @"SearchTest_NoPsmDataParallel");
+            string unitTestFolder = Path.Combine(@"D:\MetaMorpheusVignette", @"SearchTest_PepOrderRewrite");
             Directory.CreateDirectory(unitTestFolder);
             string file1Path = Path.Combine(@"D:\MetaMorpheusVignette\04-30-13_CAST_Frac4_6uL.raw");
 
@@ -205,7 +205,7 @@ namespace Test
         public static void LocalCalibrationTestLarge()
         {
             // set up directories
-            string unitTestFolder = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData", @"CalibrationTest3");
+            string unitTestFolder = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData", @"CalibrationTest_NewParallellization");
             Directory.CreateDirectory(unitTestFolder);
             string file1Path = Path.Combine(@"D:\Human_Ecoli_TwoProteome_60minGradient\RawData\04-12-24_Human_Ecoli_10to1_C18_3mm_50msec_stnd-60min_6.raw");
 
