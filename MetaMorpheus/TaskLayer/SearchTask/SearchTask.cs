@@ -30,8 +30,6 @@ namespace TaskLayer
             SearchParameters = new SearchParameters();
         }
 
-        public List<Protein> ProteinList { get; set; }
-
         public SearchParameters SearchParameters { get; set; }
 
         public static MassDiffAcceptor GetMassDiffAcceptor(Tolerance precursorMassTolerance, MassDiffAcceptorType massDiffAcceptorType, string customMdac)
@@ -246,7 +244,6 @@ namespace TaskLayer
                 {
                     case true when proteinList is null: // has finished loading but not been set
                         proteinList = proteinLoadingTask.Result;
-                        ProteinList = proteinList;
                         break;
                     case true when proteinList.Any(): // has finished loading and already been set
                         break;
