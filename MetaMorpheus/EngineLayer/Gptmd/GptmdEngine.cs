@@ -67,7 +67,7 @@ namespace EngineLayer.Gptmd
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            var modDict = new ConcurrentDictionary<string, HashSet<Tuple<int, Modification>>>();
+            var modDict = new ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>>();
 
             int modsAdded = 0;
             //foreach peptide in each psm and for each modification that matches the notch,
@@ -145,20 +145,23 @@ namespace EngineLayer.Gptmd
                     }
                 }
             });
-
-            return new GptmdResults(this, modDict.ToDictionary(kvp => kvp.Key, kvp => kvp.Value), modsAdded);
+            // Convert ConcurrentDictionary to Dictionary with HashSet
+            var finalModDict = modDict.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)
+            );
+            return new GptmdResults(this, finalModDict, modsAdded);
         }
 
-        private static void AddIndexedMod(ConcurrentDictionary<string, HashSet<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
+        private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
         {
-            if (modDict.TryGetValue(proteinAccession, out var hash))
-            {
-                hash.Add(indexedMod);
-            }
-            else
-            {
-                modDict[proteinAccession] = new HashSet<Tuple<int, Modification>> { indexedMod };
-            }
+            modDict.AddOrUpdate(proteinAccession,
+                new ConcurrentBag<Tuple<int, Modification>> { indexedMod },
+                (key, existingBag) =>
+                {
+                    existingBag.Add(indexedMod);
+                    return existingBag;
+                });
         }
 
         private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
