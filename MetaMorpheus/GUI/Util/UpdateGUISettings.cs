@@ -85,7 +85,7 @@ namespace MetaMorpheusGUI
                         "\t-Uncheck all variable mods (Please use a GPTMD database instead)\n" +
                         "\t-SEARCH TASK ONLY: Check 'No Quantification'\n" +
                         "\t-SEARCH TASK ONLY: Check '1, 2, or 3 Missed Monoisotopic Peaks'\n" +
-                        "\t-GPTMD TASK ONLY: Search for only acetylation, phosphorylation, and oxidation of M\n\n" +
+                        "\t-GPTMD TASK ONLY: Search for a select subset of Common Biological Modifications and oxidation of M\n\n" +
                     "Would you like to use these recommended settings?");
 
                 if (results.UseSettings)
@@ -292,10 +292,23 @@ namespace MetaMorpheusGUI
         {
             ("Common Variable", "Oxidation on M"),
             ("Common Biological", "Acetylation on K"),
-            ("Common Biological", "Acetylation on X"),          
+            ("Common Biological", "Acetylation on X"),
+            ("Common Biological", "Carboxylation on D"),
+            ("Common Biological", "Carboxylation on E"),
+            ("Common Biological", "Carboxylation on K"),
+            ("Common Biological", "Citrullination on R"),
+            ("Common Biological", "Dimethylation on K"),
+            ("Common Biological", "Dimethylation on R"),
+            ("Common Biological", "Formylation on K"),
+            ("Common Biological", "Hydroxylation on K"),
+            ("Common Biological", "Hydroxylation on N"),
+            ("Common Biological", "Hydroxylation on P"),
+            ("Common Biological", "Methylation on K"),
+            ("Common Biological", "Methylation on R"),
             ("Common Biological", "Phosphorylation on S"),
             ("Common Biological", "Phosphorylation on T"),
             ("Common Biological", "Phosphorylation on Y"),
+            ("Common Biological", "Trimethylation on K")
         };
     }
 }
