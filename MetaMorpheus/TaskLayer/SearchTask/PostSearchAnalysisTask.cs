@@ -60,7 +60,7 @@ namespace TaskLayer
                 Parameters.SearchParameters.DoLocalizationAnalysis = false;
             }
 
-            //update all bioPolymersWithSetMods with bioPolymer info
+            //update all psms with peptide info
             if (Parameters.SearchParameters.SearchType != SearchType.NonSpecific) //if it hasn't been done already
             {
                 Parameters.AllPsms = Parameters.AllPsms.Where(psm => psm != null).ToList();
@@ -130,7 +130,7 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Calculate estimated false-discovery rate (FDR) for bioPolymer spectral matches (PSMs)
+        /// Calculate estimated false-discovery rate (FDR) for peptide spectral matches (PSMs)
         /// </summary>
         private void CalculatePsmAndPeptideFdr(List<SpectralMatch> psms, string analysisType = "PSM", bool doPep = true)
         {
@@ -289,7 +289,7 @@ namespace TaskLayer
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<SpectralMatch, List<FlashLFQ.ProteinGroup>>();
-            if (ProteinGroups != null && ProteinGroups.Count != 0) //ProteinGroups can be null if parsimony wasn't done, and it can be empty if you're doing the two bioPolymer rule
+            if (ProteinGroups != null && ProteinGroups.Count != 0) //ProteinGroups can be null if parsimony wasn't done, and it can be empty if you're doing the two peptide rule
             {
                 foreach (var proteinGroup in ProteinGroups)
                 {
@@ -348,26 +348,26 @@ namespace TaskLayer
             if (Parameters.SearchParameters.SilacLabels != null)
             {
                 bool turnoverWithMultipleLabels = startLabel != null && endLabel != null; //used to check multiple labels
-                //go through all the bioPolymersWithSetMods and duplicate them until a bioPolymerWithSetMods copy exists for the unlabeled and labeled proteins
-                //The number of bioPolymersWithSetMods should roughly increase by a factor of N, where N is the number of labels.
-                //It may not increase exactly by a factor of N if the amino acid(s) that gets labeled doesn't exist in the bioPolymer
+                //go through all the psms and duplicate them until a psm copy exists for the unlabeled and labeled proteins
+                //The number of psms should roughly increase by a factor of N, where N is the number of labels.
+                //It may not increase exactly by a factor of N if the amino acid(s) that gets labeled doesn't exist in the peptide
 
-                List<SpectralMatch> silacPsms = new(); //populate with duplicate bioPolymersWithSetMods for heavy/light
+                List<SpectralMatch> silacPsms = new(); //populate with duplicate psms for heavy/light
 
-                //multiply the bioPolymersWithSetMods by the number of labels
+                //multiply the psms by the number of labels
                 foreach (PeptideSpectralMatch psm in psmsForQuantification)
                 {
-                    //get the original proteinGroup to give to the other bioPolymerWithSetMods clones
+                    //get the original proteinGroup to give to the other psm clones
                     List<FlashLFQ.ProteinGroup> originalProteinGroups = psmToProteinGroups.ContainsKey(psm) ? psmToProteinGroups[psm] : new List<FlashLFQ.ProteinGroup>();
 
-                    //see which label, if any, this bioPolymer has
+                    //see which label, if any, this peptide has
                     string peptideBaseSequence = psm.BaseSequence;
                     SilacLabel observedLabel = SilacConversions.GetRelevantLabelFromBaseSequence(peptideBaseSequence, allSilacLabels); //returns null if no label
 
                     //if it's not the light form, make a light form to start as a base.
                     PeptideSpectralMatch lightPsm = observedLabel == null ? psm : SilacConversions.GetSilacPsm(psm, observedLabel);
 
-                    //get easy access to values we need for new bioPolymerWithSetMods generation
+                    //get easy access to values we need for new psm generation
                     string unlabeledBaseSequence = lightPsm.BaseSequence;
                     int notch = psm.BestMatchingBioPolymersWithSetMods.First().Notch;
                     PeptideWithSetModifications pwsm = psm.BestMatchingBioPolymersWithSetMods.First().Peptide as PeptideWithSetModifications;
@@ -387,11 +387,11 @@ namespace TaskLayer
                         //take the unlabeled sequence and modify everything for each label
                         foreach (SilacLabel label in allSilacLabels)
                         {
-                            if (!label.Equals(observedLabel)) //if we need to change the bioPolymerWithSetMods
+                            if (!label.Equals(observedLabel)) //if we need to change the psm
                             {
                                 string labeledBaseSequence = SilacConversions.GetLabeledBaseSequence(unlabeledBaseSequence, label);
 
-                                //check we're not adding a duplicate (happens if none of the heavy amino acids are present in the bioPolymer)
+                                //check we're not adding a duplicate (happens if none of the heavy amino acids are present in the peptide)
                                 if (!labeledBaseSequence.Equals(unlabeledBaseSequence))
                                 {
                                     PeptideSpectralMatch labeledPsm = SilacConversions.GetLabeledPsm(psm, notch, pwsm, labeledBaseSequence);
@@ -464,13 +464,13 @@ namespace TaskLayer
                 psmsForQuantification.SetSilacFilteredPsms(silacPsms);
             }
 
-            //group bioPolymersWithSetMods by file
+            //group psms by file
             var psmsGroupedByFile = psmsForQuantification.GroupBy(p => p.FullFilePath);
 
             // some PSMs may not have protein groups (if 2 peptides are required to construct a protein group, some PSMs will be left over)
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
-            //sort the unambiguous bioPolymersWithSetMods by protease to make MBR compatible with multiple proteases
+            //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
             Dictionary<Protease, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<SpectralMatch>>();
 
             foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
@@ -738,13 +738,13 @@ namespace TaskLayer
                 );
 
 
-            //group bioPolymersWithSetMods by bioPolymer and charge, then write highest scoring PSM to dictionary
+            //group psms by peptide and charge, then write highest scoring PSM to dictionary
             Dictionary<(string, int), SpectralMatch> psmSeqChargeDictionary = peptidesForSpectralLibrary
                 .GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge))
                 .ToDictionary(
                     // Key is a (FullSequence, Charge) tuple
                     keySelector: g => g.Key,
-                    // Value is the highest scoring bioPolymerWithSetMods in the group
+                    // Value is the highest scoring psm in the group
                     elementSelector: g => g.MaxBy(p => p.Score)); 
 
             //load the original library
@@ -800,7 +800,7 @@ namespace TaskLayer
             Parameters.SearchTaskResults.NewDatabases.Add(originalFastaDb);
         }
 
-        //for those spectra matching the same bioPolymer/protein with same charge, save the one with highest score
+        //for those spectra matching the same peptide/protein with same charge, save the one with highest score
         private void SpectralLibraryGeneration()
         {
             var peptidesForSpectralLibrary = FilteredPsms.Filter(Parameters.AllPsms,
@@ -810,7 +810,7 @@ namespace TaskLayer
                 includeAmbiguous: false,
                 includeHighQValuePsms: false);
 
-            //group bioPolymersWithSetMods by bioPolymer and charge, the bioPolymersWithSetMods having same sequence and same charge will be in the same group
+            //group psms by peptide and charge, the psms having same sequence and same charge will be in the same group
             var fullSeqChargeGrouping = peptidesForSpectralLibrary.GroupBy(p => (p.FullSequence, p.ScanPrecursorCharge));
             List<LibrarySpectrum> spectraLibrary = new();
             foreach (var matchGroup in fullSeqChargeGrouping)
@@ -846,7 +846,7 @@ namespace TaskLayer
                 fileName = "AllQuantifiedProteinGroups.tsv";
             }
 
-            //set bioPolymer output values
+            //set peptide output values
             ProteinGroups.ForEach(x => x.GetIdentifiedPeptidesOutput(Parameters.SearchParameters.SilacLabels));
             // write protein groups to tsv
             string writtenFile = Path.Combine(Parameters.OutputFolder, fileName);
@@ -859,9 +859,9 @@ namespace TaskLayer
                 includeAmbiguous: true,
                 includeHighQValuePsms: false).FilteredPsmsList.GroupBy(f => f.FullFilePath);
 
-            //if we're writing individual files, we need to reprocess the bioPolymersWithSetMods
+            //if we're writing individual files, we need to reprocess the psms
             //If doing a SILAC search and no "unlabeled" labels were specified (i.e. multiple labels are used for multiplexing and no conditions are "unlabeled"),
-            //then we need to update the bioPolymersWithSetMods (which were found in the data file that has the "unlabeled" named) and say they were found in the "heavy" file)
+            //then we need to update the psms (which were found in the data file that has the "unlabeled" named) and say they were found in the "heavy" file)
             if (Parameters.SearchParameters.SilacLabels != null) //if we have silac labels
             {
                 //get the original filenames
@@ -883,8 +883,8 @@ namespace TaskLayer
                             labeledFiles.Add(SilacConversions.GetHeavyFileInfo(new SpectraFileInfo(originalFile, "", 0, 0, 0), label).FullFilePathWithExtension);
                         }
 
-                        //rename the file group for all of the relevant bioPolymersWithSetMods to their original file
-                        List<SpectralMatch> psms = psmsGroupedByFile.Where(g => labeledFiles.Contains(g.Key)).SelectMany(x => x).ToList(); //grab all the bioPolymersWithSetMods
+                        //rename the file group for all of the relevant psms to their original file
+                        List<SpectralMatch> psms = psmsGroupedByFile.Where(g => labeledFiles.Contains(g.Key)).SelectMany(x => x).ToList(); //grab all the psms
                         tempPsmsGroupedByFile.AddRange(psms.GroupBy(x => originalFile));
                     }
                     //overwrite the grouping for downstream processing
@@ -924,7 +924,7 @@ namespace TaskLayer
                     includeAmbiguous: true,
                     includeHighQValuePsms: true).FilteredPsmsList;
 
-                // Filter bioPolymersWithSetMods in place before writing mzID
+                // Filter psms in place before writing mzID
                 if (Parameters.SearchParameters.WriteMzId)
                 {
                     Status("Writing mzID...", new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
@@ -989,7 +989,7 @@ namespace TaskLayer
                     WritePeakQuantificationResultsToTsv(Parameters.FlashLfqResults, Parameters.OutputFolder, "AllQuantifiedPeaks", new List<string> { Parameters.SearchTaskId });
                 }
 
-                // write bioPolymer quant results
+                // write peptide quant results
                 string filename = "AllQuantified" + GlobalVariables.AnalyteType + "s";
                 if (SpectralRecoveryResults != null)
                 {
@@ -1117,12 +1117,12 @@ namespace TaskLayer
                 string digestionAgent = fileSpecificParameters?.DigestionParams.DigestionAgent.Name ?? CommonParameters.DigestionParams.DigestionAgent.Name;
                 DissociationType dissociationType = fileSpecificParameters?.DissociationType ?? CommonParameters.DissociationType;
 
-                foreach (var (_, bioPolymer) in psm.BestMatchingBioPolymersWithSetMods)
+                foreach (var (_, bioPolymerWithSetMods) in psm.BestMatchingBioPolymersWithSetMods)
                 {
-                    if (bioPolymer is PeptideWithSetModifications pwsm)
+                    if (bioPolymerWithSetMods is PeptideWithSetModifications pwsm)
                         initialAggregation.AddOrCreate(pwsm.Protein.NonVariantProtein, (pwsm, dissociationType, digestionAgent));
                     else
-                        initialAggregation.AddOrCreate(bioPolymer.Parent, (bioPolymer, dissociationType, digestionAgent));
+                        initialAggregation.AddOrCreate(bioPolymerWithSetMods.Parent, (bioPolymerWithSetMods, dissociationType, digestionAgent));
                 }
             }
 
@@ -1172,23 +1172,23 @@ namespace TaskLayer
                     var sortedBioPolymers = proteinGroup.Value.Select(v => v.BioPolymer)
                         .Select(bioPolymer => new
                         {
-                            BioPolymer = bioPolymer,
+                            BioPolymerWithSetMods = bioPolymer,
                             CoveredMods = modificationsToRetain
                                 .Where(mod =>
                                     bioPolymer.AllModsOneIsNterminus.TryGetValue(mod.Position, out var bioPolymerMod) &&
                                     Equals(bioPolymerMod, mod.Modification))
                                 .ToHashSet()
                         })
-                        .OrderBy(covGroup => covGroup.BioPolymer.AllModsOneIsNterminus
+                        .OrderBy(covGroup => covGroup.BioPolymerWithSetMods.AllModsOneIsNterminus
                             .Count(mod => !modificationsToRetain.Contains((mod.Key, mod.Value))))
-                        .ThenByDescending(covGroup => covGroup.BioPolymer.AllModsOneIsNterminus
+                        .ThenByDescending(covGroup => covGroup.BioPolymerWithSetMods.AllModsOneIsNterminus
                             .Count(mod => modificationsToRetain.Contains((mod.Key, mod.Value))))
                         .ToList();
 
                     while (modificationsToRetain.Count > 0 && sortedBioPolymers.Count > 0)
                     {
                         var bestBioPolymer = sortedBioPolymers.First();
-                        minimumSet.Add(bestBioPolymer.BioPolymer);
+                        minimumSet.Add(bestBioPolymer.BioPolymerWithSetMods);
                         foreach (var mod in bestBioPolymer.CoveredMods)
                         {
                             modificationsToRetain.Remove(mod);
@@ -1196,9 +1196,9 @@ namespace TaskLayer
                         sortedBioPolymers.RemoveAt(0);
                         sortedBioPolymers = sortedBioPolymers
                             .Where(covGroup => covGroup.CoveredMods.Overlaps(modificationsToRetain))
-                            .OrderBy(covGroup => covGroup.BioPolymer.AllModsOneIsNterminus
+                            .OrderBy(covGroup => covGroup.BioPolymerWithSetMods.AllModsOneIsNterminus
                                 .Count(mod => modificationsToRetain.Contains((mod.Key, mod.Value))))
-                            .ThenByDescending(covGroup => covGroup.BioPolymer.AllModsOneIsNterminus
+                            .ThenByDescending(covGroup => covGroup.BioPolymerWithSetMods.AllModsOneIsNterminus
                                 .Count(mod => modificationsToRetain.Contains((mod.Key, mod.Value))))
                             .ToList();
                     }
@@ -1527,8 +1527,8 @@ namespace TaskLayer
 
             WritePsmsToTsv(variantPeptides, variantPeptideFile);
 
-            // if a potential variant bioPolymer can be explained by a canonical protein seqeunce then should not be counted as a confident variant bioPolymer
-            //because it is most probable that the bioPolymer originated from the canonical protien.
+            // if a potential variant peptide can be explained by a canonical protein seqeunce then should not be counted as a confident variant peptide
+            //because it is most probable that the peptide originated from the canonical protien.
             foreach (var entry in variantPeptides)
             {
                 var pwsm = entry.BestMatchingBioPolymersWithSetMods;
@@ -1566,7 +1566,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> modifiedVariantPeptides = filteredVariants
                 .Where(p => p.ModsIdentified != null && p.ModsIdentified.Count > 0 && p is PeptideSpectralMatch)
                 .Select(p => (PeptideSpectralMatch)p)
-                .ToList(); //modification can be on any AA in variant bioPolymer
+                .ToList(); //modification can be on any AA in variant peptide
 
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new();// modification is speciifcally on the variant residue within the bioPolymer
             foreach (PeptideSpectralMatch entry in modifiedVariantPeptides)
@@ -1933,7 +1933,7 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// This is a handy dictionary to keep track of the PSM, bioPolymer and protein count results at the
+        /// This is a handy dictionary to keep track of the PSM, peptide and protein count results at the
         ///  "All" level and at the individual raw file level.
         ///  The keys are a tuple such as ("All", "PSMs") or ("RawFileName", "Peptides")
         ///   The values are the results as a string
