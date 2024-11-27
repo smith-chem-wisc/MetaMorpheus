@@ -573,7 +573,7 @@ namespace Test
 
             PrunedDatabaseWriter.FinishedWritingFileHandler += eventListener;
 
-            await PrunedDatabaseWriter.WriteDataAsync(outputPath, proteins);
+            await PrunedDatabaseWriter.WriteDatabaseAsync(outputPath, proteins, null);
             Assert.That(eventTriggered, Is.True);
 
             PrunedDatabaseWriter.FinishedWritingFileHandler -= eventListener;
@@ -597,7 +597,7 @@ namespace Test
 
             PrunedDatabaseWriter.FinishedWritingFileHandler += eventListener;
 
-            await PrunedDatabaseWriter.WriteDataAsync(outputPath, rnas);
+            await PrunedDatabaseWriter.WriteDatabaseAsync(outputPath, rnas, []);
             Assert.That(eventTriggered, Is.True);
 
             PrunedDatabaseWriter.FinishedWritingFileHandler -= eventListener;
@@ -609,7 +609,7 @@ namespace Test
             var bioPolymers = new List<IBioPolymer> { new Protein("MNNNKQQQ", null), new RNA("AUGCUA", null) };
             string outputPath = "test_output_invalid.xml";
 
-            Assert.Throws<ArgumentException>(() => PrunedDatabaseWriter.WriteData(outputPath, bioPolymers));
+            Assert.Throws<ArgumentException>(() => PrunedDatabaseWriter.WriteDatabase(outputPath, bioPolymers));
         }
 
         [Test]
@@ -882,22 +882,146 @@ namespace Test
             Assert.That(fullSequences, Does.Contain("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K"));
         }
 
-        //[Test]
-        //public static void GetProteinToConfidentModifiedSequences_MultipleEvidence_DifferentDigestionAgents()
-        //{
-        //    // Arrange
-        //    var psms = new List<SpectralMatch>
-        //    {
-        //        // Add test SpectralMatch objects with different digestion agents here
-        //    };
-        //    var postSearchAnalysisTask = new PostSearchAnalysisTask();
+        [Test]
+        public static void GetProteinToConfidentModifiedSequences_MultipleEvidence_DifferentDissociationTypes_MoreModsComplexReturn()
+        {
+            // Arrange
+            var psms = new List<SpectralMatch>
+            { 
+                // three mods found in the same condition, two mods of those found in a different condition, one found in the same condition in a missed cleavage product
+                new TestSpectralMatch("PEPT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K", 0, 8, "hcd"),
+                new TestSpectralMatch("PEPTIDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "hcd"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "hcd"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK", 0 , 8, "etd"),
+                new TestSpectralMatch("PEPTIDEK", 0 , 8),
+            };
+            var postSearchAnalysisTask = new PostSearchAnalysisTask()
+            {
+                CommonParameters = new(),
+                FileSpecificParameters = new()
+                {
+                    ("hcd", new CommonParameters(dissociationType: DissociationType.HCD)),
+                    ("etd", new CommonParameters(dissociationType: DissociationType.ETD))
+                },
+            };
 
-        //    // Act
-        //    var result = postSearchAnalysisTask.GetProteinToConfidentModifiedSequences(psms, 1);
+            // Act
+            var result = postSearchAnalysisTask.GetProteinToConfidentModifiedSequences(psms, 2);
 
-        //    // Assert
-        //    Assert.That(result, Is.Not.Null);
-        //    // Add more assertions to verify the correctness of the result
-        //}
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result[_testProtein].Count, Is.EqualTo(2));
+
+            string[] fullSequences = result.SelectMany(p => p.Value.Select(p => p.FullSequence)).ToArray();
+            Assert.That(fullSequences, Does.Contain("PEPT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K"));
+            Assert.That(fullSequences, Does.Contain("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK"));
+        }
+
+        [Test]
+        public static void GetProteinToConfidentModifiedSequences_MultipleEvidence_DifferentDigestionAgents()
+        {
+            // Arrange
+            var psms = new List<SpectralMatch>
+            { 
+                // two mods found in the same condition, one mod of those found in a different contdition
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK", 0, 8, "top-down", "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK", 0, 8, "top-down", "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "top-down", "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0 , 8, "trypsin", "trypsin"),
+                new TestSpectralMatch("PEPTIDEK", 0 , 8),
+            };
+            var postSearchAnalysisTask = new PostSearchAnalysisTask()
+            {
+                CommonParameters = new(),
+                FileSpecificParameters = new()
+                {
+                    ("top-down", new CommonParameters(digestionParams: new DigestionParams("top-down"))),
+                    ("trypsin", new CommonParameters(digestionParams: new DigestionParams("trypsin")))
+                },
+            };
+
+            // Act
+            var result = postSearchAnalysisTask.GetProteinToConfidentModifiedSequences(psms, 2);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result[_testProtein].Count, Is.EqualTo(1));
+
+            string[] fullSequences = result.SelectMany(p => p.Value.Select(p => p.FullSequence)).ToArray();
+            Assert.That(fullSequences, Does.Contain("PE[Common Biological:Carboxylation on E]PTIDEK"));
+        }
+
+        [Test]
+        public static void GetProteinToConfidentModifiedSequences_MultipleEvidence_DifferentDigestionAgents_MoreMods()
+        {
+            // Arrange
+            var psms = new List<SpectralMatch>
+            { 
+                // three mods found in the same condition, one mod of those found in a different condition, two found in the same condition in a missed cleavage product
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K", 0, 8, "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0 , 8, "trypsin"),
+                new TestSpectralMatch("PEPTIDEK", 0 , 8),
+            };
+            var postSearchAnalysisTask = new PostSearchAnalysisTask()
+            {
+                CommonParameters = new(),
+                FileSpecificParameters = new()
+                {
+                    ("top-down", new CommonParameters(digestionParams: new DigestionParams("top-down"))),
+                    ("trypsin", new CommonParameters(digestionParams: new DigestionParams("trypsin")))
+                },
+            };
+
+            // Act
+            var result = postSearchAnalysisTask.GetProteinToConfidentModifiedSequences(psms, 2);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result[_testProtein].Count, Is.EqualTo(1));
+
+            string[] fullSequences = result.SelectMany(p => p.Value.Select(p => p.FullSequence)).ToArray();
+            Assert.That(fullSequences, Does.Contain("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K"));
+        }
+
+        [Test]
+        public static void GetProteinToConfidentModifiedSequences_MultipleEvidence_DifferentDigestionAgents_MoreModsComplexReturn()
+        {
+            // Arrange
+            var psms = new List<SpectralMatch>
+            { 
+                // three mods found in the same condition, two mods of those found in a different condition, one found in the same condition in a missed cleavage product
+                new TestSpectralMatch("PEPT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K", 0, 8, "top-down"),
+                new TestSpectralMatch("PEPTIDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK", 0 , 8, "trypsin"),
+                new TestSpectralMatch("PEPTIDEK", 0 , 8),
+            };
+            var postSearchAnalysisTask = new PostSearchAnalysisTask()
+            {
+                CommonParameters = new(),
+                FileSpecificParameters = new()
+                {
+                    ("top-down", new CommonParameters(digestionParams: new DigestionParams("top-down"))),
+                    ("trypsin", new CommonParameters(digestionParams: new DigestionParams("trypsin")))
+                },
+            };
+
+            // Act
+            var result = postSearchAnalysisTask.GetProteinToConfidentModifiedSequences(psms, 2);
+
+            // Assert
+            Assert.That(result, Is.Not.Null);
+            Assert.That(result.Count, Is.EqualTo(1));
+            Assert.That(result[_testProtein].Count, Is.EqualTo(2));
+
+            string[] fullSequences = result.SelectMany(p => p.Value.Select(p => p.FullSequence)).ToArray();
+            Assert.That(fullSequences, Does.Contain("PEPT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K"));
+            Assert.That(fullSequences, Does.Contain("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK"));
+        }
     }
 }

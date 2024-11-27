@@ -17,15 +17,12 @@ using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
 using MzLibUtil;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using Omics;
-using ThermoFisher.CommonCore.Data;
-using Omics.Digestion;
 
 namespace TaskLayer
 {
@@ -1022,7 +1019,7 @@ namespace TaskLayer
             Status("Writing Pruned Database...", new List<string> { Parameters.SearchTaskId });
 
             var proteinToConfidentBaseSequences = GetProteinToConfidentBaseSequences(Parameters.AllPsms);
-            var proteinToConfidentModifiedSequences = GetProteinToConfidentModifiedSequences(Parameters.AllPsms);
+            var proteinToConfidentModifiedSequences = GetProteinToConfidentModifiedSequences(Parameters.AllPsms, Parameters.SearchParameters.EvidenceRequiredToWriteLocalizedMod);
 
             var proteinsOriginalModifications = new Dictionary<IBioPolymer, Dictionary<int, List<Modification>>>();
             var originalSequenceVariantModifications = new Dictionary<SequenceVariation, Dictionary<int, List<Modification>>>();
@@ -1094,7 +1091,7 @@ namespace TaskLayer
 
         /// <summary>
         /// Gets a dictionary of proteins with only localized modifications 
-        ///     Only Retain a modified residue position if there is <paramref name="evidenceRequired"/> peices of information multiple conditions. 
+        ///     Only Retain a modified residue position if there is <paramref name="evidenceRequired"/> pieces of information multiple conditions. 
         ///     Conditions here is defined by the following criteria: Dissociation Type, Digestion Agent, and Missed Cleavage Product. 
         /// </summary>
         /// <param name="allPsms">List of all PSMs.</param>
@@ -1347,18 +1344,19 @@ namespace TaskLayer
         private List<Task> WriteDatabases(Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>> proteinToConfidentBaseSequences)
         {
             List<Task> databaseWritingTasks = [];
+            List<string> nestedIds = [Parameters.SearchTaskId];
             if (Parameters.DatabaseFilenameList.Any(p => p.IsContaminant))
             {
                 string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder,
                     string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
                 var prunedProteins = Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && b.IsContaminant).ToList();
-                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDataAsync(outputXMLdbFullNameContaminants, prunedProteins));
+                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDatabaseAsync(outputXMLdbFullNameContaminants, prunedProteins, nestedIds));
 
 
                 string outputXMLdbFullNameContaminantsProteinPruned = Path.Combine(Parameters.OutputFolder,
                     string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
                 var proteinPrunedProteins = proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList();
-                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDataAsync(outputXMLdbFullNameContaminantsProteinPruned, proteinPrunedProteins));
+                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDatabaseAsync(outputXMLdbFullNameContaminantsProteinPruned, proteinPrunedProteins));
             }
 
             if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
@@ -1366,14 +1364,14 @@ namespace TaskLayer
                 string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, 
                     string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
                 var prunedProteins = Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && !b.IsContaminant).ToList();
-                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDataAsync(outputXMLdbFullName, prunedProteins));
+                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDatabaseAsync(outputXMLdbFullName, prunedProteins));
 
 
 
                 string outputXMLdbFullNameProteinPruned = Path.Combine(Parameters.OutputFolder,
                     string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
                 var proteinPrunedProteins = proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList();
-                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDataAsync(outputXMLdbFullNameProteinPruned, proteinPrunedProteins));
+                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDatabaseAsync(outputXMLdbFullNameProteinPruned, proteinPrunedProteins));
             }
 
             return databaseWritingTasks;

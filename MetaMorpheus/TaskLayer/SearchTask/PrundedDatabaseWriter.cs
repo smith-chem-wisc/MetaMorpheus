@@ -21,17 +21,17 @@ namespace TaskLayer
     {
         public static event EventHandler<SingleFileEventArgs> FinishedWritingFileHandler = null!;
 
-        public static async Task WriteDataAsync<T>(string outputPath, List<T> bioPolymers)
+        public static async Task WriteDatabaseAsync<T>(string outputPath, List<T> bioPolymers, List<string>? nestedIds = null)
             where T : IBioPolymer
         {
             // Simulate writing data to the database
             await Task.Run(() =>
             {
-                WriteData(outputPath, bioPolymers);
+                WriteDatabase(outputPath, bioPolymers, nestedIds);
             });
         }
 
-        public static void WriteData<T>(string outputPath, List<T> bioPolymers, List<string>? nestedIds = null)
+        public static void WriteDatabase<T>(string outputPath, List<T> bioPolymers, List<string>? nestedIds = null)
             where T: IBioPolymer
         {
             if (bioPolymers.Select(p => p.GetType()).Distinct().Count() != 1)
@@ -47,7 +47,7 @@ namespace TaskLayer
                     break;
             }
 
-            FinishedWritingFileHandler?.Invoke(outputPath, new SingleFileEventArgs(outputPath, nestedIds));
+            FinishedWritingFileHandler?.Invoke(outputPath, new SingleFileEventArgs(outputPath, nestedIds ?? []));
         }
 
         /// <summary>

@@ -86,7 +86,8 @@ namespace TaskLayer
         public string CustomMdac { get; set; }
         public double MaxFragmentSize { get; set; }
         public int MinAllowedInternalFragmentLength { get; set; } //0 means "no internal fragments"
-        public double HistogramBinTolInDaltons { get; set; }
+        public double HistogramBinTolInDaltons { get; set; } 
+        public uint EvidenceRequiredToWriteLocalizedMod { get; set; } = 1;
         public Dictionary<string, int> ModsToWriteSelection { get; set; }
         public double MaximumMassThatFragmentIonScoreIsDoubled { get; set; }
         public bool WriteMzId { get; set; }

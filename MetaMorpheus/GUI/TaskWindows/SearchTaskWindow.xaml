@@ -1130,21 +1130,36 @@
                                     </GroupBox>
                                     <GroupBox Header="Pruned Database Writing">
                                         <StackPanel Margin="5">
-                                            <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <ToolTipService.ToolTip>
-                                                    <TextBlock>
-                                                This is very uncommon and not recommended for the typical user.
-                                                <LineBreak />
-                                                This option writes two databases:
-                                                <LineBreak />
-                                                1) Retain all proteins but only keeps modifications found at a 1% FDR.
-                                                <LineBreak />
-                                                2) Retain only proteins and modifications found at a 1% FDR.
-                                                <LineBreak />
-                                                This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data.
-                                                    </TextBlock>
-                                                </ToolTipService.ToolTip>
-                                            </CheckBox>
+
+                                                <CheckBox Margin="0 0 0 5" x:Name="WritePrunedDBCheckBox" VerticalAlignment="Center"
+                                                          Content="Write Two Pruned Databases (Mod and Mod+Protein pruned)" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                                    <ToolTipService.ToolTip>
+                                                        <TextBlock>
+                                                            This is very uncommon and not recommended for the typical user.
+                                                            <LineBreak />
+                                                            This option writes two databases:
+                                                            <LineBreak />
+                                                            1) Retain all proteins but only keeps modifications found at a 1% FDR.
+                                                            <LineBreak />
+                                                            2) Retain only proteins and modifications found at a 1% FDR.
+                                                            <LineBreak />
+                                                            This is intended for further analysis, such as importing into Proteoform Suite to analyse top-down and intact-mass data.
+                                                        </TextBlock>
+                                                    </ToolTipService.ToolTip>
+                                                </CheckBox>
+                                                <StackPanel  Orientation="Horizontal"  VerticalAlignment="Center">
+                                                    <local:IntegerTexBoxControl x:Name="PrunedDatabaseEvidenceTextBox" Width="30" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" >
+                                                        <ToolTipService.ToolTip>
+                                                            <TextBlock>
+                                                                Only Retain a modified residue position if there is n pieces of unique information supporting it.
+                                                                <LineBreak />
+                                                                Unique information here is defined by the following criteria: Dissociation Type, Digestion Agent, and Missed Cleavage Product.
+                                                            </TextBlock>
+                                                        </ToolTipService.ToolTip>
+                                                </local:IntegerTexBoxControl>
+                                                <Label Content="Unique observations required to write modifications to pruned database" />
+                                            </StackPanel>
+
                                             <DataGrid x:Name="ModSelectionGrid" AutoGenerateColumns = "false" ItemsSource="{Binding UpdateSourceTrigger=LostFocus, Mode=OneWay}" Visibility="{Binding prunedVisible, UpdateSourceTrigger=LostFocus}" IsEnabled="{Binding IsChecked, ElementName=WritePrunedDBCheckBox}" IsReadOnly="False" AlternatingRowBackground="LightGray" AlternationCount="2">
                                                 <DataGrid.Columns>
                                                     <DataGridTextColumn Header="Mod Type"  Width="1*" Binding="{Binding ModName}" />
