@@ -16,6 +16,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
@@ -1223,64 +1224,65 @@ namespace TaskLayer
             Dictionary<IBioPolymer, Dictionary<int, List<Modification>>> proteinsOriginalModifications,
             Dictionary<SequenceVariation, Dictionary<int, List<Modification>>> originalSequenceVariantModifications)
         {
+            List<Task> databaseWritingTasks = [];
+            if (Parameters.DatabaseFilenameList.Any(p => p.IsContaminant))
+            {
+                string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder,
+                    string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
+                var prunedProteins = Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && b.IsContaminant).ToList();
+                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDataAsync(outputXMLdbFullNameContaminants, prunedProteins));
+
+
+                string outputXMLdbFullNameContaminantsProteinPruned = Path.Combine(Parameters.OutputFolder,
+                    string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
+                var proteinPrunedProteins = proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).ToList();
+                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDataAsync(outputXMLdbFullNameContaminantsProteinPruned, proteinPrunedProteins));
+            }
+
             if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
             {
                 string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, 
                     string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
+                var prunedProteins = Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && !b.IsContaminant).ToList();
+                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDataAsync(outputXMLdbFullName, prunedProteins));
 
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), 
-                    Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
-                FinishedWritingFile(outputXMLdbFullName, new List<string> { Parameters.SearchTaskId });
-            }
 
-            if (Parameters.DatabaseFilenameList.Any(b => b.IsContaminant))
-            {
-                string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, 
-                    string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), 
-                    Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
-                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
-            }
 
-            // TODO: Update the writes to support RNA it is currently casted to protein
-            if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
-            {
-                string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, 
+                string outputXMLdbFullNameProteinPruned = Path.Combine(Parameters.OutputFolder,
                     string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), 
-                    proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullName);
-                FinishedWritingFile(outputXMLdbFullName, new List<string> { Parameters.SearchTaskId });
+                var proteinPrunedProteins = proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && !b.IsContaminant).ToList();
+                databaseWritingTasks.Add(PrunedDatabaseWriter.WriteDataAsync(outputXMLdbFullNameProteinPruned, proteinPrunedProteins));
             }
 
-            if (Parameters.DatabaseFilenameList.Any(b => b.IsContaminant))
+            var cleanupTask = new Task(() =>
             {
-                string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, 
-                    string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "proteinPruned.xml");
-                ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), 
-                    proteinToConfidentBaseSequences.Keys.Where(b => !b.IsDecoy && b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullNameContaminants);
-                FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
-            }
-
-            // Clean up
-            foreach (var nonVariantProtein in Parameters.ProteinList.Select(p => p.NonVariantProtein).Distinct())
-            {
-                if (!nonVariantProtein.IsDecoy)
+                // Clean up
+                foreach (var nonVariantProtein in Parameters.ProteinList.Select(p => p.NonVariantProtein).Distinct())
                 {
-                    nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
-                    foreach (var originalMod in proteinsOriginalModifications[nonVariantProtein.NonVariantProtein])
+                    if (!nonVariantProtein.IsDecoy)
                     {
-                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
-                    }
-                    foreach (var sv in nonVariantProtein.SequenceVariations)
-                    {
-                        sv.OneBasedModifications.Clear();
-                        foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                        nonVariantProtein.OneBasedPossibleLocalizedModifications.Clear();
+                        foreach (var originalMod in proteinsOriginalModifications[nonVariantProtein.NonVariantProtein])
                         {
-                            sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                            nonVariantProtein.OneBasedPossibleLocalizedModifications.Add(originalMod.Key, originalMod.Value);
+                        }
+                        foreach (var sv in nonVariantProtein.SequenceVariations)
+                        {
+                            sv.OneBasedModifications.Clear();
+                            foreach (var originalVariantMods in originalSequenceVariantModifications[sv])
+                            {
+                                sv.OneBasedModifications.Add(originalVariantMods.Key, originalVariantMods.Value);
+                            }
                         }
                     }
                 }
-            }
+            });
+
+            // wait for all writing to stop, then clean up the proteins
+            var finalTaskForWriting = Task.WhenAll(databaseWritingTasks).ContinueWith(t => cleanupTask.Start());
+
+            // TODO: Return this and wait before exiting post search analysis if the cleanup is independent of subsequent processing
+            finalTaskForWriting.Wait();
         }
 
         private void WritePsmPlusMultiplexIons(IEnumerable<SpectralMatch> psms, string filePath, bool writePeptideLevelResults = false)

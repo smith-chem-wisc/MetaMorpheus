@@ -10,12 +10,34 @@ using System.Linq;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
+using System.Threading.Tasks;
+using Transcriptomics;
+using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace Test
 {
     [TestFixture]
     public static class GptmdPrunedDbTests
     {
+
+        private static string _testingDirectory;
+        [OneTimeSetUp]
+        public static void OneTimeSetUp()
+        {
+            _testingDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGenerationWriter");
+            if (Directory.Exists(_testingDirectory))
+                Directory.Delete(_testingDirectory, true);
+            Directory.CreateDirectory(_testingDirectory);
+        }
+
+        [OneTimeTearDown]
+        public static void OneTimeTearDown()
+        {
+            Directory.Delete(_testingDirectory, true);
+        }
+
+
         // want a psm whose base sequence is not ambigous but full sequence is (ptm is not localized): make sure this does not make it in DB
 
         [Test]
@@ -530,6 +552,86 @@ namespace Test
             Assert.That(modPruned.Count().Equals(2));
             Assert.That(modPruned.ElementAt(0).OneBasedPossibleLocalizedModifications.Count().Equals(1));
             Assert.That(modPruned.ElementAt(1).OneBasedPossibleLocalizedModifications.Count().Equals(1));
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static async Task TestWriteDataAsync_Protein()
+        {
+            string fastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "DbForPrunedDb.fasta");
+            var proteins = ProteinDbLoader.LoadProteinFasta(fastaPath, true, DecoyType.None,  false,  out _);
+            string outputPath = Path.Combine(_testingDirectory, "test_output_protein.xml");
+
+            bool eventTriggered = false;
+            var eventListener = new EventHandler<SingleFileEventArgs>((sender, e) => 
+            {
+                eventTriggered = true;
+                Assert.That(e, Is.TypeOf<SingleFileEventArgs>());
+                Assert.That(e.WrittenFile, Is.EqualTo(outputPath));
+            });
+
+            PrunedDatabaseWriter.FinishedWritingFileHandler += eventListener;
+
+            await PrunedDatabaseWriter.WriteDataAsync(outputPath, proteins);
+            Assert.That(eventTriggered, Is.True);
+
+            PrunedDatabaseWriter.FinishedWritingFileHandler -= eventListener;
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static async Task TestWriteDataAsync_RNA()
+        {
+            string fastaPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "ModomicsUnmodifiedTrimmed.fasta");
+            var rnas = RnaDbLoader.LoadRnaFasta(fastaPath, true, DecoyType.None, false, out _);
+            string outputPath = Path.Combine(_testingDirectory, "test_output_rna.xml");
+
+            bool eventTriggered = false;
+            var eventListener = new EventHandler<SingleFileEventArgs>((sender, e) =>
+            {
+                eventTriggered = true;
+                Assert.That(e, Is.TypeOf<SingleFileEventArgs>());
+                Assert.That(e.WrittenFile, Is.EqualTo(outputPath));
+            });
+
+            PrunedDatabaseWriter.FinishedWritingFileHandler += eventListener;
+
+            await PrunedDatabaseWriter.WriteDataAsync(outputPath, rnas);
+            Assert.That(eventTriggered, Is.True);
+
+            PrunedDatabaseWriter.FinishedWritingFileHandler -= eventListener;
+        }
+
+        [Test]
+        public static void TestWriteData_InvalidType()
+        {
+            var bioPolymers = new List<IBioPolymer> { new Protein("MNNNKQQQ", null), new RNA("AUGCUA", null) };
+            string outputPath = "test_output_invalid.xml";
+
+            Assert.Throws<ArgumentException>(() => PrunedDatabaseWriter.WriteData(outputPath, bioPolymers));
+        }
+
+        [Test]
+        public static void TestGetModificationsToWrite()
+        {
+            var modsToWrite = new Dictionary<string, int>
+            {
+                { "Less Common", 1},
+                { "UniProt", 2 },
+                { "Common Biological", 3 }
+            };
+
+            var (modificationsToWriteIfBoth, modificationsToWriteIfInDatabase, modificationsToWriteIfObserved) 
+                = PrunedDatabaseWriter.GetModificationsToWrite(modsToWrite);
+
+            Assert.That(modificationsToWriteIfBoth, Is.Not.Null);
+            Assert.That(modificationsToWriteIfInDatabase, Is.Not.Null);
+            Assert.That(modificationsToWriteIfObserved, Is.Not.Null);
+
+            // Assuming GlobalVariables.AllModsKnown contains modifications of types "modType1", "modType2", and "modType3"
+            Assert.That(modificationsToWriteIfBoth.Any(mod => mod.ModificationType == "Less Common"), Is.True);
+            Assert.That(modificationsToWriteIfInDatabase.Any(mod => mod.ModificationType == "UniProt"), Is.True);
+            Assert.That(modificationsToWriteIfObserved.Any(mod => mod.ModificationType == "Common Biological"), Is.True);
         }
     }
 }
