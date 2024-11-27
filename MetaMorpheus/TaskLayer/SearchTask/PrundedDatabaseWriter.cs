@@ -50,6 +50,19 @@ namespace TaskLayer
             FinishedWritingFileHandler?.Invoke(outputPath, new SingleFileEventArgs(outputPath, nestedIds));
         }
 
+        /// <summary>
+        /// Returns three categories of modification types to write to the database. 
+        ///  See <see cref="SearchParameters.ModsToWriteSelection"/>
+        /// </summary>
+        /// <param name="modTypesToWrite">
+        ///     Key is modification type
+        ///     Value is integer 0, 1, 2 and 3 interpreted as:
+        ///         0:   Do not Write
+        ///         1:   Write if in DB and Observed
+        ///         2:   Write if in DB
+        ///         3:   Write if Observed
+        ///   </param>
+        /// <returns></returns>
         public static (HashSet<Modification> modificationsToWriteIfBoth, HashSet<Modification> modificationsToWriteIfInDatabase, 
             HashSet<Modification> modificationsToWriteIfObserved) GetModificationsToWrite(Dictionary<string, int> modTypesToWrite)
         {
