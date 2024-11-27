@@ -150,6 +150,8 @@ namespace MetaMorpheusCommandLine
             MetaMorpheusTask.FinishedSingleTaskHandler += MyTaskEngine_finishedSingleTaskHandler;
             MetaMorpheusTask.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
 
+            PrunedDatabaseWriter.FinishedWritingFileHandler += MyTaskEngine_finishedWritingFileHandler;
+
             bool containsRawFiles = settings.Spectra.Select(v => Path.GetExtension(v).ToLowerInvariant()).Any(v => v == ".raw");
             if (containsRawFiles && !GlobalVariables.GlobalSettings.UserHasAgreedToThermoRawFileReaderLicence)
             {
