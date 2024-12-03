@@ -141,6 +141,99 @@ CF   H1 C1 N1 O1
 DR   Unimod; 5.
 //
 ################################## LESS COMMON MODS
+ID   Succinylation
+TG   K or C
+PP   Anywhere.
+MT   Less Common
+DI   HCD:183.089523533
+NL   ETD:101.0239
+CF   C4 H4 O3
+DR   Unimod; 64.
+//
+ID   Hydroxybutyrylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:169.110323533
+CF   C4 H6 O2
+//
+ID   Lactylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+CF   H3 C3 O2
+//
+ID   Glutarylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:181.110323533
+NL   ETD:115.0395
+CF   C5 H6 O3
+DR   Unimod; 1848.
+//
+ID   Crotonylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:151.099723533
+CF   C4 H4 O1
+DR   Unimod; 1363.
+//
+ID   Carboxylation
+TG   E
+PP   Anywhere.
+MT   Less Common
+CF   C1 O2
+DR   Unimod; 299.
+//
+ID   Glu to PyroGlu
+TG   Q
+PP   N-terminal.
+MT   Less Common
+CF   H-3 N-1
+DR   Unimod; 28.
+//
+ID   Nitrosylation
+TG   C or Y
+PP   Anywhere.
+MT   Less Common
+CF   H-1 N1 O1
+DR   Unimod; 275.
+//
+ID   Butyrylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:153.115323533
+CF   C4 H6 O1
+DR   Unimod; 1289.
+//
+ID   ADP-ribosylation
+TG   S or E or R or C
+PP   Anywhere.
+MT   Less Common
+CF   C15 H21 N5 O13 P2
+DR   Unimod; 213.
+//
+ID   Pyridoxal phosphate
+TG   K
+PP   Anywhere.
+MT   Less Common
+CF   C8 H8 N1 O5 P1
+DR   Unimod; 46.
+//
+ID   Malonylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:C7 H11 N1 O1
+DI   HCD:169.073923533
+NL   HCD:43.9898
+NL   ETD:87.0082
+CF   C3 H2 O3
+DR   Unimod; 747.
+//
 ID   Proline pyrrole to pyrrolidine six member ring
 TG   P
 PP   Anywhere.
@@ -209,13 +302,6 @@ PP   Peptide N-terminal.
 MT   Less Common
 CF   H3 C2 N1 O1
 DR   Unimod; 4.
-//
-ID   Acetylation
-TG   S or T
-PP   Anywhere.
-MT   Less Common
-CF   H2 C2 O1
-DR   Unimod; 1.
 //
 ID   Biotinylation
 TG   K
@@ -289,7 +375,7 @@ CF   C1 O1
 DR   Unimod; 122.
 //
 ID   Methylation
-TG   C or H or N or Q or I or L or D or E or S or T
+TG   C or H or N or I or L or D or E or S or T
 PP   Anywhere.
 MT   Less Common
 CF   H2 C
