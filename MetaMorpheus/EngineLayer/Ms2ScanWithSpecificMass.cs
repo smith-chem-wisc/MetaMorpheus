@@ -79,7 +79,7 @@ namespace EngineLayer
                     {
                         neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
                             new List<(double mz, double intensity)> { (mz, intensity) },
-                            mz.ToMass(1), 1, intensity, 0, 0));
+                            mz.ToMass(1), 1, intensity, 0));
                     }
                 }
             }

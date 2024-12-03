@@ -82,9 +82,10 @@ namespace TaskLayer.MbrAnalysis
             foreach (SpectraFileInfo spectraFile in FlashLfqResults.SpectraFiles)
             {
                 PeptideScoreDict["fileName"].Add(spectraFile.FilenameWithoutExtension);
-                var peaksForFile = BestMbrMatches.Select(kvp => kvp.Key).
-                    Where(p => p.SpectraFileInfo == spectraFile && p.Identifications.Any()).
-                    ToDictionary(p => p.Identifications.First().ModifiedSequence, p => p);
+                var peaksForFile = BestMbrMatches
+                    .Select(kvp => kvp.Key)
+                    .Where(p => p.SpectraFileInfo == spectraFile && p.Identifications.Any())
+                    .ToDictionary(p => p.Identifications.First().ModifiedSequence, p => p);
                 IEnumerable<string> peptidesNotInFile = flashLfqPeptides.Except(peaksForFile.Keys);
 
                 foreach (var peptide in peaksForFile.Keys)

@@ -101,6 +101,39 @@ namespace Test
             Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 140"));
         }
 
+        [Test]
+        public static void PepAnalysisEngineHasReproducibleOutput()
+        {
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
+            string outputFolderPepQ = testCase.OutputDirectory;
+            var resultsFilePepQ = Path.Combine(outputFolderPepQ, @"postSearchAnalysisTaskTestOutput\results.txt");
+            string[] resultsPepQ = File.ReadAllLines(resultsFilePepQ);
+
+            //First test that AllResults and Results display correct numbers of peptides and psms with q-value filter on
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out testCase);
+            string outputFolderQ = testCase.OutputDirectory;
+            string resultsFileQ = Path.Combine(outputFolderQ, @"postSearchAnalysisTaskTestOutput\results.txt");
+            string[] resultsQ = File.ReadAllLines(resultsFileQ);
+
+            // The Q-Value test case and the PEP-Q value test case represent the same data ran twice
+            // These assert staments compare the outputs of the PepAnalysisEngine for each test case
+            // They should be identical!!! If they aren't, then PEP is not reproducible for some reason
+            Assert.That(resultsPepQ[37], Is.EqualTo(resultsQ[37]));
+            Assert.That(resultsPepQ[38], Is.EqualTo(resultsQ[38]));
+            Assert.That(resultsPepQ[39], Is.EqualTo(resultsQ[39]));
+            Assert.That(resultsPepQ[40], Is.EqualTo(resultsQ[40]));
+            Assert.That(resultsPepQ[41], Is.EqualTo(resultsQ[41]));
+            Assert.That(resultsPepQ[42], Is.EqualTo(resultsQ[42]));
+            Assert.That(resultsPepQ[43], Is.EqualTo(resultsQ[43]));
+            Assert.That(resultsPepQ[44], Is.EqualTo(resultsQ[44]));
+            Assert.That(resultsPepQ[45], Is.EqualTo(resultsQ[45]));
+            Assert.That(resultsPepQ[46], Is.EqualTo(resultsQ[46]));
+            Assert.That(resultsPepQ[47], Is.EqualTo(resultsQ[47]));
+            Assert.That(resultsPepQ[48], Is.EqualTo(resultsQ[48]));
+            Assert.That(resultsPepQ[49], Is.EqualTo(resultsQ[49]));
+            Assert.That(resultsPepQ[50], Is.EqualTo(resultsQ[50]));
+        }
+
         /// <summary>
         /// Ensures that there is the proper ratio of summary and individual lines in the result.txt file and that peptides and proteoforms are distinct
         /// </summary>

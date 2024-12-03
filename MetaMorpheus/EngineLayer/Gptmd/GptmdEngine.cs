@@ -1,5 +1,4 @@
 ﻿using MzLibUtil;
-using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
@@ -28,13 +27,8 @@ namespace EngineLayer.Gptmd
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
         {
-            //the peptideOneBasedIndex and proteinOneBasedIndex are for the position of the modification on the sequence
-
             var motif = attemptToLocalize.Target;
-
-            // First find the capital letter...
             var hehe = motif.ToString().IndexOf(motif.ToString().First(b => char.IsUpper(b)));
-
             var proteinToMotifOffset = proteinOneBasedIndex - hehe - 1;
             var indexUp = 0;
             // Look up starting at and including the capital letter
@@ -44,7 +38,6 @@ namespace EngineLayer.Gptmd
                     return false;
                 indexUp++;
             }
-
             // if a UniProt mod already exists at this location with the same mass, don't annotate the GPTMD mod
             if (protein.OneBasedPossibleLocalizedModifications.TryGetValue(proteinOneBasedIndex, out List<Modification> modsAtThisLocation)
                 && modsAtThisLocation.Any(m => m.ModificationType == "UniProt" && Math.Abs(m.MonoisotopicMass.Value - attemptToLocalize.MonoisotopicMass.Value) < 0.005))
@@ -152,7 +145,33 @@ namespace EngineLayer.Gptmd
             );
             return new GptmdResults(this, finalModDict, modsAdded);
         }
+        private List<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
+        {
+            var scores = new List<double>();
 
+            foreach (var peptide in newPeptides)
+            {
+                var peptideTheorProducts = new List<Product>();
+                peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+
+                var scan = psm.MsDataScan;
+                var precursorMass = psm.ScanPrecursorMass;
+                var precursorCharge = psm.ScanPrecursorCharge;
+                var fileName = psm.FullFilePath;
+                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(new Ms2ScanWithSpecificMass(scan, precursorMass, precursorCharge, fileName, CommonParameters), peptideTheorProducts, CommonParameters, matchAllCharges: false);
+
+                scores.Add(CalculatePeptideScore(psm.MsDataScan, matchedIons, false));
+            }
+
+            return scores;
+        }
+        private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
+        {
+            modDict.AddOrUpdate(proteinAccession, new ConcurrentBag<Tuple<int, Modification>> { indexedMod }, (key, existingBag) =>
+            {
+                existingBag.Add(indexedMod);
+                return existingBag;
+            });
         private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
         {
             modDict.AddOrUpdate(proteinAccession,
@@ -168,14 +187,14 @@ namespace EngineLayer.Gptmd
         {
             foreach (var Mod in allMods.Where(b => b.ValidModification == true))
             {
+                //TODO: not necessarily here. I think we're creating ambiguity. If we're going to add a gptmd mod to a peptide that already has that mod, then we need info
+                // to suggest that it is at a postion other than that in the database. could be presence of frag for unmodified or presence of frag with modified at alternative location.
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + (double)Mod.MonoisotopicMass))
                     yield return Mod;
                 foreach (var modOnPsm in peptideWithSetModifications.AllModsOneIsNterminus.Values.Where(b => b.ValidModification == true))
                     if (modOnPsm.Target.Equals(Mod.Target))
                     {
                         if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + (double)Mod.MonoisotopicMass - (double)modOnPsm.MonoisotopicMass))
-
-                            //TODO: not necessarily here. I think we're creating ambiguity. If we're going to add a gptmd mod to a peptide that already has that mod, then we need info to suggest that it is at a postion other than that in the database. could be presence of frag for unmodified or presence of frag with modified at alternative location.
                             yield return Mod;
                     }
             }
@@ -188,8 +207,6 @@ namespace EngineLayer.Gptmd
                 if (precursorTolerance.Within(totalMassToGetTo, peptideWithSetModifications.MonoisotopicMass + combined))
                 {
                     foreach (var mod in GetPossibleMods(totalMassToGetTo - m1, allMods, combos, precursorTolerance, peptideWithSetModifications))
-                        yield return mod;
-                    foreach (var mod in GetPossibleMods(totalMassToGetTo - m2, allMods, combos, precursorTolerance, peptideWithSetModifications))
                         yield return mod;
                 }
             }
