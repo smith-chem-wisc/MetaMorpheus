@@ -70,12 +70,13 @@ namespace EngineLayer.Gptmd
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
-            var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy).ToList();
+            
             Parallel.ForEach(threads, (i) =>
             {
                 //foreach peptide in each psm and for each modification that matches the notch,
                 //add that modification to every allowed residue
                 //return those matches that give the highest score
+                var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy).ToList();
                 for (; i < psms.Count(); i += maxThreadsPerFile)
                 {
                     foreach (var pepWithSetMods in psms[i].BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications))
