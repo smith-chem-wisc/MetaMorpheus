@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using MassSpectrometry;
 
@@ -15,10 +14,9 @@ public abstract class DeconParamsViewModel : BaseViewModel, IEquatable<DeconPara
 
     private int _previousMinAssumedChargeState;
     private int _previousMaxAssumedChargeState;
-
+    protected readonly Guid UniqueIdentifier = Guid.NewGuid(); // Used to map which updated decon params to the combobox selection via the GetHashCodeMethod
     public DeconvolutionType DeconvolutionType => Parameters.DeconvolutionType;
     public abstract DeconvolutionParameters Parameters { get; protected set; }
-
 
     /// <summary>
     /// Gets or sets the minimum assumed charge state.
@@ -47,7 +45,6 @@ public abstract class DeconParamsViewModel : BaseViewModel, IEquatable<DeconPara
             }
         }
     }
-
 
     ///<summary>
     /// Gets or sets the maximum assumed charge state.
@@ -159,10 +156,9 @@ public abstract class DeconParamsViewModel : BaseViewModel, IEquatable<DeconPara
 
     public override int GetHashCode()
     {
-        return (Parameters != null ? Parameters.DeconvolutionType.GetHashCode() + Parameters.Polarity.GetHashCode() + MaxAssumedChargeState.GetHashCode() : 0);
+        return UniqueIdentifier.GetHashCode();
     }
 }
-
 
 [ExcludeFromCodeCoverage] // Model used only for visualizing the view in visual studio
 public class DeconParamsModel : DeconParamsViewModel

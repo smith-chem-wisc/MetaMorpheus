@@ -2,11 +2,10 @@
 
 namespace GuiFunctions;
 
-// TODO: Carry Precursor ID throughout the search
-
-// TODO: Collapse duplicate precursor IDs
-
-// TODO: Figure out how isodec multiple precursors plays with MS2 decon
+// Todo: IsoDec has the ability to report all plausible MonoIsotopic masses for a peak (missed monos). 
+// This behavior is currently suppressed due to the complexities of interacting with our mass difference acceptor. 
+//      The Isotpic Envelopes that IsoDec produces are labeled with an ID.
+//      This ID can be used in PostSearchAnalysis to ensure that no spectral match can be made from two deconvolution results of the same species.
 
 public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
 {
@@ -24,6 +23,9 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
 
     public IsoDecDeconParamsViewModel(IsoDecDeconvolutionParameters parameters)
     {
+        // Todo: remove this and reconcile the Missed Monoisotopics
+        parameters.ReportMulitpleMonoisos = false;
+
         Parameters = parameters;
     }
 
@@ -175,7 +177,6 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         get => _parameters.ReportMulitpleMonoisos;
         set
         {
-            // TODO: Reconcile this with other parameters within MetaMorpheus (Mass diff acceptor). 
             _parameters.ReportMulitpleMonoisos = value;
             OnPropertyChanged(nameof(ReportMultipleMonoisotopicMasses));
         }

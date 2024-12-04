@@ -1,10 +1,8 @@
 ﻿#nullable enable
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using Easy.Common.Extensions;
 using EngineLayer;
 using MassSpectrometry;
 
@@ -153,6 +151,24 @@ public class DeconHostViewModel : BaseViewModel
         }
     }
 
+    public void SetAllPrecursorMaxChargeState(int newMaxCharge)
+    {
+        foreach (var precursorParams in PrecursorDeconvolutionParametersList)
+        {
+            precursorParams.MaxAssumedChargeState = newMaxCharge;
+        }
+        OnPropertyChanged(nameof(PrecursorDeconvolutionParametersList));
+    }
+
+    public void SetAllProductMaxChargeState(int newMaxCharge)
+    {
+        foreach (var productParams in ProductDeconvolutionParametersList)
+        {
+            productParams.MaxAssumedChargeState = newMaxCharge;
+        }
+        OnPropertyChanged(nameof(ProductDeconvolutionParametersList));
+    }
+
     #endregion
 
     /// <summary>
@@ -210,7 +226,7 @@ public class DeconHostViewModel : BaseViewModel
 [ExcludeFromCodeCoverage] // Model used only for visualizing the view in visual studio
 public class DeconHostModel : DeconHostViewModel
 {
-    public static DeconHostModel Instance => new DeconHostModel();
+    public static DeconHostModel Instance => new();
 
     public DeconHostModel() : base (DeconParamsModel.Instance.Parameters, DeconParamsModel.Instance.Parameters)
     {

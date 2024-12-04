@@ -22,7 +22,17 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-        <CheckBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="4" Content="Report All Potential Missed Monoisotopics"
+        
+        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Top" >
+            <Label Content="Phase Resolution"></Label>
+            <RadioButton Content="4 (Speed)" IsChecked="{Binding PhaseResIsFour}" VerticalContentAlignment="Center"
+                         Margin="0 0 5 0" />
+            <RadioButton Content="8 (Depth)" IsChecked="{Binding PhaseResIsFour, Converter={local:BooleanInverter}}"
+                         VerticalContentAlignment="Center" />
+        </StackPanel>
+        <!-- This checkbox is currently hidden as the missed mono behavior is suppressed -->
+        <CheckBox Visibility="Hidden"
+                  Grid.Row="0" Grid.Column="2" Content="Report All Potential Missed Monoisotopics"
                   IsChecked="{Binding ReportMultipleMonoisotopicMasses}" VerticalAlignment="Center"
                   ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" Margin="5 0">
             <CheckBox.ToolTip>
@@ -33,13 +43,6 @@
                 </TextBlock>
             </CheckBox.ToolTip>
         </CheckBox>
-        <StackPanel Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Top" >
-            <Label Content="Phase Resolution"></Label>
-            <RadioButton Content="4 (Quick)" IsChecked="{Binding PhaseResIsFour}" VerticalContentAlignment="Center"
-                         Margin="0 0 5 0" />
-            <RadioButton Content="8 (Depth)" IsChecked="{Binding PhaseResIsFour, Converter={local:BooleanInverter}}"
-                         VerticalContentAlignment="Center" />
-        </StackPanel>
         <Label Grid.Row="2" Grid.Column="0" Content="Max Assumed Charge State:" />
         <local:IntegerTexBoxControl Grid.Row="2" Grid.Column="1" x:Name="DeconvolutionMaxAssumedChargeStateTextBox"
                                     Width="45" ToolTipService.ShowDuration="999999"

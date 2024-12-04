@@ -100,7 +100,7 @@
                         Converter={StaticResource DeconTypeToControlConverter }}" />
 
             <!-- Specific Product Parameters -->
-            <Expander Grid.Row="2" Header="MSn Deconvolution" >
+            <Expander Grid.Row="2" Header="MS2 Deconvolution" >
                 <Border BorderBrush="{StaticResource BorderColor}" BorderThickness="1" CornerRadius="10">
                     <StackPanel>
                         <ComboBox  x:Name="ProductDeconvolutionTypeComboBox" Width="100" Height="35" Margin="5 5 5 -5"
