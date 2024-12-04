@@ -34,6 +34,8 @@ namespace EngineLayer.Gptmd
             var proteinToMotifOffset = proteinOneBasedIndex - hehe - 1;
             var indexUp = 0;
             // Look up starting at and including the capital letter
+            
+            
             while (indexUp < motif.ToString().Length)
             {
                 if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= protein.Length || (!char.ToUpper(motif.ToString()[indexUp]).Equals('X') && !char.ToUpper(motif.ToString()[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))

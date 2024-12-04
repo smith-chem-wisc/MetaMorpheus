@@ -308,7 +308,16 @@ namespace MetaMorpheusGUI
             ("Common Biological", "Sulfonation on Y"),
             ("Common Biological", "Trimethylation on K"),
             ("Common Biological", "Citrullination on R"),
-            ("Common Biological", "Allysine on K")
+            ("Common Biological", "Allysine on K"),
+            ("Common Biological", "HexNAc on Nxs"),
+            ("Common Biological", "HexNAc on Nxt"),
+            ("Common Biological", "HexNAc on S"),
+            ("Common Biological", "HexNAc on T"),
+            ("Common Biological", "Carboxylation on E"),
+            ("Common Biological", "Carboxylation on D"),
+            ("Common Biological", "Carboxylation on K"),
+            ("Common Biological", "Formylation on K"),
+            ("Common Biological", "Crotonylation on K")
         };
     }
 }
