@@ -36,7 +36,6 @@ namespace EngineLayer.Gptmd
             var indexUp = 0;
             // Look up starting at and including the capital letter
 
-
             while (indexUp < motif.ToString().Length)
             {
                 if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= protein.Length || (!char.ToUpper(motif.ToString()[indexUp]).Equals('X') && !char.ToUpper(motif.ToString()[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))
@@ -62,7 +61,6 @@ namespace EngineLayer.Gptmd
                 return true;
             return false;
         }
-
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
@@ -213,7 +211,6 @@ namespace EngineLayer.Gptmd
                     return existingBag;
                 });
         }
-
         private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
         {
             foreach (var Mod in allMods.Where(b => b.ValidModification == true))
