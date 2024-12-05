@@ -120,6 +120,7 @@ namespace EngineLayer.Gptmd
                                             foreach (var index in highScoreIndices)
                                             {
                                                 AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(pepWithSetMods.OneBasedStartResidue + possibleIndices[index], mod));
+                                                modsAdded++;
                                             }
                                         }
                                     }
@@ -148,6 +149,7 @@ namespace EngineLayer.Gptmd
                                                 {
                                                     AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod));
                                                     foundSite = true;
+                                                    modsAdded++;
                                                     break;
                                                 }
 
@@ -156,6 +158,7 @@ namespace EngineLayer.Gptmd
                                                 {
                                                     AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
                                                     foundSite = true;
+                                                    modsAdded++;
                                                     break;
                                                 }
 
@@ -164,6 +167,7 @@ namespace EngineLayer.Gptmd
                                             if (!foundSite)
                                             {
                                                 AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                                modsAdded++;
                                             }
                                         }
                                     }
