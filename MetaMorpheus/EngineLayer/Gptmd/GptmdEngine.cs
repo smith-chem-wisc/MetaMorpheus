@@ -75,116 +75,113 @@ namespace EngineLayer.Gptmd
             {
                 return new GptmdResults(this, new Dictionary<string, HashSet<Tuple<int, Modification>>>(), 0);
             }
-            else
+            Parallel.ForEach(Partitioner.Create(0, psms.Count), new ParallelOptions() { MaxDegreeOfParallelism = maxThreadsPerFile }, (range) =>
             {
-                Parallel.ForEach(Partitioner.Create(0, psms.Count), new ParallelOptions() { MaxDegreeOfParallelism = maxThreadsPerFile }, (range) =>
+                for (int i = range.Item1; i < range.Item2; i++)
                 {
-                    for (int i = range.Item1; i < range.Item2; i++)
+                    foreach (var pepWithSetMods in psms[i].BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications))
                     {
-                        foreach (var pepWithSetMods in psms[i].BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications))
+                        var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Protein.NonVariantProtein;
+                        var possibleModifications = GetPossibleMods(psms[i].ScanPrecursorMass, GptmdModifications, Combos, FilePathToPrecursorMassTolerance[psms[i].FullFilePath], pepWithSetMods);
+
+                        if (!isVariantProtein)
                         {
-                            var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Protein.NonVariantProtein;
-                            var possibleModifications = GetPossibleMods(psms[i].ScanPrecursorMass, GptmdModifications, Combos, FilePathToPrecursorMassTolerance[psms[i].FullFilePath], pepWithSetMods);
-
-                            if (!isVariantProtein)
+                            foreach (var mod in possibleModifications)
                             {
-                                foreach (var mod in possibleModifications)
+                                List<int> possibleIndices = Enumerable.Range(0, pepWithSetMods.Length).Where(i => ModFits(mod, pepWithSetMods.Parent, i + 1, pepWithSetMods.Length, pepWithSetMods.OneBasedStartResidue + i)).ToList();
+                                if (possibleIndices.Any())
                                 {
-                                    List<int> possibleIndices = Enumerable.Range(0, pepWithSetMods.Length).Where(i => ModFits(mod, pepWithSetMods.Parent, i + 1, pepWithSetMods.Length, pepWithSetMods.OneBasedStartResidue + i)).ToList();
-                                    if (possibleIndices.Any())
+                                    List<PeptideWithSetModifications> newPeptides = new();
+                                    foreach (int index in possibleIndices)
                                     {
-                                        List<PeptideWithSetModifications> newPeptides = new();
-                                        foreach (int index in possibleIndices)
+                                        if (mod.MonoisotopicMass.HasValue)
                                         {
-                                            if (mod.MonoisotopicMass.HasValue)
-                                            {
-                                                newPeptides.Add((PeptideWithSetModifications)pepWithSetMods.Localize(index, mod.MonoisotopicMass.Value));
-                                            }
+                                            newPeptides.Add((PeptideWithSetModifications)pepWithSetMods.Localize(index, mod.MonoisotopicMass.Value));
                                         }
+                                    }
 
-                                        if (newPeptides.Any())
-                                        {
-                                            var scores = new List<double>();
-                                            var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                                                psms[i].MsDataScan.DissociationType.Value : CommonParameters.DissociationType;
+                                    if (newPeptides.Any())
+                                    {
+                                        var scores = new List<double>();
+                                        var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
+                                            psms[i].MsDataScan.DissociationType.Value : CommonParameters.DissociationType;
 
-                                            scores = CalculatePeptideScores(newPeptides, dissociationType, psms[i]);
+                                        scores = CalculatePeptideScores(newPeptides, dissociationType, psms[i]);
 
-                                            // If the score is within tolerance of the highest score, add the mod to the peptide
-                                            // If the tolerance is too tight, then the number of identifications in subsequent searches will be reduced
+                                        // If the score is within tolerance of the highest score, add the mod to the peptide
+                                        // If the tolerance is too tight, then the number of identifications in subsequent searches will be reduced
                                             
-                                            var highScoreIndices = scores.Select((item, index) => new { item, index })
-                                                .Where(x => x.item > (scores.Max() - ScoreTolerance))
-                                                .Select(x => x.index)
-                                                .ToList();
+                                        var highScoreIndices = scores.Select((item, index) => new { item, index })
+                                            .Where(x => x.item > (scores.Max() - ScoreTolerance))
+                                            .Select(x => x.index)
+                                            .ToList();
 
-                                            foreach (var index in highScoreIndices)
-                                            {
-                                                AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(pepWithSetMods.OneBasedStartResidue + possibleIndices[index], mod));
-                                                modsAdded++;
-                                            }
+                                        foreach (var index in highScoreIndices)
+                                        {
+                                            AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(pepWithSetMods.OneBasedStartResidue + possibleIndices[index], mod));
+                                            modsAdded++;
                                         }
                                     }
                                 }
                             }
-                            // if a variant protein, index to variant protein if on variant, or to the original protein if not
-                            else
+                        }
+                        // if a variant protein, index to variant protein if on variant, or to the original protein if not
+                        else
+                        {
+                            foreach (var mod in possibleModifications)
                             {
-                                foreach (var mod in possibleModifications)
+                                for (int j = 0; j < pepWithSetMods.Length; j++)
                                 {
-                                    for (int j = 0; j < pepWithSetMods.Length; j++)
+                                    int indexInProtein = pepWithSetMods.OneBasedStartResidue + j;
+
+                                    if (ModFits(mod, pepWithSetMods.Parent, j + 1, pepWithSetMods.Length, indexInProtein))
                                     {
-                                        int indexInProtein = pepWithSetMods.OneBasedStartResidue + j;
-
-                                        if (ModFits(mod, pepWithSetMods.Parent, j + 1, pepWithSetMods.Length, indexInProtein))
+                                        bool foundSite = false;
+                                        int offset = 0;
+                                        foreach (var variant in pepWithSetMods.Protein.AppliedSequenceVariations.OrderBy(v => v.OneBasedBeginPosition))
                                         {
-                                            bool foundSite = false;
-                                            int offset = 0;
-                                            foreach (var variant in pepWithSetMods.Protein.AppliedSequenceVariations.OrderBy(v => v.OneBasedBeginPosition))
+                                            bool modIsBeforeVariant = indexInProtein < variant.OneBasedBeginPosition + offset;
+                                            bool modIsOnVariant = variant.OneBasedBeginPosition + offset <= indexInProtein && indexInProtein <= variant.OneBasedEndPosition + offset;
+
+                                            // if a variant protein and the mod is on the variant, index to the variant protein sequence
+                                            if (modIsOnVariant)
                                             {
-                                                bool modIsBeforeVariant = indexInProtein < variant.OneBasedBeginPosition + offset;
-                                                bool modIsOnVariant = variant.OneBasedBeginPosition + offset <= indexInProtein && indexInProtein <= variant.OneBasedEndPosition + offset;
-
-                                                // if a variant protein and the mod is on the variant, index to the variant protein sequence
-                                                if (modIsOnVariant)
-                                                {
-                                                    AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod));
-                                                    foundSite = true;
-                                                    modsAdded++;
-                                                    break;
-                                                }
-
-                                                // otherwise back calculate the index to the original protein sequence
-                                                if (modIsBeforeVariant)
-                                                {
-                                                    AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
-                                                    foundSite = true;
-                                                    modsAdded++;
-                                                    break;
-                                                }
-
-                                                offset += variant.VariantSequence.Length - variant.OriginalSequence.Length;
+                                                AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod));
+                                                foundSite = true;
+                                                modsAdded++;
+                                                break;
                                             }
-                                            if (!foundSite)
+
+                                            // otherwise back calculate the index to the original protein sequence
+                                            if (modIsBeforeVariant)
                                             {
                                                 AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                                foundSite = true;
                                                 modsAdded++;
+                                                break;
                                             }
+
+                                            offset += variant.VariantSequence.Length - variant.OriginalSequence.Length;
+                                        }
+                                        if (!foundSite)
+                                        {
+                                            AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                            modsAdded++;
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                });
+                }
+            });
 
-                // Convert ConcurrentDictionary to Dictionary with HashSet
-                var finalModDict = modDict.ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)
-                );
-                return new GptmdResults(this, finalModDict, modsAdded);
-            }
+            // Convert ConcurrentDictionary to Dictionary with HashSet
+            var finalModDict = modDict.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)
+            );
+            return new GptmdResults(this, finalModDict, modsAdded);
         }
         private List<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
         {
