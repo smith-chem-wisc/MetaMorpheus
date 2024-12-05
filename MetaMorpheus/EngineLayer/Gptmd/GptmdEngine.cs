@@ -5,10 +5,10 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics;
 using Omics.Modifications;
-using System.Threading.Tasks;
-using System.Collections.Concurrent;
 using MassSpectrometry;
 using Omics.Fragmentation;
+using System.Collections.Concurrent;
+using System.Threading.Tasks;
 
 namespace EngineLayer.Gptmd
 {
@@ -34,8 +34,6 @@ namespace EngineLayer.Gptmd
             var proteinToMotifOffset = proteinOneBasedIndex - hehe - 1;
             var indexUp = 0;
             // Look up starting at and including the capital letter
-            
-            
             while (indexUp < motif.ToString().Length)
             {
                 if (indexUp + proteinToMotifOffset < 0 || indexUp + proteinToMotifOffset >= protein.Length || (!char.ToUpper(motif.ToString()[indexUp]).Equals('X') && !char.ToUpper(motif.ToString()[indexUp]).Equals(protein.BaseSequence[indexUp + proteinToMotifOffset])))
@@ -62,7 +60,6 @@ namespace EngineLayer.Gptmd
             return false;
         }
 
-
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             var modDict = new ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>>();
@@ -70,13 +67,15 @@ namespace EngineLayer.Gptmd
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
-            
+            var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy).ToList();
             Parallel.ForEach(threads, (i) =>
             {
+                var localModDict = new ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>>();
+                int localModsAdded = 0;
+
                 //foreach peptide in each psm and for each modification that matches the notch,
                 //add that modification to every allowed residue
                 //return those matches that give the highest score
-                var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy).ToList();
                 for (; i < psms.Count(); i += maxThreadsPerFile)
                 {
                     foreach (var pepWithSetMods in psms[i].BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications))
@@ -118,7 +117,8 @@ namespace EngineLayer.Gptmd
 
                                         foreach (var index in highScoreIndices)
                                         {
-                                            AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(pepWithSetMods.OneBasedStartResidue + possibleIndices[index], mod));
+                                            AddIndexedMod(localModDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(pepWithSetMods.OneBasedStartResidue + possibleIndices[index], mod));
+                                            System.Threading.Interlocked.Increment(ref localModsAdded);
                                         }
                                     }
                                 }
@@ -145,7 +145,8 @@ namespace EngineLayer.Gptmd
                                             // if a variant protein and the mod is on the variant, index to the variant protein sequence
                                             if (modIsOnVariant)
                                             {
-                                                AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod));
+                                                AddIndexedMod(localModDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod));
+                                                System.Threading.Interlocked.Increment(ref localModsAdded);
                                                 foundSite = true;
                                                 break;
                                             }
@@ -153,7 +154,8 @@ namespace EngineLayer.Gptmd
                                             // otherwise back calculate the index to the original protein sequence
                                             if (modIsBeforeVariant)
                                             {
-                                                AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                                AddIndexedMod(localModDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                                System.Threading.Interlocked.Increment(ref localModsAdded);
                                                 foundSite = true;
                                                 break;
                                             }
@@ -162,7 +164,8 @@ namespace EngineLayer.Gptmd
                                         }
                                         if (!foundSite)
                                         {
-                                            AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                            AddIndexedMod(localModDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
+                                            System.Threading.Interlocked.Increment(ref localModsAdded);
                                         }
                                     }
                                 }
@@ -170,14 +173,21 @@ namespace EngineLayer.Gptmd
                         }
                     }
                 }
+                foreach (var kvp in localModDict)
+                {
+                    modDict.AddOrUpdate(kvp.Key, kvp.Value, (key, existingBag) =>
+                    {
+                        foreach (var item in kvp.Value)
+                        {
+                            existingBag.Add(item);
+                        }
+                        return existingBag;
+                    });
+                }
+                System.Threading.Interlocked.Add(ref modsAdded, localModsAdded);
             });
 
-            // Convert ConcurrentDictionary to Dictionary with HashSet
-            var finalModDict = modDict.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)
-            );
-            return new GptmdResults(this, finalModDict, modsAdded);
+            return new GptmdResults(this, modDict.ToDictionary(kvp => kvp.Key, kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)), modsAdded);
         }
         private List<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
         {
@@ -201,13 +211,11 @@ namespace EngineLayer.Gptmd
         }
         private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
         {
-            modDict.AddOrUpdate(proteinAccession,
-                new ConcurrentBag<Tuple<int, Modification>> { indexedMod },
-                (key, existingBag) =>
-                {
-                    existingBag.Add(indexedMod);
-                    return existingBag;
-                });
+            modDict.AddOrUpdate(proteinAccession, new ConcurrentBag<Tuple<int, Modification>> { indexedMod }, (key, existingBag) =>
+            {
+                existingBag.Add(indexedMod);
+                return existingBag;
+            });
         }
 
         private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
