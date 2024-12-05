@@ -18,7 +18,8 @@ namespace EngineLayer.Gptmd
         private readonly IEnumerable<Tuple<double, double>> Combos;
         private readonly List<Modification> GptmdModifications;
         private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
-
+        //The ScoreTolerance property is used to differentiatie when a PTM candidate is added to a peptide. We check the score at each position and then add that mod where the score is highest.
+        private readonly double ScoreTolerance = 0.1;
         public GptmdEngine(List<SpectralMatch> allIdentifications, List<Modification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
@@ -111,9 +112,9 @@ namespace EngineLayer.Gptmd
 
                                             // If the score is within tolerance of the highest score, add the mod to the peptide
                                             // If the tolerance is too tight, then the number of identifications in subsequent searches will be reduced
-                                            double scoreTolerance = 0.1;
+                                            
                                             var highScoreIndices = scores.Select((item, index) => new { item, index })
-                                                .Where(x => x.item > (scores.Max() - scoreTolerance))
+                                                .Where(x => x.item > (scores.Max() - ScoreTolerance))
                                                 .Select(x => x.index)
                                                 .ToList();
 
