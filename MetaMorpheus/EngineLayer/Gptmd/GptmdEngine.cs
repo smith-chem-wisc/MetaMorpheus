@@ -20,6 +20,7 @@ namespace EngineLayer.Gptmd
         private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
         //The ScoreTolerance property is used to differentiatie when a PTM candidate is added to a peptide. We check the score at each position and then add that mod where the score is highest.
         private readonly double ScoreTolerance = 0.1;
+        
         public GptmdEngine(List<SpectralMatch> allIdentifications, List<Modification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
@@ -117,7 +118,7 @@ namespace EngineLayer.Gptmd
                                         foreach (var index in highScoreIndices)
                                         {
                                             AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(pepWithSetMods.OneBasedStartResidue + possibleIndices[index], mod));
-                                            modsAdded++;
+                                            System.Threading.Interlocked.Increment(ref modsAdded); ;
                                         }
                                     }
                                 }
@@ -146,7 +147,7 @@ namespace EngineLayer.Gptmd
                                             {
                                                 AddIndexedMod(modDict, pepWithSetMods.Protein.Accession, new Tuple<int, Modification>(indexInProtein, mod));
                                                 foundSite = true;
-                                                modsAdded++;
+                                                System.Threading.Interlocked.Increment(ref modsAdded); ;
                                                 break;
                                             }
 
@@ -155,7 +156,7 @@ namespace EngineLayer.Gptmd
                                             {
                                                 AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
                                                 foundSite = true;
-                                                modsAdded++;
+                                                System.Threading.Interlocked.Increment(ref modsAdded); ;
                                                 break;
                                             }
 
@@ -164,7 +165,7 @@ namespace EngineLayer.Gptmd
                                         if (!foundSite)
                                         {
                                             AddIndexedMod(modDict, pepWithSetMods.Protein.NonVariantProtein.Accession, new Tuple<int, Modification>(indexInProtein - offset, mod));
-                                            modsAdded++;
+                                            System.Threading.Interlocked.Increment(ref modsAdded); ;
                                         }
                                     }
                                 }
@@ -175,11 +176,11 @@ namespace EngineLayer.Gptmd
             });
 
             // Convert ConcurrentDictionary to Dictionary with HashSet
-            var finalModDict = modDict.ToDictionary(
+            var finalModDictionary = modDict.ToDictionary(
                 kvp => kvp.Key,
                 kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)
             );
-            return new GptmdResults(this, finalModDict, modsAdded);
+            return new GptmdResults(this, finalModDictionary, modsAdded);
         }
         private List<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
         {
