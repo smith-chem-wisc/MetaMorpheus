@@ -340,7 +340,7 @@ namespace Test
 
             // the following code is just a control to make sure the phosphorylation actually does fit
             // at the given residue if the UniProt phosphorylation is not already present
-            var someOtherSMod = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Common Biological" && p.IdWithMotif.Contains("HexNAc on S")).First();
+            var someOtherSMod = GlobalVariables.AllModsKnown.Where(p => p.ModificationType == "Less Common" && p.IdWithMotif.Contains("Oxidation on S")).First();
 
             protein = new Protein("PEPTIDESK", "test",
                 oneBasedModifications: new Dictionary<int, List<Modification>>() { { 8, new List<Modification> { someOtherSMod } } });
