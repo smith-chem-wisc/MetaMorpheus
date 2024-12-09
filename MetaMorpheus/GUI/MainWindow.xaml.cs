@@ -517,7 +517,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf)|*.raw;*.mzML;*.mgf");
+            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*.d)|*.raw;*.mzML;*.mgf;*.d");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -1694,6 +1694,16 @@ namespace MetaMorpheusGUI
                 Filter = filter,
                 FilterIndex = 1,
                 RestoreDirectory = true,
+                Multiselect = true
+            };
+
+            return openFileDialog;
+        }
+
+        private OpenFolderDialog StartOpenFolderDialog(string filter)
+        {
+            OpenFolderDialog openFileDialog = new OpenFolderDialog
+            {
                 Multiselect = true
             };
 
