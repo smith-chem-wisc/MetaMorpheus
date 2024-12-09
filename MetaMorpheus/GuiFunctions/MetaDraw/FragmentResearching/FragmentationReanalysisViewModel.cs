@@ -8,6 +8,7 @@ using Easy.Common.Extensions;
 using EngineLayer;
 using iText.StyledXmlParser.Jsoup;
 using MassSpectrometry;
+using MzLibUtil;
 using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -26,10 +27,11 @@ namespace GuiFunctions
             _isProtein = isProtein;
             UseInternalIons = false;
             MinInternalIonLength = 10;
+            ProductIonMassTolerance = 20;
             if (isProtein)
             {
                 DissociationTypes = new ObservableCollection<DissociationType>(Enum.GetValues<DissociationType>()
-                    .Where(p => p != DissociationType.AnyActivationType && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) && prod.Any()));
+                    .Where(p => p != DissociationType.AnyActivationType && Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType.TryGetValue(p, out var prod) && prod.Count != 0));
                 PossibleProducts = new ObservableCollection<FragmentViewModel>(GetPossibleProducts(_isProtein));
                 SelectedDissociationType = DissociationType.HCD;
             }
@@ -89,6 +91,14 @@ namespace GuiFunctions
         {
             get => _useInternalIons; 
             set { _useInternalIons = value; OnPropertyChanged(nameof(UseInternalIons)); }
+        }
+
+        private double _productIonMassTolerance;
+
+        public double ProductIonMassTolerance
+        {
+            get => _productIonMassTolerance;
+            set { _productIonMassTolerance = value; OnPropertyChanged(nameof(ProductIonMassTolerance)); }
         }
 
         private IEnumerable<FragmentViewModel> GetPossibleProducts(bool isProtein)
@@ -177,7 +187,7 @@ namespace GuiFunctions
                     Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[dissociationType].ToArray()
                     : Omics.Fragmentation.Oligo.DissociationTypeCollection.GetRnaProductTypesFromDissociationType(dissociationType).ToArray();
             }
-            catch (Exception e)
+            catch (Exception)
             {
                 _selectedDissociationType = DissociationType.HCD;
                 dissociationTypeProducts = isProtein ?
@@ -211,13 +221,15 @@ namespace GuiFunctions
 
             // TODO: Adjust decon params for when RNA gets incorporated
             var commonParams = new CommonParameters();
+            if (Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001)
+                commonParams.ProductMassTolerance = new PpmTolerance(ProductIonMassTolerance);
+
             var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, psmToRematch.PrecursorMz,
                 psmToRematch.PrecursorCharge, psmToRematch.FileNameWithoutExtension, commonParams);
 
             return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false)
                 .Union(psmToRematch.MatchedIons.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType)))
                 .ToList();
-            
         }
     }
 }

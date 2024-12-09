@@ -1,5 +1,5 @@
 ﻿using GuiFunctions.Databases;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using System;
 using System.Collections.Generic;
@@ -39,7 +39,7 @@ namespace Test
                 Console.WriteLine("Finished with Uniprot database test.");
             }
 
-            Assert.AreEqual(expectedResult, filename);
+            Assert.That(expectedResult, Is.EqualTo(filename));
         }
 
         // Occasionally the downloaded files will change, and thus the expected result will need to be updated.

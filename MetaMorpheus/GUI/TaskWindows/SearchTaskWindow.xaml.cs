@@ -69,12 +69,6 @@ namespace MetaMorpheusGUI
             base.Closing += this.OnClosing;
         }
 
-
-        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
-        }
-
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
         {
             var ye = sender as DataGridCell;
