@@ -116,8 +116,8 @@ namespace TaskLayer
                     }
                     // set the mass tolerances for the file specific parameters
                     // we use a multiplier of 4 for the tolerance for files that are not calibrated
-                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((4 * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
-                    fileSpecificParams.ProductMassTolerance = new PpmTolerance((4 * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((4 * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError),1));
+                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((4 * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError),1));
 
                     // generate calibration function and shift data points
                     Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
@@ -133,8 +133,8 @@ namespace TaskLayer
                         numPsms = acquisitionResults.Psms.Count;
                         numPeptides = acquisitionResults.Psms.Select(p => p.FullSequence).Distinct().Count();
                         myMsDataFile = engine.CalibratedDataFile;
-                        fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
-                        fileSpecificParams.ProductMassTolerance = new PpmTolerance((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+                        fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError),1));
+                        fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1));
                         //Try a second round of calibration
                         // generate calibration function and shift data points
                         Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
@@ -150,8 +150,8 @@ namespace TaskLayer
                             numPsms = acquisitionResults.Psms.Count;
                             numPeptides = acquisitionResults.Psms.Select(p => p.FullSequence).Distinct().Count();
                             // write toml settings for the calibrated file
-                            fileSpecificParams.PrecursorMassTolerance = new PpmTolerance((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError));
-                            fileSpecificParams.ProductMassTolerance = new PpmTolerance((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError));
+                            fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1));
+                            fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1));
                         }
                     }
                     if (calibrated) // write the calibrated mzML file
