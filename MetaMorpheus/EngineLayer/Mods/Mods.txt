@@ -1,19 +1,5 @@
 Custom List
 ################################## COMMON BIOLOGICAL MODS
-ID   Hydroxylation
-TG   K or N
-PP   Anywhere.
-CF   O1
-MT   Common Biological
-DR   Unimod; 35.
-//
-ID   Carboxylation
-TG   K or D or E
-PP   Anywhere.
-MT   Common Biological
-CF   C1 O2
-DR   Unimod; 299.
-//
 ID   Phosphorylation
 TG   S or T
 PP   Anywhere.
@@ -32,14 +18,7 @@ DI   HCD:C8 H10 N1 O4 P1
 DR   Unimod; 21.
 //
 ID   Acetylation
-TG   X
-PP   N-terminal.
-MT   Common Biological
-CF   H2 C2 O1
-DR   Unimod; 1.
-//
-ID   Acetylation
-TG   K
+TG   K or A or M or S or T or G or P
 PP   Anywhere.
 MT   Common Biological
 NL   ETD:45.0204
@@ -47,22 +26,15 @@ DI   HCD:C7 H11 N1 O1
 CF   H2 C2 O1
 DR   Unimod; 1.
 //
-ID   Lactylation
-TG   K
-PP   Anywhere.
-MT   Less Common
-CF   H3 C3 O2
-//
-ID   Formylation
-TG   K
-PP   Anywhere.
+ID   Acetylation
+TG   X
+PP   N-terminal.
 MT   Common Biological
-DI   HCD:111.068423533
-CF   C1 O1
-DR   Unimod; 122.
+CF   H2 C2 O1
+DR   Unimod; 1.
 //
 ID   Methylation
-TG   K or R
+TG   K or R or Q
 PP   Anywhere.
 MT   Common Biological
 CF   H2 C
@@ -84,13 +56,13 @@ MT   Common Biological
 CF   H4 C2
 DR   Unimod; 36.
 //
-ID   Trimethylation
-TG   K
+ID   Hydroxylation
+TG   P or K or N
 PP   Anywhere.
 MT   Common Biological
-CF   H6 C3
-NL   ETD:45.0204
-DR   Unimod; 37.
+CF   O1
+DI   HCD:170.069143
+DR   Unimod; 35.
 //
 ID   Sulfonation
 TG   Y
@@ -99,6 +71,14 @@ NL   O3 S1
 MT   Common Biological
 CF   O3 S1
 DR   Unimod; 40.
+//
+ID   Trimethylation
+TG   K
+PP   Anywhere.
+MT   Common Biological
+CF   H6 C3
+NL   ETD:45.0204
+DR   Unimod; 37.
 //
 ID   Citrullination
 TG   R
@@ -109,80 +89,13 @@ NL   HCD:43.0058
 CF   H-1 N-1 O1
 DR   Unimod; 7.
 //
-ID   Hydroxylation
-TG   P
-PP   Anywhere.
-MT   Common Biological
-CF   O1
-DI   HCD:170.069143
-DR   Unimod; 35.
-//
-ID   Nitrosylation
-TG   Y
-PP   Anywhere.
-MT   Common Biological
-CF   H-1 N1 O2
-DI   HCD:180.053523533
-DR   Unimod; 354.
-//
-ID   Butyrylation
+ID   Allysine
 TG   K
+PA   Amino acid side chain.
 PP   Anywhere.
 MT   Common Biological
-DI   HCD:153.115323533
-CF   C4 H6 O1
-DR   Unimod; 1289.
-//
-ID   Crotonylation
-TG   K
-PP   Anywhere.
-MT   Common Biological
-DI   HCD:151.099723533
-CF   C4 H4 O1
-DR   Unimod; 1363.
-//
-ID   Glutarylation
-TG   K
-PP   Anywhere.
-MT   Common Biological
-DI   HCD:181.110323533
-NL   ETD:115.0395
-CF   C5 H6 O3
-DR   Unimod; 1848.
-//
-ID   Hydroxybutyrylation
-TG   K
-PP   Anywhere.
-MT   Common Biological
-DI   HCD:169.110323533
-CF   C4 H6 O2
-//
-ID   Malonylation
-TG   K
-PP   Anywhere.
-MT   Common Biological
-DI   HCD:C7 H11 N1 O1
-DI   HCD:169.073923533
-NL   HCD:43.9898
-NL   ETD:87.0082
-CF   C3 H2 O3
-DR   Unimod; 747.
-//
-ID   Succinylation
-TG   K
-PP   Anywhere.
-MT   Common Biological
-DI   HCD:183.089523533
-NL   ETD:101.0239
-CF   C4 H4 O3
-DR   Unimod; 64.
-//
-ID   Glu to PyroGlu
-TG   Q
-PP   N-terminal.
-MT   Common Biological
-CF   H-3 N-1
-DR   Unimod; 28.
+CF   H-3 N-1 O1
+DR   Unimod; 352.
 //
 ID   HexNAc
 TG   Nxs or Nxt
@@ -200,26 +113,27 @@ CF   C8H13NO5
 MT   Common Biological
 DR   Unimod; 43.
 //
-ID   ADP-ribosylation
-TG   S
+ID   Carboxylation
+TG   E or D or K
 PP   Anywhere.
 MT   Common Biological
-CF   C15 H21 N5 O13 P2
-DR   Unimod; 213.
+CF   C1 O2
+DR   Unimod; 299.
 //
-ID   Pyridoxal phosphate
+ID   Formylation
 TG   K
 PP   Anywhere.
 MT   Common Biological
-CF   C8 H8 N1 O5 P1
-DR   Unimod; 46.
+CF   C1 O1
+DR   Unimod; 122.
 //
-ID   Nitrosylation
-TG   C
+ID   Crotonylation
+TG   K
 PP   Anywhere.
 MT   Common Biological
-CF   H-1 N1 O1
-DR   Unimod; 275.
+DI   HCD:151.099723533
+CF   C4 H4 O1
+DR   Unimod; 1363.
 //
 ################################## COMMON ARTIFACT MODS
 ID   Deamidation
@@ -264,7 +178,86 @@ MT   Common Artifact
 CF   H1 C1 N1 O1
 DR   Unimod; 5.
 //
+
 ################################## LESS COMMON MODS
+ID   Succinylation
+TG   K or C
+PP   Anywhere.
+MT   Less Common
+DI   HCD:183.089523533
+NL   ETD:101.0239
+CF   C4 H4 O3
+DR   Unimod; 64.
+//
+ID   Hydroxybutyrylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:169.110323533
+CF   C4 H6 O2
+//
+ID   Lactylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+CF   H3 C3 O2
+//
+ID   Glutarylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:181.110323533
+NL   ETD:115.0395
+CF   C5 H6 O3
+DR   Unimod; 1848.
+//
+ID   Glu to PyroGlu
+TG   Q
+PP   N-terminal.
+MT   Less Common
+CF   H-3 N-1
+DR   Unimod; 28.
+//
+ID   Nitrosylation
+TG   C or Y
+PP   Anywhere.
+MT   Less Common
+CF   H-1 N1 O1
+DR   Unimod; 275.
+//
+ID   Butyrylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:153.115323533
+CF   C4 H6 O1
+DR   Unimod; 1289.
+//
+ID   ADP-ribosylation
+TG   S or E or R or C
+PP   Anywhere.
+MT   Less Common
+CF   C15 H21 N5 O13 P2
+DR   Unimod; 213.
+//
+ID   Pyridoxal phosphate
+TG   K
+PP   Anywhere.
+MT   Less Common
+CF   C8 H8 N1 O5 P1
+DR   Unimod; 46.
+//
+ID   Malonylation
+TG   K
+PP   Anywhere.
+MT   Less Common
+DI   HCD:C7 H11 N1 O1
+DI   HCD:169.073923533
+NL   HCD:43.9898
+NL   ETD:87.0082
+CF   C3 H2 O3
+DR   Unimod; 747.
+//
 ID   Proline pyrrole to pyrrolidine six member ring
 TG   P
 PP   Anywhere.
@@ -333,13 +326,6 @@ PP   Peptide N-terminal.
 MT   Less Common
 CF   H3 C2 N1 O1
 DR   Unimod; 4.
-//
-ID   Acetylation
-TG   S or T
-PP   Anywhere.
-MT   Less Common
-CF   H2 C2 O1
-DR   Unimod; 1.
 //
 ID   Biotinylation
 TG   K
@@ -413,7 +399,7 @@ CF   C1 O1
 DR   Unimod; 122.
 //
 ID   Methylation
-TG   C or H or N or Q or I or L or D or E or S or T
+TG   C or H or N or I or L or D or E or S or T
 PP   Anywhere.
 MT   Less Common
 CF   H2 C
