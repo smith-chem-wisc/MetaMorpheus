@@ -458,7 +458,7 @@
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
-                        Add spectra file(s) in .mzML, .mgf, or Thermo .raw format.
+                        Add spectra file(s) in .mzML, .mgf, Thermo .raw, or Bruker .d formats. Bruker files can only be added by dragging and dropping into the window.
                     </TextBlock>
 
                     <!--Button to add spectra files-->
