@@ -64,7 +64,7 @@ namespace Test
             int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count + p.SequenceVariations.Sum(sv => sv.OneBasedModifications.Count));
 
             //tests that modifications are being done correctly
-            Assert.That(totalNumberOfMods, Is.EqualTo(0));
+            Assert.That(totalNumberOfMods, Is.EqualTo(8));
             Directory.Delete(outputFolder, true);
         }
 
