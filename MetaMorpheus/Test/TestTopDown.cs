@@ -30,7 +30,7 @@ namespace Test
             MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
 
             // test output file name (should be proteoform and not peptide)
-            Assert.That(GlobalVariables.AnalyteType == "Proteoform");
+            Assert.That(GlobalVariables.AnalyteType == AnalyteType.Proteoform);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
