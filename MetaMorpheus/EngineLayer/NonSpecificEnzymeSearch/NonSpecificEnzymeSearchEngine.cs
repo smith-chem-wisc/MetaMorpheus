@@ -377,7 +377,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                                 updatedMods.Add(key, mod.Value);
                             }
                         }
-                        if (terminalMod != null)
+                        if (terminalMod != null && !updatedMods.Keys.Contains(startResidue - 1))
                         {
                             updatedMods.Add(startResidue - 1, terminalMod);
                         }
