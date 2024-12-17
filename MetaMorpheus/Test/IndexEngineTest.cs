@@ -21,7 +21,7 @@ namespace Test
         [Test]
         public static void TestIndexEngine()
         {
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", "FakeAccession") };
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
@@ -60,6 +60,14 @@ namespace Test
             Assert.That(digestedList.Count, Is.EqualTo(5));
             foreach (PeptideWithSetModifications peptide in digestedList)
             {
+                try
+                {
+                    Assert.That(results.PeptideIndex.Contains(peptide));
+                }
+                catch (Exception e)
+                {
+                    Assert.Fail("Peptide not found in index: " + peptide);
+                }
                 Assert.That(results.PeptideIndex.Contains(peptide));
 
                 var fragments = new List<Product>();

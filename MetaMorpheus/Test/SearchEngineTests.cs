@@ -1364,7 +1364,7 @@ namespace Test
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
+            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "FakeAccession") };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
                 CommonParameters, null, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -1569,7 +1569,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<ProteolysisProduct> { new ProteolysisProduct(null, null, "test") }) };
+            var proteinList = new List<Protein> { new Protein("GGGGGMKNNNQQQGGGGKGG", "FakeAccession", null, null, null, new List<ProteolysisProduct> { new ProteolysisProduct(null, null, "test") }) };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
