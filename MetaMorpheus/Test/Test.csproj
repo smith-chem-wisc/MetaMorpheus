@@ -217,6 +217,9 @@
     <None Update="SlicedSearchTaskConfig.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\bosTaurusEnamPruned.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\customBCZ.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -323,6 +326,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\myPrositLib.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\NonSpecificSearchToml.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\noSAreaderTest.psmtsv">
