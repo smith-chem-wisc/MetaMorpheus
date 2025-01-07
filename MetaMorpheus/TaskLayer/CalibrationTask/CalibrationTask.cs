@@ -217,7 +217,7 @@ namespace TaskLayer
             MyTaskResults.NewFileSpecificTomls.Add(tomlName);
         }
 
-        private DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
+        public DataPointAquisitionResults GetDataAcquisitionResults(MsDataFile myMsDataFile, string currentDataFile, List<Modification> variableModifications, List<Modification> fixedModifications, List<Protein> proteinList, string taskId, CommonParameters combinedParameters, Tolerance initPrecTol, Tolerance initProdTol)
         {
             string fileNameWithoutExtension = Path.GetFileNameWithoutExtension(currentDataFile);
             MassDiffAcceptor searchMode = initPrecTol is PpmTolerance ?
@@ -253,12 +253,12 @@ namespace TaskLayer
 
             //get the deconvoluted ms2scans for the good identifications
             List<Ms2ScanWithSpecificMass> goodScans = new List<Ms2ScanWithSpecificMass>();
-            List<SpectralMatch> unfilteredPsms = allPsmsArray.ToList();
-            foreach (SpectralMatch psm in goodIdentifications)
+            HashSet<int> goodScanIndices = new HashSet<int>(goodIdentifications.Select(psm => Array.IndexOf(allPsmsArray, psm)));
+            foreach (int index in goodScanIndices)
             {
-                goodScans.Add(listOfSortedms2Scans[unfilteredPsms.IndexOf(psm)]);
+                goodScans.Add(listOfSortedms2Scans[index]);
             }
-
+            
             DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
                     goodIdentifications,
                     goodScans,

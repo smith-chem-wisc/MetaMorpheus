@@ -129,7 +129,9 @@ namespace EngineLayer
         {
             get
             {
-                return _BestMatchingBioPolymersWithSetMods.OrderBy(p => p.Pwsm.FullSequence)
+                return _BestMatchingBioPolymersWithSetMods
+                    .OrderBy(p => p.Notch)
+                    .ThenBy(p => p.Pwsm.FullSequence)
                     .ThenBy(p => p.Pwsm.Parent.Accession)
                     .ThenBy(p => p.Pwsm.OneBasedStartResidue);
             }
@@ -182,7 +184,7 @@ namespace EngineLayer
         public virtual void ResolveAllAmbiguities()
         {
             // Order the BPWSM list for stability
-            _BestMatchingBioPolymersWithSetMods = _BestMatchingBioPolymersWithSetMods.OrderBy(t => t.Notch).ThenBy(t => t.Pwsm.FullSequence).ToList();
+            _BestMatchingBioPolymersWithSetMods = BestMatchingBioPolymersWithSetMods.ToList();
 
             IsDecoy = _BestMatchingBioPolymersWithSetMods.Any(p => p.Pwsm.Parent.IsDecoy);
             IsContaminant = _BestMatchingBioPolymersWithSetMods.Any(p => p.Pwsm.Parent.IsContaminant);
