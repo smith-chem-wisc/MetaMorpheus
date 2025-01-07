@@ -17,8 +17,8 @@ namespace Test
     {
         public static Array GetTestCases() => Enum.GetValues(typeof(EverythingRunnerEngineTestCases));
 
-        public static async Task DrainResources(CancellationToken cancellationToken)
-        {
+        //public static async Task DrainResources(CancellationToken cancellationToken)
+        //{
             //await Task.Run(() =>
             //{
             //    while(!cancellationToken.IsCancellationRequested)
@@ -33,15 +33,15 @@ namespace Test
             //        Array.Sort(unsortedArray);
             //    }
             //});
-        }
+        //}
 
-        [Test]
-        public static void ReproducibilityTest()
-        {
-            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpGPTMD, out var testCase);
-            string outputFolder = testCase.OutputDirectory;
-            var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
-        }
+        //[Test]
+        //public static void ReproducibilityTest()
+        //{
+        //    EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpGPTMD, out var testCase);
+        //    string outputFolder = testCase.OutputDirectory;
+        //    var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
+        //}
 
     }
 }

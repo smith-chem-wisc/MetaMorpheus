@@ -100,8 +100,8 @@ namespace EngineLayer
             spectrum.Append("Num alpha peaks: " + MatchedFragmentIons.Count);
             spectrum.AppendLine(", Num beta peaks: " + BetaPeptideSpectrum.MatchedFragmentIons.Count);
 
-            double maxIntensity = Math.Max(MatchedFragmentIons.Max(b => b.Intensity),
-                BetaPeptideSpectrum.MatchedFragmentIons.Max(s => s.Intensity));
+            double maxIntensity = Math.Max(MatchedFragmentIons.Max(b => (double?)b.Intensity) ?? 0,
+                BetaPeptideSpectrum.MatchedFragmentIons.Max(s => (double?)s.Intensity) ?? 0);
 
             foreach (MatchedFragmentIon matchedIon in MatchedFragmentIons)
             {
