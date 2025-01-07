@@ -18,7 +18,10 @@ namespace Test
         BottomUpQValueSingle,
         BottomUpPepQValue,
         TopDownQValue,
-        TopDownQValueSingle
+        TopDownQValueSingle,
+
+        BottomUpGPTMD,
+        BottumUpGPTMD_Duplicate
     }
 
     /// <summary>
@@ -216,12 +219,24 @@ namespace Test
                     new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", searchTaskLoaded) },
                     new List<string> { myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false) }, true));
 
-            // GPTMD Database Test Case
+            // Local File Tests. DO NOT PUSH
             myTomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
-                @"TestData\Task3-GptmdTaskconfig.toml");
+                @"TestData\Task4-GPTMDTaskconfig.toml");
+            myFile1 = @"D:\MetaMorpheusVignette\04-30-13_CAST_Frac5_4uL.raw";
+            myFile2 = @"D:\MetaMorpheusVignette\04-30-13_CAST_Frac4_6uL.raw";
+            myDatabase = @"D:\MetaMorpheusVignette\uniprot-mouse-reviewed-1-24-2018.xml.gz";
+            string crapDatabase = @"D:\MetaMorpheusVignette\uniprot-cRAP-1-24-2018.xml.gz";
             GptmdTask gptmdTaskLoaded = Toml.ReadFile<GptmdTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
-            myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory,
-                @"TestData\TaGe_SA_A549_3_snip.fasta");
+            _cases.Add(EverythingRunnerEngineTestCases.BottomUpGPTMD,
+                new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottomUpGPTMD,
+                    new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", gptmdTaskLoaded) },
+                    new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(crapDatabase, true) },
+                    false));
+            _cases.Add(EverythingRunnerEngineTestCases.BottumUpGPTMD_Duplicate,
+                new EverythingRunnerEngineTestCase(EverythingRunnerEngineTestCases.BottumUpGPTMD_Duplicate,
+                    new List<(string, MetaMorpheusTask)> { ("postSearchAnalysisTaskTestOutput", gptmdTaskLoaded) },
+                    new List<string> { myFile1, myFile2 }, new List<DbForTask> { new DbForTask(myDatabase, false), new DbForTask(crapDatabase, true) },
+                    false));
         }
 
         #endregion

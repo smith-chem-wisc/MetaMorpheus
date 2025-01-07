@@ -1,0 +1,45 @@
+TaskType = "Gptmd"
+
+[GptmdParameters]
+ListOfModsGptmd = "Common Biological\tAcetylation on K\t\tCommon Biological\tAcetylation on X\t\tCommon Biological\tADP-ribosylation on S\t\tCommon Biological\tButyrylation on K\t\tCommon Biological\tCarboxylation on D\t\tCommon Biological\tCarboxylation on E\t\tCommon Biological\tCarboxylation on K\t\tCommon Biological\tCitrullination on R\t\tCommon Biological\tCrotonylation on K\t\tCommon Biological\tDimethylation on K\t\tCommon Biological\tDimethylation on R\t\tCommon Biological\tFormylation on K\t\tCommon Biological\tGlu to PyroGlu on Q\t\tCommon Biological\tGlutarylation on K\t\tCommon Biological\tHexNAc on Nxs\t\tCommon Biological\tHexNAc on Nxt\t\tCommon Biological\tHexNAc on S\t\tCommon Biological\tHexNAc on T\t\tCommon Biological\tHydroxybutyrylation on K\t\tCommon Biological\tHydroxylation on K\t\tCommon Biological\tHydroxylation on N\t\tCommon Biological\tHydroxylation on P\t\tCommon Biological\tMalonylation on K\t\tCommon Biological\tMethylation on K\t\tCommon Biological\tMethylation on R\t\tCommon Biological\tNitrosylation on C\t\tCommon Biological\tNitrosylation on Y\t\tCommon Biological\tPhosphorylation on S\t\tCommon Biological\tPhosphorylation on T\t\tCommon Biological\tPhosphorylation on Y\t\tCommon Biological\tPyridoxal phosphate on K\t\tCommon Biological\tSuccinylation on K\t\tCommon Biological\tSulfonation on Y\t\tCommon Biological\tTrimethylation on K\t\tLess Common\tAcetylation on S\t\tLess Common\tAcetylation on T\t\tLess Common\tAmidation on X\t\tLess Common\tBiotinylation on K\t\tLess Common\tCarbamidomethyl on D\t\tLess Common\tCarbamidomethyl on E\t\tLess Common\tCarbamidomethyl on H\t\tLess Common\tCarbamidomethyl on K\t\tLess Common\tCarbamidomethyl on S\t\tLess Common\tCarbamidomethyl on T\t\tLess Common\tCarbamidomethyl on X\t\tLess Common\tCarbamidomethyl on Y\t\tLess Common\tCarboxymethylation on C\t\tLess Common\tCarboxymethylation on K\t\tLess Common\tCarboxymethylation on W\t\tLess Common\tCarboxymethylation on X\t\tLess Common\tDecarboxylation on D\t\tLess Common\tDecarboxylation on E\t\tLess Common\tDehydroalanine on C\t\tLess Common\tDehydroalanine on S\t\tLess Common\tDehydrobutyrine on T\t\tLess Common\tDidehydro on Y\t\tLess Common\tDimethylation on N\t\tLess Common\tDioxidation on C\t\tLess Common\tDioxidation on F\t\tLess Common\tDioxidation on K\t\tLess Common\tDioxidation on M\t\tLess Common\tDioxidation on P\t\tLess Common\tDioxidation on R\t\tLess Common\tDioxidation on W\t\tLess Common\tDioxidation on Y\t\tLess Common\tEthylation on D\t\tLess Common\tEthylation on E\t\tLess Common\tEthylation on K\t\tLess Common\tEthylation on X\t\tLess Common\tFarnesylation on C\t\tLess Common\tFormylation on S\t\tLess Common\tFormylation on T\t\tLess Common\tFormylation on X\t\tLess Common\tMethylation on C\t\tLess Common\tMethylation on D\t\tLess Common\tMethylation on E\t\tLess Common\tMethylation on H\t\tLess Common\tMethylation on I\t\tLess Common\tMethylation on L\t\tLess Common\tMethylation on N\t\tLess Common\tMethylation on Q\t\tLess Common\tMethylation on S\t\tLess Common\tMethylation on T\t\tLess Common\tMethylation on X\t\tLess Common\tMyristoylation on C\t\tLess Common\tMyristoylation on G\t\tLess Common\tMyristoylation on K\t\tLess Common\tOxidation and then loss on oxidized M side chain\t\tLess Common\tOxidation on C\t\tLess Common\tOxidation on D\t\tLess Common\tOxidation on E\t\tLess Common\tOxidation on F\t\tLess Common\tOxidation on H\t\tLess Common\tOxidation on I\t\tLess Common\tOxidation on L\t\tLess Common\tOxidation on Q\t\tLess Common\tOxidation on R\t\tLess Common\tOxidation on S\t\tLess Common\tOxidation on T\t\tLess Common\tOxidation on U\t\tLess Common\tOxidation on V\t\tLess Common\tOxidation on W\t\tLess Common\tOxidation on Y\t\tLess Common\tOxidation to Kynurenine on W\t\tLess Common\tPalmitoylation on C\t\tLess Common\tPalmitoylation on K\t\tLess Common\tPalmitoylation on S\t\tLess Common\tPalmitoylation on T\t\tLess Common\tProline pyrrole to pyrrolidine six member ring on P\t\tLess Common\tPropionamidation on C\t\tLess Common\tPropionamidation on K\t\tLess Common\tPropionamidation on X\t\tLess Common\tPropionylation on K\t\tLess Common\tPyrrolidinone on P\t\tLess Common\tQuinone on W\t\tLess Common\tQuinone on Y\t\tLess Common\tReduction on D\t\tLess Common\tReduction on S\t\tLess Common\tReduction on T\t\tLess Common\tSuccinylation on X\t\tLess Common\tSulfonation on S\t\tLess Common\tSulfonation on T\t\tLess Common\tTrioxidation on C\t\tLess Common\tTryptophan oxidation to hydroxykynurenin on W\t\tLess Common\tWater loss on D\t\tCommon Artifact\tAmmonia loss on C\t\tCommon Artifact\tAmmonia loss on N\t\tCommon Artifact\tCarbamyl on C\t\tCommon Artifact\tCarbamyl on K\t\tCommon Artifact\tCarbamyl on M\t\tCommon Artifact\tCarbamyl on R\t\tCommon Artifact\tCarbamyl on X\t\tCommon Artifact\tDeamidation on N\t\tCommon Artifact\tDeamidation on Q\t\tCommon Artifact\tWater Loss on E\t\tMetal\tCalcium on D\t\tMetal\tCalcium on E\t\tMetal\tCu[I] on D\t\tMetal\tCu[I] on E\t\tMetal\tFe[II] on D\t\tMetal\tFe[II] on E\t\tMetal\tFe[III] on D\t\tMetal\tFe[III] on E\t\tMetal\tMagnesium on D\t\tMetal\tMagnesium on E\t\tMetal\tPotassium on D\t\tMetal\tPotassium on E\t\tMetal\tSodium on D\t\tMetal\tSodium on E\t\tMetal\tZinc on D\t\tMetal\tZinc on E"
+
+[CommonParameters]
+TaskDescriptor = "GPTMDTask"
+MaxThreadsToUsePerFile = 3
+ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C\t\tCommon Fixed\tCarbamidomethyl on U"
+ListOfModsVariable = "Common Variable\tOxidation on M"
+DoPrecursorDeconvolution = true
+UseProvidedPrecursorInfo = true
+DeconvolutionIntensityRatio = 3.0
+DeconvolutionMaxAssumedChargeState = 12
+DeconvolutionMassTolerance = "±4.0000 PPM"
+TotalPartitions = 1
+ProductMassTolerance = "±20.0000 PPM"
+PrecursorMassTolerance = "±5.0000 PPM"
+AddCompIons = false
+ScoreCutoff = 5.0
+ReportAllAmbiguity = true
+TopNpeaks = 200
+MinRatio = 0.01
+TrimMs1Peaks = false
+TrimMsMsPeaks = true
+UseDeltaScore = false
+CalculateEValue = false
+QValueOutputFilter = 1.0
+DissociationType = "HCD"
+CustomIons = []
+AssumeOrphanPeaksAreZ1Fragments = true
+MaxHeterozygousVariants = 4
+MinVariantDepth = 1
+
+[CommonParameters.DigestionParams]
+MaxMissedCleavages = 2
+InitiatorMethionineBehavior = "Variable"
+MinPeptideLength = 7
+MaxPeptideLength = 2147483647
+MaxModificationIsoforms = 1024
+MaxModsForPeptide = 2
+Protease = "trypsin"
+SearchModeType = "Full"
+FragmentationTerminus = "Both"
+SpecificProtease = "trypsin"
