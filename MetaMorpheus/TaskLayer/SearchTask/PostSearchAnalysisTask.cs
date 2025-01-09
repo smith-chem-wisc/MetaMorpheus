@@ -1024,7 +1024,7 @@ namespace TaskLayer
             var proteinToConfidentBaseSequences = GetProteinToConfidentBaseSequences(Parameters.AllPsms);
 
             // find all biopolymers that have at least one confident PSM and their confident localized modifications -> Used for determining which mods to retain
-            var proteinToConfidentModifiedSequences = GetProteinToConfidentModifiedSequences(Parameters.AllPsms, Parameters.SearchParameters.EvidenceRequiredToWriteLocalizedMod, Parameters.SearchParameters.IncludeProteinAmbiguous);
+            var proteinToConfidentModifiedSequences = GetProteinToConfidentModifiedSequences(Parameters.AllPsms, Parameters.SearchParameters.EvidenceRequiredToWriteLocalizedMod);
 
             if (proteinToConfidentBaseSequences.Count == 0) return;
 
@@ -1073,7 +1073,7 @@ namespace TaskLayer
         /// <param name="allPsms">List of all PSMs.</param>
         /// <param name="evidenceRequired"></param>
         /// <returns>A dictionary where the peptideModIndex is a protein and the value is all confidently identified species from that protein with an unambiguous modified sequences.</returns>
-        public Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>> GetProteinToConfidentModifiedSequences(List<SpectralMatch> allPsms, uint evidenceRequired = 1, bool includeProteinAmbiguous = false)
+        public Dictionary<IBioPolymer, List<IBioPolymerWithSetMods>> GetProteinToConfidentModifiedSequences(List<SpectralMatch> allPsms, uint evidenceRequired = 1)
         {
             // set up and filter spectral matches
             var fileSpecificParametersDictionary = FileSpecificParameters.ToDictionary(p => p.FileName, p => p.Parameters);
