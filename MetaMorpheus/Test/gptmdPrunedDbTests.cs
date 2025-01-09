@@ -642,18 +642,21 @@ namespace Test
         {
             // Construct the bare minimum of our objects needed to run this section of PostSearchAnalysisTask
             public TestSpectralMatch(string fullSequence, int startResidue = 0, int endResidue = 13,
-                string filePath = "default", string protease = "trypsin")
+                string filePath = "default", string protease = "trypsin", int missedCleavages = 0)
                 : base(
                     new PeptideWithSetModifications(fullSequence, GlobalVariables.AllModsKnownDictionary,
-                        p: _testProtein, oneBasedStartResidueInProtein: startResidue,
+                        p: _testProtein, oneBasedStartResidueInProtein: startResidue, missedCleavages: missedCleavages,
                         oneBasedEndResidueInProtein: endResidue, digestionParams: new DigestionParams(protease)),
                     0, 10, 0,
                     new Ms2ScanWithSpecificMass(
                         new MsDataScan(
-                            new MzSpectrum([], [], false), 0, 0,
-                            true, Polarity.Positive, 0, default, "", 0,
+                            new MzSpectrum([], [], false),
                             0, 0,
-                            new double[0, 0], ""), 0, 0, filePath, new CommonParameters(), []),
+                            true, Polarity.Positive, 0,
+                            default, "", 0,
+                            0, 0,
+                            new double[0, 0], ""),
+                        0, 0, filePath, new CommonParameters(), []),
                     new CommonParameters(), [])
             {
                 FdrInfo = new EngineLayer.FdrAnalysis.FdrInfo
@@ -664,17 +667,6 @@ namespace Test
                     QValueNotch = 0
                 };
                 ResolveAllAmbiguities();
-
-                // adjust modification index 
-                foreach (var bioPolymer in BestMatchingBioPolymersWithSetMods)
-                {
-                    var allMods = bioPolymer.Peptide.AllModsOneIsNterminus.ToArray();
-                    bioPolymer.Peptide.AllModsOneIsNterminus.Clear();
-                    foreach (var modification in allMods)
-                    {
-                        bioPolymer.Peptide.AllModsOneIsNterminus.Add(modification.Key + startResidue-1, modification.Value);
-                    }
-                }
             }
         };
 
@@ -759,8 +751,8 @@ namespace Test
             {
                 new TestSpectralMatch("PEPTIDE[Common Biological:Carboxylation on E]K", 0 , 8),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0 , 8),
-                new TestSpectralMatch("PEPTIDEKPE[Common Biological:Carboxylation on E]PTK", 0 , 13),
-                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEKPEPTK", 0 , 13)
+                new TestSpectralMatch("PEPTIDEKPE[Common Biological:Carboxylation on E]PTK", 0 , 13, missedCleavages: 1),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEKPEPTK", 0 , 13, missedCleavages: 1)
             };
             var postSearchAnalysisTask = new PostSearchAnalysisTask()
             {
@@ -780,7 +772,7 @@ namespace Test
             Assert.That(fullSequences, Does.Contain("PE[Common Biological:Carboxylation on E]PTIDEK"));
         }
 
-        [Test]
+        [Test] // TODO: UGH
         public static void GetProteinToConfidentModifiedSequences_MultipleEvidence_MissedCleavage_TwoSharedMod_AlternatingTerm()
         {
             // Arrange
@@ -788,11 +780,11 @@ namespace Test
             {
                 new TestSpectralMatch("PEPT[Common Biological:Phosphorylation on T]K", 8, 13),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0 , 8),
-                new TestSpectralMatch("PEPTIDEKPE[Common Biological:Carboxylation on E]PTK", 0 , 13),
+                new TestSpectralMatch("PEPTIDEKPE[Common Biological:Carboxylation on E]PTK", 0 , 13, missedCleavages: 1),
 
-                // both of the below satisfy the criteria of covering all modifications, but only one should be selected
-                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEKPEPT[Common Biological:Phosphorylation on T]K", 0 , 13),
-                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEKPE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]K", 0 , 13)
+                // both of the below satisfy the criteria of covering all modifications, but only one the first should be selected as the second has an extra modification
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEKPEPT[Common Biological:Phosphorylation on T]K", 0 , 13, missedCleavages: 1),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEKPE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]K", 0 , 13, missedCleavages: 1)
             };
             var postSearchAnalysisTask = new PostSearchAnalysisTask()
             {
@@ -855,7 +847,7 @@ namespace Test
             { 
                 // three mods found in the same condition, one mod of those found in a different condition, two found in the same condition in a missed cleavage product
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K", 0, 8, "hcd"),
-                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "hcd"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "hcd", missedCleavages: 1),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "hcd"),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0 , 8, "etd"),
                 new TestSpectralMatch("PEPTIDEK", 0 , 8),
@@ -890,7 +882,7 @@ namespace Test
             { 
                 // three mods found in the same condition, two mods of those found in a different condition, one found in the same condition in a missed cleavage product
                 new TestSpectralMatch("PEPT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K", 0, 8, "hcd"),
-                new TestSpectralMatch("PEPTIDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "hcd"),
+                new TestSpectralMatch("PEPTIDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "hcd", missedCleavages: 1),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "hcd"),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK", 0 , 8, "etd"),
                 new TestSpectralMatch("PEPTIDEK", 0 , 8),
@@ -927,8 +919,8 @@ namespace Test
                 // two mods found in the same condition, one mod of those found in a different contdition
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK", 0, 8, "top-down", "top-down"),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK", 0, 8, "top-down", "top-down"),
-                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "top-down", "top-down"),
-                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0 , 8, "trypsin", "trypsin"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "top-down", "top-down", missedCleavages: 1),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0 , 8, "trypsin", "trypsin", missedCleavages: 1),
                 new TestSpectralMatch("PEPTIDEK", 0 , 8),
             };
             var postSearchAnalysisTask = new PostSearchAnalysisTask()
@@ -961,7 +953,7 @@ namespace Test
             { 
                 // three mods found in the same condition, one mod of those found in a different condition, two found in the same condition in a missed cleavage product
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K", 0, 8, "top-down"),
-                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "top-down"),
+                new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "top-down", missedCleavages: 1),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "top-down"),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0 , 8, "trypsin"),
                 new TestSpectralMatch("PEPTIDEK", 0 , 8),
@@ -996,7 +988,7 @@ namespace Test
             { 
                 // three mods found in the same condition, two mods of those found in a different condition, one found in the same condition in a missed cleavage product
                 new TestSpectralMatch("PEPT[Common Biological:Phosphorylation on T]IDE[Common Biological:Carboxylation on E]K", 0, 8, "top-down"),
-                new TestSpectralMatch("PEPTIDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "top-down"),
+                new TestSpectralMatch("PEPTIDE[Common Biological:Carboxylation on E]KPEPTK", 0, 13, "top-down", missedCleavages: 1),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PTIDEK", 0, 8, "top-down"),
                 new TestSpectralMatch("PE[Common Biological:Carboxylation on E]PT[Common Biological:Phosphorylation on T]IDEK", 0 , 8, "trypsin"),
                 new TestSpectralMatch("PEPTIDEK", 0 , 8),

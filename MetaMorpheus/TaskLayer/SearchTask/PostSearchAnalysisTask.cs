@@ -1026,9 +1026,10 @@ namespace TaskLayer
             // find all biopolymers that have at least one confident PSM and their confident localized modifications -> Used for determining which mods to retain
             var proteinToConfidentModifiedSequences = GetProteinToConfidentModifiedSequences(Parameters.AllPsms, Parameters.SearchParameters.EvidenceRequiredToWriteLocalizedMod, Parameters.SearchParameters.IncludeProteinAmbiguous);
 
+            if (proteinToConfidentBaseSequences.Count == 0) return;
+
             // populate the protein object with the desired modifications with a modify in place operation, original modifications are stored for later restoration
             UpdateProteinModifications(proteinToConfidentModifiedSequences, out var proteinsOriginalModifications, out var originalSequenceVariantModifications);
-
             WriteDatabases(proteinToConfidentBaseSequences);
 
             // Restore Original Modifications with a modify in place operation
@@ -1142,15 +1143,15 @@ namespace TaskLayer
                     if (modAndLocationGrouped.Count() <= 1)
                         continue;
 
-                    var dissociationTypeCount = modAndLocationGrouped.GroupBy(p => p.dissociationType).Count();
-                    var digestionAgentCount = modAndLocationGrouped.GroupBy(p => p.digestionAgent).Count();
+                    var dissociationAndDigestionCount = modAndLocationGrouped.GroupBy(p => (p.dissociationType, p.digestionAgent)).Count();
 
                     // TODO: Ask Claire about truncy bois. Right now they dont count for anything as they are not true missed cleavages. 
-                    var missedCleavageCount = modAndLocationGrouped.GroupBy(p => p.dissociationType)
-                        .Sum(dissGroup => dissGroup.GroupBy(p => p.missedCleavages).Count() - 1);
+                    // missed cleavages should only count if they occur with the same digestion agent
+                    int missedCleavageCount = modAndLocationGrouped.GroupBy(p => p.digestionAgent)
+                        .Sum(dissGroup =>
+                             dissGroup.Select(p => p.missedCleavages).Distinct().Count() - 1);
 
-                    var conditionCount = dissociationTypeCount + digestionAgentCount + missedCleavageCount - 2;
-
+                    var conditionCount = dissociationAndDigestionCount + missedCleavageCount;
                     if (conditionCount >= evidenceRequired)
                         modificationsToRetain.Add(modAndLocationGrouped.Key);
                 }
@@ -1182,17 +1183,19 @@ namespace TaskLayer
                         .Count(mod => !modificationsToRetain.Contains((mod.Key - covGroup.BioPolymerWithSetMods.OneBasedStartResidue + 1, mod.Value))))
                     .ToList();
 
-                    
+
                 // iterate through the sorted list until we cover all modifications or use all biopolymers (we should never hit the second case, but stops and infinite loop just in case)
                 while (modificationsToRetain.Count > 0 && sortedBioPolymers.Count > 0)
                 {
+                    // Select the biopolymer that covers the most uncovered modifications
                     var bestBioPolymer = sortedBioPolymers.First();
 
                     minimumSet.Add(bestBioPolymer.BioPolymerWithSetMods);
                     foreach (var mod in bestBioPolymer.CoveredMods)
                         modificationsToRetain.Remove(mod);
-                    sortedBioPolymers.RemoveAt(0);
 
+                    // Remove the selected biopolymer from the list
+                    sortedBioPolymers.Remove(bestBioPolymer);
 
                     sortedBioPolymers = sortedBioPolymers
                         .Where(covGroup => covGroup.CoveredMods.Overlaps(modificationsToRetain)) // retain only those with mods that are not yet covered
