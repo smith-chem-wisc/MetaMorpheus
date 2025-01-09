@@ -363,6 +363,15 @@ namespace Test
             Assert.That(csmListList.Select(c => c.First().XLTotalScore).ToList(), Is.EquivalentTo(new List<double> { 43d, 33d }));
             Assert.That(csmListList.Select(c => c.First().BaseSequence).ToList(), Is.EquivalentTo(new List<string> { "LEDITPEP", "VPEPTIDE" }));
             Assert.That(csmListList.Select(c => c.First().BetaPeptide.BaseSequence).ToList(), Is.EquivalentTo(new List<string> { "VEDI", "APEP" }));
+
+
+            Protein protForwardAsDecoy = new Protein(sequence: "VPEPTIDELPEPTIDEAPEPTIDE", accession: "DECOY", isDecoy: true);
+            PeptideWithSetModifications pwsmV_D = new PeptideWithSetModifications(protForwardAsDecoy, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "VPEPTIDE", 0, mod, 0, null);
+
+            csmOne.AddOrReplace(pwsmV_D, 3, 0, true, new List<MatchedFragmentIon>(), 0);
+            csmOne.ResolveAllAmbiguities();
+            Assert.That(csmOne.BestMatchingBioPolymersWithSetMods.Count() == 1);
+            Assert.That(!csmOne.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy);
         }
 
         [Test]
