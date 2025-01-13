@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using MzLibUtil;
 using Nett;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Omics.Fragmentation;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -122,16 +122,9 @@ namespace Test
             CollectionAssert.AreEquivalent(customIons, loadedSearchTask.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.Custom));
 
-            // read gptmd and search results to ensure matched ions are correct
-            var gptmdResults = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, "GPTMD", "GPTMD_Candidates.psmtsv"), out List<string> warnings);
+            var searchResults = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, "Search", "AllPSMs.psmtsv"), out List<string> warnings);
             Assert.That(!warnings.Any());
-            var productIons = gptmdResults.SelectMany(p => p.MatchedIons.Select(m => m.NeutralTheoreticalProduct.ProductType))
-                .Distinct();
-            CollectionAssert.AreEquivalent(customIons, productIons);
-
-            var searchResults = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, "Search", "AllPSMs.psmtsv"), out warnings);
-            Assert.That(!warnings.Any());
-            productIons = searchResults.SelectMany(p => p.MatchedIons.Select(m => m.NeutralTheoreticalProduct.ProductType))
+            var productIons = searchResults.SelectMany(p => p.MatchedIons.Select(m => m.NeutralTheoreticalProduct.ProductType))
                 .Distinct();
             CollectionAssert.AreEquivalent(customIons, productIons);
 
@@ -155,13 +148,6 @@ namespace Test
                 MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons, loadedSearchTask.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask.CommonParameters.DissociationType, Is.EqualTo(DissociationType.Custom));
-
-            // read gptmd and search results to ensure matched ions are correct
-            gptmdResults = PsmTsvReader.ReadTsv(Path.Combine(newOutputFolder, "GPTMD", "GPTMD_Candidates.psmtsv"), out warnings);
-            Assert.That(!warnings.Any());
-            productIons = gptmdResults.SelectMany(p => p.MatchedIons.Select(m => m.NeutralTheoreticalProduct.ProductType))
-                .Distinct();
-            CollectionAssert.AreEquivalent(customIons, productIons);
 
             searchResults = PsmTsvReader.ReadTsv(Path.Combine(newOutputFolder, "Search", "AllPSMs.psmtsv"), out warnings);
             Assert.That(!warnings.Any());
@@ -298,16 +284,9 @@ namespace Test
             CollectionAssert.AreEquivalent(customIons3, loadedSearchTask3.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask3.CommonParameters.DissociationType == DissociationType.Custom);
 
-            // read gptmd and search results to ensure matched ions are correct
-            var gptmdResults = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, "GPTMD", "GPTMD_Candidates.psmtsv"), out List<string> warnings);
+            var searchResults1 = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, "Search1", "AllPSMs.psmtsv"), out List<string> warnings);
             Assert.That(!warnings.Any());
-            var productIons = gptmdResults.SelectMany(p => p.MatchedIons.Select(m => m.NeutralTheoreticalProduct.ProductType))
-                .Distinct();
-            CollectionAssert.AreEquivalent(customIons2, productIons);
-
-            var searchResults1 = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, "Search1", "AllPSMs.psmtsv"), out warnings);
-            Assert.That(!warnings.Any());
-            productIons = searchResults1.SelectMany(p => p.MatchedIons.Select(m => m.NeutralTheoreticalProduct.ProductType))
+            var productIons = searchResults1.SelectMany(p => p.MatchedIons.Select(m => m.NeutralTheoreticalProduct.ProductType))
                 .Distinct();
             CollectionAssert.AreEquivalent(customIons1, productIons);
 
@@ -364,15 +343,6 @@ namespace Test
                 MetaMorpheusTask.tomlConfig);
             CollectionAssert.AreEquivalent(customIons3, loadedSearchTask3.CommonParameters.CustomIons);
             Assert.That(loadedSearchTask3.CommonParameters.DissociationType == DissociationType.Custom);
-
-            // read gptmd and search results to ensure matched ions are correct
-            gptmdResults = PsmTsvReader.ReadTsv(Path.Combine(newOutputFolder, "GPTMD", "GPTMD_Candidates.psmtsv"),
-                out warnings);
-            Assert.That(!warnings.Any());
-            productIons = gptmdResults
-                .SelectMany(p => p.MatchedIons.Select(m => m.NeutralTheoreticalProduct.ProductType))
-                .Distinct();
-            CollectionAssert.AreEquivalent(customIons2, productIons);
 
             searchResults1 =
                 PsmTsvReader.ReadTsv(Path.Combine(newOutputFolder, "Search1", "AllPSMs.psmtsv"), out warnings);

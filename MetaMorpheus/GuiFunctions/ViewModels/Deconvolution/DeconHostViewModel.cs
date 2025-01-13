@@ -54,9 +54,9 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            "Peptide" => new ClassicDeconvolutionParameters(1, 12, 4, 3),
-                            "Proteoform" => new ClassicDeconvolutionParameters(1, 60, 4, 3),
-                            "Oligo" => new ClassicDeconvolutionParameters(-20, -1, 4, 3),
+                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 60, 4, 3),
+                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-20, -1, 4, 3),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
@@ -68,14 +68,18 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            "Peptide" => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            "Proteoform" => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            "Oligo" => new ClassicDeconvolutionParameters(-10, -1, 4, 3),
+                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 10, 4, 3),
+                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 10, 4, 3),
+                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-10, -1, 4, 3),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());
                     }
 
+                    break;
+
+                case DeconvolutionType.IsoDecDeconvolution:
+                    // TODO: fill in IsoDec region in follow-up pull request
                     break;
 
                 default: // This will only be hit if a new deconvolution type is added to mzlib and not handled here

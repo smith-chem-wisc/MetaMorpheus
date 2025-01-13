@@ -572,10 +572,10 @@ namespace TaskLayer
                 using (StreamWriter file = new StreamWriter(proseFilePath))
                 {
                     file.WriteLine("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
-		    file.WriteLine();
+		            file.WriteLine();
                     file.Write(ProseCreatedWhileRunning.ToString());
                     file.WriteLine(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
-		    file.WriteLine();
+		            file.WriteLine();
                     file.WriteLine("The total time to perform the " + TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
                     file.WriteLine();
                     file.WriteLine("Published works using MetaMorpheus software are encouraged to cite the appropriate publications listed in the reference guide, found here: https://github.com/smith-chem-wisc/MetaMorpheus/blob/master/README.md.");
@@ -1143,11 +1143,11 @@ namespace TaskLayer
                 && commonParameters.DigestionParams.Protease != null
                 && commonParameters.DigestionParams.Protease.Name == "top-down")
             {
-                GlobalVariables.AnalyteType = "Proteoform";
+                GlobalVariables.AnalyteType = AnalyteType.Proteoform;
             }
             else
             {
-                GlobalVariables.AnalyteType = "Peptide";
+                GlobalVariables.AnalyteType = AnalyteType.Peptide;
             }
         }
 

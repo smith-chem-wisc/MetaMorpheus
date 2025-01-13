@@ -112,7 +112,7 @@ public class DeconHostViewModelTests
     public void TestDeconHostViewModel_GlobalVariables_Proteoform()
     {
         // Arrange
-        GlobalVariables.AnalyteType = "Proteoform";
+        GlobalVariables.AnalyteType = AnalyteType.Proteoform;
         DeconHostViewModel viewModel = new DeconHostViewModel(null, null);
 
         // Act
@@ -130,7 +130,7 @@ public class DeconHostViewModelTests
         Assert.That(((ClassicDeconvolutionParameters)productParams.Parameters).MaxAssumedChargeState, Is.EqualTo(10));
 
         // Revert back to default
-        GlobalVariables.AnalyteType = "Peptide";
+        GlobalVariables.AnalyteType = AnalyteType.Peptide;
     }
 
     [Test]
@@ -138,7 +138,7 @@ public class DeconHostViewModelTests
     public void TestDeconHostViewModel_GlobalVariables_Oligo()
     {
         // Arrange
-        GlobalVariables.AnalyteType = "Oligo";
+        GlobalVariables.AnalyteType = AnalyteType.Oligo;
         DeconHostViewModel viewModel = new DeconHostViewModel(null, null);
 
         // Act
@@ -156,7 +156,7 @@ public class DeconHostViewModelTests
         Assert.That(((ClassicDeconvolutionParameters)productParams.Parameters).MinAssumedChargeState, Is.EqualTo(-10));
 
         // Revert back to default
-        GlobalVariables.AnalyteType = "Peptide";
+        GlobalVariables.AnalyteType = AnalyteType.Peptide;
     }
 
     [Test]
@@ -164,7 +164,7 @@ public class DeconHostViewModelTests
     public void TestDeconHostViewModel_GlobalVariables_Unknown()
     {
         // Arrange
-        GlobalVariables.AnalyteType = "ThisWasSetWrong";
+        GlobalVariables.AnalyteType = (AnalyteType)(-1);
 
         // Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -178,7 +178,7 @@ public class DeconHostViewModelTests
         });
 
         // Revert back to default
-        GlobalVariables.AnalyteType = "Peptide";
+        GlobalVariables.AnalyteType = AnalyteType.Peptide;
     }
 
     [Test]

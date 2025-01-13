@@ -137,11 +137,6 @@ namespace EngineLayer
 
             if (scan.TheScan.MassSpectrum.XcorrProcessed && scan.TheScan.MassSpectrum.XArray.Length != 0)
             {
-                // if the spectrum has no peaks
-                if (scan.TheScan.MassSpectrum.XArray.Length == 0)
-                {
-                    return matchedFragmentIons;
-                }
 
                 for (int i = 0; i < theoreticalProducts.Count; i++)
                 {
@@ -225,7 +220,7 @@ namespace EngineLayer
 
             return matchedFragmentIons;
         }
-
+        
         //Used only when user wants to generate spectral library.
         //Normal search only looks for one match ion for one fragment, and if it accepts it then it doesn't try to look for different charge states of that same fragment. 
         //But for library generation, we need find all the matched peaks with all the different charges.

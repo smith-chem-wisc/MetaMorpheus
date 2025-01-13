@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
@@ -12,9 +10,6 @@ using MassSpectrometry;
 using Nett;
 using NUnit.Framework;
 using NUnit.Framework.Legacy;
-using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using Omics.Fragmentation;
-using pepXML.Generated;
 using Readers;
 using TaskLayer;
 
@@ -29,12 +24,12 @@ namespace Test.MetaDraw
             var viewModel = new FragmentationReanalysisViewModel();
 
             // check default parameters on loading
-            Assert.AreEqual(DissociationType.HCD, viewModel.SelectedDissociationType);
-            Assert.False(viewModel.Persist);
-            Assert.False(viewModel.UseInternalIons);
-            Assert.AreEqual(10, viewModel.MinInternalIonLength);
-            Assert.AreEqual(7, viewModel.DissociationTypes.Count());
-            Assert.AreEqual(20, viewModel.ProductIonMassTolerance);
+            Assert.That(viewModel.SelectedDissociationType, Is.EqualTo(DissociationType.HCD));
+            Assert.That(!viewModel.Persist);
+            Assert.That(!viewModel.UseInternalIons);
+            Assert.That(viewModel.MinInternalIonLength, Is.EqualTo(10));
+            Assert.That(viewModel.DissociationTypes.Count(), Is.EqualTo(7));
+            Assert.That(viewModel.ProductIonMassTolerance, Is.EqualTo(20));
 
             var productsToUse = viewModel.PossibleProducts.Where(p => p.Use).Select(p => p.ProductType).ToList();
             var hcdProducts = Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.HCD];
@@ -101,12 +96,12 @@ namespace Test.MetaDraw
             // increase product ion tolerance and ensure more ions are found
             viewModel.ProductIonMassTolerance = 200;
             var newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
-            Assert.Less(psmToResearch.MatchedIons.Count, newMatchedIons.Count);
+            Assert.That(psmToResearch.MatchedIons.Count < newMatchedIons.Count);
 
             // decrease product ion tolerance and ensure fewer ions are found
             viewModel.ProductIonMassTolerance = 2;
             newMatchedIons = viewModel.MatchIonsWithNewTypes(scan, psmToResearch);
-            Assert.Less(newMatchedIons.Count, psmToResearch.MatchedIons.Count);
+            Assert.That(newMatchedIons.Count < psmToResearch.MatchedIons.Count);
             viewModel.ProductIonMassTolerance = 20;
 
             // ensure ambiguous psms get kicked out before reanalysis

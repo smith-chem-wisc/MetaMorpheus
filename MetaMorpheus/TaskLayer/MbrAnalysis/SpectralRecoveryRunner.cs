@@ -50,8 +50,8 @@ namespace TaskLayer.MbrAnalysis
 
             foreach (SpectraFileInfo spectraFile in spectraFiles)
             {
-                List<ChromatographicPeak> fileSpecificMbrPeaks =
-                    parameters.FlashLfqResults.Peaks[spectraFile].Where(p => p.IsMbrPeak).ToList();
+                List<ChromatographicPeak> fileSpecificMbrPeaks = parameters.FlashLfqResults.Peaks[spectraFile]
+                    .Where(p => p.IsMbrPeak && !p.RandomRt && !p.DecoyPeptide).ToList();
                 if (fileSpecificMbrPeaks == null || (!fileSpecificMbrPeaks.Any())) break;
 
                 MyFileManager myFileManager = new(true);
