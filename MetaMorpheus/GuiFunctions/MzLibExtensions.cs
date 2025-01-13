@@ -8,6 +8,7 @@ namespace GuiFunctions
     /// </summary>
     public static class MzLibExtensions
     {
+
         /// <summary>
         /// Converts the given <see cref="DeconvolutionParameters"/> to a <see cref="DeconParamsViewModel"/>.
         /// </summary>

@@ -5,7 +5,7 @@ using EngineLayer;
 using EngineLayer.ClassicSearch;
 using IO.MzML;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -14,12 +14,10 @@ using Chemistry;
 using System;
 using MassSpectrometry;
 using Nett;
-using EngineLayer.Gptmd;
 using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using static System.Net.WebRequestMethods;
 
 namespace Test
 {
@@ -71,8 +69,8 @@ namespace Test
 
             //compare 2 scores , they should have same integer part but new search has a little higher score than old search
             Assert.That(psm[1].Score > psm_oneCharge[1].Score);
-            Assert.AreEqual(Math.Truncate(psm[1].Score), 12);
-            Assert.AreEqual(Math.Truncate(psm_oneCharge[1].Score), 12);
+            Assert.That(Math.Truncate(psm[1].Score), Is.EqualTo(12));
+            Assert.That(Math.Truncate(psm_oneCharge[1].Score), Is.EqualTo(12));
 
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
@@ -120,7 +118,7 @@ namespace Test
                 proteinList1, searchModes, CommonParameters1, fsp, null, new List<string>(), writeSpectralLibrary).Run();
 
             var psm1 = allPsmsArray1.Where(p => p != null).ToList();
-            Assert.AreEqual(psm1.Count, 222);
+            Assert.That(psm1.Count, Is.EqualTo(222));
         }
 
         [Test]
@@ -134,7 +132,7 @@ namespace Test
             MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
 
             // test output file name (should be proteoform and not peptide)
-            Assert.That(GlobalVariables.AnalyteType == "Proteoform");
+            Assert.That(GlobalVariables.AnalyteType.ToString() == "Proteoform");
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
@@ -170,8 +168,8 @@ namespace Test
 
             //compare 2 scores , they should have same integer but new search has a little higher score than old search
             Assert.That(psm.Score > psm_oneCharge.Score);
-            Assert.AreEqual(Math.Truncate(psm.Score), 47);
-            Assert.AreEqual(Math.Truncate(psm_oneCharge.Score), 47);
+            Assert.That(Math.Truncate(psm.Score), Is.EqualTo(47));
+            Assert.That(Math.Truncate(psm_oneCharge.Score), Is.EqualTo(47));
 
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
@@ -219,28 +217,27 @@ namespace Test
 
             //test1 when all the masses are too small
             var test1 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(50, 95);
-            Assert.AreEqual(test1, null);
+            Assert.That(test1, Is.EqualTo(null));
             //test2 when all the masses are too big
             var test2 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(582, 682);
-            Assert.AreEqual(test2, null);
+            Assert.That(test2, Is.EqualTo(null));
             //test3 when the mass which is bigger than given min mass is bigger than the mass which is smaller than the given max mass
             //for example: the mass array is [1,2,3,4,5], the given min mass is 2.2, the given max mass is 2.8
             var test3 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(110, 111);
-            Assert.AreEqual(test3, null);
-
+            Assert.That(test3, Is.EqualTo(null));
 
             //test normal conditions:look for IsotopicEnvelopes which are in the range of acceptable mass 
             var test4 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(120, 130);
             IsotopicEnvelope[] expected4 = ms2ScanTest.ExperimentalFragments.Skip(15).Take(9).ToArray();
             Assert.That(ms2ScanTest.ExperimentalFragments[15].MonoisotopicMass > 120 && ms2ScanTest.ExperimentalFragments[14].MonoisotopicMass < 120);
             Assert.That(ms2ScanTest.ExperimentalFragments[23].MonoisotopicMass < 130 && ms2ScanTest.ExperimentalFragments[24].MonoisotopicMass > 130);
-            Assert.AreEqual(test4, expected4);
+            Assert.That(test4, Is.EqualTo(expected4));
 
             var test5 = ms2ScanTest.GetClosestExperimentalIsotopicEnvelopeList(400, 500);
             IsotopicEnvelope[] expected5 = ms2ScanTest.ExperimentalFragments.Skip(150).Take(7).ToArray();
             Assert.That(ms2ScanTest.ExperimentalFragments[150].MonoisotopicMass > 400 && ms2ScanTest.ExperimentalFragments[149].MonoisotopicMass < 400);
             Assert.That(ms2ScanTest.ExperimentalFragments[156].MonoisotopicMass < 500 && ms2ScanTest.ExperimentalFragments[157].MonoisotopicMass > 500);
-            Assert.AreEqual(test5, expected5);
+            Assert.That(test5, Is.EqualTo(expected5));
         }
 
         [Test]
@@ -421,11 +418,8 @@ namespace Test
             string raw1 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             string raw2 = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_A549_3_snip.mzML");
             string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibrary.msp");
-
-
             string rawCopy = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\UpdateLibrary\rawCopy.mzML");
             System.IO.File.Copy(raw1, rawCopy);
-
             EverythingRunnerEngine UpdateLibrary = new(new List<(string, MetaMorpheusTask)> { ("UpdateSpectraFileOutput", task) }, new List<string> { raw1, raw2 }, new List<DbForTask> { new DbForTask(lib, false), new DbForTask( db1,false), new DbForTask(db2, false) }, thisTaskOutputFolder);
 
             UpdateLibrary.Run();
@@ -483,7 +477,6 @@ namespace Test
             _ = Directory.CreateDirectory(thisTaskOutputFolder);
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
 
-   
             string db = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\hela_snip_for_unitTest.fasta");
             string raw = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
             string lib = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralLibrary.msp");
@@ -515,10 +508,8 @@ namespace Test
 
             var computedSpectralSimilarity = spectrum.CalculateSpectralAngleOnTheFly(psms[0].MatchedIons);
 
-            Assert.AreEqual(1,Convert.ToDouble(computedSpectralSimilarity),0.01);
-
-
-            Assert.AreEqual("N/A", spectrum.CalculateSpectralAngleOnTheFly(new List<MatchedFragmentIon>()));
+            Assert.That(Convert.ToDouble(computedSpectralSimilarity), Is.EqualTo(1).Within(0.01));
+            Assert.That(spectrum.CalculateSpectralAngleOnTheFly(new List<MatchedFragmentIon>()), Is.EqualTo("N/A"));
         }
 
 

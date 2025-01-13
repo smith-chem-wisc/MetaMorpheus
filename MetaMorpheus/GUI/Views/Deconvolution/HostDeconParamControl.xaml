@@ -81,7 +81,7 @@
 
                 <!-- Precursor Decon Type ComboBox -->
                 <ComboBox Grid.Column="1" x:Name="DeconvolutionTypeComboBox" Width="100" Height="35"
-                          VerticalContentAlignment="Center" HorizontalContentAlignment="Center" 
+                          VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
                           ItemsSource="{Binding PrecursorDeconvolutionParametersList}"
                           SelectedItem="{Binding PrecursorDeconvolutionParameters}"
                           Visibility="{Binding DisplayDeconSelectionComboBox, Converter={StaticResource BooleanToVisibilityConverter}}"

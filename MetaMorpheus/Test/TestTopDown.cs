@@ -7,7 +7,7 @@ using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using IO.MzML;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -30,7 +30,7 @@ namespace Test
             MetaMorpheusTask.DetermineAnalyteType(CommonParameters);
 
             // test output file name (should be proteoform and not peptide)
-            Assert.That(GlobalVariables.AnalyteType == "Proteoform");
+            Assert.That(GlobalVariables.AnalyteType == AnalyteType.Proteoform);
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();

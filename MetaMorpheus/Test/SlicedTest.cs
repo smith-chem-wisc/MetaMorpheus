@@ -1,5 +1,5 @@
 ﻿using Nett;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -27,14 +27,14 @@ namespace Test
 
             var peaks = Path.Combine(thisTaskOutputFolder, "Task", "AllQuantifiedPeaks.tsv");
 
-            Assert.AreEqual(2, File.ReadLines(peaks).Count());
+            Assert.That(File.ReadLines(peaks).Count(), Is.EqualTo(2));
 
             var psms = Path.Combine(thisTaskOutputFolder, "Task", "AllPSMs.psmtsv");
 
-            Assert.AreEqual(3, File.ReadLines(psms).Count());
+            Assert.That(File.ReadLines(psms).Count(), Is.EqualTo(3));
             var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllQuantifiedProteinGroups.tsv");
 
-            Assert.AreEqual(2, File.ReadLines(protGroups).Count());
+            Assert.That(File.ReadLines(protGroups).Count(), Is.EqualTo(2));
             Directory.Delete(outputFolder, true);
         }
 
@@ -54,14 +54,14 @@ namespace Test
 
             var peaks = Path.Combine(thisTaskOutputFolder, "Task", "AllQuantifiedPeaks.tsv");
 
-            Assert.AreEqual(2, File.ReadLines(peaks).Count());
+            Assert.That(File.ReadLines(peaks).Count(), Is.EqualTo(2));
 
             var psms = Path.Combine(thisTaskOutputFolder, "Task", "AllPSMs.psmtsv");
 
-            Assert.AreEqual(3, File.ReadLines(psms).Count());
+            Assert.That(File.ReadLines(psms).Count(), Is.EqualTo(3));
             var protGroups = Path.Combine(thisTaskOutputFolder, "Task", "AllQuantifiedProteinGroups.tsv");
 
-            Assert.AreEqual(2, File.ReadLines(protGroups).Count());
+            Assert.That(File.ReadLines(protGroups).Count(), Is.EqualTo(2));
             Directory.Delete(outputFolder, true);
         }
     }

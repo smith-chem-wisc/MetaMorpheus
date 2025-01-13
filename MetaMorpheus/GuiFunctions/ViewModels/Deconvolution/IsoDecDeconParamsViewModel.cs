@@ -141,7 +141,7 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
     /// Minimum area covered by isotope distribution. Use in or with css_thresh
     /// </summary>
     public float MinAreaCovered
-    {
+{
         get => _parameters.MinAreaCovered;
         set
         {
@@ -160,7 +160,7 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
     {
         get => _parameters.DataThreshold;
         set
-        {
+    {
             if (value is > 1 or < 0)
                 return;
 
@@ -182,5 +182,6 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
-    public override string ToString() => "IsoDec";
+        public override string ToString() => "IsoDec";
+    }
 }

@@ -491,11 +491,6 @@ namespace MetaMorpheusGUI
             DialogResult = true;
         }
 
-        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
-        }
-
         private void KeyPressed(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Return)

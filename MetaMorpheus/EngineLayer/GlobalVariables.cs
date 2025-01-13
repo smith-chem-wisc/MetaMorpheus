@@ -34,7 +34,7 @@ namespace EngineLayer
         private static char[] _InvalidAminoAcids;
 
         // this affects output labels, etc. and can be changed to "Proteoform" for top-down searches
-        public static string AnalyteType;
+        public static AnalyteType AnalyteType;
 
         public static List<string> ErrorsReadingMods;
 
@@ -65,7 +65,7 @@ namespace EngineLayer
             Loaders.LoadElements();
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
-            AnalyteType = "Peptide";
+            AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };

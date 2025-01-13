@@ -52,6 +52,7 @@ namespace MetaMorpheusGUI
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             if (task == null)
             {
@@ -68,12 +69,6 @@ namespace MetaMorpheusGUI
             SearchModifications.Timer.Tick += new EventHandler(TextChangeTimerHandler);
             dataGridSilacLabels.DataContext = StaticSilacLabelsObservableCollection;
             base.Closing += this.OnClosing;
-        }
-
-
-        private void CheckIfNumber(object sender, TextCompositionEventArgs e)
-        {
-            e.Handled = GlobalGuiSettings.CheckIsPositiveInteger(e.Text);
         }
 
         private void Row_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -434,7 +429,6 @@ namespace MetaMorpheusGUI
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
             SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
 
-            // TODO: Reconcile Isodec params with Mass difference acceptor
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(
                 PrecursorMassToleranceTextBox.Text, 
                 ProductMassToleranceTextBox.Text, 

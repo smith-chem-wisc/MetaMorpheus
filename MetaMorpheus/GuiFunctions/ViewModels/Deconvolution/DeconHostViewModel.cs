@@ -1,8 +1,10 @@
 ﻿#nullable enable
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using Easy.Common.Extensions;
 using EngineLayer;
 using MassSpectrometry;
 
@@ -19,7 +21,7 @@ namespace GuiFunctions;
 public class DeconHostViewModel : BaseViewModel
 {
     /// <summary>
-    /// This is where default deconvolution parameters are set for GUI display 
+    /// This is where default deconvolution parameters are set for GUI display
     /// </summary>
     /// <param name="initialPrecursorParameters">precursor params to display first</param>
     /// <param name="initialProductParameters">product params to display first</param>
@@ -53,14 +55,14 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            "Peptide" => new ClassicDeconvolutionParameters(1, 12, 4, 3),
-                            "Proteoform" => new ClassicDeconvolutionParameters(1, 60, 4, 3),
-                            "Oligo" => new ClassicDeconvolutionParameters(-20, -1, 4, 3),
+                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 12, 4, 3),
+                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 60, 4, 3),
+                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-20, -1, 4, 3),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
                     }
-
+                    
                     // Product
                     if (initialProductParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
                         ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
@@ -68,9 +70,9 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            "Peptide" => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            "Proteoform" => new ClassicDeconvolutionParameters(1, 10, 4, 3),
-                            "Oligo" => new ClassicDeconvolutionParameters(-10, -1, 4, 3),
+                            AnalyteType.Peptide => new ClassicDeconvolutionParameters(1, 10, 4, 3),
+                            AnalyteType.Proteoform => new ClassicDeconvolutionParameters(1, 10, 4, 3),
+                            AnalyteType.Oligo => new ClassicDeconvolutionParameters(-10, -1, 4, 3),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());

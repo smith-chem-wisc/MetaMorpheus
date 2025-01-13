@@ -114,7 +114,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="1" Margin="5">
                                     <Label Content="Keep top N candidates" />
-                                    <TextBox x:Name="txtTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
+                                    <local:IntegerTexBoxControl x:Name="txtTopNum"  Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbTopNum}" />
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="2">
                                     <Label Content="Data Type    "/>
@@ -139,7 +139,7 @@
                                 </StackPanel>
                                 <StackPanel Orientation="Horizontal" Grid.Row="3">
                                     <Label Content="Maximum OGlycan Allowed"/>
-                                    <TextBox x:Name="TbMaxOGlycanNum" PreviewTextInput="CheckIfNumber" Width="45"/>
+                                    <local:IntegerTexBoxControl x:Name="TbMaxOGlycanNum" Width="45"/>
                                 </StackPanel>
                                 <CheckBox x:Name="CkbOxoniumIonFilt" Content="OxoniumIonFilt" Grid.Row="3" Grid.Column="1" VerticalAlignment="Center"/>
                             </Grid>
@@ -166,11 +166,11 @@
                                     <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks"/>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
+                                        <local:IntegerTexBoxControl x:Name="TopNPeaksTextBox"   Width="45" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum ratio" />
-                                        <TextBox x:Name="MinRatioTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
+                                        <local:DoubleTextBoxControl x:Name="MinRatioTextBox"  Width="45" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -202,7 +202,7 @@
                                         </RadioButton>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber"  Width="45" TextChanged="NonSpecificUpdate"/>
+                                            <local:IntegerTexBoxControl x:Name="missedCleavagesTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label_Copy" Content="Protease" />
@@ -210,7 +210,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="numberOfDatabaseSearchesTextBox" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -220,17 +220,17 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="maxModificationIsoformsTextBox" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="Lb_MaxMods" Content="Max Modification Per Peptide" />
-                                            <TextBox x:Name="TxtBoxMaxModPerPep" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="TxtBoxMaxModPerPep"  Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" />
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" TextChanged="NonSpecificUpdate"/>
+                                            <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -257,11 +257,11 @@
                                     <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
-                                            <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="minScoreAllowed" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
-                                            <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <local:IntegerTexBoxControl x:Name="maxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
@@ -269,7 +269,7 @@
                                                         Enter a lower number to limit CPU usage.
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
-                                            </TextBox>
+                                            </local:IntegerTexBoxControl>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -435,7 +435,7 @@
                             </ToolTipService.ToolTip>
                         </RadioButton>
                         <StackPanel Orientation="Horizontal">
-                            <TextBox x:Name="PeakFindingToleranceTextBox"  PreviewTextInput="CheckIfNumber" Width="30" Height="20">
+                            <local:DoubleTextBoxControl x:Name="PeakFindingToleranceTextBox" Width="30" Height="20">
                                 <TextBox.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">
                                         <Binding  ElementName="CheckBoxLFQ" Path ="IsChecked"/>
@@ -444,7 +444,7 @@
                                 <ToolTipService.ToolTip>
                                     <ToolTip Content="PPM tolerance for MS1 (LFQ) peakfinding" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
-                            </TextBox>
+                            </local:DoubleTextBoxControl>
                             <Label x:Name="peakFindingLabel" Content=" ppm peakfinding tolerance">
                                 <Label.IsEnabled>
                                     <MultiBinding Converter="{StaticResource boolOrConverter}">

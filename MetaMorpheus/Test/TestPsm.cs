@@ -4,7 +4,7 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.Localization;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -54,18 +54,18 @@ namespace Test
 
             var t = psm.ToString();
             var tabsepheader = SpectralMatch.GetTabSeparatedHeader();
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.That(psm.ToString().Count(f => f == '\t'), Is.EqualTo(SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t')));
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.That(psm.ToString().Count(f => f == '\t'), Is.EqualTo(SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t')));
 
             Tolerance fragmentTolerance = new PpmTolerance(10);
             new LocalizationEngine(new List<SpectralMatch> { psm }, myMsDataFile, new CommonParameters(productMassTolerance: fragmentTolerance), null, new List<string>()).Run();
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.That(psm.ToString().Count(f => f == '\t'), Is.EqualTo(SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t')));
 
             psm.SetFdrValues(6, 6, 6, 6, 6, 0, 0, 0);
 
-            Assert.AreEqual(psm.ToString().Count(f => f == '\t'), SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t'));
+            Assert.That(psm.ToString().Count(f => f == '\t'), Is.EqualTo(SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t')));
         }
 
         [Test]
@@ -108,6 +108,7 @@ namespace Test
         [Test]
         public static void TestPpmAndDaMassErrors()
         {
+            
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             var origDataFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\TaGe_SA_HeLa_04_subset_longestSeq.mzML");
@@ -173,7 +174,7 @@ namespace Test
                     }
                 }
             }
-            Assert.IsTrue(longestSeriesExpected.SequenceEqual(longestSeriesObserved));
+            Assert.That(longestSeriesExpected.SequenceEqual(longestSeriesObserved));
         }
 
         [Test]
@@ -268,12 +269,12 @@ namespace Test
             SpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, commonParameters, null);
             psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
-            Assert.AreEqual(2, psm.BestMatchingBioPolymersWithSetMods.Count());
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.Peptide.Parent.IsDecoy));
 
             psm.ResolveAllAmbiguities();
 
-            Assert.AreEqual(1, psm.BestMatchingBioPolymersWithSetMods.Count());
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(1));
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.All(p => !p.Peptide.Parent.IsDecoy));
             Assert.That(!psm.IsDecoy);
         }
@@ -294,18 +295,19 @@ namespace Test
             SpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, commonParameters, null);
             psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
-            Assert.AreEqual(2, psm.BestMatchingBioPolymersWithSetMods.Count());
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.Peptide.Parent.IsDecoy));
 
             psm.ResolveAllAmbiguities();
 
-            Assert.AreEqual(2, psm.BestMatchingBioPolymersWithSetMods.Count());
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
             Assert.That(psm.IsDecoy);
 
             List<(string fileName, CommonParameters fileSpecificParameters)> fsp = new List<(string fileName, CommonParameters fileSpecificParameters)> { ("filename", commonParameters) };
 
             new FdrAnalysisEngine(new List<SpectralMatch> { psm }, 1, new CommonParameters(), fsp, new List<string>()).Run();
-            Assert.AreEqual(0.5, psm.FdrInfo.CumulativeDecoy);
+            Assert.That(psm.FdrInfo.CumulativeDecoy, Is.EqualTo(0.5));
+
         }
 
         [Test]
@@ -397,8 +399,7 @@ namespace Test
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                     psm.QValue <= 0.01)
                 .GroupBy(p => p.FullSequence).ToList();
-            Assert.AreEqual(unambiguousPsmsLessThanOnePercentFdr.Count, allPeptidesQvalueBelowCutoff);
-
+            Assert.That(unambiguousPsmsLessThanOnePercentFdr.Count, Is.EqualTo(allPeptidesQvalueBelowCutoff));
 
             // Test for precursorIntensity in PsmFromTsv
             int scanNumber = 117;
@@ -414,7 +415,7 @@ namespace Test
             File.WriteAllLines(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), lines.ToArray());
             var psmsFromTsvInvalid = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
             var psmInvalid = psmsFromTsvInvalid[psmsFromTsvInvalid.Count - 1];
-            Assert.AreEqual(psmInvalid.PrecursorIntensity, null);
+            Assert.That(psmInvalid.PrecursorIntensity, Is.EqualTo(null));
 
             //Test for precursorIntensity and precursorEnvelopePeakCount in SpectralMatch
             List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse, false, out List<string> errors);
@@ -438,7 +439,7 @@ namespace Test
 
             string peptideCountFromResultsString = results.FirstOrDefault(r => r.Contains("All target peptides with q-value <= 0.01: "));
             double peptideCountFromResults = Convert.ToDouble(peptideCountFromResultsString?.Split(':')[1].ToString());
-            Assert.AreEqual(allPeptidesQvalueBelowCutoff, peptideCountFromResults);
+            Assert.That(allPeptidesQvalueBelowCutoff, Is.EqualTo(peptideCountFromResults));
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
         }
@@ -465,12 +466,12 @@ namespace Test
 
             psm1.AddOrReplace(pwsm, 11, 1, true, new List<MatchedFragmentIon>(), 0);
 
-            Assert.AreEqual(1, psm1.BestMatchingBioPolymersWithSetMods.Count());
+            Assert.That(psm1.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(1));
 
-            Assert.AreEqual(11, psm1.Score);
+            Assert.That(psm1.Score, Is.EqualTo(11));
 
-            Assert.AreEqual(10, psm1.RunnerUpScore);
-            Assert.AreEqual(1, psm1.DeltaScore);
+            Assert.That(psm1.RunnerUpScore, Is.EqualTo(10));
+            Assert.That(psm1.DeltaScore, Is.EqualTo(1));
         }
 
         [Test]
@@ -489,11 +490,11 @@ namespace Test
             int count = SpectralMatch.GetCountComplementaryIons(psm1.BioPolymersWithSetModsToMatchingFragments, pwsm);
 
             //No Matched Fragment Ions Returns 0
-            Assert.AreEqual(0, count);
+            Assert.That(count, Is.EqualTo(0));
 
             count = SpectralMatch.GetCountComplementaryIons(null, pwsm);
             //BioPolymersWithSetModsToMatchingFragments Null Returns 0
-            Assert.AreEqual(0, count);
+            Assert.That(count, Is.EqualTo(0));
 
             List<Product> myProducts = new List<Product>();
             pwsm.Fragment(DissociationType.HCD, FragmentationTerminus.Both, myProducts);
@@ -510,7 +511,7 @@ namespace Test
 
             count = SpectralMatch.GetCountComplementaryIons(PTMF, pwsm);
             //BioPolymersWithSetModsToMatchingFragments Contains one N and one C ion so intersection Returns 1
-            Assert.AreEqual(1, count);
+            Assert.That(count, Is.EqualTo(1));
         }
 
         [Test]
@@ -528,14 +529,14 @@ namespace Test
 
             //BioPolymersWithSetModsToMatchingFragments == null returns 1
             longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(null, pwsm);
-            Assert.AreEqual(1, longestSeries);
+            Assert.That(longestSeries, Is.EqualTo(1));
 
             //matchedFragments == null returns 1
             Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
             PeptidesToMatchingFragments.Add(pwsm, null);
 
             longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(PeptidesToMatchingFragments, pwsm);
-            Assert.AreEqual(1, longestSeries);
+            Assert.That(longestSeries, Is.EqualTo(1));
         }
 
         [Test]
@@ -578,19 +579,19 @@ namespace Test
             psm1.ResolveAllAmbiguities();
             psm1.GetAminoAcidCoverage();
             //First amino acid
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(1));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(1));
             //sequential N term Frags
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(4));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(4));
             //Last amino acid
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(14));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(14));
             //Covered from both directions inclusive
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(8));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(8));
             //Covered from both directions exclusive
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(7));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(7));
             //Sequential C term Frags
-            Assert.IsTrue(psm1.FragmentCoveragePositionInPeptide.Contains(11));
+            Assert.That(psm1.FragmentCoveragePositionInPeptide.Contains(11));
             //Not coveredRT
-            Assert.IsFalse(psm1.FragmentCoveragePositionInPeptide.Contains(5));
+            Assert.That(!psm1.FragmentCoveragePositionInPeptide.Contains(5));
 
 
             SpectralMatch psm2 = new PeptideSpectralMatch(pep2, 0, 0, 0, scan1, commonParameters, mfis1);
@@ -614,13 +615,13 @@ namespace Test
 
             var scansWithPrecursors = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters);
             var Ms2Scan1 = scansWithPrecursors[17][1];
-            Assert.IsTrue(Math.Abs(2889051 - Ms2Scan1.PrecursorIntensity) <= 10);
+            Assert.That(Math.Abs(2889051 - Ms2Scan1.PrecursorIntensity) <= 10);
             Assert.That(Ms2Scan1.PrecursorEnvelopePeakCount, Is.EqualTo(2)); //might not be the correct number of peaks but use it for now
 
             CommonParameters CommonParameters1 = new CommonParameters(useMostAbundantPrecursorIntensity: false);
             var scansWithPrecursors1 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters1);
             var Ms2Scan1_2 = scansWithPrecursors1[17][1];
-            Assert.IsTrue(Math.Abs(3405218 - Ms2Scan1_2.PrecursorIntensity) <= 10);
+            Assert.That(Math.Abs(3405218 - Ms2Scan1_2.PrecursorIntensity) <= 10);
 
             //just to look at the envelopes, not relavent to the test
             var msNScans = myMsDataFile.GetAllScansList().ToArray();
@@ -632,7 +633,7 @@ namespace Test
             CommonParameters CommonParameters2 = new CommonParameters(doPrecursorDeconvolution: false, useProvidedPrecursorInfo: true);
             var scansWithPrecursors2 = MetaMorpheusTask._GetMs2Scans(myMsDataFile, filePath, CommonParameters2);
             var Ms2Scan2 = scansWithPrecursors2[17][0];
-            Assert.IsTrue(Math.Abs(1.14554e7 - Ms2Scan2.PrecursorIntensity) <= 1000);
+            Assert.That(Math.Abs(1.14554e7 - Ms2Scan2.PrecursorIntensity) <= 1000);
             Assert.That(Ms2Scan2.PrecursorEnvelopePeakCount, Is.EqualTo(1));
 
             //3: use scan header (selectedIonIntensity) to find precursor info 
