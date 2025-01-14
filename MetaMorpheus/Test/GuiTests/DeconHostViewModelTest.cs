@@ -69,8 +69,8 @@ public class DeconHostViewModelTests
         Assert.That(viewModel.ProductDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(initialProductParameters.MaxAssumedChargeState)); 
         Assert.That(initialPrecursorParameters.DeconvolutionType, Is.EqualTo(DeconvolutionType.ClassicDeconvolution));
         Assert.That(initialProductParameters.DeconvolutionType, Is.EqualTo(DeconvolutionType.ClassicDeconvolution));
-        Assert.That(initialPrecursorParameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
-        Assert.That(initialProductParameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
+        Assert.That(viewModel.PrecursorDeconvolutionParameters.Parameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
+        Assert.That(viewModel.ProductDeconvolutionParameters.Parameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
     }
 
     [Test]
@@ -90,8 +90,9 @@ public class DeconHostViewModelTests
         Assert.That(viewModel.ProductDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(initialProductParameters.MaxAssumedChargeState));
         Assert.That(initialPrecursorParameters.DeconvolutionType, Is.EqualTo(DeconvolutionType.IsoDecDeconvolution));
         Assert.That(initialProductParameters.DeconvolutionType, Is.EqualTo(DeconvolutionType.IsoDecDeconvolution));
-        Assert.That(initialPrecursorParameters, Is.InstanceOf<IsoDecDeconvolutionParameters>());
-        Assert.That(initialProductParameters, Is.InstanceOf<IsoDecDeconvolutionParameters>());
+        Assert.That(viewModel.PrecursorDeconvolutionParameters.Parameters, Is.InstanceOf<IsoDecDeconvolutionParameters>());
+        Assert.That(viewModel.PrecursorDeconvolutionParameters.Parameters, Is.InstanceOf<IsoDecDeconvolutionParameters>());
+        Assert.That(viewModel.PrecursorDeconvolutionParameters.ToString(), Is.EqualTo("IsoDec"));
     }
 
     [Test]
@@ -151,7 +152,6 @@ public class DeconHostViewModelTests
         Assert.That(propertyChangedTriggered, Is.True);
     }
 
-        
     [Test]
     [NonParallelizable]
     public void TestDeconHostViewModel_GlobalVariables_Proteoform_Classic()
@@ -248,6 +248,21 @@ public class DeconHostViewModelTests
             var deconHostViewModel = new DeconHostViewModel(ClassicPrecursorDeconvolutionParameters, null);
         });
 
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
+            var deconHostViewModel = new DeconHostViewModel(null, ClassicProductDeconvolutionParameters);
+        });
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
+            var deconHostViewModel = new DeconHostViewModel(IsoDecPrecursorDeconvolutionParameters, null);
+        });
+
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        {
+            var deconHostViewModel = new DeconHostViewModel(null, IsoDecProductDeconvolutionParameters);
+        });
+
         // Revert back to default
         GlobalVariables.AnalyteType = AnalyteType.Peptide;
     }
@@ -294,5 +309,39 @@ public class DeconHostViewModelTests
 
         // Assert
         Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void SetAllPrecursorMaxChargeState_ShouldUpdateAllPrecursorParams()
+    {
+        // Arrange
+        var viewModel = new DeconHostViewModel();
+        int newMaxCharge = 5;
+
+        // Act
+        viewModel.SetAllPrecursorMaxChargeState(newMaxCharge);
+
+        // Assert
+        foreach (var precursorParams in viewModel.PrecursorDeconvolutionParametersList)
+        {
+            Assert.That(precursorParams.MaxAssumedChargeState, Is.EqualTo(newMaxCharge));
+        }
+    }
+
+    [Test]
+    public void SetAllProductMaxChargeState_ShouldUpdateAllProductParams()
+    {
+        // Arrange
+        var viewModel = new DeconHostViewModel();
+        int newMaxCharge = 5;
+
+        // Act
+        viewModel.SetAllProductMaxChargeState(newMaxCharge);
+
+        // Assert
+        foreach (var productParams in viewModel.ProductDeconvolutionParametersList)
+        {
+            Assert.That(productParams.MaxAssumedChargeState, Is.EqualTo(newMaxCharge));
+        }
     }
 }
