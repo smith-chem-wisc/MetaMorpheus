@@ -1,6 +1,7 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
@@ -11,7 +12,7 @@ namespace TaskLayer
     public class MyFileManager
     {
         private readonly bool DisposeOfFileWhenDone;
-        private readonly Dictionary<string, MsDataFile> MyMsDataFiles = new Dictionary<string, MsDataFile>();
+        private readonly ConcurrentDictionary<string, MsDataFile> MyMsDataFiles = new ConcurrentDictionary<string, MsDataFile>();
         private readonly object FileLoadingLock = new object();
 
         public MyFileManager(bool disposeOfFileWhenDone)

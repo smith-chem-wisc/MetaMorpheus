@@ -162,6 +162,24 @@ namespace EngineLayer
             }
         }
 
+        internal static List<MatchedFragmentIon> Resolve(IEnumerable<List<MatchedFragmentIon>> enumerable)
+        {
+            // Most resolve methods return a string and a value, but building a string representation of a list of MatchedFragmentIons is
+            // computationally costly. So, we just return the list of MatchedFragmentIons, or null if the list is not the same for all PWSMs
+            var list = enumerable.ToList();
+            var first = list.FirstOrDefault(b => b != null);
+            // Only first if list is either all null or all equal to the first
+            if (list.All(b => b == null) || list.All(b => first.SequenceEqual(b)))
+            {
+                return first;
+            }
+            else
+            {
+                // Otherwise, return the intersect of the lists (this removes ambiguous ions, but keeps all those that were confidently identified)
+                return list.Aggregate((a, b) => a.Intersect(b).ToList());
+            }
+        }
+
         internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm)
         {
             s[PsmTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
