@@ -139,8 +139,8 @@ namespace EngineLayer
             get => PrecursorDeconvolutionParameters.MaxAssumedChargeState;
             private set => PrecursorDeconvolutionParameters.MaxAssumedChargeState = value;
         }
-        [TomlIgnore] public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
-        [TomlIgnore] public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
+        public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
+        public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
