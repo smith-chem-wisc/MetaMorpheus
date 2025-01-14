@@ -89,9 +89,9 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            "Peptide" => new IsoDecDeconvolutionParameters(),
-                            "Proteoform" => new IsoDecDeconvolutionParameters(),
-                            "Oligo" => new IsoDecDeconvolutionParameters(Polarity.Negative),
+                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(),
+                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(),
+                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
@@ -104,9 +104,9 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            "Peptide" => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false),
-                            "Proteoform" => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false),
-                            "Oligo" => new IsoDecDeconvolutionParameters(Polarity.Negative, reportMultipleMonoisos: false),
+                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false),
+                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false),
+                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative, reportMultipleMonoisos: false),
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());

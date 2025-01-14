@@ -182,6 +182,5 @@ public sealed class IsoDecDeconParamsViewModel : DeconParamsViewModel
         }
     }
 
-        public override string ToString() => "IsoDec";
-    }
+    public override string ToString() => "IsoDec";
 }

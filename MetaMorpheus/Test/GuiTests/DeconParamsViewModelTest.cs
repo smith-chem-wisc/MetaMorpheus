@@ -249,28 +249,38 @@ public class DeconParamsViewModelTest
         var viewModel1 = new TestDeconParamsViewModel(parameters1);
         var parameters2 = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
         var viewModel2 = new TestDeconParamsViewModel(parameters2);
+        Assert.That(viewModel1.Equals(viewModel2), Is.False);
+        Assert.That(viewModel1.Equals((object)viewModel2), Is.False);
+    }
+
+    [Test]
+    public void TestGetHashCode_UniqueIdentifier()
+    {
+        var parameters = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
+        var viewModel1 = new TestDeconParamsViewModel(parameters);
+        var viewModel2 = new TestDeconParamsViewModel(parameters);
+
+        Assert.That(viewModel1.GetHashCode(), Is.Not.EqualTo(viewModel2.GetHashCode()));
+    }
+
+    [Test]
+    public void TestEquals_SameUniqueIdentifier()
+    {
+        var parameters = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
+        var viewModel1 = new TestDeconParamsViewModel(parameters);
+        var viewModel2 = viewModel1;
+
         Assert.That(viewModel1.Equals(viewModel2), Is.True);
     }
 
     [Test]
-    public void TestEquals_SameParameters_Obj()
+    public void TestEquals_DifferentUniqueIdentifier()
     {
         var parameters1 = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
         var viewModel1 = new TestDeconParamsViewModel(parameters1);
         var parameters2 = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
         var viewModel2 = new TestDeconParamsViewModel(parameters2);
-        Assert.That(viewModel1.Equals((object)viewModel2), Is.True);
-    }
 
-    [Test]
-    public void TestGetHashCode()
-    {
-        var parameters = new ClassicDeconvolutionParameters(1, 12, 5, 3, Polarity.Positive);
-        var viewModel = new TestDeconParamsViewModel(parameters);
-        var expectedHashCode = parameters.DeconvolutionType.GetHashCode() + parameters.Polarity.GetHashCode() + parameters.MaxAssumedChargeState.GetHashCode();
-        Assert.That(viewModel.GetHashCode(), Is.EqualTo(expectedHashCode));
-
-        viewModel = new TestDeconParamsViewModel(null);
-        Assert.That(viewModel.GetHashCode(), Is.EqualTo(0));
+        Assert.That(viewModel1.Equals(viewModel2), Is.False);
     }
 }

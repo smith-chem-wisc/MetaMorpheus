@@ -53,7 +53,7 @@ public class DeconHostViewModelTests
     }
 
     [Test]
-    public void Constructor_WithProvidedParameters_ShouldSetCorrectly()
+    public void Constructor_WithProvidedParameters_ShouldSetCorrectly_Classic()
     {
         // Arrange
         var initialPrecursorParameters = ClassicPrecursorDeconvolutionParameters;
@@ -65,8 +65,12 @@ public class DeconHostViewModelTests
         // Assert
         Assert.That(viewModel.UseProvidedPrecursors, Is.True);
         Assert.That(viewModel.DoPrecursorDeconvolution, Is.False);
-        Assert.That(viewModel.PrecursorDeconvolutionParameters, Is.EqualTo(initialPrecursorParameters.ToViewModel()));
-        Assert.That(viewModel.ProductDeconvolutionParameters, Is.EqualTo(initialProductParameters.ToViewModel()));
+        Assert.That(viewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(initialPrecursorParameters.MaxAssumedChargeState));
+        Assert.That(viewModel.ProductDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(initialProductParameters.MaxAssumedChargeState)); 
+        Assert.That(initialPrecursorParameters.DeconvolutionType, Is.EqualTo(DeconvolutionType.ClassicDeconvolution));
+        Assert.That(initialProductParameters.DeconvolutionType, Is.EqualTo(DeconvolutionType.ClassicDeconvolution));
+        Assert.That(initialPrecursorParameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
+        Assert.That(initialProductParameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
     }
 
     [Test]
@@ -82,8 +86,12 @@ public class DeconHostViewModelTests
         // Assert
         Assert.That(viewModel.UseProvidedPrecursors, Is.True);
         Assert.That(viewModel.DoPrecursorDeconvolution, Is.False);
-        Assert.That(viewModel.PrecursorDeconvolutionParameters, Is.EqualTo(initialPrecursorParameters.ToViewModel()));
-        Assert.That(viewModel.ProductDeconvolutionParameters, Is.EqualTo(initialProductParameters.ToViewModel()));
+        Assert.That(viewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(initialPrecursorParameters.MaxAssumedChargeState));
+        Assert.That(viewModel.ProductDeconvolutionParameters.MaxAssumedChargeState, Is.EqualTo(initialProductParameters.MaxAssumedChargeState));
+        Assert.That(initialPrecursorParameters.DeconvolutionType, Is.EqualTo(DeconvolutionType.IsoDecDeconvolution));
+        Assert.That(initialProductParameters.DeconvolutionType, Is.EqualTo(DeconvolutionType.IsoDecDeconvolution));
+        Assert.That(initialPrecursorParameters, Is.InstanceOf<IsoDecDeconvolutionParameters>());
+        Assert.That(initialProductParameters, Is.InstanceOf<IsoDecDeconvolutionParameters>());
     }
 
     [Test]
@@ -149,7 +157,7 @@ public class DeconHostViewModelTests
     public void TestDeconHostViewModel_GlobalVariables_Proteoform_Classic()
     {
         // Arrange
-        GlobalVariables.AnalyteType = "Proteoform";
+        GlobalVariables.AnalyteType = AnalyteType.Proteoform;
         DeconHostViewModel viewModel = new DeconHostViewModel(null, null);
 
         // Act
@@ -165,9 +173,9 @@ public class DeconHostViewModelTests
         Assert.That(productParams.Parameters, Is.InstanceOf<ClassicDeconvolutionParameters>());
         Assert.That(((ClassicDeconvolutionParameters)precursorParams.Parameters).MaxAssumedChargeState, Is.EqualTo(60));
         Assert.That(((ClassicDeconvolutionParameters)productParams.Parameters).MaxAssumedChargeState, Is.EqualTo(10));
-        
+
         // Revert back to default
-        GlobalVariables.AnalyteType = "Peptide";
+        GlobalVariables.AnalyteType = AnalyteType.Peptide;
     }
 
     [Test]

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using MassSpectrometry;
 
@@ -10,9 +9,8 @@ namespace GuiFunctions;
 /// Used to wrap the DeconvolutionParameters object
 /// Contains only shared information between different DeconvolutionParameters
 /// </summary>
-public abstract class DeconParamsViewModel : BaseViewModel, IEquatable<DeconParamsViewModel>
+public abstract class DeconParamsViewModel : BaseViewModel
 {
-
     private int _previousMinAssumedChargeState;
     private int _previousMaxAssumedChargeState;
     protected readonly Guid UniqueIdentifier = Guid.NewGuid(); // Used to map which updated decon params to the combobox selection via the GetHashCodeMethod
@@ -130,30 +128,6 @@ public abstract class DeconParamsViewModel : BaseViewModel, IEquatable<DeconPara
     }
     
     public override string ToString() => DeconvolutionType.ToString();
-
-    public bool Equals(DeconParamsViewModel other)
-    {
-        if (ReferenceEquals(null, other)) return false;
-        if (ReferenceEquals(this, other)) return true;
-
-        if (Parameters.DeconvolutionType != other.Parameters.DeconvolutionType)
-            return false;
-        if (Parameters.Polarity != other.Parameters.Polarity)
-            return false;
-        if (Parameters.MinAssumedChargeState != other.Parameters.MinAssumedChargeState)
-            return false;
-        if (Parameters.MaxAssumedChargeState != other.Parameters.MaxAssumedChargeState)
-            return false;
-        return true;
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj)) return false;
-        if (ReferenceEquals(this, obj)) return true;
-        if (obj.GetType() != this.GetType()) return false;
-        return Equals((DeconParamsViewModel)obj);
-    }
 
     public override int GetHashCode()
     {
