@@ -89,9 +89,9 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(),
-                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(),
-                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative),
+                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters() { MaxAssumedChargeState = 12},
+                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters() { MaxAssumedChargeState = 60 },
+                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative) { MaxAssumedChargeState = -20, MinAssumedChargeState = -1 },
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
@@ -104,9 +104,9 @@ public class DeconHostViewModel : BaseViewModel
                     {
                         var toAdd = GlobalVariables.AnalyteType switch
                         {
-                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false),
-                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false),
-                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative, reportMultipleMonoisos: false),
+                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false) { MaxAssumedChargeState = 10},
+                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false) { MaxAssumedChargeState = 10 },
+                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative, reportMultipleMonoisos: false) { MaxAssumedChargeState = -10, MinAssumedChargeState = -1 },
                             _ => throw new ArgumentOutOfRangeException()
                         };
                         ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());
