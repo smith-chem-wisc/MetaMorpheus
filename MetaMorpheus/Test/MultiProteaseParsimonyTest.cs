@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.FdrAnalysis;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -82,13 +82,13 @@ namespace Test
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
             var proteinGroup1 = proteinGroups.Where(h => h.ProteinGroupName == "1").First();
-            Assert.AreEqual(1, proteinGroup1.UniquePeptides.Count);
-            Assert.AreEqual(2, proteinGroup1.AllPeptides.Count);
+            Assert.That(proteinGroup1.UniquePeptides.Count, Is.EqualTo(1));
+            Assert.That(proteinGroup1.AllPeptides.Count, Is.EqualTo(2));
             var proteinGroup2 = proteinGroups.Where(h => h.ProteinGroupName == "2|3").First();
-            Assert.AreEqual(0, proteinGroup2.UniquePeptides.Count);
-            Assert.AreEqual(4, proteinGroup2.AllPeptides.Count);
+            Assert.That(proteinGroup2.UniquePeptides.Count, Is.EqualTo(0));
+            Assert.That(proteinGroup2.AllPeptides.Count, Is.EqualTo(4));
         }
 
         /// <summary>
@@ -171,8 +171,8 @@ namespace Test
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
             // should result in 1 protein group (protein2)
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("2", proteinGroups.ElementAt(0).ProteinGroupName);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("2"));
         }
 
         /// <summary>
@@ -248,11 +248,11 @@ namespace Test
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
 
             var proteinGroup1 = proteinGroups.Where(p => p.ProteinGroupName == "1").First();
-            Assert.AreEqual(2, proteinGroup1.AllPeptides.Count);
-            Assert.AreEqual(1, proteinGroup1.UniquePeptides.Count);
+            Assert.That(proteinGroup1.AllPeptides.Count, Is.EqualTo(2));
+            Assert.That(proteinGroup1.UniquePeptides.Count, Is.EqualTo(1));
             var pg1pep1 = proteinGroup1.AllPeptides.Where(p => p.BaseSequence == "XYZ").First();
             Assert.That(pg1pep1.DigestionParams.DigestionAgent.Name == "proteaseA");
             var pg1pep2 = proteinGroup1.AllPeptides.Where(p => p.BaseSequence == "ABC").First();
@@ -260,8 +260,8 @@ namespace Test
             Assert.That(proteinGroup1.UniquePeptides.First().BaseSequence.Equals("ABC"));
 
             var proteinGroup2 = proteinGroups.Where(p => p.ProteinGroupName == "2").First();
-            Assert.AreEqual(3, proteinGroup2.AllPeptides.Count);
-            Assert.AreEqual(2, proteinGroup2.UniquePeptides.Count);
+            Assert.That(proteinGroup2.AllPeptides.Count, Is.EqualTo(3));
+            Assert.That(proteinGroup2.UniquePeptides.Count, Is.EqualTo(2));
             var pg2pep1 = proteinGroup2.AllPeptides.Where(p => p.BaseSequence == "XYZ").First();
             Assert.That(pg2pep1.DigestionParams.DigestionAgent.Name == "proteaseA");
             var pg2pep2 = proteinGroup2.AllPeptides.Where(p => p.BaseSequence == "ABC").First();
@@ -340,7 +340,7 @@ namespace Test
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
 
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
 
             // check first protein group
             ProteinGroup pg1 = proteinGroups.Where(v => v.ProteinGroupName == "1").First();
@@ -432,9 +432,9 @@ namespace Test
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
 
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("1", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(2, proteinGroups.ElementAt(0).UniquePeptides.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("1"));
+            Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(2));
         }
 
         /// <summary>
@@ -496,24 +496,24 @@ namespace Test
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
 
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
             if (proteinGroups.ElementAt(0).ProteinGroupName == "1")
             {
-                Assert.AreEqual("1", proteinGroups.ElementAt(0).ProteinGroupName);
-                Assert.AreEqual(1, proteinGroups.ElementAt(0).UniquePeptides.Count);
-                Assert.AreEqual("ABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence);
-                Assert.AreEqual("2|3", proteinGroups.ElementAt(1).ProteinGroupName);
-                Assert.AreEqual(0, proteinGroups.ElementAt(1).UniquePeptides.Count);
-                Assert.AreEqual(2, proteinGroups.ElementAt(1).AllPeptides.Count);
+                Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("1"));
+                Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(1));
+                Assert.That(proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence, Is.EqualTo("ABC"));
+                Assert.That(proteinGroups.ElementAt(1).ProteinGroupName, Is.EqualTo("2|3"));
+                Assert.That(proteinGroups.ElementAt(1).UniquePeptides.Count, Is.EqualTo(0));
+                Assert.That(proteinGroups.ElementAt(1).AllPeptides.Count, Is.EqualTo(2));
             }
             else
             {
-                Assert.AreEqual("1", proteinGroups.ElementAt(1).ProteinGroupName);
-                Assert.AreEqual(1, proteinGroups.ElementAt(1).UniquePeptides.Count);
-                Assert.AreEqual("ABC", proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).FullSequence);
-                Assert.AreEqual("2|3", proteinGroups.ElementAt(0).ProteinGroupName);
-                Assert.AreEqual(0, proteinGroups.ElementAt(0).UniquePeptides.Count);
-                Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
+                Assert.That(proteinGroups.ElementAt(1).ProteinGroupName, Is.EqualTo("1"));
+                Assert.That(proteinGroups.ElementAt(1).UniquePeptides.Count, Is.EqualTo(1));
+                Assert.That(proteinGroups.ElementAt(1).UniquePeptides.ElementAt(0).FullSequence, Is.EqualTo("ABC"));
+                Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("2|3"));
+                Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(0));
+                Assert.That(proteinGroups.ElementAt(0).AllPeptides.Count, Is.EqualTo(2));
             }
         }
 
@@ -588,10 +588,10 @@ namespace Test
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
 
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("1", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(1, proteinGroups.ElementAt(0).UniquePeptides.Count);
-            Assert.AreEqual("ABC", proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("1"));
+            Assert.That(proteinGroups.ElementAt(0).UniquePeptides.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).UniquePeptides.ElementAt(0).FullSequence, Is.EqualTo("ABC"));
         }
 
         /// <summary>
@@ -716,7 +716,7 @@ namespace Test
                 }
             }
 
-            Assert.AreEqual(3, fdrFilteredPsms.Count);
+            Assert.That(fdrFilteredPsms.Count, Is.EqualTo(3));
 
             var test1 = fdrFilteredPsms.Contains(psms.ElementAt(2));
             var test2 = fdrFilteredPsms.Contains(psms.ElementAt(4));
@@ -724,12 +724,12 @@ namespace Test
             var test4 = fdrFilteredPsms.Contains(psms.ElementAt(0));
             var test5 = fdrFilteredPsms.Contains(psms.ElementAt(1));
             var test6 = fdrFilteredPsms.Contains(psms.ElementAt(3));
-            Assert.AreEqual(true, test1);
-            Assert.AreEqual(true, test2);
-            Assert.AreEqual(true, test3);
-            Assert.AreEqual(false, test4);
-            Assert.AreEqual(false, test5);
-            Assert.AreEqual(false, test6);
+            Assert.That(test1, Is.EqualTo(true));
+            Assert.That(test2, Is.EqualTo(true));
+            Assert.That(test3, Is.EqualTo(true));
+            Assert.That(test4, Is.EqualTo(false));
+            Assert.That(test5, Is.EqualTo(false));
+            Assert.That(test6, Is.EqualTo(false));
         }
 
         /// <summary>
@@ -762,10 +762,10 @@ namespace Test
 
             var psms = Path.Combine(thisTaskOutputFolder, "AllPSMs.psmtsv");
 
-            Assert.AreEqual(11, File.ReadLines(psms).Count());
+            Assert.That(File.ReadLines(psms).Count(), Is.EqualTo(11));
             var protGroups = Path.Combine(thisTaskOutputFolder, "AllQuantifiedProteinGroups.tsv");
 
-            Assert.AreEqual(7, File.ReadLines(protGroups).Count());
+            Assert.That(File.ReadLines(protGroups).Count(), Is.EqualTo(7));
             Directory.Delete(outputFolder, true);
         }
 
@@ -841,13 +841,13 @@ namespace Test
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(2, proteinGroups.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(2));
             var proteinGroup1 = proteinGroups.Where(h => h.ProteinGroupName == "1").First();
-            Assert.AreEqual(1, proteinGroup1.UniquePeptides.Count);
-            Assert.AreEqual(1, proteinGroup1.AllPeptides.Count);
+            Assert.That(proteinGroup1.UniquePeptides.Count, Is.EqualTo(1));
+            Assert.That(proteinGroup1.AllPeptides.Count, Is.EqualTo(1));
             var proteinGroup2 = proteinGroups.Where(h => h.ProteinGroupName == "4").First();
-            Assert.AreEqual(0, proteinGroup2.UniquePeptides.Count);
-            Assert.AreEqual(2, proteinGroup2.AllPeptides.Count);
+            Assert.That(proteinGroup2.UniquePeptides.Count, Is.EqualTo(0));
+            Assert.That(proteinGroup2.AllPeptides.Count, Is.EqualTo(2));
         }
 
         /// <summary>
@@ -914,9 +914,9 @@ namespace Test
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("1|2", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(8, proteinGroups.ElementAt(0).AllPeptides.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("1|2"));
+            Assert.That(proteinGroups.ElementAt(0).AllPeptides.Count, Is.EqualTo(8));
         }
 
         /// <summary>
@@ -984,9 +984,9 @@ namespace Test
             var results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
             List<ProteinGroup> proteinGroups = results.SortedAndScoredProteinGroups;
-            Assert.AreEqual(1, proteinGroups.Count);
-            Assert.AreEqual("2", proteinGroups.ElementAt(0).ProteinGroupName);
-            Assert.AreEqual(2, proteinGroups.ElementAt(0).AllPeptides.Count);
+            Assert.That(proteinGroups.Count, Is.EqualTo(1));
+            Assert.That(proteinGroups.ElementAt(0).ProteinGroupName, Is.EqualTo("2"));
+            Assert.That(proteinGroups.ElementAt(0).AllPeptides.Count, Is.EqualTo(2));
         }
 
         /// <summary>
@@ -1047,16 +1047,16 @@ namespace Test
             //	8	d	12	tryp	3	2	0.666666667
             //	9	t	11	tryp	4	2	0.666666667
 
-            Assert.AreEqual(0.00, Math.Round(psms[0].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[1].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[2].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[3].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.50, Math.Round(psms[4].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.50, Math.Round(psms[5].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.00, Math.Round(psms[6].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.33, Math.Round(psms[7].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.67, Math.Round(psms[8].FdrInfo.QValue, 2));
-            Assert.AreEqual(0.67, Math.Round(psms[9].FdrInfo.QValue, 2));
+            Assert.That(Math.Round(psms[0].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[1].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[2].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[3].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[4].FdrInfo.QValue, 2), Is.EqualTo(0.50));
+            Assert.That(Math.Round(psms[5].FdrInfo.QValue, 2), Is.EqualTo(0.50));
+            Assert.That(Math.Round(psms[6].FdrInfo.QValue, 2), Is.EqualTo(0.00));
+            Assert.That(Math.Round(psms[7].FdrInfo.QValue, 2), Is.EqualTo(0.33));
+            Assert.That(Math.Round(psms[8].FdrInfo.QValue, 2), Is.EqualTo(0.67));
+            Assert.That(Math.Round(psms[9].FdrInfo.QValue, 2), Is.EqualTo(0.67));
 
         }
     }

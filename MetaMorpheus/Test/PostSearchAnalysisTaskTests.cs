@@ -2,7 +2,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 
 namespace Test
 {
@@ -27,29 +27,29 @@ namespace Test
             // The new PEP calculation method improves things, so all these numbers are increasing as of (7/17/24)
             // There is a discrepancy between the number of All target peptides and individual file target peptides, 
             // presumably due to the way protein inference is performed.
-            Assert.AreEqual("All target PSMs with q-value <= 0.01: 428", allResults[10]);
-            Assert.AreEqual("All target peptides with q-value <= 0.01: 174", allResults[11]);
-            Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 165", allResults[12]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target PSMs with q-value <= 0.01: 214", allResults[14]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target peptides with q-value <= 0.01: 174", allResults[15]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165", allResults[16]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214", allResults[18]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174", allResults[19]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165", allResults[20]);
+            Assert.That(allResults[10], Is.EqualTo("All target PSMs with q-value <= 0.01: 428"));
+            Assert.That(allResults[11], Is.EqualTo("All target peptides with q-value <= 0.01: 174"));
+            Assert.That(allResults[12], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 165"));
+            Assert.That(allResults[14], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with q-value <= 0.01: 214"));
+            Assert.That(allResults[15], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with q-value <= 0.01: 174"));
+            Assert.That(allResults[16], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165"));
+            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214"));
+            Assert.That(allResults[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174"));
+            Assert.That(allResults[20], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165"));
 
 
             string resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             string[] results = File.ReadAllLines(resultsFile);
 
-            Assert.AreEqual("All target PSMs with q-value <= 0.01: 428", results[5]);
-            Assert.AreEqual("All target peptides with q-value <= 0.01: 174", results[6]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target PSMs with q-value <= 0.01: 214", results[9]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target peptides with q-value <= 0.01: 174", results[10]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165", results[11]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214", results[13]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174", results[14]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165", results[15]);
-            
+            Assert.That(results[5], Is.EqualTo("All target PSMs with q-value <= 0.01: 428"));
+            Assert.That(results[6], Is.EqualTo("All target peptides with q-value <= 0.01: 174"));
+            Assert.That(results[9], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with q-value <= 0.01: 214"));
+            Assert.That(results[10], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with q-value <= 0.01: 174"));
+            Assert.That(results[11], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 165"));
+            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with q-value <= 0.01: 214"));
+            Assert.That(results[14], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with q-value <= 0.01: 174"));
+            Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 165"));
+
             // Search TaGe_SA_A549_3_snip_2 by itself. The results from this should be identical to the file specific results above
             // TaGe_SA_A549_3_snip_2 is searched twice. First with two files being searched simultaneously, then with TaGe_SA_A549_3_snip_2 by itself
             // This allows us to compare the file specific results produced by in the two file search to the output
@@ -65,9 +65,9 @@ namespace Test
 
             resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             string[] singleFileResults = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("All target PSMs with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms, singleFileResults[5]);
-            Assert.AreEqual("All target peptides with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPeptides, singleFileResults[6]);
-            Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 165", singleFileResults[7]);
+            Assert.That(singleFileResults[5], Is.EqualTo("All target PSMs with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPsms));
+            Assert.That(singleFileResults[6], Is.EqualTo("All target peptides with q-value <= 0.01: " + TaGe_SA_A549_3_snip_2ExpectedPeptides));
+            Assert.That(singleFileResults[7], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 165"));
         }
 
         [Test]
@@ -78,27 +78,60 @@ namespace Test
             string outputFolder = testCase.OutputDirectory;
             var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
             var allResults = File.ReadAllLines(allResultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value <= 0.01: 382", allResults[10]);
-            Assert.AreEqual("All target peptides with pep q-value <= 0.01: 153", allResults[11]);
-            Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 140", allResults[12]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 190", allResults[14]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 153", allResults[15]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 140", allResults[16]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 190", allResults[18]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 153", allResults[19]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 140", allResults[20]);
+            Assert.That(allResults[10], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 382"));
+            Assert.That(allResults[11], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(allResults[12], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 140"));
+            Assert.That(allResults[14], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 190"));
+            Assert.That(allResults[15], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(allResults[16], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 140"));
+            Assert.That(allResults[18], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 190"));
+            Assert.That(allResults[19], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(allResults[20], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 140"));
 
             var resultsFile = Path.Combine(outputFolder, @"postSearchAnalysisTaskTestOutput\results.txt");
             var results = File.ReadAllLines(resultsFile);
-            Assert.AreEqual("All target PSMs with pep q-value <= 0.01: 382", results[5]);
-            Assert.AreEqual("All target peptides with pep q-value <= 0.01: 153", results[6]);
-            Assert.AreEqual("All target protein groups with q-value <= 0.01 (1% FDR): 140", results[7]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 190", results[9]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 153", results[10]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 140", results[11]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 190", results[13]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 153", results[14]);
-            Assert.AreEqual("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 140", results[15]);
+            Assert.That(results[5], Is.EqualTo("All target PSMs with pep q-value <= 0.01: 382"));
+            Assert.That(results[6], Is.EqualTo("All target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(results[7], Is.EqualTo("All target protein groups with q-value <= 0.01 (1% FDR): 140"));
+            Assert.That(results[9], Is.EqualTo("TaGe_SA_A549_3_snip - Target PSMs with pep q-value <= 0.01: 190"));
+            Assert.That(results[10], Is.EqualTo("TaGe_SA_A549_3_snip - Target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(results[11], Is.EqualTo("TaGe_SA_A549_3_snip - Target protein groups within 1 % FDR: 140"));
+            Assert.That(results[13], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target PSMs with pep q-value <= 0.01: 190"));
+            Assert.That(results[14], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target peptides with pep q-value <= 0.01: 153"));
+            Assert.That(results[15], Is.EqualTo("TaGe_SA_A549_3_snip_2 - Target protein groups within 1 % FDR: 140"));
+        }
+
+        [Test]
+        public static void PepAnalysisEngineHasReproducibleOutput()
+        {
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpPepQValue, out var testCase);
+            string outputFolderPepQ = testCase.OutputDirectory;
+            var resultsFilePepQ = Path.Combine(outputFolderPepQ, @"postSearchAnalysisTaskTestOutput\results.txt");
+            string[] resultsPepQ = File.ReadAllLines(resultsFilePepQ);
+
+            //First test that AllResults and Results display correct numbers of peptides and psms with q-value filter on
+            EverythingRunnerEngineTestCase.TryGetTestCase(EverythingRunnerEngineTestCases.BottomUpQValue, out testCase);
+            string outputFolderQ = testCase.OutputDirectory;
+            string resultsFileQ = Path.Combine(outputFolderQ, @"postSearchAnalysisTaskTestOutput\results.txt");
+            string[] resultsQ = File.ReadAllLines(resultsFileQ);
+
+            // The Q-Value test case and the PEP-Q value test case represent the same data ran twice
+            // These assert staments compare the outputs of the PepAnalysisEngine for each test case
+            // They should be identical!!! If they aren't, then PEP is not reproducible for some reason
+            Assert.That(resultsPepQ[37], Is.EqualTo(resultsQ[37]));
+            Assert.That(resultsPepQ[38], Is.EqualTo(resultsQ[38]));
+            Assert.That(resultsPepQ[39], Is.EqualTo(resultsQ[39]));
+            Assert.That(resultsPepQ[40], Is.EqualTo(resultsQ[40]));
+            Assert.That(resultsPepQ[41], Is.EqualTo(resultsQ[41]));
+            Assert.That(resultsPepQ[42], Is.EqualTo(resultsQ[42]));
+            Assert.That(resultsPepQ[43], Is.EqualTo(resultsQ[43]));
+            Assert.That(resultsPepQ[44], Is.EqualTo(resultsQ[44]));
+            Assert.That(resultsPepQ[45], Is.EqualTo(resultsQ[45]));
+            Assert.That(resultsPepQ[46], Is.EqualTo(resultsQ[46]));
+            Assert.That(resultsPepQ[47], Is.EqualTo(resultsQ[47]));
+            Assert.That(resultsPepQ[48], Is.EqualTo(resultsQ[48]));
+            Assert.That(resultsPepQ[49], Is.EqualTo(resultsQ[49]));
+            Assert.That(resultsPepQ[50], Is.EqualTo(resultsQ[50]));
         }
 
         /// <summary>
@@ -110,7 +143,7 @@ namespace Test
         {
             var testCase = EverythingRunnerEngineTestCase.GetTestCase(testCaseIdentifier);
 
-            int expectedIndividualFileLines = testCase.DataFileList.Count == 1 || !testCase.WriteIndividualResults 
+            int expectedIndividualFileLines = testCase.DataFileList.Count == 1 || !testCase.WriteIndividualResults
                 ? 0 : testCase.DataFileList.Count;
             int expectedSummaryLines = 1;
             var allResultTxtLines = File.ReadAllLines(Path.Combine(testCase.OutputDirectory, @"allResults.txt"));
@@ -118,8 +151,8 @@ namespace Test
             var summaryPsmLines = allResultTxtLines.Where(p => p.Contains("All target PSMs")).ToArray();
             var individualPsmLines = allResultTxtLines.Where(p => p.Contains("Target PSMs")
                                                                   && !p.Contains("All")).ToArray();
-            Assert.AreEqual(expectedSummaryLines, summaryPsmLines.Length);
-            Assert.AreEqual(expectedIndividualFileLines, individualPsmLines.Length);
+            Assert.That(summaryPsmLines.Length, Is.EqualTo(expectedSummaryLines));
+            Assert.That(individualPsmLines.Length, Is.EqualTo(expectedIndividualFileLines));
 
             if (testCase.IsTopDown)
             {
@@ -127,23 +160,23 @@ namespace Test
                     allResultTxtLines.Where(p => p.Contains("All target proteoforms")).ToArray();
                 var individualProteoformLines = allResultTxtLines.Where(p => p.Contains("Target proteoforms")
                                                                              && !p.Contains("All")).ToArray();
-                Assert.AreEqual(expectedSummaryLines, summaryProteoformLines.Length);
-                Assert.AreEqual(expectedIndividualFileLines, individualProteoformLines.Length);
+                Assert.That(summaryProteoformLines.Length, Is.EqualTo(expectedSummaryLines));
+                Assert.That(individualProteoformLines.Length, Is.EqualTo(expectedIndividualFileLines));
             }
             else
             {
                 var summaryPeptideLines = allResultTxtLines.Where(p => p.Contains("All target peptides")).ToArray();
                 var individualPeptideLines = allResultTxtLines.Where(p => p.Contains("Target peptides")
                                                                           && !p.Contains("All")).ToArray();
-                Assert.AreEqual(expectedSummaryLines, summaryPeptideLines.Length);
-                Assert.AreEqual(expectedIndividualFileLines, individualPeptideLines.Length);
+                Assert.That(summaryPeptideLines.Length, Is.EqualTo(expectedSummaryLines));
+                Assert.That(individualPeptideLines.Length, Is.EqualTo(expectedIndividualFileLines));
             }
 
             var summaryProteinLines = allResultTxtLines.Where(p => p.Contains("All target protein groups")).ToArray();
             var individualProteinLines = allResultTxtLines.Where(p => p.Contains("Target protein groups")
                                                                       && !p.Contains("All")).ToArray();
-            Assert.AreEqual(expectedSummaryLines, summaryProteinLines.Length);
-            Assert.AreEqual(expectedIndividualFileLines, individualProteinLines.Length);
+            Assert.That(summaryProteinLines.Length, Is.EqualTo(expectedSummaryLines));
+            Assert.That(individualProteinLines.Length, Is.EqualTo(expectedIndividualFileLines));
         }
 
         /// <summary>
@@ -166,44 +199,44 @@ namespace Test
             var expectedResultFileCount = testCase.WriteIndividualResults && testCase.DataFileList.Count > 1
                 ? testCase.DataFileList.Count + 1 : 1;
 
-            Assert.AreEqual(expectedResultFileCount, psmFiles.Length);
-            Assert.AreEqual(expectedResultFileCount, proteinGroupFiles.Length);
+            Assert.That(psmFiles.Length, Is.EqualTo(expectedResultFileCount));
+            Assert.That(proteinGroupFiles.Length, Is.EqualTo(expectedResultFileCount));
             if (testCase.IsTopDown)
             {
-                Assert.AreEqual(expectedResultFileCount, proteoformFiles.Length);
-                Assert.AreEqual(0, peptideFiles.Length);
+                Assert.That(proteoformFiles.Length, Is.EqualTo(expectedResultFileCount));
+                Assert.That(peptideFiles.Length, Is.EqualTo(0));
             }
             else
             {
-                Assert.AreEqual(expectedResultFileCount, peptideFiles.Length);
-                Assert.AreEqual(0, proteoformFiles.Length);
+                Assert.That(peptideFiles.Length, Is.EqualTo(expectedResultFileCount));
+                Assert.That(proteoformFiles.Length, Is.EqualTo(0));
             }
 
             if (testCase.WritePepXml)
             {
-                Assert.AreEqual(spectraFileCount, pepXmlFiles.Length);
+                Assert.That(pepXmlFiles.Length, Is.EqualTo(spectraFileCount));
             }
             else
             {
-                Assert.AreEqual(0, pepXmlFiles.Length);
+                Assert.That(pepXmlFiles.Length, Is.EqualTo(0));
             }
 
             if (testCase.WriteIndividualResults)
             {
-                Assert.AreEqual(expectedResultFileCount, percolatorFiles.Length);
+                Assert.That(percolatorFiles.Length, Is.EqualTo(expectedResultFileCount));
             }
             else
             {
-                Assert.AreEqual(1, percolatorFiles.Length);
+                Assert.That(percolatorFiles.Length, Is.EqualTo(1));
             }
 
             if (testCase.WriteMzId)
             {
-                Assert.AreEqual(spectraFileCount, mzidFiles.Length);
+                Assert.That(mzidFiles.Length, Is.EqualTo(spectraFileCount));
             }
             else
             {
-                Assert.AreEqual(0, mzidFiles.Length);
+                Assert.That(mzidFiles.Length, Is.EqualTo(0));
             }
         }
     }
