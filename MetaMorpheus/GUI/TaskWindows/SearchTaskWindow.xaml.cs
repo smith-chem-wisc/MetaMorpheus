@@ -306,6 +306,7 @@ namespace MetaMorpheusGUI
             NumberOfWindowsTextBox.Text = task.CommonParameters.NumberOfWindows == int.MaxValue || !task.CommonParameters.NumberOfWindows.HasValue ? "" : task.CommonParameters.NumberOfWindows.Value.ToString(CultureInfo.InvariantCulture);
             NormalizePeaksInWindowCheckBox.IsChecked = task.CommonParameters.NormalizePeaksAccrossAllWindows;
 
+            PrunedDatabaseEvidenceTextBox.Text = task.SearchParameters.EvidenceRequiredToWriteLocalizedMod.ToString(CultureInfo.InvariantCulture);
             MaxThreadsTextBox.Text = task.CommonParameters.MaxThreadsToUsePerFile.ToString(CultureInfo.InvariantCulture);
             MinVariantDepthTextBox.Text = task.CommonParameters.MinVariantDepth.ToString(CultureInfo.InvariantCulture);
             MaxHeterozygousVariantsTextBox.Text = task.CommonParameters.MaxHeterozygousVariants.ToString(CultureInfo.InvariantCulture);
@@ -650,6 +651,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.UpdateSpectralLibrary = UpdateSpectralLibraryCheckBox.IsChecked.Value;
             TheTask.SearchParameters.CompressIndividualFiles = CompressIndividualResultsCheckBox.IsChecked.Value;
             TheTask.SearchParameters.IncludeModMotifInMzid = IncludeMotifInModNamesCheckBox.IsChecked.Value;
+            TheTask.SearchParameters.EvidenceRequiredToWriteLocalizedMod = PrunedDatabaseEvidenceTextBox.Text.Equals("") ? 1 : uint.Parse(PrunedDatabaseEvidenceTextBox.Text, CultureInfo.InvariantCulture);
 
             if (RemoveContaminantRadioBox.IsChecked.Value)
             {

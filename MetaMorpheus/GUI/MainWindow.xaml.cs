@@ -73,6 +73,8 @@ namespace MetaMorpheusGUI
             MetaMorpheusEngine.OutLabelStatusHandler += NewoutLabelStatus;
             MetaMorpheusEngine.WarnHandler += NotificationHandler;
 
+            PrunedDatabaseWriter.FinishedWritingFileHandler += FinishedWritingFile;
+
             MyFileManager.WarnHandler += NotificationHandler;
             Application.Current.MainWindow.Closing += new CancelEventHandler(MainWindow_Closing);
         }
