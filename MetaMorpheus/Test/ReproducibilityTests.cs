@@ -5,9 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MathNet.Numerics.Statistics;
 using Nett;
 using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -22,23 +24,26 @@ namespace Test
     {
         public static Array GetTestCases() => Enum.GetValues(typeof(EverythingRunnerEngineTestCases));
 
-        //public static async Task DrainResources(CancellationToken cancellationToken)
-        //{
-        //await Task.Run(() =>
-        //{
-        //    while(!cancellationToken.IsCancellationRequested)
-        //    {
-        //        // Tie up the CPU
-        //        int[] unsortedArray = new int[1000000];
-        //        Random random = new Random();
-        //        for (int i = 0; i < unsortedArray.Length; i++)
-        //        {
-        //            unsortedArray[i] = random.Next(0, 1000000);
-        //        }
-        //        Array.Sort(unsortedArray);
-        //    }
-        //});
-        //}
+        public static async Task DrainResources(CancellationToken cancellationToken)
+        {
+            Task.Run(() =>
+            {
+                while (!cancellationToken.IsCancellationRequested)
+                {
+                    // Tie up the CPU
+                    double[] unsortedArray = new double[1000000];
+                    Random random = new Random();
+                    for (int i = 0; i < unsortedArray.Length; i++)
+                    {
+                        unsortedArray[i] = random.NextDouble();
+                    }
+                    Thread.Sleep((int)(random.NextDouble()*1000));
+                    if (random.NextDouble() > 0.99)
+                        Console.WriteLine(unsortedArray[0]);
+                    Array.Sort(unsortedArray);
+                }
+            }, cancellationToken);
+        }
 
         //[Test]
         //public static void ReproducibilityTest()
@@ -47,6 +52,86 @@ namespace Test
         //    string outputFolder = testCase.OutputDirectory;
         //    var allResultsFile = Path.Combine(outputFolder, "allResults.txt");
         //}
+
+        [Test]
+        public static void LocalCalTest()
+        {
+            string vignetteFilePath = @"D:\MetaMorpheusVignette\04-30-13_CAST_Frac5_4uL.raw";
+            string outputFolder = @"D:\MetaMorpheusVignette\CalibrationUnitTest";
+            string dbPath = @"D:\MetaMorpheusVignette\uniprot-mouse-reviewed-1-24-2018.xml.gz";
+            string contamPath = @"D:\MetaMorpheusVignette\uniprot-cRAP-1-24-2018.xml.gz";
+
+            CalibrationTask calibrationTask = new();
+            //calibrationTask.RunTask(outputFolder,
+            //    new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(contamPath, true) },
+            //    new List<string> { vignetteFilePath },
+            //    "test1");
+
+            //CancellationTokenSource cts = new();
+            //var token = cts.Token;
+            //List<Task> resourceDrainers = new();
+            //for (int i = 0; i < 22; i++)
+            //{
+            //    Task drain = DrainResources(token);
+            //    resourceDrainers.Add(drain);
+            //}
+
+            outputFolder = @"D:\MetaMorpheusVignette\CalibrationUnitTestAsync";
+            if(Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+            Directory.CreateDirectory(outputFolder);
+            CalibrationTask calTask2 = new();
+            calTask2.CommonParameters.MaxThreadsToUsePerFile = 5;
+            calTask2.RunTask(outputFolder,
+                new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(contamPath, true) },
+                new List<string> { vignetteFilePath },
+                "test2_async");
+            //cts.Cancel();   
+        }
+
+        [Test]
+        public static void FileEquivalencyTest()
+        {
+            // Read in two mzmls, and go through every spectra point by point to make sure they are the same
+            var reader = MsDataFileReader.GetDataFile(@"D:\MetaMorpheusVignette\CalibrationUnitTest\04-30-13_CAST_Frac5_4uL.mzML");
+            reader.LoadAllStaticData();
+
+            var reader2 = MsDataFileReader.GetDataFile(@"D:\MetaMorpheusVignette\CalibrationUnitTestAsync\04-30-13_CAST_Frac5_4uL.mzML");
+            reader2.LoadAllStaticData();
+
+            List<double> mzDiscrepancies = new();
+            List<double> intensityDiscrepancies = new();
+
+            for (int i = 0; i < reader.Scans.Length; i++)
+            {
+                var spectrum1 = reader.Scans[i].MassSpectrum;
+                var spectrum2 = reader2.Scans[i].MassSpectrum;
+
+                if (spectrum1.Size != spectrum2.Size) Console.WriteLine("Spectra are unequal length. One based scan index: " + i);
+
+                for (int j = 0; j < spectrum1.Size; j++)
+                {
+                    if (spectrum1.XArray[j] != spectrum2.XArray[j])
+                    {
+                        mzDiscrepancies.Add(Math.Abs(spectrum1.XArray[j] - spectrum2.XArray[j]));
+                    }
+                    if (spectrum1.YArray[j] != spectrum2.YArray[j])
+                    {
+                        intensityDiscrepancies.Add(Math.Abs(spectrum1.YArray[j] - spectrum2.YArray[j]));
+                    }
+                }
+            }
+
+            Console.WriteLine("No. unequal mz values: " + mzDiscrepancies.Count);
+            Console.WriteLine("No. unequal intensity values: " + intensityDiscrepancies.Count);
+            Console.WriteLine("Average mz discrepancy" + mzDiscrepancies.Mean());
+            if (intensityDiscrepancies.Any())
+                Console.WriteLine("Average intensity discrepancy" + intensityDiscrepancies.Mean());
+            if(mzDiscrepancies.Any())
+                Console.WriteLine("Maximum mz discrepancy" + mzDiscrepancies.Max());
+            if(intensityDiscrepancies.Any())
+                Console.WriteLine("Maximum intensity discrepancy" + intensityDiscrepancies.Max());
+        }
 
         [Test]
         public static void PeptideIntersectTest()
