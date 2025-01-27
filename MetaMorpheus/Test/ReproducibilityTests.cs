@@ -67,14 +67,14 @@ namespace Test
             //    new List<string> { vignetteFilePath },
             //    "test1");
 
-            //CancellationTokenSource cts = new();
-            //var token = cts.Token;
-            //List<Task> resourceDrainers = new();
-            //for (int i = 0; i < 22; i++)
-            //{
-            //    Task drain = DrainResources(token);
-            //    resourceDrainers.Add(drain);
-            //}
+            CancellationTokenSource cts = new();
+            var token = cts.Token;
+            List<Task> resourceDrainers = new();
+            for (int i = 0; i < 22; i++)
+            {
+                Task drain = DrainResources(token);
+                resourceDrainers.Add(drain);
+            }
 
             outputFolder = @"D:\MetaMorpheusVignette\CalibrationUnitTestAsync";
             if(Directory.Exists(outputFolder))

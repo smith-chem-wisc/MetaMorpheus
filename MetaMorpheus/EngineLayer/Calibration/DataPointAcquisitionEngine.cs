@@ -59,9 +59,6 @@ namespace EngineLayer.Calibration
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
             Parallel.ForEach(threads, (matchIndex) =>
             {
-                object lockObj = new object();
-                object lockObj2 = new object();
-
                 //foreach psm
                 for (; matchIndex < GoodIdentifications.Count; matchIndex += maxThreadsPerFile)
                 {
