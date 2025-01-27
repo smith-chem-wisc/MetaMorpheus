@@ -159,20 +159,7 @@
                             </Style>
                         </Expander.Style>
                         <StackPanel>
-                            <GroupBox Header="File Load Parameters">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <StackPanel Margin="5">
-                                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor"/>
-                                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Grid>
-                            </GroupBox>
+                            <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
                                     <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks"/>
