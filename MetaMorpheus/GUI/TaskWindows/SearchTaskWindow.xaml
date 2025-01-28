@@ -1172,10 +1172,10 @@
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
                                     <CheckBox x:Name="WriteDigestCountCheckBox" Margin="20 0 0 0" 
-                                              Content="Write digestion product count histogram" >
+                                              Content="Write digestion product count histogram" IsEnabled="{Binding IsChecked, ElementName=ClassicSearchRadioButton}">
                                         <ToolTipService.ToolTip>
                                             <TextBlock>
-                                                Checking this box will append the modification motif onto modification names in the .mzID output, e.g. "Carbamidomethylation on C"
+                                                Checking this box will create an additional output file with a histogram of the number of digestion products per protein.
                                             </TextBlock>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
