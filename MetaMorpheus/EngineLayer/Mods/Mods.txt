@@ -89,14 +89,6 @@ NL   HCD:43.0058
 CF   H-1 N-1 O1
 DR   Unimod; 7.
 //
-ID   Allysine
-TG   K
-PA   Amino acid side chain.
-PP   Anywhere.
-MT   Common Biological
-CF   H-3 N-1 O1
-DR   Unimod; 352.
-//
 ID   HexNAc
 TG   Nxs or Nxt
 PP   Anywhere.

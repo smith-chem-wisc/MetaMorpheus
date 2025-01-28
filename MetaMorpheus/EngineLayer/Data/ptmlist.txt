@@ -1738,6 +1738,20 @@ TR   Eukaryota; taxId:9258 (Ornithorhynchus anatinus).
 DR   RESID; AA0515.
 DR   PSI-MOD; MOD:01618.
 //
+ID   Allysine
+AC   PTM-0059
+FT   MOD_RES
+TG   Lysine.
+PA   Amino acid side chain.
+PP   Anywhere.
+CF   H-3 N-1 O1
+MM   -1.031634
+MA   -1.03
+LC   Extracellular and lumenal localisation.
+TR   Eukaryota; taxId:6052 (Ephydatia muelleri), taxId:7742 (Vertebrata).
+DR   RESID; AA0121.
+DR   PSI-MOD; MOD:00130.
+//
 ID   Aminomalonic acid (Ser)
 AC   PTM-0321
 FT   MOD_RES
