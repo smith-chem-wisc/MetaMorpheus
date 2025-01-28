@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using Nett;
+using System.Collections.Generic;
+using System.Numerics;
 
 namespace EngineLayer;
 
@@ -22,6 +24,27 @@ public static class DictionaryExtensions
         else
         {
             dictionary.Add(key, new List<TValues> { value });
+        }
+    }
+
+    /// <summary>
+    /// Increments the value associated with the specified key in the dictionary.
+    /// If the key does not exist, a new entry is created with the value set to one.
+    /// </summary>
+    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+    /// <typeparam name="TValue">The type of the values in the dictionary, which must implement <see cref="INumber{TValue}"/>.</typeparam>
+    /// <param name="dictionary">The dictionary to operate on.</param>
+    /// <param name="key">The key whose value to increment or create.</param>
+    public static void Increment<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
+        where TValue : INumber<TValue>
+    {
+        if (dictionary.TryGetValue(key, out TValue value))
+        {
+            dictionary[key] = value + TValue.One;
+        }
+        else
+        {
+            dictionary.Add(key, TValue.One);
         }
     }
 }

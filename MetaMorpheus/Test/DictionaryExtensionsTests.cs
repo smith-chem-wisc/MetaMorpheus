@@ -68,5 +68,68 @@ namespace Test
             // Assert
             Assert.That(dictionary["key1"], Is.EquivalentTo(new List<int> { 1, 2, 3 }));
         }
+
+        [Test]
+        public void Increment_IncrementsExistingKey()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, int>
+            {
+                { "key1", 1 }
+            };
+
+            // Act
+            dictionary.Increment("key1");
+
+            // Assert
+            Assert.That(dictionary["key1"], Is.EqualTo(2));
+        }
+
+        [Test]
+        public void Increment_AddsNewKeyWithInitialValue()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, int>();
+
+            // Act
+            dictionary.Increment("key1");
+
+            // Assert
+            Assert.That(dictionary.ContainsKey("key1"));
+            Assert.That(dictionary["key1"], Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Increment_IncrementsMultipleTimes()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, int>
+            {
+                { "key1", 1 }
+            };
+
+            // Act
+            dictionary.Increment("key1");
+            dictionary.Increment("key1");
+            dictionary.Increment("key1");
+
+            // Assert
+            Assert.That(dictionary["key1"], Is.EqualTo(4));
+        }
+
+        [Test]
+        public void Increment_AddsAndIncrementsNewKey()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, int>();
+
+            // Act
+            dictionary.Increment("key1");
+            dictionary.Increment("key1");
+
+            // Assert
+            Assert.That(dictionary.ContainsKey("key1"));
+            Assert.That(dictionary["key1"], Is.EqualTo(2));
+        }
     }
 }
