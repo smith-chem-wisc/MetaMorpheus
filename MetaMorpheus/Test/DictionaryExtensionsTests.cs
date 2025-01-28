@@ -131,5 +131,46 @@ namespace Test
             Assert.That(dictionary.ContainsKey("key1"));
             Assert.That(dictionary["key1"], Is.EqualTo(2));
         }
+        [Test]
+        public void IsNullOrEmpty_ReturnsTrueForNullDictionary()
+        {
+            // Arrange
+            Dictionary<string, int> dictionary = null;
+
+            // Act
+            var result = dictionary.IsNullOrEmpty();
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void IsNullOrEmpty_ReturnsTrueForEmptyDictionary()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, int>();
+
+            // Act
+            var result = dictionary.IsNullOrEmpty();
+
+            // Assert
+            Assert.That(result, Is.True);
+        }
+
+        [Test]
+        public void IsNullOrEmpty_ReturnsFalseForNonEmptyDictionary()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, int>
+            {
+                { "key1", 1 }
+            };
+
+            // Act
+            var result = dictionary.IsNullOrEmpty();
+
+            // Assert
+            Assert.That(result, Is.False);
+        }
     }
 }
