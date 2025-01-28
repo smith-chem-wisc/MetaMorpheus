@@ -1171,6 +1171,14 @@
                                             </TextBlock>
                                         </ToolTipService.ToolTip>
                                     </CheckBox>
+                                    <CheckBox x:Name="WriteDigestCountCheckBox" Margin="20 0 0 0" 
+                                              Content="Write digestion product count histogram" >
+                                        <ToolTipService.ToolTip>
+                                            <TextBlock>
+                                                Checking this box will append the modification motif onto modification names in the .mzID output, e.g. "Carbamidomethylation on C"
+                                            </TextBlock>
+                                        </ToolTipService.ToolTip>
+                                    </CheckBox>
                                 </StackPanel>
                             </Expander>
                         </GroupBox>
