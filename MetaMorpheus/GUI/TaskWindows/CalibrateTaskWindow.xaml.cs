@@ -399,8 +399,7 @@ namespace MetaMorpheusGUI
                             //uncheck all variable mods
                             DeconHostViewModel.UseProvidedPrecursors = false;
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
-                            DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
-                            DeconHostViewModel.SetAllProductMaxChargeState(20);
+                            DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 60;
                             TrimMsMs.IsChecked = false;
 
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
