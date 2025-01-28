@@ -28,6 +28,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<ModTypeForLoc> LocalizeModTypeForTreeViewObservableCollection = new ObservableCollection<ModTypeForLoc>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
+        private DeconHostViewModel DeconHostViewModel;
 
         public CalibrateTaskWindow(CalibrationTask myCalibrateTask)
         {
@@ -38,6 +39,7 @@ namespace MetaMorpheusGUI
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             if (myCalibrateTask == null)
             {
@@ -51,6 +53,9 @@ namespace MetaMorpheusGUI
 
         private void UpdateFieldsFromTask(CalibrationTask task)
         {
+            DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
+                TheTask.CommonParameters.ProductDeconvolutionParameters,
+                TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
             ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.Protease; //protease needs to come first or recommended settings can overwrite the actual settings
             MissedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
             MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
@@ -255,6 +260,10 @@ namespace MetaMorpheusGUI
             }
 
             bool parseMaxThreadsPerFile = int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) <= Environment.ProcessorCount && int.Parse(MaxThreadsTextBox.Text, CultureInfo.InvariantCulture) > 0;
+            DeconvolutionParameters precursorDeconvolutionParameters = DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
+            DeconvolutionParameters productDeconvolutionParameters = DeconHostViewModel.ProductDeconvolutionParameters.Parameters;
+            bool useProvidedPrecursorInfo = DeconHostViewModel.UseProvidedPrecursors;
+            bool doPrecursorDeconvolution = DeconHostViewModel.DoPrecursorDeconvolution;
 
             //the below parameters are optimized for top-down but do not exist in the GUI as of Nov. 13, 2019
             if (((Protease)ProteaseComboBox.SelectedItem).Name.Contains("top-down"))
@@ -272,9 +281,11 @@ namespace MetaMorpheusGUI
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     minVariantDepth: minVariantDepth,
                     maxHeterozygousVariants: maxHeterozygousVariants,
-                    useProvidedPrecursorInfo: false, //Updated
-                    deconvolutionMaxAssumedChargeState: 60, //Updated
-                    trimMsMsPeaks: false); //Updated
+                    trimMsMsPeaks: false,
+                    doPrecursorDeconvolution: doPrecursorDeconvolution,
+                    precursorDeconParams: precursorDeconvolutionParameters,
+                    productDeconParams: productDeconvolutionParameters,
+                    useProvidedPrecursorInfo: useProvidedPrecursorInfo); 
                 TheTask.CommonParameters = commonParamsToSave;
             }
             else //bottom-up
@@ -291,7 +302,11 @@ namespace MetaMorpheusGUI
                     precursorMassTolerance: precursorMassTolerance,
                     assumeOrphanPeaksAreZ1Fragments: protease.Name != "top-down",
                     minVariantDepth: minVariantDepth,
-                    maxHeterozygousVariants: maxHeterozygousVariants);
+                    maxHeterozygousVariants: maxHeterozygousVariants,
+                    useProvidedPrecursorInfo: useProvidedPrecursorInfo,
+                    doPrecursorDeconvolution: doPrecursorDeconvolution,
+                    precursorDeconParams: precursorDeconvolutionParameters,
+                    productDeconParams: productDeconvolutionParameters);
                 TheTask.CommonParameters = commonParamsToSave;
             }
 
@@ -381,6 +396,12 @@ namespace MetaMorpheusGUI
                         {
                             //many variables are not present in the calibrate task gui, but we modify them when saving
                             //uncheck all variable mods
+                            DeconHostViewModel.UseProvidedPrecursors = false;
+                            DeconHostViewModel.DoPrecursorDeconvolution = true;
+                            DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
+                            DeconHostViewModel.SetAllProductMaxChargeState(20);
+                            TrimMsMs.IsChecked = false;
+
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
                             {
                                 mod.Use = false;
