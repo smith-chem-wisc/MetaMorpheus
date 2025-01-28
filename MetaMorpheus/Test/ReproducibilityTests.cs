@@ -54,53 +54,117 @@ namespace Test
         //}
 
         [Test]
-        public static void LocalCalTest()
+        public static void TinyTest()
         {
             string vignetteFilePath = @"D:\MetaMorpheusVignette\04-30-13_CAST_Frac5_4uL.raw";
             string outputFolder = @"D:\MetaMorpheusVignette\CalibrationUnitTest";
             string dbPath = @"D:\MetaMorpheusVignette\uniprot-mouse-reviewed-1-24-2018.xml.gz";
             string contamPath = @"D:\MetaMorpheusVignette\uniprot-cRAP-1-24-2018.xml.gz";
+            string myTomlPath = @"D:\MetaMorpheusVignette\Task2CalibrationTaskconfig.toml";
+            CalibrationTask calibrationTask = Toml.ReadFile<CalibrationTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
 
-            CalibrationTask calibrationTask = new();
-            //calibrationTask.RunTask(outputFolder,
-            //    new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(contamPath, true) },
-            //    new List<string> { vignetteFilePath },
-            //    "test1");
-
-            CancellationTokenSource cts = new();
-            var token = cts.Token;
-            List<Task> resourceDrainers = new();
-            for (int i = 0; i < 22; i++)
-            {
-                Task drain = DrainResources(token);
-                resourceDrainers.Add(drain);
-            }
-
-            outputFolder = @"D:\MetaMorpheusVignette\CalibrationUnitTestAsync";
-            if(Directory.Exists(outputFolder))
+            if (Directory.Exists(outputFolder))
                 Directory.Delete(outputFolder, true);
             Directory.CreateDirectory(outputFolder);
-            CalibrationTask calTask2 = new();
-            calTask2.CommonParameters.MaxThreadsToUsePerFile = 5;
-            calTask2.RunTask(outputFolder,
-                new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(contamPath, true) },
+            var everythingRunner = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("calibration", calibrationTask) },
                 new List<string> { vignetteFilePath },
-                "test2_async");
-            //cts.Cancel();   
+                new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(contamPath, true) },
+                outputFolder
+            );
+            everythingRunner.Run();
         }
 
         [Test]
-        public static void FileEquivalencyTest()
+        public static void LocalCalTest()
+        {
+
+            string vingetteDataPath = @"D:\MetaMorpheusVignette\04-30-13_CAST_Frac5_4uL.raw";
+            string vingetteDataPath2 = @"D:\MetaMorpheusVignette\04-30-13_CAST_Frac4_6uL.raw";
+            string outputFolder = @"D:\MetaMorpheusVignette\CalibrationUnitTest";
+            string dbPath = @"D:\MetaMorpheusVignette\uniprot-mouse-reviewed-1-24-2018.xml.gz";
+            string contamPath = @"D:\MetaMorpheusVignette\uniprot-cRAP-1-24-2018.xml.gz";
+            string myTomlPath = @"D:\MetaMorpheusVignette\Task2CalibrationTaskconfig.toml";
+            CalibrationTask calibrationTask = Toml.ReadFile<CalibrationTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
+            Directory.CreateDirectory(outputFolder);
+            var everythingRunner = new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("calibration", calibrationTask) },
+                new List<string> { vingetteDataPath, vingetteDataPath2 },
+                new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(contamPath, true) },
+                outputFolder
+            );
+            everythingRunner.Run();
+
+
+            List<double> mzDiscrepancies;
+            do
+            {
+                // Start resource drainers
+                CancellationTokenSource cts = new();
+                var token = cts.Token;
+                List<Task> resourceDrainers = new();
+                Random rand = new Random();
+                int numberOfDrainers = rand.Next(1, 22);
+                for (int i = 0; i < numberOfDrainers; i++)
+                {
+                    Task drain = DrainResources(token);
+                    resourceDrainers.Add(drain);
+                }
+
+                outputFolder = @"D:\MetaMorpheusVignette\CalibrationUnitTestAsync";
+                if (Directory.Exists(outputFolder))
+                    Directory.Delete(outputFolder, true);
+                Directory.CreateDirectory(outputFolder);
+                CalibrationTask calTask2 = Toml.ReadFile<CalibrationTask>(myTomlPath, MetaMorpheusTask.tomlConfig);
+                everythingRunner = new EverythingRunnerEngine(
+                    new List<(string, MetaMorpheusTask)> { ("calibration", calTask2) },
+                    new List<string> { vingetteDataPath, vingetteDataPath2 },
+                    new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(contamPath, true) },
+                    outputFolder
+                );
+                everythingRunner.Run();
+            }
+            while (TestIfCalibratedFilesAreEquivalent(out mzDiscrepancies));
+
+           
+            Console.WriteLine("No. unequal mz values: " + mzDiscrepancies.Count);
+
+            Console.WriteLine("Average mz discrepancy: " + mzDiscrepancies.Mean());
+
+            Console.WriteLine("Max mz Discrepancy: " + mzDiscrepancies.Max());
+            // Check the calibrated outputs for equality
+
+        }
+
+        [Test]
+        public static void ReadCalTest()
+        {
+            TestIfCalibratedFilesAreEquivalent(out var mzDiscrepancies);
+            Console.WriteLine("No. unequal mz values: " + mzDiscrepancies.Count);
+
+            Console.WriteLine("Average mz discrepancy: " + mzDiscrepancies.Mean());
+
+            Console.WriteLine("Max mz Discrepancy: " + mzDiscrepancies.Max());
+        }
+
+        /// <summary>
+        /// Returns true if the files are equivalent, false otherwise
+        /// </summary>
+        /// <param name="mzDiscrepancies"></param>
+        /// <returns></returns>
+        public static bool TestIfCalibratedFilesAreEquivalent(out List<double> mzDiscrepancies)
         {
             // Read in two mzmls, and go through every spectra point by point to make sure they are the same
-            var reader = MsDataFileReader.GetDataFile(@"D:\MetaMorpheusVignette\CalibrationUnitTest\04-30-13_CAST_Frac5_4uL.mzML");
+            var reader = MsDataFileReader.GetDataFile(@"D:\MetaMorpheusVignette\CalibrationUnitTest\calibration\04-30-13_CAST_Frac5_4uL-calib.mzML");
             reader.LoadAllStaticData();
 
-            var reader2 = MsDataFileReader.GetDataFile(@"D:\MetaMorpheusVignette\CalibrationUnitTestAsync\04-30-13_CAST_Frac5_4uL.mzML");
+            var reader2 = MsDataFileReader.GetDataFile(@"D:\MetaMorpheusVignette\CalibrationUnitTestAsync\calibration\04-30-13_CAST_Frac5_4uL-calib.mzML");
             reader2.LoadAllStaticData();
 
-            List<double> mzDiscrepancies = new();
-            List<double> intensityDiscrepancies = new();
+            mzDiscrepancies = new List<double>();
 
             for (int i = 0; i < reader.Scans.Length; i++)
             {
@@ -115,22 +179,19 @@ namespace Test
                     {
                         mzDiscrepancies.Add(Math.Abs(spectrum1.XArray[j] - spectrum2.XArray[j]));
                     }
-                    if (spectrum1.YArray[j] != spectrum2.YArray[j])
-                    {
-                        intensityDiscrepancies.Add(Math.Abs(spectrum1.YArray[j] - spectrum2.YArray[j]));
-                    }
                 }
             }
 
-            Console.WriteLine("No. unequal mz values: " + mzDiscrepancies.Count);
-            Console.WriteLine("No. unequal intensity values: " + intensityDiscrepancies.Count);
-            Console.WriteLine("Average mz discrepancy" + mzDiscrepancies.Mean());
-            if (intensityDiscrepancies.Any())
-                Console.WriteLine("Average intensity discrepancy" + intensityDiscrepancies.Mean());
-            if(mzDiscrepancies.Any())
-                Console.WriteLine("Maximum mz discrepancy" + mzDiscrepancies.Max());
-            if(intensityDiscrepancies.Any())
-                Console.WriteLine("Maximum intensity discrepancy" + intensityDiscrepancies.Max());
+            //Console.WriteLine("No. unequal mz values: " + mzDiscrepancies.Count);
+            
+            //Console.WriteLine("Average mz discrepancy" + mzDiscrepancies.Mean());
+
+            //if(mzDiscrepancies.Any())
+            //    Console.WriteLine("Maximum mz discrepancy" + mzDiscrepancies.Max());
+            //if(intensityDiscrepancies.Any())
+            //    Console.WriteLine("Maximum intensity discrepancy" + intensityDiscrepancies.Max());
+
+            return !mzDiscrepancies.Any();
         }
 
         [Test]
