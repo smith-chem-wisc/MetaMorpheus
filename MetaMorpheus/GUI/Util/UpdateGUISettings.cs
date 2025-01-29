@@ -80,6 +80,7 @@ namespace MetaMorpheusGUI
                         "\t-Uncheck all variable mods (Please use a GPTMD database instead)\n" +
                         "\t-SEARCH TASK ONLY: Check 'No Quantification'\n" +
                         "\t-SEARCH TASK ONLY: Check '1, 2, or 3 Missed Monoisotopic Peaks'\n" +
+                        "\t-SEARCH TASK ONLY: Increase the maximum allowed modified isoforms to 4096'\n" +
                         "\t-GPTMD TASK ONLY: Search for a select subset of Common Biological Modifications and oxidation of M\n\n" +
                     "Would you like to use these recommended settings?");
 
