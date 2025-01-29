@@ -112,15 +112,6 @@ namespace Test
             return outCase;
         }
 
-        internal static EverythingRunnerEngineTestCase ForceReRun(EverythingRunnerEngineTestCases testCase)
-        {
-            if (!_cases.TryGetValue(testCase, out var outCase)) return null;
-
-            outCase.Run();
-
-            return outCase;
-        }
-
         internal static void DisposeAll()
         {
             foreach (var testCase in _cases.Values)
