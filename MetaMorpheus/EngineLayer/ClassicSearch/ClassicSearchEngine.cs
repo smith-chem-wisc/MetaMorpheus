@@ -25,9 +25,9 @@ namespace EngineLayer.ClassicSearch
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
         private readonly bool WriteSpectralLibrary;
-        private readonly bool WriteDigestionCounts;// Used to track the amount of digestion products from each protein when the option is enabled. 
-        private readonly ConcurrentDictionary<string, int> DigestionCountDictionary;
+        private readonly bool WriteDigestionCounts;
         private readonly object[] Locks;
+        public readonly ConcurrentDictionary<string, int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
 
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
