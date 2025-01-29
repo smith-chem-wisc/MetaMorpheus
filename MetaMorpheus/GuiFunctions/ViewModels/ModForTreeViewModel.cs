@@ -74,8 +74,8 @@ namespace GuiFunctions
                 // This if statement prevents a crash from loading a search task modifications not found on launch
                 // This can occur due to new custom modifications or a mod in the xml database that was not in our initial list
                 if (!MetaDrawSettings.ModificationTypeToColor.TryGetValue(modName, out OxyColor color))
-                    color = OxyColors.Aqua;
-                SelectedColor = AddSpaces(color.GetColorName());
+                    color = MetaDrawSettings.FallbackColor;
+                SelectedColor = AddSpaces(MetaDrawSettings.PossibleColors[color]);
                 ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
             }
             
