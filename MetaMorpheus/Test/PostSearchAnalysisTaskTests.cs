@@ -398,7 +398,7 @@ namespace Test
             string searchTaskId = "test";
             DigestionParams digestionParams = new DigestionParams(maxModificationIsoforms: testCase.MaxIsoforms, maxMissedCleavages: 0, minPeptideLength: 3);
             var db = new List<DbForTask>() { new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, testCase.DbPath), false) };
-            var files = new List<string>() { Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "sliced_b6.mzML") };
+            var files = new List<string>() { Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "sliced_b6.mzML"), Path.Combine(TestContext.CurrentContext.TestDirectory, "DatabaseTests", "Q9UHB6_Chym_snip.mzML") };
             var tasks = new List<(string, MetaMorpheusTask)>{ (searchTaskId, new SearchTask
             {
                 CommonParameters = new CommonParameters(digestionParams: digestionParams, listOfModsVariable: variableMods),
