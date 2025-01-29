@@ -1,6 +1,8 @@
 using EngineLayer;
 using NUnit.Framework;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Test
 {
@@ -131,6 +133,71 @@ namespace Test
             Assert.That(dictionary.ContainsKey("key1"));
             Assert.That(dictionary["key1"], Is.EqualTo(2));
         }
+
+        [Test]
+        public void Increment_ThreadSafeWithConcurrentDictionary()
+        {
+            // Arrange
+            var dictionary = new ConcurrentDictionary<string, int>();
+            var tasks = new List<Task>();
+
+            // Act
+            for (int i = 0; i < 1000; i++)
+            {
+                tasks.Add(Task.Run(() => dictionary.Increment("key1")));
+            }
+            Task.WaitAll(tasks.ToArray());
+
+            // Assert
+            Assert.That(dictionary["key1"], Is.EqualTo(1000));
+        }
+
+        [Test]
+        public void AddOrCreate_ThreadSafeWithConcurrentDictionary()
+        {
+            // Arrange
+            var dictionary = new ConcurrentDictionary<string, IList<int>>();
+            var tasks = new List<Task>();
+
+            // Act
+            for (int i = 0; i < 1000; i++)
+            {
+                int value = i;
+                tasks.Add(Task.Run(() => dictionary.AddOrCreateThreadSafe("key1", value)));
+            }
+            Task.WaitAll(tasks.ToArray());
+
+            // Assert
+            Assert.That(dictionary["key1"].Count, Is.EqualTo(1000));
+            for (int i = 0; i < 1000; i++)
+            {
+                Assert.That(dictionary["key1"], Contains.Item(i));
+            }
+        }
+
+        [Test]
+        public void AddOrCreate_ThreadSafeWithDictionary()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, IList<int>>();
+            var tasks = new List<Task>();
+
+            // Act
+            for (int i = 0; i < 1000; i++)
+            {
+                int value = i;
+                tasks.Add(Task.Run(() => dictionary.AddOrCreateThreadSafe("key1", value)));
+            }
+            Task.WaitAll(tasks.ToArray());
+
+            // Assert
+            Assert.That(dictionary["key1"].Count, Is.EqualTo(1000));
+            for (int i = 0; i < 1000; i++)
+            {
+                Assert.That(dictionary["key1"], Contains.Item(i));
+            }
+        }
+
         [Test]
         public void IsNullOrEmpty_ReturnsTrueForNullDictionary()
         {
