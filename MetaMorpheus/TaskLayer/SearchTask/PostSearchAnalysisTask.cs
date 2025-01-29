@@ -113,7 +113,7 @@ namespace TaskLayer
                 UpdateSpectralLibrary();
             }
           
-            if (DigestionCountDictionary != null && DigestionCountDictionary.Any())
+            if (DigestionCountDictionary != null && DigestionCountDictionary.Any()) // Will be null or empty if no digestion count output file is desired. 
             {
                 WriteDigestionCountByProtein();
                 WriteDigestionCountHistogram();

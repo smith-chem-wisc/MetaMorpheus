@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using EngineLayer;
 using NUnit.Framework;
-using Omics.Digestion;
 using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
 using TaskLayer;
