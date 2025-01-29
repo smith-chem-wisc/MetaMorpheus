@@ -1,4 +1,5 @@
 ﻿using Nett;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -17,13 +18,20 @@ public static class DictionaryExtensions
     /// <param name="value">The value to add to the list associated with the specified key.</param>
     public static void AddOrCreate<TKey, TValues>(this IDictionary<TKey, IList<TValues>> dictionary, TKey key, TValues value)
     {
-        if (dictionary.TryGetValue(key, out IList<TValues> values))
+        if (dictionary is ConcurrentDictionary<TKey, IList<TValues>> concurrentDictionary)
         {
-            values.Add(value);
+            concurrentDictionary.AddOrUpdate(key, new List<TValues> { value }, (k, v) => { v.Add(value); return v; });
         }
         else
         {
-            dictionary.Add(key, new List<TValues> { value });
+            if (dictionary.TryGetValue(key, out IList<TValues> values))
+            {
+                values.Add(value);
+            }
+            else
+            {
+                dictionary.Add(key, new List<TValues> { value });
+            }
         }
     }
 
@@ -38,13 +46,20 @@ public static class DictionaryExtensions
     public static void Increment<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
         where TValue : INumber<TValue>
     {
-        if (dictionary.TryGetValue(key, out TValue value))
+        if (dictionary is ConcurrentDictionary<TKey, TValue> concurrentDictionary)
         {
-            dictionary[key] = value + TValue.One;
+            concurrentDictionary.AddOrUpdate(key, TValue.One, (k, v) => v + TValue.One);
         }
         else
         {
-            dictionary.Add(key, TValue.One);
+            if (dictionary.TryGetValue(key, out TValue value))
+            {
+                dictionary[key] = value + TValue.One;
+            }
+            else
+            {
+                dictionary.Add(key, TValue.One);
+            }
         }
     }
 
