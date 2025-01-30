@@ -1,6 +1,4 @@
-﻿using Nett;
-using Newtonsoft.Json.Linq;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Numerics;
 
@@ -8,8 +6,6 @@ namespace EngineLayer;
 
 public static class DictionaryExtensions
 {
-    private static readonly object AddOrCreateLock = new object();
-
     /// <summary>
     /// Adds a value to the list associated with the specified key in the dictionary.
     /// If the key does not exist, a new list is created with the value and added to the dictionary.
@@ -43,16 +39,18 @@ public static class DictionaryExtensions
     /// <param name="dictionary">The dictionary to operate on.</param>
     /// <param name="key">The key whose value list to add to or create.</param>
     /// <param name="value">The value to add to the list associated with the specified key.</param>
+    /// <param name="lockObject">Object used to lock this specific dictionary</param>
     /// <remarks>
     /// This is thread safe for all dictionary types. 
     /// </remarks>
-    public static void AddOrCreateThreadSafe<TKey, TValues>(this IDictionary<TKey, IList<TValues>> dictionary, TKey key, TValues value)
+    public static void AddOrCreateThreadSafe<TKey, TValues>(this IDictionary<TKey, IList<TValues>> dictionary, TKey key, TValues value, object lockObject)
     {
         if (dictionary is ConcurrentDictionary<TKey, IList<TValues>> concurrentDictionary)
         {
             concurrentDictionary.AddOrUpdate(key, new List<TValues> { value }, (k, v) =>
             {
-                lock (AddOrCreateLock)
+                // must lock inside the add or update as the List.Add method is not thread safe. 
+                lock (lockObject)
                 {
                     v.Add(value);
                     return v;
@@ -61,7 +59,7 @@ public static class DictionaryExtensions
         }
         else
         {
-            lock (AddOrCreateLock)
+            lock (lockObject)
             {
                 if (dictionary.TryGetValue(key, out IList<TValues> values))
                 {

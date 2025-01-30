@@ -158,12 +158,13 @@ namespace Test
             // Arrange
             var dictionary = new ConcurrentDictionary<string, IList<int>>();
             var tasks = new List<Task>();
+            var lockObject = new object();
 
             // Act
             for (int i = 0; i < 1000; i++)
             {
                 int value = i;
-                tasks.Add(Task.Run(() => dictionary.AddOrCreateThreadSafe("key1", value)));
+                tasks.Add(Task.Run(() => dictionary.AddOrCreateThreadSafe("key1", value, lockObject)));
             }
             Task.WaitAll(tasks.ToArray());
 
@@ -181,12 +182,13 @@ namespace Test
             // Arrange
             var dictionary = new Dictionary<string, IList<int>>();
             var tasks = new List<Task>();
+            var lockObject = new object();
 
             // Act
             for (int i = 0; i < 1000; i++)
             {
                 int value = i;
-                tasks.Add(Task.Run(() => dictionary.AddOrCreateThreadSafe("key1", value)));
+                tasks.Add(Task.Run(() => dictionary.AddOrCreateThreadSafe("key1", value, lockObject)));
             }
             Task.WaitAll(tasks.ToArray());
 
