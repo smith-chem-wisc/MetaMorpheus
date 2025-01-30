@@ -37,6 +37,7 @@ namespace GuiFunctions
         public static bool AnnotationBold { get; set; } = false;
         public static bool DisplayInternalIons { get; set; } = true;
         public static bool DisplayInternalIonAnnotations { get; set; }= true;
+        public static OxyColor FallbackColor { get; } = OxyColors.Aqua;
         public static Dictionary<OxyColor, string> PossibleColors { get; set; }
         public static Dictionary<ProductType, OxyColor> ProductTypeToColor { get; set; }
         public static Dictionary<ProductType, OxyColor> BetaProductTypeToColor { get; set; }
