@@ -517,7 +517,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*.d)|*.raw;*.mzML;*.mgf;*.d");
+            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*.tdf;*.tdf_bin)|*.raw;*.mzML;*.mgf;*.tdf;*.tdf_bin");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -1576,6 +1576,12 @@ namespace MetaMorpheusGUI
                 case ".mgf":
                     NotificationHandler(null, new StringEventArgs(".mgf files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
                     goto case ".mzml";
+                case ".tdf":
+                case ".tdf_bin":
+                    // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 
+                    // the fileReader is designed to take the path to the .d directory instead of either/both individual files
+                    filePath = Path.GetDirectoryName(filePath);
+                    goto case ".d";
                 case ".d": // Bruker data files are directories that contain .d files
                     NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
                     goto case ".mzml";
@@ -1694,16 +1700,6 @@ namespace MetaMorpheusGUI
                 Filter = filter,
                 FilterIndex = 1,
                 RestoreDirectory = true,
-                Multiselect = true
-            };
-
-            return openFileDialog;
-        }
-
-        private OpenFolderDialog StartOpenFolderDialog(string filter)
-        {
-            OpenFolderDialog openFileDialog = new OpenFolderDialog
-            {
                 Multiselect = true
             };
 
