@@ -400,7 +400,6 @@ namespace MetaMorpheusGUI
                             DeconHostViewModel.UseProvidedPrecursors = false;
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
                             DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 60;
-                            TrimMsMs.IsChecked = false;
 
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
                             {
