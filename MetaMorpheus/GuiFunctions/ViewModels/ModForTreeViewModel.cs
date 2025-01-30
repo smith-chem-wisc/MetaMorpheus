@@ -14,6 +14,7 @@ namespace GuiFunctions
         private bool _isChecked;
         private string _selectedColor;
         private SolidColorBrush _colorBrush;
+        private bool _colorDataLoaded;
 
         #endregion
 
@@ -23,10 +24,7 @@ namespace GuiFunctions
 
         public bool Use
         {
-            get
-            {
-                return _isChecked;
-            }
+            get => _isChecked;
             set
             {
                 _isChecked = value;
@@ -40,17 +38,26 @@ namespace GuiFunctions
         public Brush Background { get; }
         public string SelectedColor
         {
-            get { return _selectedColor; }
+            get
+            {
+                EnsureColorDataLoaded();
+                return _selectedColor;
+            }
             set
             {
                 _selectedColor = value;
                 ColorBrush = DrawnSequence.ParseColorBrushFromName(_selectedColor);
+                _colorDataLoaded = true;
                 OnPropertyChanged(nameof(SelectedColor));
             }
         }
         public SolidColorBrush ColorBrush
         {
-            get { return _colorBrush; }
+            get
+            {
+                EnsureColorDataLoaded();
+                return _colorBrush;
+            }
             set
             {
                 _colorBrush = value;
@@ -69,16 +76,6 @@ namespace GuiFunctions
             Use = use;
             ModName = modName;
             DisplayName = modName;
-            if (MetaDrawSettings.ModificationTypeToColor != null)
-            {
-                // This if statement prevents a crash from loading a search task modifications not found on launch
-                // This can occur due to new custom modifications or a mod in the xml database that was not in our initial list
-                if (!MetaDrawSettings.ModificationTypeToColor.TryGetValue(modName, out OxyColor color))
-                    color = OxyColors.Aqua;
-                SelectedColor = AddSpaces(color.GetColorName());
-                ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
-            }
-            
 
             if (toolTip.ToLower().Contains("terminal"))
             {
@@ -103,6 +100,27 @@ namespace GuiFunctions
         }
 
         #endregion
+
+        /// <summary>
+        /// Ensures the color data is loaded. This is necessary because the color data is not loaded until the first time it is accessed.
+        /// This enables the use of the same control in MetaDraw and Task Windows without loading the color data for task windows. 
+        /// </summary>
+        private void EnsureColorDataLoaded()
+        {
+            if (!_colorDataLoaded)
+            {
+                if (MetaDrawSettings.ModificationTypeToColor != null)
+                {
+                    // This if statement prevents a crash from loading a search task modifications not found on launch
+                    // This can occur due to new custom modifications or a mod in the xml database that was not in our initial list
+                    if (!MetaDrawSettings.ModificationTypeToColor.TryGetValue(ModName, out OxyColor color))
+                        color = MetaDrawSettings.FallbackColor;
+                    _selectedColor = AddSpaces(MetaDrawSettings.PossibleColors[color]);
+                    _colorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
+                }
+                _colorDataLoaded = true;
+            }
+        }
 
         public void SelectionChanged(string newColor)
         {

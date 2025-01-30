@@ -381,25 +381,26 @@ namespace GuiFunctions
 
         public static SolidColorBrush ParseColorBrushFromOxyColor(OxyColor color)
         {
-            var colorVal = color.ToByteString().Split(',');
-            return new SolidColorBrush(System.Windows.Media.Color.FromArgb(Byte.Parse(colorVal[0]), Byte.Parse(colorVal[1]), Byte.Parse(colorVal[2]), Byte.Parse(colorVal[3])));
+            return new SolidColorBrush(Color.FromArgb(color.A, color.R, color.G, color.B));
         }
 
         public static SolidColorBrush ParseColorBrushFromName(string name)
         {
-            OxyColor color = MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(name.Replace(" ", ""))).First();
-            return ParseColorBrushFromOxyColor(color);
+            string cleanedName = name.Replace(" ", "");
+            var foundColor = MetaDrawSettings.PossibleColors.FirstOrDefault(p => p.Value == cleanedName).Key;
+            return ParseColorBrushFromOxyColor(foundColor == default ? MetaDrawSettings.FallbackColor : foundColor);
         }
 
         public static OxyColor ParseOxyColorFromName(string name)
         {
-            return MetaDrawSettings.PossibleColors.Keys.Where(p => p.GetColorName().Equals(name.Replace(" ", ""))).First();
+            string cleanedName = name.Replace(" ", "");
+            var foundColor = MetaDrawSettings.PossibleColors.FirstOrDefault(p => p.Value == cleanedName).Key;
+            return foundColor == default ? MetaDrawSettings.FallbackColor : foundColor;
         }
 
         public static Color ParseColorFromOxyColor(OxyColor color)
         {
-            var colorVal = color.ToByteString().Split(',');
-            return System.Windows.Media.Color.FromArgb(Byte.Parse(colorVal[0]), Byte.Parse(colorVal[1]), Byte.Parse(colorVal[2]), Byte.Parse(colorVal[3]));
+            return Color.FromArgb(color.A, color.R, color.G, color.B);
         }
 
         /// <summary>

@@ -51,7 +51,7 @@ namespace GuiFunctions
         {
             Name = name;
             OxyColor color = MetaDrawSettings.CoverageTypeToColor[name];
-            SelectedColor = AddSpaces(color.GetColorName());
+            SelectedColor = AddSpaces(MetaDrawSettings.PossibleColors[color]);
             ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
         }
 
