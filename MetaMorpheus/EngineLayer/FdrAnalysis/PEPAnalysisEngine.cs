@@ -381,6 +381,8 @@ namespace EngineLayer
             return s.ToString();
         }
 
+        private readonly object _modelLock = new();
+
         public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
             MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
@@ -410,7 +412,10 @@ namespace EngineLayer
                     }
                     else
                     {
-                        threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+                        lock (_modelLock)
+                        {
+                            threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+                        }
                     }
 
                     // one prediction engine per thread, because the prediction engine is not thread-safe
