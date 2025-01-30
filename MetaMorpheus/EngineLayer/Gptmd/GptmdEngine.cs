@@ -67,7 +67,6 @@ namespace EngineLayer.Gptmd
         {
             var mergedDictionaries = new ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>>();
             int modsAdded = 0;
-            object lockObject = new object();
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy).ToList();
             if (psms.Any() == false)
@@ -174,8 +173,6 @@ namespace EngineLayer.Gptmd
                         }
                     }
                 }
-                lock (lockObject)
-                {
                     foreach (var kvp in modDict)
                     {
                         mergedDictionaries.AddOrUpdate(kvp.Key, kvp.Value, (key, oldValue) =>
@@ -186,8 +183,7 @@ namespace EngineLayer.Gptmd
                             }
                             return oldValue;
                         });
-                    }
-                }         
+                    }         
             });
 
             // Convert ConcurrentDictionary to Dictionary with HashSet
