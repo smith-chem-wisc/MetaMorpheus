@@ -253,20 +253,21 @@ namespace Test
             // Arrange
             var task = new PostSearchAnalysisTask();
             var outputDirectory = Path.Combine(TestContext.CurrentContext.WorkDirectory, "DigestionCountTest");
-            if (Directory.Exists(outputDirectory)) 
+            if (Directory.Exists(outputDirectory))
                 Directory.Delete(outputDirectory, true);
             Directory.CreateDirectory(outputDirectory);
             var parameters = new PostSearchAnalysisParameters
             {
+                SearchParameters = new(),
                 OutputFolder = outputDirectory,
                 SearchTaskId = "TestTask",
             };
 
             task.GetType().GetProperty("Parameters").SetValue(task, parameters);
-            var digestionCountDictionary = new Dictionary<string, int>
+            var digestionCountDictionary = new Dictionary<(string Accession, string BaseSeqeunce), int>
             {
-                { "Protein1", 5 },
-                { "Protein2", 10 }
+                { ("Protein1", "SEQUENCE1"), 5 },
+                { ("Protein2", "SEQUENCE2"), 10 }
             };
             task.GetType().GetProperty("DigestionCountDictionary", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(task, digestionCountDictionary);
 
@@ -280,9 +281,9 @@ namespace Test
 
             var lines = File.ReadAllLines(expectedFilePath);
             Assert.That(lines.Length, Is.EqualTo(3));
-            Assert.That(lines[0], Is.EqualTo("Protein Accession\tDigestion Products"));
-            Assert.That(lines[1], Is.EqualTo("Protein1\t5"));
-            Assert.That(lines[2], Is.EqualTo("Protein2\t10"));
+            Assert.That(lines[0], Is.EqualTo("Protein Accession\tPrimary Sequence\tDigestion Products"));
+            Assert.That(lines[1], Is.EqualTo("Protein1\tSEQUENCE1\t5"));
+            Assert.That(lines[2], Is.EqualTo("Protein2\tSEQUENCE2\t10"));
 
             // Cleanup
             Directory.Delete(parameters.OutputFolder, true);
@@ -299,15 +300,16 @@ namespace Test
             Directory.CreateDirectory(outputDirectory);
             var parameters = new PostSearchAnalysisParameters
             {
+                SearchParameters = new(),
                 OutputFolder = outputDirectory,
                 SearchTaskId = "TestTask"
             };
             task.GetType().GetProperty("Parameters").SetValue(task, parameters);
-            var digestionCountDictionary = new Dictionary<string, int>
+            var digestionCountDictionary = new Dictionary<(string Accession, string BaseSeqeunce), int>
             {
-                { "Protein1", 5 },
-                { "Protein2", 10 },
-                { "Protein3", 5 }
+                { ("Protein1", "SEQUENCE1"), 5 },
+                { ("Protein2", "SEQUENCE2"), 10 },
+                { ("Protein3", "SEQUENCE3"), 5 }
             };
             task.GetType().GetProperty("DigestionCountDictionary", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(task, digestionCountDictionary);
 
@@ -325,7 +327,7 @@ namespace Test
             Assert.That(lines[2], Is.EqualTo("10\t1"));
 
             // Cleanup
-            Directory.Delete(parameters.OutputFolder, true);
+            Directory.Delete(outputDirectory, true);
         }
 
         public record DigestionCountTestCase(string DbPath, int MaxIsoforms, bool UseVariableMods, string Name)
@@ -423,22 +425,26 @@ namespace Test
 
             // Pull Results from files and calculate from digestion
             var proteins = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, testCase.DbPath), true, DecoyType.None, false, out var errors);
-            var digestionResults = proteins.ToDictionary(p => p.Accession, p => p.Digest(digestionParams, [], variableModifications).ToList());
-            var digestionHistResults = digestionResults.GroupBy(p => p.Value.Count).ToDictionary(p => p.Key, p => p.Count());
+            var digestionResults = proteins.SelectMany(p => p.Digest(digestionParams, [], variableModifications))
+                .GroupBy(p => (p.Parent.Accession, p.BaseSequence))
+                .ToDictionary(p => p.Key, p => p.ToArray());
+            var digestionHistResults = digestionResults.GroupBy(p => p.Value.Length)
+                .ToDictionary(p => p.Key, p => p.Count());
             var byProteinLines = File.ReadAllLines(Path.Combine(outDirectory, searchTaskId, "DigestionCountsByProteins.tsv"));
             var histogramLines = File.ReadAllLines(Path.Combine(outDirectory, searchTaskId, "DigestionCountHistogram.tsv"));
 
             // Assert
-            Assert.That(byProteinLines.Length, Is.EqualTo(proteins.Count + 1));
+            Assert.That(byProteinLines.Length, Is.EqualTo(digestionResults.Count + 1));
             for (int i = 1; i < byProteinLines.Length; i++)
             {
                 var split = byProteinLines[i].Split('\t');
-                Assert.That(split.Length, Is.EqualTo(2));
+                Assert.That(split.Length, Is.EqualTo(3));
 
                 var writtenAccession = split[0];
-                var writtenCount = int.Parse(split[1]);
+                var writtenSequence = split[1];
+                var writtenCount = int.Parse(split[2]);
 
-                Assert.That(writtenCount, Is.EqualTo(digestionResults[writtenAccession].Count));
+                Assert.That(writtenCount, Is.EqualTo(digestionResults[(writtenAccession, writtenSequence)].Length));
             }
 
             Assert.That(histogramLines.Length, Is.EqualTo(digestionHistResults.Count + 1));
@@ -455,6 +461,94 @@ namespace Test
 
             // Cleanup
             Directory.Delete(outDirectory, true);
+        }
+        [Test]
+        public static void WriteDigestionCountFiles_DoesNotIncludeDecoys_WhenNotIntended()
+        {
+            // Arrange
+            var task = new PostSearchAnalysisTask();
+            var outputDirectory = Path.Combine(TestContext.CurrentContext.WorkDirectory, "DigestionCountTest");
+            if (Directory.Exists(outputDirectory))
+                Directory.Delete(outputDirectory, true);
+            Directory.CreateDirectory(outputDirectory);
+            var parameters = new PostSearchAnalysisParameters
+            {
+                OutputFolder = outputDirectory,
+                SearchTaskId = "TestTask",
+                SearchParameters = new SearchParameters
+                {
+                    WriteDecoys = false
+                }
+            };
+
+            task.GetType().GetProperty("Parameters").SetValue(task, parameters);
+            var digestionCountDictionary = new Dictionary<(string Accession, string BaseSeqeunce), int>
+            {
+                { ("DECOY_Protein1", "SEQUENCE1"), 5 },
+                { ("Protein2", "SEQUENCE2"), 10 }
+            };
+            task.GetType().GetProperty("DigestionCountDictionary", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(task, digestionCountDictionary);
+
+            // Act
+            var method = task.GetType().GetMethod("WriteDigestionCountByProtein", BindingFlags.NonPublic | BindingFlags.Instance);
+            method!.Invoke(task, null);
+
+            // Assert
+            var expectedFilePath = Path.Combine(parameters.OutputFolder, "DigestionCountsByProteins.tsv");
+            Assert.That(File.Exists(expectedFilePath), Is.True);
+
+            var lines = File.ReadAllLines(expectedFilePath);
+            Assert.That(lines.Length, Is.EqualTo(2));
+            Assert.That(lines[0], Is.EqualTo("Protein Accession\tPrimary Sequence\tDigestion Products"));
+            Assert.That(lines[1], Is.EqualTo("Protein2\tSEQUENCE2\t10"));
+
+            // Cleanup
+            Directory.Delete(parameters.OutputFolder, true);
+        }
+
+        [Test]
+        public static void WriteDigestionCountFiles_IncludesDecoys_WhenIntended()
+        {
+            // Arrange
+            var task = new PostSearchAnalysisTask();
+            var outputDirectory = Path.Combine(TestContext.CurrentContext.WorkDirectory, "DigestionCountTest");
+            if (Directory.Exists(outputDirectory))
+                Directory.Delete(outputDirectory, true);
+            Directory.CreateDirectory(outputDirectory);
+            var parameters = new PostSearchAnalysisParameters
+            {
+                OutputFolder = outputDirectory,
+                SearchTaskId = "TestTask",
+                SearchParameters = new SearchParameters
+                {
+                    WriteDecoys = true
+                }
+            };
+
+            task.GetType().GetProperty("Parameters").SetValue(task, parameters);
+            var digestionCountDictionary = new Dictionary<(string Accession, string BaseSeqeunce), int>
+            {
+                { ("DECOY_Protein1", "SEQUENCE1"), 5 },
+                { ("Protein2", "SEQUENCE2"), 10 }
+            };
+            task.GetType().GetProperty("DigestionCountDictionary", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(task, digestionCountDictionary);
+
+            // Act
+            var method = task.GetType().GetMethod("WriteDigestionCountByProtein", BindingFlags.NonPublic | BindingFlags.Instance);
+            method!.Invoke(task, null);
+
+            // Assert
+            var expectedFilePath = Path.Combine(parameters.OutputFolder, "DigestionCountsByProteins.tsv");
+            Assert.That(File.Exists(expectedFilePath), Is.True);
+
+            var lines = File.ReadAllLines(expectedFilePath);
+            Assert.That(lines.Length, Is.EqualTo(3));
+            Assert.That(lines[0], Is.EqualTo("Protein Accession\tPrimary Sequence\tDigestion Products"));
+            Assert.That(lines[1], Is.EqualTo("DECOY_Protein1\tSEQUENCE1\t5"));
+            Assert.That(lines[2], Is.EqualTo("Protein2\tSEQUENCE2\t10"));
+
+            // Cleanup
+            Directory.Delete(parameters.OutputFolder, true);
         }
     }
 }

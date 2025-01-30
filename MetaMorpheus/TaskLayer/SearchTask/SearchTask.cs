@@ -203,7 +203,8 @@ namespace TaskLayer
             Status("Searching files...", new List<string> { taskId, "Individual Spectra Files" });
 
             Dictionary<string, int[]> numMs2SpectraPerFile = new Dictionary<string, int[]>();
-            IDictionary<string, int> digestionCountDictionary = null;
+            bool collectedDigestionInformation = false;
+            IDictionary<(string Accession, string BaseSequence), int> digestionCountDictionary = null;
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 if (GlobalVariables.StopLoops) { break; }
@@ -379,9 +380,9 @@ namespace TaskLayer
                     var result = newClassicSearchEngine.Run();
 
                     // The same proteins (all of them) get digested with each classic search engine, therefor we only need to calculate this for the first file that runs
-                    if (SearchParameters.WriteDigestionProductCountFile) 
-                    {   
-                        SearchParameters.WriteDigestionProductCountFile = false;
+                    if (!collectedDigestionInformation) 
+                    {
+                        collectedDigestionInformation = true;
                         digestionCountDictionary = (result.MyEngine as ClassicSearchEngine).DigestionCountDictionary;
                     }
 

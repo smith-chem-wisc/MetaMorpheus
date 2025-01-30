@@ -38,7 +38,7 @@ namespace TaskLayer
         /// <summary>
         /// Used for storage of results for writing digestion product counts to a .tsv. 
         /// </summary>
-        internal IDictionary<string, int>? DigestionCountDictionary { get; set; }
+        internal IDictionary<(string Accession, string BaseSeqeunce), int> DigestionCountDictionary { get; set; }
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
@@ -113,7 +113,7 @@ namespace TaskLayer
                 UpdateSpectralLibrary();
             }
           
-            if (DigestionCountDictionary != null && DigestionCountDictionary.Any()) // Will be null or empty if no digestion count output file is desired. 
+            if (Parameters.SearchParameters.WriteDigestionProductCountFile)
             {
                 WriteDigestionCountByProtein();
                 WriteDigestionCountHistogram();
@@ -1963,10 +1963,12 @@ namespace TaskLayer
             // write all values to file
             using (var writer = new StreamWriter(countByProteinPath))
             {
-                writer.WriteLine("Protein Accession\tDigestion Products");
+                writer.WriteLine("Protein Accession\tPrimary Sequence\tDigestion Products");
                 foreach (var proteinEntry in DigestionCountDictionary!)
                 {
-                    writer.WriteLine($"{proteinEntry.Key}\t{proteinEntry.Value}");
+                    if (!Parameters.SearchParameters.WriteDecoys && proteinEntry.Key.Accession.StartsWith("DECOY"))
+                        continue;
+                    writer.WriteLine($"{proteinEntry.Key.Accession}\t{proteinEntry.Key.BaseSeqeunce}\t{proteinEntry.Value}");
                 }
             }
             FinishedWritingFile(countByProteinPath, nestedIds);
@@ -1987,6 +1989,8 @@ namespace TaskLayer
             var countDictionary = new Dictionary<int, int>(CommonParameters.DigestionParams.MaxModificationIsoforms);
             foreach (var proteinEntry in DigestionCountDictionary!)
             {
+                if (!Parameters.SearchParameters.WriteDecoys && proteinEntry.Key.Accession.StartsWith("DECOY"))
+                    continue;
                 countDictionary.Increment(proteinEntry.Value);
             }
 

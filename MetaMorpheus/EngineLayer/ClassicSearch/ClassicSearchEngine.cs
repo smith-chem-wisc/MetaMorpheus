@@ -27,7 +27,7 @@ namespace EngineLayer.ClassicSearch
         private readonly bool WriteSpectralLibrary;
         private readonly bool WriteDigestionCounts;
         private readonly object[] Locks;
-        public readonly ConcurrentDictionary<string, int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
+        public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
 
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
@@ -112,8 +112,8 @@ namespace EngineLayer.ClassicSearch
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
                             if (WriteDigestionCounts)
-                                DigestionCountDictionary.Increment(peptide.Parent.Accession);
-
+                                DigestionCountDictionary.Increment((peptide.Parent.Accession, peptide.BaseSequence));
+                                
                             PeptideWithSetModifications reversedOnTheFlyDecoy = null;
 
                             if (SpectralLibrary != null)
