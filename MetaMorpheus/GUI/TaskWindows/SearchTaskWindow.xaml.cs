@@ -894,6 +894,7 @@ namespace MetaMorpheusGUI
                             TrimMsMs.IsChecked = false;
                             CheckBoxNoQuant.IsChecked = true;
                             MassDiffAccept3mm.IsChecked = true;
+                            maxModificationIsoformsTextBox.Text = "4096";
                             //uncheck all variable mods
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
                             {
