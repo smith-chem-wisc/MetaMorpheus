@@ -382,13 +382,13 @@ namespace EngineLayer
         }
 
         private readonly object _modelLock = new();
+        private readonly object _peptideCountLock = new();
 
         public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
             MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
         {
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
-            object lockObject = new object();
             int ambiguousPeptidesResolved = 0;
 
             //the trained model is not threadsafe. Therefore, to use the same model for each thread saved the model to disk. Then each thread reads its own copy of the model back from disk.
@@ -460,7 +460,7 @@ namespace EngineLayer
                         }
                     }
 
-                    lock (lockObject)
+                    lock (_peptideCountLock)
                     {
                         ambiguousPeptidesResolved += ambigousPeptidesRemovedinThread;
                     }
