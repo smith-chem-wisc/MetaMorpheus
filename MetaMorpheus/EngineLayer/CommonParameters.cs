@@ -128,7 +128,7 @@ namespace EngineLayer
         //    If you forget this, and the user uses file-specific parameters, your settings will be overwritten by default values!
 
         public string TaskDescriptor { get; private set; }
-        public int MaxThreadsToUsePerFile { get; private set; }
+        public int MaxThreadsToUsePerFile { get; set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
         public bool DoPrecursorDeconvolution { get; private set; }

@@ -39,7 +39,7 @@ namespace EngineLayer.Calibration
             ProductMassTolerance = productMassTolerance;
             MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
         }
-
+         
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("Extracting data points:");
@@ -52,6 +52,7 @@ namespace EngineLayer.Calibration
             List<LabeledDataPoint> Ms1List = new List<LabeledDataPoint>();
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
 
+            // Problem is here, these locks should be properties!
             object lockObj = new object();
             object lockObj2 = new object();
 
