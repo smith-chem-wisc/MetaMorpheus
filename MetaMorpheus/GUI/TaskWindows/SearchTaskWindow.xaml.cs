@@ -17,8 +17,6 @@ using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using GuiFunctions;
-using Proteomics;
-using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
 
@@ -896,6 +894,7 @@ namespace MetaMorpheusGUI
                             TrimMsMs.IsChecked = false;
                             CheckBoxNoQuant.IsChecked = true;
                             MassDiffAccept3mm.IsChecked = true;
+                            maxModificationIsoformsTextBox.Text = "4096";
                             //uncheck all variable mods
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
                             {
