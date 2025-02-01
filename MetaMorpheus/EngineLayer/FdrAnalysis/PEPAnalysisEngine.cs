@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Omics.Modifications;
 using Omics;
 using Easy.Common.Extensions;
+using System.Threading;
 
 namespace EngineLayer
 {
@@ -382,7 +383,6 @@ namespace EngineLayer
         }
 
         private readonly object _modelLock = new();
-        private readonly object _peptideCountLock = new();
 
         public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
@@ -460,10 +460,7 @@ namespace EngineLayer
                         }
                     }
 
-                    lock (_peptideCountLock)
-                    {
-                        ambiguousPeptidesResolved += ambigousPeptidesRemovedinThread;
-                    }
+                    Interlocked.Add(ref ambiguousPeptidesResolved, ambigousPeptidesRemovedinThread);
                 });
             return ambiguousPeptidesResolved;
         }
