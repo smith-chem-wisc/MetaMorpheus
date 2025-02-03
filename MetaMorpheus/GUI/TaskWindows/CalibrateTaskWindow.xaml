@@ -45,6 +45,13 @@
                         </TextBox.Style>
                     </TextBox>
                 </StackPanel>
+                <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
+                    <Expander x:Name="FileLoadExpander" >
+                        <StackPanel>
+                            <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">
                         <StackPanel>
