@@ -12,7 +12,7 @@ namespace GuiFunctions;
 
 /// <summary>
 /// This class holds all of the information in the Deconvolution tab of the GUI
-/// One instance will be create per Task Window
+/// One instance will be created per Task Window
 ///
 /// The Task window will populate this view model with the appropriate parameters from <see cref="CommonParameters"/>
 /// The user can then modify these parameters as needed via the gui
@@ -48,6 +48,7 @@ public class DeconHostViewModel : BaseViewModel
 
                 case DeconvolutionType.ClassicDeconvolution:
 
+                    // Precursor
                     if (initialPrecursorParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
                         PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel());
                     else
@@ -62,6 +63,7 @@ public class DeconHostViewModel : BaseViewModel
                         PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
                     }
                     
+                    // Product
                     if (initialProductParameters is { DeconvolutionType: DeconvolutionType.ClassicDeconvolution })
                         ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
                     else
@@ -79,7 +81,37 @@ public class DeconHostViewModel : BaseViewModel
                     break;
 
                 case DeconvolutionType.IsoDecDeconvolution:
-                    // TODO: fill in IsoDec region in follow-up pull request
+
+                    // Precursor
+                    if (initialPrecursorParameters is { DeconvolutionType: DeconvolutionType.IsoDecDeconvolution })
+                        PrecursorDeconvolutionParametersList.Add(initialPrecursorParameters.ToViewModel());
+                    else
+                    {
+                        var toAdd = GlobalVariables.AnalyteType switch
+                        {
+                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters() { MaxAssumedChargeState = 12},
+                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters() { MaxAssumedChargeState = 60 },
+                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative) { MaxAssumedChargeState = -20, MinAssumedChargeState = -1 },
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                        PrecursorDeconvolutionParametersList.Add(toAdd.ToViewModel());
+                    }
+
+                    // Product
+                    if (initialProductParameters is { DeconvolutionType: DeconvolutionType.IsoDecDeconvolution })
+                        ProductDeconvolutionParametersList.Add(initialProductParameters.ToViewModel());
+                    else
+                    {
+                        var toAdd = GlobalVariables.AnalyteType switch
+                        {
+                            AnalyteType.Peptide => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false) { MaxAssumedChargeState = 10},
+                            AnalyteType.Proteoform => new IsoDecDeconvolutionParameters(reportMultipleMonoisos: false) { MaxAssumedChargeState = 10 },
+                            AnalyteType.Oligo => new IsoDecDeconvolutionParameters(Polarity.Negative, reportMultipleMonoisos: false) { MaxAssumedChargeState = -10, MinAssumedChargeState = -1 },
+                            _ => throw new ArgumentOutOfRangeException()
+                        };
+                        ProductDeconvolutionParametersList.Add(toAdd.ToViewModel());
+                    }
+
                     break;
 
                 default: // This will only be hit if a new deconvolution type is added to mzlib and not handled here
@@ -119,6 +151,24 @@ public class DeconHostViewModel : BaseViewModel
             _doPrecursorDeconvolution = value;
             OnPropertyChanged(nameof(DoPrecursorDeconvolution));
         }
+    }
+
+    public void SetAllPrecursorMaxChargeState(int newMaxCharge)
+    {
+        foreach (var precursorParams in PrecursorDeconvolutionParametersList)
+        {
+            precursorParams.MaxAssumedChargeState = newMaxCharge;
+        }
+        OnPropertyChanged(nameof(PrecursorDeconvolutionParametersList));
+    }
+
+    public void SetAllProductMaxChargeState(int newMaxCharge)
+    {
+        foreach (var productParams in ProductDeconvolutionParametersList)
+        {
+            productParams.MaxAssumedChargeState = newMaxCharge;
+        }
+        OnPropertyChanged(nameof(ProductDeconvolutionParametersList));
     }
 
     #endregion
@@ -178,7 +228,7 @@ public class DeconHostViewModel : BaseViewModel
 [ExcludeFromCodeCoverage] // Model used only for visualizing the view in visual studio
 public class DeconHostModel : DeconHostViewModel
 {
-    public static DeconHostModel Instance => new DeconHostModel();
+    public static DeconHostModel Instance => new();
 
     public DeconHostModel() : base (DeconParamsModel.Instance.Parameters, DeconParamsModel.Instance.Parameters)
     {

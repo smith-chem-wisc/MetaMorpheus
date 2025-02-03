@@ -70,7 +70,35 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
-        );
+            // Switch on DeconvolutionParameters
+            .ConfigureType<DeconvolutionParameters>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable => tmlTable.Get<string>("DeconvolutionType") switch
+                        {
+                            "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
+                            "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
+                            _ => throw new MetaMorpheusException("Unrecognized deconvolution type in toml")
+                        })))
+            // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
+            .ConfigureType<ClassicDeconvolutionParameters>(type => type
+                .CreateInstance(() => new ClassicDeconvolutionParameters(1, 20, 4, 3))
+                .IgnoreProperty(p => p.IntensityRatioLimit)
+                .IgnoreProperty(p => p.DeconvolutionTolerancePpm))
+            .ConfigureType<IsoDecDeconvolutionParameters>(type => type
+                .CreateInstance(() => new IsoDecDeconvolutionParameters())
+                .IgnoreProperty(p => p.Verbose)
+                .IgnoreProperty(p => p.PeakWindow)
+                .IgnoreProperty(p => p.PeakThreshold)
+                .IgnoreProperty(p => p.MinPeaks)
+                .IgnoreProperty(p => p.PlusOneIntWindow)
+                .IgnoreProperty(p => p.MinScoreDiff)
+                .IgnoreProperty(p => p.IsoLength)
+                .IgnoreProperty(p => p.MassDiffC)
+                .IgnoreProperty(p => p.MinusOneAreasZero)
+                .IgnoreProperty(p => p.IsotopeThreshold)
+                .IgnoreProperty(p => p.ZScoreThreshold))
+        
+            );
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();

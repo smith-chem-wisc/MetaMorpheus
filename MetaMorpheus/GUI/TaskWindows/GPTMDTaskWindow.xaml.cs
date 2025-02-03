@@ -264,7 +264,9 @@ namespace MetaMorpheusGUI
                         if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
                             DeconHostViewModel.UseProvidedPrecursors = false;
-                            DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 60;
+                            DeconHostViewModel.DoPrecursorDeconvolution = true;
+                            DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
+                            DeconHostViewModel.SetAllProductMaxChargeState(20);
                             TrimMsMs.IsChecked = false;
                             //uncheck all variable mods
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
