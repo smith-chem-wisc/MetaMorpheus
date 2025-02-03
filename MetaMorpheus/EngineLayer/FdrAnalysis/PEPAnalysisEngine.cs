@@ -406,6 +406,7 @@ namespace EngineLayer
                     if (GlobalVariables.StopLoops) { return; }
 
                     ITransformer threadSpecificTrainedModel;
+                    
                     if (maxThreads == 1)
                     {
                         threadSpecificTrainedModel = trainedModel;
