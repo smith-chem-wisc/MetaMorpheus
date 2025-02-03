@@ -401,7 +401,6 @@ namespace MetaMorpheusGUI
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
                             DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
                             DeconHostViewModel.SetAllProductMaxChargeState(20);
-                            TrimMsMs.IsChecked = false;
 
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
                             {
