@@ -35,7 +35,10 @@ namespace TaskLayer
         /// Used for storage of results for writing to Results.tsv. It is explained in the method ConstructResultsDictionary()
         /// </summary>
         private Dictionary<(string,string),string> ResultsDictionary { get; set; }
-
+        /// <summary>
+        /// Used for storage of results for writing digestion product counts to a .tsv. 
+        /// </summary>
+        internal IDictionary<(string Accession, string BaseSeqeunce), int> DigestionCountDictionary { get; set; }
         public PostSearchAnalysisTask()
             : base(MyTask.Search)
         {
@@ -110,6 +113,12 @@ namespace TaskLayer
                 UpdateSpectralLibrary();
             }
           
+            if (Parameters.SearchParameters.WriteDigestionProductCountFile)
+            {
+                WriteDigestionCountByProtein();
+                WriteDigestionCountHistogram();
+            }
+
             WriteFlashLFQResults();
 
             if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
@@ -1938,6 +1947,63 @@ namespace TaskLayer
             flashLFQResults.WriteResults(peaksPath, null, null, null, true);
 
             FinishedWritingFile(peaksPath, nestedIds);
+        }
+
+        /// <summary>
+        /// Writes the digestion product counts for each protein to a .tsv file.
+        /// </summary>
+        private void WriteDigestionCountByProtein()
+        {
+            if (DigestionCountDictionary.IsNullOrEmpty())
+                return;
+
+            var nestedIds = new List<string> { Parameters.SearchTaskId };
+            var countByProteinPath = Path.Combine(Parameters.OutputFolder, $"DigestionCountsBy{GlobalVariables.AnalyteType.GetBioPolymerLabel()}s.tsv");
+
+            // write all values to file
+            using (var writer = new StreamWriter(countByProteinPath))
+            {
+                writer.WriteLine("Protein Accession\tPrimary Sequence\tDigestion Products");
+                foreach (var proteinEntry in DigestionCountDictionary!)
+                {
+                    if (!Parameters.SearchParameters.WriteDecoys && proteinEntry.Key.Accession.StartsWith("DECOY"))
+                        continue;
+                    writer.WriteLine($"{proteinEntry.Key.Accession}\t{proteinEntry.Key.BaseSeqeunce}\t{proteinEntry.Value}");
+                }
+            }
+            FinishedWritingFile(countByProteinPath, nestedIds);
+        }
+
+        /// <summary>
+        /// Writes a histogram of digestion product counts to a .tsv file.
+        /// </summary>
+        private void WriteDigestionCountHistogram()
+        {
+            if (DigestionCountDictionary.IsNullOrEmpty())
+                return;
+
+            var nestedIds = new List<string> { Parameters.SearchTaskId };
+            var countHistogramPath = Path.Combine(Parameters.OutputFolder, $"DigestionCountHistogram.tsv");
+
+            // Create Histogram
+            var countDictionary = new Dictionary<int, int>(CommonParameters.DigestionParams.MaxModificationIsoforms);
+            foreach (var proteinEntry in DigestionCountDictionary!)
+            {
+                if (!Parameters.SearchParameters.WriteDecoys && proteinEntry.Key.Accession.StartsWith("DECOY"))
+                    continue;
+                countDictionary.Increment(proteinEntry.Value);
+            }
+
+            // Write Histogram
+            using (StreamWriter writer = new(countHistogramPath))
+            {
+                writer.WriteLine($"Digestion Products\tCount of {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s");
+                foreach (var count in countDictionary.OrderBy(p => p.Key))
+                {
+                    writer.WriteLine($"{count.Key}\t{count.Value}");
+                }
+            }
+            FinishedWritingFile(countHistogramPath, nestedIds);
         }
     }
 }

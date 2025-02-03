@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
 using Omics.Modifications;
-using Proteomics;
 
 namespace TaskLayer
 {
@@ -32,6 +31,7 @@ namespace TaskLayer
             WriteMzId = true;
             WritePepXml = false;
             IncludeModMotifInMzid = false;
+            WriteDigestionProductCountFile = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
             {
@@ -103,5 +103,6 @@ namespace TaskLayer
         public SilacLabel EndTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
         public bool IncludeModMotifInMzid { get; set; }
+        public bool WriteDigestionProductCountFile { get; set; }
     }
 }
