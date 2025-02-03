@@ -595,9 +595,13 @@ namespace Test.MetaDraw
 
             var colorBrushfromName = DrawnSequence.ParseColorBrushFromName(oxyBlue.GetColorName());
             Assert.That(colorBrushfromName.Color == brushBlue.Color);
+            var colorBrushfromNameBad = DrawnSequence.ParseColorBrushFromName("humbug");
+            Assert.That(colorBrushfromNameBad.Color == Colors.Aqua);
 
             var oxyFromName = DrawnSequence.ParseOxyColorFromName(oxyBlue.GetColorName());
             Assert.That(oxyFromName == oxyBlue);
+            var oxyFromNameBad = DrawnSequence.ParseOxyColorFromName("gobbledygook");
+            Assert.That(oxyFromNameBad == MetaDrawSettings.FallbackColor);
 
             var colorFromOxy = DrawnSequence.ParseColorFromOxyColor(oxyBlue);
             Assert.That(colorFromOxy == colorBlue);
