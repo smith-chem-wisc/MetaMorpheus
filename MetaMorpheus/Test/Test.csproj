@@ -376,6 +376,12 @@
     <None Update="TestData\smalldb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\snippet.d\analysis.tdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\snippet.d\analysis.tdf_bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\1-81.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
