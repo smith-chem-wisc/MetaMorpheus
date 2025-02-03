@@ -253,10 +253,10 @@ namespace TaskLayer
 
             //get the deconvoluted ms2scans for the good identifications
             List<Ms2ScanWithSpecificMass> goodScans = new List<Ms2ScanWithSpecificMass>();
-            HashSet<int> goodScanIndices = new HashSet<int>(goodIdentifications.Select(psm => Array.IndexOf(allPsmsArray, psm)));
-            foreach (int index in goodScanIndices)
+            List<SpectralMatch> unfilteredPsms = allPsmsArray.ToList();
+            foreach (SpectralMatch psm in goodIdentifications)
             {
-                goodScans.Add(listOfSortedms2Scans[index]);
+                goodScans.Add(listOfSortedms2Scans[unfilteredPsms.IndexOf(psm)]);
             }
             
             DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
