@@ -6,10 +6,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using MathNet.Numerics.Distributions;
+using Omics;
 
 namespace EngineLayer.CrosslinkSearch
 {
-    public class CrosslinkSpectralMatch : PeptideSpectralMatch
+    public class CrosslinkSpectralMatch : SpectralMatch
     {
         public CrosslinkSpectralMatch(
             PeptideWithSetModifications theBestPeptide,
@@ -184,6 +185,57 @@ namespace EngineLayer.CrosslinkSearch
 
                 csm.XlProteinPosLoop = csm.OneBasedStartResidue == null ? (int?)null : csm.OneBasedStartResidue.Value + csm.LinkPositions[1] - 1;
             }
+        }
+
+        public override void ResolveAllAmbiguities()
+        {
+            IsDecoy = _BestMatchingBioPolymersWithSetMods.Any(p => p.Pwsm.Parent.IsDecoy);
+            IsContaminant = _BestMatchingBioPolymersWithSetMods.Any(p => p.Pwsm.Parent.IsContaminant);
+            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.FullSequence)).ResolvedValue;
+            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.BaseSequence)).ResolvedValue;
+            BioPolymerWithSetModsLength = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.Length)).ResolvedValue;
+            OneBasedStartResidue = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.OneBasedStartResidue)).ResolvedValue;
+            OneBasedEndResidue = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.OneBasedEndResidue)).ResolvedValue;
+            ParentLength = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.Parent.Length)).ResolvedValue;
+            BioPolymerWithSetModsMonoisotopicMass = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.MonoisotopicMass)).ResolvedValue;
+            Accession = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.Parent.Accession)).ResolvedValue;
+            Organism = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.Parent.Organism)).ResolvedValue;
+            ModsIdentified = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.AllModsOneIsNterminus)).ResolvedValue;
+            ModsChemicalFormula = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
+            Notch = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Notch)).ResolvedValue;
+
+            //if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
+            if (IsDecoy)
+            {
+                bool removedPeptides = false;
+                var hits = _BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Pwsm.FullSequence);
+
+                foreach (var hit in hits)
+                {
+                    if (hit.Any(p => p.Pwsm.Parent.IsDecoy) && hit.Any(p => !p.Pwsm.Parent.IsDecoy))
+                    {
+                        // at least one peptide with this sequence is a target and at least one is a decoy
+                        // remove the decoys with this sequence
+                        var pwsmToRemove = _BestMatchingBioPolymersWithSetMods.Where(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Parent.IsDecoy).ToList();
+                        _BestMatchingBioPolymersWithSetMods.RemoveAll(p => p.Pwsm.FullSequence == hit.Key && p.Pwsm.Parent.IsDecoy);
+                        foreach ((int, IBioPolymerWithSetMods) pwsm in pwsmToRemove)
+                        {
+                            BioPolymersWithSetModsToMatchingFragments.Remove(pwsm.Item2);
+                        }
+
+                        removedPeptides = true;
+                    }
+                }
+
+                if (removedPeptides)
+                {
+                    ResolveAllAmbiguities();
+                }
+            }
+
+            // TODO: technically, different peptide options for this PSM can have different matched ions
+            // we can write a Resolve method for this if we want...
+            MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments.First().Value;
         }
 
         public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite)

@@ -44,7 +44,9 @@ namespace EngineLayer
         /// </summary>
         public IEnumerable<SpectralMatch> GetBestMatches()
         { 
-            return SpectralMatches.GroupBy(p => p.FullSequence).Select(g => g.MaxBy(p => p));
+            return SpectralMatches
+                .GroupBy(p => p.FullSequence)
+                .Select(g => g.MaxBy(p => p));
         }
 
         /// <summary>
