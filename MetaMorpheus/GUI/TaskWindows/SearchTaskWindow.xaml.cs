@@ -161,6 +161,7 @@ namespace MetaMorpheusGUI
         /// <param name="task"></param>
         private void UpdateFieldsFromTask(SearchTask task)
         {
+            MetaMorpheusTask.DetermineAnalyteType(TheTask.CommonParameters);
             ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
             ClassicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             ModernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
