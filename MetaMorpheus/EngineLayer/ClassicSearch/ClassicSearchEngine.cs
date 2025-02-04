@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Threading;
 using Omics.Modifications;
 using System.Collections.Concurrent;
 
@@ -26,12 +25,14 @@ namespace EngineLayer.ClassicSearch
         private readonly Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans;
         private readonly double[] MyScanPrecursorMasses;
         private readonly bool WriteSpectralLibrary;
+        private readonly bool WriteDigestionCounts;
         private readonly object[] Locks;
+        public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
 
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
-            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary)
+            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool writeDigestionCounts = false)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
@@ -48,6 +49,8 @@ namespace EngineLayer.ClassicSearch
             SearchMode = searchMode;
             SpectralLibrary = spectralLibrary;
             WriteSpectralLibrary = writeSpectralLibrary;
+            WriteDigestionCounts = writeDigestionCounts;
+            DigestionCountDictionary = new();
 
             // Create one lock for each PSM to ensure thread safety
             Locks = new object[PeptideSpectralMatches.Length];
@@ -108,6 +111,9 @@ namespace EngineLayer.ClassicSearch
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
                         foreach (PeptideWithSetModifications peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
+                            if (WriteDigestionCounts)
+                                DigestionCountDictionary.Increment((peptide.Parent.Accession, peptide.BaseSequence));
+                                
                             PeptideWithSetModifications reversedOnTheFlyDecoy = null;
 
                             if (SpectralLibrary != null)
