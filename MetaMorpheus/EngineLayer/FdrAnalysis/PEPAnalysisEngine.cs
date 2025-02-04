@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Omics.Modifications;
 using Omics;
 using Easy.Common.Extensions;
+using System.Threading;
 
 namespace EngineLayer
 {
@@ -381,12 +382,13 @@ namespace EngineLayer
             return s.ToString();
         }
 
+        private readonly object _modelLock = new();
+
         public int Compute_PSM_PEP(List<SpectralMatchGroup> peptideGroups,
             List<int> peptideGroupIndices,
             MLContext mLContext, TransformerChain<BinaryPredictionTransformer<Microsoft.ML.Calibrators.CalibratedModelParametersBase<Microsoft.ML.Trainers.FastTree.FastTreeBinaryModelParameters, Microsoft.ML.Calibrators.PlattCalibrator>>> trainedModel, string searchType, string outputFolder)
         {
             int maxThreads = FileSpecificParametersDictionary.Values.FirstOrDefault().MaxThreadsToUsePerFile;
-            object lockObject = new object();
             int ambiguousPeptidesResolved = 0;
 
             //the trained model is not threadsafe. Therefore, to use the same model for each thread saved the model to disk. Then each thread reads its own copy of the model back from disk.
@@ -404,13 +406,17 @@ namespace EngineLayer
                     if (GlobalVariables.StopLoops) { return; }
 
                     ITransformer threadSpecificTrainedModel;
+                    
                     if (maxThreads == 1)
                     {
                         threadSpecificTrainedModel = trainedModel;
                     }
                     else
                     {
-                        threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+                        lock (_modelLock)
+                        {
+                            threadSpecificTrainedModel = mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+                        }
                     }
 
                     // one prediction engine per thread, because the prediction engine is not thread-safe
@@ -455,10 +461,7 @@ namespace EngineLayer
                         }
                     }
 
-                    lock (lockObject)
-                    {
-                        ambiguousPeptidesResolved += ambigousPeptidesRemovedinThread;
-                    }
+                    Interlocked.Add(ref ambiguousPeptidesResolved, ambigousPeptidesRemovedinThread);
                 });
             return ambiguousPeptidesResolved;
         }
