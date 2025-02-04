@@ -187,6 +187,10 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
+        /// <summary>
+        /// CrosslinkSpectralMatch.ResolveAllAmbiguities() is very similar to SpectralMatch.ResolveAllAmbiguities(),
+        /// but MatchedFragmentIons is handled differently, as BioPolymersWithSetModsToMatchingFragments contains alpha-peptide and beta-peptide BPWSM-Fragment pairs.
+        /// </summary>
         public override void ResolveAllAmbiguities()
         {
             IsDecoy = _BestMatchingBioPolymersWithSetMods.Any(p => p.Pwsm.Parent.IsDecoy);
@@ -233,8 +237,6 @@ namespace EngineLayer.CrosslinkSearch
                 }
             }
 
-            // TODO: technically, different peptide options for this PSM can have different matched ions
-            // we can write a Resolve method for this if we want...
             MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments.First().Value;
         }
 
