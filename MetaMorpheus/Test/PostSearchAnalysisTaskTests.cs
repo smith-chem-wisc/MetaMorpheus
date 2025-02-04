@@ -71,6 +71,13 @@ namespace Test
         }
 
         [Test]
+        public static void LocalTest()
+        {
+            var modelPath = @"D:\MetaMorpheusVignette\Search_0105GPTMD_NotchSorting\Task1-SearchTask\model.zip";
+            //mLContext.Model.Load(Path.Combine(outputFolder, "model.zip"), out DataViewSchema savedModelSchema);
+        }
+
+        [Test]
         public static void AllResultsAndResultsTxtContainsCorrectValues_PepQValue_BottomUp()
         {
             //First test that AllResults and Results display correct numbers of peptides and psms with pep q-value filter on
