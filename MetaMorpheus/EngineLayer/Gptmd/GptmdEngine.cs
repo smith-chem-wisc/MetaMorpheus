@@ -65,9 +65,8 @@ namespace EngineLayer.Gptmd
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
-            var modDict = new ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>>();
+            var mergedDictionaries = new ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>>();
             int modsAdded = 0;
-
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy).ToList();
             if (psms.Any() == false)
@@ -76,6 +75,7 @@ namespace EngineLayer.Gptmd
             }
             Parallel.ForEach(Partitioner.Create(0, psms.Count), new ParallelOptions() { MaxDegreeOfParallelism = maxThreadsPerFile }, (range) =>
             {
+                var modDict = new ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>>();
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
                     foreach (var pepWithSetMods in psms[i].BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications))
@@ -173,10 +173,21 @@ namespace EngineLayer.Gptmd
                         }
                     }
                 }
+                    foreach (var kvp in modDict)
+                    {
+                        mergedDictionaries.AddOrUpdate(kvp.Key, kvp.Value, (key, oldValue) =>
+                        {
+                            foreach (var item in kvp.Value)
+                            {
+                                oldValue.Add(item);
+                            }
+                            return oldValue;
+                        });
+                    }         
             });
 
             // Convert ConcurrentDictionary to Dictionary with HashSet
-            var finalModDictionary = modDict.ToDictionary(
+            var finalModDictionary = mergedDictionaries.ToDictionary(
                 kvp => kvp.Key,
                 kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)
             );
