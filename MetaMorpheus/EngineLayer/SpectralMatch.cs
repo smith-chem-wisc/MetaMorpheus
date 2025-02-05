@@ -123,11 +123,14 @@ namespace EngineLayer
 
         #region Search
         public DigestionParams DigestionParams { get; }
+
+        public static BioPolymerNotchFragmentIonComparer<(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions)> BioPolymerNotchFragmentIonComparer = new();
+
+        // TODO: The BioPolymerWithSetModsToMatchingFragments dictionary should be more tightly coupled to the _BestMatchingBioPolymersWithSetMods list,
+        // so that the two are always in sync. This would make the code more robust and easier to understand.
         public Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> BioPolymersWithSetModsToMatchingFragments { get; private set; }
 
         protected List<(int Notch, IBioPolymerWithSetMods Pwsm)> _BestMatchingBioPolymersWithSetMods;
-
-        public static BioPolymerNotchFragmentIonComparer<(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions)> BioPolymerNotchFragmentIonComparer = new();
 
         public IEnumerable<(int Notch, IBioPolymerWithSetMods Peptide)> BestMatchingBioPolymersWithSetMods
         {
@@ -138,7 +141,8 @@ namespace EngineLayer
 
                 // Order by descending sorts things from high (better matches) to low (worse matches)
                 return _BestMatchingBioPolymersWithSetMods.OrderByDescending(t => 
-                    (t.Notch, t.Pwsm, BioPolymersWithSetModsToMatchingFragments[t.Pwsm]), comparer: BioPolymerNotchFragmentIonComparer);
+                    (t.Notch, t.Pwsm, BioPolymersWithSetModsToMatchingFragments.TryGetValue(t.Pwsm, out var ions) ? ions : null), 
+                    comparer: BioPolymerNotchFragmentIonComparer);
             }
         }
 
@@ -238,10 +242,11 @@ namespace EngineLayer
             // Technically, different peptide options for this PSM can have different matched ions
             // However, writing out all the matched ions for all the peptide options would break excel
             // Instead, we set MatchedFragmentIons as the ions matched to the best peptide option
-            if (this is CrosslinkSpectralMatch)
+            if (this is CrosslinkSpectralMatch) // CrosslinkSpectralMatch has its own way of handling this, however, this method of retrieving the "First" item in a dictionary is problematic and should be revisted at some point
                 MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments.Values.First();
-            else
-                MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments[_BestMatchingBioPolymersWithSetMods.First().Pwsm];
+            else if (BioPolymersWithSetModsToMatchingFragments.TryGetValue(_BestMatchingBioPolymersWithSetMods.First().Pwsm, out var ionList))
+                MatchedFragmentIons = ionList;
+            else MatchedFragmentIons = null;
         }
 
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
