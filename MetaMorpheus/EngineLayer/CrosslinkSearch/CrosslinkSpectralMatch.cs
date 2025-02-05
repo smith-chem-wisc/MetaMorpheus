@@ -9,7 +9,7 @@ using MathNet.Numerics.Distributions;
 
 namespace EngineLayer.CrosslinkSearch
 {
-    public class CrosslinkSpectralMatch : SpectralMatch
+    public class CrosslinkSpectralMatch : PeptideSpectralMatch
     {
         public CrosslinkSpectralMatch(
             PeptideWithSetModifications theBestPeptide,
