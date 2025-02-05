@@ -24,7 +24,7 @@ namespace EngineLayer
                 return x.ions.Count.CompareTo(y.ions.Count); // More ions are better
 
             if(x.pwsm.NumMods !=  y.pwsm.NumMods)
-                return -1 * x.pwsm.NumMods.CompareTo(y.pwsm.NumMods); // Fewer mods are
+                return -1 * x.pwsm.NumMods.CompareTo(y.pwsm.NumMods); // Fewer mods are better
 
             if(!x.pwsm.FullSequence.Equals(y.pwsm.FullSequence))
                 return -1 * String.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
