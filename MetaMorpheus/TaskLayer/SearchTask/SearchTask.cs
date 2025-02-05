@@ -84,13 +84,15 @@ namespace TaskLayer
             }
         }
 
-        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
+        protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, 
+            FileSpecificParameters[] fileSettingsList)
         {
             MyFileManager myFileManager = new MyFileManager(SearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             // start loading first spectra file in the background
-            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
+            string fileToLoad = currentRawFileList[0];
+            Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(fileToLoad, SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
             nextFileLoadingTask.Start();
 
             if (SearchParameters.DoLabelFreeQuantification)

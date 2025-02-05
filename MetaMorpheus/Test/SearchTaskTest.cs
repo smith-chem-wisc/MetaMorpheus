@@ -253,6 +253,9 @@ namespace Test
                 {
                     Normalize = true
                 },
+                CommonParameters = new( precursorDeconParams:new IsoDecDeconvolutionParameters())
+                {
+                }
             };
 
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PrunedDbSpectra.mzml");
