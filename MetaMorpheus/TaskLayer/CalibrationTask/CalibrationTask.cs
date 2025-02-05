@@ -258,7 +258,7 @@ namespace TaskLayer
             {
                 goodScans.Add(listOfSortedms2Scans[unfilteredPsms.IndexOf(psm)]);
             }
-            
+
             DataPointAquisitionResults currentResult = (DataPointAquisitionResults)new DataPointAcquisitionEngine(
                     goodIdentifications,
                     goodScans,
