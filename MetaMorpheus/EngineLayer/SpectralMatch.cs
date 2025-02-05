@@ -43,21 +43,21 @@ namespace EngineLayer
         }
 
         public MsDataScan MsDataScan { get; set; }
-        public ChemicalFormula ModsChemicalFormula { get; protected set; } // these fields will be null if they are ambiguous
+        public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; protected set; }
         public string EssentialSequence { get; protected set; }
-        public int? Notch { get; protected set; }
+        public int? Notch { get; private set; }
         public string BaseSequence { get; protected set; }
-        public int? BioPolymerWithSetModsLength { get; protected set; }
-        public int? OneBasedStartResidue { get; protected set; }
-        public int? OneBasedEndResidue { get; protected set; }
-        public double? BioPolymerWithSetModsMonoisotopicMass { get; protected set; }
-        public int? ParentLength { get; protected set; }
-        public string Accession { get; protected set; }
-        public string Organism { get; protected set; }
+        public int? BioPolymerWithSetModsLength { get; private set; }
+        public int? OneBasedStartResidue { get; private set; }
+        public int? OneBasedEndResidue { get; private set; }
+        public double? BioPolymerWithSetModsMonoisotopicMass { get; private set; }
+        public int? ParentLength { get; private set; }
+        public string Accession { get; private set; }
+        public string Organism { get; private set; }
         public List<MatchedFragmentIon> MatchedFragmentIons { get; protected set; }
         public int PsmCount { get; internal set; }
-        public Dictionary<string, int> ModsIdentified { get; protected set; } // these should never be null under normal circumstances
+        public Dictionary<string, int> ModsIdentified { get; private set; } // these should never be null under normal circumstances
         public List<double> LocalizedScores { get; internal set; }
         public int ScanNumber { get; }
         public int? PrecursorScanNumber { get; }
@@ -97,8 +97,8 @@ namespace EngineLayer
         public double DeltaScore { get { return (Score - RunnerUpScore); } }
 
         public double RunnerUpScore { get; set; }
-        public bool IsDecoy { get; protected set; }
-        public bool IsContaminant { get; protected set; }
+        public bool IsDecoy { get; private set; }
+        public bool IsContaminant { get; private set; }
 
         //One-based positions in peptide that are covered by fragments on both sides of amino acids
         public List<int> FragmentCoveragePositionInPeptide { get; private set; }
@@ -129,9 +129,7 @@ namespace EngineLayer
         {
             get
             {
-                return _BestMatchingBioPolymersWithSetMods
-                    .OrderBy(p => p.Notch)
-                    .ThenBy(p => p.Pwsm.FullSequence)
+                return _BestMatchingBioPolymersWithSetMods.OrderBy(p => p.Pwsm.FullSequence)
                     .ThenBy(p => p.Pwsm.Parent.Accession)
                     .ThenBy(p => p.Pwsm.OneBasedStartResidue);
             }
@@ -181,11 +179,8 @@ namespace EngineLayer
         /// These resolved fields are (usually) null if there is more than one option.
         /// e.g., if this PSM can be explained by more than one base sequence, the BaseSequence property will be null
         /// </summary>
-        public virtual void ResolveAllAmbiguities()
+        public void ResolveAllAmbiguities()
         {
-            // Order the BPWSM list for stability
-            _BestMatchingBioPolymersWithSetMods = BestMatchingBioPolymersWithSetMods.ToList();
-
             IsDecoy = _BestMatchingBioPolymersWithSetMods.Any(p => p.Pwsm.Parent.IsDecoy);
             IsContaminant = _BestMatchingBioPolymersWithSetMods.Any(p => p.Pwsm.Parent.IsContaminant);
             FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.FullSequence)).ResolvedValue;
@@ -232,7 +227,7 @@ namespace EngineLayer
 
             // TODO: technically, different peptide options for this PSM can have different matched ions
             // we can write a Resolve method for this if we want...
-            MatchedFragmentIons = PsmTsvWriter.Resolve(BioPolymersWithSetModsToMatchingFragments.Values);
+            MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments.First().Value;
         }
 
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
