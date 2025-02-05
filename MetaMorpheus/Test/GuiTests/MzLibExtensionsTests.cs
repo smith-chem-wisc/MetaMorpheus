@@ -23,6 +23,19 @@ public class MzLibExtensionsTests
     }
 
     [Test]
+    public void ToViewModel_WithIsoDecDeconvolutionParameters_ReturnsClassicDeconParamsViewModel()
+    {
+        // Arrange
+        var isoDecParams = new IsoDecDeconvolutionParameters();
+
+        // Act
+        var result = isoDecParams.ToViewModel();
+
+        // Assert
+        Assert.That(result, Is.InstanceOf<IsoDecDeconParamsViewModel>());
+    }
+
+    [Test]
     public void ToViewModel_WithUnsupportedParameters_ThrowsNotImplementedException()
     {
         // Arrange
