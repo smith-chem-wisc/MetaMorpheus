@@ -52,6 +52,7 @@ namespace Test
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\RibosomeGO.fasta");
 
+            if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
             Directory.CreateDirectory(outputFolder);
 
             XLSearchTask xLSearch = new XLSearchTask
