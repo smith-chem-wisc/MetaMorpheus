@@ -1,10 +1,14 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
 using NUnit.Framework;
 using Omics;
 using Omics.Fragmentation;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Omics.Modifications;
 
 namespace Test
 {
@@ -12,67 +16,93 @@ namespace Test
     public static class BioPolymerNotchFragmentIonComparerTest
     {
         private static BioPolymerNotchFragmentIonComparer<(int, IBioPolymerWithSetMods, List<MatchedFragmentIon>)> comparer;
+        private static Protein exampleProtein;
+        private static PeptideWithSetModifications examplePwsm;
+        private static MatchedFragmentIon exampleIon;
+        private static PropertyInfo fullSequenceProperty;
+        private static FieldInfo modDictField;
 
         [SetUp]
         public static void Setup()
         {
             comparer = new BioPolymerNotchFragmentIonComparer<(int, IBioPolymerWithSetMods, List<MatchedFragmentIon>)>();
+            exampleProtein = new Protein("PEPTIDEK", "accession");
+            examplePwsm = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
+            exampleIon = new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0), 100, 100, 1);
+            fullSequenceProperty = examplePwsm.GetType().GetProperty("FullSequence", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            modDictField = examplePwsm.GetType().GetField("_allModsOneIsNterminus", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         }
-
-        private static Protein _exampleProtein = new Protein("PEPTIDEK", "accession");
-        private static PeptideWithSetModifications _examplePwsm = new PeptideWithSetModifications("PEPTIDEK", null, p: _exampleProtein);
-        private static MatchedFragmentIon _exampleIon = new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0), 100, 100, 2);
 
         [Test]
         public static void Compare_DifferentNotches()
         {
-            var x = (0, _examplePwsm, new List<MatchedFragmentIon>());
-            var y = (2, _examplePwsm, new List<MatchedFragmentIon>());
+            var x = (0, _examplePwsm: examplePwsm, new List<MatchedFragmentIon>());
+            var y = (2, _examplePwsm: examplePwsm, new List<MatchedFragmentIon>());
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
         [Test]
         public static void Compare_DifferentFragmentIonCounts()
         {
-            var x = (1, _examplePwsm, new List<MatchedFragmentIon> { _exampleIon });
-            var y = (1, _examplePwsm, new List<MatchedFragmentIon>());
+            var x = (1, _examplePwsm: examplePwsm, new List<MatchedFragmentIon> { exampleIon });
+            var y = (1, _examplePwsm: examplePwsm, new List<MatchedFragmentIon>());
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
         [Test]
-        public static void Compare_DifferentSequenceLengths()
+        public static void Compare_DifferentNumberOfMods()
         {
-            var modifiedPwsm = new PeptideWithSetModifications("PEP[Oxidation]T[Reduction]IDEK", null, p: _exampleProtein);
-            var x = (0, _examplePwsm, new List<MatchedFragmentIon>());
+            var modifiedPwsm = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
+            fullSequenceProperty.SetValue(modifiedPwsm, "P[Oxidation]EPT[Reduction]IDEK", null); 
+            modDictField.SetValue(modifiedPwsm,
+                new Dictionary<int, Modification>
+                {
+                    {1, new Modification() },
+                    {4, new Modification() }
+                });
+            var x = (0, _examplePwsm: examplePwsm, new List<MatchedFragmentIon>());
             var y = (0, modifiedPwsm, new List<MatchedFragmentIon>());
+            Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
+
+            // double check that mods are considered before sequence
+            fullSequenceProperty.SetValue(modifiedPwsm, "AAAAAAAA", null);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
         [Test]
         public static void Compare_DifferentFullSequences()
         {
-            var modifiedPwsmFirst = new PeptideWithSetModifications("PEP[Oxidation]TIDEK", null, p: _exampleProtein);
-            var modifiedPwsmSecond = new PeptideWithSetModifications("P[Oxidation]EPTIDEK", null, p: _exampleProtein);
+            var modifiedPwsmFirst = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
+            var modifiedPwsmSecond = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
+            fullSequenceProperty.SetValue(modifiedPwsmFirst, "P[Oxidation]EPTIDEK");
+            fullSequenceProperty.SetValue(modifiedPwsmSecond, "PEP[Oxidation]TIDEK");
+
+            // Full sequences are compared alphabetically, and '[' comes before 'E'
             var x = (0, modifiedPwsmFirst, new List<MatchedFragmentIon>());
             var y = (0, modifiedPwsmSecond, new List<MatchedFragmentIon>());
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
-        //[Test]
-        //public static void Compare_DifferentAccessions()
-        //{
-        //    var x = (1, new MockBioPolymerWithSetMods("SEQ", "ACC1", 1), new List<MatchedFragmentIon>());
-        //    var y = (1, new MockBioPolymerWithSetMods("SEQ", "ACC2", 1), new List<MatchedFragmentIon>());
-        //    Assert.That(comparer.Compare(x, y), Is.LessThan(0));
-        //}
+        [Test]
+        public static void Compare_DifferentAccessions()
+        {
+            var protein1 = new Protein("PEPTIDEK", "accession1");
+            var protein2 = new Protein("PEPTIDEK", "accession2");
+            var x = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: protein1), new List<MatchedFragmentIon>());
+            var y = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: protein2), new List<MatchedFragmentIon>());
+            Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
+        }
 
-        //[Test]
-        //public static void Compare_DifferentStartResidues()
-        //{
-        //    var x = (1, new MockBioPolymerWithSetMods("SEQ", "ACC", 1), new List<MatchedFragmentIon>());
-        //    var y = (1, new MockBioPolymerWithSetMods("SEQ", "ACC", 2), new List<MatchedFragmentIon>());
-        //    Assert.That(comparer.Compare(x, y), Is.LessThan(0));
-        //}
+        [Test]
+        public static void Compare_DifferentStartResidues()
+        {
+            var x = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 1), new List<MatchedFragmentIon>());
+            var y = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 5), new List<MatchedFragmentIon>());
+            Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
+        }
     }
+
+  
+
 }
 
