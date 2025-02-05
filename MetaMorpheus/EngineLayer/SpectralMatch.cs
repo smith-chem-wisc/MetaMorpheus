@@ -190,7 +190,7 @@ namespace EngineLayer
         /// These resolved fields are (usually) null if there is more than one option.
         /// e.g., if this PSM can be explained by more than one base sequence, the BaseSequence property will be null
         /// </summary>
-        public virtual void ResolveAllAmbiguities()
+        public void ResolveAllAmbiguities()
         {
             // Order the BPWSM list for stability
             _BestMatchingBioPolymersWithSetMods = BestMatchingBioPolymersWithSetMods.ToList();
