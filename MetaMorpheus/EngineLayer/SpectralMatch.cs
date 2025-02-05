@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics;
 using System;
+using EngineLayer.CrosslinkSearch;
 
 namespace EngineLayer
 {
@@ -125,15 +126,18 @@ namespace EngineLayer
         public Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> BioPolymersWithSetModsToMatchingFragments { get; private set; }
 
         protected List<(int Notch, IBioPolymerWithSetMods Pwsm)> _BestMatchingBioPolymersWithSetMods;
+
+        public static BioPolymerNotchFragmentIonComparer<(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions)> BioPolymerNotchFragmentIonComparer = new();
+
         public IEnumerable<(int Notch, IBioPolymerWithSetMods Peptide)> BestMatchingBioPolymersWithSetMods
         {
             get
             {
-                return _BestMatchingBioPolymersWithSetMods
-                    .OrderBy(p => p.Notch)
-                    .ThenBy(p => p.Pwsm.FullSequence)
-                    .ThenBy(p => p.Pwsm.Parent.Accession)
-                    .ThenBy(p => p.Pwsm.OneBasedStartResidue);
+                // This property gets called frequently
+                // It might be worth considering stashing the sorted list in a field 
+                // instead of sorting every time
+                return _BestMatchingBioPolymersWithSetMods.OrderByDescending(t => 
+                    (t.Notch, t.Pwsm, BioPolymersWithSetModsToMatchingFragments[t.Pwsm]), comparer: BioPolymerNotchFragmentIonComparer);
             }
         }
 
@@ -230,9 +234,13 @@ namespace EngineLayer
                 }
             }
 
-            // TODO: technically, different peptide options for this PSM can have different matched ions
-            // we can write a Resolve method for this if we want...
-            MatchedFragmentIons = PsmTsvWriter.Resolve(BioPolymersWithSetModsToMatchingFragments.Values);
+            // Technically, different peptide options for this PSM can have different matched ions
+            // However, writing out all the matched ions for all the peptide options would break excel
+            // Instead, we set MatchedFragmentIons as the ions matched to the best peptide option
+            if (this is CrosslinkSpectralMatch)
+                MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments.Values.First();
+            else
+                MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments[_BestMatchingBioPolymersWithSetMods.First().Pwsm];
         }
 
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
