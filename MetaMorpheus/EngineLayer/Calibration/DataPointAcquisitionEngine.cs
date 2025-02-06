@@ -40,6 +40,9 @@ namespace EngineLayer.Calibration
             MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
         }
 
+        private readonly object _ms1Lock = new();
+        private readonly object _ms2Lock = new();
+
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("Extracting data points:");
@@ -51,9 +54,6 @@ namespace EngineLayer.Calibration
             int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
             List<LabeledDataPoint> Ms1List = new List<LabeledDataPoint>();
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
-
-            object lockObj = new object();
-            object lockObj2 = new object();
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -85,7 +85,7 @@ namespace EngineLayer.Calibration
 
                     List<LabeledDataPoint> ms2tuple = SearchMS2Spectrum(GoodScans[matchIndex], identification, ProductMassTolerance);
 
-                    lock (lockObj2)
+                    lock (_ms2Lock)
                     {
                         Ms2List.AddRange(ms2tuple);
                     }
@@ -102,7 +102,7 @@ namespace EngineLayer.Calibration
 
                     var ms1tupleForward = SearchMS1Spectra(theoreticalMasses, theoreticalIntensities, ms2scanNumber, 1, peptideCharge, identification);
 
-                    lock (lockObj)
+                    lock (_ms1Lock)
                     {
                         Ms1List.AddRange(ms1tupleBack.Item1);
                         numMs1MassChargeCombinationsConsidered += ms1tupleBack.Item2;
