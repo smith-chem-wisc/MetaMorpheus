@@ -85,7 +85,7 @@ namespace EngineLayer
         public FdrInfo PeptideFdrInfo { get;  set; }
         public FdrInfo GetFdrInfo(bool peptideLevel)
         {
-            return peptideLevel ? PeptideFdrInfo : PsmFdrInfo;
+            return peptideLevel & PeptideFdrInfo != null ? PeptideFdrInfo : PsmFdrInfo;
         }
 
         public PsmData PsmData_forPEPandPercolator { get; set; }

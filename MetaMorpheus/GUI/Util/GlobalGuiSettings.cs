@@ -23,6 +23,7 @@ namespace MetaMorpheusGUI
             string maxThreads,
             string minScore,
             string peakFindingTolerance,
+            string mbrFdrThreshold,
             string histogramBinWidth,
             string deconMaxAssumedCharge,
             string numberOfPeaksToKeepPerWindow,
@@ -50,6 +51,7 @@ namespace MetaMorpheusGUI
                 (CheckMaxThreads(maxThreads)),
                 (CheckMinScoreAllowed(minScore)),
                 (CheckPeakFindingTolerance(peakFindingTolerance)),
+                (CheckMbrFdrThreshold(mbrFdrThreshold)),
                 (CheckHistogramBinWidth(histogramBinWidth)),
                 (CheckDeconvolutionMaxAssumedChargeState(deconMaxAssumedCharge)),
                 (CheckTopNPeaks(numberOfPeaksToKeepPerWindow)),
@@ -271,7 +273,18 @@ namespace MetaMorpheusGUI
             }
             return true;
         }
-      
+
+        public static bool CheckMbrFdrThreshold(string text)
+        {
+            if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double mbrFdrThreshold) || mbrFdrThreshold > 1)
+            {
+                MessageBox.Show("The MBR FDR Threshold is invalid. \n You entered " + '"' + text + '"' + "\n Please enter a positive number less than or equal to 1.");
+                return false;
+            }
+            return true;
+        }
+        
+
         public static bool CheckHistogramBinWidth(string text)
         {
             if (!double.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out double binWidth) || binWidth < 0 || binWidth > 1)

@@ -261,6 +261,8 @@ namespace MetaMorpheusGUI
             CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
+            MbrFdrThresholdTextBox.Text = task.SearchParameters.MbrFdrThreshold.ToString(CultureInfo.InvariantCulture);
+            MbrFdrThresholdTextBox.Text = task.SearchParameters.MbrFdrThreshold.ToString(CultureInfo.InvariantCulture);
             CheckBoxNormalize.IsChecked = task.SearchParameters.Normalize;
             ModPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
             CheckBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
@@ -441,6 +443,7 @@ namespace MetaMorpheusGUI
                 MaxThreadsTextBox.Text, 
                 MinScoreAllowed.Text,
                 PeakFindingToleranceTextBox.Text, 
+                MbrFdrThresholdTextBox.Text,
                 HistogramBinWidthTextBox.Text, 
                 DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), 
                 NumberOfPeaksToKeepPerWindowTextBox.Text,
@@ -640,6 +643,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
+            TheTask.SearchParameters.MbrFdrThreshold = double.Parse(MbrFdrThresholdTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = CheckBoxTarget.IsChecked.Value;
