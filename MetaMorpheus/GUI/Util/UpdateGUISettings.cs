@@ -263,6 +263,7 @@ namespace MetaMorpheusGUI
                     "The following parameters are necessary for the Spectral Recovery algorithm:\n" +
                     "\t-Check 'Match between runs' (Search Task Only)\n" +
                     "\t-Check 'Write Spectral Library' (Search Task Only)\n" +
+                    "\t-SEARCH TASK ONLY: Increase the maximum allowed modified isoforms to 4096'\n" +
                     "Would you like to use these settings?");
 
                 if (results.UseSettings)
