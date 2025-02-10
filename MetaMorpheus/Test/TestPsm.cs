@@ -28,6 +28,7 @@ namespace Test
     [TestFixture]
     public static class TestPsm
     {
+
         [Test]
         public static void TestPsmHeader()
         {
@@ -66,6 +67,42 @@ namespace Test
             psm.SetFdrValues(6, 6, 6, 6, 6, 0, 0, 0);
 
             Assert.That(psm.ToString().Count(f => f == '\t'), Is.EqualTo(SpectralMatch.GetTabSeparatedHeader().Count(f => f == '\t')));
+        }
+
+        [Test]
+        public static void TestResolvedAmbiguitiesWithDiagnosticIon()
+        {
+            CommonParameters commonParameters = new CommonParameters();
+
+            Protein protein = new Protein("", "accession");
+            Modification oxP = new Modification(_originalId: "Oxidation on P", _monoisotopicMass: 16);
+            Modification oxI = new Modification(_originalId: "Oxidation on I", _monoisotopicMass: 16);
+            PeptideWithSetModifications pepWithOxidationOnP= new("PEP[Variable:Oxidation]TIDEK", 
+                new Dictionary<string, Modification> { { "Oxidation", oxP} }, p: protein);
+            PeptideWithSetModifications pepWithOxidationOnI = new("PEPTI[Variable:Oxidation]DEK",
+                new Dictionary<string, Modification> { { "Oxidation", oxI} }, p: protein);
+
+            MsDataFile myMsDataFile = new TestDataFile();
+            MsDataScan scann = myMsDataFile.GetOneBasedScan(1);
+            Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(scann, 4, 1, null, new CommonParameters());
+
+            var bIon = new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0), 100, 100, 1);
+            var dIon = new MatchedFragmentIon(new Product(ProductType.D, FragmentationTerminus.None, 1, 1, 1, 0), 50, 100, 1);
+            var twoIonList = new List<MatchedFragmentIon> { bIon, dIon };
+
+            // Start with a psm matched to a peptide with oxidation on I and one matched product ion
+            SpectralMatch psm = new PeptideSpectralMatch(pepWithOxidationOnI, 1, 2, 3, scan, commonParameters, new List<MatchedFragmentIon> { bIon });
+            // add a pwsm matched to a peptide with oxidation on P, one matched product ion, and one matched diagnostic ion (scores are identical as diagnostic ions aren't scored)
+            psm.AddOrReplace(pepWithOxidationOnP, 2, 1, true, twoIonList, 0);
+
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
+
+            psm.ResolveAllAmbiguities();
+
+            // Check that the ion series with the diagnostic ion is set to the MatchedFragmentIons property
+            Assert.That(psm.MatchedFragmentIons, Is.EqualTo(twoIonList));
+            // Check that the pwsm with the diagnostic ion is first in the BestMatchingBioPolymersWithSetMods list
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.First().Peptide, Is.EqualTo(pepWithOxidationOnP));
         }
 
         [Test]
@@ -442,13 +479,6 @@ namespace Test
             Assert.That(allPeptidesQvalueBelowCutoff, Is.EqualTo(peptideCountFromResults));
             Directory.Delete(outputFolder, true);
             Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
-        }
-
-        [Test]
-        public static void PsmtsvTest()
-        {
-            Type type = typeof(PsmFromTsv);
-            PropertyInfo[] properties = type.GetProperties();
         }
 
         [Test]
