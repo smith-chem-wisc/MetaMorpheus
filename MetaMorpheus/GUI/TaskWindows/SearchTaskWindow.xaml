@@ -428,10 +428,10 @@
                                     <ToolTip Content="Intensity of reporter ions are reported as additional columns in AllPeptides.psmtsv and AllPSMs.psmtsv" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
                                 </ToolTipService.ToolTip>
                             </RadioButton>
-                            <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery finds misidentified MS/MS spectra common in single-cell proteomics data" 
+                            <RadioButton x:Name="CheckBoxLFQwSpectralRecovery" Content="LFQ + Spectral Recovery: Spectral recovery finds missed MS/MS spectra common in single-cell proteomics data" 
                                          GroupName="QuantType" Click="SpectralRecoveryUpdate">
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="Match between runs analysis via spectral library search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip Content="Re-analyzes MS/MS spectra based on the results of MBR to find spectra that may have been missed during the inital search" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </RadioButton>
 
@@ -508,7 +508,7 @@
                                     </MultiBinding>
                                 </CheckBox.Visibility>
                                 <ToolTipService.ToolTip>
-                                    <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified&#x0a;Selecting &quot;Write Spectral Library&quot; in the Output Options below will enable additional MBR analysis" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                    <ToolTip Content="(LFQ) Use MS2 identifications from one run to quantify those same peptides in other runs where they were not identified" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                 </ToolTipService.ToolTip>
                             </CheckBox>
                             <CheckBox x:Name="CheckBoxNormalize" Content="Normalize quantification results">
@@ -561,7 +561,7 @@
                                 
                                 <local:DoubleTextBoxControl x:Name="MbrFdrThresholdTextBox" Width="45" Height="20">
                                     <ToolTipService.ToolTip>
-                                        <ToolTip Content="FDR Threshold for MBR Results" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
+                                        <ToolTip Content="Q-Value Threshold for MBR&#x0a;Determines which MBR matches will be reported in the AllQuantifiedPeptides and AllQuantifiedProteinGroups outputs" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                     </ToolTipService.ToolTip>
                                 </local:DoubleTextBoxControl>
                                 <Label x:Name="MbrFdrThreshold" Content=" MBR FDR Threshold" />
