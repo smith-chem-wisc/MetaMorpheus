@@ -564,7 +564,7 @@
                                         <ToolTip Content="Q-Value Threshold for MBR&#x0a;Determines which MBR matches will be reported in the AllQuantifiedPeptides and AllQuantifiedProteinGroups outputs" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
                                     </ToolTipService.ToolTip>
                                 </local:DoubleTextBoxControl>
-                                <Label x:Name="MbrFdrThreshold" Content=" MBR FDR Threshold" />
+                                <Label x:Name="MbrFdrThreshold" Content=" MBR Q-Value Threshold" />
                             </StackPanel>
 
                             <!-- Multiplex Options -->
