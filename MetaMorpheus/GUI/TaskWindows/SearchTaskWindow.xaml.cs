@@ -17,8 +17,6 @@ using System.Windows.Input;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using GuiFunctions;
-using Proteomics;
-using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
 
