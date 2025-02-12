@@ -82,6 +82,7 @@ namespace EngineLayer.ClassicSearch
             Log(fileName);
             Log($"\tPrecursor Tolerance: {precursorString}");
             Log($"\tFragment  Tolerance: {productString}");
+            Log("");
 
             if (Proteins.Any())
             {
