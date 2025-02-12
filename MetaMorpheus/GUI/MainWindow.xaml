@@ -649,7 +649,7 @@
 
                         <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" 
                              Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" 
-                                 FontSize="13"/>
+                                 FontSize="13" KeyDown="OutputFolderTextBox_KeyDown"/>
                     </DockPanel>
 
                     <Grid Grid.Row="3" Background="{StaticResource BackgroundColor}">
