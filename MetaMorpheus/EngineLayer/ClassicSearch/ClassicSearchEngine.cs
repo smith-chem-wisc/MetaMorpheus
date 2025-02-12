@@ -75,6 +75,14 @@ namespace EngineLayer.ClassicSearch
             
             Status("Performing classic search...");
 
+            var fileName = ArrayOfSortedMS2Scans.First().FullFilePath.GetPeriodTolerantFilenameWithoutExtension();
+            var precursorString = SearchMode.ToProseString();
+            var productString = CommonParameters.ProductMassTolerance.Value.ToString();
+
+            Log(fileName);
+            Log($"\tPrecursor Tolerance: {precursorString}");
+            Log($"\tFragment  Tolerance: {productString}");
+
             if (Proteins.Any())
             {
                 int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
