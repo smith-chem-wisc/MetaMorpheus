@@ -231,6 +231,8 @@ namespace TaskLayer
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
             bool writeSpectralLibrary = false;
+            combinedParameters.PrecursorMassTolerance = initPrecTol;
+            combinedParameters.ProductMassTolerance = initProdTol;
             _ = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters,
                 FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }, writeSpectralLibrary).Run();
             List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
