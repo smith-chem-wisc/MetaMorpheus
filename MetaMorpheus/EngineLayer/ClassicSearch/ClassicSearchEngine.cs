@@ -79,10 +79,10 @@ namespace EngineLayer.ClassicSearch
             var precursorString = SearchMode.ToProseString();
             var productString = CommonParameters.ProductMassTolerance.Value.ToString();
 
+            Log("");
             Log(fileName);
             Log($"\tPrecursor Tolerance: {precursorString}");
             Log($"\tFragment  Tolerance: {productString}");
-            Log("");
 
             if (Proteins.Any())
             {
