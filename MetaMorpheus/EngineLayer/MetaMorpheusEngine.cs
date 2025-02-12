@@ -40,6 +40,7 @@ namespace EngineLayer
         public static event EventHandler<StringEventArgs> OutLabelStatusHandler;
 
         public static event EventHandler<StringEventArgs> WarnHandler;
+        public static event EventHandler<StringEventArgs> LogHandler;
 
         public static event EventHandler<ProgressEventArgs> OutProgressHandler;
 
@@ -289,6 +290,11 @@ namespace EngineLayer
         protected void Warn(string v)
         {
             WarnHandler?.Invoke(this, new StringEventArgs(v, NestedIds));
+        }
+
+        protected void Log(string s)
+        {
+            LogHandler?.Invoke(this, new StringEventArgs(s, NestedIds));
         }
 
         protected void Status(string v)

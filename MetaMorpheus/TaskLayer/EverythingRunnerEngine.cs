@@ -59,6 +59,14 @@ namespace TaskLayer
             var startTimeForAllFilenames = DateTime.Now.ToString("yyyy-MM-dd-HH-mm-ss", CultureInfo.InvariantCulture);
 
             OutputFolder = OutputFolder.Replace("$DATETIME", startTimeForAllFilenames);
+            if (!Directory.Exists(OutputFolder))
+                Directory.CreateDirectory(OutputFolder);
+
+            var logPath = Path.Combine(OutputFolder, "log.txt");
+            Logger.Attach(logPath);
+            MetaMorpheusTask.StartingSingleTaskHander += Logger.StartingTaskHander;
+            MetaMorpheusEngine.LogHandler += Logger.Log;
+            MetaMorpheusTask.LogHandler += Logger.Log;
 
             StringBuilder allResultsText = new StringBuilder();
 
@@ -154,6 +162,7 @@ namespace TaskLayer
 
         private void FinishedAllTasks(string rootOutputDir)
         {
+            Logger.Detach();
             FinishedAllTasksEngineHandler?.Invoke(this, new StringEventArgs(rootOutputDir, null));
         }
 
