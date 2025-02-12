@@ -121,7 +121,7 @@ namespace TaskLayer
                     // we use a multiplier of 4 for the tolerance for files that are not calibrated
                     fileSpecificParameters.PrecursorMassTolerance = new PpmTolerance(Math.Round((4 * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError),1));
                     fileSpecificParameters.ProductMassTolerance = new PpmTolerance(Math.Round((4 * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError),1));
-                    SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParameters);
+                    combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParameters);
 
                     // generate calibration function and shift data points
                     Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
@@ -140,7 +140,7 @@ namespace TaskLayer
                         myMsDataFile = engine.CalibratedDataFile;
                         fileSpecificParameters.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError),1));
                         fileSpecificParameters.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1));
-                        SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParameters);
+                        combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParameters);
                         //Try a second round of calibration
                         // generate calibration function and shift data points
                         Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
