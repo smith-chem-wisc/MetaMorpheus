@@ -1969,5 +1969,13 @@ namespace MetaMorpheusGUI
         {
             OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
         }
+
+        private void OutputFolderTextBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
+            {
+                RunTasksButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            }
+        }
     }
 }
