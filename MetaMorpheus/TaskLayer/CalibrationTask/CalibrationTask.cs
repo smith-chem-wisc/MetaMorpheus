@@ -14,7 +14,6 @@ using System.Linq;
 using Omics.Modifications;
 using Readers;
 using UsefulProteomicsDatabases;
-using System.Threading.Tasks;
 
 namespace TaskLayer
 {
@@ -31,14 +30,15 @@ namespace TaskLayer
         }
 
         public CalibrationParameters CalibrationParameters { get; set; }
-        private readonly int NumRequiredPsms = 16;
-        private readonly int NumRequiredMs1Datapoints = 40;
-        private readonly int NumRequiredMs2Datapoints = 80;
-        private readonly double PrecursorMultiplier = 3;
-        private readonly double ProductMultiplier = 6;
-        double MaxPrecursorTolerance = 40;
-        double MaxProductTolerance = 150;
+        private static readonly int NumRequiredPsms = 16;
+        private static readonly int NumRequiredMs1Datapoints = 40;
+        private static readonly int NumRequiredMs2Datapoints = 80;
+        private static readonly double PrecursorMultiplier = 3;
+        private static readonly double ProductMultiplier = 6;
+        private static readonly double MaxPrecursorTolerance = 40;
+        private static readonly double MaxProductTolerance = 150;
         public const string CalibSuffix = "-calib";
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
@@ -116,8 +116,8 @@ namespace TaskLayer
                     }
                     // set the mass tolerances for the file specific parameters
                     // we use a multiplier of 4 for the tolerance for files that are not calibrated
-                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((4 * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError),1));
-                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((4 * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError),1));
+                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError),1));
+                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError),1));
 
                     // generate calibration function and shift data points
                     Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
@@ -125,7 +125,7 @@ namespace TaskLayer
                     _ = engine.Run();
 
                     // get the calibrated data points again to see if there was an increase
-                    acquisitionResults = GetDataAcquisitionResults(engine.CalibratedDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(MaxPrecursorTolerance), new PpmTolerance(MaxProductTolerance));
+                    acquisitionResults = GetDataAcquisitionResults(engine.CalibratedDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, fileSpecificParams.PrecursorMassTolerance, fileSpecificParams.ProductMassTolerance);
 
                     if (acquisitionResults.Psms.Select(p => p.FullSequence).Distinct().Count() >= numPeptides && acquisitionResults.Psms.Count >= numPsms)
                     {
@@ -142,13 +142,11 @@ namespace TaskLayer
                         _ = engine.Run();
 
                         // get the calibrated data points again to see if there was an increase
-                        acquisitionResults = GetDataAcquisitionResults(engine.CalibratedDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(MaxPrecursorTolerance), new PpmTolerance(MaxProductTolerance));
+                        acquisitionResults = GetDataAcquisitionResults(engine.CalibratedDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, fileSpecificParams.PrecursorMassTolerance, fileSpecificParams.ProductMassTolerance);
 
                         if (acquisitionResults.Psms.Select(p => p.FullSequence).Distinct().Count() >= numPeptides && acquisitionResults.Psms.Count >= numPsms)
                         {
                             myMsDataFile = engine.CalibratedDataFile;
-                            numPsms = acquisitionResults.Psms.Count;
-                            numPeptides = acquisitionResults.Psms.Select(p => p.FullSequence).Distinct().Count();
                             // write toml settings for the calibrated file
                             fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError), 1));
                             fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError), 1));
@@ -230,7 +228,10 @@ namespace TaskLayer
             Log("Searching with searchMode: " + searchMode, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
             Log("Searching with productMassTolerance: " + initProdTol, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension });
 
+            // overwrite specific properties in the common parameters that are different for this iteration in the calibraiton task
             bool writeSpectralLibrary = false;
+            combinedParameters.PrecursorMassTolerance = initPrecTol;
+            combinedParameters.ProductMassTolerance = initProdTol;
             _ = new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null, proteinList, searchMode, combinedParameters,
                 FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", fileNameWithoutExtension }, writeSpectralLibrary).Run();
             List<SpectralMatch> allPsms = allPsmsArray.Where(b => b != null).ToList();
