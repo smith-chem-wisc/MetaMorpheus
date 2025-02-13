@@ -543,7 +543,7 @@
             </TabItem>
 
             <!--Run tab-->
-            <TabItem Name="RunTab" Header="Run" TabIndex="0" Style="{StaticResource TabItemStyle}">
+            <TabItem Name="RunTab" Header="Run" TabIndex="0" Style="{StaticResource TabItemStyle}" PreviewKeyDown="Window_PreviewKeyDown">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="4*" />
@@ -649,7 +649,7 @@
 
                         <TextBox x:Name="OutputFolderTextBox" ToolTip="$DATETIME is automatically replaced by the current date and time" 
                              Background="Transparent" Foreground="{StaticResource TextColor1}" BorderBrush="{StaticResource BorderColor}" BorderThickness="1" 
-                                 FontSize="13" KeyDown="OutputFolderTextBox_KeyDown"/>
+                                 FontSize="13"/>
                     </DockPanel>
 
                     <Grid Grid.Row="3" Background="{StaticResource BackgroundColor}">

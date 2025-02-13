@@ -3,7 +3,6 @@ using IO.ThermoRawFileReader;
 using Microsoft.Win32;
 using MzLibUtil;
 using Nett;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Navigation;
@@ -1064,28 +1064,39 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (RunTasksButton.IsEnabled)
+            if (!RunTasksButton.IsEnabled) return;
+
+            switch (e.Key)
             {
                 // delete selected task/db/spectra
-                if (e.Key == Key.Delete || e.Key == Key.Back)
-                {
+                case Key.Delete:
+                case Key.Back:
                     Delete_Click(sender, e);
                     e.Handled = true;
-                }
+                    break;
 
                 // move task down
-                if (e.Key == Key.Add || e.Key == Key.OemPlus)
-                {
+                case Key.Add:
+                case Key.OemPlus:
                     MoveSelectedTask_Click(sender, e, false);
                     e.Handled = true;
-                }
+                    break;
 
                 // move task up
-                if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
-                {
+                case Key.Subtract:
+                case Key.OemMinus:
                     MoveSelectedTask_Click(sender, e, true);
                     e.Handled = true;
-                }
+                    break;
+
+                // run all tasks
+                case Key.Enter when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    RunTasksButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                    e.Handled = true;
+                    break;
+
+                default:
+                    e.Handled = false; break;
             }
         }
 
@@ -1968,14 +1979,6 @@ namespace MetaMorpheusGUI
         private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
         {
             OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
-        }
-
-        private void OutputFolderTextBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Enter && (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control)
-            {
-                RunTasksButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            }
         }
     }
 }
