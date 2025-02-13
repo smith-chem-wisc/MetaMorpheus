@@ -20,13 +20,13 @@ namespace Test
         [Test]
         public void EnsureTolerancesAreCorrectThroughout()
         {
-            // set up directories
+            // set up directories and input data
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CaliConsistencyTest");
             if (Directory.Exists(outputFolder))
                 Directory.Delete(outputFolder, true);
             Directory.CreateDirectory(outputFolder);
 
-            // set up input data
+            CalibrationTask calibrationTask = new();
             string nonCalibratedFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
 
@@ -37,10 +37,12 @@ namespace Test
             int expectedFdrAnalysisEngineCount = 3;
 
             // These expected tolerances are for the second and third classic search that is run. 
-            // They are magic numbers and should only be used to ensure engine tolerance consistency, not accuracy. 
+            // They are magic numbers (except the first) and should only be used to ensure engine tolerance consistency, not accuracy. 
             // They will likely need to be changed if Calibration changes.  
-            double[] expectedPrecursorTolerances = [CalibrationTask.MaxPrecursorTolerance, 9.1, 6.3];
-            double[] expectedProductTolerances = [CalibrationTask.MaxProductTolerance, 10.2, 12.7];
+            var initialPrecursor = (double)calibrationTask.GetType().GetField("MaxPrecursorTolerance", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+            var initialProduct = (double)calibrationTask.GetType().GetField("MaxProductTolerance", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+            double[] expectedPrecursorTolerances = [initialPrecursor, 7.1, 6.8];
+            double[] expectedProductTolerances = [initialProduct, 15.2, 13.3];
 
             int classicSearchEngineCount = 0;
             int calibrationEngineCount = 0;
@@ -51,8 +53,7 @@ namespace Test
             List<(double precursor, double product, double expectedPrecursor, double expectedProduct)> calibrationResults = new();
             List<(double precursor, double product, double expectedPrecursor, double expectedProduct)> dataPointAcquisitionResults = new();
 
-            // Ensure we catch the end of all engines running and record the tolerances
-            MetaMorpheusEngine.FinishedSingleEngineHandler += (sender, e) =>
+            EventHandler<SingleEngineFinishedEventArgs> finishedEngineEventHandler = (sender, e) =>
             {
                 switch (sender)
                 {
@@ -115,9 +116,37 @@ namespace Test
                 }
             };
 
+            // Ensure we catch the end of all engines running and record the tolerances
+            MetaMorpheusEngine.FinishedSingleEngineHandler += finishedEngineEventHandler;
+
             // run calibration
-            CalibrationTask calibrationTask = new();
             calibrationTask.RunTask(outputFolder, [new DbForTask(myDatabase, false)], [nonCalibratedFilePath], "test");
+
+            // Unsubscribe from the event
+            MetaMorpheusEngine.FinishedSingleEngineHandler -= finishedEngineEventHandler;
+
+            Assert.That(calibrationEngineCount, Is.EqualTo(expectedCalibrationCount));
+            Assert.That(classicSearchEngineCount, Is.EqualTo(expectedClassicSearchCount));
+            Assert.That(dataPointAcquisitionCount, Is.EqualTo(expectedDataPointAcquisitionCount));
+            Assert.That(fdrAnalysisEngineCount, Is.EqualTo(expectedFdrAnalysisEngineCount));
+
+            foreach (var result in classicSearchResults)
+            {
+                Assert.That(result.precursor, Is.EqualTo(result.expectedPrecursor));
+                Assert.That(result.product, Is.EqualTo(result.expectedProduct));
+            }
+
+            foreach (var result in calibrationResults)
+            {
+                Assert.That(result.precursor, Is.EqualTo(result.expectedPrecursor));
+                Assert.That(result.product, Is.EqualTo(result.expectedProduct));
+            }
+
+            foreach (var result in dataPointAcquisitionResults)
+            {
+                Assert.That(result.precursor, Is.EqualTo(result.expectedPrecursor));
+                Assert.That(result.product, Is.EqualTo(result.expectedProduct));
+            }
 
             Assert.That(calibrationEngineCount, Is.EqualTo(expectedCalibrationCount));
             Assert.That(classicSearchEngineCount, Is.EqualTo(expectedClassicSearchCount));

@@ -14,7 +14,6 @@ using System.Linq;
 using Omics.Modifications;
 using Readers;
 using UsefulProteomicsDatabases;
-using System.Threading.Tasks;
 
 namespace TaskLayer
 {
@@ -36,9 +35,10 @@ namespace TaskLayer
         private static readonly int NumRequiredMs2Datapoints = 80;
         private static readonly double PrecursorMultiplier = 3;
         private static readonly double ProductMultiplier = 6;
-        public static readonly double MaxPrecursorTolerance = 40;
-        public static readonly double MaxProductTolerance = 150;
+        private static readonly double MaxPrecursorTolerance = 40;
+        private static readonly double MaxProductTolerance = 150;
         public const string CalibSuffix = "-calib";
+
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
@@ -116,8 +116,8 @@ namespace TaskLayer
                     }
                     // set the mass tolerances for the file specific parameters
                     // we use a multiplier of 4 for the tolerance for files that are not calibrated
-                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((4 * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError),1));
-                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((4 * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError),1));
+                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplier * acquisitionResults.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResults.PsmPrecursorMedianPpmError),1));
+                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplier * acquisitionResults.PsmProductIqrPpmError) + Math.Abs(acquisitionResults.PsmProductMedianPpmError),1));
 
                     // generate calibration function and shift data points
                     Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
