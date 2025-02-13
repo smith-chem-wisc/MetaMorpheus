@@ -1111,12 +1111,6 @@ namespace MetaMorpheusGUI
                     e.Handled = true;
                     break;
 
-                // run all tasks
-                case Key.Enter when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
-                    RunTasksButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
-                    e.Handled = true;
-                    break;
-
                 // copy selected task
                 case Key.C when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
                     if (sender is TreeView { SelectedItem: PreRunTask preRunTask })
