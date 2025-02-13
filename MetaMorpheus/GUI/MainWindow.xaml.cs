@@ -1058,11 +1058,33 @@ namespace MetaMorpheusGUI
             OpenFolder(outputFolder);
         }
 
+        
+
+        // This is designed for the entire window
+        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (!RunTasksButton.IsEnabled) return;
+            switch (e.Key)
+            {
+                // run all tasks
+                case Key.Enter when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    RunTasksButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                    e.Handled = true;
+                    break;
+
+                default:
+                    e.Handled = false; break;
+            }
+        }
+
+        private MetaMorpheusTask? _clipboard;
+
         /// <summary>
         /// Handles keyboard input.
+        /// Note: This is designed for all boxes which contain lists of items such as database, tasks, or spectra files. 
         /// Note: Window_KeyDown is NOT used because it does not seem to capture keyboard input from a DataGrid.
         /// </summary>
-        private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
+        private void BoxWithList_PreviewKeyDown(object sender, KeyEventArgs e)
         {
             if (!RunTasksButton.IsEnabled) return;
 
@@ -1092,6 +1114,36 @@ namespace MetaMorpheusGUI
                 // run all tasks
                 case Key.Enter when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
                     RunTasksButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                    e.Handled = true;
+                    break;
+
+                // copy selected task
+                case Key.C when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView { SelectedItem: PreRunTask preRunTask })
+                    {
+                        _clipboard = preRunTask.metaMorpheusTask;
+                    }
+                    e.Handled = true;
+
+                    break;
+
+                // paste selected task 
+                case Key.V when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView && _clipboard != null)
+                    {
+                        PreRunTasks.Add(new PreRunTask(_clipboard));
+                        UpdateGuiOnPreRunChange();
+                    }
+                    e.Handled = true;
+                    break;
+
+                // Duplicate Selected Task
+                case Key.D when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView { SelectedItem: PreRunTask task })
+                    {
+                        PreRunTasks.Add(task);
+                        UpdateGuiOnPreRunChange();
+                    }
                     e.Handled = true;
                     break;
 
