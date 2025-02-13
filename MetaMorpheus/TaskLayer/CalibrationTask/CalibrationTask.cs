@@ -35,8 +35,8 @@ namespace TaskLayer
         private static readonly int NumRequiredMs2Datapoints = 80;
         private static readonly double PrecursorMultiplier = 3;
         private static readonly double ProductMultiplier = 6;
-        private static readonly double MaxPrecursorTolerance = 40;
-        private static readonly double MaxProductTolerance = 150;
+        //private static readonly double MaxPrecursorTolerance = 40;
+        //private static readonly double MaxProductTolerance = 150;
         public const string CalibSuffix = "-calib";
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
@@ -98,8 +98,10 @@ namespace TaskLayer
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResultsFirst = null;
-                acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(MaxPrecursorTolerance), new PpmTolerance(MaxProductTolerance));
+                //acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, new PpmTolerance(MaxPrecursorTolerance), new PpmTolerance(MaxProductTolerance));
 
+                acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams,
+                    new PpmTolerance(combinedParams.ProductMassTolerance.Value * 1.5), new PpmTolerance(combinedParams.PrecursorMassTolerance.Value * 1.5));
                 // check if we have enough data points to calibrate and then calibrate
                 if (FileSuitableForCalibration(acquisitionResultsFirst))
                 {
@@ -188,6 +190,10 @@ namespace TaskLayer
         private bool CalibrationHasValue(DataPointAquisitionResults acquisitionResultsFirst, DataPointAquisitionResults acquisitionResultsSecond)
         {
             bool improvedCounts = acquisitionResultsSecond.Psms.Count > acquisitionResultsFirst.Psms.Count && acquisitionResultsSecond.Psms.Select(p => p.FullSequence).Distinct().Count() > acquisitionResultsFirst.Psms.Select(p => p.FullSequence).Distinct().Count();
+            if(improvedCounts)
+            {
+                return true;
+            }
             bool numPsmsIncreased = acquisitionResultsSecond.Psms.Count >= acquisitionResultsFirst.Psms.Count;
             bool numPeptidesIncreased = acquisitionResultsSecond.Psms.Select(p => p.FullSequence).Distinct().Count() >= acquisitionResultsFirst.Psms.Select(p => p.FullSequence).Distinct().Count();
             bool psmPrecursorMedianPpmErrorDecreased = Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError) <= 1 || Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError) <= Math.Abs(acquisitionResultsFirst.PsmPrecursorMedianPpmError);
@@ -195,7 +201,7 @@ namespace TaskLayer
             bool MS1IqrDecreased = acquisitionResultsSecond.PsmPrecursorIqrPpmError <= acquisitionResultsFirst.PsmPrecursorIqrPpmError;
             bool MS2IqrDecreased = acquisitionResultsSecond.PsmProductIqrPpmError <= acquisitionResultsFirst.PsmProductIqrPpmError;
 
-            return (improvedCounts || (numPsmsIncreased && numPeptidesIncreased && psmPrecursorMedianPpmErrorDecreased && psmProductMedianPpmErrorDecreased && MS1IqrDecreased && MS2IqrDecreased));
+            return (numPsmsIncreased && numPeptidesIncreased && psmPrecursorMedianPpmErrorDecreased && psmProductMedianPpmErrorDecreased && MS1IqrDecreased && MS2IqrDecreased);
         }
         private bool FileSuitableForCalibration(DataPointAquisitionResults acquisitionResults)
         {
