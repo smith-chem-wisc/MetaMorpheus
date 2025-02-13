@@ -128,8 +128,8 @@ namespace TaskLayer
                     // get the calibrated data points again to see if there was an increase
                     DataPointAquisitionResults acquisitionResultsSecond = GetDataAcquisitionResults(engine.CalibratedDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, fileSpecificParams.PrecursorMassTolerance, fileSpecificParams.ProductMassTolerance);
 
-                    if (CalibrationHasValue(acquisitionResultsFirst, acquisitionResultsSecond))
-                    {
+                    //if (CalibrationHasValue(acquisitionResultsFirst, acquisitionResultsSecond))
+                    //{
                         calibrated = true;
                         myMsDataFile = engine.CalibratedDataFile;
                         acquisitionResultsFirst = acquisitionResultsSecond;
@@ -151,7 +151,7 @@ namespace TaskLayer
                             fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplier * acquisitionResultsSecond.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError), 1));
                             fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplier * acquisitionResultsSecond.PsmProductIqrPpmError) + Math.Abs(acquisitionResultsSecond.PsmProductMedianPpmError), 1));
                         }
-                    }
+                    //}
                     if (calibrated) // write the calibrated mzML file
                     {
                         CalibrationOutput(myMsDataFile, calibratedFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
@@ -198,10 +198,10 @@ namespace TaskLayer
             bool numPeptidesIncreased = acquisitionResultsSecond.Psms.Select(p => p.FullSequence).Distinct().Count() >= acquisitionResultsFirst.Psms.Select(p => p.FullSequence).Distinct().Count();
             bool psmPrecursorMedianPpmErrorDecreased = Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError) <= 1 || Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError) <= Math.Abs(acquisitionResultsFirst.PsmPrecursorMedianPpmError);
             bool psmProductMedianPpmErrorDecreased = Math.Abs(acquisitionResultsSecond.PsmProductMedianPpmError) <= 1 || Math.Abs(acquisitionResultsSecond.PsmProductMedianPpmError) <= Math.Abs(acquisitionResultsFirst.PsmProductMedianPpmError);
-            bool MS1IqrDecreased = acquisitionResultsSecond.PsmPrecursorIqrPpmError <= acquisitionResultsFirst.PsmPrecursorIqrPpmError;
-            bool MS2IqrDecreased = acquisitionResultsSecond.PsmProductIqrPpmError <= acquisitionResultsFirst.PsmProductIqrPpmError;
+            //bool MS1IqrDecreased = acquisitionResultsSecond.PsmPrecursorIqrPpmError <= acquisitionResultsFirst.PsmPrecursorIqrPpmError;
+            //bool MS2IqrDecreased = acquisitionResultsSecond.PsmProductIqrPpmError <= acquisitionResultsFirst.PsmProductIqrPpmError;
 
-            return (numPsmsIncreased && numPeptidesIncreased && psmPrecursorMedianPpmErrorDecreased && psmProductMedianPpmErrorDecreased && MS1IqrDecreased && MS2IqrDecreased);
+            return (numPsmsIncreased && numPeptidesIncreased && psmPrecursorMedianPpmErrorDecreased && psmProductMedianPpmErrorDecreased);
         }
         private bool FileSuitableForCalibration(DataPointAquisitionResults acquisitionResults)
         {
