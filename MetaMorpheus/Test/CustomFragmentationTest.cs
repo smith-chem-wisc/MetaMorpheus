@@ -68,8 +68,8 @@ namespace Test
             DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = customIons;
             var calibCommonParams = new CommonParameters(
                 dissociationType: DissociationType.Custom,
-                productMassTolerance: new PpmTolerance(25),
-                precursorMassTolerance: new PpmTolerance(15),
+                //productMassTolerance: new PpmTolerance(25),
+                //precursorMassTolerance: new PpmTolerance(15),
                 trimMsMsPeaks: false,
                 doPrecursorDeconvolution: false);
             CalibrationTask calibrationTask = new CalibrationTask() {CommonParameters = calibCommonParams};
