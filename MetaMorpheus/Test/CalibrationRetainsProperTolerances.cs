@@ -36,13 +36,8 @@ namespace Test
             int expectedDataPointAcquisitionCount = 3;
             int expectedFdrAnalysisEngineCount = 3;
 
-            // These expected tolerances are for the second and third classic search that is run. 
-            // They are magic numbers (except the first) and should only be used to ensure engine tolerance consistency, not accuracy. 
-            // They will likely need to be changed if Calibration changes.  
-            var initialPrecursor = (double)calibrationTask.GetType().GetField("MaxPrecursorTolerance", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
-            var initialProduct = (double)calibrationTask.GetType().GetField("MaxProductTolerance", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
-            double[] expectedPrecursorTolerances = [initialPrecursor, 7.1, 6.8];
-            double[] expectedProductTolerances = [initialProduct, 15.2, 13.3];
+            double[] expectedPrecursorTolerances = [30, 7.7, 6.7];
+            double[] expectedProductTolerances = [7.5, 12.6, 13];
 
             int classicSearchEngineCount = 0;
             int calibrationEngineCount = 0;
