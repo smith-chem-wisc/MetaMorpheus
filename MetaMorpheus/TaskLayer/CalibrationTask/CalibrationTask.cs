@@ -23,7 +23,9 @@ namespace TaskLayer
         {
             CommonParameters = new CommonParameters(
                 trimMsMsPeaks: false,
-                doPrecursorDeconvolution: false
+                doPrecursorDeconvolution: false,
+                productMassTolerance: new PpmTolerance(InitialProductTolerance),
+                precursorMassTolerance: new PpmTolerance(InitialPrecursorTolerance)
                 );
 
             CalibrationParameters = new CalibrationParameters();
@@ -36,7 +38,9 @@ namespace TaskLayer
         private static readonly double InitialSearchToleranceMultiplier = 1.5;
         private static readonly double PrecursorMultiplierForToml = 3;
         private static readonly double ProductMultiplierForToml = 6;
-        
+        private static readonly double InitialProductTolerance = 30;
+        private static readonly double InitialPrecursorTolerance = 15;
+
         public const string CalibSuffix = "-calib";
 
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
@@ -97,7 +101,6 @@ namespace TaskLayer
                     fileSpecificParams = fileSettingsList[spectraFileIndex].Clone();
                 }
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSpecificParams);
-                string uncalibratedTomlFilename = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + ".toml");
                 // load the file
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
                 MsDataFile myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams);
@@ -163,7 +166,7 @@ namespace TaskLayer
                     continue;
                 }
                 // if we didn't calibrate, write the uncalibrated file to the output folder
-                CalibrationOutput(myMsDataFile, uncalibratedFilePath, fileSpecificParams, uncalibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
+                myMsDataFile.ExportAsMzML(uncalibratedFilePath, CalibrationParameters.WriteIndexedMzml);
                 unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
                 // provide a message indicating why we couldn't calibrate
                 CalibrationWarnMessage(acquisitionResultsFirst);
