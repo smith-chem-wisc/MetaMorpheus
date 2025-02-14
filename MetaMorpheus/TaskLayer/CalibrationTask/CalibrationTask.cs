@@ -105,9 +105,15 @@ namespace TaskLayer
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResultsFirst = null;
-
                 acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams,
+                    new PpmTolerance(combinedParams.ProductMassTolerance.Value), new PpmTolerance(combinedParams.PrecursorMassTolerance.Value));
+                
+                //not enough points on the first go so try again with a little wider tolerance
+                if (!FileSuitableForCalibration(acquisitionResultsFirst))
+                {
+                    acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams,
                     new PpmTolerance(combinedParams.ProductMassTolerance.Value * InitialSearchToleranceMultiplier), new PpmTolerance(combinedParams.PrecursorMassTolerance.Value * InitialSearchToleranceMultiplier));
+                }
                 // check if we have enough data points to calibrate and then calibrate
                 if (FileSuitableForCalibration(acquisitionResultsFirst))
                 {
@@ -129,24 +135,23 @@ namespace TaskLayer
                         fileSpecificParams.PrecursorMassTolerance, fileSpecificParams.ProductMassTolerance);
 
                     myMsDataFile = engine.CalibratedDataFile;
-                    acquisitionResultsFirst = acquisitionResultsSecond;
-                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplierForToml * acquisitionResultsFirst.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResultsFirst.PsmPrecursorMedianPpmError),1));
-                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplierForToml * acquisitionResultsFirst.PsmProductIqrPpmError) + Math.Abs(acquisitionResultsFirst.PsmProductMedianPpmError), 1));
+                    fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplierForToml * acquisitionResultsSecond.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError),1));
+                    fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplierForToml * acquisitionResultsSecond.PsmProductIqrPpmError) + Math.Abs(acquisitionResultsSecond.PsmProductMedianPpmError), 1));
                     //Try a second round of calibration
                     // generate calibration function and shift data points
                     Status("Calibrating...", new List<string> { taskId, "Individual Spectra Files" });
-                    engine = new(myMsDataFile, acquisitionResultsFirst, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
+                    engine = new(myMsDataFile, acquisitionResultsSecond, combinedParams, FileSpecificParameters, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension });
                     _ = engine.Run();
 
                     // get the calibrated data points again to see if there was an increase
-                    acquisitionResultsSecond = GetDataAcquisitionResults(engine.CalibratedDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, fileSpecificParams.PrecursorMassTolerance, fileSpecificParams.ProductMassTolerance);
+                    DataPointAquisitionResults acquisitionResultsThird = GetDataAcquisitionResults(engine.CalibratedDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams, fileSpecificParams.PrecursorMassTolerance, fileSpecificParams.ProductMassTolerance);
 
-                    if (CalibrationHasValue(acquisitionResultsFirst, acquisitionResultsSecond))
+                    if (CalibrationHasValue(acquisitionResultsSecond, acquisitionResultsThird))
                     {
                         myMsDataFile = engine.CalibratedDataFile;
                         // write toml settings for the calibrated file
-                        fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplierForToml * acquisitionResultsSecond.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError), 1));
-                        fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplierForToml * acquisitionResultsSecond.PsmProductIqrPpmError) + Math.Abs(acquisitionResultsSecond.PsmProductMedianPpmError), 1));
+                        fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplierForToml * acquisitionResultsThird.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResultsThird.PsmPrecursorMedianPpmError), 1));
+                        fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplierForToml * acquisitionResultsThird.PsmProductIqrPpmError) + Math.Abs(acquisitionResultsThird.PsmProductMedianPpmError), 1));
                     }
                     CalibrationOutput(myMsDataFile, calibratedFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
                     myFileManager.DoneWithFile(originalUncalibratedFilePath);
