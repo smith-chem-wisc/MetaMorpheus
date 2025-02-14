@@ -94,17 +94,31 @@ namespace Test
 
             Protein proteinWithChain = new("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<ProteolysisProduct> { new ProteolysisProduct(4, 8, "chain") }, "name2", "fullname2");
 
-            string mzmlName = @"ok.mzML";
+            string inputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestEverythingRunnerInput");
+            if (Directory.Exists(inputFolder))
+            {
+                Directory.Delete(inputFolder,true);
+            }
+            Directory.CreateDirectory(inputFolder);
+
+            string mzmlName = Path.Join(inputFolder, "ok.mzML");
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
-            string xmlName = "okk.xml";
+            string xmlName = Path.Join(inputFolder, "okk.xml");
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestEverythingRunner");
+            if (Directory.Exists(outputFolder))
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
             // RUN!
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
             engine.Run();
-            System.IO.File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName));
-            System.IO.File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, xmlName));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, xmlName));
+            Directory.Delete(inputFolder, true);
             Directory.Delete(outputFolder, true);
         }
         /// <summary>
