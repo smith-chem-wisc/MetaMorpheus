@@ -89,7 +89,7 @@ namespace EngineLayer
 
         public bool DisplayModsOnPeptides { get; set; }
 
-        public List<string> ModsInfo { get; private set; }
+        public List<string> ModsInfo { get; set; }
 
         public Dictionary<SpectraFileInfo, double> IntensitiesByFile { get; set; }
 
@@ -613,22 +613,28 @@ namespace EngineLayer
                     }
                 }
 
-                var modStrings = new List<(int aaNum, string part)>();
-                for (int i = 0; i < pepModTotals.Count; i++)
+                // modInfo will be updated by the PostSearchAnalysisTask. However, leaving this code
+                // here for now in case we want to use it in the future.
+                bool quantifyModsByPSM = false;
+                if (quantifyModsByPSM)
                 {
-                    string aa = modIndex[i].index.ToString();
-                    string modName = modIndex[i].modName.ToString();
-                    string occupancy = ((double)pepModTotals[i] / (double)pepTotals[i]).ToString("F2");
-                    string fractOccupancy = $"{pepModTotals[i].ToString()}/{pepTotals[i].ToString()}";
-                    string tempString = ($"#aa{aa}[{modName},info:occupancy={occupancy}({fractOccupancy})]");
-                    modStrings.Add((modIndex[i].index, tempString));
-                }
+                    var modStrings = new List<(int aaNum, string part)>();
+                    for (int i = 0; i < pepModTotals.Count; i++)
+                    {
+                        string aa = modIndex[i].index.ToString();
+                        string modName = modIndex[i].modName.ToString();
+                        string occupancy = ((double)pepModTotals[i] / (double)pepTotals[i]).ToString("F2");
+                        string fractOccupancy = $"{pepModTotals[i].ToString()}/{pepTotals[i].ToString()}";
+                        string tempString = ($"#aa{aa}[{modName},info:occupancy={occupancy}({fractOccupancy})]");
+                        modStrings.Add((modIndex[i].index, tempString));
+                    }
 
-                var modInfoString = string.Join(";", modStrings.OrderBy(x => x.aaNum).Select(x => x.part));
+                    var modInfoString = string.Join(";", modStrings.OrderBy(x => x.aaNum).Select(x => x.part)); 
 
-                if (!string.IsNullOrEmpty(modInfoString))
-                {
-                    ModsInfo.Add(modInfoString);
+                    if (!string.IsNullOrEmpty(modInfoString))
+                    {
+                        ModsInfo.Add(modInfoString);
+                    }
                 }
             }
         }
