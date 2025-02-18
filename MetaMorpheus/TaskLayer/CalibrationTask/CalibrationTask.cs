@@ -88,8 +88,8 @@ namespace TaskLayer
                 // get filename stuff
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
-                string uncalibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + ".mzML");
+                string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
+                string uncalibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + ".mzML");
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -156,7 +156,7 @@ namespace TaskLayer
                         fileSpecificParams.PrecursorMassTolerance = new PpmTolerance(Math.Round((PrecursorMultiplierForToml * acquisitionResultsThird.PsmPrecursorIqrPpmError) + Math.Abs(acquisitionResultsThird.PsmPrecursorMedianPpmError), 1));
                         fileSpecificParams.ProductMassTolerance = new PpmTolerance(Math.Round((ProductMultiplierForToml * acquisitionResultsThird.PsmProductIqrPpmError) + Math.Abs(acquisitionResultsThird.PsmProductMedianPpmError), 1));
                     }
-                    CalibrationOutput(myMsDataFile, calibratedFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
+                    CalibrationOutput(myMsDataFile, calibratedNewFullFilePath, fileSpecificParams, calibratedTomlFilename, taskId, originalUncalibratedFilenameWithoutExtension);
                     myFileManager.DoneWithFile(originalUncalibratedFilePath);
 
                     // finished calibrating this file
@@ -165,9 +165,10 @@ namespace TaskLayer
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
                     continue;
                 }
-                // if we didn't calibrate, write the uncalibrated file to the output folder
-                myMsDataFile.ExportAsMzML(uncalibratedFilePath, CalibrationParameters.WriteIndexedMzml);
-                unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
+
+                // if we didn't calibrate, write the uncalibrated file to the output folder as an mzML
+                myMsDataFile.ExportAsMzML(uncalibratedNewFullFilePath, CalibrationParameters.WriteIndexedMzml);
+                unsuccessfullyCalibratedFilePaths.Add(uncalibratedNewFullFilePath);
                 // provide a message indicating why we couldn't calibrate
                 CalibrationWarnMessage(acquisitionResultsFirst);
                 FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -304,21 +305,18 @@ namespace TaskLayer
 
             List<SpectraFileInfo> newExperDesign = new();
 
-            foreach (SpectraFileInfo uncalibratedSpectraFile in oldExperDesign)
+            foreach (SpectraFileInfo originalSpectraFile in oldExperDesign)
             {
-                string originalUncalibratedFilePath = uncalibratedSpectraFile.FullFilePathWithExtension;
-                string originalUncalibratedFilenameWithoutExtension = GlobalVariables.GetFilenameWithoutExtension(originalUncalibratedFilePath);
-                string calibratedFilePath = Path.Combine(outputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
-
-                SpectraFileInfo calibratedSpectraFile = new(calibratedFilePath,
-                    uncalibratedSpectraFile.Condition, uncalibratedSpectraFile.BiologicalReplicate, uncalibratedSpectraFile.TechnicalReplicate, uncalibratedSpectraFile.Fraction);
-
-                if (unsuccessfullyCalibratedFilePaths.Contains(uncalibratedSpectraFile.FullFilePathWithExtension))
+                var originalFileName = originalSpectraFile.FilenameWithoutExtension;
+                var k = unsuccessfullyCalibratedFilePaths.FirstOrDefault(fn => fn.Contains(originalFileName));
+                if (k != null)
                 {
-                    newExperDesign.Add(uncalibratedSpectraFile);
+                    newExperDesign.Add(new SpectraFileInfo(k, originalSpectraFile.Condition, originalSpectraFile.BiologicalReplicate, originalSpectraFile.TechnicalReplicate, originalSpectraFile.Fraction));
                 }
                 else
                 {
+                    SpectraFileInfo calibratedSpectraFile = new(Path.Combine(outputFolder, originalFileName + CalibSuffix + ".mzML"),
+                    originalSpectraFile.Condition, originalSpectraFile.BiologicalReplicate, originalSpectraFile.TechnicalReplicate, originalSpectraFile.Fraction);
                     newExperDesign.Add(calibratedSpectraFile);
                 }
             }
