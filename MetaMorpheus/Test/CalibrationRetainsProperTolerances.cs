@@ -36,8 +36,8 @@ namespace Test
             int expectedDataPointAcquisitionCount = 3;
             int expectedFdrAnalysisEngineCount = 3;
 
-            double[] expectedPrecursorTolerances = [30, 7.7, 6.7];
-            double[] expectedProductTolerances = [7.5, 12.6, 13];
+            double[] expectedPrecursorTolerances = [30, 7.7, 7.4];
+            double[] expectedProductTolerances = [10, 13, 13];
 
             int classicSearchEngineCount = 0;
             int calibrationEngineCount = 0;

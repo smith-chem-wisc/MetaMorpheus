@@ -35,11 +35,11 @@ namespace TaskLayer
         private static readonly int NumRequiredPsms = 16;
         private static readonly int NumRequiredMs1Datapoints = 40;
         private static readonly int NumRequiredMs2Datapoints = 80;
-        private static readonly double InitialSearchToleranceMultiplier = 1.5;
+        private static readonly double InitialSearchToleranceMultiplier = 2.0;
         private static readonly double PrecursorMultiplierForToml = 3;
         private static readonly double ProductMultiplierForToml = 6;
         private static readonly double InitialProductTolerance = 30;
-        private static readonly double InitialPrecursorTolerance = 15;
+        private static readonly double InitialPrecursorTolerance = 10;
 
         public const string CalibSuffix = "-calib";
 
