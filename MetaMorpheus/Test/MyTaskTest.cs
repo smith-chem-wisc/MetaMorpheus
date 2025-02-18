@@ -102,7 +102,7 @@ namespace Test
             Directory.CreateDirectory(inputFolder);
 
             string mzmlName = Path.Join(inputFolder, "ok.mzML");
-            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+            Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, true);
             string xmlName = Path.Join(inputFolder, "okk.xml");
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
 
