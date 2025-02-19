@@ -109,8 +109,8 @@ namespace TaskLayer
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResultsFirst = null;
                 acquisitionResultsFirst = GetDataAcquisitionResults(myMsDataFile, originalUncalibratedFilePath, variableModifications, fixedModifications, proteinList, taskId, combinedParams,
-                    new PpmTolerance(combinedParams.ProductMassTolerance.Value), new PpmTolerance(combinedParams.PrecursorMassTolerance.Value));
-                
+                    combinedParams.ProductMassTolerance, combinedParams.PrecursorMassTolerance);
+
                 //not enough points on the first go so try again with a little wider tolerance
                 if (!FileSuitableForCalibration(acquisitionResultsFirst))
                 {
