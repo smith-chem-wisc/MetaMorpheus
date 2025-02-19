@@ -186,13 +186,17 @@ namespace TaskLayer
         }
         private bool CalibrationHasValue(DataPointAquisitionResults acquisitionResultsFirst, DataPointAquisitionResults acquisitionResultsSecond)
         {
-            bool improvedCounts = acquisitionResultsSecond.Psms.Count > acquisitionResultsFirst.Psms.Count && acquisitionResultsSecond.Psms.Select(p => p.FullSequence).Distinct().Count() > acquisitionResultsFirst.Psms.Select(p => p.FullSequence).Distinct().Count();
+            int psmsCountFirst = acquisitionResultsFirst.Psms.Count;
+            int psmsCountSecond = acquisitionResultsSecond.Psms.Count;
+            int peptidesCountFirst = acquisitionResultsFirst.Psms.Select(p => p.FullSequence).Distinct().Count();
+            int peptidesCountSecond = acquisitionResultsSecond.Psms.Select(p => p.FullSequence).Distinct().Count();
+            bool improvedCounts = psmsCountSecond > psmsCountFirst && peptidesCountSecond > peptidesCountFirst;
             if(improvedCounts)
             {
                 return true;
             }
-            bool numPsmsIncreased = acquisitionResultsSecond.Psms.Count >= acquisitionResultsFirst.Psms.Count;
-            bool numPeptidesIncreased = acquisitionResultsSecond.Psms.Select(p => p.FullSequence).Distinct().Count() >= acquisitionResultsFirst.Psms.Select(p => p.FullSequence).Distinct().Count();
+            bool numPsmsIncreased = psmsCountSecond >= psmsCountFirst;
+            bool numPeptidesIncreased = peptidesCountSecond >= peptidesCountFirst;
             bool psmPrecursorMedianPpmErrorDecreased = Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError) <= 1 || Math.Abs(acquisitionResultsSecond.PsmPrecursorMedianPpmError) <= Math.Abs(acquisitionResultsFirst.PsmPrecursorMedianPpmError);
             bool psmProductMedianPpmErrorDecreased = Math.Abs(acquisitionResultsSecond.PsmProductMedianPpmError) <= 1 || Math.Abs(acquisitionResultsSecond.PsmProductMedianPpmError) <= Math.Abs(acquisitionResultsFirst.PsmProductMedianPpmError);
 
