@@ -89,7 +89,7 @@ namespace TaskLayer
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
                 string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
                 string calibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
-                string uncalibratedNewFullFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + ".mzML");
+                string uncalibratedNewFullFilePath = Path.Combine(OutputFolder, Path.GetFileName(originalUncalibratedFilePath));
 
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
@@ -104,7 +104,7 @@ namespace TaskLayer
                 // load the file
                 Status("Loading spectra file...", new List<string> { taskId, "Individual Spectra Files" });
                 MsDataFile myMsDataFile = myFileManager.LoadFile(originalUncalibratedFilePath, combinedParams);
-
+                myMsDataFile.LoadAllStaticData();
                 // get datapoints to fit calibration function to
                 Status("Acquiring calibration data points...", new List<string> { taskId, "Individual Spectra Files" });
                 DataPointAquisitionResults acquisitionResultsFirst = null;
@@ -167,7 +167,7 @@ namespace TaskLayer
                 }
 
                 // if we didn't calibrate, write the uncalibrated file to the output folder as an mzML
-                myMsDataFile.ExportAsMzML(uncalibratedNewFullFilePath, CalibrationParameters.WriteIndexedMzml);
+                File.Copy(originalUncalibratedFilePath, uncalibratedNewFullFilePath, true);
                 unsuccessfullyCalibratedFilePaths.Add(uncalibratedNewFullFilePath);
                 // provide a message indicating why we couldn't calibrate
                 CalibrationWarnMessage(acquisitionResultsFirst);
