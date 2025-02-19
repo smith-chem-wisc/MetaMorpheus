@@ -22,6 +22,8 @@ using Chemistry;
 using MzLibUtil;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
+using System.Reflection.Metadata.Ecma335;
+using ThermoFisher.CommonCore.Data.Business;
 
 namespace TaskLayer
 {
@@ -1322,7 +1324,7 @@ namespace TaskLayer
                 foreach (var psm in psms)
                 {
                     IEnumerable<string> labelIonIntensities =
-                        GetMultiplexIonIntensities(psm.MsDataScan.MassSpectrum, reporterIonMzs, ionTolerance)
+                        GetMultiplexIonIntensities(psm, reporterIonMzs, ionTolerance)
                             .Select(d => d.ToString(CultureInfo.CurrentCulture));
 
                     output.Write(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults).Trim());
@@ -1373,6 +1375,38 @@ namespace TaskLayer
                 }
             }
             return String.Join('\t', ionLabels);
+        }
+
+        public static double[] GetMultiplexIonIntensities(SpectralMatch psm, double[] theoreticalIonMzs, Tolerance tolerance)
+        {
+            var diagnosticIons = psm.MatchedFragmentIons
+                .Where(ion => ion.NeutralTheoreticalProduct.ProductType == Omics.Fragmentation.ProductType.D)
+                .OrderBy(ion => ion.Mz)
+                .ToArray();
+            double[] expIonMzs = diagnosticIons.Select(ion => ion.Mz).ToArray(); 
+
+            double[] ionIntensities = new double[theoreticalIonMzs.Length];
+
+            int expIonIndex = 0;
+            for (int theoreticalIonIndex = 0; theoreticalIonIndex < ionIntensities.Length; theoreticalIonIndex++)
+            {
+                while (expIonIndex < expIonMzs.Length &&
+                       expIonMzs[expIonIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[theoreticalIonIndex]))
+                {
+                    expIonIndex++;
+                }
+                if (expIonIndex >= expIonMzs.Length)
+                {
+                    break;
+                }
+                if (tolerance.Within(expIonMzs[expIonIndex], theoreticalIonMzs[theoreticalIonIndex]))
+                {
+                    ionIntensities[theoreticalIonIndex] = diagnosticIons[expIonIndex].Intensity;
+                    expIonIndex++;
+                }
+            }
+
+            return ionIntensities;
         }
 
         public static double[] GetMultiplexIonIntensities(MzSpectrum scan, double[] theoreticalIonMzs, Tolerance tolerance)
