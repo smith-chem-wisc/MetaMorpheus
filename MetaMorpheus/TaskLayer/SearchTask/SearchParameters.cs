@@ -18,6 +18,7 @@ namespace TaskLayer
             UseSharedPeptidesForLFQ = false;
             DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
+            MbrFdrThreshold = 0.01;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
@@ -67,6 +68,7 @@ namespace TaskLayer
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
+        public double MbrFdrThreshold { get; set; }
         public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
