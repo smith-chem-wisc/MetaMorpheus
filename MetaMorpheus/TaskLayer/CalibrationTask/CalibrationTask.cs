@@ -83,10 +83,22 @@ namespace TaskLayer
 
                 // get filename stuff
                 string originalUncalibratedFilePath = currentRawFileList[spectraFileIndex];
+                var fileExtension = Path.GetExtension(originalUncalibratedFilePath);
                 string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
+                bool calibrated = false;
+                if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase))
+                {
+                    unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
+                    // provide a message indicating why we couldn't calibrate
+                    Warn(fileExtension + " files can not be calibrated.");
+                    FinishedDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilenameWithoutExtension }));
+                    continue;
+                }
+                
                 string calibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + CalibSuffix + ".mzML");
                 string uncalibratedFilePath = Path.Combine(OutputFolder, originalUncalibratedFilenameWithoutExtension + ".mzML");
-                bool calibrated = false;
+                
                 // mark the file as in-progress
                 StartingDataFile(originalUncalibratedFilePath, new List<string> { taskId, "Individual Spectra Files", originalUncalibratedFilePath });
                 CommonParameters combinedParams = SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[spectraFileIndex]);
