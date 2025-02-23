@@ -618,8 +618,6 @@ namespace TaskLayer
 
                 foreach (var proteinGroup in quantifiedProteinGroups)
                 {
-                    var modInfoString = new StringBuilder();
-
                     foreach (var protein in proteinGroup.Proteins)
                     {
                         List<string> peptideBaseSequencesSeen = new List<string>();
@@ -630,7 +628,7 @@ namespace TaskLayer
                             {
                                 proteinGroupsOccupancyByProteins[proteinGroup.ProteinGroupName]
                                     .Proteins[protein.Accession].Peptides[peptide.BaseSequence]
-                                    .PeptideToProteinPositions(peptide.OneBasedStartResidueInProtein);
+                                    .OneBasedStartIndexInProtein = peptide.OneBasedStartResidueInProtein;
 
                                 peptideBaseSequencesSeen.Add(peptide.BaseSequence);
                             }
@@ -642,7 +640,6 @@ namespace TaskLayer
 
                         // build modInfoString for this protein
                         var occupancyPGProtein = proteinGroupsOccupancyByProteins[proteinGroup.ProteinGroupName].Proteins[protein.Accession];
-                        modInfoString.Append($"");
                         var aaModStrings = new List<string>();
 
                         foreach (var modpos in occupancyPGProtein.ModifiedAminoAcidPositionsInProtein.OrderBy(x => x.Key))
@@ -650,19 +647,21 @@ namespace TaskLayer
                             var aaModString = new StringBuilder();
                             aaModString.Append($"aa#{modpos.Key.ToString()}");
 
-                            foreach (var mod in occupancyPGProtein.ModifiedAminoAcidPositionsInProtein[modpos.Key])
+                            var totalPositionIntensity = occupancyPGProtein.PeptidesByProteinPosition[modpos.Key].Sum(x => x.Intensity);
+
+                            foreach (var mod in modpos.Value)
                             {
-                                aaModString.Append($"[{mod.Key}, info:occupancy={mod.Value.Intensity.ToString()}]");
+                                var modStoichiometry = mod.Value.Intensity / totalPositionIntensity;
+                                aaModString.Append($"[{mod.Key}, info:occupancy={modStoichiometry.ToString("N4")}({totalPositionIntensity})]");
                             }
 
                             aaModStrings.Add(aaModString.ToString());
                         }
                         if (aaModStrings.IsNotNullOrEmpty())
                         {
-                            modInfoString.Append($"protein:{protein.Accession}{{{string.Join(";", aaModStrings)}}}");
+                            proteinGroup.ModsInfo.Add($"protein:{protein.Accession}{{{string.Join(";", aaModStrings)}}}");
                         }
                     }
-                    proteinGroup.ModsInfo.Add(modInfoString.ToString());
                 }
 
                 // get protein intensity back from FlashLFQ
