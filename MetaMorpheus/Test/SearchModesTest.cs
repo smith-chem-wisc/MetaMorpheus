@@ -62,6 +62,7 @@ namespace Test
             var theList2 = dsm2.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(1000).ToList();
 
             Assert.That(theList2[0].Contains(1000));
+            Assert.That(theList2[0].Contains(3000));
 
             Assert.That(1000 * (1 + 5.0 / 1e6 / 1.0000001) < theList2[0].Maximum);
             Assert.That(1000 * (1 - 5.0 / 1e6 / 1.0000001) > theList2[0].Minimum);
@@ -70,6 +71,45 @@ namespace Test
 
             Assert.That(theList2[1].Contains(1001));
         }
+
+        [Test]
+        public static void TestAbsoluteAroundZeroSearchMode()
+        {
+            var absolute = new SingleAbsoluteAroundZeroSearchMode(2);
+            Assert.That(absolute.Accepts(2, 2), Is.GreaterThanOrEqualTo(0));
+            Assert.That(absolute.Accepts(2, 3), Is.GreaterThanOrEqualTo(0));
+            Assert.That(absolute.Accepts(2, 5), Is.LessThanOrEqualTo(0));
+            
+            var theoretical = absolute.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(10).ToList();
+            Assert.That(theoretical.Count, Is.EqualTo(1));
+            Assert.That(theoretical[0].Minimum, Is.EqualTo(8));
+            Assert.That(theoretical[0].Maximum, Is.EqualTo(12));
+
+            var observed = absolute.GetAllowedPrecursorMassIntervalsFromObservedMass(10).ToList();
+            Assert.That(observed.Count, Is.EqualTo(1));
+            Assert.That(observed[0].Minimum, Is.EqualTo(8));
+            Assert.That(observed[0].Maximum, Is.EqualTo(12));
+        }
+
+        [Test]
+        public static void TestPpmAroundZeroSearchMode()
+        {
+            var ppm = new SinglePpmAroundZeroSearchMode(2 * 1e6);
+            Assert.That(ppm.Accepts(2, 2), Is.GreaterThanOrEqualTo(0));
+            Assert.That(ppm.Accepts(2, 3), Is.GreaterThanOrEqualTo(0));
+            Assert.That(ppm.Accepts(2, 50), Is.LessThanOrEqualTo(0));
+
+            var theoretical = ppm.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(10).ToList();
+            Assert.That(theoretical.Count, Is.EqualTo(1));
+            Assert.That(theoretical[0].Minimum, Is.EqualTo(-10));
+            Assert.That(theoretical[0].Maximum, Is.EqualTo(30));
+
+            var observed = ppm.GetAllowedPrecursorMassIntervalsFromObservedMass(10).ToList();
+            Assert.That(observed.Count, Is.EqualTo(1));
+            Assert.That(observed[0].Minimum, Is.EqualTo(-10));
+            Assert.That(observed[0].Maximum, Is.EqualTo(30));
+        }
+
 
         // Accept if scanPrecursorMass*peptideMass>=1.
         private class TestSearchMode : MassDiffAcceptor
