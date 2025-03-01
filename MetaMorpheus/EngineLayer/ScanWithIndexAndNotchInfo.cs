@@ -1,16 +1,19 @@
 ﻿namespace EngineLayer
 {
-    internal class ScanWithIndexAndNotchInfo
+    internal class ScanWithIndexAndNotchInfo(int notch, int scanIndex)
     {
-        public Ms2ScanWithSpecificMass TheScan;
-        public int Notch;
-        public int ScanIndex;
+        public readonly int Notch = notch;
+        public readonly int ScanIndex = scanIndex;
+    }
 
-        public ScanWithIndexAndNotchInfo(Ms2ScanWithSpecificMass theScan, int notch, int scanIndex)
-        {
-            TheScan = theScan;
-            Notch = notch;
-            ScanIndex = scanIndex;
-        }
+    /// <summary>
+    /// For use in MiniClassicSearchEngine
+    /// </summary>
+    /// <param name="scan"></param>
+    /// <param name="notch"></param>
+    /// <param name="scanIndex"></param>
+    internal class ExtendedScanWithIndexAndNotchInfo(Ms2ScanWithSpecificMass scan, int notch, int scanIndex) : ScanWithIndexAndNotchInfo(notch, scanIndex)
+    {
+        public readonly Ms2ScanWithSpecificMass TheScan = scan;
     }
 }
