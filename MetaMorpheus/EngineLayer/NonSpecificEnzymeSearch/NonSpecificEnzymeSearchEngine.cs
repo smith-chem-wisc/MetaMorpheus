@@ -335,7 +335,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                 {
                     foreach (Modification mod in terminalModsAtThisIndex)
                     {
-                        notch = searchMode.Accepts(scanPrecursorMass, theoMass + mod.MonoisotopicMass.Value); //overwrite the Notch, since the other Notch wasn't accepted
+                        notch = searchMode.Accepts(scanPrecursorMass, theoMass + mod.MonoisotopicMass.Value); //overwrite the notch, since the other notch wasn't accepted
                         if (notch >= 0)
                         {
                             terminalMod = mod;
@@ -408,7 +408,7 @@ namespace EngineLayer.NonSpecificEnzymeSearch
                     {
                         foreach (Modification terminalMod in terminalModsAtThisIndex)
                         {
-                            notch = searchMode.Accepts(scanPrecursorMass, totalMass + terminalMod.MonoisotopicMass.Value); //overwrite the Notch, since the other Notch wasn't accepted
+                            notch = searchMode.Accepts(scanPrecursorMass, totalMass + terminalMod.MonoisotopicMass.Value); //overwrite the notch, since the other notch wasn't accepted
                             if (notch >= 0)
                             {
                                 //need to update the mod dictionary and don't want to overwrite the peptide incase it's in other scans

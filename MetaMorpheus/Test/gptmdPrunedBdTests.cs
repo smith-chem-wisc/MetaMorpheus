@@ -154,7 +154,7 @@ namespace Test
                 variableModifications).ToList();
             Assert.That(digestedList.Count, Is.EqualTo(4));
 
-            //Set WithSetMods with 1 mod at position 3
+            //Set Peptide with 1 mod at position 3
             PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
 
             //Finally Write MZML file
@@ -283,7 +283,7 @@ namespace Test
             var protein = ProteinDbLoader.LoadProteinXML(xmlName2, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
             var digestedList = protein[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-            //Set WithSetMods with 1 mod at position 3
+            //Set Peptide with 1 mod at position 3
             PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
             PeptideWithSetModifications pepWithSetMods2 = digestedList[1];
             PeptideWithSetModifications pepWithSetMods3 = digestedList[2];

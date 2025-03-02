@@ -216,7 +216,7 @@ namespace Test
 
             Assert.That(theStringResult.Contains("All target PSMs with q-value <= 0.01: 2")); //it's not a psm, it's a MBR feature. 2 because there are two files, but not 4 because MBR != psm
 
-            ///Normal WithSetMods
+            ///Normal Peptide
             //test proteins
             string[] output = File.ReadAllLines(TestContext.CurrentContext.TestDirectory + @"\TestSilac\AllQuantifiedProteinGroups.tsv");
             Assert.That(output.Length, Is.EqualTo(2));

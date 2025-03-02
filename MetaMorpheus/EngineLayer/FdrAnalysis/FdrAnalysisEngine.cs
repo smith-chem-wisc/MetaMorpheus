@@ -150,7 +150,7 @@ namespace EngineLayer.FdrAnalysis
         /// <summary>
         /// This methods assumes that PSMs are already sorted appropriately for downstream usage
         /// Then, it counts the number of targets and (fractional) decoys, writes those values to the 
-        /// appropriate FdrInfo (PSM or WithSetMods level), and calculates q-values
+        /// appropriate FdrInfo (PSM or Peptide level), and calculates q-values
         /// </summary>
         public void CalculateQValue(List<SpectralMatch> psms, bool peptideLevelCalculation, bool pepCalculation = false)
         {
@@ -167,7 +167,7 @@ namespace EngineLayer.FdrAnalysis
                 // Stop if canceled
                 if (GlobalVariables.StopLoops) { break; }
 
-                // we have to keep track of q-values separately for each Notch
+                // we have to keep track of q-values separately for each notch
                 int notch = psm.Notch ?? MassDiffAcceptorNumNotches;
                 if (psm.IsDecoy)
                 {
@@ -256,7 +256,7 @@ namespace EngineLayer.FdrAnalysis
                 if (GlobalVariables.StopLoops) { break; }
                 int notch = psms[i].Notch ?? MassDiffAcceptorNumNotches;
 
-                // populate the highest q-Value for each Notch 
+                // populate the highest q-Value for each notch 
                 if (!qValueNotchCalculated[notch])
                 {
                     qValueNotch[notch] = (psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeDecoyNotch + 1) / psms[0].GetFdrInfo(peptideLevelAnalysis).CumulativeTargetNotch;

@@ -281,7 +281,7 @@ namespace Test
             string metrics = pepEngine.ComputePEPValuesForAllPSMs();
             Assert.That(32 >= trueCount);
 
-            //Test Variant WithSetMods as Input is identified as such as part of PEP calculation input much of the next several lines simply necessry to create a psm.
+            //Test Variant Peptide as Input is identified as such as part of PEP calculation input much of the next several lines simply necessry to create a psm.
 
             var anMzSpectrum = new MzSpectrum(new double[] { 1, 1 }, new double[] { 2, 2 }, true);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(anMzSpectrum, 1, 1, true, Polarity.Negative, 2, null, "", MZAnalyzerType.Orbitrap, 2, null, null, null), 1, 1, "path", new CommonParameters());

@@ -12,7 +12,7 @@ namespace EngineLayer.Localization
     /// <summary>
     /// The mass difference between an experimental precursor and the theoretical mass of the assigned peptide is determined. The LocalizationEngine attempts
     /// to localize this mass to one of the residues. It does this by adding the mass difference to each theoretical ion mass and looking for additional matches
-    /// in the experimental spectrum. This engine should only be run for open, Notch or custom searches. It should not be run for exact mass or missed
+    /// in the experimental spectrum. This engine should only be run for open, notch or custom searches. It should not be run for exact mass or missed
     /// monoisopic searches.
     /// </summary>
     public class LocalizationEngine : MetaMorpheusEngine

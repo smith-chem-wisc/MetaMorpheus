@@ -9,7 +9,6 @@ using System.Linq;
 using Omics;
 using System;
 using EngineLayer.CrosslinkSearch;
-using EngineLayer.Util;
 using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
@@ -141,7 +140,7 @@ namespace EngineLayer
                 // This property gets called frequently
                 // It might be worth considering stashing the sorted list in a field instead of sorting every time
 
-                // Order by descending sorts things from high (better matches) to low (worse matches)
+                // Order high (better matches) to low (worse matches)
                 return _BestMatchingBioPolymersWithSetMods.OrderBy(t => 
                     (t.Notch, t.WithSetMods, t.MatchedIons), 
                     comparer: BioPolymerNotchFragmentIonComparer);
