@@ -1,6 +1,7 @@
 ﻿using Omics;
 using Omics.Fragmentation;
 using System.Collections.Generic;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer;
 
@@ -8,7 +9,6 @@ namespace EngineLayer;
 /// Compares the information of two tentative spectral matches to determine which is better
 /// If used in an order by operation, the best matches will be first. 
 /// </summary>
-public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolymerWithSetMods Bpwsm, List<MatchedFragmentIon> MatchedIons)>
 public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolymerWithSetMods Bpwsm, List<MatchedFragmentIon> MatchedIons)>,
     IComparer<TentativeSpectralMatch>
 {
