@@ -424,7 +424,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_Localization2()
         {
-            //There may have a bug that MM cannot identify Peptide modified with (HexNAc), This is to test and find the bug.
+            //There may have a bug that MM cannot identify WithSetMods modified with (HexNAc), This is to test and find the bug.
             //Get glycanBox
             var glycanBox = OGlycanBoxes[0];
 

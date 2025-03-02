@@ -10,6 +10,7 @@ using Easy.Common.Extensions;
 using MassSpectrometry.MzSpectra;
 using Omics;
 using Omics.SpectrumMatch;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
 {
@@ -40,34 +41,31 @@ namespace EngineLayer
                             if (psms[i] != null)
                             {
                                 Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
-                                List<(int, IBioPolymerWithSetMods)> pwsms = new();
                                 List<double> pwsmSpectralAngles = new();
-                                foreach (var (Notch, Peptide) in psms[i].BestMatchingBioPolymersWithSetMods)
+                                foreach (var bestMatch in psms[i].BestMatchingBioPolymersWithSetMods)
                                 {
                                     //if peptide is target, directly look for the target's spectrum in the spectral library
-                                    if (!Peptide.Parent.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                                    if (!bestMatch.IsDecoy && spectralLibrary.TryGetSpectrum(bestMatch.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                     {
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray, 
                                             SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, commonParameters.ProductMassTolerance.Value, false);
                                         if (s.SpectralContrastAngle().HasValue)
                                         {
-                                            pwsms.Add((Notch, Peptide));
                                             pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
                                         }
                                     }
 
                                     //if peptide is decoy, look for the decoy's corresponding target's spectrum in the spectral library and generate decoy spectrum by function GetDecoyLibrarySpectrumFromTargetByRevers
-                                    else if (Peptide.Parent.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.Description, scan.PrecursorCharge, out var targetlibrarySpectrum))
+                                    else if (bestMatch.IsDecoy && spectralLibrary.TryGetSpectrum(bestMatch.WithSetMods.Description, scan.PrecursorCharge, out var targetlibrarySpectrum))
                                     {
                                         var decoyPeptideTheorProducts = new List<Product>();
-                                        Peptide.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
+                                        bestMatch.WithSetMods.Fragment(commonParameters.DissociationType, commonParameters.DigestionParams.FragmentationTerminus, decoyPeptideTheorProducts);
                                         var decoylibrarySpectrum = GetDecoyLibrarySpectrumFromTargetByReverse(targetlibrarySpectrum, decoyPeptideTheorProducts);
                                         SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, decoylibrarySpectrum.Select(x => x.Mz).ToArray(),
                                             decoylibrarySpectrum.Select(x => x.Intensity).ToArray(), SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum,
                                             commonParameters.ProductMassTolerance.Value, false);
                                         if (s.SpectralContrastAngle().HasValue)
                                         {
-                                            pwsms.Add((Notch, Peptide));
                                             pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
                                         }
                                     }

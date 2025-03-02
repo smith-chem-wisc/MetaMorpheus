@@ -43,7 +43,7 @@ namespace EngineLayer
         internal string SpectralMatchExtension { get; init; } = spectralMatchExtension;
 
         /// <summary>
-        /// Gets or sets the label for unique forms (e.g. Peptide).
+        /// Gets or sets the label for unique forms (e.g. WithSetMods).
         /// </summary>
         internal string UniqueFormLabel { get; init; } = uniqueFormLabel;
 

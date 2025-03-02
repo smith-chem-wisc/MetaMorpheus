@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using Omics.Digestion;
 using Omics.Modifications;
 using Easy.Common.Extensions;
+using EngineLayer.SpectrumMatch;
 
 namespace Test
 {
@@ -82,7 +83,8 @@ namespace Test
             Assert.That(matchedIonSeries, Is.EqualTo("[(b1-5.00)+1]"));
 
             //removing one of the peptides to reset for the next test
-            myPsm.RemoveThisAmbiguousPeptide(0, pwsm2);
+            var tentativeSpectralMatch = new TentativeSpectralMatch(0, pwsm2, []);
+            myPsm.RemoveThisAmbiguousPeptide(tentativeSpectralMatch);
 
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus1, 0);
             myPsm.AddOrReplace(pwsm3, 10, 0, true, mfi, 10);

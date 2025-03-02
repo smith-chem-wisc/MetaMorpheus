@@ -273,7 +273,7 @@ namespace Test
             var digestedList = variantProteins[0].GetVariantProteins()[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
             Assert.That(digestedList.Count, Is.EqualTo(4));
 
-            //Set Peptide with 1 mod at position 3
+            //Set WithSetMods with 1 mod at position 3
             PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
 
             //Finally Write MZML file

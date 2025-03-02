@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using EngineLayer.SpectrumMatch;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -25,15 +26,15 @@ namespace EngineLayer
         public void ResolveHeavySilacLabel(List<SilacLabel> labels, IReadOnlyDictionary<string, int> modsToWritePruned)
         {
             //FullSequence
-            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.FullSequence)).ResolvedString; //string, not value
+            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.FullSequence)).ResolvedString; //string, not value
             FullSequence = SilacConversions.GetAmbiguousLightSequence(FullSequence, labels, false);
 
             //BaseSequence
-            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.BaseSequence)).ResolvedString; //string, not value
+            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.BaseSequence)).ResolvedString; //string, not value
             BaseSequence = SilacConversions.GetAmbiguousLightSequence(BaseSequence, labels, true);
 
             //EssentialSequence
-            EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
+            EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
             EssentialSequence = SilacConversions.GetAmbiguousLightSequence(EssentialSequence, labels, false);
         }
 
@@ -41,9 +42,9 @@ namespace EngineLayer
         /// This method is used by SILAC quantification to add heavy/light psms
         /// Don't have access to the scans at that point, so a new contructor is needed
         /// </summary>
-        public PeptideSpectralMatch Clone(List<(int Notch, IBioPolymerWithSetMods Peptide)> bestMatchingPeptides) => new PeptideSpectralMatch(this, bestMatchingPeptides);
+        public PeptideSpectralMatch Clone(List<TentativeSpectralMatch> bestMatchingPeptides) => new PeptideSpectralMatch(this, bestMatchingPeptides);
         
-        protected PeptideSpectralMatch(SpectralMatch psm, List<(int Notch, IBioPolymerWithSetMods Peptide)> bestMatchingPeptides) 
+        protected PeptideSpectralMatch(SpectralMatch psm, List<TentativeSpectralMatch> bestMatchingPeptides) 
             : base(psm, bestMatchingPeptides)
         {
         }

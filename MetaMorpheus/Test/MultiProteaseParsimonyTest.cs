@@ -772,7 +772,7 @@ namespace Test
         /// <summary>
         /// In this test, the peptide sequence ABC  results in a unique peptide for protein 1 when the sample is digested with protease alpha.
         /// But when the sample is digested with protease beta the base sequece ABC is a shared peptide between protein 2 and 4.
-        /// Peptide EFG is shared between protein 3 and 4. This is a more complex testing set to ensure that Parsing of shared peptides when unique proteins
+        /// WithSetMods EFG is shared between protein 3 and 4. This is a more complex testing set to ensure that Parsing of shared peptides when unique proteins
         /// are present is being handled correctly.
         /// The protein list should contain protein 1 and the protein 4.
         /// </summary>
