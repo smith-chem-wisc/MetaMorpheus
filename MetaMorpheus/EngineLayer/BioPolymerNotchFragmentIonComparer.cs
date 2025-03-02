@@ -23,9 +23,17 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolym
         if (x.Notch != y.Notch)
             return x.Notch.CompareTo(y.Notch); // Lower Notch is better
 
-        if (x.MatchedIons?.Count != y.MatchedIons?.Count && !ReferenceEquals(x.MatchedIons, null))
-            return -1 * x.MatchedIons.Count.CompareTo(y.MatchedIons?.Count); // More ions are better
+        // Matched Ions is a nullable list, so we need to check for null
+        if (x.MatchedIons == null && y.MatchedIons == null)
+            return 0; // Both are null, they are equal
+        if (x.MatchedIons == null)
+            return 1; // x is null, y is better
+        if (y.MatchedIons == null)
+            return -1; // y is null, x is better
+        if (x.MatchedIons.Count != y.MatchedIons.Count)
+            return -1 * x.MatchedIons.Count.CompareTo(y.MatchedIons.Count); // More ions are better
 
+        // Bpwsm is a nullable property, so we need to check for null
         if (x.Bpwsm == null && y.Bpwsm == null)
             return 0;
         if (x.Bpwsm == null)
@@ -39,7 +47,7 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolym
         if (x.Bpwsm.FullSequence != y.Bpwsm.FullSequence)
             return string.Compare(x.Bpwsm.FullSequence, y.Bpwsm.FullSequence); // Alphabetical ordering of full sequence
 
-        if (x.Bpwsm.Parent?.Accession != y.Bpwsm.Parent?.Accession) // This will break if the protein accession is not set (I'm not sure if that's possible)
+        if (x.Bpwsm.Parent?.Accession != y.Bpwsm.Parent?.Accession)
             return string.Compare(x.Bpwsm.Parent?.Accession, y.Bpwsm.Parent?.Accession); // Alphabetical ordering of protein accession
 
         return x.Bpwsm.OneBasedStartResidue.CompareTo(y.Bpwsm.OneBasedStartResidue);
