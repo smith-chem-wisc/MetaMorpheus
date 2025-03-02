@@ -180,10 +180,10 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(TentativeSpectralMatch tentativeSpectralMatch)
         {
             _BestMatchingBioPolymersWithSetMods.Remove(tentativeSpectralMatch);
-            //if (!_BestMatchingBioPolymersWithSetMods.Any(x => x.WithSetMods.Equals(pwsm)))
-            //{
-            //    BioPolymersWithSetModsToMatchingFragments.Remove(pwsm);
-            //}
+            if (!_BestMatchingBioPolymersWithSetMods.Any(x => x.WithSetMods.Equals(tentativeSpectralMatch.WithSetMods)))
+            {
+                BioPolymersWithSetModsToMatchingFragments.Remove(tentativeSpectralMatch.WithSetMods);
+            }
             this.ResolveAllAmbiguities();
         }
 
@@ -216,15 +216,15 @@ namespace EngineLayer
             if (IsDecoy)
             {
                 bool removedPeptides = false;
-                var hits = _BestMatchingBioPolymersWithSetMods.GroupBy(p => p.WithSetMods.FullSequence);
+                var hits = _BestMatchingBioPolymersWithSetMods.GroupBy(p => p.FullSequence);
 
                 foreach (var hit in hits)
                 {
-                    if (hit.Any(p => p.WithSetMods.Parent.IsDecoy) && hit.Any(p => !p.WithSetMods.Parent.IsDecoy))
+                    if (hit.Any(p => p.WithSetMods.Parent.IsDecoy) && hit.Any(p => !p.IsDecoy))
                     {
                         // at least one peptide with this sequence is a target and at least one is a decoy
                         // remove the decoys with this sequence
-                        _BestMatchingBioPolymersWithSetMods.RemoveAll(p => p.WithSetMods.FullSequence == hit.Key && p.WithSetMods.Parent.IsDecoy);
+                        _BestMatchingBioPolymersWithSetMods.RemoveAll(p => p.FullSequence == hit.Key && p.IsDecoy);
                         removedPeptides = true;
                     }
                 }
@@ -336,11 +336,15 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to add PeptideWithSetModifications objects for modification-agnostic parsimony
         /// </summary>
-        public virtual void AddProteinMatch(TentativeSpectralMatch tentativeSpectralMatch)
+        public void AddProteinMatch(TentativeSpectralMatch tentativeSpectralMatch)
         {
             if (!_BestMatchingBioPolymersWithSetMods.Contains(tentativeSpectralMatch))
             {
-                _BestMatchingBioPolymersWithSetMods.Add(tentativeSpectralMatch);
+                _BestMatchingBioPolymersWithSetMods.Add(tentativeSpectralMatch); 
+                if (!BioPolymersWithSetModsToMatchingFragments.ContainsKey(tentativeSpectralMatch.WithSetMods))
+                {
+                    BioPolymersWithSetModsToMatchingFragments.Add(tentativeSpectralMatch.WithSetMods, tentativeSpectralMatch.MatchedIons);
+                }
                 ResolveAllAmbiguities();
             }
         }

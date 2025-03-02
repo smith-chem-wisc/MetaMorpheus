@@ -83,7 +83,7 @@ namespace Test
             Assert.That(matchedIonSeries, Is.EqualTo("[(b1-5.00)+1]"));
 
             //removing one of the peptides to reset for the next test
-            var tentativeSpectralMatch = new TentativeSpectralMatch(0, pwsm2, []);
+            var tentativeSpectralMatch = new TentativeSpectralMatch(0, pwsm2, mfi);
             myPsm.RemoveThisAmbiguousPeptide(tentativeSpectralMatch);
 
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus1, 0);
