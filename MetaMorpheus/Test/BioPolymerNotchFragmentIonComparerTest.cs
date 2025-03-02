@@ -26,12 +26,9 @@ namespace Test
             comparer = new BioPolymerNotchFragmentIonComparer();
             exampleProtein = new Protein("PEPTIDEK", "accession");
             examplePwsm = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
-            exampleIon = new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0), 100,
-                100, 1);
-            fullSequenceProperty = examplePwsm.GetType().GetProperty("FullSequence",
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-            modDictField = examplePwsm.GetType().GetField("_allModsOneIsNterminus",
-                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            exampleIon = new MatchedFragmentIon(new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0), 100, 100, 1);
+            fullSequenceProperty = examplePwsm.GetType().GetProperty("FullSequence", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            modDictField = examplePwsm.GetType().GetField("_allModsOneIsNterminus", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
             emptyList = new();
         }
 
@@ -46,8 +43,8 @@ namespace Test
         [Test]
         public static void Compare_DifferentFragmentIonCounts()
         {
-            var x = (1, examplePwsm, new List<MatchedFragmentIon> { exampleIon });
-            var y = (1, examplePwsm, emptyList);
+            var x = (1, _examplePwsm: examplePwsm, new List<MatchedFragmentIon> { exampleIon });
+            var y = (1, _examplePwsm: examplePwsm, emptyList);
             Assert.That(comparer.Compare(x, y), Is.LessThan(0));
         }
 
@@ -59,8 +56,8 @@ namespace Test
             modDictField.SetValue(modifiedPwsm,
                 new Dictionary<int, Modification>
                 {
-                    { 1, new Modification() },
-                    { 4, new Modification() }
+                    {1, new Modification() },
+                    {4, new Modification() }
                 });
             var x = (0, _examplePwsm: examplePwsm, emptyList);
             var y = (0, modifiedPwsm, emptyList);
@@ -98,12 +95,8 @@ namespace Test
         [Test]
         public static void Compare_DifferentStartResidues()
         {
-            var x = (1,
-                new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 1),
-                emptyList);
-            var y = (1,
-                new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 5),
-                emptyList);
+            var x = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 1), emptyList);
+            var y = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 5), emptyList);
             Assert.That(comparer.Compare(x, y), Is.LessThan(0));
         }
 
