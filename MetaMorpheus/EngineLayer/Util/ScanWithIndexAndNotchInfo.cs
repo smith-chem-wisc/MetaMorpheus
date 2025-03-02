@@ -1,4 +1,4 @@
-﻿namespace EngineLayer
+﻿namespace EngineLayer.Util
 {
     internal class ScanWithIndexAndNotchInfo(int notch, int scanIndex)
     {

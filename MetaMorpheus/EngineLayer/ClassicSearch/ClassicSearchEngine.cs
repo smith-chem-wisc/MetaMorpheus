@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Omics.Modifications;
 using System.Collections.Concurrent;
+using EngineLayer.Util;
 
 namespace EngineLayer.ClassicSearch
 {
