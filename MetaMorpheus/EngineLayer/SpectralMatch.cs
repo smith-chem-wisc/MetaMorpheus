@@ -403,10 +403,10 @@ namespace EngineLayer
         /// <param name="PeptidesToMatchingFragments"></param>
         /// <param name="peptide"></param>
         /// <returns></returns>
-        public static int GetLongestIonSeriesBidirectional(Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments, IBioPolymerWithSetMods peptide)
+        public static int GetLongestIonSeriesBidirectional(List<MatchedFragmentIon> matchedFragments, IBioPolymerWithSetMods peptide)
         {
             List<int> maxDiffs = new List<int> { 1 };
-            if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
+            if (matchedFragments != null && matchedFragments.Count != 0)
             {
                 var jointSeries = matchedFragments.Select(p => p.NeutralTheoreticalProduct.AminoAcidPosition).Distinct().ToList();
 
@@ -533,9 +533,9 @@ namespace EngineLayer
             this.FragmentCoveragePositionInPeptide = fragmentCoveredAminoAcidsList;
         }
 
-        public static int GetCountComplementaryIons(Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments, IBioPolymerWithSetMods peptide)
+        public static int GetCountComplementaryIons(List<MatchedFragmentIon> matchedFragments, IBioPolymerWithSetMods peptide)
         {
-            if (PeptidesToMatchingFragments != null && PeptidesToMatchingFragments.TryGetValue(peptide, out var matchedFragments) && matchedFragments != null && matchedFragments.Any())
+            if (matchedFragments != null && matchedFragments.Count != 0)
             {
                 List<int> nIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.N).Select(f => f.NeutralTheoreticalProduct.FragmentNumber).ToList();
                 List<int> cIons = matchedFragments.Where(f => f.NeutralTheoreticalProduct.Terminus == FragmentationTerminus.C).Select(f => (peptide.BaseSequence.Length - f.NeutralTheoreticalProduct.FragmentNumber)).ToList();

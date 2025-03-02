@@ -207,7 +207,7 @@ namespace Test
                 {
                     foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, bestMatch.WithSetMods));
+                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(bestMatch.MatchedIons, bestMatch.WithSetMods));
                     }
                 }
             }
@@ -517,7 +517,7 @@ namespace Test
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
-            int count = SpectralMatch.GetCountComplementaryIons(psm1.BioPolymersWithSetModsToMatchingFragments, pwsm);
+            int count = SpectralMatch.GetCountComplementaryIons([], pwsm);
 
             //No Matched Fragment Ions Returns 0
             Assert.That(count, Is.EqualTo(0));
@@ -536,10 +536,7 @@ namespace Test
                 mfiList.Add(new MatchedFragmentIon(prod, 1, 1, 1));
             }
 
-            Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PTMF = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
-            PTMF.Add(pwsm, mfiList);
-
-            count = SpectralMatch.GetCountComplementaryIons(PTMF, pwsm);
+            count = SpectralMatch.GetCountComplementaryIons(mfiList, pwsm);
             //BioPolymersWithSetModsToMatchingFragments Contains one N and one C ion so intersection Returns 1
             Assert.That(count, Is.EqualTo(1));
         }
@@ -562,10 +559,8 @@ namespace Test
             Assert.That(longestSeries, Is.EqualTo(1));
 
             //matchedFragments == null returns 1
-            Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
-            PeptidesToMatchingFragments.Add(pwsm, null);
 
-            longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(PeptidesToMatchingFragments, pwsm);
+            longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(null, pwsm);
             Assert.That(longestSeries, Is.EqualTo(1));
         }
 
