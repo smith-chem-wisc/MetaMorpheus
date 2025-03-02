@@ -34,7 +34,6 @@ namespace EngineLayer
             PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
             PrecursorFractionalIntensity = scan.PrecursorFractionalIntensity;
             DigestionParams = commonParameters.DigestionParams;
-            BioPolymersWithSetModsToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
             Xcorr = xcorr;
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
@@ -127,10 +126,6 @@ namespace EngineLayer
 
         public static BioPolymerNotchFragmentIonComparer BioPolymerNotchFragmentIonComparer = new();
 
-        // TODO: The BioPolymerWithSetModsToMatchingFragments dictionary should be more tightly coupled to the _BestMatchingBioPolymersWithSetMods list,
-        // so that the two are always in sync. This would make the code more robust and easier to understand.
-        public Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> BioPolymersWithSetModsToMatchingFragments { get; private set; }
-
         protected List<SpectralMatchHypothesis> _BestMatchingBioPolymersWithSetMods;
 
         public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
@@ -158,14 +153,10 @@ namespace EngineLayer
                 }
                 Score = newScore;
                 Xcorr = newXcorr;
-
-                BioPolymersWithSetModsToMatchingFragments.Clear();
-                BioPolymersWithSetModsToMatchingFragments.Add(pwsm, matchedFragmentIons);
             }
             else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
                 _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons));
-                BioPolymersWithSetModsToMatchingFragments.TryAdd(pwsm, matchedFragmentIons);
             }
             else if (newScore - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
@@ -177,10 +168,6 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(SpectralMatchHypothesis tentativeSpectralMatch)
         {
             _BestMatchingBioPolymersWithSetMods.Remove(tentativeSpectralMatch);
-            if (!_BestMatchingBioPolymersWithSetMods.Any(x => x.WithSetMods.Equals(tentativeSpectralMatch.WithSetMods)))
-            {
-                BioPolymersWithSetModsToMatchingFragments.Remove(tentativeSpectralMatch.WithSetMods);
-            }
             this.ResolveAllAmbiguities();
         }
 
@@ -236,10 +223,9 @@ namespace EngineLayer
             // However, writing out all the matched ions for all the peptide options would break excel
             // Instead, we set MatchedFragmentIons as the ions matched to the best peptide option
             if (this is CrosslinkSpectralMatch) // CrosslinkSpectralMatch has its own way of handling this, however, this method of retrieving the "First" item in a dictionary is problematic and should be revisted at some point
-                MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments.Values.First();
-            else if (BioPolymersWithSetModsToMatchingFragments.TryGetValue(_BestMatchingBioPolymersWithSetMods.First().WithSetMods, out var ionList))
-                MatchedFragmentIons = ionList;
-            else MatchedFragmentIons = null;
+                MatchedFragmentIons = _BestMatchingBioPolymersWithSetMods.First().MatchedIons;
+            else 
+                MatchedFragmentIons = _BestMatchingBioPolymersWithSetMods.First().MatchedIons;
         }
 
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
@@ -338,10 +324,6 @@ namespace EngineLayer
             if (!_BestMatchingBioPolymersWithSetMods.Contains(tentativeSpectralMatch))
             {
                 _BestMatchingBioPolymersWithSetMods.Add(tentativeSpectralMatch); 
-                if (!BioPolymersWithSetModsToMatchingFragments.ContainsKey(tentativeSpectralMatch.WithSetMods))
-                {
-                    BioPolymersWithSetModsToMatchingFragments.Add(tentativeSpectralMatch.WithSetMods, tentativeSpectralMatch.MatchedIons);
-                }
                 ResolveAllAmbiguities();
             }
         }
@@ -386,7 +368,6 @@ namespace EngineLayer
             IsDecoy = psm.IsDecoy;
             IsContaminant = psm.IsContaminant;
             DigestionParams = psm.DigestionParams;
-            BioPolymersWithSetModsToMatchingFragments = psm.BioPolymersWithSetModsToMatchingFragments;
             SpectralAngle = psm.SpectralAngle;
         }
 
