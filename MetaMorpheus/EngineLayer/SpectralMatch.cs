@@ -141,9 +141,7 @@ namespace EngineLayer
                 // It might be worth considering stashing the sorted list in a field instead of sorting every time
 
                 // Order high (better matches) to low (worse matches)
-                return _BestMatchingBioPolymersWithSetMods.OrderBy(t => 
-                    (t.Notch, t.WithSetMods, t.MatchedIons), 
-                    comparer: BioPolymerNotchFragmentIonComparer);
+                return _BestMatchingBioPolymersWithSetMods.OrderBy(p => p, BioPolymerNotchFragmentIonComparer);
             }
         }
 

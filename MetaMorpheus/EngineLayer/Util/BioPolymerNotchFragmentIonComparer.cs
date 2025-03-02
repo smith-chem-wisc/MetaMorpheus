@@ -9,6 +9,8 @@ namespace EngineLayer;
 /// If used in an order by operation, the best matches will be first. 
 /// </summary>
 public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolymerWithSetMods Bpwsm, List<MatchedFragmentIon> MatchedIons)>
+public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolymerWithSetMods Bpwsm, List<MatchedFragmentIon> MatchedIons)>,
+    IComparer<TentativeSpectralMatch>
 {
     /// <summary>
     /// Returns less than 0 if x is better than y, greater than 0 if y is better than x, and 0 if they are equal.
@@ -35,12 +37,21 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolym
             return x.Bpwsm.NumMods.CompareTo(y.Bpwsm.NumMods); // Fewer mods are better
 
         if (x.Bpwsm.FullSequence != y.Bpwsm.FullSequence)
-            return string.Compare(x.Bpwsm.FullSequence,
-                y.Bpwsm.FullSequence); // Alphabetical ordering of full sequence
+            return string.Compare(x.Bpwsm.FullSequence, y.Bpwsm.FullSequence); // Alphabetical ordering of full sequence
 
         if (x.Bpwsm.Parent?.Accession != y.Bpwsm.Parent?.Accession) // This will break if the protein accession is not set (I'm not sure if that's possible)
             return string.Compare(x.Bpwsm.Parent?.Accession, y.Bpwsm.Parent?.Accession); // Alphabetical ordering of protein accession
 
         return x.Bpwsm.OneBasedStartResidue.CompareTo(y.Bpwsm.OneBasedStartResidue);
+    }
+
+    public int Compare(TentativeSpectralMatch x, TentativeSpectralMatch y)
+    {
+        if (x is null && y is null)
+            return 0;
+        if (x is null) return 1;
+        if (y is null) return -1;
+
+        return Compare((x.Notch, x.WithSetMods, x.MatchedIons), (y.Notch, y.WithSetMods, y.MatchedIons));
     }
 }
