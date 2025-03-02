@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Test
+namespace Test.UtilitiesTest
 {
     [TestFixture]
     public static class SearchModesTest
@@ -62,7 +62,7 @@ namespace Test
             var theList2 = dsm2.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(1000).ToList();
 
             Assert.That(theList2[0].Contains(1000));
-            Assert.That(theList2[0].Contains(3000));
+            Assert.That(!theList2[0].Contains(3000));
 
             Assert.That(1000 * (1 + 5.0 / 1e6 / 1.0000001) < theList2[0].Maximum);
             Assert.That(1000 * (1 - 5.0 / 1e6 / 1.0000001) > theList2[0].Minimum);
@@ -79,7 +79,7 @@ namespace Test
             Assert.That(absolute.Accepts(2, 2), Is.GreaterThanOrEqualTo(0));
             Assert.That(absolute.Accepts(2, 3), Is.GreaterThanOrEqualTo(0));
             Assert.That(absolute.Accepts(2, 5), Is.LessThanOrEqualTo(0));
-            
+
             var theoretical = absolute.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(10).ToList();
             Assert.That(theoretical.Count, Is.EqualTo(1));
             Assert.That(theoretical[0].Minimum, Is.EqualTo(8));
