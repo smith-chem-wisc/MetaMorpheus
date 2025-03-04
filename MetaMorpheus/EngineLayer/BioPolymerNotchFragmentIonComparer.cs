@@ -6,6 +6,10 @@ using System.Collections.Generic;
 
 namespace EngineLayer
 {
+    /// <summary>
+    /// Compares the information of two tentative spectral matches to determine which is better
+    /// If used in an order by operation, the best matches will be last. OrderByDescending for best -> worst 
+    /// </summary>
     public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions)>
     {
         /// <summary>
@@ -54,7 +58,7 @@ namespace EngineLayer
                 return -1; // x is null, y is better
             if (y.pwsm.Parent.Accession == null)
                 return 1; // y is null, x is better
-            if (x.pwsm.Parent.Accession != y.pwsm.Parent.Accession) // This will break if the protein accession is not set (I'm not sure if that's possible)
+            if (x.pwsm.Parent.Accession != y.pwsm.Parent.Accession)
                 return -1 * String.Compare(x.pwsm.Parent.Accession, y.pwsm.Parent.Accession); // (reverse) Alphabetical ordering of protein accession
 
             return -1 * x.pwsm.OneBasedStartResidue.CompareTo(y.pwsm.OneBasedStartResidue);                                                                  
