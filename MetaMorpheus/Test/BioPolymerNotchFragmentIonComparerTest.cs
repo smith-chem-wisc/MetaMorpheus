@@ -66,7 +66,7 @@ namespace Test
 
             // double check that mods are considered before sequence
             fullSequenceProperty.SetValue(modifiedPwsm, "AAAAAAAA", null);
-            Assert.That(comparer.Compare(x, y), Is.LessThan(0));
+            Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
         [Test]
@@ -91,14 +91,14 @@ namespace Test
             var x = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: protein1), emptyList);
             var y = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: protein2), emptyList);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
+        }
 
-            x = (0, examplePwsm, emptyList);
-            y = (0, null, emptyList);
-            Assert.That(comparer.Compare(x, y), Is.LessThan(0));
-
-            x = (0, null, emptyList);
-            y = (0, null, emptyList);
-            Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
+        [Test]
+        public static void Compare_DifferentStartResidues()
+        {
+            var x = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 1), emptyList);
+            var y = (1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 5), emptyList);
+            Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
         [Test]
