@@ -1,64 +1,82 @@
-﻿using Omics;
+﻿using EngineLayer.SpectrumMatch;
+using Omics;
 using Omics.Fragmentation;
+using System;
 using System.Collections.Generic;
-using EngineLayer.SpectrumMatch;
+// ReSharper disable ConditionIsAlwaysTrueOrFalse
 
 namespace EngineLayer;
 
 /// <summary>
 /// Compares the information of two tentative spectral matches to determine which is better
-/// If used in an order by operation, the best matches will be first. 
+/// If used in an order by operation, the best matches will be last. OrderByDescending for best -> worst 
 /// </summary>
-public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolymerWithSetMods Bpwsm, List<MatchedFragmentIon> MatchedIons)>,
+public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions)>,
     IComparer<SpectralMatchHypothesis>
 {
     /// <summary>
-    /// Returns less than 0 if x is better than y, greater than 0 if y is better than x, and 0 if they are equal.
-    /// Better is defined as having a lower Notch, more fragment ions, or a shorter sequence (i.e. fewer modifications) in that order.
+    /// Returns greater than 0 if x is better than y, less than 0 if y is better than x, and 0 if they are equal.
+    /// Better is defined as having a lower notch, more fragment ions, or a shorter sequence (i.e. fewer modifications) in that order.
     /// If the aforementioned criteria are equal, then the two are compared based on the alphebetical ordering of the full sequence
     /// </summary>
-    public override int Compare((int Notch, IBioPolymerWithSetMods Bpwsm, List<MatchedFragmentIon> MatchedIons) x,
-        (int Notch, IBioPolymerWithSetMods Bpwsm, List<MatchedFragmentIon> MatchedIons) y)
+    public override int Compare((int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions) x, (int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions) y)
     {
-        if (x.Notch != y.Notch)
-            return x.Notch.CompareTo(y.Notch); // Lower Notch is better
+        if (x.notch != y.notch)
+            return -1 * x.notch.CompareTo(y.notch); // Lower notch is better
 
         // Matched Ions is a nullable list, so we need to check for null
-        if (x.MatchedIons == null && y.MatchedIons == null)
+        if (x.ions == null && y.ions == null)
             return 0; // Both are null, they are equal
-        if (x.MatchedIons == null)
-            return 1; // x is null, y is better
-        if (y.MatchedIons == null)
-            return -1; // y is null, x is better
-        if (x.MatchedIons.Count != y.MatchedIons.Count)
-            return -1 * x.MatchedIons.Count.CompareTo(y.MatchedIons.Count); // More ions are better
+        if (x.ions == null)
+            return -1; // x is null, y is better
+        if (y.ions == null)
+            return 1; // y is null, x is better
+        if (x.ions.Count != y.ions.Count)
+            return x.ions.Count.CompareTo(y.ions.Count); // More ions are better
 
         // Bpwsm is a nullable property, so we need to check for null
-        if (x.Bpwsm == null && y.Bpwsm == null)
+        if (x.pwsm == null && y.pwsm == null)
             return 0;
-        if (x.Bpwsm == null)
-            return 1; // Null Bpwsm is considered worse
-        if (y.Bpwsm == null)
-            return -1; // Null Bpwsm is considered worse
+        if (x.pwsm == null)
+            return -1; // x is null, y is better
+        if (y.pwsm == null)
+            return 1; // y is null, x is better
 
-        if (x.Bpwsm.NumMods != y.Bpwsm.NumMods)
-            return x.Bpwsm.NumMods.CompareTo(y.Bpwsm.NumMods); // Fewer mods are better
+        if (x.pwsm.NumMods != y.pwsm.NumMods)
+            return -1 * x.pwsm.NumMods.CompareTo(y.pwsm.NumMods); // Fewer mods are better
 
-        if (x.Bpwsm.FullSequence != y.Bpwsm.FullSequence)
-            return string.Compare(x.Bpwsm.FullSequence, y.Bpwsm.FullSequence); // Alphabetical ordering of full sequence
+        if (x.pwsm.FullSequence != y.pwsm.FullSequence)
+            return -1 * string.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
 
-        if (x.Bpwsm.Parent?.Accession != y.Bpwsm.Parent?.Accession)
-            return string.Compare(x.Bpwsm.Parent?.Accession, y.Bpwsm.Parent?.Accession); // Alphabetical ordering of protein accession
+        if (x.pwsm.Parent == null && y.pwsm.Parent == null)
+            return 0;
+        if (x.pwsm.Parent == null)
+            return -1; // x is null, y is better
+        if (y.pwsm.Parent == null)
+            return 1; // y is null, x is better
+        if (x.pwsm.Parent.Accession == null && y.pwsm.Parent.Accession == null)
+            return 0;
+        if (x.pwsm.Parent.Accession == null)
+            return -1; // x is null, y is better
+        if (y.pwsm.Parent.Accession == null)
+            return 1; // y is null, x is better
+        if (x.pwsm.Parent.Accession != y.pwsm.Parent.Accession)
+            return -1 * string.Compare(x.pwsm.Parent.Accession, y.pwsm.Parent.Accession); // (reverse) Alphabetical ordering of protein accession
 
-        return x.Bpwsm.OneBasedStartResidue.CompareTo(y.Bpwsm.OneBasedStartResidue);
+        return -1 * x.pwsm.OneBasedStartResidue.CompareTo(y.pwsm.OneBasedStartResidue);
     }
 
+    /// <summary>
+    /// Returns greater than 0 if x is better than y, less than 0 if y is better than x, and 0 if they are equal.
+    /// Better is defined as having a lower notch, more fragment ions, or a shorter sequence (i.e. fewer modifications) in that order.
+    /// If the aforementioned criteria are equal, then the two are compared based on the alphebetical ordering of the full sequence
+    /// </summary>
     public int Compare(SpectralMatchHypothesis x, SpectralMatchHypothesis y)
     {
         if (x is null && y is null)
             return 0;
-        if (x is null) return 1;
-        if (y is null) return -1;
+        if (x is null) return -1;
+        if (y is null) return 1;
 
         return Compare((x.Notch, x.WithSetMods, x.MatchedIons), (y.Notch, y.WithSetMods, y.MatchedIons));
     }

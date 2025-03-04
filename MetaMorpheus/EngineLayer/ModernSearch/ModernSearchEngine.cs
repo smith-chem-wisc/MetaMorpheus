@@ -101,8 +101,8 @@ namespace EngineLayer.ModernSearch
             // this is just PRELIMINARY precursor-mass filtering	
             // additional checks are made later to ensure that the theoretical precursor mass is acceptable
             List<AllowedIntervalWithNotch> notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.PrecursorMass).ToList();
-            double lowestMassPeptideToLookFor = notches.Min(p => p.AllowedInterval.Minimum);
-            double highestMassPeptideToLookFor = notches.Max(p => p.AllowedInterval.Maximum);
+            double lowestMassPeptideToLookFor = notches.Min(p => p.Minimum);
+            double highestMassPeptideToLookFor = notches.Max(p => p.Maximum);
 
             // clear the scoring table to score the new scan (conserves memory compared to allocating a new array)
             Array.Clear(scoringTable, 0, scoringTable.Length);

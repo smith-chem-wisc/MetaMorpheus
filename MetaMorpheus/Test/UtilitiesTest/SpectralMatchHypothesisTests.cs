@@ -12,7 +12,7 @@ namespace Test.UtilitiesTest
 {
     [TestFixture]
     [ExcludeFromCodeCoverage]
-    internal class TentativeSpectralMatchTest
+    internal class SpectralMatchHypothesisTests
     {
         IBioPolymerWithSetMods testPeptide1 = new PeptideWithSetModifications("PEPTIDE", GlobalVariables.AllModsKnownDictionary);
         IBioPolymerWithSetMods testPeptide2 = new PeptideWithSetModifications("PE[UniProt:4-carboxyglutamate on E]PTIDE", GlobalVariables.AllModsKnownDictionary);

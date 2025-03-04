@@ -7,7 +7,7 @@ using System;
 namespace EngineLayer.SpectrumMatch;
 
 /// <summary>
-/// Class to represent a possible spectral match
+/// Class to represent a possible spectral match to be analyzed at a later point
 /// </summary>
 /// <param name="notch"></param>
 /// <param name="pwsm"></param>
