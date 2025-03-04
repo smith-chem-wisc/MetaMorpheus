@@ -3,7 +3,8 @@
     public class GuiGlobalParams
     {
         public bool AskAboutUpdating { get; internal set; } = true;
-        public bool AskBeforeExitingMetaMorpheus { get; internal set; } = true; 
+        public bool AskBeforeExitingMetaMorpheus { get; internal set; } = true;
+        public string UserSpecifiedProteomeDir { get; internal set; } = "";
 
         //Ask about protease-specific parameter recommendations
         public bool AskAboutTopDownParams { get; internal set; } = true;
