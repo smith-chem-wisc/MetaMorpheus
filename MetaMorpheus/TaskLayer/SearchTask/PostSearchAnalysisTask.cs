@@ -290,11 +290,21 @@ namespace TaskLayer
             // get PSMs to pass to FlashLFQ
             var psmsForQuantification = FilteredPsms.Filter(Parameters.AllPsms,
                 CommonParameters,
-                includeDecoys: false,
+                includeDecoys: Parameters.SearchParameters.MatchBetweenRuns, // Decoys are required for PIP-ECHO, but are not written to the output file
                 includeContaminants: true,
                 includeAmbiguous: false,
                 includeAmbiguousMods: false,
                 includeHighQValuePsms: false);
+
+            // Only these peptides will be written to the AllQuantifiedPeptides.tsv output file
+            var peptideSequencesForQuantification = FilteredPsms.Filter(Parameters.AllPsms,
+                CommonParameters,
+                includeDecoys: false,
+                includeContaminants: true,
+                includeAmbiguous: false,
+                includeAmbiguousMods: false,
+                includeHighQValuePsms: false,
+                filterAtPeptideLevel: true).Select(p => p.FullSequence).ToList();
 
             // pass protein group info for each PSM
             var psmToProteinGroups = new Dictionary<SpectralMatch, List<FlashLFQ.ProteinGroup>>();
@@ -503,12 +513,22 @@ namespace TaskLayer
             var flashLFQIdentifications = new List<Identification>();
             foreach (var spectraFile in psmsGroupedByFile)
             {
-                var rawfileinfo = spectraFileInfo.Where(p => p.FullFilePathWithExtension.Equals(spectraFile.Key)).First();
+                var rawfileinfo = spectraFileInfo.First(p => p.FullFilePathWithExtension.Equals(spectraFile.Key));
 
                 foreach (var psm in spectraFile)
                 {
-                    flashLFQIdentifications.Add(new Identification(rawfileinfo, psm.BaseSequence, psm.FullSequence,
-                        psm.BioPolymerWithSetModsMonoisotopicMass.Value, psm.ScanRetentionTime, psm.ScanPrecursorCharge, psmToProteinGroups[psm]));
+                    flashLFQIdentifications.Add(
+                        new Identification(
+                            fileInfo: rawfileinfo,
+                            psm.BaseSequence, 
+                            psm.FullSequence,
+                            psm.BioPolymerWithSetModsMonoisotopicMass.Value, 
+                            psm.ScanRetentionTime, 
+                            psm.ScanPrecursorCharge, 
+                            psmToProteinGroups[psm],
+                            psmScore: psm.Score,
+                            qValue: psmsForQuantification.FilterType == FilterType.QValue ? psm.FdrInfo.QValue : psm.FdrInfo.PEP_QValue,
+                            decoy: psm.IsDecoy));
                 }
             }
 
@@ -519,7 +539,9 @@ namespace TaskLayer
                 ppmTolerance: Parameters.SearchParameters.QuantifyPpmTol,
                 matchBetweenRunsPpmTolerance: Parameters.SearchParameters.QuantifyPpmTol,  // If these tolerances are not equivalent, then MBR will falsely classify peptides found in the initial search as MBR peaks
                 matchBetweenRuns: Parameters.SearchParameters.MatchBetweenRuns,
+                matchBetweenRunsFdrThreshold: Parameters.SearchParameters.MbrFdrThreshold,
                 useSharedPeptidesForProteinQuant: Parameters.SearchParameters.UseSharedPeptidesForLFQ,
+                peptideSequencesToQuantify: Parameters.SearchParameters.SilacLabels == null ? peptideSequencesForQuantification : null, // Silac is doing it's own thing, no need to pass in peptide sequences
                 silent: true,
                 maxThreads: CommonParameters.MaxThreadsToUsePerFile);
 
