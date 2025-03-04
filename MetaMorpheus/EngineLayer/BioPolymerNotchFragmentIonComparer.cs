@@ -1,10 +1,11 @@
-﻿using Omics;
+﻿using EngineLayer.SpectrumMatch;
+using Omics;
 using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
 // ReSharper disable ConditionIsAlwaysTrueOrFalse
 
-namespace EngineLayer.SpectrumMatch;
+namespace EngineLayer;
 
 /// <summary>
 /// Compares the information of two tentative spectral matches to determine which is better

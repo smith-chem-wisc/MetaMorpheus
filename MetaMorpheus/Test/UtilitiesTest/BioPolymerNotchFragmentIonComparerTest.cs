@@ -5,7 +5,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Reflection;
 using Omics.Modifications;
-using EngineLayer.SpectrumMatch;
+using EngineLayer;
 
 namespace Test.UtilitiesTest
 {
