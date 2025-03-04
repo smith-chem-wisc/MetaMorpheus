@@ -119,7 +119,7 @@ namespace TaskLayer
 
             foreach (var psm in psms)
             {
-                PeptideWithSetModifications peptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide as PeptideWithSetModifications;
+                PeptideWithSetModifications peptide = psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods as PeptideWithSetModifications;
 
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
                 foreach (var mod in peptide.AllModsOneIsNterminus)
@@ -132,7 +132,7 @@ namespace TaskLayer
                     mods.Add(pepXmlMod);
                 }
 
-                var proteinAccessions = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide.Parent.Accession).Distinct();
+                var proteinAccessions = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods.Parent.Accession).Distinct();
 
                 var searchHit = new pepXML.Generated.msms_pipeline_analysisMsms_run_summarySpectrum_querySearch_resultSearch_hit
                 {

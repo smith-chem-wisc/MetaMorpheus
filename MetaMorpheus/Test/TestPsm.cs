@@ -102,7 +102,7 @@ namespace Test
             // Check that the ion series with the diagnostic ion is set to the MatchedFragmentIons property
             Assert.That(psm.MatchedFragmentIons, Is.EqualTo(twoIonList));
             // Check that the pwsm with the diagnostic ion is first in the BestMatchingBioPolymersWithSetMods list
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.First().Peptide, Is.EqualTo(pepWithOxidationOnP));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods, Is.EqualTo(pepWithOxidationOnP));
         }
 
         [Test]
@@ -170,10 +170,10 @@ namespace Test
             foreach (PeptideSpectralMatch psm in nonNullPsms)
             {
                 double daError =
-                    Math.Round(psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass, 5);
+                    Math.Round(psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods.MonoisotopicMass, 5);
                 Assert.That(psm.PrecursorMassErrorDa.First(), Is.EqualTo(daError).Within(0.01));
 
-                double ppmError = Math.Round((psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass) / psm.BestMatchingBioPolymersWithSetMods.First().Peptide.MonoisotopicMass * 1e6, 5);
+                double ppmError = Math.Round((psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods.MonoisotopicMass) / psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods.MonoisotopicMass * 1e6, 5);
                 Assert.That(psm.PrecursorMassErrorPpm.First(), Is.EqualTo(ppmError).Within(0.1));
             }
         }
@@ -205,9 +205,9 @@ namespace Test
             {
                 if (psm != null)
                 {
-                    foreach (var (Notch, Peptide) in psm.BestMatchingBioPolymersWithSetMods)
+                    foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, Peptide));
+                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(bestMatch.MatchedIons, bestMatch.WithSetMods));
                     }
                 }
             }
@@ -307,12 +307,12 @@ namespace Test
             psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.Peptide.Parent.IsDecoy));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.WithSetMods.Parent.IsDecoy));
 
             psm.ResolveAllAmbiguities();
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(1));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.All(p => !p.Peptide.Parent.IsDecoy));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.All(p => !p.WithSetMods.Parent.IsDecoy));
             Assert.That(!psm.IsDecoy);
         }
 
@@ -333,7 +333,7 @@ namespace Test
             psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.Peptide.Parent.IsDecoy));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.WithSetMods.Parent.IsDecoy));
 
             psm.ResolveAllAmbiguities();
 
@@ -517,7 +517,7 @@ namespace Test
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
-            int count = SpectralMatch.GetCountComplementaryIons(psm1.BioPolymersWithSetModsToMatchingFragments, pwsm);
+            int count = SpectralMatch.GetCountComplementaryIons([], pwsm);
 
             //No Matched Fragment Ions Returns 0
             Assert.That(count, Is.EqualTo(0));
@@ -536,10 +536,7 @@ namespace Test
                 mfiList.Add(new MatchedFragmentIon(prod, 1, 1, 1));
             }
 
-            Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PTMF = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
-            PTMF.Add(pwsm, mfiList);
-
-            count = SpectralMatch.GetCountComplementaryIons(PTMF, pwsm);
+            count = SpectralMatch.GetCountComplementaryIons(mfiList, pwsm);
             //BioPolymersWithSetModsToMatchingFragments Contains one N and one C ion so intersection Returns 1
             Assert.That(count, Is.EqualTo(1));
         }
@@ -562,10 +559,8 @@ namespace Test
             Assert.That(longestSeries, Is.EqualTo(1));
 
             //matchedFragments == null returns 1
-            Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
-            PeptidesToMatchingFragments.Add(pwsm, null);
 
-            longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(PeptidesToMatchingFragments, pwsm);
+            longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(null, pwsm);
             Assert.That(longestSeries, Is.EqualTo(1));
         }
 
