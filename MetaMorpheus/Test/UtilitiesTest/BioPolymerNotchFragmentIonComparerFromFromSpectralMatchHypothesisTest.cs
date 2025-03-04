@@ -1,4 +1,3 @@
-using EngineLayer;
 using NUnit.Framework;
 using Omics.Fragmentation;
 using Proteomics;

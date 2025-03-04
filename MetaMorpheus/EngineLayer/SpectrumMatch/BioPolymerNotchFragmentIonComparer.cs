@@ -2,10 +2,9 @@
 using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
-using EngineLayer.SpectrumMatch;
 // ReSharper disable ConditionIsAlwaysTrueOrFalse
 
-namespace EngineLayer;
+namespace EngineLayer.SpectrumMatch;
 
 /// <summary>
 /// Compares the information of two tentative spectral matches to determine which is better
@@ -45,9 +44,9 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
         if (x.pwsm.NumMods != y.pwsm.NumMods)
             return -1 * x.pwsm.NumMods.CompareTo(y.pwsm.NumMods); // Fewer mods are better
 
-        if(x.pwsm.FullSequence != y.pwsm.FullSequence)
-            return -1 * String.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
-            
+        if (x.pwsm.FullSequence != y.pwsm.FullSequence)
+            return -1 * string.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
+
         if (x.pwsm.Parent == null && y.pwsm.Parent == null)
             return 0;
         if (x.pwsm.Parent == null)
@@ -61,7 +60,7 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
         if (y.pwsm.Parent.Accession == null)
             return 1; // y is null, x is better
         if (x.pwsm.Parent.Accession != y.pwsm.Parent.Accession)
-            return -1 * String.Compare(x.pwsm.Parent.Accession, y.pwsm.Parent.Accession); // (reverse) Alphabetical ordering of protein accession
+            return -1 * string.Compare(x.pwsm.Parent.Accession, y.pwsm.Parent.Accession); // (reverse) Alphabetical ordering of protein accession
 
         return -1 * x.pwsm.OneBasedStartResidue.CompareTo(y.pwsm.OneBasedStartResidue);
     }
@@ -79,5 +78,5 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
         if (y is null) return 1;
 
         return Compare((x.Notch, x.WithSetMods, x.MatchedIons), (y.Notch, y.WithSetMods, y.MatchedIons));
-    } 
+    }
 }
