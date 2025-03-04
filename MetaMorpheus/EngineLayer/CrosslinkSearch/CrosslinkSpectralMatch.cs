@@ -25,7 +25,7 @@ namespace EngineLayer.CrosslinkSearch
             XLTotalScore = score;
             _BestMatchingBioPolymersWithSetMods.Clear();
 
-            _BestMatchingBioPolymersWithSetMods.Add(new SpectrumMatch.TentativeSpectralMatch(0, theBestPeptide, matchedFragmentIons));
+            _BestMatchingBioPolymersWithSetMods.Add(new SpectrumMatch.SpectralMatchHypothesis(0, theBestPeptide, matchedFragmentIons));
 
         }
 

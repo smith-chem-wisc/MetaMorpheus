@@ -42,9 +42,9 @@ namespace EngineLayer
         /// This method is used by SILAC quantification to add heavy/light psms
         /// Don't have access to the scans at that point, so a new contructor is needed
         /// </summary>
-        public PeptideSpectralMatch Clone(List<TentativeSpectralMatch> bestMatchingPeptides) => new PeptideSpectralMatch(this, bestMatchingPeptides);
+        public PeptideSpectralMatch Clone(List<SpectralMatchHypothesis> bestMatchingPeptides) => new PeptideSpectralMatch(this, bestMatchingPeptides);
         
-        protected PeptideSpectralMatch(SpectralMatch psm, List<TentativeSpectralMatch> bestMatchingPeptides) 
+        protected PeptideSpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides) 
             : base(psm, bestMatchingPeptides)
         {
         }

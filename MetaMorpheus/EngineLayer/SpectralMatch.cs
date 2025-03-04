@@ -19,7 +19,7 @@ namespace EngineLayer
 
         protected SpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
         {
-            _BestMatchingBioPolymersWithSetMods = new List<TentativeSpectralMatch>();
+            _BestMatchingBioPolymersWithSetMods = new List<SpectralMatchHypothesis>();
             ScanIndex = scanIndex;
             FullFilePath = scan.FullFilePath;
             ScanNumber = scan.OneBasedScanNumber;
@@ -131,9 +131,9 @@ namespace EngineLayer
         // so that the two are always in sync. This would make the code more robust and easier to understand.
         public Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> BioPolymersWithSetModsToMatchingFragments { get; private set; }
 
-        protected List<TentativeSpectralMatch> _BestMatchingBioPolymersWithSetMods;
+        protected List<SpectralMatchHypothesis> _BestMatchingBioPolymersWithSetMods;
 
-        public IEnumerable<TentativeSpectralMatch> BestMatchingBioPolymersWithSetMods
+        public IEnumerable<SpectralMatchHypothesis> BestMatchingBioPolymersWithSetMods
         {
             get
             {
@@ -174,7 +174,7 @@ namespace EngineLayer
         }
 
         //PEP-Value analysis identifies ambiguous peptides with lower probability. These are removed from the bestmatchingpeptides dictionary, which lowers ambiguity.
-        public void RemoveThisAmbiguousPeptide(TentativeSpectralMatch tentativeSpectralMatch)
+        public void RemoveThisAmbiguousPeptide(SpectralMatchHypothesis tentativeSpectralMatch)
         {
             _BestMatchingBioPolymersWithSetMods.Remove(tentativeSpectralMatch);
             if (!_BestMatchingBioPolymersWithSetMods.Any(x => x.WithSetMods.Equals(tentativeSpectralMatch.WithSetMods)))
@@ -333,7 +333,7 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to add PeptideWithSetModifications objects for modification-agnostic parsimony
         /// </summary>
-        public void AddProteinMatch(TentativeSpectralMatch tentativeSpectralMatch)
+        public void AddProteinMatch(SpectralMatchHypothesis tentativeSpectralMatch)
         {
             if (!_BestMatchingBioPolymersWithSetMods.Contains(tentativeSpectralMatch))
             {
@@ -350,7 +350,7 @@ namespace EngineLayer
 
         #region Silac
 
-        protected SpectralMatch(SpectralMatch psm, List<TentativeSpectralMatch> bestMatchingPeptides)
+        protected SpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides)
         {
             _BestMatchingBioPolymersWithSetMods = bestMatchingPeptides;
             BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.WithSetMods.BaseSequence)).ResolvedValue;

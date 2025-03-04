@@ -10,7 +10,7 @@ namespace EngineLayer;
 /// If used in an order by operation, the best matches will be first. 
 /// </summary>
 public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolymerWithSetMods Bpwsm, List<MatchedFragmentIon> MatchedIons)>,
-    IComparer<TentativeSpectralMatch>
+    IComparer<SpectralMatchHypothesis>
 {
     /// <summary>
     /// Returns less than 0 if x is better than y, greater than 0 if y is better than x, and 0 if they are equal.
@@ -53,7 +53,7 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int Notch, IBioPolym
         return x.Bpwsm.OneBasedStartResidue.CompareTo(y.Bpwsm.OneBasedStartResidue);
     }
 
-    public int Compare(TentativeSpectralMatch x, TentativeSpectralMatch y)
+    public int Compare(SpectralMatchHypothesis x, SpectralMatchHypothesis y)
     {
         if (x is null && y is null)
             return 0;

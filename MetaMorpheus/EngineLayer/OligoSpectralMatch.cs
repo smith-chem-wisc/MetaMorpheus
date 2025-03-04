@@ -20,7 +20,7 @@ public class OligoSpectralMatch : SpectralMatch
 
     }
 
-    protected OligoSpectralMatch(SpectralMatch psm, List<TentativeSpectralMatch> bestMatchingPeptides)
+    protected OligoSpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides)
         : base(psm, bestMatchingPeptides)
     {
     }

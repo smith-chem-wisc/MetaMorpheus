@@ -261,7 +261,7 @@ namespace EngineLayer.GlycoSearch
 
                             if (preString == currentString) //If peptides have the same sequence and their score is almost the same
                             {
-                                foreach (TentativeSpectralMatch bestMatchPeptide in gsm.BestMatchingBioPolymersWithSetMods) // We should add tje new ProteinMatch to the gsm. 
+                                foreach (SpectralMatchHypothesis bestMatchPeptide in gsm.BestMatchingBioPolymersWithSetMods) // We should add tje new ProteinMatch to the gsm. 
                                 {                                                                                                               // Because the indentical sequence may from the different protein.
                                     GlobalGsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide);
                                 }

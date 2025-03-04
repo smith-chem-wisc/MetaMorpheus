@@ -291,7 +291,7 @@ namespace EngineLayer
                     else
                     {
                         double bmp = 0;
-                        foreach (TentativeSpectralMatch bestMatch in psm.BestMatchingBioPolymersWithSetMods)
+                        foreach (SpectralMatchHypothesis bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                         {
                             bool label;
                             double bmpc = psm.BestMatchingBioPolymersWithSetMods.Count();
@@ -437,7 +437,7 @@ namespace EngineLayer
 
                                 //Here we compute the pepvalue predection for each ambiguous peptide in a PSM. Ambiguous peptides with lower pepvalue predictions are removed from the PSM.
                                 var bestMatchingBioPolymersWithSetMods = psm.BestMatchingBioPolymersWithSetMods.ToList();
-                                foreach (TentativeSpectralMatch bestMatch in bestMatchingBioPolymersWithSetMods)
+                                foreach (SpectralMatchHypothesis bestMatch in bestMatchingBioPolymersWithSetMods)
                                 {
                                     PsmData pd = CreateOnePsmDataEntry(searchType, psm, bestMatch, !bestMatch.IsDecoy);
                                     var pepValuePrediction = threadPredictionEngine.Predict(pd);
@@ -460,7 +460,7 @@ namespace EngineLayer
             return ambiguousPeptidesResolved;
         }
 
-        public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, TentativeSpectralMatch tentativeSpectralMatch, bool label)
+        public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch, bool label)
         {
             double normalizationFactor = tentativeSpectralMatch.WithSetMods.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
@@ -648,7 +648,7 @@ namespace EngineLayer
             return psm.PsmData_forPEPandPercolator;
         }
 
-        public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<TentativeSpectralMatch> allPeptides, ref int ambiguousPeptidesRemovedCount)
+        public static void RemoveBestMatchingPeptidesWithLowPEP(SpectralMatch psm, List<int> indiciesOfPeptidesToRemove, List<SpectralMatchHypothesis> allPeptides, ref int ambiguousPeptidesRemovedCount)
         {
             int peptidesRemoved = 0;
             foreach (var toRemove in indiciesOfPeptidesToRemove)
@@ -709,7 +709,7 @@ namespace EngineLayer
                 foreach (SpectralMatch psm in psms.Where(f => (f.FullFilePath == null || Path.GetFileName(f.FullFilePath) == filename) && f.FdrInfo.QValue <= 0.01 && !f.IsDecoy))
                 {
                     List<string> fullSequences = new List<string>();
-                    foreach (TentativeSpectralMatch bestMatch in psm.BestMatchingBioPolymersWithSetMods)
+                    foreach (SpectralMatchHypothesis bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
                         if (fullSequences.Contains(bestMatch.WithSetMods.FullSequence))
                         {
@@ -811,7 +811,7 @@ namespace EngineLayer
                 foreach (SpectralMatch psm in psms.Where(f => (f.FullFilePath == null || Path.GetFileName(f.FullFilePath) == filename) && f.FdrInfo.QValue <= 0.01 && !f.IsDecoy))
                 {
                     List<string> fullSequences = new List<string>();
-                    foreach (TentativeSpectralMatch bestMatch in psm.BestMatchingBioPolymersWithSetMods)
+                    foreach (SpectralMatchHypothesis bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
                         if (fullSequences.Contains(bestMatch.WithSetMods.FullSequence))
                         {

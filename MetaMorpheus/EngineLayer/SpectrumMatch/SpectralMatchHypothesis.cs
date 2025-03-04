@@ -12,7 +12,7 @@ namespace EngineLayer.SpectrumMatch;
 /// <param name="notch"></param>
 /// <param name="pwsm"></param>
 /// <param name="matchedIons"></param>
-public class TentativeSpectralMatch(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> matchedIons) : IEquatable<TentativeSpectralMatch>
+public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> matchedIons) : IEquatable<SpectralMatchHypothesis>
 {
     public readonly int Notch = notch;
     public readonly IBioPolymerWithSetMods WithSetMods = pwsm;
@@ -21,7 +21,7 @@ public class TentativeSpectralMatch(int notch, IBioPolymerWithSetMods pwsm, List
     public bool IsDecoy => WithSetMods.Parent.IsDecoy;
     public string FullSequence => WithSetMods.FullSequence;
 
-    public bool Equals(TentativeSpectralMatch? other)
+    public bool Equals(SpectralMatchHypothesis? other)
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
@@ -33,7 +33,7 @@ public class TentativeSpectralMatch(int notch, IBioPolymerWithSetMods pwsm, List
         if (obj is null) return false;
         if (ReferenceEquals(this, obj)) return true;
         if (obj.GetType() != GetType()) return false;
-        return Equals((TentativeSpectralMatch)obj);
+        return Equals((SpectralMatchHypothesis)obj);
     }
 
     public override int GetHashCode()

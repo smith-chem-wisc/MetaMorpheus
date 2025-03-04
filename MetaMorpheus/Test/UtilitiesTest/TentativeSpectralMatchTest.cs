@@ -21,7 +21,7 @@ namespace Test.UtilitiesTest
         public void TestEquals_SameObject()
         {
             var matchedIons = new List<MatchedFragmentIon>();
-            var tsm = new TentativeSpectralMatch(1, testPeptide1, matchedIons);
+            var tsm = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
 
             Assert.That(tsm.Equals(tsm), Is.True);
         }
@@ -30,7 +30,7 @@ namespace Test.UtilitiesTest
         public void TestEquals_NullObject()
         {
             var matchedIons = new List<MatchedFragmentIon>();
-            var tsm = new TentativeSpectralMatch(1, testPeptide1, matchedIons);
+            var tsm = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
 
             Assert.That(tsm.Equals(null), Is.False);
         }
@@ -39,7 +39,7 @@ namespace Test.UtilitiesTest
         public void TestEquals_DifferentType()
         {
             var matchedIons = new List<MatchedFragmentIon>();
-            var tsm = new TentativeSpectralMatch(1, testPeptide1, matchedIons);
+            var tsm = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
 
             Assert.That(tsm.Equals(new object()), Is.False);
         }
@@ -49,8 +49,8 @@ namespace Test.UtilitiesTest
         {
             var matchedIons1 = new List<MatchedFragmentIon>();
             var matchedIons2 = new List<MatchedFragmentIon> { new MatchedFragmentIon(default, 1, 1, 1) };
-            var tsm1 = new TentativeSpectralMatch(1, testPeptide1, matchedIons1);
-            var tsm2 = new TentativeSpectralMatch(2, testPeptide2, matchedIons2);
+            var tsm1 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons1);
+            var tsm2 = new SpectralMatchHypothesis(2, testPeptide2, matchedIons2);
 
             Assert.That(tsm1.Equals(tsm2), Is.False);
         }
@@ -59,8 +59,8 @@ namespace Test.UtilitiesTest
         public void TestEquals_SameValues()
         {
             var matchedIons = new List<MatchedFragmentIon>();
-            var tsm1 = new TentativeSpectralMatch(1, testPeptide1, matchedIons);
-            var tsm2 = new TentativeSpectralMatch(1, testPeptide1, matchedIons);
+            var tsm1 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
+            var tsm2 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
 
             Assert.That(tsm1.Equals(tsm2), Is.True);
         }
@@ -69,7 +69,7 @@ namespace Test.UtilitiesTest
         public void TestGetHashCode()
         {
             var matchedIons = new List<MatchedFragmentIon>();
-            var tsm = new TentativeSpectralMatch(1, testPeptide1, matchedIons);
+            var tsm = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
 
             Assert.That(tsm.GetHashCode(), Is.EqualTo(HashCode.Combine(1, testPeptide1, matchedIons)));
         }

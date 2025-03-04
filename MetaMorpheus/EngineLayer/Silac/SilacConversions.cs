@@ -50,16 +50,16 @@ namespace EngineLayer
                 pwsm.AllModsOneIsNterminus,
                 pwsm.NumFixedMods,
                 labeledBaseSequence);
-            return psm.Clone(new List<TentativeSpectralMatch> { new(notch, labeledPwsm, []) });
+            return psm.Clone(new List<SpectralMatchHypothesis> { new(notch, labeledPwsm, []) });
         }
 
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel)
         {
-            List<TentativeSpectralMatch> updatedBestMatchingPeptides = new();
+            List<SpectralMatchHypothesis> updatedBestMatchingPeptides = new();
             foreach (var notchAndPwsm in psm.BestMatchingBioPolymersWithSetMods)
             {
                 PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(silacLabel, notchAndPwsm.WithSetMods as PeptideWithSetModifications);
-                updatedBestMatchingPeptides.Add(new TentativeSpectralMatch(notchAndPwsm.Notch, modifiedPwsm, notchAndPwsm.MatchedIons));
+                updatedBestMatchingPeptides.Add(new SpectralMatchHypothesis(notchAndPwsm.Notch, modifiedPwsm, notchAndPwsm.MatchedIons));
             }
             return psm.Clone(updatedBestMatchingPeptides) as PeptideSpectralMatch;
         }
@@ -70,8 +70,8 @@ namespace EngineLayer
             List<SpectralMatch> psmsToReturn = new List<SpectralMatch>();
             foreach (PeptideSpectralMatch psm in originalPsms)
             {
-                List<TentativeSpectralMatch> originalPeptides = psm.BestMatchingBioPolymersWithSetMods.ToList();
-                List<TentativeSpectralMatch> updatedPeptides = new ();
+                List<SpectralMatchHypothesis> originalPeptides = psm.BestMatchingBioPolymersWithSetMods.ToList();
+                List<SpectralMatchHypothesis> updatedPeptides = new ();
                 foreach (var notchPwsm in originalPeptides)
                 {
                     PeptideWithSetModifications pwsm = notchPwsm.WithSetMods as PeptideWithSetModifications;
