@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Omics.Modifications;
 using System.Collections.Concurrent;
+using pepXML.Generated;
 
 namespace EngineLayer.ClassicSearch
 {
@@ -28,11 +29,13 @@ namespace EngineLayer.ClassicSearch
         private readonly bool WriteDigestionCounts;
         private readonly object[] Locks;
         public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
+        private bool _clearScansFromPsms;
+
 
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
-            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool writeDigestionCounts = false)
+            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool writeDigestionCounts = false, bool clearScansFromPsms = true)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             PeptideSpectralMatches = globalPsms;
@@ -51,6 +54,7 @@ namespace EngineLayer.ClassicSearch
             WriteSpectralLibrary = writeSpectralLibrary;
             WriteDigestionCounts = writeDigestionCounts;
             DigestionCountDictionary = new();
+            _clearScansFromPsms = clearScansFromPsms;
 
             // Create one lock for each PSM to ensure thread safety
             Locks = new object[PeptideSpectralMatches.Length];
@@ -225,6 +229,10 @@ namespace EngineLayer.ClassicSearch
                         else
                         {
                             PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                        }
+                        if(_clearScansFromPsms)
+                        {
+                            PeptideSpectralMatches[scan.ScanIndex].MsDataScan = null;
                         }
                     }
                 }
