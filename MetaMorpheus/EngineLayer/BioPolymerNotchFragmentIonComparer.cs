@@ -2,6 +2,7 @@
 using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
+// ReSharper disable ConditionIsAlwaysTrueOrFalse
 
 namespace EngineLayer
 {
@@ -25,23 +26,35 @@ namespace EngineLayer
             if (y.ions == null)
                 return 1; // y is null, x is better
             if (x.ions.Count != y.ions.Count)
-                return -1 * x.ions.Count.CompareTo(y.ions.Count); // More ions are better
+                return x.ions.Count.CompareTo(y.ions.Count); // More ions are better
 
             // Bpwsm is a nullable property, so we need to check for null
             if (x.pwsm == null && y.pwsm == null)
                 return 0;
             if (x.pwsm == null)
-                return 1; // Null Bpwsm is considered worse
+                return -1; // x is null, y is better
             if (y.pwsm == null)
-                return -1; // Null Bpwsm is considered worse
+                return 1; // y is null, x is better
 
-            if (x.pwsm.NumMods !=  y.pwsm.NumMods)
+            if (x.pwsm.NumMods != y.pwsm.NumMods)
                 return -1 * x.pwsm.NumMods.CompareTo(y.pwsm.NumMods); // Fewer mods are better
 
             if(x.pwsm.FullSequence != y.pwsm.FullSequence)
                 return -1 * String.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
-
-            if(x.pwsm.Parent.Accession != y.pwsm.Parent.Accession) // This will break if the protein accession is not set (I'm not sure if that's possible)
+            
+            if (x.pwsm.Parent == null && y.pwsm.Parent == null)
+                return 0;
+            if (x.pwsm.Parent == null)
+                return -1; // x is null, y is better
+            if (y.pwsm.Parent == null)
+                return 1; // y is null, x is better
+            if (x.pwsm.Parent.Accession == null && y.pwsm.Parent.Accession == null)
+                return 0;
+            if (x.pwsm.Parent.Accession == null)
+                return -1; // x is null, y is better
+            if (y.pwsm.Parent.Accession == null)
+                return 1; // y is null, x is better
+            if (x.pwsm.Parent.Accession != y.pwsm.Parent.Accession) // This will break if the protein accession is not set (I'm not sure if that's possible)
                 return -1 * String.Compare(x.pwsm.Parent.Accession, y.pwsm.Parent.Accession); // (reverse) Alphabetical ordering of protein accession
 
             return -1 * x.pwsm.OneBasedStartResidue.CompareTo(y.pwsm.OneBasedStartResidue);                                                                  
