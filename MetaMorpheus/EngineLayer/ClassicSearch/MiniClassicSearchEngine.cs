@@ -166,12 +166,11 @@ namespace EngineLayer.ClassicSearch
             double[] myScanPrecursorMasses = arrayOfSortedMs2Scans.Select(p => p.PrecursorMass).ToArray();
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass).ToList())
             {
-                DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
-                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum, myScanPrecursorMasses);
+                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedIntervalWithNotch.Minimum, myScanPrecursorMasses);
                 if (scanIndex < arrayOfSortedMs2Scans.Length)
                 {
                     var scanMass = myScanPrecursorMasses[scanIndex];
-                    while (scanMass <= allowedInterval.Maximum)
+                    while (scanMass <= allowedIntervalWithNotch.Maximum)
                     {
                         var scan = arrayOfSortedMs2Scans[scanIndex];
                         yield return new ExtendedScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
