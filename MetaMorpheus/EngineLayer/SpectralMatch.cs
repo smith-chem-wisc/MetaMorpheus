@@ -124,7 +124,7 @@ namespace EngineLayer
         #region Search
         public DigestionParams DigestionParams { get; }
 
-        public static BioPolymerNotchFragmentIonComparer<(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions)> BioPolymerNotchFragmentIonComparer = new();
+        public static BioPolymerNotchFragmentIonComparer BioPolymerNotchFragmentIonComparer = new();
 
         // TODO: The BioPolymerWithSetModsToMatchingFragments dictionary should be more tightly coupled to the _BestMatchingBioPolymersWithSetMods list,
         // so that the two are always in sync. This would make the code more robust and easier to understand.
