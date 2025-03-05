@@ -371,7 +371,7 @@ namespace Test
             csmOne.AddOrReplace(pwsmV_D, 3, 0, true, new List<MatchedFragmentIon>(), 0);
             csmOne.ResolveAllAmbiguities();
             Assert.That(csmOne.BestMatchingBioPolymersWithSetMods.Count() == 1);
-            Assert.That(!csmOne.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy);
+            Assert.That(!csmOne.BestMatchingBioPolymersWithSetMods.First().WithSetMods.Parent.IsDecoy);
         }
 
         [Test]
@@ -704,7 +704,7 @@ namespace Test
                 }
             }
 
-            var intraPsmData = pepEngine.CreateOnePsmDataEntry("crosslink", intraCsm, intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, intraCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !intraCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy);
+            var intraPsmData = pepEngine.CreateOnePsmDataEntry("crosslink", intraCsm, intraCsm.BestMatchingBioPolymersWithSetMods.First(), !intraCsm.BestMatchingBioPolymersWithSetMods.First().WithSetMods.Parent.IsDecoy);
             Assert.That(intraPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(1.0).Within(0.1));
             Assert.That(intraPsmData.AlphaIntensity, Is.EqualTo(1).Within(0.1));
             Assert.That(intraPsmData.Ambiguity, Is.EqualTo(0));
@@ -731,9 +731,8 @@ namespace Test
 
             var singleCsmPsmData = pepEngine.CreateOnePsmDataEntry("standard",
                 singleCsm,
-                singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Peptide,
-                singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Notch,
-                !singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Peptide.Parent.IsDecoy);
+                singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault(),
+                !singleCsm.BestMatchingBioPolymersWithSetMods.FirstOrDefault().IsDecoy);
             Assert.That(singleCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(8).Within(0.1));
             Assert.That(singleCsmPsmData.AlphaIntensity, Is.EqualTo(0));
             Assert.That(singleCsmPsmData.Ambiguity, Is.EqualTo(0));
@@ -759,7 +758,7 @@ namespace Test
 
 
             CrosslinkSpectralMatch loopCsm = firstCsmsFromListsOfCsms.Where(c => c.CrossType == PsmCrossType.Loop).OrderBy(c => -c.Score).First();
-            var loopCsmPsmData = pepEngine.CreateOnePsmDataEntry("standard", loopCsm, loopCsm.BestMatchingBioPolymersWithSetMods.First().Peptide, loopCsm.BestMatchingBioPolymersWithSetMods.First().Notch, !loopCsm.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.IsDecoy); Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(6).Within(0.1));
+            var loopCsmPsmData = pepEngine.CreateOnePsmDataEntry("standard", loopCsm, loopCsm.BestMatchingBioPolymersWithSetMods.First(), !loopCsm.BestMatchingBioPolymersWithSetMods.First().WithSetMods.Parent.IsDecoy); Assert.That(loopCsmPsmData.AbsoluteAverageFragmentMassErrorFromMedian, Is.EqualTo(6).Within(0.1));
             Assert.That(loopCsmPsmData.AlphaIntensity, Is.EqualTo(0));
             Assert.That(loopCsmPsmData.Ambiguity, Is.EqualTo(0));
             Assert.That(loopCsmPsmData.BetaIntensity, Is.EqualTo(0));
@@ -1300,9 +1299,9 @@ namespace Test
             Crosslinker xlinker = Crosslinker.ParseCrosslinkerFromString("DSSO\tK\tK\tT\tCID|HCD\t158.0038\t54.01056\t85.982635\t176.0143\t175.0303\t279.0777");
             double someSortOfMass = csmAlpha.ScanPrecursorMass - csmAlpha.BetaPeptide.BioPolymerWithSetModsMonoisotopicMass.Value - csmAlpha.BioPolymerWithSetModsMonoisotopicMass.Value - xlinker.TotalMass;
             string someLongString = "-." + csmAlpha.FullSequence + csmAlpha.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + csmAlpha.BetaPeptide.FullSequence + csmAlpha.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-";
-            string someOtherString = csmAlpha.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.Accession.ToString(CultureInfo.InvariantCulture)
+            string someOtherString = csmAlpha.BestMatchingBioPolymersWithSetMods.First().WithSetMods.Parent.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + (csmAlpha.XlProteinPos.HasValue ? csmAlpha.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")";
-            string lastRandomString = csmAlpha.BetaPeptide.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.Accession.ToString(CultureInfo.InvariantCulture)
+            string lastRandomString = csmAlpha.BetaPeptide.BestMatchingBioPolymersWithSetMods.First().WithSetMods.Parent.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + (csmAlpha.BetaPeptide.XlProteinPos.HasValue ? csmAlpha.BetaPeptide.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")";
 
             Assert.That(csmAlpha.ScanRetentionTime.ToString(CultureInfo.InvariantCulture), Is.EqualTo("NaN"));

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using EngineLayer.SpectrumMatch;
 using Omics;
 using Omics.Fragmentation;
 
@@ -19,7 +20,7 @@ public class OligoSpectralMatch : SpectralMatch
 
     }
 
-    protected OligoSpectralMatch(SpectralMatch psm, List<(int Notch, IBioPolymerWithSetMods Peptide)> bestMatchingPeptides)
+    protected OligoSpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides)
         : base(psm, bestMatchingPeptides)
     {
     }

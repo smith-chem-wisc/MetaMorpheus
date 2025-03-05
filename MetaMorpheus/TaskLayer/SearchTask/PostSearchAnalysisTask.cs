@@ -335,7 +335,7 @@ namespace TaskLayer
                 var accessionToPg = new Dictionary<string, FlashLFQ.ProteinGroup>();
                 foreach (var psm in psmsForQuantification)
                 {
-                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Peptide.Parent).Distinct();
+                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.Parent).Distinct();
 
                     foreach (var protein in proteins)
                     {
@@ -387,7 +387,7 @@ namespace TaskLayer
                     //get easy access to values we need for new psm generation
                     string unlabeledBaseSequence = lightPsm.BaseSequence;
                     int notch = psm.BestMatchingBioPolymersWithSetMods.First().Notch;
-                    PeptideWithSetModifications pwsm = psm.BestMatchingBioPolymersWithSetMods.First().Peptide as PeptideWithSetModifications;
+                    PeptideWithSetModifications pwsm = psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods as PeptideWithSetModifications;
 
                     //check if turnover or multiplex experiment
                     if (startLabel == null && endLabel == null) //if multiplex
@@ -612,7 +612,7 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoMultiplexQuantification &&
                 Parameters.MultiplexModification != null &&
                 psms.Any(p => p.BestMatchingBioPolymersWithSetMods
-                    .SelectMany(pwsm => pwsm.Peptide.AllModsOneIsNterminus.Values)
+                    .SelectMany(pwsm => pwsm.WithSetMods.AllModsOneIsNterminus.Values)
                     .Any(mod => mod.OriginalId.Equals(Parameters.MultiplexModification.OriginalId))))
             {
                 WritePsmPlusMultiplexIons(psms, filePath);
@@ -1063,7 +1063,7 @@ namespace TaskLayer
                 // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
                 foreach (SpectralMatch psm in filteredPsms)
                 {
-                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide);
+                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods);
 
                     foreach (PeptideWithSetModifications peptide in myPepsWithSetMods)
                     {
@@ -1116,7 +1116,7 @@ namespace TaskLayer
 
                 foreach (SpectralMatch psm in originalModPsms)
                 {
-                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide);
+                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods);
 
                     foreach (PeptideWithSetModifications peptide in myPepsWithSetMods)
                     {
@@ -1449,7 +1449,7 @@ namespace TaskLayer
                         filterAtPeptideLevel: true);
 
             var possibleVariantPsms = fdrPsms.Where(p =>
-                    p.BestMatchingBioPolymersWithSetMods.Any(pep => pep.Peptide is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide()))
+                    p.BestMatchingBioPolymersWithSetMods.Any(pep => pep.WithSetMods is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide()))
                 .OrderByDescending(pep => pep.Score)
                 .ToList();
 
@@ -1481,7 +1481,7 @@ namespace TaskLayer
             foreach (var entry in variantPeptides)
             {
                 var pwsm = entry.BestMatchingBioPolymersWithSetMods;
-                var nonVariantOption = pwsm.Any(p => p.Peptide is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide() == false);
+                var nonVariantOption = pwsm.Any(p => p.WithSetMods is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide() == false);
                 if (nonVariantOption == false)
                 {
                     confidentVariantPeps.Add(entry);
@@ -1520,7 +1520,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new();// modification is speciifcally on the variant residue within the peptide
             foreach (PeptideSpectralMatch entry in modifiedVariantPeptides)
             {
-                PeptideWithSetModifications firstOrDefault = entry.BestMatchingBioPolymersWithSetMods.FirstOrDefault().Peptide as PeptideWithSetModifications;
+                PeptideWithSetModifications firstOrDefault = entry.BestMatchingBioPolymersWithSetMods.FirstOrDefault().WithSetMods as PeptideWithSetModifications;
 
                 var variantPWSM = firstOrDefault;
                 var peptideMods = variantPWSM.AllModsOneIsNterminus.Values.ToList();
@@ -1545,11 +1545,10 @@ namespace TaskLayer
             foreach (var peptide in confidentVariantPeps)
             {
                 var variantPWSM =
-                    peptide.BestMatchingBioPolymersWithSetMods.FirstOrDefault() is (_, PeptideWithSetModifications)
-                        ? ((int Notch, PeptideWithSetModifications Peptide))peptide.BestMatchingBioPolymersWithSetMods
-                            .FirstOrDefault()
-                        : (0, null);//TODO: expand to all peptide options not just the first
-                var variants = variantPWSM.Peptide.Protein.AppliedSequenceVariations;
+                    peptide.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.WithSetMods is PeptideWithSetModifications peptideWithSetModifications
+                        ? peptideWithSetModifications
+                        : null;//TODO: expand to all peptide options not just the first
+                var variants = variantPWSM.Protein.AppliedSequenceVariations;
                 var culture = CultureInfo.CurrentCulture;
                 // these bools allow for us to accurrately count the number of peptides that have at least one variants of a given type.
                 // they will prevent double counting if a variant type is found more than once in a given peptide (most typically missense, but all will be covered)
@@ -1563,7 +1562,7 @@ namespace TaskLayer
 
                 foreach (var variant in variants)
                 {
-                    if (variantPWSM.Peptide.IntersectsAndIdentifiesVariation(variant).identifies == true)
+                    if (variantPWSM.IntersectsAndIdentifiesVariation(variant).identifies == true)
                     {
                         if (culture.CompareInfo.IndexOf(variant.Description.Description, "missense_variant", CompareOptions.IgnoreCase) >= 0)
                         {
@@ -1574,13 +1573,13 @@ namespace TaskLayer
                                     SNVmissenseCount++;
                                     SNVmissenseIdentified = true;
                                 }
-                                if (SNVmissenseVariants.ContainsKey(variantPWSM.Peptide.Protein))
+                                if (SNVmissenseVariants.ContainsKey(variantPWSM.Protein))
                                 {
-                                    SNVmissenseVariants[variantPWSM.Peptide.Protein].Add(variant);
+                                    SNVmissenseVariants[variantPWSM.Protein].Add(variant);
                                 }
                                 else
                                 {
-                                    SNVmissenseVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
+                                    SNVmissenseVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
                                 }
                             }
                             else
@@ -1590,13 +1589,13 @@ namespace TaskLayer
                                     MNVmissenseCount++;
                                     MNVmissenseIdentified = true;
                                 }
-                                if (MNVmissenseVariants.ContainsKey(variantPWSM.Peptide.Protein))
+                                if (MNVmissenseVariants.ContainsKey(variantPWSM.Protein))
                                 {
-                                    MNVmissenseVariants[variantPWSM.Peptide.Protein].Add(variant);
+                                    MNVmissenseVariants[variantPWSM.Protein].Add(variant);
                                 }
                                 else
                                 {
-                                    MNVmissenseVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
+                                    MNVmissenseVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
                                 }
                             }
                         }
@@ -1607,13 +1606,13 @@ namespace TaskLayer
                                 frameshiftCount++;
                                 frameshiftIdentified = true;
                             }
-                            if (frameshiftVariants.ContainsKey(variantPWSM.Peptide.Protein))
+                            if (frameshiftVariants.ContainsKey(variantPWSM.Protein))
                             {
-                                frameshiftVariants[variantPWSM.Peptide.Protein].Add(variant);
+                                frameshiftVariants[variantPWSM.Protein].Add(variant);
                             }
                             else
                             {
-                                frameshiftVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
+                                frameshiftVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
                             }
                         }
                         else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
@@ -1623,13 +1622,13 @@ namespace TaskLayer
                                 stopGainCount++;
                                 stopGainIdentified = true;
                             }
-                            if (stopGainVariants.ContainsKey(variantPWSM.Peptide.Protein))
+                            if (stopGainVariants.ContainsKey(variantPWSM.Protein))
                             {
-                                stopGainVariants[variantPWSM.Peptide.Protein].Add(variant);
+                                stopGainVariants[variantPWSM.Protein].Add(variant);
                             }
                             else
                             {
-                                stopGainVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
+                                stopGainVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
                             }
                         }
                         else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
@@ -1639,13 +1638,13 @@ namespace TaskLayer
                                 insertionCount++;
                                 insertionIdentified = true;
                             }
-                            if (insertionVariants.ContainsKey(variantPWSM.Peptide.Protein))
+                            if (insertionVariants.ContainsKey(variantPWSM.Protein))
                             {
-                                insertionVariants[variantPWSM.Peptide.Protein].Add(variant);
+                                insertionVariants[variantPWSM.Protein].Add(variant);
                             }
                             else
                             {
-                                insertionVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
+                                insertionVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
                             }
                         }
                         else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
@@ -1655,13 +1654,13 @@ namespace TaskLayer
                                 deletionCount++;
                                 deletionIdentified = true;
                             }
-                            if (deletionVariants.ContainsKey(variantPWSM.Peptide.Protein))
+                            if (deletionVariants.ContainsKey(variantPWSM.Protein))
                             {
-                                deletionVariants[variantPWSM.Peptide.Protein].Add(variant);
+                                deletionVariants[variantPWSM.Protein].Add(variant);
                             }
                             else
                             {
-                                deletionVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
+                                deletionVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
                             }
                         }
                         else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
@@ -1671,13 +1670,13 @@ namespace TaskLayer
                                 stopLossCount++;
                                 stopLossIdentifed = true;
                             }
-                            if (stopLossVariants.ContainsKey(variantPWSM.Peptide.Protein))
+                            if (stopLossVariants.ContainsKey(variantPWSM.Protein))
                             {
-                                stopLossVariants[variantPWSM.Peptide.Protein].Add(variant);
+                                stopLossVariants[variantPWSM.Protein].Add(variant);
                             }
                             else
                             {
-                                stopLossVariants.Add(variantPWSM.Peptide.Protein, new HashSet<SequenceVariation> { variant });
+                                stopLossVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
                             }
                         }
                     }
@@ -1843,11 +1842,11 @@ namespace TaskLayer
                     foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods)
                     {
                         output.Write(idNumber.ToString());
-                        output.Write('\t' + (peptide.Peptide.Parent.IsDecoy ? -1 : 1).ToString());
+                        output.Write('\t' + (peptide.WithSetMods.Parent.IsDecoy ? -1 : 1).ToString());
                         output.Write('\t' + psm.ScanNumber.ToString());
                         output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
-                        output.Write('\t' + (peptide.Peptide.PreviousResidue + "." + peptide.Peptide.FullSequence + "." + peptide.Peptide.NextResidue).ToString());
-                        output.Write('\t' + (peptide.Peptide.Parent.Accession).ToString());
+                        output.Write('\t' + (peptide.WithSetMods.PreviousResidue + "." + peptide.WithSetMods.FullSequence + "." + peptide.WithSetMods.NextResidue).ToString());
+                        output.Write('\t' + (peptide.WithSetMods.Parent.Accession).ToString());
                         output.WriteLine();
                     }
                     idNumber++;

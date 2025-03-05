@@ -321,9 +321,9 @@ namespace TaskLayer
             {
                 foreach (var psm in _filteredPsms)
                 {
-                    List<Protein> proteinList = psm.BestMatchingBioPolymersWithSetMods.Select(p => ((PeptideWithSetModifications)p.Peptide).Protein).ToList();
+                    List<Protein> proteinList = psm.BestMatchingBioPolymersWithSetMods.Select(p => ((PeptideWithSetModifications)p.WithSetMods).Protein).ToList();
                     ProteinGroup newProteinGroup = new ProteinGroup(new HashSet<Protein>(proteinList),
-                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.Peptide).ToList())), new HashSet<PeptideWithSetModifications>());
+                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.WithSetMods).ToList())), new HashSet<PeptideWithSetModifications>());
 
                     if (_proteinGroups.Any(p => p.Equals(newProteinGroup)))
                     {
@@ -454,7 +454,7 @@ namespace TaskLayer
                 var accessionToPg = new Dictionary<string, FlashLFQ.ProteinGroup>();
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                 {
-                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => ((PeptideWithSetModifications)b.Peptide).Protein).Distinct();
+                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => ((PeptideWithSetModifications)b.WithSetMods).Protein).Distinct();
 
                     foreach (var protein in proteins)
                     {
