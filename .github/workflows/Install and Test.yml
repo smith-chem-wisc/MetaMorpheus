@@ -1,6 +1,5 @@
 name: Install Test
 
-
 on:
   push:
     branches: [ "master" ]
@@ -22,10 +21,10 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-          
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
-        
+
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
 
@@ -35,7 +34,7 @@ jobs:
       - name: Build installer
         run: |
           msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /verbosity:minimal /p:UseSharedCompilation=false
-          msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release /verbosity:minimal /p:UseSharedCompilation=false
+          msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release /verbosity=minimal /p:UseSharedCompilation=false
 
       - name: Verify installer exists
         run: |
@@ -51,8 +50,7 @@ jobs:
 
       - name: Sign installer
         run: |
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
-          $cert.Import("${{ secrets.SIGN_CERT }}", "${{ secrets.KEY_CERT }}", 'DefaultKeySet')
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "${{ secrets.KEY_CERT }}", "DefaultKeySet")
           Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
 
       - name: Install MetaMorpheus MSI
@@ -66,7 +64,7 @@ jobs:
 
       - name: Validate installed CLI launches
         run: |
-          $exePath = "C:\Program Files\MetaMorpheus\CMD.exe"
+          $exePath = "C:\Program Files\MetaMorpheus\MetaMorpheusCmd.exe"
           if (!(Test-Path $exePath)) {
             Write-Host "❌ Installed executable not found!" -ForegroundColor Red
             exit 1
@@ -82,7 +80,15 @@ jobs:
       - name: Run NUnit Tests
         run: dotnet test ./MetaMorpheus/Test/Test.csproj --configuration Release --no-build --verbosity minimal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput='./opencoverCoverage.xml' /p:ExcludeByFile='**/*.md'
 
+      - name: Upload coverage to Codecov
+        if: always()
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./opencoverCoverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+
       - name: Upload artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: MetaMorpheusInstaller
