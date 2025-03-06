@@ -227,7 +227,7 @@ jobs:
               "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\net8.0",
               "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0",
               "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\net8.0",
-              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\net8.0",
+              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\net8.0-windows",
               "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\net8.0"
           )
           
