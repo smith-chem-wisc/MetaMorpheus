@@ -113,7 +113,6 @@ jobs:
   test_build:
     name: Search with Built CMD.dll
     runs-on: windows-latest
-    needs: install
 
     steps:
       - uses: actions/checkout@v4
