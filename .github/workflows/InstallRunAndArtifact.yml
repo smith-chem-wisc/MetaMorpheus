@@ -216,15 +216,32 @@ jobs:
           $buildDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0"
           $installDir = "C:\Program Files\MetaMorpheus"
 
+          # Get DLL names
           $buildDlls = Get-ChildItem -Path $buildDir -Filter *.dll | Select-Object -ExpandProperty Name
           $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name
 
+          # Find missing DLLs (present in build, not in install)
           $missingDlls = $buildDlls | Where-Object { $_ -notin $installedDlls }
 
+          # Find extra DLLs (present in install, not in build)
+          $extraDlls = $installedDlls | Where-Object { $_ -notin $buildDlls }
+
+          $hasError = $false
+
           if ($missingDlls.Count -gt 0) {
-              Write-Host "❌ The following DLLs are in the build output but missing from the installer:" -ForegroundColor Red
+              Write-Host "❌ Missing DLLs from installer:" -ForegroundColor Red
               $missingDlls | ForEach-Object { Write-Host "- $_" }
+              $hasError = $true
+          }
+
+          if ($extraDlls.Count -gt 0) {
+              Write-Host "❌ Extra/unexpected DLLs in installer:" -ForegroundColor Red
+              $extraDlls | ForEach-Object { Write-Host "- $_" }
+              $hasError = $true
+          }
+
+          if ($hasError) {
               exit 1
           } else {
-              Write-Host "✅ All built DLLs are present in the installed directory." -ForegroundColor Green
+              Write-Host "✅ Installer DLLs match build output exactly." -ForegroundColor Green
           }
