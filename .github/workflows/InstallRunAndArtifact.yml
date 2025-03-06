@@ -47,7 +47,8 @@ jobs:
         run: |
           nuget install secure-file -ExcludeVersion
           secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret ${{ secrets.KEY_SECRET }}
-
+          
+      # This currently has issues and leads to Microsoft waringing the user that MetaMorpheus is untrusted. 
       - name: Sign installer
         run: |
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "${{ secrets.KEY_CERT }}", "DefaultKeySet")
@@ -79,7 +80,7 @@ jobs:
 
 
   test_installer:
-    name: Search with Installed CMD
+    name: Search with Installed
     runs-on: windows-latest
     needs: install
 
@@ -138,7 +139,7 @@ jobs:
           }
           
   test_build:
-    name: Search with Built CMD.dll
+    name: Search with Built
     runs-on: windows-latest
 
     steps:
@@ -154,21 +155,7 @@ jobs:
 
       - name: Build solution
         run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
-
-#      - name: Display workspace directory tree
-#        run: |
-#          function Show-Tree ($path, $indent = "") {
-#              Get-ChildItem -LiteralPath $path | ForEach-Object {
-#                  Write-Host "$indent|- $($_.Name)"
-#                  if ($_.PSIsContainer) {
-#                      Show-Tree -path $_.FullName -indent ("$indent   ")
-#                  }
-#              }
-#          }
-#          $workspace = Get-Location
-#          Write-Host "Workspace directory tree for: $workspace"
-#          Show-Tree $workspace
-
+        
       - name: Generate Default TOMLs
         run: |
           dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\Data"
@@ -235,7 +222,29 @@ jobs:
           )
 
           # Get all unique DLLs in the entire build repository
-          $buildDlls = Get-ChildItem -Path $repoDir -Filter *.dll -Recurse | Select-Object -ExpandProperty Name -Unique
+          # Define which folders to check in the repo
+          $foldersToCheck = @(
+              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\net8.0",
+              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0",
+              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\net8.0",
+              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\net8.0",
+              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\net8.0",
+          )
+          
+          # Collect DLLs and their source folders
+          $buildDlls = @()
+          $buildDllLocations = @{}
+
+          foreach ($folder in $foldersToCheck) {
+              if (Test-Path $folder) {
+                  Get-ChildItem -Path $folder -Filter *.dll | ForEach-Object {
+                      $dllName = $_.Name
+                      $buildDlls += $dllName
+                      $buildDllLocations[$dllName] = $folder
+                  }
+              }
+          }
+          $buildDlls = $buildDlls | Sort-Object -Unique
 
           # Get installed DLLs
           $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name -Unique
@@ -249,8 +258,11 @@ jobs:
           $hasError = $false
 
           if ($missingDlls.Count -gt 0) {
-              Write-Host "❌ Missing DLLs from installer:" -ForegroundColor Red
-              $missingDlls | ForEach-Object { Write-Host "- $_" }
+              Write-Host "❌ Missing DLLs from installer (not whitelisted):" -ForegroundColor Red
+              $missingDlls | ForEach-Object {
+                  $sourceFolder = $buildDllLocations[$_]
+                  Write-Host "- $_ (from $sourceFolder)"
+              }
               $hasError = $true
           }
 
