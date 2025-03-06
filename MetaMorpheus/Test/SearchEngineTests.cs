@@ -65,6 +65,43 @@ namespace Test
         }
 
         [Test]
+        public static void TestClassicSearchEngine_IsoDec()
+        {
+            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
+            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
+            CommonParameters commonParameters = new CommonParameters
+            (digestionParams: new DigestionParams(
+                    protease: protease.Name,
+                    minPeptideLength: 1),
+                scoreCutoff: 1, 
+                precursorDeconParams: new IsoDecDeconvolutionParameters());
+            commonParameters.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 12;
+
+            var myMsDataFile = new TestDataFile();
+            var variableModifications = new List<Modification>();
+            var fixedModifications = new List<Modification>();
+            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var searchModes = new SinglePpmAroundZeroSearchMode(5);
+            var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
+
+            SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[listOfSortedms2Scans.Length];
+            bool writeSpectralLibrary = false;
+            new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
+                proteinList, searchModes, commonParameters, null, null, new List<string>(), writeSpectralLibrary).Run();
+
+            // Single search mode
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
+
+            // One scan
+            Assert.That(allPsmsArray.Length, Is.EqualTo(1));
+
+            Assert.That(allPsmsArray[0].Score > 1);
+            Assert.That(allPsmsArray[0].ScanNumber, Is.EqualTo(2));
+
+            Assert.That(allPsmsArray[0].BaseSequence, Is.EqualTo("QQQ"));
+        }
+
+        [Test]
         [NonParallelizable]
         public static void TestSearchEngineResultsPsmFromTsv()
         {
