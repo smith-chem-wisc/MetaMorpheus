@@ -53,11 +53,30 @@ jobs:
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "${{ secrets.KEY_CERT }}", "DefaultKeySet")
           Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
 
+      - name: Zip command-line version
+        run: |
+          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\net8.0\* "-x!*.xml"
+
+      # check that installer is greater than 1 kb to avoid pushing an empty artifact
+      - name: Validate command-line zip artifact
+        run: |
+          if ((Get-Item MetaMorpheus_CommandLine.zip).length -lt 1kb) {
+            Write-Host "❌ The build failed because the command-line .zip did not build properly; it is empty." -ForegroundColor Red
+            exit 1
+          }
+
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
           name: MetaMorpheusInstaller
           path: ./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi
+
+      - name: Upload command-line zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MetaMorpheusCommandLine
+          path: MetaMorpheus_CommandLine.zip
+
 
   test:
     name: Install Artifact and Search
