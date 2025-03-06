@@ -34,7 +34,7 @@ jobs:
       - name: Build installer
         run: |
           msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /verbosity:minimal /p:UseSharedCompilation=false
-          msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release /verbosity=minimal /p:UseSharedCompilation=false
+          msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release /p:UseSharedCompilation=false
 
       - name: Verify installer exists
         run: |
