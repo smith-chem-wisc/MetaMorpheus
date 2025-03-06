@@ -31,6 +31,7 @@ namespace Test
     {
         public static Protease _customProtease;
 
+        [OneTimeSetUp]
         public static void OneTimeSetUp()
         {
             _customProtease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
