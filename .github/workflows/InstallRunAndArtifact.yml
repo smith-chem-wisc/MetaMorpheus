@@ -1,4 +1,4 @@
-name: Install Test
+name: Install and Run
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [ "master" ]
 
 jobs:
-  install-test:
-    name: Install and Test on Windows
+  install:
+    name: Install MetaMorpheus
     runs-on: windows-latest
 
     env:
@@ -33,7 +33,7 @@ jobs:
 
       - name: Build installer
         run: |
-          msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /verbosity:minimal /p:UseSharedCompilation=false
+          msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /verbosity=minimal /p:UseSharedCompilation=false
           msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release /p:UseSharedCompilation=false
 
       - name: Verify installer exists
@@ -53,9 +53,33 @@ jobs:
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "${{ secrets.KEY_CERT }}", "DefaultKeySet")
           Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
 
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MetaMorpheusInstaller
+          path: ./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi
+
+  test:
+    name: Install Artifact and Search
+    runs-on: windows-latest
+    needs: install
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+
+      - name: Download installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MetaMorpheusInstaller
+
       - name: Install MetaMorpheus MSI
         run: |
-          Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$(Get-Location)\MetaMorpheus\MetaMorpheusSetup\bin\Release\MetaMorpheusInstaller.msi`" /qn /l*v install.log" -Wait
+          Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$(Get-Location)\MetaMorpheusInstaller.msi`" /qn /l*v install.log" -Wait
           if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ Installation failed!" -ForegroundColor Red
             Get-Content install.log
@@ -95,10 +119,3 @@ jobs:
           } else {
             Write-Host "✅ Simple data search ran successfully!" -ForegroundColor Green
           }
-
-      - name: Upload artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: MetaMorpheusInstaller
-          path: ./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi
