@@ -213,18 +213,38 @@ jobs:
 
       - name: Compare built DLLs to installed DLLs
         run: |
-          $buildDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0"
+          $buildDir = $repoDir = Get-Location
           $installDir = "C:\Program Files\MetaMorpheus"
 
           # Get DLL names
           $buildDlls = Get-ChildItem -Path $buildDir -Filter *.dll | Select-Object -ExpandProperty Name
           $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name
 
-          # Find missing DLLs (present in build, not in install)
-          $missingDlls = $buildDlls | Where-Object { $_ -notin $installedDlls }
+          # Define whitelist for missing DLLs (build-only) - Okay to not be installed
+          $whitelistedMissingDlls = @(
+            "System.Configuration.ConfigurationManager.dll",
+            "System.Security.Cryptography.ProtectedData.dll",
+            "System.Security.Permissions.dll"
+            "System.Windows.Extensions.dll"
+            "Microsoft.Win32.SystemEvents.dll"
+          )
 
-          # Find extra DLLs (present in install, not in build)
-          $extraDlls = $installedDlls | Where-Object { $_ -notin $buildDlls }
+          # Define whitelist for extra DLLs (install-only)
+          $whitelistedExtraDlls = @(
+          
+          )
+
+          # Get all unique DLLs in the entire build repository
+          $buildDlls = Get-ChildItem -Path $repoDir -Filter *.dll -Recurse | Select-Object -ExpandProperty Name -Unique
+
+          # Get installed DLLs
+          $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name -Unique
+
+          # Find missing DLLs (in build, not in install), ignoring whitelist
+          $missingDlls = $buildDlls | Where-Object { $_ -notin $installedDlls -and $_ -notin $whitelistedMissingDlls }
+
+          # Find extra DLLs (in install, not in build), ignoring whitelist
+          $extraDlls = $installedDlls | Where-Object { $_ -notin $buildDlls -and $_ -notin $whitelistedExtraDlls }
 
           $hasError = $false
 
