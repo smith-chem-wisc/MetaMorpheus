@@ -273,6 +273,18 @@
 	  <Component Id="src_Omics.dll" Guid="B8F0F0A0-5F0B-4F0B-9F0B-0B0B0B0B0B0B">
 	    <File Id="src_Omics.dll" Name="Omics.dll" Source="$(var.GUI_TargetDir)Omics.dll" />
 	  </Component>
+	  <Component Id="src_isodeclib.dll" Guid="0289908F-7EB7-41C5-8B73-4A4BFD501CCB">
+	  	<File Id="src_isodeclib.dll" Name="isodeclib.dll" Source="$(var.GUI_TargetDir)isodeclib.dll" />
+	  </Component>
+	  <Component Id="src_isogenmass.dll" Guid="8A6C1ECC-6081-4A6A-9325-2EC7855EB4BF">
+	  	<File Id="src_isogenmass.dll" Name="isogenmass.dll" Source="$(var.GUI_TargetDir)isogenmass.dll" />
+	  </Component>
+	  <Component Id="src_libmmd.dll" Guid="BE1DFE98-90FD-4577-8568-B438C21457DD">
+	  	<File Id="src_libmmd.dll" Name="libmmd.dll" Source="$(var.GUI_TargetDir)libmmd.dll" />
+	  </Component>
+	  <Component Id="src_svml_dispmd.dll" Guid="8FB6522C-298B-440D-A8CD-B96782220DFC">
+	  	<File Id="src_svml_dispmd.dll" Name="svml_dispmd.dll" Source="$(var.GUI_TargetDir)svml_dispmd.dll" />
+	  </Component>
       <Component Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Guid="F3DA60DB-CF5F-4671-9F3C-1033780261DD">
         <File Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Name="ThermoFisher.CommonCore.BackgroundSubtraction.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.BackgroundSubtraction.dll" />
       </Component>
