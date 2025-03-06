@@ -24,7 +24,7 @@ jobs:
       - name: Install Coverlet for code coverage
         run: dotnet add ./MetaMorpheus/Test/Test.csproj package coverlet.msbuild
       - name: Run unit tests with coverage
-        run: dotnet test .\MetaMorpheus\Test\Test.csproj --verbosity normal --collect:"XPlat Code Coverage" /p:CoverletOutputFormat=cobertura ./Test/Test.csproj 
+        run: dotnet test .\MetaMorpheus\Test\Test.csproj --verbosity normal --collect:"XPlat Code Coverage" /p:CoverletOutputFormat=cobertura 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
