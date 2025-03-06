@@ -24,7 +24,7 @@ jobs:
         run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration Release
         
       - name: Install Coverlet for code coverage
-        run: dotnet add ./MetaMorpheus/Test/Test.csproj package package coverlet.collector -v 6.0.2
+        run: dotnet add ./MetaMorpheus/Test/Test.csproj package coverlet.collector -v 6.0.2
         
       - name: Run unit tests with coverage
         run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
