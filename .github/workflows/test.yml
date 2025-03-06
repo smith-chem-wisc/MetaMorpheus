@@ -11,22 +11,24 @@ on:
 
 jobs:
   test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest]
-        cofiguration: [Release, Debug]
-
+    name: Test
+    runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 8.0.x
-    - name: Restore dependencies
-      run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
-    - name: Build
-      run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration ${{ matrix.configuration }}
-    - name: Test
-      run: dotnet test ./MetaMorpheus/Test/Test.csproj --no-build --verbosity normal --configuration ${{ matrix.configuration }}
+      - uses: actions/checkout@v4
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+      - name: Build
+        run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration Release
+      - name: Install Coverlet for code coverage
+        run: dotnet add ./MetaMorpheus/Test/Test.csproj package coverlet.msbuild
+      - name: Run unit tests with coverage
+        run: dotnet test ./MetaMorpheus/Test/Test.csproj --configuration Release /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput=./MetaMorpheus/opencoverCoverage.xml /p:ExcludeByFile="**/*.md"
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./MetaMorpheus/opencoverCoverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
