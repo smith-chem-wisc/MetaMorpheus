@@ -28,10 +28,6 @@ jobs:
         
       - name: Run unit tests with coverage
         run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
-
-      # ✅ Debug step to check where the coverage file is
-      - name: List test results
-        run: dir MetaMorpheus\Test\TestResults\ /s
         
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
