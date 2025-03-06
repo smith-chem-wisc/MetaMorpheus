@@ -100,9 +100,19 @@ jobs:
           Get-Location
           Get-ChildItem -Path $(Get-Location) -Recurse -Force
           
+
       - name: Check Data directory
         run: |
-          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
+          $dataDir = "$(Get-Location)\Test\TestData"
+          if (Test-Path $dataDir) {
+            Get-ChildItem -Path $dataDir -Recurse -Force
+          } else {
+            Write-Host "❌ Data directory does not exist."
+          }        
+
+      - name: Check Data directory2
+        run: |
+          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
           if (Test-Path $dataDir) {
             Get-ChildItem -Path $dataDir -Recurse -Force
           } else {
@@ -158,12 +168,30 @@ jobs:
           Get-Location
           Get-ChildItem -Path $(Get-Location) -Recurse -Force
 
+      - name: Check Data directory
+        run: |
+          $dataDir = "$(Get-Location)\Test\TestData"
+          if (Test-Path $dataDir) {
+            Get-ChildItem -Path $dataDir -Recurse -Force
+          } else {
+            Write-Host "❌ Data directory does not exist."
+          }        
 
+      - name: Check Data directory2
+        run: |
+          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          if (Test-Path $dataDir) {
+            Get-ChildItem -Path $dataDir -Recurse -Force
+          } else {
+            Write-Host "❌ Data directory does not exist."
+          }  
 
       - name: Copy test data into Data directory
         run: |
           New-Item -ItemType Directory -Force -Path "$(Get-Location)\CMD\bin\Release\net8.0\Data"
-          Copy-Item "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData\*" "$(Get-Location)\CMD\bin\Release\net8.0\Data" -Recurse -Force
+          Copy-Item "$(Get-Location)\Test\TestData\*" "$(Get-Location)\CMD\bin\Release\net8.0\Data" -Recurse -Force
+
+
 
       - name: Generate Default TOMLs
         run: |
