@@ -1,5 +1,6 @@
 name: Install Test
 
+
 on:
   push:
     branches: [ "master" ]
@@ -11,50 +12,75 @@ jobs:
     name: Install and Test on Windows
     runs-on: windows-latest
 
+    env:
+      DOTNET_VERSION: 8.0.204
+
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
 
+      - name: Build solution
+        run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
+
       - name: Build installer
         run: |
-          msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release
-          msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release
+          msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /verbosity:minimal /p:UseSharedCompilation=false
+          msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release /verbosity:minimal /p:UseSharedCompilation=false
+
+      - name: Verify installer exists
+        run: |
+          if (!(Test-Path "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi")) {
+            Write-Host "❌ Installer build failed: MetaMorpheusInstaller.msi not found." -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Decrypt security certificate
+        run: |
+          nuget install secure-file -ExcludeVersion
+          secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret ${{ secrets.KEY_SECRET }}
+
+      - name: Sign installer
+        run: |
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+          $cert.Import("${{ secrets.SIGN_CERT }}", "${{ secrets.KEY_CERT }}", 'DefaultKeySet')
+          Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
 
       - name: Install MetaMorpheus MSI
         run: |
-          $installerPath = "$(Get-Location)\MetaMorpheus\MetaMorpheusSetup\bin\Release\MetaMorpheusInstaller.msi"
-          if (!(Test-Path $installerPath)) {
-            Write-Host "Installer not found!" -ForegroundColor Red
-            exit 1
-          }
-          Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$installerPath`" /qn /l*v install.log" -Wait
+          Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$(Get-Location)\MetaMorpheus\MetaMorpheusSetup\bin\Release\MetaMorpheusInstaller.msi`" /qn /l*v install.log" -Wait
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "Installation failed!" -ForegroundColor Red
+            Write-Host "❌ Installation failed!" -ForegroundColor Red
             Get-Content install.log
             exit $LASTEXITCODE
           }
 
       - name: Validate installed CLI launches
         run: |
-          $exePath = "C:\Program Files\MetaMorpheus\MetaMorpheusCmd.exe"
+          $exePath = "C:\Program Files\MetaMorpheus\CMD.exe"
           if (!(Test-Path $exePath)) {
-            Write-Host "Installed executable not found!" -ForegroundColor Red
+            Write-Host "❌ Installed executable not found!" -ForegroundColor Red
             exit 1
           }
           & "$exePath" --help
           if ($LASTEXITCODE -ne 0) {
-            Write-Host "Installed executable failed to run!" -ForegroundColor Red
+            Write-Host "❌ Installed executable failed to run!" -ForegroundColor Red
             exit $LASTEXITCODE
           } else {
-            Write-Host "Installed executable ran successfully!" -ForegroundColor Green
+            Write-Host "✅ Installed executable ran successfully!" -ForegroundColor Green
           }
 
       - name: Run NUnit Tests
-        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --no-build --verbosity minimal
+        run: dotnet test ./MetaMorpheus/Test/Test.csproj --configuration Release --no-build --verbosity minimal /p:CollectCoverage=true /p:CoverletOutputFormat=opencover /p:CoverletOutput='./opencoverCoverage.xml' /p:ExcludeByFile='**/*.md'
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: MetaMorpheusInstaller
+          path: ./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi
