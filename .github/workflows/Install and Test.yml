@@ -1,0 +1,57 @@
+name: Install Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  install-test:
+    name: Install and Test on Windows
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build installer
+        run: |
+          msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release
+          msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release
+
+      - name: Install MetaMorpheus MSI
+        run: |
+          $installerPath = "$(Get-Location)\MetaMorpheus\MetaMorpheusSetup\bin\Release\MetaMorpheusInstaller.msi"
+          if (!(Test-Path $installerPath)) {
+            Write-Host "Installer not found!" -ForegroundColor Red
+            exit 1
+          }
+          Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$installerPath`" /qn /l*v install.log" -Wait
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Installation failed!" -ForegroundColor Red
+            Get-Content install.log
+            exit $LASTEXITCODE
+          }
+
+      - name: Validate installed CLI
+        run: |
+          $exePath = "C:\Program Files\MetaMorpheus\CMD.exe"
+          if (!(Test-Path $exePath)) {
+            Write-Host "Installed executable not found!" -ForegroundColor Red
+            exit 1
+          }
+          & "$exePath" --help
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Installed executable failed to run!" -ForegroundColor Red
+            exit $LASTEXITCODE
+          } else {
+            Write-Host "Installed executable ran successfully!" -ForegroundColor Green
+          }
