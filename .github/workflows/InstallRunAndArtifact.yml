@@ -8,7 +8,7 @@ on:
 
 jobs:
   install:
-    name: Install MetaMorpheus
+    name: Create Install Artifact
     runs-on: windows-latest
 
     env:
@@ -78,8 +78,8 @@ jobs:
           path: MetaMorpheus_CommandLine.zip
 
 
-  test:
-    name: Install Artifact and Search
+  test_installer:
+    name: Search with Installed CMD
     runs-on: windows-latest
     needs: install
 
@@ -99,15 +99,6 @@ jobs:
       - name: Install MetaMorpheus MSI
         run: |
           Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$(Get-Location)\MetaMorpheusInstaller.msi`" /qn /l*v install.log" -Wait
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Installation failed!" -ForegroundColor Red
-            Get-Content install.log
-            exit $LASTEXITCODE
-          }
-
-      - name: Create Default Tomls
-        run: |
-          dotnet "$(Get-Location)\CMD\bin\Release\net8.0\CMD.dll" -g -o "$(Get-Location)\CMD\bin\Release\net8.0\Data"
 
       - name: Run search with installed CMD.exe
         run: |
@@ -118,6 +109,29 @@ jobs:
         run: |
           $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
           dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\dll_output" -v minimal
+
+  test_build:
+    name: Search with Built CMD.dll
+    runs-on: windows-latest
+    needs: install
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build solution
+        run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
+
+      - name: Generate Default TOMLs
+        run: |
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -g -o "$(Get-Location)\CMD\bin\Release\net8.0\Data"
 
       - name: Run search with built CMD.dll
         run: |
