@@ -291,6 +291,51 @@
 	  <Component Id="src_TopDownProteomics.dll" Guid="5FA064E8-F67E-44E3-A462-DBBC381247A5">
 	  	<File Id="src_TopDownProteomics.dll" Name="TopDownProteomics.dll" Source="$(var.GUI_TargetDir)TopDownProteomics.dll" />
 	  </Component>
+	  <Component Id="src_CsvHelper.dll" Guid="79F28320-5AF2-4825-9B9B-AC0776E753C1">
+	  	<File Id="src_CsvHelper.dll" Name="CsvHelper.dll" Source="$(var.GUI_TargetDir)CsvHelper.dll" />
+	  </Component>
+	  <Component Id="src_EntityFramework.dll" Guid="AAB0BE24-C695-42CE-9495-B804B0929589">
+	  	<File Id="src_EntityFramework.dll" Name="EntityFramework.dll" Source="$(var.GUI_TargetDir)EntityFramework.dll" />
+	  </Component>
+	  <Component Id="src_EntityFramework.SqlServer.dll" Guid="C8207F75-5358-4EEB-9E86-D648FAFDD735">
+	  	<File Id="src_EntityFramework.SqlServer.dll" Name="EntityFramework.SqlServer.dll" Source="$(var.GUI_TargetDir)EntityFramework.SqlServer.dll" />
+	  </Component>
+	  <Component Id="src_Microsoft.Win32.SystemEvents.dll" Guid="DE0C1A1D-2DD8-4290-BFB2-E08B19C39C76">
+	  	<File Id="src_Microsoft.Win32.SystemEvents.dll" Name="Microsoft.Win32.SystemEvents.dll" Source="$(var.GUI_TargetDir)Microsoft.Win32.SystemEvents.dll" />
+	  </Component>
+	  <Component Id="src_msvcp110.dll" Guid="36947FB1-E7F0-4580-A15C-66CB25D566C4">
+	  	<File Id="src_msvcp110.dll" Name="msvcp110.dll" Source="$(var.GUI_TargetDir)msvcp110.dll" />
+	  </Component>
+	  <Component Id="src_msvcr110.dll" Guid="4C52ED24-C962-42B7-AE53-0FF423D25E64">
+	  	<File Id="src_msvcr110.dll" Name="msvcr110.dll" Source="$(var.GUI_TargetDir)msvcr110.dll" />
+	  </Component>
+	  <Component Id="src_System.Configuration.ConfigurationManager.dll" Guid="018C1D99-2C39-4E25-B184-73E8DE993277">
+	  	<File Id="src_System.Configuration.ConfigurationManager.dll" Name="System.Configuration.ConfigurationManager.dll" Source="$(var.GUI_TargetDir)System.Configuration.ConfigurationManager.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SqlClient.dll" Guid="46279896-7740-429F-A4B4-F4453F577F67">
+	  	<File Id="src_System.Data.SqlClient.dll" Name="System.Data.SqlClient.dll" Source="$(var.GUI_TargetDir)System.Data.SqlClient.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SQLite.dll" Guid="5CB69DD0-680A-4E49-9A93-74D0F4A10661">
+	  	<File Id="src_System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SQLite.EF6.dll" Guid="F9804BA5-D660-4079-8BB4-738DF62EAF7E">
+	  	<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />
+	  </Component>
+	  <Component Id="src_System.Drawing.Common.dll" Guid="D0717D69-C8C8-422C-8E25-A32A422AEFCE">
+	  	<File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.GUI_TargetDir)System.Drawing.Common.dll" />
+	  </Component>
+	  <Component Id="src_System.Numerics.Tensors.dll" Guid="E82682ED-383F-4592-8B64-A0314FFB5481">
+	  	<File Id="src_System.Numerics.Tensors.dll" Name="System.Numerics.Tensors.dll" Source="$(var.GUI_TargetDir)System.Numerics.Tensors.dll" />
+	  </Component>
+	  <Component Id="src_System.Security.Cryptography.ProtectedData.dll" Guid="7E9A7418-6644-4266-BF4A-70458C357E05">
+	  	<File Id="src_System.Security.Cryptography.ProtectedData.dll" Name="System.Security.Cryptography.ProtectedData.dll" Source="$(var.GUI_TargetDir)System.Security.Cryptography.ProtectedData.dll" />
+	  </Component>
+	  <Component Id="src_System.Security.Permissions.dll" Guid="D121632C-1D9E-4892-BEEB-399A69404AFB">
+	  	<File Id="src_System.Security.Permissions.dll" Name="System.Security.Permissions.dll" Source="$(var.GUI_TargetDir)System.Security.Permissions.dll" />
+	  </Component>
+	  <Component Id="src_System.Windows.Extensions.dll" Guid="64D9FFD2-6173-478E-B62E-10E04305E342">
+	  	<File Id="src_System.Windows.Extensions.dll" Name="System.Windows.Extensions.dll" Source="$(var.GUI_TargetDir)System.Windows.Extensions.dll" />
+	  </Component>
       <Component Id="src_timsdata.dll" Guid="22BAA8D2-623B-493E-932E-666A27ECC5A0">
       	<File Id="src_timsdata.dll" Name="timsdata.dll" Source="$(var.GUI_TargetDir)timsdata.dll" />
       </Component>
