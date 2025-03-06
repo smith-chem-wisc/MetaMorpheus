@@ -126,11 +126,11 @@ jobs:
           
       - name: Generate Default TOMLs with installed CMD.dll
         run: |
-          dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\Test\TestData"
+          dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\EngineLayer\Data"
 
       - name: Run search with installed CMD.dll
         run: |
-          $dataDir = "$(Get-Location)\MetaMorpheus\Test\TestData"
+          $dataDir = "$(Get-Location)\MetaMorpheus\EngineLayer\Data"
           dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\dll_output" -v minimal
           if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ CMD.dll search failed with exit code $LASTEXITCODE" -ForegroundColor Red
