@@ -91,33 +91,7 @@ jobs:
         with:
           dotnet-version: 8.0.204
 
-
-
-
-
-      - name: List workspace contents
-        run: |
-          Get-Location
-          Get-ChildItem -Path $(Get-Location) -Recurse -Force
-          
-
-      - name: Check Data directory
-        run: |
-          $dataDir = "$(Get-Location)\Test\TestData"
-          if (Test-Path $dataDir) {
-            Get-ChildItem -Path $dataDir -Recurse -Force
-          } else {
-            Write-Host "❌ Data directory does not exist."
-          }        
-
-      - name: Check Data directory2
-        run: |
-          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
-          if (Test-Path $dataDir) {
-            Get-ChildItem -Path $dataDir -Recurse -Force
-          } else {
-            Write-Host "❌ Data directory does not exist."
-          }          
+       
 
 
 
@@ -161,16 +135,9 @@ jobs:
         run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
 
 
-
-
-      - name: List all directories and files
-        run: |
-          Get-Location
-          Get-ChildItem -Path $(Get-Location) -Recurse -Force
-
       - name: Check Data directory
         run: |
-          $dataDir = "$(Get-Location)\Test\TestData"
+          $dataDir = "$(Get-Location)"
           if (Test-Path $dataDir) {
             Get-ChildItem -Path $dataDir -Recurse -Force
           } else {
@@ -179,20 +146,50 @@ jobs:
 
       - name: Check Data directory2
         run: |
-          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          $dataDir = "$(Get-Location)\CMD"
+          if (Test-Path $dataDir) {
+            Get-ChildItem -Path $dataDir -Recurse -Force
+          } else {
+            Write-Host "❌ Data directory does not exist."
+          }  
+      - name: Check Data directory3
+        run: |
+          $dataDir = "$(Get-Location)\CMD\bin\"
+          if (Test-Path $dataDir) {
+            Get-ChildItem -Path $dataDir -Recurse -Force
+          } else {
+            Write-Host "❌ Data directory does not exist."
+          }        
+
+      - name: Check Data directory4
+        run: |
+          $dataDir = "$(Get-Location)\CMD\bin\Release"
           if (Test-Path $dataDir) {
             Get-ChildItem -Path $dataDir -Recurse -Force
           } else {
             Write-Host "❌ Data directory does not exist."
           }  
 
-      - name: Copy test data into Data directory
+      - name: Display workspace directory tree
         run: |
-          New-Item -ItemType Directory -Force -Path "$(Get-Location)\CMD\bin\Release\net8.0\Data"
-          Copy-Item "$(Get-Location)\Test\TestData\*" "$(Get-Location)\CMD\bin\Release\net8.0\Data" -Recurse -Force
+          function Show-Tree ($path, $indent = "") {
+              Get-ChildItem -LiteralPath $path | ForEach-Object {
+                  Write-Host "$indent|- $($_.Name)"
+                  if ($_.PSIsContainer) {
+                      Show-Tree -path $_.FullName -indent ("$indent   ")
+                  }
+              }
+          }
+          $workspace = Get-Location
+          Write-Host "Workspace directory tree for: $workspace"
+          Show-Tree $workspace
 
 
 
+
+
+
+          
       - name: Generate Default TOMLs
         run: |
           dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -g -o "$(Get-Location)\CMD\bin\Release\net8.0\Data"
