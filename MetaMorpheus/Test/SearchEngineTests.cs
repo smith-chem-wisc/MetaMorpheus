@@ -29,14 +29,20 @@ namespace Test
     [TestFixture]
     public static class SearchEngineTests
     {
+        public static Protease _customProtease;
+
+        public static void OneTimeSetUp()
+        {
+            _customProtease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
+            ProteaseDictionary.Dictionary.Add(_customProtease.Name, _customProtease);
+        }
+
         [Test]
         public static void TestClassicSearchEngine()
         {
-            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters CommonParameters = new CommonParameters
                 (digestionParams: new DigestionParams(
-                    protease: protease.Name,
+                    protease: _customProtease.Name,
                     minPeptideLength: 1),
                 scoreCutoff: 1);
 
@@ -67,11 +73,9 @@ namespace Test
         [Test]
         public static void TestClassicSearchEngine_IsoDec()
         {
-            Protease protease = new Protease("Customized Protease", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") });
-            ProteaseDictionary.Dictionary.Add(protease.Name, protease);
             CommonParameters commonParameters = new CommonParameters
             (digestionParams: new DigestionParams(
-                    protease: protease.Name,
+                    protease: _customProtease.Name,
                     minPeptideLength: 1),
                 scoreCutoff: 1, 
                 precursorDeconParams: new IsoDecDeconvolutionParameters());
