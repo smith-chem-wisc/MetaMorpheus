@@ -22,7 +22,10 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
+          
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+        
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
 
