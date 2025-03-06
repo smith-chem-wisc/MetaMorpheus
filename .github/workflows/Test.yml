@@ -31,3 +31,5 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
           files: MetaMorpheus/Test*/TestResults/*/coverage.cobertura.xml
+          flags: unittests
+          disable_default_comments: false
