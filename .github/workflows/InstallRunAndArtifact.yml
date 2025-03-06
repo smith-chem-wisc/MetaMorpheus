@@ -8,7 +8,7 @@ on:
 
 jobs:
   install:
-    name: Create Install Artifact
+    name: Create Installer Artifact
     runs-on: windows-latest
 
     env:
@@ -102,12 +102,12 @@ jobs:
 
       - name: Run search with installed CMD.exe
         run: |
-          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
           & "C:\Program Files\MetaMorpheus\CMD.exe" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\exe_output" -v minimal
 
       - name: Run search with installed CMD.dll
         run: |
-          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
           dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\dll_output" -v minimal
 
   test_build:
@@ -127,6 +127,11 @@ jobs:
 
       - name: Build solution
         run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
+
+      - name: Copy test data into Data directory
+        run: |
+          New-Item -ItemType Directory -Force -Path "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          Copy-Item "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData\*" "$(Get-Location)\CMD\bin\Release\net8.0\Data" -Recurse -Force
 
       - name: Generate Default TOMLs
         run: |
