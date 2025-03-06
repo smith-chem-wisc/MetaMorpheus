@@ -106,14 +106,19 @@ jobs:
         run: |
           Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$(Get-Location)\MetaMorpheusInstaller.msi`" /qn /l*v install.log" -Wait
 
+      - name: Generate Default TOMLs
+        run: |
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\Data"
+
+
       - name: Run search with installed CMD.exe
         run: |
-          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\Data"
           & "C:\Program Files\MetaMorpheus\CMD.exe" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\exe_output" -v minimal
 
       - name: Run search with installed CMD.dll
         run: |
-          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\Data"
           dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\dll_output" -v minimal
 
   test_build:
@@ -137,7 +142,7 @@ jobs:
 
       - name: Check Data directory
         run: |
-          $dataDir = "$(Get-Location)"
+          $dataDir = "$(Get-Location)\MetaMorpheus"
           if (Test-Path $dataDir) {
             Get-ChildItem -Path $dataDir -Recurse -Force
           } else {
@@ -146,7 +151,7 @@ jobs:
 
       - name: Check Data directory2
         run: |
-          $dataDir = "$(Get-Location)\CMD"
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD"
           if (Test-Path $dataDir) {
             Get-ChildItem -Path $dataDir -Recurse -Force
           } else {
@@ -154,7 +159,7 @@ jobs:
           }  
       - name: Check Data directory3
         run: |
-          $dataDir = "$(Get-Location)\CMD\bin\"
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\"
           if (Test-Path $dataDir) {
             Get-ChildItem -Path $dataDir -Recurse -Force
           } else {
@@ -163,7 +168,7 @@ jobs:
 
       - name: Check Data directory4
         run: |
-          $dataDir = "$(Get-Location)\CMD\bin\Release"
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release"
           if (Test-Path $dataDir) {
             Get-ChildItem -Path $dataDir -Recurse -Force
           } else {
@@ -192,9 +197,9 @@ jobs:
           
       - name: Generate Default TOMLs
         run: |
-          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -g -o "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\Data"
 
       - name: Run search with built CMD.dll
         run: |
-          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\Data"
           dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
