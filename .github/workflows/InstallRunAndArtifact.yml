@@ -121,10 +121,10 @@ jobs:
         run: |
           dotnet "C:\Program Files\MetaMorpheus\CMD.exe" -g -o "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
                     
-      - name: Run search with installed CMD.exe
+      - name: Microvinette with installed CMD.exe
         run: |
           $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
-          & "C:\Program Files\MetaMorpheus\CMD.exe" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\exe_output" -v minimal
+          & "C:\Program Files\MetaMorpheus\CMD.exe" --test -o "$dataDir\exe_output" -v minimal
           if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ CMD.exe search failed with exit code $LASTEXITCODE" -ForegroundColor Red
             exit $LASTEXITCODE
