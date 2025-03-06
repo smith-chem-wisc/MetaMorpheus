@@ -91,6 +91,28 @@ jobs:
         with:
           dotnet-version: 8.0.204
 
+
+
+
+
+      - name: List workspace contents
+        run: |
+          Get-Location
+          Get-ChildItem -Path $(Get-Location) -Recurse -Force
+          
+      - name: Check Data directory
+        run: |
+          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          if (Test-Path $dataDir) {
+            Get-ChildItem -Path $dataDir -Recurse -Force
+          } else {
+            Write-Host "❌ Data directory does not exist."
+          }          
+
+
+
+
+
       - name: Download installer artifact
         uses: actions/download-artifact@v4
         with:
@@ -128,10 +150,17 @@ jobs:
       - name: Build solution
         run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
 
-      - name: Copy test data into Data directory
+
+
+
+      - name: List all directories and files
         run: |
-          New-Item -ItemType Directory -Force -Path "$(Get-Location)\CMD\bin\Release\net8.0\Data"
-          Copy-Item "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData\*" "$(Get-Location)\CMD\bin\Release\net8.0\Data" -Recurse -Force
+          Get-Location
+          Get-ChildItem -Path $(Get-Location) -Recurse -Force
+
+
+
+
 
       - name: Generate Default TOMLs
         run: |
