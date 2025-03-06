@@ -86,36 +86,17 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      - name: Validate installed CLI launches
+      - name: Run search with installed CMD.exe
         run: |
-          $exePath = "C:\Program Files\MetaMorpheus\CMD.exe"
-          if (!(Test-Path $exePath)) {
-            Write-Host "❌ Installed executable not found!" -ForegroundColor Red
-            exit 1
-          }
-          & "$exePath" --help
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Installed executable failed to run!" -ForegroundColor Red
-            exit $LASTEXITCODE
-          } else {
-            Write-Host "✅ Installed executable ran successfully!" -ForegroundColor Green
-          }
+          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
+          & "C:\Program Files\MetaMorpheus\CMD.exe" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\exe_output" -v minimal
 
-      - name: Run simple data search
+      - name: Run search with installed CMD.dll
         run: |
-          $dataDir = "$(Get-Location)\TestData"
-          $mzml = "$dataDir\SmallCalibratible_Yeast.mzML"
-          $fasta = "$dataDir\SmallYeast.fasta"
-          $task = "$dataDir\SearchTask.toml"
-          $output = "$dataDir\SearchOutput"
-          New-Item -ItemType Directory -Force -Path $output | Out-Null
+          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
+          dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\dll_output" -v minimal
 
-          $exePath = "C:\Program Files\MetaMorpheus\CMD.exe"
-          & "$exePath" -s "$mzml" -d "$fasta" -t "$task" -o "$output" -v minimal
-
-          if ($LASTEXITCODE -ne 0) {
-            Write-Host "❌ Simple data search failed!" -ForegroundColor Red
-            exit $LASTEXITCODE
-          } else {
-            Write-Host "✅ Simple data search ran successfully!" -ForegroundColor Green
-          }
+      - name: Run search with built CMD.dll
+        run: |
+          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
