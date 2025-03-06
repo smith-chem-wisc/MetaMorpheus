@@ -41,9 +41,9 @@ jobs:
             exit $LASTEXITCODE
           }
 
-      - name: Validate installed CLI
+      - name: Validate installed CLI launches
         run: |
-          $exePath = "C:\Program Files\MetaMorpheus\CMD.exe"
+          $exePath = "C:\Program Files\MetaMorpheus\MetaMorpheusCmd.exe"
           if (!(Test-Path $exePath)) {
             Write-Host "Installed executable not found!" -ForegroundColor Red
             exit 1
@@ -55,3 +55,6 @@ jobs:
           } else {
             Write-Host "Installed executable ran successfully!" -ForegroundColor Green
           }
+
+      - name: Run NUnit Tests
+        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --no-build --verbosity minimal
