@@ -114,13 +114,7 @@ jobs:
           $workspace = Get-Location
           Write-Host "Workspace directory tree for: $workspace"
           Show-Tree $workspace
-
-
-
-      - name: Generate Default TOMLs with installed CMD.exe
-        run: |
-          dotnet "C:\Program Files\MetaMorpheus\CMD.exe" -g -o "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
-                    
+       
       - name: Microvinette with installed CMD.exe
         run: |
           $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
@@ -188,5 +182,49 @@ jobs:
             exit $LASTEXITCODE
           }
 
+  ## Installs and builds. Verifies that the same dlls exist
+  validate_installer_contents:
+    name: Validate Installer Contents
+    runs-on: windows-latest
+    needs: install
 
+    steps:
+      - uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.204
+
+      - name: Download installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MetaMorpheusInstaller
+
+      - name: Install MetaMorpheus MSI
+        run: |
+          Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$(Get-Location)\MetaMorpheusInstaller.msi`" /qn /l*v install.log" -Wait
+
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build solution
+        run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
+
+      - name: Compare built DLLs to installed DLLs
+        run: |
+          $buildDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0"
+          $installDir = "C:\Program Files\MetaMorpheus"
+
+          $buildDlls = Get-ChildItem -Path $buildDir -Filter *.dll | Select-Object -ExpandProperty Name
+          $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name
+
+          $missingDlls = $buildDlls | Where-Object { $_ -notin $installedDlls }
+
+          if ($missingDlls.Count -gt 0) {
+              Write-Host "❌ The following DLLs are in the build output but missing from the installer:" -ForegroundColor Red
+              $missingDlls | ForEach-Object { Write-Host "- $_" }
+              exit 1
+          } else {
+              Write-Host "✅ All built DLLs are present in the installed directory." -ForegroundColor Green
+          }
