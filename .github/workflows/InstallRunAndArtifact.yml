@@ -102,7 +102,7 @@ jobs:
           
       - name: Check Data directory
         run: |
-          $dataDir = "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
           if (Test-Path $dataDir) {
             Get-ChildItem -Path $dataDir -Recurse -Force
           } else {
@@ -160,7 +160,10 @@ jobs:
 
 
 
-
+      - name: Copy test data into Data directory
+        run: |
+          New-Item -ItemType Directory -Force -Path "$(Get-Location)\CMD\bin\Release\net8.0\Data"
+          Copy-Item "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData\*" "$(Get-Location)\CMD\bin\Release\net8.0\Data" -Recurse -Force
 
       - name: Generate Default TOMLs
         run: |
