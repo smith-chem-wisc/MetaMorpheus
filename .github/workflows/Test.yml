@@ -19,17 +19,23 @@ jobs:
           dotnet-version: 8.0.204
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+        
       - name: Build
         run: dotnet build --no-restore ./MetaMorpheus/MetaMorpheus.sln --configuration Release
+        
       - name: Install Coverlet for code coverage
-        run: dotnet add ./MetaMorpheus/Test/Test.csproj package coverlet.msbuild
+        run: dotnet add ./MetaMorpheus/Test/Test.csproj package package coverlet.collector -v 6.0.2
+        
       - name: Run unit tests with coverage
-        run: dotnet test .\MetaMorpheus\Test\Test.csproj --verbosity normal --collect:"XPlat Code Coverage" /p:CoverletOutputFormat=cobertura 
+        run: dotnet test .\MetaMorpheus\Test\Test.csproj --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+
+      # ✅ Debug step to check where the coverage file is
+      - name: List test results
+        run: dir MetaMorpheus\Test\TestResults\ /s
+        
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           verbose: true
-          files: MetaMorpheus/Test*/TestResults/*/coverage.cobertura.xml
           flags: unittests
-          disable_default_comments: false
