@@ -267,12 +267,6 @@
 	  <Component Id="src_ExCSS.dll" Guid="08836151-C7AC-42C1-9386-D05834CD4036">
 	  	<File Id="src_ExCSS.dll" Name="ExCSS.dll" Source="$(var.GUI_TargetDir)ExCSS.dll" />
 	  </Component>
-	  <Component Id="src_itext.bouncy-castle-adapter.dll" Guid="7FD830FC-FA51-4B4B-8F23-11D2EB063A3A">
-	  	<File Id="src_itext.bouncy-castle-adapter.dll" Name="itext.bouncy-castle-adapter.dll" Source="$(var.GUI_TargetDir)itext.bouncy-castle-adapter.dll" />
-	  </Component>
-	  <Component Id="src_itext.bouncy-castle-connector.dll" Guid="C9C76607-1B1F-468B-A3C4-D785131B5B46">
-	  	<File Id="src_itext.bouncy-castle-connector.dll" Name="itext.bouncy-castle-connector.dll" Source="$(var.GUI_TargetDir)itext.bouncy-castle-connector.dll" />
-	  </Component>
 	  <Component Id="src_itext.commons.dll" Guid="83239B61-114F-428E-838D-A9A399F4F7FB">
 	  	<File Id="src_itext.commons.dll" Name="itext.commons.dll" Source="$(var.GUI_TargetDir)itext.commons.dll" />
 	  </Component>
