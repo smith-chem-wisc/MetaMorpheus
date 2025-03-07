@@ -87,8 +87,22 @@ namespace TaskLayer
                 NewDatabases = new List<DbForTask>()
             };
 
+            var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
+            for (int i = 0; i < currentRawFileList.Count; i++)
+            {
+                string filePath = currentRawFileList[i];
+                Tolerance fileTolerance = CommonParameters.PrecursorMassTolerance;
+                if (fileSettingsList[i] != null && fileSettingsList[i].PrecursorMassTolerance != null)
+                {
+                    fileTolerance = fileSettingsList[i].PrecursorMassTolerance;
+                }
+                filePathToPrecursorMassTolerance.Add(filePath, fileTolerance);
+            }
+
             object lock1 = new object();
             object lock2 = new object();
+
+            Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
 
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
@@ -120,7 +134,7 @@ namespace TaskLayer
                 Status("Getting ms2 scans...", new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 Ms2ScanWithSpecificMass[] arrayOfMs2ScansSortedByMass = GetMs2Scans(myMsDataFile, origDataFile, combinedParams).OrderBy(b => b.PrecursorMass).ToArray();
                 myFileManager.DoneWithFile(origDataFile);
-                SpectralMatch[] allPsmsArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
+                SpectralMatch[] psmArray = new PeptideSpectralMatch[arrayOfMs2ScansSortedByMass.Length];
 
                 //spectral Library search and library generation have't applied to GPTMD yet
                 bool writeSpctralLibrary = false;
@@ -139,9 +153,15 @@ namespace TaskLayer
                         break;
                 }
 
-                new ClassicSearchEngine(allPsmsArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, null, null, 
+                new ClassicSearchEngine(psmArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, null, null, 
                     proteinList, searchMode, combinedParams, this.FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", origDataFile }, writeSpctralLibrary).Run();
-                allPsms.AddRange(allPsmsArray.Where(p => p != null));
+
+                var psmList = psmArray.Where(p => p != null).ToList();
+                new FdrAnalysisEngine(psmList, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
+
+                new GptmdEngine(psmList, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId },
+                    arrayOfMs2ScansSortedByMass, allModDictionary).Run();
+
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
             }
@@ -150,26 +170,8 @@ namespace TaskLayer
             //Move this text after search because proteins don't get loaded until search begins.
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
-            new FdrAnalysisEngine(allPsms.OrderBy(p=>p).ToList(), tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
-
-            var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
-            for (int i = 0; i < currentRawFileList.Count; i++)
-            {
-                string filePath = currentRawFileList[i];
-                Tolerance fileTolerance = CommonParameters.PrecursorMassTolerance;
-                if (fileSettingsList[i] != null && fileSettingsList[i].PrecursorMassTolerance != null)
-                {
-                    fileTolerance = fileSettingsList[i].PrecursorMassTolerance;
-                }
-                filePathToPrecursorMassTolerance.Add(filePath, fileTolerance);
-            }
-
             // run GPTMD engine
             Status("Creating the GPTMD Database", new List<string> { taskId });
-            var gptmdResults = (GptmdResults)new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }).Run();
-
-            // Stop if canceled
-            if (GlobalVariables.StopLoops) { return MyTaskResults; }
 
             // write GPTMD databases
             if (dbFilenameList.Any(b => !b.IsContaminant))
@@ -184,7 +186,7 @@ namespace TaskLayer
                 }
                 string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
-                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
@@ -210,7 +212,7 @@ namespace TaskLayer
                 }
                 string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
-                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
 
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
