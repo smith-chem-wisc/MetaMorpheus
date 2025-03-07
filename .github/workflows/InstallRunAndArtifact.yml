@@ -54,6 +54,11 @@ jobs:
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "${{ secrets.KEY_CERT }}", "DefaultKeySet")
           Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
 
+      # remove this later
+      - name: List build directory before zipping
+        run: Get-ChildItem "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0"
+        
+        
       - name: Zip command-line version
         run: |
           7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\net8.0\* "-x!*.xml"
@@ -75,7 +80,7 @@ jobs:
       - name: Upload command-line zip artifact
         uses: actions/upload-artifact@v4
         with:
-          name: MetaMorpheusCommandLine
+          name: MetaMorpheus_CommandLine
           path: MetaMorpheus_CommandLine.zip
 
 
