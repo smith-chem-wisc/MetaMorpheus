@@ -47,7 +47,7 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
 
         if (x.pwsm.FullSequence != y.pwsm.FullSequence)
             return -1 * string.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
-
+            
         if (x.pwsm.Parent == null && y.pwsm.Parent == null)
             return 0;
         if (x.pwsm.Parent == null)
