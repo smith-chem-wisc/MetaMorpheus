@@ -40,6 +40,9 @@ public static class DictionaryExtensions
     /// <param name="dictionary">The dictionary to operate on.</param>
     /// <param name="key">The key whose value list to add to or create.</param>
     /// <param name="value">The value to add to the list associated with the specified key.</param>
+    /// <remarks>
+    /// This is not thread-safe!
+    /// </remarks>
     public static void AddOrCreate<TKey, TValues>(this IDictionary<TKey, HashSet<TValues>> dictionary, TKey key, TValues value)
     {
         if (dictionary.TryGetValue(key, out HashSet<TValues> values))
