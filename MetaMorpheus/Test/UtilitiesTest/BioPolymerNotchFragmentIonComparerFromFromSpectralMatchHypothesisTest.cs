@@ -177,5 +177,25 @@ namespace Test.UtilitiesTest
             y = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList);
             Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
         }
+
+
+        [Test]
+        public static void Compare_Null()
+        {
+            var nullProteinPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: null);
+            var normalPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
+
+            SpectralMatchHypothesis x = null;
+            SpectralMatchHypothesis y = new SpectralMatchHypothesis(1, normalPeptide, emptyList);
+            Assert.That(comparer.Compare(x, y), Is.LessThan(0));
+
+            x = new SpectralMatchHypothesis(1, normalPeptide, emptyList);
+            y = null;
+            Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
+
+            x = null;
+            y = null;
+            Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
+        }
     }
 }
