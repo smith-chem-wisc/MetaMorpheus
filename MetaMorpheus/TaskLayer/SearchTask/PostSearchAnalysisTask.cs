@@ -1573,14 +1573,7 @@ namespace TaskLayer
                                     SNVmissenseCount++;
                                     SNVmissenseIdentified = true;
                                 }
-                                if (SNVmissenseVariants.ContainsKey(variantPWSM.Protein))
-                                {
-                                    SNVmissenseVariants[variantPWSM.Protein].Add(variant);
-                                }
-                                else
-                                {
-                                    SNVmissenseVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
-                                }
+                                SNVmissenseVariants.AddOrCreate(variantPWSM.Protein, variant);
                             }
                             else
                             {
@@ -1589,14 +1582,7 @@ namespace TaskLayer
                                     MNVmissenseCount++;
                                     MNVmissenseIdentified = true;
                                 }
-                                if (MNVmissenseVariants.ContainsKey(variantPWSM.Protein))
-                                {
-                                    MNVmissenseVariants[variantPWSM.Protein].Add(variant);
-                                }
-                                else
-                                {
-                                    MNVmissenseVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
-                                }
+                                MNVmissenseVariants.AddOrCreate(variantPWSM.Protein, variant);
                             }
                         }
                         else if (culture.CompareInfo.IndexOf(variant.Description.Description, "frameshift_variant", CompareOptions.IgnoreCase) >= 0)
@@ -1606,14 +1592,7 @@ namespace TaskLayer
                                 frameshiftCount++;
                                 frameshiftIdentified = true;
                             }
-                            if (frameshiftVariants.ContainsKey(variantPWSM.Protein))
-                            {
-                                frameshiftVariants[variantPWSM.Protein].Add(variant);
-                            }
-                            else
-                            {
-                                frameshiftVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
-                            }
+                            frameshiftVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
                         else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_gained", CompareOptions.IgnoreCase) >= 0)
                         {
@@ -1622,14 +1601,7 @@ namespace TaskLayer
                                 stopGainCount++;
                                 stopGainIdentified = true;
                             }
-                            if (stopGainVariants.ContainsKey(variantPWSM.Protein))
-                            {
-                                stopGainVariants[variantPWSM.Protein].Add(variant);
-                            }
-                            else
-                            {
-                                stopGainVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
-                            }
+                            stopGainVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
                         else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_insertion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_insertion", CompareOptions.IgnoreCase) >= 0))
                         {
@@ -1638,14 +1610,7 @@ namespace TaskLayer
                                 insertionCount++;
                                 insertionIdentified = true;
                             }
-                            if (insertionVariants.ContainsKey(variantPWSM.Protein))
-                            {
-                                insertionVariants[variantPWSM.Protein].Add(variant);
-                            }
-                            else
-                            {
-                                insertionVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
-                            }
+                            insertionVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
                         else if ((culture.CompareInfo.IndexOf(variant.Description.Description, "conservative_inframe_deletion", CompareOptions.IgnoreCase) >= 0) || (culture.CompareInfo.IndexOf(variant.Description.Description, "disruptive_inframe_deletion", CompareOptions.IgnoreCase) >= 0))
                         {
@@ -1654,14 +1619,7 @@ namespace TaskLayer
                                 deletionCount++;
                                 deletionIdentified = true;
                             }
-                            if (deletionVariants.ContainsKey(variantPWSM.Protein))
-                            {
-                                deletionVariants[variantPWSM.Protein].Add(variant);
-                            }
-                            else
-                            {
-                                deletionVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
-                            }
+                            deletionVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
                         else if (culture.CompareInfo.IndexOf(variant.Description.Description, "stop_loss", CompareOptions.IgnoreCase) >= 0)
                         {
@@ -1670,14 +1628,7 @@ namespace TaskLayer
                                 stopLossCount++;
                                 stopLossIdentifed = true;
                             }
-                            if (stopLossVariants.ContainsKey(variantPWSM.Protein))
-                            {
-                                stopLossVariants[variantPWSM.Protein].Add(variant);
-                            }
-                            else
-                            {
-                                stopLossVariants.Add(variantPWSM.Protein, new HashSet<SequenceVariation> { variant });
-                            }
+                            stopLossVariants.AddOrCreate(variantPWSM.Protein, variant);
                         }
                     }
                 }

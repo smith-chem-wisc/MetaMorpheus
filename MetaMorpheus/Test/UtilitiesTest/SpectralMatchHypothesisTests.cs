@@ -24,6 +24,7 @@ namespace Test.UtilitiesTest
             var tsm = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
 
             Assert.That(tsm.Equals(tsm), Is.True);
+            Assert.That(tsm.Equals((object)tsm), Is.True);
         }
 
         [Test]
@@ -32,7 +33,8 @@ namespace Test.UtilitiesTest
             var matchedIons = new List<MatchedFragmentIon>();
             var tsm = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
 
-            Assert.That(tsm.Equals(null), Is.False);
+            Assert.That(tsm.Equals((SpectralMatchHypothesis)null), Is.False);
+            Assert.That(tsm.Equals((object)null), Is.False);
         }
 
         [Test]
@@ -53,6 +55,7 @@ namespace Test.UtilitiesTest
             var tsm2 = new SpectralMatchHypothesis(2, testPeptide2, matchedIons2);
 
             Assert.That(tsm1.Equals(tsm2), Is.False);
+            Assert.That(tsm1.Equals((object)tsm2), Is.False);
         }
 
         [Test]
@@ -63,6 +66,7 @@ namespace Test.UtilitiesTest
             var tsm2 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons);
 
             Assert.That(tsm1.Equals(tsm2), Is.True);
+            Assert.That(tsm1.Equals((object)tsm2), Is.True);
         }
 
         [Test]
