@@ -21,8 +21,8 @@ namespace EngineLayer.Gptmd
         //The ScoreTolerance property is used to differentiatie when a PTM candidate is added to a peptide. We check the score at each position and then add that mod where the score is highest.
         private readonly double ScoreTolerance = 0.1;
 
-        public Ms2ScanWithSpecificMass[] MsDataScans { get; private set; }
-        public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary;
+        public Ms2ScanWithSpecificMass[] MsDataScans { get; init; }
+        public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
 
         public GptmdEngine(
             List<SpectralMatch> allIdentifications, 
@@ -190,11 +190,6 @@ namespace EngineLayer.Gptmd
                 }
             });
 
-            // Convert ConcurrentDictionary to Dictionary with HashSet
-            //var finalModDictionary = modDict.ToDictionary(
-            //    kvp => kvp.Key,
-            //    kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)
-            //);
             UpdateModDictionary(modDict);
             return new GptmdResults(this, ModDictionary, modsAdded);
         }
@@ -223,8 +218,7 @@ namespace EngineLayer.Gptmd
                 var peptideTheorProducts = new List<Product>();
                 peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
-                var scan = psm.MsDataScan;
-                scan = MsDataScans[psm.ScanIndex].TheScan;
+                var scan = MsDataScans[psm.ScanIndex].TheScan;
                 var precursorMass = psm.ScanPrecursorMass;
                 var precursorCharge = psm.ScanPrecursorCharge;
                 var fileName = psm.FullFilePath;

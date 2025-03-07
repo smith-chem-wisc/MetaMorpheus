@@ -205,8 +205,8 @@ namespace Test
             match.SetFdrValues(1, 0, 0, 1, 0, 0, 0, 0);
             allIdentifications = new List<SpectralMatch> { match };
 
-            //var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>());
-            //var res = (GptmdResults)engine.Run();
+            var engine = new GptmdEngine(allIdentifications, gptmdModifications, combos, new Dictionary<string, Tolerance> { { "filepath", precursorMassTolerance } }, new CommonParameters(), null, new List<string>(), new Ms2ScanWithSpecificMass[] {scan}, null);
+            var res = (GptmdResults)engine.Run();
         }
 
         [Test]
