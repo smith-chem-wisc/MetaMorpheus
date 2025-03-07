@@ -96,16 +96,33 @@ namespace Test
 
             string mzmlName = @"ok.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
+
+            string inputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestEverythingRunnerInput");
+            if (Directory.Exists(inputFolder))
+            {
+                Directory.Delete(inputFolder, true);
+            }
+            Directory.CreateDirectory(inputFolder);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName), Path.Join(inputFolder, mzmlName));
+
             string xmlName = "okk.xml";
             ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { ParentProtein, proteinWithChain }, xmlName);
+            File.Copy(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName), Path.Join(inputFolder, xmlName));
 
-            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestEverythingRunner");
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestEverythingRunnerOutput");
+            if (Directory.Exists(outputFolder))
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
             // RUN!
-            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false) }, outputFolder);
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { Path.Join(inputFolder, mzmlName) }, new List<DbForTask> { new DbForTask(Path.Join(inputFolder, xmlName), false) }, outputFolder);
             engine.Run();
-            System.IO.File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName));
-            System.IO.File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, xmlName));
-            Directory.Delete(outputFolder, true);
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, mzmlName));
+            File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, xmlName));
+            //Directory.Delete(inputFolder, true);
+            //Directory.Delete(outputFolder, true);
         }
         /// <summary>
         /// Designed to hit the nooks and crannies of ModificationAnalysisEngine

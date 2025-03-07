@@ -3,7 +3,6 @@ using IO.ThermoRawFileReader;
 using Microsoft.Win32;
 using MzLibUtil;
 using Nett;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -14,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Navigation;
@@ -1059,34 +1059,91 @@ namespace MetaMorpheusGUI
             OpenFolder(outputFolder);
         }
 
-        /// <summary>
-        /// Handles keyboard input.
-        /// Note: Window_KeyDown is NOT used because it does not seem to capture keyboard input from a DataGrid.
-        /// </summary>
+        
+
+        // This is designed for the entire window
         private void Window_PreviewKeyDown(object sender, KeyEventArgs e)
         {
-            if (RunTasksButton.IsEnabled)
+            if (!RunTasksButton.IsEnabled) return;
+            switch (e.Key)
+            {
+                // run all tasks
+                case Key.Enter when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    RunTasksButton.RaiseEvent(new RoutedEventArgs(ButtonBase.ClickEvent));
+                    e.Handled = true;
+                    break;
+
+                default:
+                    e.Handled = false; break;
+            }
+        }
+
+        private MetaMorpheusTask? _clipboard;
+
+        /// <summary>
+        /// Handles keyboard input.
+        /// Note: This is designed for all boxes which contain lists of items such as database, tasks, or spectra files. 
+        /// Note: Window_KeyDown is NOT used because it does not seem to capture keyboard input from a DataGrid.
+        /// </summary>
+        private void BoxWithList_PreviewKeyDown(object sender, KeyEventArgs e)
+        {
+            if (!RunTasksButton.IsEnabled) return;
+
+            switch (e.Key)
             {
                 // delete selected task/db/spectra
-                if (e.Key == Key.Delete || e.Key == Key.Back)
-                {
+                case Key.Delete:
+                case Key.Back:
                     Delete_Click(sender, e);
                     e.Handled = true;
-                }
+                    break;
 
                 // move task down
-                if (e.Key == Key.Add || e.Key == Key.OemPlus)
-                {
+                case Key.Add:
+                case Key.OemPlus:
                     MoveSelectedTask_Click(sender, e, false);
                     e.Handled = true;
-                }
+                    break;
 
                 // move task up
-                if (e.Key == Key.Subtract || e.Key == Key.OemMinus)
-                {
+                case Key.Subtract:
+                case Key.OemMinus:
                     MoveSelectedTask_Click(sender, e, true);
                     e.Handled = true;
-                }
+                    break;
+
+                // copy selected task
+                case Key.C when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView { SelectedItem: PreRunTask preRunTask })
+                    {
+                        _clipboard = preRunTask.metaMorpheusTask;
+                    }
+                    e.Handled = true;
+
+                    break;
+
+                // paste selected task 
+                case Key.V when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView && _clipboard != null)
+                    {
+                        PreRunTasks.Add(new PreRunTask(_clipboard));
+                        UpdateGuiOnPreRunChange();
+                    }
+                    e.Handled = true;
+                    break;
+
+                // Duplicate Selected Task
+                case Key.D when (Keyboard.Modifiers & ModifierKeys.Control) == ModifierKeys.Control:
+                    if (sender is TreeView { SelectedItem: PreRunTask task })
+                    {
+                        PreRunTasks.Add(task);
+                        UpdateGuiOnPreRunChange();
+                    }
+                    e.Handled = true;
+                    break;
+
+                default:
+                    e.Handled = false; break;
             }
         }
 
@@ -1973,7 +2030,12 @@ namespace MetaMorpheusGUI
 
         private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
         {
-            OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
+            if (UpdateGUISettings.Params.UserSpecifiedProteomeDir != "" && Directory.Exists(UpdateGUISettings.Params.UserSpecifiedProteomeDir))
+            {
+                OpenFolder(UpdateGUISettings.Params.UserSpecifiedProteomeDir);
+            }
+            else
+                OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
         }
     }
 }
