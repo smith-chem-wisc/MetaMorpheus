@@ -77,6 +77,8 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
             return 0;
         if (x is null) return -1;
         if (y is null) return 1;
+        if (Math.Abs(x.Score - y.Score) > SpectralMatch.ToleranceForScoreDifferentiation)
+            return x.Score.CompareTo(y.Score); // Higher score is better
 
         return Compare((x.Notch, x.WithSetMods, x.MatchedIons), (y.Notch, y.WithSetMods, y.MatchedIons));
     }

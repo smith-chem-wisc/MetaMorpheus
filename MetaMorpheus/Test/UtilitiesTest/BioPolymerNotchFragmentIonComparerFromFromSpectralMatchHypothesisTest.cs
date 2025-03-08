@@ -84,6 +84,30 @@ namespace Test.UtilitiesTest
         }
 
         [Test]
+        public static void Compare_DifferentScores()
+        {
+            var x = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 0);
+            var y = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 10);
+            Assert.That(comparer.Compare(x, y), Is.LessThan(0));
+
+            x = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 10);
+            y = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 0);
+            Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
+
+            x = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 10);
+            y = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 9.9);
+            Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
+
+            x = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 10);
+            y = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 10);
+            Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
+
+            x = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 10);
+            y = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 10.0000000000000000000000000001);
+            Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
+        }
+
+        [Test]
         public static void Compare_DifferentAccessions()
         {
             var protein1 = new Protein("PEPTIDEK", "accession1");
@@ -182,7 +206,6 @@ namespace Test.UtilitiesTest
         [Test]
         public static void Compare_Null()
         {
-            var nullProteinPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: null);
             var normalPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
 
             SpectralMatchHypothesis x = null;

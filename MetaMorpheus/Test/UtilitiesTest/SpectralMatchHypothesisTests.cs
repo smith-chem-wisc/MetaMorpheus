@@ -69,6 +69,18 @@ namespace Test.UtilitiesTest
             Assert.That(tsm1.Equals((object)tsm2), Is.True);
         }
 
+
+        [Test]
+        public void TestEquals_DifferentScores()
+        {
+            var matchedIons = new List<MatchedFragmentIon>();
+            var tsm1 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons, 0);
+            var tsm2 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons, 4);
+
+            Assert.That(tsm1.Equals(tsm2), Is.False);
+            Assert.That(tsm1.Equals((object)tsm2), Is.False);
+        }
+
         [Test]
         public void TestGetHashCode()
         {
