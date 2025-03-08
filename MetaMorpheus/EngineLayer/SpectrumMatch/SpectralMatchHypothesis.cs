@@ -12,8 +12,9 @@ namespace EngineLayer.SpectrumMatch;
 /// <param name="notch"></param>
 /// <param name="pwsm"></param>
 /// <param name="matchedIons"></param>
-public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> matchedIons) : IEquatable<SpectralMatchHypothesis>
+public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> matchedIons, double score) : IEquatable<SpectralMatchHypothesis>
 {
+    public readonly double Score = score;
     public readonly int Notch = notch;
     public readonly IBioPolymerWithSetMods WithSetMods = pwsm;
     public readonly List<MatchedFragmentIon> MatchedIons = matchedIons;

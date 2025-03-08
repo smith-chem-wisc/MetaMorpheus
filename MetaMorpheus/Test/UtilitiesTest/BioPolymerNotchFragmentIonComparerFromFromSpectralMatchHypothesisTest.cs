@@ -36,16 +36,16 @@ namespace Test.UtilitiesTest
         [Test]
         public static void Compare_DifferentNotches()
         {
-            var x = new SpectralMatchHypothesis(0, examplePwsm, emptyList);
-            var y = new SpectralMatchHypothesis(2, examplePwsm, emptyList);
+            var x = new SpectralMatchHypothesis(0, examplePwsm, emptyList,0);
+            var y = new SpectralMatchHypothesis(2, examplePwsm, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
         [Test]
         public static void Compare_DifferentFragmentIonCounts()
         {
-            var x = new SpectralMatchHypothesis(1, examplePwsm, new List<MatchedFragmentIon> { exampleIon });
-            var y = new SpectralMatchHypothesis(1, examplePwsm, emptyList);
+            var x = new SpectralMatchHypothesis(1, examplePwsm, new List<MatchedFragmentIon> { exampleIon }, 0);
+            var y = new SpectralMatchHypothesis(1, examplePwsm, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
@@ -60,8 +60,8 @@ namespace Test.UtilitiesTest
                     {1, new Modification() },
                     {4, new Modification() }
                 });
-            var x = new SpectralMatchHypothesis(0, examplePwsm, emptyList);
-            var y = new SpectralMatchHypothesis(0, modifiedPwsm, emptyList);
+            var x = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 0);
+            var y = new SpectralMatchHypothesis(0, modifiedPwsm, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
 
             // double check that mods are considered before sequence
@@ -78,8 +78,8 @@ namespace Test.UtilitiesTest
             fullSequenceProperty.SetValue(modifiedPwsmSecond, "PEP[Oxidation]TIDEK");
 
             // Full sequences are compared alphabetically, and '[' comes before 'E'
-            var x = new SpectralMatchHypothesis(0, modifiedPwsmFirst, emptyList);
-            var y = new SpectralMatchHypothesis(0, modifiedPwsmSecond, emptyList);
+            var x = new SpectralMatchHypothesis(0, modifiedPwsmFirst, emptyList, 0);
+            var y = new SpectralMatchHypothesis(0, modifiedPwsmSecond, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
@@ -88,32 +88,32 @@ namespace Test.UtilitiesTest
         {
             var protein1 = new Protein("PEPTIDEK", "accession1");
             var protein2 = new Protein("PEPTIDEK", "accession2");
-            var x = new SpectralMatchHypothesis(1, new PeptideWithSetModifications("PEPTIDEK", null, p: protein1), emptyList);
-            var y = new SpectralMatchHypothesis(1, new PeptideWithSetModifications("PEPTIDEK", null, p: protein2), emptyList);
+            var x = new SpectralMatchHypothesis(1, new PeptideWithSetModifications("PEPTIDEK", null, p: protein1), emptyList, 0);
+            var y = new SpectralMatchHypothesis(1, new PeptideWithSetModifications("PEPTIDEK", null, p: protein2), emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
         [Test]
         public static void Compare_DifferentStartResidues()
         {
-            var x = new SpectralMatchHypothesis(1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 1), emptyList);
-            var y = new SpectralMatchHypothesis(1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 5), emptyList);
+            var x = new SpectralMatchHypothesis(1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 1), emptyList, 0);
+            var y = new SpectralMatchHypothesis(1, new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein, oneBasedStartResidueInProtein: 5), emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
         }
 
         [Test]
         public static void Compare_NullPwsm()
         {
-            var x = new SpectralMatchHypothesis(0, null, emptyList);
-            var y = new SpectralMatchHypothesis(0, examplePwsm, emptyList);
+            var x = new SpectralMatchHypothesis(0, null, emptyList, 0);
+            var y = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.LessThan(0));
 
-            x = new SpectralMatchHypothesis(0, examplePwsm, emptyList);
-            y = new SpectralMatchHypothesis(0, null, emptyList);
+            x = new SpectralMatchHypothesis(0, examplePwsm, emptyList, 0);
+            y = new SpectralMatchHypothesis(0, null, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
 
-            x = new SpectralMatchHypothesis(0, null, emptyList);
-            y = new SpectralMatchHypothesis(0, null, emptyList);
+            x = new SpectralMatchHypothesis(0, null, emptyList, 0);
+            y = new SpectralMatchHypothesis(0, null, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
         }
 
@@ -124,16 +124,16 @@ namespace Test.UtilitiesTest
             var peptide = new PeptideWithSetModifications("PEPTIDEK", null, p: protein1);
             List<MatchedFragmentIon> nullList = null;
 
-            var x = new SpectralMatchHypothesis(1, peptide, nullList);
-            var y = new SpectralMatchHypothesis(1, peptide, emptyList);
+            var x = new SpectralMatchHypothesis(1, peptide, nullList, 0);
+            var y = new SpectralMatchHypothesis(1, peptide, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.LessThan(0));
 
-            x = new SpectralMatchHypothesis(1, peptide, emptyList);
-            y = new SpectralMatchHypothesis(1, peptide, nullList);
+            x = new SpectralMatchHypothesis(1, peptide, emptyList, 0);
+            y = new SpectralMatchHypothesis(1, peptide, nullList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
 
-            x = new SpectralMatchHypothesis(1, peptide, nullList);
-            y = new SpectralMatchHypothesis(1, peptide, nullList);
+            x = new SpectralMatchHypothesis(1, peptide, nullList, 0);
+            y = new SpectralMatchHypothesis(1, peptide, nullList, 0);
             Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
         }
 
@@ -146,16 +146,16 @@ namespace Test.UtilitiesTest
             var nullAccessionPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: protein1);
             var normalPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: protein2);
 
-            var x = new SpectralMatchHypothesis(1, nullAccessionPeptide, emptyList);
-            var y = new SpectralMatchHypothesis(1, normalPeptide, emptyList);
+            var x = new SpectralMatchHypothesis(1, nullAccessionPeptide, emptyList, 0);
+            var y = new SpectralMatchHypothesis(1, normalPeptide, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.LessThan(0));
 
-            x = new SpectralMatchHypothesis(1, normalPeptide, emptyList);
-            y = new SpectralMatchHypothesis(1, nullAccessionPeptide, emptyList);
+            x = new SpectralMatchHypothesis(1, normalPeptide, emptyList, 0);
+            y = new SpectralMatchHypothesis(1, nullAccessionPeptide, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
 
-            x = new SpectralMatchHypothesis(1, nullAccessionPeptide, emptyList);
-            y = new SpectralMatchHypothesis(1, nullAccessionPeptide, emptyList);
+            x = new SpectralMatchHypothesis(1, nullAccessionPeptide, emptyList, 0);
+            y = new SpectralMatchHypothesis(1, nullAccessionPeptide, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
         }
 
@@ -165,16 +165,16 @@ namespace Test.UtilitiesTest
             var nullProteinPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: null);
             var normalPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
 
-            var x = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList);
-            var y = new SpectralMatchHypothesis(1, normalPeptide, emptyList);
+            var x = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList, 0);
+            var y = new SpectralMatchHypothesis(1, normalPeptide, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.LessThan(0));
 
-            x = new SpectralMatchHypothesis(1, normalPeptide, emptyList);
-            y = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList);
+            x = new SpectralMatchHypothesis(1, normalPeptide, emptyList, 0);
+            y = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
 
-            x = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList);
-            y = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList);
+            x = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList, 0);
+            y = new SpectralMatchHypothesis(1, nullProteinPeptide, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.EqualTo(0));
         }
 
@@ -186,10 +186,10 @@ namespace Test.UtilitiesTest
             var normalPeptide = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
 
             SpectralMatchHypothesis x = null;
-            SpectralMatchHypothesis y = new SpectralMatchHypothesis(1, normalPeptide, emptyList);
+            SpectralMatchHypothesis y = new SpectralMatchHypothesis(1, normalPeptide, emptyList, 0);
             Assert.That(comparer.Compare(x, y), Is.LessThan(0));
 
-            x = new SpectralMatchHypothesis(1, normalPeptide, emptyList);
+            x = new SpectralMatchHypothesis(1, normalPeptide, emptyList, 0);
             y = null;
             Assert.That(comparer.Compare(x, y), Is.GreaterThan(0));
 
