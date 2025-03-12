@@ -207,7 +207,7 @@ namespace Test
                 {
                     foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(bestMatch.MatchedIons, bestMatch.SpecificBioPolymer));
+                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(bestMatch));
                     }
                 }
             }

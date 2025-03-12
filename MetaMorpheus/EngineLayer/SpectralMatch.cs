@@ -381,9 +381,6 @@ namespace EngineLayer
         /// <summary>
         /// Returns an integer representing the longest continuous number of residues in the match covered on both sides by fragment ions
         /// </summary>
-        /// <param name="PeptidesToMatchingFragments"></param>
-        /// <param name="peptide"></param>
-        /// <returns></returns>
         public static int GetLongestIonSeriesBidirectional(List<MatchedFragmentIon> matchedFragments, IBioPolymerWithSetMods peptide)
         {
             List<int> maxDiffs = new List<int> { 1 };
@@ -418,6 +415,11 @@ namespace EngineLayer
 
             return maxDiffs.Max();
         }
+
+        /// <summary>
+        /// Returns an integer representing the longest continuous number of residues in the match covered on both sides by fragment ions
+        /// </summary>
+        public static int GetLongestIonSeriesBidirectional(SpectralMatchHypothesis hypothesis) => GetLongestIonSeriesBidirectional(hypothesis.MatchedIons, hypothesis.SpecificBioPolymer);
 
         /// <summary>
         /// Determine the Fragment Coverage the PSM
@@ -514,6 +516,9 @@ namespace EngineLayer
             this.FragmentCoveragePositionInPeptide = fragmentCoveredAminoAcidsList;
         }
 
+        /// <summary>
+        /// Gets the count of complementary ions in the PSM, or those that have been observed on both the N and C termini for the same residue
+        /// </summary>
         public static int GetCountComplementaryIons(List<MatchedFragmentIon> matchedFragments, IBioPolymerWithSetMods peptide)
         {
             if (matchedFragments != null && matchedFragments.Count != 0)
@@ -534,6 +539,11 @@ namespace EngineLayer
                 return 0;
             }
         }
+
+        /// <summary>
+        /// Gets the count of complementary ions in the PSM, or those that have been observed on both the N and C termini for the same residue
+        /// </summary>
+        public static int GetCountComplementaryIons(SpectralMatchHypothesis hypothesis) => GetCountComplementaryIons(hypothesis.MatchedIons, hypothesis.SpecificBioPolymer);
 
         #endregion
 

@@ -517,8 +517,8 @@ namespace EngineLayer
 
                 ambiguity = Math.Min((float)(psm.BestMatchingBioPolymersWithSetMods.Count() - 1), 10);
                 //ambiguity = 10; // I'm pretty sure that you shouldn't train on ambiguity and its skewing the results
-                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(tentativeSpectralMatch.MatchedIons, tentativeSpectralMatch.SpecificBioPolymer) / normalizationFactor * multiplier, 0);
-                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(tentativeSpectralMatch.MatchedIons, tentativeSpectralMatch.SpecificBioPolymer) / normalizationFactor * multiplier, 0);
+                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(tentativeSpectralMatch) / normalizationFactor * multiplier, 0);
+                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(tentativeSpectralMatch) / normalizationFactor * multiplier, 0);
                 isVariantPeptide = PeptideIsVariant(tentativeSpectralMatch.SpecificBioPolymer);
                 spectralAngle = (float)psm.SpectralAngle;
                 if (chimeraCountDictionary.TryGetValue(psm.ChimeraIdString, out int val))
@@ -602,8 +602,8 @@ namespace EngineLayer
                 chargeDifference = -Math.Abs(ChargeStateMode - psm.ScanPrecursorCharge);
                 alphaIntensity = (float)Math.Min(100, Math.Round((csm.Score - (int)csm.Score) / alphaNormalizationFactor * 100.0, 0));
                 betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)Math.Min(100.0, Math.Round((csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score) / betaNormalizationFactor * 100.0, 0));
-                longestFragmentIonSeries_Alpha = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(selectedAlphaPeptide.MatchedIons, selectedAlphaPeptide.SpecificBioPolymer) / alphaNormalizationFactor * 10.0, 0);
-                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : SpectralMatch.GetLongestIonSeriesBidirectional(selectedBetaPeptide.MatchedIons, selectedBetaPeptide.SpecificBioPolymer) / betaNormalizationFactor;
+                longestFragmentIonSeries_Alpha = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(selectedAlphaPeptide) / alphaNormalizationFactor * 10.0, 0);
+                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : SpectralMatch.GetLongestIonSeriesBidirectional(selectedBetaPeptide) / betaNormalizationFactor;
                 longestFragmentIonSeries_Beta = (float)Math.Round(longestFragmentIonSeries_Beta * 10.0, 0);
                 isInter = Convert.ToSingle(csm.CrossType == PsmCrossType.Inter);
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
