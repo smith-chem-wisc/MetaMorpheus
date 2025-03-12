@@ -87,7 +87,7 @@ namespace Test.UtilitiesTest
             var matchedIons = new List<MatchedFragmentIon>();
             var tsm = new SpectralMatchHypothesis(1, testPeptide1, matchedIons, 0);
 
-            Assert.That(tsm.GetHashCode(), Is.EqualTo(HashCode.Combine(1, testPeptide1, matchedIons)));
+            Assert.That(tsm.GetHashCode(), Is.EqualTo(HashCode.Combine(testPeptide1, matchedIons, 0, 1)));
         }
     }
 }

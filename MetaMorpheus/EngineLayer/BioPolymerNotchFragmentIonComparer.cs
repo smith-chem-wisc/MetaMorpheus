@@ -46,7 +46,7 @@ namespace EngineLayer
                 return -1 * x.pwsm.NumMods.CompareTo(y.pwsm.NumMods); // Fewer mods are better
 
             if (x.pwsm.FullSequence != y.pwsm.FullSequence)
-                return -1 * string.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
+                return -1 * String.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
             
             if (x.pwsm.Parent == null && y.pwsm.Parent == null)
                 return 0;
@@ -61,7 +61,7 @@ namespace EngineLayer
             if (y.pwsm.Parent.Accession == null)
                 return 1; // y is null, x is better
             if (x.pwsm.Parent.Accession != y.pwsm.Parent.Accession)
-                return -1 * string.Compare(x.pwsm.Parent.Accession, y.pwsm.Parent.Accession); // (reverse) Alphabetical ordering of protein accession
+                return -1 * String.Compare(x.pwsm.Parent.Accession, y.pwsm.Parent.Accession); // (reverse) Alphabetical ordering of protein accession
 
             return -1 * x.pwsm.OneBasedStartResidue.CompareTo(y.pwsm.OneBasedStartResidue);
         }
