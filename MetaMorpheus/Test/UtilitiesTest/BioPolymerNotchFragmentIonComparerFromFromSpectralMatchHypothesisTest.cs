@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using EngineLayer.SpectrumMatch;
 using Omics.Modifications;
-using EngineLayer;
 
 namespace Test.UtilitiesTest
 {
