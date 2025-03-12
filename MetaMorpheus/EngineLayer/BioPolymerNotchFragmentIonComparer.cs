@@ -16,8 +16,8 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
 {
     /// <summary>
     /// Returns greater than 0 if x is better than y, less than 0 if y is better than x, and 0 if they are equal.
-    /// Better is defined as having a lower notch, more fragment ions, or a shorter sequence (i.e. fewer modifications) in that order.
-    /// If the aforementioned criteria are equal, then the two are compared based on the alphebetical ordering of the full sequence
+    /// Better is defined as having a lower notch, more fragment ions, and finally fewer modifications in that order.
+    /// If the aforementioned criteria are equal, then the two are compared based on the alphebetical ordering of the full sequence, then protein accession, then one based start residue. 
     /// </summary>
     public override int Compare((int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions) x, (int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> ions) y)
     {
@@ -68,8 +68,9 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
 
     /// <summary>
     /// Returns greater than 0 if x is better than y, less than 0 if y is better than x, and 0 if they are equal.
-    /// Better is defined as having a lower notch, more fragment ions, or a shorter sequence (i.e. fewer modifications) in that order.
-    /// If the aforementioned criteria are equal, then the two are compared based on the alphebetical ordering of the full sequence
+    /// Better is defined as having a lower notch, more fragment ions, and finally fewer modifications in that order.
+    /// If the aforementioned criteria are equal, then the two are compared based on the alphebetical ordering of the full sequence, then protein accession, then one based start residue. 
+
     /// </summary>
     public int Compare(SpectralMatchHypothesis x, SpectralMatchHypothesis y)
     {

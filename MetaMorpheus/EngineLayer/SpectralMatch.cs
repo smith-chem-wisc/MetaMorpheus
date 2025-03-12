@@ -122,6 +122,7 @@ namespace EngineLayer
         }
 
         #region Search
+        
         public DigestionParams DigestionParams { get; }
 
         public static BioPolymerNotchFragmentIonComparer BioPolymerNotchFragmentIonComparer = new();
