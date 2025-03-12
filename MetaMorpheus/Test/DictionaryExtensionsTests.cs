@@ -323,5 +323,39 @@ namespace Test
             // Assert
             Assert.That(result, Is.False);
         }
+
+        [Test]
+        public void MergeOrCreate_MergesValuesToExistingKey()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, HashSet<int>>
+            {
+                { "key1", new HashSet<int> { 1, 2 } }
+            };
+            var newValues = new HashSet<int> { 2, 3 };
+
+            // Act
+            dictionary.MergeOrCreate("key1", newValues);
+
+            // Assert
+            Assert.That(dictionary["key1"], Is.EquivalentTo(new HashSet<int> { 1, 2, 3 }));
+        }
+
+        [Test]
+        public void MergeOrCreate_CreatesNewKeyWithHashSet()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, HashSet<int>>();
+            var newValues = new HashSet<int> { 1, 2 };
+
+            // Act
+            dictionary.MergeOrCreate("key1", newValues);
+
+            // Assert
+            Assert.That(dictionary.ContainsKey("key1"));
+            Assert.That(dictionary["key1"], Is.EquivalentTo(new HashSet<int> { 1, 2 }));
+        }
+
+       
     }
 }
