@@ -335,7 +335,7 @@ namespace TaskLayer
                 var accessionToPg = new Dictionary<string, FlashLFQ.ProteinGroup>();
                 foreach (var psm in psmsForQuantification)
                 {
-                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.Parent).Distinct();
+                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent).Distinct();
 
                     foreach (var protein in proteins)
                     {
@@ -387,7 +387,7 @@ namespace TaskLayer
                     //get easy access to values we need for new psm generation
                     string unlabeledBaseSequence = lightPsm.BaseSequence;
                     int notch = psm.BestMatchingBioPolymersWithSetMods.First().Notch;
-                    PeptideWithSetModifications pwsm = psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods as PeptideWithSetModifications;
+                    PeptideWithSetModifications pwsm = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer as PeptideWithSetModifications;
 
                     //check if turnover or multiplex experiment
                     if (startLabel == null && endLabel == null) //if multiplex
@@ -612,7 +612,7 @@ namespace TaskLayer
             if (Parameters.SearchParameters.DoMultiplexQuantification &&
                 Parameters.MultiplexModification != null &&
                 psms.Any(p => p.BestMatchingBioPolymersWithSetMods
-                    .SelectMany(pwsm => pwsm.WithSetMods.AllModsOneIsNterminus.Values)
+                    .SelectMany(pwsm => pwsm.SpecificBioPolymer.AllModsOneIsNterminus.Values)
                     .Any(mod => mod.OriginalId.Equals(Parameters.MultiplexModification.OriginalId))))
             {
                 WritePsmPlusMultiplexIons(psms, filePath);
@@ -1063,7 +1063,7 @@ namespace TaskLayer
                 // associate all confident PSMs with all possible proteins they could be digest products of (before or after parsimony)
                 foreach (SpectralMatch psm in filteredPsms)
                 {
-                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods);
+                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer);
 
                     foreach (PeptideWithSetModifications peptide in myPepsWithSetMods)
                     {
@@ -1116,7 +1116,7 @@ namespace TaskLayer
 
                 foreach (SpectralMatch psm in originalModPsms)
                 {
-                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods);
+                    var myPepsWithSetMods = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer);
 
                     foreach (PeptideWithSetModifications peptide in myPepsWithSetMods)
                     {
@@ -1449,7 +1449,7 @@ namespace TaskLayer
                         filterAtPeptideLevel: true);
 
             var possibleVariantPsms = fdrPsms.Where(p =>
-                    p.BestMatchingBioPolymersWithSetMods.Any(pep => pep.WithSetMods is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide()))
+                    p.BestMatchingBioPolymersWithSetMods.Any(pep => pep.SpecificBioPolymer is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide()))
                 .OrderByDescending(pep => pep.Score)
                 .ToList();
 
@@ -1481,7 +1481,7 @@ namespace TaskLayer
             foreach (var entry in variantPeptides)
             {
                 var pwsm = entry.BestMatchingBioPolymersWithSetMods;
-                var nonVariantOption = pwsm.Any(p => p.WithSetMods is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide() == false);
+                var nonVariantOption = pwsm.Any(p => p.SpecificBioPolymer is PeptideWithSetModifications pwsm && pwsm.IsVariantPeptide() == false);
                 if (nonVariantOption == false)
                 {
                     confidentVariantPeps.Add(entry);
@@ -1520,7 +1520,7 @@ namespace TaskLayer
             List<PeptideSpectralMatch> modifiedVariantSitePeptides = new();// modification is speciifcally on the variant residue within the peptide
             foreach (PeptideSpectralMatch entry in modifiedVariantPeptides)
             {
-                PeptideWithSetModifications firstOrDefault = entry.BestMatchingBioPolymersWithSetMods.FirstOrDefault().WithSetMods as PeptideWithSetModifications;
+                PeptideWithSetModifications firstOrDefault = entry.BestMatchingBioPolymersWithSetMods.FirstOrDefault().SpecificBioPolymer as PeptideWithSetModifications;
 
                 var variantPWSM = firstOrDefault;
                 var peptideMods = variantPWSM.AllModsOneIsNterminus.Values.ToList();
@@ -1545,7 +1545,7 @@ namespace TaskLayer
             foreach (var peptide in confidentVariantPeps)
             {
                 var variantPWSM =
-                    peptide.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.WithSetMods is PeptideWithSetModifications peptideWithSetModifications
+                    peptide.BestMatchingBioPolymersWithSetMods.FirstOrDefault()?.SpecificBioPolymer is PeptideWithSetModifications peptideWithSetModifications
                         ? peptideWithSetModifications
                         : null;//TODO: expand to all peptide options not just the first
                 var variants = variantPWSM.Protein.AppliedSequenceVariations;
@@ -1793,11 +1793,11 @@ namespace TaskLayer
                     foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods)
                     {
                         output.Write(idNumber.ToString());
-                        output.Write('\t' + (peptide.WithSetMods.Parent.IsDecoy ? -1 : 1).ToString());
+                        output.Write('\t' + (peptide.SpecificBioPolymer.Parent.IsDecoy ? -1 : 1).ToString());
                         output.Write('\t' + psm.ScanNumber.ToString());
                         output.Write(psm.PsmData_forPEPandPercolator.ToString(searchType));
-                        output.Write('\t' + (peptide.WithSetMods.PreviousResidue + "." + peptide.WithSetMods.FullSequence + "." + peptide.WithSetMods.NextResidue).ToString());
-                        output.Write('\t' + (peptide.WithSetMods.Parent.Accession).ToString());
+                        output.Write('\t' + (peptide.SpecificBioPolymer.PreviousResidue + "." + peptide.SpecificBioPolymer.FullSequence + "." + peptide.SpecificBioPolymer.NextResidue).ToString());
+                        output.Write('\t' + (peptide.SpecificBioPolymer.Parent.Accession).ToString());
                         output.WriteLine();
                     }
                     idNumber++;

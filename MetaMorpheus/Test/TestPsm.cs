@@ -102,7 +102,7 @@ namespace Test
             // Check that the ion series with the diagnostic ion is set to the MatchedFragmentIons property
             Assert.That(psm.MatchedFragmentIons, Is.EqualTo(twoIonList));
             // Check that the pwsm with the diagnostic ion is first in the BestMatchingBioPolymersWithSetMods list
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods, Is.EqualTo(pepWithOxidationOnP));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer, Is.EqualTo(pepWithOxidationOnP));
         }
 
         [Test]
@@ -170,10 +170,10 @@ namespace Test
             foreach (PeptideSpectralMatch psm in nonNullPsms)
             {
                 double daError =
-                    Math.Round(psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods.MonoisotopicMass, 5);
+                    Math.Round(psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.MonoisotopicMass, 5);
                 Assert.That(psm.PrecursorMassErrorDa.First(), Is.EqualTo(daError).Within(0.01));
 
-                double ppmError = Math.Round((psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods.MonoisotopicMass) / psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods.MonoisotopicMass * 1e6, 5);
+                double ppmError = Math.Round((psm.ScanPrecursorMass - psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.MonoisotopicMass) / psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.MonoisotopicMass * 1e6, 5);
                 Assert.That(psm.PrecursorMassErrorPpm.First(), Is.EqualTo(ppmError).Within(0.1));
             }
         }
@@ -207,7 +207,7 @@ namespace Test
                 {
                     foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, bestMatch.WithSetMods));
+                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, bestMatch.SpecificBioPolymer));
                     }
                 }
             }
@@ -307,12 +307,12 @@ namespace Test
             psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.WithSetMods.Parent.IsDecoy));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.Parent.IsDecoy));
 
             psm.ResolveAllAmbiguities();
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(1));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.All(p => !p.WithSetMods.Parent.IsDecoy));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.All(p => !p.SpecificBioPolymer.Parent.IsDecoy));
             Assert.That(!psm.IsDecoy);
         }
 
@@ -333,7 +333,7 @@ namespace Test
             psm.AddOrReplace(decoy, 1, 0, true, null, 0);
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
-            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.WithSetMods.Parent.IsDecoy));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.Parent.IsDecoy));
 
             psm.ResolveAllAmbiguities();
 

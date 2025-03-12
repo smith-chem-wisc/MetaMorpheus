@@ -127,8 +127,8 @@ namespace EngineLayer.CrosslinkSearch
 
             if (csm.Accession == null)
             {
-                var alphaProteins = csm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods.Parent.Accession).ToList();
-                var betaProteins = csm.BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods.Parent.Accession).ToList();
+                var alphaProteins = csm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession).ToList();
+                var betaProteins = csm.BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession).ToList();
 
                 foreach (var alpha in alphaProteins)
                 {
@@ -373,7 +373,7 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             sb.Append("\t"); //Intentionally left empty for readability in the tsv file.
-            List<PeptideWithSetModifications> pepsWithMods = BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods as PeptideWithSetModifications).ToList();
+            List<PeptideWithSetModifications> pepsWithMods = BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications).ToList();
             var proteinAccessionString = Accession ?? PsmTsvWriter.Resolve(pepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
             sb.Append(proteinAccessionString + "\t");
             sb.Append(XlProteinPos + (XlProteinPosLoop.HasValue ? "~" + XlProteinPosLoop.Value : null) + "\t");
@@ -422,7 +422,7 @@ namespace EngineLayer.CrosslinkSearch
             if (BetaPeptide != null)
             {
                 sb.Append("\t"); //Intentionally left empty for readability in the tsv file.
-                List<PeptideWithSetModifications> betaPepsWithMods = BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods as PeptideWithSetModifications).ToList();
+                List<PeptideWithSetModifications> betaPepsWithMods = BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications).ToList();
                 var betaProteinAccessionString = BetaPeptide.Accession ?? PsmTsvWriter.Resolve(betaPepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
                 sb.Append(betaProteinAccessionString + "\t");
                 sb.Append(BetaPeptide.XlProteinPos + "\t");

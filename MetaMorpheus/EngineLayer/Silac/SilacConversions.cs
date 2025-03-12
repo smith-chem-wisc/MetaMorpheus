@@ -58,7 +58,7 @@ namespace EngineLayer
             List<SpectralMatchHypothesis> updatedBestMatchingPeptides = new();
             foreach (var notchAndPwsm in psm.BestMatchingBioPolymersWithSetMods)
             {
-                PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(silacLabel, notchAndPwsm.WithSetMods as PeptideWithSetModifications);
+                PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(silacLabel, notchAndPwsm.SpecificBioPolymer as PeptideWithSetModifications);
                 updatedBestMatchingPeptides.Add(new SpectralMatchHypothesis(notchAndPwsm.Notch, modifiedPwsm, notchAndPwsm.MatchedIons, psm.Score));
             }
             return psm.Clone(updatedBestMatchingPeptides) as PeptideSpectralMatch;
@@ -74,7 +74,7 @@ namespace EngineLayer
                 List<SpectralMatchHypothesis> updatedPeptides = new ();
                 foreach (var notchPwsm in originalPeptides)
                 {
-                    PeptideWithSetModifications pwsm = notchPwsm.WithSetMods as PeptideWithSetModifications;
+                    PeptideWithSetModifications pwsm = notchPwsm.SpecificBioPolymer as PeptideWithSetModifications;
                     SilacLabel label = GetRelevantLabelFromBaseSequence(pwsm.BaseSequence, labels);
                     Protein updatedProtein = pwsm.Protein;
                     if (label != null)

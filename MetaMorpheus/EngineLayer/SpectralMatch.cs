@@ -109,7 +109,7 @@ namespace EngineLayer
         {
             get
             {
-                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round(this.ScanPrecursorMass - p.WithSetMods.MonoisotopicMass, 5))
+                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round(this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass, 5))
                     .ToList();
             }
         }
@@ -118,7 +118,7 @@ namespace EngineLayer
         {
             get
             {
-                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round((this.ScanPrecursorMass - p.WithSetMods.MonoisotopicMass) / p.WithSetMods.MonoisotopicMass * 1e6, 2)).ToList();
+                return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round((this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass) / p.SpecificBioPolymer.MonoisotopicMass * 1e6, 2)).ToList();
             }
         }
 
@@ -177,9 +177,9 @@ namespace EngineLayer
         public void RemoveThisAmbiguousPeptide(SpectralMatchHypothesis tentativeSpectralMatch)
         {
             _BestMatchingBioPolymersWithSetMods.Remove(tentativeSpectralMatch);
-            if (!_BestMatchingBioPolymersWithSetMods.Any(x => x.WithSetMods.Equals(tentativeSpectralMatch.WithSetMods)))
+            if (!_BestMatchingBioPolymersWithSetMods.Any(x => x.SpecificBioPolymer.Equals(tentativeSpectralMatch.SpecificBioPolymer)))
             {
-                BioPolymersWithSetModsToMatchingFragments.Remove(tentativeSpectralMatch.WithSetMods);
+                BioPolymersWithSetModsToMatchingFragments.Remove(tentativeSpectralMatch.SpecificBioPolymer);
             }
             this.ResolveAllAmbiguities();
         }
@@ -194,19 +194,19 @@ namespace EngineLayer
             // Order the BPWSM list for stability
             _BestMatchingBioPolymersWithSetMods = BestMatchingBioPolymersWithSetMods.ToList();
 
-            IsDecoy = _BestMatchingBioPolymersWithSetMods.Any(p => p.WithSetMods.Parent.IsDecoy);
-            IsContaminant = _BestMatchingBioPolymersWithSetMods.Any(p => p.WithSetMods.Parent.IsContaminant);
-            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.FullSequence)).ResolvedValue;
-            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.BaseSequence)).ResolvedValue;
-            BioPolymerWithSetModsLength = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.Length)).ResolvedValue;
-            OneBasedStartResidue = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.OneBasedStartResidue)).ResolvedValue;
-            OneBasedEndResidue = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.OneBasedEndResidue)).ResolvedValue;
-            ParentLength = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.Parent.Length)).ResolvedValue;
-            BioPolymerWithSetModsMonoisotopicMass = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.MonoisotopicMass)).ResolvedValue;
-            Accession = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.Parent.Accession)).ResolvedValue;
-            Organism = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.Parent.Organism)).ResolvedValue;
-            ModsIdentified = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.AllModsOneIsNterminus)).ResolvedValue;
-            ModsChemicalFormula = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
+            IsDecoy = _BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.Parent.IsDecoy);
+            IsContaminant = _BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.Parent.IsContaminant);
+            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence)).ResolvedValue;
+            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.BaseSequence)).ResolvedValue;
+            BioPolymerWithSetModsLength = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Length)).ResolvedValue;
+            OneBasedStartResidue = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.OneBasedStartResidue)).ResolvedValue;
+            OneBasedEndResidue = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.OneBasedEndResidue)).ResolvedValue;
+            ParentLength = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Length)).ResolvedValue;
+            BioPolymerWithSetModsMonoisotopicMass = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.MonoisotopicMass)).ResolvedValue;
+            Accession = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Accession)).ResolvedValue;
+            Organism = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Organism)).ResolvedValue;
+            ModsIdentified = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus)).ResolvedValue;
+            ModsChemicalFormula = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
             Notch = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Notch)).ResolvedValue;
 
             //if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
@@ -217,7 +217,7 @@ namespace EngineLayer
 
                 foreach (var hit in hits)
                 {
-                    if (hit.Any(p => p.WithSetMods.Parent.IsDecoy) && hit.Any(p => !p.IsDecoy))
+                    if (hit.Any(p => p.SpecificBioPolymer.Parent.IsDecoy) && hit.Any(p => !p.IsDecoy))
                     {
                         // at least one peptide with this sequence is a target and at least one is a decoy
                         // remove the decoys with this sequence
@@ -237,7 +237,7 @@ namespace EngineLayer
             // Instead, we set MatchedFragmentIons as the ions matched to the best peptide option
             if (this is CrosslinkSpectralMatch) // CrosslinkSpectralMatch has its own way of handling this, however, this method of retrieving the "First" item in a dictionary is problematic and should be revisted at some point
                 MatchedFragmentIons = BioPolymersWithSetModsToMatchingFragments.Values.First();
-            else if (BioPolymersWithSetModsToMatchingFragments.TryGetValue(_BestMatchingBioPolymersWithSetMods.First().WithSetMods, out var ionList))
+            else if (BioPolymersWithSetModsToMatchingFragments.TryGetValue(_BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer, out var ionList))
                 MatchedFragmentIons = ionList;
             else MatchedFragmentIons = null;
         }
@@ -316,15 +316,15 @@ namespace EngineLayer
         {
             if (IsDecoy)
             {
-                if (_BestMatchingBioPolymersWithSetMods.Any(p => parsimoniousProteins.Contains(p.WithSetMods.Parent) && p.WithSetMods.Parent.IsDecoy))
+                if (_BestMatchingBioPolymersWithSetMods.Any(p => parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent) && p.SpecificBioPolymer.Parent.IsDecoy))
                 {
-                    _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.WithSetMods.Parent));
+                    _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
                 }
                 // else do nothing
             }
             else
             {
-                _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.WithSetMods.Parent));
+                _BestMatchingBioPolymersWithSetMods.RemoveAll(p => !parsimoniousProteins.Contains(p.SpecificBioPolymer.Parent));
             }
 
             ResolveAllAmbiguities();
@@ -338,9 +338,9 @@ namespace EngineLayer
             if (!_BestMatchingBioPolymersWithSetMods.Contains(tentativeSpectralMatch))
             {
                 _BestMatchingBioPolymersWithSetMods.Add(tentativeSpectralMatch); 
-                if (!BioPolymersWithSetModsToMatchingFragments.ContainsKey(tentativeSpectralMatch.WithSetMods))
+                if (!BioPolymersWithSetModsToMatchingFragments.ContainsKey(tentativeSpectralMatch.SpecificBioPolymer))
                 {
-                    BioPolymersWithSetModsToMatchingFragments.Add(tentativeSpectralMatch.WithSetMods, tentativeSpectralMatch.MatchedIons);
+                    BioPolymersWithSetModsToMatchingFragments.Add(tentativeSpectralMatch.SpecificBioPolymer, tentativeSpectralMatch.MatchedIons);
                 }
                 ResolveAllAmbiguities();
             }
@@ -353,8 +353,8 @@ namespace EngineLayer
         protected SpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides)
         {
             _BestMatchingBioPolymersWithSetMods = bestMatchingPeptides;
-            BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.WithSetMods.BaseSequence)).ResolvedValue;
-            FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.WithSetMods.FullSequence)).ResolvedValue;
+            BaseSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.SpecificBioPolymer.BaseSequence)).ResolvedValue;
+            FullSequence = PsmTsvWriter.Resolve(bestMatchingPeptides.Select(b => b.SpecificBioPolymer.FullSequence)).ResolvedValue;
 
             ModsChemicalFormula = psm.ModsChemicalFormula;
             Notch = psm.Notch;

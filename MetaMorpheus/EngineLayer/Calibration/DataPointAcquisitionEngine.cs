@@ -71,10 +71,10 @@ namespace EngineLayer.Calibration
                     int ms2scanNumber = identification.ScanNumber;
                     int peptideCharge = identification.ScanPrecursorCharge;
                     //skip if ambiguous
-                    if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.WithSetMods.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
+                    if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
                         continue;
 
-                    var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().WithSetMods;
+                    var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                     // Get the peptide, don't forget to add the modifications!!!!
                     var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
