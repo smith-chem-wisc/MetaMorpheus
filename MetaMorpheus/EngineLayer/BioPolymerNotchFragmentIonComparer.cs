@@ -47,7 +47,7 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
 
         if (x.pwsm.FullSequence != y.pwsm.FullSequence)
             return -1 * string.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
-            
+
         if (x.pwsm.Parent == null && y.pwsm.Parent == null)
             return 0;
         if (x.pwsm.Parent == null)
@@ -70,7 +70,6 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
     /// Returns greater than 0 if x is better than y, less than 0 if y is better than x, and 0 if they are equal.
     /// Better is defined as having a lower notch, more fragment ions, and finally fewer modifications in that order.
     /// If the aforementioned criteria are equal, then the two are compared based on the alphebetical ordering of the full sequence, then protein accession, then one based start residue. 
-
     /// </summary>
     public int Compare(SpectralMatchHypothesis x, SpectralMatchHypothesis y)
     {
