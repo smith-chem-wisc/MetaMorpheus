@@ -8,6 +8,7 @@ using EngineLayer;
 using Proteomics.ProteolyticDigestion;
 using System.Diagnostics.CodeAnalysis;
 using Proteomics;
+using System.Drawing.Text;
 
 namespace Test.UtilitiesTest
 {
@@ -17,6 +18,20 @@ namespace Test.UtilitiesTest
     {
         IBioPolymerWithSetMods testPeptide1 = new PeptideWithSetModifications("PEPTIDE", GlobalVariables.AllModsKnownDictionary, p: new Protein("PEPTIDE", "protein"));
         IBioPolymerWithSetMods testPeptide2 = new PeptideWithSetModifications("PE[UniProt:4-carboxyglutamate on E]PTIDE", GlobalVariables.AllModsKnownDictionary, p: new Protein("PEPTIDE", "protein"));
+
+        public class TestSearchAttempt(int notch, bool isDecoy, double score) : ISearchAttempt
+        {
+            public double Score { get; } = score;
+
+            public bool IsDecoy { get; } = isDecoy;
+
+            public int Notch { get; } = notch;
+
+            public bool Equals(ISearchAttempt other)
+            {
+                throw new NotImplementedException();
+            }
+        }
 
         [Test]
         public void TestEquals_SameObject()
@@ -84,31 +99,31 @@ namespace Test.UtilitiesTest
         {
             var matchedIons = new List<MatchedFragmentIon>();
             var tsm1 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons, 0);
-            var tsm2 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons, 0);
+            var tsm2 = new TestSearchAttempt(1,  testPeptide1.Parent.IsDecoy, 0);
 
             Assert.That(tsm1.Equals((ISearchAttempt)tsm2), Is.True);
         }
 
         [Test]
         public void TestEquals_ISearchAttempt_DifferentValues()
-        {
-            var matchedIons1 = new List<MatchedFragmentIon>();
-            var matchedIons2 = new List<MatchedFragmentIon> { new MatchedFragmentIon(default, 1, 1, 1) };
-            var tsm1 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons1, 0);
+        { 
+
+            var matchedIons = new List<MatchedFragmentIon> { new MatchedFragmentIon(default, 1, 1, 1) };
+            var tsm1 = new SpectralMatchHypothesis(1, testPeptide1, matchedIons, 10);
 
             // different notch
-            var tsm2 = new SpectralMatchHypothesis(2, testPeptide2, matchedIons2, 0);
-            Assert.That(tsm1.Equals((ISearchAttempt)tsm2), Is.False);
+            ISearchAttempt tsm2 = new TestSearchAttempt(2, testPeptide1.Parent.IsDecoy, 10);
+            Assert.That(tsm1.Equals(tsm2), Is.False);
 
             // different score
-            tsm2 = new SpectralMatchHypothesis(1, testPeptide2, matchedIons2, 20);
-            Assert.That(tsm1.Equals((ISearchAttempt)tsm2), Is.False);
+            tsm2 = new TestSearchAttempt(1, testPeptide1.Parent.IsDecoy, 20);
+            Assert.That(tsm1.Equals(tsm2), Is.False);
+            tsm2 = new TestSearchAttempt(1, testPeptide1.Parent.IsDecoy, 10.0000000000000000000000001);
+            Assert.That(tsm1.Equals(tsm2), Is.True);
 
             // decoy vs target
-            var decoyProtein = new Protein("PEPTIDE", "decoy", isDecoy: true);
-            var decoyPeptide = new PeptideWithSetModifications("PEPTIDE", null, p: decoyProtein);
-            tsm2 = new SpectralMatchHypothesis(1, decoyPeptide, matchedIons2, 0);
-            Assert.That(tsm1.Equals((ISearchAttempt)tsm2), Is.False);
+            tsm2 = new TestSearchAttempt(1, true, 10);
+            Assert.That(tsm1.Equals(tsm2), Is.False);
         }
 
         [Test]

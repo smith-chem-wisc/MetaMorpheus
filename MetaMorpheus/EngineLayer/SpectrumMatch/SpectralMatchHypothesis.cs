@@ -29,6 +29,7 @@ public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, Lis
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
         return IsDecoy == other.IsDecoy
+               && Notch == other.Notch
                && Math.Abs(Score - other.Score) < SpectralMatch.ToleranceForScoreDifferentiation;
     }
 
@@ -36,11 +37,11 @@ public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, Lis
     {
         if (other is null) return false;
         if (ReferenceEquals(this, other)) return true;
-        return Math.Abs(Score - other.Score) < SpectralMatch.ToleranceForScoreDifferentiation 
-            && Notch == other.Notch
+        return Notch == other.Notch
             && IsDecoy == other.IsDecoy
-            && WithSetMods.Equals(other.WithSetMods) 
-            && Equals(MatchedIons.Count, other.MatchedIons.Count);
+            && Equals(MatchedIons.Count, other.MatchedIons.Count)
+            && Math.Abs(Score - other.Score) < SpectralMatch.ToleranceForScoreDifferentiation
+            && WithSetMods.Equals(other.WithSetMods);
     }
 
     public override bool Equals(object? obj)
