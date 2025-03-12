@@ -179,22 +179,22 @@ namespace EngineLayer
         public void ResolveAllAmbiguities()
         {
             // Order the BPWSM list for stability
-            _BestMatchingBioPolymersWithSetMods = BestMatchingBioPolymersWithSetMods.ToList();
+            var bestMatches = BestMatchingBioPolymersWithSetMods.ToList();
 
-            IsDecoy = _BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.Parent.IsDecoy);
-            IsContaminant = _BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.Parent.IsContaminant);
-            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence)).ResolvedValue;
-            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.BaseSequence)).ResolvedValue;
-            BioPolymerWithSetModsLength = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Length)).ResolvedValue;
-            OneBasedStartResidue = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.OneBasedStartResidue)).ResolvedValue;
-            OneBasedEndResidue = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.OneBasedEndResidue)).ResolvedValue;
-            ParentLength = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Length)).ResolvedValue;
-            BioPolymerWithSetModsMonoisotopicMass = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.MonoisotopicMass)).ResolvedValue;
-            Accession = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Accession)).ResolvedValue;
-            Organism = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.Organism)).ResolvedValue;
-            ModsIdentified = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus)).ResolvedValue;
-            ModsChemicalFormula = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
-            Notch = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Notch)).ResolvedValue;
+            IsDecoy = bestMatches.Any(p => p.SpecificBioPolymer.Parent.IsDecoy);
+            IsContaminant = bestMatches.Any(p => p.SpecificBioPolymer.Parent.IsContaminant);
+            FullSequence = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.FullSequence)).ResolvedValue;
+            BaseSequence = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.BaseSequence)).ResolvedValue;
+            BioPolymerWithSetModsLength = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.Length)).ResolvedValue;
+            OneBasedStartResidue = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.OneBasedStartResidue)).ResolvedValue;
+            OneBasedEndResidue = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.OneBasedEndResidue)).ResolvedValue;
+            ParentLength = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.Parent.Length)).ResolvedValue;
+            BioPolymerWithSetModsMonoisotopicMass = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.MonoisotopicMass)).ResolvedValue;
+            Accession = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.Parent.Accession)).ResolvedValue;
+            Organism = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.Parent.Organism)).ResolvedValue;
+            ModsIdentified = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus)).ResolvedValue;
+            ModsChemicalFormula = PsmTsvWriter.Resolve(bestMatches.Select(b => b.SpecificBioPolymer.AllModsOneIsNterminus.Select(c => (c.Value)))).ResolvedValue;
+            Notch = PsmTsvWriter.Resolve(bestMatches.Select(b => b.Notch)).ResolvedValue;
 
             //if the PSM matches a target and a decoy and they are the SAME SEQUENCE, remove the decoy
             if (IsDecoy)
@@ -204,7 +204,7 @@ namespace EngineLayer
 
                 foreach (var hit in hits)
                 {
-                    if (hit.Any(p => p.SpecificBioPolymer.Parent.IsDecoy) && hit.Any(p => !p.IsDecoy))
+                    if (hit.Any(p => p.IsDecoy) && hit.Any(p => !p.IsDecoy))
                     {
                         // at least one peptide with this sequence is a target and at least one is a decoy
                         // remove the decoys with this sequence
@@ -223,9 +223,9 @@ namespace EngineLayer
             // However, writing out all the matched ions for all the peptide options would break excel
             // Instead, we set MatchedFragmentIons as the ions matched to the best peptide option
             if (this is CrosslinkSpectralMatch) // CrosslinkSpectralMatch has its own way of handling this, however, this method of retrieving the "First" item in a dictionary is problematic and should be revisted at some point
-                MatchedFragmentIons = _BestMatchingBioPolymersWithSetMods.First().MatchedIons;
+                MatchedFragmentIons = bestMatches.First().MatchedIons;
             else 
-                MatchedFragmentIons = _BestMatchingBioPolymersWithSetMods.First().MatchedIons;
+                MatchedFragmentIons = bestMatches.First().MatchedIons;
         }
 
         public void SetFdrValues(double cumulativeTarget, double cumulativeDecoy, double qValue, double cumulativeTargetNotch, double cumulativeDecoyNotch, double qValueNotch, double pep, double pepQValue)
@@ -242,25 +242,6 @@ namespace EngineLayer
                 PEP_QValue = pepQValue
             };
         }
-        /// <summary>
-        /// This method is used to compute qValue etc for the inverted set of psms
-        /// We neither compute nor calculated cumulativeTarget, cumulativeDecoy, etc for the inverted set.
-        /// CumulativeTarget, CumulativeDecoy, CumulativeTargetNotch, CumulativeDecoyNotch, were computed
-        /// for the non-inverted set.   We don't want to use them for the inverted set.
-        /// </summary>
-        /// <param name="qValue"></param>
-        /// <param name="qValueNotch"></param>
-        /// <param name="pep"></param>
-        /// <param name="pepQValue"></param>
-        public void SetQandPEPvalues(double qValue, double qValueNotch, double pep, double pepQValue)
-        {
-            FdrInfo.QValue = qValue;
-            FdrInfo.QValueNotch = qValueNotch;
-            FdrInfo.PEP = pep;
-            FdrInfo.PEP_QValue = pepQValue;
-        }
-
-
 
         #endregion
 
