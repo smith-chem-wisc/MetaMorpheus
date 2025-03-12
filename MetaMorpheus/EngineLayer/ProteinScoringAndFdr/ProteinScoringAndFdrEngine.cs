@@ -46,7 +46,7 @@ namespace EngineLayer
                 {
                     if ((TreatModPeptidesAsDifferentPeptides && psm.FullSequence != null) || (!TreatModPeptidesAsDifferentPeptides && psm.BaseSequence != null))
                     {
-                        foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide))
+                        foreach (var pepWithSetMods in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer))
                         {
                             if (!peptideToPsmMatching.TryGetValue(pepWithSetMods, out HashSet<SpectralMatch> psmsForThisPeptide))
                                 peptideToPsmMatching.Add(pepWithSetMods, new HashSet<SpectralMatch> { psm });
@@ -129,14 +129,14 @@ namespace EngineLayer
             }
 
             //Do Classic protein FDR (all targets, all decoys)
-            // order protein groups by notch-QValue
+            // order protein groups by Notch-QValue
             var sortedProteinGroups = proteinGroups.OrderBy(b => b.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
             AssignQValuesToProteins(sortedProteinGroups);
 
             // Do "Picked" protein FDR
             // adapted from "A Scalable Approach for Protein False Discovery Rate Estimation in Large Proteomic Data Sets" ~ MCP, 2015, Savitski
             // pair decoys and targets by accession
-            // then use the best peptide notch-QValue as the score for the protein group
+            // then use the best peptide Notch-QValue as the score for the protein group
             Dictionary<string, List<ProteinGroup>> accessionToProteinGroup = new Dictionary<string, List<ProteinGroup>>();
             foreach (var pg in proteinGroups)
             {
@@ -158,7 +158,7 @@ namespace EngineLayer
                 pg.BestPeptideQValue = pg.AllPsmsBelowOnePercentFDR.Min(psm => psm.FdrInfo.QValueNotch);
             }
 
-            // pick the best notch-QValue for each paired accession
+            // pick the best Notch-QValue for each paired accession
             // this compares target-decoy pairs for each protein and saves the highest scoring group
             List<ProteinGroup> rescuedProteins = new List<ProteinGroup>();
             foreach (var accession in accessionToProteinGroup)
@@ -166,7 +166,7 @@ namespace EngineLayer
                 if (accession.Value.Count > 1)
                 {
                     var pgList = accession.Value.OrderBy(p => p.BestPeptideQValue).ThenByDescending(p => p.BestPeptideScore).ToList();
-                    var pgToUse = pgList.First(); // pick lowest notch QValue and remove the rest
+                    var pgToUse = pgList.First(); // pick lowest Notch QValue and remove the rest
                     pgList.Remove(pgToUse);
                     rescuedProteins.AddRange(pgList); //save the remaining protein groups
                     proteinGroups = proteinGroups.Except(pgList).ToList(); //remove the remaining protein groups
