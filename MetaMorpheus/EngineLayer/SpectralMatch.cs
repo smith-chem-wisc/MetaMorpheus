@@ -156,7 +156,7 @@ namespace EngineLayer
             }
             else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
-                _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons));
+                _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons, newScore));
             }
             else if (newScore - RunnerUpScore > ToleranceForScoreDifferentiation)
             {
