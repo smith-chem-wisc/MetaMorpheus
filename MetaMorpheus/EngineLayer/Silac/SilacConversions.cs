@@ -50,7 +50,7 @@ namespace EngineLayer
                 pwsm.AllModsOneIsNterminus,
                 pwsm.NumFixedMods,
                 labeledBaseSequence);
-            return psm.Clone(new List<SpectralMatchHypothesis> { new(notch, labeledPwsm, []) });
+            return psm.Clone([new SpectralMatchHypothesis(notch, labeledPwsm, [], psm.Score)]);
         }
 
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel)
@@ -59,7 +59,7 @@ namespace EngineLayer
             foreach (var notchAndPwsm in psm.BestMatchingBioPolymersWithSetMods)
             {
                 PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(silacLabel, notchAndPwsm.WithSetMods as PeptideWithSetModifications);
-                updatedBestMatchingPeptides.Add(new SpectralMatchHypothesis(notchAndPwsm.Notch, modifiedPwsm, notchAndPwsm.MatchedIons));
+                updatedBestMatchingPeptides.Add(new SpectralMatchHypothesis(notchAndPwsm.Notch, modifiedPwsm, notchAndPwsm.MatchedIons, psm.Score));
             }
             return psm.Clone(updatedBestMatchingPeptides) as PeptideSpectralMatch;
         }
@@ -101,7 +101,7 @@ namespace EngineLayer
                         pwsm.AllModsOneIsNterminus,
                         pwsm.NumFixedMods,
                         pwsm.BaseSequence);
-                    updatedPeptides.Add(new (notchPwsm.Notch, updatedPwsm, notchPwsm.MatchedIons));
+                    updatedPeptides.Add(new (notchPwsm.Notch, updatedPwsm, notchPwsm.MatchedIons, psm.Score));
                 }
 
                 psmsToReturn.Add(psm.Clone(updatedPeptides));

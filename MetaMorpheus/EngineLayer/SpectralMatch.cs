@@ -145,7 +145,7 @@ namespace EngineLayer
             if (newScore - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
                 _BestMatchingBioPolymersWithSetMods.Clear();
-                _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons));
+                _BestMatchingBioPolymersWithSetMods.Add(new(notch, pwsm, matchedFragmentIons, newScore));
 
                 if (Score - RunnerUpScore > ToleranceForScoreDifferentiation)
                 {

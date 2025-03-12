@@ -210,7 +210,7 @@ namespace EngineLayer
                                                     _fdrFilteredPeptides.Add(pep);
                                                 }
 
-                                                psm.AddProteinMatch(new(proteinWithDigestInfo.Value.Notch, pep, mfi));
+                                                psm.AddProteinMatch(new(proteinWithDigestInfo.Value.Notch, pep, mfi, psm.Score));
                                             }
                                         }
                                     }
