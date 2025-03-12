@@ -211,9 +211,15 @@ jobs:
           $whitelistedMissingDlls = @(
             "System.Configuration.ConfigurationManager.dll",
             "System.Security.Cryptography.ProtectedData.dll",
-            "System.Security.Permissions.dll"
-            "System.Windows.Extensions.dll"
-            "Microsoft.Win32.SystemEvents.dll"
+            "System.Security.Permissions.dll",
+            "System.Windows.Extensions.dll",
+            "Microsoft.Win32.SystemEvents.dll",
+            "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+            "Microsoft.Extensions.DependencyInjection.dll",
+            "Microsoft.Extensions.Logging.Abstractions.dll",
+            "Microsoft.Extensions.Logging.dll",
+            "Microsoft.Extensions.Options.dll",
+            "Microsoft.Extensions.Primitives.dll",
           )
 
           # Define whitelist for extra DLLs (install-only)
