@@ -12,7 +12,8 @@ namespace EngineLayer.SpectrumMatch;
 /// <param name="notch"></param>
 /// <param name="pwsm"></param>
 /// <param name="matchedIons"></param>
-public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> matchedIons, double score) : IEquatable<SpectralMatchHypothesis>
+public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, List<MatchedFragmentIon> matchedIons, double score) 
+    : IEquatable<SpectralMatchHypothesis>, ISearchAttempt
 {
     public double Score { get; } = score;
     public int Notch { get; } = notch;
@@ -21,6 +22,15 @@ public class SpectralMatchHypothesis(int notch, IBioPolymerWithSetMods pwsm, Lis
 
     public bool IsDecoy => WithSetMods.Parent.IsDecoy;
     public string FullSequence => WithSetMods.FullSequence;
+
+    public bool Equals(ISearchAttempt? other)
+    {
+        if (other is SpectralMatchHypothesis hypothesis) return Equals(hypothesis);
+        if (other is null) return false;
+        if (ReferenceEquals(this, other)) return true;
+        return IsDecoy == other.IsDecoy
+               && Math.Abs(Score - other.Score) < SpectralMatch.ToleranceForScoreDifferentiation;
+    }
 
     public bool Equals(SpectralMatchHypothesis? other)
     {
