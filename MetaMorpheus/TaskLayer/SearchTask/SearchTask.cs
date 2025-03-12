@@ -555,7 +555,7 @@ namespace TaskLayer
                     //get matched ions for each peptide
                     List<List<MatchedFragmentIon>> matchedIonsForAllAmbiguousPeptides = new List<List<MatchedFragmentIon>>();
                     List<Product> internalFragments = new List<Product>();
-                    foreach (IBioPolymerWithSetMods peptide in ambiguousPeptides.Select(p => p.WithSetMods))
+                    foreach (IBioPolymerWithSetMods peptide in ambiguousPeptides.Select(p => p.SpecificBioPolymer))
                     {
                         internalFragments.Clear();
                         peptide.FragmentInternally(dissociationType, minInternalFragmentLength, internalFragments);
@@ -580,7 +580,7 @@ namespace TaskLayer
                         // otherwise add the matched internal ions to the total ions
                         else
                         {
-                            IBioPolymerWithSetMods currentPwsm = thisPeptide.WithSetMods;
+                            IBioPolymerWithSetMods currentPwsm = thisPeptide.SpecificBioPolymer;
                             //check that we haven't already added the matched ions for this peptide
                             if (!PeptidesToMatchingInternalFragments.Contains(currentPwsm))
                             {

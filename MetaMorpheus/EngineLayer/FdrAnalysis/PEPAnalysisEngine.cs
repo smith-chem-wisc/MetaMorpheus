@@ -295,12 +295,12 @@ namespace EngineLayer
                         {
                             bool label;
                             double bmpc = psm.BestMatchingBioPolymersWithSetMods.Count();
-                            if (bestMatch.WithSetMods.Parent.IsDecoy)
+                            if (bestMatch.SpecificBioPolymer.Parent.IsDecoy)
                             {
                                 label = false;
                                 newPsmData = CreateOnePsmDataEntry(searchType, psm, bestMatch, label);
                             }
-                            else if (!bestMatch.WithSetMods.Parent.IsDecoy
+                            else if (!bestMatch.SpecificBioPolymer.Parent.IsDecoy
                                 && psm.GetFdrInfo(UsePeptideLevelQValueForTraining).QValue <= QValueCutoff)
                             {
                                 label = true;
@@ -462,7 +462,7 @@ namespace EngineLayer
 
         public PsmData CreateOnePsmDataEntry(string searchType, SpectralMatch psm, SpectralMatchHypothesis tentativeSpectralMatch, bool label)
         {
-            double normalizationFactor = tentativeSpectralMatch.WithSetMods.BaseSequence.Length;
+            double normalizationFactor = tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Length;
             float totalMatchingFragmentCount = 0;
             float internalMatchingFragmentCount = 0;
             float intensity = 0;
@@ -509,7 +509,7 @@ namespace EngineLayer
                 chargeDifference = -Math.Abs(ChargeStateMode - psm.ScanPrecursorCharge);
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * multiplier, 0);
                 notch = tentativeSpectralMatch.Notch;
-                modCount = Math.Min((float)tentativeSpectralMatch.WithSetMods.AllModsOneIsNterminus.Keys.Count(), 10);
+                modCount = Math.Min((float)tentativeSpectralMatch.SpecificBioPolymer.AllModsOneIsNterminus.Keys.Count(), 10);
                 if (tentativeSpectralMatch.MatchedIons?.Count() > 0)
                 {
                     absoluteFragmentMassError = (float)Math.Min(100.0, Math.Round(10.0 * Math.Abs(GetAverageFragmentMassError(tentativeSpectralMatch.MatchedIons) - FileSpecificMedianFragmentMassErrors[Path.GetFileName(psm.FullFilePath)])));
@@ -517,9 +517,9 @@ namespace EngineLayer
 
                 ambiguity = Math.Min((float)(psm.BestMatchingBioPolymersWithSetMods.Count() - 1), 10);
                 //ambiguity = 10; // I'm pretty sure that you shouldn't train on ambiguity and its skewing the results
-                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(tentativeSpectralMatch.MatchedIons, tentativeSpectralMatch.WithSetMods) / normalizationFactor * multiplier, 0);
-                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(tentativeSpectralMatch.MatchedIons, tentativeSpectralMatch.WithSetMods) / normalizationFactor * multiplier, 0);
-                isVariantPeptide = PeptideIsVariant(tentativeSpectralMatch.WithSetMods);
+                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(tentativeSpectralMatch.MatchedIons, tentativeSpectralMatch.SpecificBioPolymer) / normalizationFactor * multiplier, 0);
+                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(tentativeSpectralMatch.MatchedIons, tentativeSpectralMatch.SpecificBioPolymer) / normalizationFactor * multiplier, 0);
+                isVariantPeptide = PeptideIsVariant(tentativeSpectralMatch.SpecificBioPolymer);
                 spectralAngle = (float)psm.SpectralAngle;
                 if (chimeraCountDictionary.TryGetValue(psm.ChimeraIdString, out int val))
                     chimeraCount = val;
@@ -534,23 +534,23 @@ namespace EngineLayer
 
                 if (psm.DigestionParams.Protease.Name != "top-down")
                 {
-                    missedCleavages = tentativeSpectralMatch.WithSetMods.MissedCleavages;
+                    missedCleavages = tentativeSpectralMatch.SpecificBioPolymer.MissedCleavages;
                     bool fileIsCzeSeparationType = FileSpecificParametersDictionary.ContainsKey(Path.GetFileName(psm.FullFilePath)) && FileSpecificParametersDictionary[Path.GetFileName(psm.FullFilePath)].SeparationType == "CZE";
 
                     if (!fileIsCzeSeparationType)
                     {
-                        if (tentativeSpectralMatch.WithSetMods.BaseSequence.Equals(tentativeSpectralMatch.WithSetMods.FullSequence))
+                        if (tentativeSpectralMatch.SpecificBioPolymer.BaseSequence.Equals(tentativeSpectralMatch.SpecificBioPolymer.FullSequence))
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.WithSetMods, FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, FileSpecificTimeDependantHydrophobicityAverageAndDeviation_unmodified) * 10.0, 0);
                         }
                         else
                         {
-                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.WithSetMods, FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified) * 10.0, 0);
+                            hydrophobicityZscore = (float)Math.Round(GetSSRCalcHydrophobicityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer, FileSpecificTimeDependantHydrophobicityAverageAndDeviation_modified) * 10.0, 0);
                         }
                     }
                     else
                     {
-                        hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.WithSetMods) * 10.0, 0);
+                        hydrophobicityZscore = (float)Math.Round(GetMobilityZScore(psm, tentativeSpectralMatch.SpecificBioPolymer) * 10.0, 0);
                     }
                 }
                 //this is not for actual crosslinks but for the byproducts of crosslink loop links, deadends, etc.
@@ -567,8 +567,8 @@ namespace EngineLayer
                 var selectedAlphaPeptide = csm.BestMatchingBioPolymersWithSetMods.First();
                 var selectedBetaPeptide = csm.BetaPeptide?.BestMatchingBioPolymersWithSetMods.First();
 
-                float alphaNormalizationFactor = selectedAlphaPeptide.WithSetMods.BaseSequence.Length;
-                float betaNormalizationFactor = selectedBetaPeptide == null ? (float)0 : selectedBetaPeptide.WithSetMods.BaseSequence.Length;
+                float alphaNormalizationFactor = selectedAlphaPeptide.SpecificBioPolymer.BaseSequence.Length;
+                float betaNormalizationFactor = selectedBetaPeptide == null ? (float)0 : selectedBetaPeptide.SpecificBioPolymer.BaseSequence.Length;
                 float totalNormalizationFactor = alphaNormalizationFactor + betaNormalizationFactor;
 
                 totalMatchingFragmentCount = (float)Math.Round(csm.XLTotalScore / totalNormalizationFactor * 10, 0);
@@ -602,8 +602,8 @@ namespace EngineLayer
                 chargeDifference = -Math.Abs(ChargeStateMode - psm.ScanPrecursorCharge);
                 alphaIntensity = (float)Math.Min(100, Math.Round((csm.Score - (int)csm.Score) / alphaNormalizationFactor * 100.0, 0));
                 betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)Math.Min(100.0, Math.Round((csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score) / betaNormalizationFactor * 100.0, 0));
-                longestFragmentIonSeries_Alpha = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(selectedAlphaPeptide.MatchedIons, selectedAlphaPeptide.WithSetMods) / alphaNormalizationFactor * 10.0, 0);
-                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : SpectralMatch.GetLongestIonSeriesBidirectional(selectedBetaPeptide.MatchedIons, selectedBetaPeptide.WithSetMods) / betaNormalizationFactor;
+                longestFragmentIonSeries_Alpha = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(selectedAlphaPeptide.MatchedIons, selectedAlphaPeptide.SpecificBioPolymer) / alphaNormalizationFactor * 10.0, 0);
+                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : SpectralMatch.GetLongestIonSeriesBidirectional(selectedBetaPeptide.MatchedIons, selectedBetaPeptide.SpecificBioPolymer) / betaNormalizationFactor;
                 longestFragmentIonSeries_Beta = (float)Math.Round(longestFragmentIonSeries_Beta * 10.0, 0);
                 isInter = Convert.ToSingle(csm.CrossType == PsmCrossType.Inter);
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
@@ -711,19 +711,19 @@ namespace EngineLayer
                     List<string> fullSequences = new List<string>();
                     foreach (SpectralMatchHypothesis bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        if (fullSequences.Contains(bestMatch.WithSetMods.FullSequence))
+                        if (fullSequences.Contains(bestMatch.SpecificBioPolymer.FullSequence))
                         {
                             continue;
                         }
-                        fullSequences.Add(bestMatch.WithSetMods.FullSequence);
+                        fullSequences.Add(bestMatch.SpecificBioPolymer.FullSequence);
 
-                        double predictedHydrophobicity = bestMatch.WithSetMods is PeptideWithSetModifications pep ?  calc.ScoreSequence(pep) : 0;
+                        double predictedHydrophobicity = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ?  calc.ScoreSequence(pep) : 0;
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));
 
                         //First block of if statement is for modified peptides.
-                        if (bestMatch.WithSetMods.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
+                        if (bestMatch.SpecificBioPolymer.AllModsOneIsNterminus.Any() && computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
@@ -735,7 +735,7 @@ namespace EngineLayer
                             }
                         }
                         //this second block of if statment is for unmodified peptides.
-                        else if (!bestMatch.WithSetMods.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
+                        else if (!bestMatch.SpecificBioPolymer.AllModsOneIsNterminus.Any() && !computeHydrophobicitiesforModifiedPeptides)
                         {
                             if (hydrophobicities.ContainsKey(possibleKey))
                             {
@@ -813,13 +813,13 @@ namespace EngineLayer
                     List<string> fullSequences = new List<string>();
                     foreach (SpectralMatchHypothesis bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        if (fullSequences.Contains(bestMatch.WithSetMods.FullSequence))
+                        if (fullSequences.Contains(bestMatch.SpecificBioPolymer.FullSequence))
                         {
                             continue;
                         }
-                        fullSequences.Add(bestMatch.WithSetMods.FullSequence);
+                        fullSequences.Add(bestMatch.SpecificBioPolymer.FullSequence);
 
-                        double predictedMobility = bestMatch.WithSetMods is PeptideWithSetModifications pep ? 100.0 * GetCifuentesMobility(pep) : 0;
+                        double predictedMobility = bestMatch.SpecificBioPolymer is PeptideWithSetModifications pep ? 100.0 * GetCifuentesMobility(pep) : 0;
 
                         //here i'm grouping this in 2 minute increments becuase there are cases where you get too few data points to get a good standard deviation an average. This is for stability.
                         int possibleKey = (int)(2 * Math.Round(psm.ScanRetentionTime / 2d, 0));

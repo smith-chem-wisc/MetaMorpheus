@@ -180,7 +180,7 @@ namespace Test
             List<string> sequences = new List<string>();
             foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence).ToList();
                 sequences.Add(String.Join("|", ss));
             }
 
@@ -237,14 +237,14 @@ namespace Test
 
             var maxPsmData = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Count() - 1, Is.EqualTo(maxPsmData.Ambiguity));
-            double normalizationFactor = (double)bestMatch.WithSetMods.BaseSequence.Length;
+            double normalizationFactor = (double)bestMatch.SpecificBioPolymer.BaseSequence.Length;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(52.0).Within(0.05));
-            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
-            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.That((float)0, Is.EqualTo(maxPsmData.IsVariantPeptide));
@@ -298,7 +298,7 @@ namespace Test
             nonNullPsms.Add(variantPSM);
             foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence).ToList();
                 sequences.Add(String.Join("|", ss));
             }
 
@@ -428,7 +428,7 @@ namespace Test
             List<string> sequences = new List<string>();
             foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.WithSetMods.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence).ToList();
                 sequences.Add(String.Join(" | ", ss));
             }
             var s = sequences.GroupBy(i => i);
@@ -467,7 +467,7 @@ namespace Test
                 }
             }
 
-            var maxPsmData = pepEngine.CreateOnePsmDataEntry("top-down", maxScorePsm, bestMatch, !bestMatch.WithSetMods.Parent.IsDecoy);
+            var maxPsmData = pepEngine.CreateOnePsmDataEntry("top-down", maxScorePsm, bestMatch, !bestMatch.SpecificBioPolymer.Parent.IsDecoy);
             Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Count() - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = 1;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
@@ -475,8 +475,8 @@ namespace Test
             float maxPsmIntensity = (float)Math.Min(50, Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(float.NaN));
-            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
-            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
             Assert.That((float)0, Is.EqualTo(maxPsmData.IsVariantPeptide));

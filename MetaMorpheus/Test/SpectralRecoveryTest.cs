@@ -259,7 +259,7 @@ namespace Test
 
             foreach (SpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
-                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().WithSetMods;
+                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                 MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
                     listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),

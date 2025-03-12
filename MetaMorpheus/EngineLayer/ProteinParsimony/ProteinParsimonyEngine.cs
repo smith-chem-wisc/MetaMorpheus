@@ -52,7 +52,7 @@ namespace EngineLayer
             _fdrFilteredPeptides = new HashSet<IBioPolymerWithSetMods>();
             foreach (var psm in _fdrFilteredPsms)
             {
-                foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods))
+                foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer))
                 {
                     _fdrFilteredPeptides.Add(peptide);
                 }
@@ -127,12 +127,12 @@ namespace EngineLayer
                                 var peptidesWithNotchInfo = baseSequence.Value.SelectMany(p => p.BestMatchingBioPolymersWithSetMods).Distinct().ToList();
 
                                 // if the base seq has >1 PeptideWithSetMods object and has >0 mods, it might need to be matched to new proteins
-                                if (peptidesWithNotchInfo.Count > 1 && peptidesWithNotchInfo.Any(p => p.WithSetMods.NumMods > 0))
+                                if (peptidesWithNotchInfo.Count > 1 && peptidesWithNotchInfo.Any(p => p.SpecificBioPolymer.NumMods > 0))
                                 {
                                     bool needToAddPeptideToProteinAssociations = false;
 
                                     // numProteinsForThisBaseSequence is the total number of proteins that this base sequence is a digestion product of
-                                    int numProteinsForThisBaseSequence = peptidesWithNotchInfo.Select(p => p.WithSetMods.Parent).Distinct().Count();
+                                    int numProteinsForThisBaseSequence = peptidesWithNotchInfo.Select(p => p.SpecificBioPolymer.Parent).Distinct().Count();
 
                                     if (numProteinsForThisBaseSequence == 1)
                                     {
@@ -142,7 +142,7 @@ namespace EngineLayer
                                     foreach (var psm in baseSequence.Value)
                                     {
                                         // numProteinsForThisPsm is the number of proteins that this PSM's peptides are associated with
-                                        int numProteinsForThisPsm = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods.Parent).Distinct().Count();
+                                        int numProteinsForThisPsm = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent).Distinct().Count();
 
                                         if (numProteinsForThisPsm != numProteinsForThisBaseSequence)
                                         {
@@ -166,18 +166,18 @@ namespace EngineLayer
                                     {
                                         foreach (var peptideWithNotch in psm.BestMatchingBioPolymersWithSetMods)
                                         {
-                                            PeptideWithSetModifications peptide = peptideWithNotch.WithSetMods as PeptideWithSetModifications;
+                                            PeptideWithSetModifications peptide = peptideWithNotch.SpecificBioPolymer as PeptideWithSetModifications;
                                             Protein protein = peptide.Protein;
 
                                             if (!proteinToPeptideInfo.ContainsKey(protein))
                                             {
                                                 proteinToPeptideInfo.Add(protein,
-                                                    (peptideWithNotch.WithSetMods.DigestionParams,
-                                                    peptideWithNotch.WithSetMods.OneBasedStartResidue,
-                                                    peptideWithNotch.WithSetMods.OneBasedEndResidue,
-                                                    peptideWithNotch.WithSetMods.MissedCleavages,
+                                                    (peptideWithNotch.SpecificBioPolymer.DigestionParams,
+                                                    peptideWithNotch.SpecificBioPolymer.OneBasedStartResidue,
+                                                    peptideWithNotch.SpecificBioPolymer.OneBasedEndResidue,
+                                                    peptideWithNotch.SpecificBioPolymer.MissedCleavages,
                                                     peptideWithNotch.Notch,
-                                                    peptideWithNotch.WithSetMods.CleavageSpecificityForFdrCategory));
+                                                    peptideWithNotch.SpecificBioPolymer.CleavageSpecificityForFdrCategory));
                                             }
                                         }
                                     }
@@ -186,9 +186,9 @@ namespace EngineLayer
                                     foreach (PeptideSpectralMatch psm in baseSequence.Value)
                                     {
                                         var tentativeMatch = psm.BestMatchingBioPolymersWithSetMods.First();
-                                        IBioPolymerWithSetMods originalPeptide = tentativeMatch.WithSetMods;
+                                        IBioPolymerWithSetMods originalPeptide = tentativeMatch.SpecificBioPolymer;
                                         List<MatchedFragmentIon> mfi = tentativeMatch.MatchedIons;
-                                        HashSet<Protein> psmProteins = new HashSet<Protein>(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.WithSetMods.Parent as Protein));
+                                        HashSet<Protein> psmProteins = new HashSet<Protein>(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent as Protein));
 
                                         foreach (var proteinWithDigestInfo in proteinToPeptideInfo)
                                         {
@@ -433,7 +433,7 @@ namespace EngineLayer
                 // if this PSM has a protein in the parsimonious list, it removes the proteins NOT in the parsimonious list
                 // otherwise, no proteins are removed (i.e., for PSMs that cannot be explained by a parsimonious protein,
                 // no protein associations are removed)
-                if (psm.BestMatchingBioPolymersWithSetMods.Any(p => parsimoniousProteinList.Contains(p.WithSetMods.Parent as Protein)))
+                if (psm.BestMatchingBioPolymersWithSetMods.Any(p => parsimoniousProteinList.Contains(p.SpecificBioPolymer.Parent as Protein)))
                 {
                     psm.TrimProteinMatches(parsimoniousProteinList);
                 }
