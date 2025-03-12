@@ -183,6 +183,33 @@ namespace Test
         }
 
         [Test]
+        public static void CalibrationTestYeastLowRes()
+        {
+            CalibrationTask calibrationTask = new CalibrationTask();
+
+            CommonParameters CommonParameters = new(dissociationType: DissociationType.LowCID,
+                scoreCutoff: 1);
+
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrationLow");
+            string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
+            Directory.CreateDirectory(outputFolder);
+
+            calibrationTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(myDatabase, false) }, new List<string> { myFile }, "test");
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.mzML")));
+            Assert.That(File.Exists(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.toml")));
+            var lines = File.ReadAllLines(Path.Combine(outputFolder, @"SmallCalibratible_Yeast-calib.toml"));
+            var tolerance = Regex.Match(lines[0], @"\d+\.\d*").Value;
+            var tolerance1 = Regex.Match(lines[1], @"\d+\.\d*").Value;
+            Assert.That(double.TryParse(tolerance, out double tol) == true);
+            Assert.That(double.TryParse(tolerance1, out double tol1) == true);
+            Assert.That(lines[0].Contains("PrecursorMassTolerance"));
+            Assert.That(lines[1].Contains("ProductMassTolerance"));
+            Directory.Delete(outputFolder, true);
+            Directory.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Task Settings"), true);
+        }
+
+        [Test]
         [TestCase("filename1.1.mzML")]
         public static void ExperimentalDesignCalibrationAndSearch(string nonCalibratedFile)
         {
