@@ -55,11 +55,6 @@ namespace TaskLayer
             List<Modification> gptmdModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => GptmdParameters.ListOfModsGptmd.Contains((b.ModificationType, b.IdWithMotif))).ToList();
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
-
-            List<SpectralMatch> allPsms = new List<SpectralMatch>();
-
-            var numRawFiles = currentRawFileList.Count;
-
             // write prose settings
             ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");

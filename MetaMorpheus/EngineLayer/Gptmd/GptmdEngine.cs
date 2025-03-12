@@ -21,7 +21,7 @@ namespace EngineLayer.Gptmd
         //The ScoreTolerance property is used to differentiatie when a PTM candidate is added to a peptide. We check the score at each position and then add that mod where the score is highest.
         private readonly double ScoreTolerance = 0.1;
 
-        public Ms2ScanWithSpecificMass[] MsDataScans { get; init; }
+        public Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans { get; init; }
         public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
 
         public GptmdEngine(
@@ -40,7 +40,7 @@ namespace EngineLayer.Gptmd
             GptmdModifications = gptmdModifications;
             Combos = combos;
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
-            MsDataScans = dataScans;
+            ArrayOfSortedMs2Scans = dataScans;
             ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
         }
 
@@ -118,7 +118,7 @@ namespace EngineLayer.Gptmd
                                     {
                                         var scores = new List<double>();
                                         var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                                            MsDataScans[psms[i].ScanIndex].TheScan.DissociationType.Value : CommonParameters.DissociationType;
+                                            ArrayOfSortedMs2Scans[psms[i].ScanIndex].TheScan.DissociationType.Value : CommonParameters.DissociationType;
 
                                         scores = CalculatePeptideScores(newPeptides, dissociationType, psms[i]);
 
@@ -196,21 +196,6 @@ namespace EngineLayer.Gptmd
             return new GptmdResults(this, ModDictionary, modsAdded);
         }
 
-        private void UpdateModDictionary(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> concurrentDict)
-        {
-            foreach (var kvp in concurrentDict)
-            {
-                if(ModDictionary.TryGetValue(kvp.Key, out var modSet))
-                {
-                    modSet.UnionWith(kvp.Value);
-                }
-                else
-                {
-                    ModDictionary.Add(kvp.Key, new HashSet<Tuple<int, Modification>>(kvp.Value));
-                }
-            }
-        }
-
         private List<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
         {
             var scores = new List<double>();
@@ -220,7 +205,7 @@ namespace EngineLayer.Gptmd
                 var peptideTheorProducts = new List<Product>();
                 peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
-                var scan = MsDataScans[psm.ScanIndex].TheScan;
+                var scan = ArrayOfSortedMs2Scans[psm.ScanIndex].TheScan;
                 var precursorMass = psm.ScanPrecursorMass;
                 var precursorCharge = psm.ScanPrecursorCharge;
                 var fileName = psm.FullFilePath;
