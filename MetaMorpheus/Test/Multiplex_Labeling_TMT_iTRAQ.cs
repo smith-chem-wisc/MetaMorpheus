@@ -110,9 +110,10 @@ namespace Test
         [TestCase(new double[] { 1, 2, 3 }, new double[] { 2, 4, 6 }, new double[] { 2, 4, 6, 0, 0 })]
         [TestCase(new double[] { 0.1, 1, 2, 3, 4, 5 }, new double[] { 10, 2, 4, 6, 8, 10 }, new double[] { 2, 4, 6, 8, 10 })]
         //[TestCase(new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 }, new double[] { 2, 4, 6, 8, 10 })]
-        public static void TestMultiplexIonIntensityDetection(double[] ionMzs, double[] ionIntensities, double[] expectedOutput)
+        public static void TestMultiplexIonIntensityDetection(double[] ionMzs, double[] ionIntensities, double[] expectedOutput, double[] theoreticalMzs = null)
         {
             Tolerance tol = new PpmTolerance(10);
+            theoreticalMzs ??= 
 
             // Create a psm
             MsDataScan scanNumberOne = new MsDataScan(new MzSpectrum(new double[] { 10 }, new double[] { 1 }, false), 1, 2, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", 10, 2, 100, double.NaN, null, DissociationType.AnyActivationType, 0, null);
