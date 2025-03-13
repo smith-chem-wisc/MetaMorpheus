@@ -198,7 +198,7 @@ namespace MetaMorpheusGUI
 
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(PrecursorMassToleranceTextBox.Text, ProductMassToleranceTextBox.Text, MissedCleavagesTextBox.Text,
                  MaxModificationIsoformsTextBox.Text, MinPeptideLengthTextBox.Text, MaxPeptideLengthTextBox.Text, MaxThreadsTextBox.Text, MinScoreAllowed.Text,
-                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
+                 fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, fieldNotUsed, null, null, fieldNotUsed, MaxModsPerPeptideTextBox.Text, fieldNotUsed, 
                  null, null, null))
             {
                 return;
@@ -399,7 +399,8 @@ namespace MetaMorpheusGUI
                             //uncheck all variable mods
                             DeconHostViewModel.UseProvidedPrecursors = false;
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
-                            DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 60;
+                            DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
+                            DeconHostViewModel.SetAllProductMaxChargeState(20);
 
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
                             {

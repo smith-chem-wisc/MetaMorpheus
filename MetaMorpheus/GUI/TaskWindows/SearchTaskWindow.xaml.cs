@@ -261,6 +261,7 @@ namespace MetaMorpheusGUI
             CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
+            MbrFdrThresholdTextBox.Text = task.SearchParameters.MbrFdrThreshold.ToString(CultureInfo.InvariantCulture);
             CheckBoxNormalize.IsChecked = task.SearchParameters.Normalize;
             ModPepsAreUnique.IsChecked = task.SearchParameters.ModPeptidesAreDifferent;
             CheckBoxHistogramAnalysis.IsChecked = task.SearchParameters.DoHistogramAnalysis;
@@ -300,6 +301,7 @@ namespace MetaMorpheusGUI
             DeconHostViewModel = new DeconHostViewModel(TheTask.CommonParameters.PrecursorDeconvolutionParameters,
                 TheTask.CommonParameters.ProductDeconvolutionParameters,
                 TheTask.CommonParameters.UseProvidedPrecursorInfo, TheTask.CommonParameters.DoPrecursorDeconvolution);
+            DeisotopingControl.DataContext = DeconHostViewModel;
 
             NumberOfPeaksToKeepPerWindowTextBox.Text = task.CommonParameters.NumberOfPeaksToKeepPerWindow == int.MaxValue || !task.CommonParameters.NumberOfPeaksToKeepPerWindow.HasValue ? "" : task.CommonParameters.NumberOfPeaksToKeepPerWindow.Value.ToString(CultureInfo.InvariantCulture);
             MinimumAllowedIntensityRatioToBasePeakTexBox.Text = task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak == double.MaxValue || !task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.HasValue ? "" : task.CommonParameters.MinimumAllowedIntensityRatioToBasePeak.Value.ToString(CultureInfo.InvariantCulture);
@@ -430,7 +432,6 @@ namespace MetaMorpheusGUI
             CleavageSpecificity searchModeType = GetSearchModeType(); //change search type to semi or non if selected
             SnesUpdates(searchModeType); //decide on singleN/C, make comp ion changes
 
-            // TODO: Reconcile Isodec params with Mass difference acceptor
             if (!GlobalGuiSettings.CheckTaskSettingsValidity(
                 PrecursorMassToleranceTextBox.Text, 
                 ProductMassToleranceTextBox.Text, 
@@ -441,6 +442,7 @@ namespace MetaMorpheusGUI
                 MaxThreadsTextBox.Text, 
                 MinScoreAllowed.Text,
                 PeakFindingToleranceTextBox.Text, 
+                MbrFdrThresholdTextBox.Text,
                 HistogramBinWidthTextBox.Text, 
                 DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState.ToString(), 
                 NumberOfPeaksToKeepPerWindowTextBox.Text,
@@ -640,6 +642,7 @@ namespace MetaMorpheusGUI
             TheTask.SearchParameters.MultiplexModId = (string)MultiplexComboBox.SelectedItem;
             TheTask.SearchParameters.Normalize = CheckBoxNormalize.IsChecked.Value;
             TheTask.SearchParameters.MatchBetweenRuns = CheckBoxMatchBetweenRuns.IsChecked.Value;
+            TheTask.SearchParameters.MbrFdrThreshold = double.Parse(MbrFdrThresholdTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.ModPeptidesAreDifferent = ModPepsAreUnique.IsChecked.Value;
             TheTask.SearchParameters.QuantifyPpmTol = double.Parse(PeakFindingToleranceTextBox.Text, CultureInfo.InvariantCulture);
             TheTask.SearchParameters.SearchTarget = CheckBoxTarget.IsChecked.Value;
@@ -895,10 +898,15 @@ namespace MetaMorpheusGUI
                         if (UpdateGUISettings.UseTopDownRecommendedSettings())
                         {
                             DeconHostViewModel.DoPrecursorDeconvolution = true;
-                            DeconHostViewModel.PrecursorDeconvolutionParameters.MaxAssumedChargeState = 60;
+                            DeconHostViewModel.UseProvidedPrecursors = false;
+                            DeconHostViewModel.SetAllPrecursorMaxChargeState(60);
+                            DeconHostViewModel.SetAllProductMaxChargeState(20);
                             TrimMsMs.IsChecked = false;
                             CheckBoxNoQuant.IsChecked = true;
                             MassDiffAccept3mm.IsChecked = true;
+                            maxModificationIsoformsTextBox.Text = "4096";
+                            InternalIonsCheckBox.IsChecked = true;
+                            MinInternalFragmentLengthTextBox.Text = "10";
                             //uncheck all variable mods
                             foreach (var mod in VariableModTypeForTreeViewObservableCollection)
                             {

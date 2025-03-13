@@ -1,4 +1,5 @@
-﻿using MassSpectrometry;
+﻿using EngineLayer.Util;
+using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
 using MzLibUtil;
 using Omics;
@@ -61,14 +62,14 @@ namespace EngineLayer.ClassicSearch
             }
 
             // score each scan that has an acceptable precursor mass
-            IEnumerable<ScanWithIndexAndNotchInfo> acceptableScans = GetAcceptableScans(donorPwsm.MonoisotopicMass, peakApexRT, SearchMode); // GetAcceptableScans is asynchronous, in case you care
+            IEnumerable<ExtendedScanWithIndexAndNotchInfo> acceptableScans = GetAcceptableScans(donorPwsm.MonoisotopicMass, peakApexRT, SearchMode); // GetAcceptableScans is asynchronous, in case you care
             if (!acceptableScans.Any())
             {
                 return null;
             }
 
             List<SpectralMatch> acceptablePsms = new();
-            foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
+            foreach (ExtendedScanWithIndexAndNotchInfo scan in acceptableScans)
             {
                 var dissociationType = FileSpecificParameters.DissociationType == DissociationType.Autodetect ?
                     scan.TheScan.TheScan.DissociationType.Value : FileSpecificParameters.DissociationType;
@@ -159,21 +160,20 @@ namespace EngineLayer.ClassicSearch
             }
         }
 
-        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, double apexRT, MassDiffAcceptor searchMode)
+        private IEnumerable<ExtendedScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, double apexRT, MassDiffAcceptor searchMode)
         {
             Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans = GetScansInWindow(apexRT);
             double[] myScanPrecursorMasses = arrayOfSortedMs2Scans.Select(p => p.PrecursorMass).ToArray();
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass).ToList())
             {
-                DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
-                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum, myScanPrecursorMasses);
+                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedIntervalWithNotch.Minimum, myScanPrecursorMasses);
                 if (scanIndex < arrayOfSortedMs2Scans.Length)
                 {
                     var scanMass = myScanPrecursorMasses[scanIndex];
-                    while (scanMass <= allowedInterval.Maximum)
+                    while (scanMass <= allowedIntervalWithNotch.Maximum)
                     {
                         var scan = arrayOfSortedMs2Scans[scanIndex];
-                        yield return new ScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
+                        yield return new ExtendedScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
                         scanIndex++;
                         if (scanIndex == arrayOfSortedMs2Scans.Length)
                         {

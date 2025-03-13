@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Omics.Modifications;
 using System.Collections.Concurrent;
+using EngineLayer.Util;
 
 namespace EngineLayer.ClassicSearch
 {
@@ -132,8 +133,9 @@ namespace EngineLayer.ClassicSearch
                             // score each scan that has an acceptable precursor mass
                             foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
                             {
+                                Ms2ScanWithSpecificMass theScan = ArrayOfSortedMS2Scans[scan.ScanIndex];
                                 var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                                    scan.TheScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
+                                    theScan.TheScan.DissociationType.Value : CommonParameters.DissociationType;
 
                                 if (!targetFragmentsForEachDissociationType.TryGetValue(dissociationType, out var peptideTheorProducts))
                                 {
@@ -148,11 +150,11 @@ namespace EngineLayer.ClassicSearch
                                 }
 
                                 // match theoretical target ions to spectrum
-                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(scan.TheScan, peptideTheorProducts, CommonParameters,
+                                List<MatchedFragmentIon> matchedIons = MatchFragmentIons(theScan, peptideTheorProducts, CommonParameters,
                                         matchAllCharges: WriteSpectralLibrary);
 
                                 // calculate the peptide's score
-                                double thisScore = CalculatePeptideScore(scan.TheScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+                                double thisScore = CalculatePeptideScore(theScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
 
                                 AddPeptideCandidateToPsm(scan, thisScore, peptide, matchedIons);
 
@@ -193,12 +195,12 @@ namespace EngineLayer.ClassicSearch
             {
                 reversedOnTheFlyDecoy.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, decoyTheoreticalFragments);
             }
-
-            var decoyMatchedIons = MatchFragmentIons(scan.TheScan, decoyTheoreticalFragments, CommonParameters,
+            Ms2ScanWithSpecificMass theScan = ArrayOfSortedMS2Scans[scan.ScanIndex];
+            var decoyMatchedIons = MatchFragmentIons(theScan, decoyTheoreticalFragments, CommonParameters,
                 matchAllCharges: WriteSpectralLibrary);
 
             // calculate decoy's score
-            var decoyScore = CalculatePeptideScore(scan.TheScan.TheScan, decoyMatchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
+            var decoyScore = CalculatePeptideScore(theScan.TheScan, decoyMatchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
 
             AddPeptideCandidateToPsm(scan, decoyScore, reversedOnTheFlyDecoy, decoyMatchedIons);
         }
@@ -220,7 +222,7 @@ namespace EngineLayer.ClassicSearch
                     {
                         if (PeptideSpectralMatches[scan.ScanIndex] == null)
                         {
-                            PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, CommonParameters, matchedIons, 0);
+                            PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons, 0);
                         }
                         else
                         {
@@ -233,17 +235,15 @@ namespace EngineLayer.ClassicSearch
 
         private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, MassDiffAcceptor searchMode)
         {
-            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass).ToList())
+            foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass))
             {
-                DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
-                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum);
+                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedIntervalWithNotch.Minimum);
                 if (scanIndex < ArrayOfSortedMS2Scans.Length)
                 {
                     var scanMass = MyScanPrecursorMasses[scanIndex];
-                    while (scanMass <= allowedInterval.Maximum)
+                    while (scanMass <= allowedIntervalWithNotch.Maximum)
                     {
-                        var scan = ArrayOfSortedMS2Scans[scanIndex];
-                        yield return new ScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
+                        yield return new ScanWithIndexAndNotchInfo(allowedIntervalWithNotch.Notch, scanIndex);
                         scanIndex++;
                         if (scanIndex == ArrayOfSortedMS2Scans.Length)
                         {
