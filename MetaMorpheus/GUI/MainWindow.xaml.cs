@@ -2024,7 +2024,12 @@ namespace MetaMorpheusGUI
 
         private void OpenProteomesFolder_Click(object sender, RoutedEventArgs e)
         {
-            OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
+            if (UpdateGUISettings.Params.UserSpecifiedProteomeDir != "" && Directory.Exists(UpdateGUISettings.Params.UserSpecifiedProteomeDir))
+            {
+                OpenFolder(UpdateGUISettings.Params.UserSpecifiedProteomeDir);
+            }
+            else
+                OpenFolder(Path.Combine(GlobalVariables.DataDir, @"Proteomes"));
         }
     }
 }

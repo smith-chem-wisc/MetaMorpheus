@@ -1,13 +1,13 @@
-﻿using EngineLayer;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Omics.Fragmentation;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.Reflection;
 using Omics.Modifications;
+using EngineLayer;
 
-namespace Test
+namespace Test.UtilitiesTest
 {
     [TestFixture]
     public static class BioPolymerNotchFragmentIonComparerTest
@@ -52,7 +52,7 @@ namespace Test
         public static void Compare_DifferentNumberOfMods()
         {
             var modifiedPwsm = new PeptideWithSetModifications("PEPTIDEK", null, p: exampleProtein);
-            fullSequenceProperty.SetValue(modifiedPwsm, "P[Oxidation]EPT[Reduction]IDEK", null); 
+            fullSequenceProperty.SetValue(modifiedPwsm, "P[Oxidation]EPT[Reduction]IDEK", null);
             modDictField.SetValue(modifiedPwsm,
                 new Dictionary<int, Modification>
                 {
