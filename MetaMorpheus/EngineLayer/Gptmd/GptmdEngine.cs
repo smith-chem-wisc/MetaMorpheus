@@ -40,7 +40,7 @@ namespace EngineLayer.Gptmd
             GptmdModifications = gptmdModifications;
             Combos = combos;
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
-            ArrayOfSortedMs2Scans = dataScans;
+            ArrayOfSortedMS2Scans = dataScans;
             ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
         }
 
@@ -118,7 +118,7 @@ namespace EngineLayer.Gptmd
                                     {
                                         var scores = new List<double>();
                                         var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                                            ArrayOfSortedMs2Scans[psms[i].ScanIndex].TheScan.DissociationType.Value : CommonParameters.DissociationType;
+                                            ArrayOfSortedMS2Scans[psms[i].ScanIndex].TheScan.DissociationType.Value : CommonParameters.DissociationType;
 
                                         scores = CalculatePeptideScores(newPeptides, dissociationType, psms[i]);
 
@@ -205,7 +205,7 @@ namespace EngineLayer.Gptmd
                 var peptideTheorProducts = new List<Product>();
                 peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
-                var scan = ArrayOfSortedMs2Scans[psm.ScanIndex].TheScan;
+                var scan = ArrayOfSortedMS2Scans[psm.ScanIndex].TheScan;
                 var precursorMass = psm.ScanPrecursorMass;
                 var precursorCharge = psm.ScanPrecursorCharge;
                 var fileName = psm.FullFilePath;
