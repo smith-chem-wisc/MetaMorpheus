@@ -1406,7 +1406,6 @@ namespace TaskLayer
                 .OrderBy(ion => ion.Mz)
                 .ToArray();
             double[] expIonMzs = diagnosticIons.Select(ion => ion.Mz).ToArray(); 
-
             double[] ionIntensities = new double[theoreticalIonMzs.Length];
 
             int expIonIndex = 0;
