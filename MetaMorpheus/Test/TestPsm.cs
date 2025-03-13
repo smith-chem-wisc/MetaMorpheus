@@ -93,7 +93,7 @@ namespace Test
             // Start with a psm matched to a peptide with oxidation on I and one matched product ion
             SpectralMatch psm = new PeptideSpectralMatch(pepWithOxidationOnI, 1, 2, 3, scan, commonParameters, new List<MatchedFragmentIon> { bIon });
             // add a pwsm matched to a peptide with oxidation on P, one matched product ion, and one matched diagnostic ion (scores are identical as diagnostic ions aren't scored)
-            psm.AddOrReplace(pepWithOxidationOnP, 2, 1, true, twoIonList, 0);
+            psm.AddOrReplace(pepWithOxidationOnP, 2, 1, true, twoIonList);
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
 
@@ -304,7 +304,7 @@ namespace Test
             Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, commonParameters);
 
             SpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, commonParameters, null);
-            psm.AddOrReplace(decoy, 1, 0, true, null, 0);
+            psm.AddOrReplace(decoy, 1, 0, true, null);
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.Parent.IsDecoy));
@@ -330,7 +330,7 @@ namespace Test
             Ms2ScanWithSpecificMass scanWithMass = new Ms2ScanWithSpecificMass(msDataScan, 4, 1, null, commonParameters);
 
             SpectralMatch psm = new PeptideSpectralMatch(target, 0, 1, 1, scanWithMass, commonParameters, null);
-            psm.AddOrReplace(decoy, 1, 0, true, null, 0);
+            psm.AddOrReplace(decoy, 1, 0, true, null);
 
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
             Assert.That(psm.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.Parent.IsDecoy));
@@ -494,7 +494,7 @@ namespace Test
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
-            psm1.AddOrReplace(pwsm, 11, 1, true, new List<MatchedFragmentIon>(), 0);
+            psm1.AddOrReplace(pwsm, 11, 1, true, new List<MatchedFragmentIon>());
 
             Assert.That(psm1.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(1));
 

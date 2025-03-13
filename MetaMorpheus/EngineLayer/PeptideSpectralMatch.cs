@@ -12,7 +12,7 @@ namespace EngineLayer
         public PeptideSpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex,
             Ms2ScanWithSpecificMass scan, CommonParameters commonParameters,
             List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0) : base(peptide, notch, score, scanIndex,
-            scan, commonParameters, matchedFragmentIons, xcorr)
+            scan, commonParameters, matchedFragmentIons)
         {
 
         }
