@@ -30,6 +30,7 @@ namespace EngineLayer.ClassicSearch
         private readonly object[] Locks;
         public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
 
+
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
