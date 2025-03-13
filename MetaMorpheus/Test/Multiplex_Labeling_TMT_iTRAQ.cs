@@ -105,15 +105,30 @@ namespace Test
         }
 
         [Test]
-        [TestCase(new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 }, new double[] { 2, 4, 6, 8, 10 })] // 1-to-1 concordance between theoretical and observed diagnostic ions
-        [TestCase(new double[] { 1, 2.5, 3, 4.5, 5 }, new double[] { 2, 4, 6, 8, 10 }, new double[] { 2, 0, 6, 0, 10 })]
-        [TestCase(new double[] { 1, 2, 3 }, new double[] { 2, 4, 6 }, new double[] { 2, 4, 6, 0, 0 })]
-        [TestCase(new double[] { 0.1, 1, 2, 3, 4, 5 }, new double[] { 10, 2, 4, 6, 8, 10 }, new double[] { 2, 4, 6, 8, 10 })]
-        //[TestCase(new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 }, new double[] { 2, 4, 6, 8, 10 })]
-        public static void TestMultiplexIonIntensityDetection(double[] ionMzs, double[] ionIntensities, double[] expectedOutput, double[] theoreticalMzs = null)
+        [TestCase(new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 }, new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 })] 
+        [TestCase(new double[] { 1, 2.5, 3, 4.5, 5 }, new double[] { 2, 4, 6, 8, 10 }, new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 0, 6, 0, 10 })]
+        [TestCase(new double[] { 1, 2, 3 }, new double[] { 2, 4, 6 }, new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 0, 0 })]
+        [TestCase(new double[] { 0.1, 1, 2, 3, 4, 5 }, new double[] { 10, 2, 4, 6, 8, 10 }, new double[] { 1, 2, 3, 4, 5 }, new double[] { 2, 4, 6, 8, 10 })]
+        [TestCase(new double[] { // These are actual m/z values taken from a TMT peptide spectrum
+                    117.131741292845, // 1
+                    117.134464401653,
+                    117.137487573882, // 2
+                    117.141610419051,
+                    117.143971287762, // 3
+                    117.146374792442,
+                    118.138548390966,
+                    118.140942895911, // 4
+                    118.147293426491, // 5
+                    118.153027983766, // 6
+                    118.177848927571
+                },
+            new double[] { 1, 0, 2, 0, 3, 0, 0, 4, 5, 6, 0 },
+            new double[] { 117.13147, 117.13731, 117.14363, 118.14067, 118.14699, 118.15283 },
+            new double[] { 1, 2, 3, 4, 5, 6 })]
+        public static void TestMultiplexIonIntensityDetection(double[] observedIonMzs, double[] observedIonIntensities, 
+            double[] diagnosticIonTheoreticalMzs, double[] expectedIntensities)
         {
             Tolerance tol = new PpmTolerance(10);
-            theoreticalMzs ??= 
 
             // Create a psm
             MsDataScan scanNumberOne = new MsDataScan(new MzSpectrum(new double[] { 10 }, new double[] { 1 }, false), 1, 2, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", 10, 2, 100, double.NaN, null, DissociationType.AnyActivationType, 0, null);
@@ -127,43 +142,9 @@ namespace Test
             // Set the psm ionss
             var matchedIonProperty = psm.GetType().GetProperty("MatchedFragmentIons",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance);
-            matchedIonProperty.SetValue(psm, GetIonsFromSpectrum(ionMzs, ionIntensities));
+            matchedIonProperty.SetValue(psm, GetIonsFromSpectrum(observedIonMzs, observedIonIntensities));
 
-            Assert.That(PostSearchAnalysisTask.GetMultiplexIonIntensities(psm, ionMzs, tol), Is.EqualTo(expectedOutput));
-
-
-            //// This test uses values from a 12-plex DiLeu experiment
-            //ionMzs = new double[] { 117.13147, 117.13731, 117.14363, 118.14067, 118.14699, 118.15283 };
-            //fakeSpectrum = new MzSpectrum(
-            //    mz: new double[] { 
-            //        117.131741292845, // 1
-            //        117.134464401653,
-            //        117.137487573882, // 2
-            //        117.141610419051,
-            //        117.143971287762, // 3
-            //        117.146374792442,
-            //        118.138548390966,
-            //        118.140942895911, // 4
-            //        118.147293426491, // 5
-            //        118.153027983766, // 6
-            //        118.177848927571
-            //    },
-            //    intensities: new double[]
-            //    {
-            //        1,
-            //        0,
-            //        2,
-            //        0, 
-            //        3,
-            //        0,
-            //        0,
-            //        4,
-            //        5,
-            //        6,
-            //        0
-            //    },
-            //    shouldCopy: false);
-            //Assert.That(PostSearchAnalysisTask.GetMultiplexIonIntensities(fakeSpectrum, ionMzs, tol), Is.EqualTo(new double[] { 1, 2, 3, 4, 5, 6 }));
+            Assert.That(PostSearchAnalysisTask.GetMultiplexIonIntensities(psm, diagnosticIonTheoreticalMzs, tol), Is.EqualTo(expectedIntensities));
         }
 
         [Test]

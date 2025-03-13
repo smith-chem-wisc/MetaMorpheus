@@ -1430,33 +1430,6 @@ namespace TaskLayer
             return ionIntensities;
         }
 
-        public static double[] GetMultiplexIonIntensities(MzSpectrum scan, double[] theoreticalIonMzs, Tolerance tolerance)
-        {
-            int peakIndex = scan.GetClosestPeakIndex(theoreticalIonMzs[0]);
-            int lastPeakIndex = Math.Min(scan.GetClosestPeakIndex(theoreticalIonMzs.Last()) + 1, scan.XArray.Length - 1);
-            double[] ionIntensities = new double[theoreticalIonMzs.Length];
-            
-            for (int ionIndex = 0; ionIndex < ionIntensities.Length; ionIndex++)
-            {
-                while (peakIndex <= lastPeakIndex && 
-                       scan.XArray[peakIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[ionIndex]))
-                {
-                    peakIndex++;
-                }
-                if (peakIndex > lastPeakIndex)
-                {
-                    break;
-                }
-                if (tolerance.Within(scan.XArray[peakIndex], theoreticalIonMzs[ionIndex]))
-                {
-                    ionIntensities[ionIndex] = scan.YArray[peakIndex];
-                    peakIndex++;
-                }
-            }
-            
-            return ionIntensities;
-        }
-
         private void CompressIndividualFileResults()
         {
             if (Parameters.SearchParameters.CompressIndividualFiles && Directory.Exists(Parameters.IndividualResultsOutputFolder))
