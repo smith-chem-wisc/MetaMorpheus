@@ -93,7 +93,7 @@ namespace EngineLayer.ClassicSearch
                 double thisScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
 
                 // Add psm to list
-                acceptablePsms.Add(new PeptideSpectralMatch(donorPwsm, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, FileSpecificParameters, matchedIons, 0));
+                acceptablePsms.Add(new PeptideSpectralMatch(donorPwsm, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, FileSpecificParameters, matchedIons));
             }
 
             IEnumerable<SpectralMatch> matchedSpectra = acceptablePsms.Where(p => p != null);

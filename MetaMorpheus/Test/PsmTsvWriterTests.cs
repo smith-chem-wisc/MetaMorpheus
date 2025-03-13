@@ -61,7 +61,7 @@ namespace Test
             mfi.Add(new MatchedFragmentIon(p, 1, 1, 1));
             SpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), mfi);
 
-            myPsm.AddOrReplace(pwsm2, 10, 0, true, mfi, 10);
+            myPsm.AddOrReplace(pwsm2, 10, 0, true, mfi);
 
             myPsm.ResolveAllAmbiguities();
 
@@ -87,7 +87,7 @@ namespace Test
             myPsm.RemoveThisAmbiguousPeptide(tentativeSpectralMatch);
 
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus1, 0);
-            myPsm.AddOrReplace(pwsm3, 10, 0, true, mfi, 10);
+            myPsm.AddOrReplace(pwsm3, 10, 0, true, mfi);
 
             myPsm.ResolveAllAmbiguities();
 

@@ -179,7 +179,7 @@ namespace Test
             };
 
             // this PSM has a target and a decoy
-            psms[0].AddOrReplace(pep2, 1, 0, true, new List<MatchedFragmentIon>() { mfiC3, mfiC4 }, 0);
+            psms[0].AddOrReplace(pep2, 1, 0, true, new List<MatchedFragmentIon>() { mfiC3, mfiC4 });
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));

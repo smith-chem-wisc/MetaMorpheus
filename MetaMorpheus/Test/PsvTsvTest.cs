@@ -295,32 +295,32 @@ namespace Test
             //second highest score 9. delta score 1
             PeptideSpectralMatch psmTwo = new(pepOne, 0, 8, 0, ms2ScanOneMzTen, commonParams,
                 new List<MatchedFragmentIon>());
-            psmTwo.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmTwo.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>());
 
             //second highest score 9. delta score 0.1
             PeptideSpectralMatch psmThree = new(pepOne, 0, 8.90000000000000000000000000000, 0, ms2ScanOneMzTen, commonParams,
                 new List<MatchedFragmentIon>());
-            psmThree.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmThree.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>());
 
             //third highest score delta score 1. ppm error -888657.54 low
             PeptideSpectralMatch psmFour = new(pepOne, 0, 7, 0, ms2ScanOneMzTwenty, commonParams,
                 new List<MatchedFragmentIon>());
-            psmFour.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmFour.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>());
 
             //third highest score 8. delta score 1. ppm error -947281.29 high
             PeptideSpectralMatch psmFive = new(pepOne, 0, 7, 0, ms2ScanOneMzTen, commonParams,
                 new List<MatchedFragmentIon>());
-            psmFive.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmFive.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>());
 
             //fourth highest score 7. delta score 1. same ppm error
             PeptideSpectralMatch psmSix = new(pepOne, 0, 6, 0, ms2ScanTwoMzTwenty, commonParams,
                 new List<MatchedFragmentIon>());
-            psmSix.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmSix.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>());
 
             //fourth highest score 7. delta score 1. same ppm error
             PeptideSpectralMatch psmSeven = new(pepOne, 0, 6, 0, ms2ScanThreeMzTwenty, commonParams,
                 new List<MatchedFragmentIon>());
-            psmSeven.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmSeven.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>());
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmFour, psmOne, psmThree, psmSeven, psmTwo, psmFive, psmSix };
             psms.ForEach(j => j.ResolveAllAmbiguities());
