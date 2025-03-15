@@ -105,7 +105,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Icons\rna_200.bmp" />
-    <Resource Include="Icons\rna_4.bmp" />
     <Resource Include="Icons\Slack_Mark_Web.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>

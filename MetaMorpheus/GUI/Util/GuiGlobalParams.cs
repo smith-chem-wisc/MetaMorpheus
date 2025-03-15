@@ -1,4 +1,6 @@
-﻿namespace MetaMorpheusGUI
+﻿using GuiFunctions;
+
+namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Gui Parameters that are written out to a toml file. 
@@ -31,6 +33,18 @@
         public bool UseSpectralRecoveryParams { get; internal set; } = true;
 
         // Rna Toggles
-        public bool IsProteomicsMode { get; internal set; } = true;
+        public bool IsRnaMode { get; internal set; } = true;
+    }
+
+    /// <summary>
+    /// Class to represent Global parameters that can change at runtime. 
+    /// </summary>
+    public class GlobalParamsViewModel(GuiGlobalParams parameters) : BaseViewModel
+    {
+        public bool IsRnaMode
+        {
+            get => parameters.IsRnaMode;
+            set { parameters.IsRnaMode = value; OnPropertyChanged(nameof(IsRnaMode)); }
+        }
     }
 }

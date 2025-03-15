@@ -19,6 +19,7 @@
             <!--Allows use of "not" (i.e., inverse of true boolean) in binding properties-->
             <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
+
             <!--Styling for the tab items on the left side-->
             <Style x:Key="TabItemStyle" TargetType="TabItem">
                 <Setter Property="Template">
@@ -74,6 +75,11 @@
                 <Setter Property="Background" Value="{StaticResource AccentColor}"/>
                 <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
                 <Setter Property="FontSize" Value="12"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsProteinMode}" Value="False">
+                        <Setter Property="Background" Value="{StaticResource RnaAccentColor}" />
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <!--Styling for borders-->

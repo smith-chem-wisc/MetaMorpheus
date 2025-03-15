@@ -42,9 +42,9 @@
         </StackPanel>
 
         <CheckBox Grid.Column="1"  Name="ToggleCheckBox" VerticalAlignment="Top" HorizontalAlignment="Center"
-                  Style="{StaticResource SwitchCheckBoxStyle}" Margin="-10,14,-14,0" />
+                  Style="{StaticResource SwitchCheckBoxStyle}" Margin="-10,14,-14,0" Checked="ToggleCheckBox_Checked" Unchecked="ToggleCheckBox_Checked" />
 
-        <StackPanel Grid.Column="2" Style="{StaticResource StackPanelStyle}"  >
+        <StackPanel Grid.Column="2" Style="{StaticResource StackPanelStyle}" >
             <Image   Source="/Icons/rna_200.bmp" Height="40" />
             <TextBox Text="TRANSCRIPTOMICS" Style="{StaticResource TextBoxStyle}"/>
         </StackPanel> 

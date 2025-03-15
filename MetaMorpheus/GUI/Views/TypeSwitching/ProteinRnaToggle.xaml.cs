@@ -11,4 +11,12 @@ public partial class ProteinRnaToggle : UserControl
     {
         InitializeComponent();
     }
+
+    private void ToggleCheckBox_Checked(object sender, System.Windows.RoutedEventArgs e)
+    {
+        var checkBox = (CheckBox)sender;
+        var checkState = checkBox.IsChecked;
+        UpdateGUISettings.Globals.IsProteinMode = checkState ?? true;
+        UpdateGUISettings.NotifyGlobalsChanged();
+    }
 }
