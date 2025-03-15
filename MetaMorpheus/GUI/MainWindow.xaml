@@ -22,19 +22,25 @@
 
             <!--Styling for the tab items on the left side-->
             <Style x:Key="TabItemStyle" TargetType="TabItem">
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Background" Value="{StaticResource SideBarMainColor}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                <Setter Property="Margin" Value="0,0,2,0" />
+                <Setter Property="Padding" Value="0" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
                             <Grid Height="35" Width="105" Background="{TemplateBinding Background}">
                                 <Border Name="Border" Margin="0,0,0,0" Background="Transparent"
-                                                BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" >
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}">
                                     <ContentPresenter 
-                                                x:Name="ContentSite" 
-                                                VerticalAlignment="Center"
-                                                HorizontalAlignment="Left"
-                                                ContentSource="Header" Margin="5,2,10,2"
-                                                RecognizesAccessKey="True">
-                                    </ContentPresenter>
+                                        x:Name="ContentSite" 
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Left"
+                                        ContentSource="Header" Margin="5,2,10,2"
+                                        RecognizesAccessKey="True"/>
                                 </Border>
                             </Grid>
 
@@ -42,30 +48,20 @@
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="BorderThickness" Value="0,0,7,0"/>
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <!--Color of tab item text (when selected)-->
                                     <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
-                                    <!--Color of tab item right side (when selected)-->
-                                    <Setter Property="BorderBrush" Value="{TemplateBinding BorderBrush}"/>
                                 </Trigger>
 
                                 <Trigger Property="IsSelected" Value="False">
-                                    <!--Color of tab item text (when deselected)-->
                                     <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
-                <Setter Property="FontSize" Value="14" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Background" Value="{StaticResource SideBarMainColor}"/>
-                <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
-                <Setter Property="Margin" Value="0,0,2,0" />
-                <Setter Property="Padding" Value="0" />
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
-                        <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
-                        <Setter Property="BorderBrush" Value="{StaticResource RnaAccentColor}"/>
+                        <Setter Property="Background" Value="{DynamicResource RnaSideBarMainColor}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource RnaAccentColor}"/>
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -86,6 +82,16 @@
                 <Style.Triggers>
                     <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
                         <Setter Property="Background" Value="{StaticResource RnaAccentColor}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!--Styling for the "important" buttons that should disapear in RNA mode-->
+            <Style x:Key="ImportantButtonStyleNotForRna" TargetType="Button" BasedOn="{StaticResource ImportantButtonStyle}">
+                <Setter Property="Visibility" Value="Visible" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Visibility" Value="Collapsed" />
                     </DataTrigger>
                 </Style.Triggers>
             </Style>
@@ -301,7 +307,7 @@
             <TabItem Name="AboutTab" Header="About" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="60"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition/>
                         <RowDefinition/>
@@ -309,6 +315,7 @@
 
                     <!--Header label-->
                     <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <local:ProteinRnaToggle Grid.Row="0" VerticalAlignment="Top" HorizontalAlignment="Right" />
 
                     <!--Text content-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
@@ -392,16 +399,10 @@
                         
                         <LineBreak />
                         <LineBreak />
-                        <LineBreak />
-                        
-                        <ContentControl>
-                            <local:ProteinRnaToggle Grid.Row="1" Margin="20 0 0 0"
-                                                    VerticalAlignment="Top" HorizontalAlignment="Left" />
-                        </ContentControl>
-                        
+
                         <LineBreak />
                         <LineBreak />
-                        <LineBreak />
+
                         Visit the 
                         <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
                             MetaMorpheus wiki
@@ -413,12 +414,13 @@
                         <LineBreak />
                         <LineBreak />
                         <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
                         
                         MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
                     </TextBlock>
-
-                    
-
                 </Grid>
             </TabItem>
 
@@ -426,7 +428,7 @@
             <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="60"/>
                         <RowDefinition Height="60"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
@@ -434,6 +436,7 @@
 
                     <!--Header label-->
                     <Label Content="Protein Databases and Spectral Libraries" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" Grid.ColumnSpan="4"/>
+                    <local:ProteinRnaToggle Grid.Row="0" Grid.RowSpan="2" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0 5 0 0" />
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}" Grid.ColumnSpan="4">
@@ -456,14 +459,15 @@
                     <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" Visibility="Collapsed"
                         Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
 
-                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN PROTEOMES FOLDER" 
-                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left"/>
+                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN DATABASE FOLDER"
+                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left" />
 
-                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD PROTEOME" 
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD DATABASE" 
                         Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" HorizontalAlignment="Right"/>
 
                     <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
-                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0" HorizontalAlignment="Right"/>
+                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,211,0" HorizontalAlignment="Right">
+                    </Button>
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" Grid.ColumnSpan="4" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
@@ -496,6 +500,7 @@
 
                     <!--Header label-->
                     <Label Content="Spectra" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <local:ProteinRnaToggle Grid.Row="0" Grid.RowSpan="2" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0 5 0 0" />
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
@@ -545,6 +550,7 @@
 
                     <!--Header label-->
                     <Label Content="Tasks" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
+                    <local:ProteinRnaToggle Grid.Row="0" Grid.RowSpan="2" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0 5 0 0" />
 
                     <!--Detail text-->
                     <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
@@ -571,9 +577,9 @@
                         <Button Name="AddSearchTaskButton" Grid.Column="3" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddXlTaskButton" Grid.Column="4" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                            Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddGlycoTaskButton" Grid.Column="5" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="140"/>
+                            Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,0,0" Width="140"/>
                     </Grid>
 
                     <!--List of tasks-->
@@ -705,7 +711,7 @@
                                 Width="200" Style="{StaticResource ImportantButtonStyle}" />
                     </Grid>
 
-                    <local:ProteinRnaToggle Grid.Row="4" VerticalAlignment="Bottom" HorizontalAlignment="Left" />
+                    <local:ProteinRnaToggle Grid.Row="4" VerticalAlignment="Bottom" HorizontalAlignment="Right" />
                 </Grid>
             </TabItem>
 

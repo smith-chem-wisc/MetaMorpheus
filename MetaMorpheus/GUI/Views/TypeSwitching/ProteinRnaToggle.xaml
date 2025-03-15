@@ -10,13 +10,10 @@
 
     <UserControl.Resources>
         <ResourceDictionary>
-            <Style x:Key="TextBoxStyle" TargetType="TextBox">
+            <Style x:Key="TextBlockStyle" TargetType="TextBlock">
                 <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
                 <Setter Property="Background" Value="Transparent"/>
-                <Setter Property="BorderBrush" Value="Transparent"/>
                 <Setter Property="FontSize" Value="8"/>
-                <Setter Property="HorizontalContentAlignment" Value="Center"/>
-                <Setter Property="VerticalContentAlignment" Value="Center"/>
                 <Setter Property="TextWrapping" Value="WrapWithOverflow" />
                 <Setter Property="Margin" Value="0,0,0,0"/>
             </Style>
@@ -38,15 +35,17 @@
 
         <StackPanel Grid.Column="0" Style="{StaticResource StackPanelStyle}" >
             <Image  Source="/Icons/protein_5.bmp" Height="40" />
-            <TextBox Text="PROTEOMICS" Style="{StaticResource TextBoxStyle}"/>
+            <TextBlock Text="PROTEOMICS" Style="{StaticResource TextBlockStyle}"/>
         </StackPanel>
 
         <CheckBox Grid.Column="1"  Name="ToggleCheckBox" VerticalAlignment="Top" HorizontalAlignment="Center"
-                  Style="{StaticResource SwitchCheckBoxStyle}" Margin="-10,14,-14,0" Checked="ToggleCheckBox_Checked" Unchecked="ToggleCheckBox_Checked" />
+                  IsChecked="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode, Mode=TwoWay}"
+                  Style="{StaticResource SwitchCheckBoxStyle}" Margin="-10,14,-14,0" 
+                  />
 
         <StackPanel Grid.Column="2" Style="{StaticResource StackPanelStyle}" >
             <Image   Source="/Icons/rna_200.bmp" Height="40" />
-            <TextBox Text="TRANSCRIPTOMICS" Style="{StaticResource TextBoxStyle}"/>
+            <TextBlock Text="TRANSCRIPTOMICS" Style="{StaticResource TextBlockStyle}"/>
         </StackPanel> 
     </Grid>
 </UserControl>
