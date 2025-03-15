@@ -33,18 +33,7 @@ namespace MetaMorpheusGUI
         public bool UseSpectralRecoveryParams { get; internal set; } = true;
 
         // Rna Toggles
-        public bool IsRnaMode { get; internal set; } = true;
-    }
-
-    /// <summary>
-    /// Class to represent Global parameters that can change at runtime. 
-    /// </summary>
-    public class GlobalParamsViewModel(GuiGlobalParams parameters) : BaseViewModel
-    {
-        public bool IsRnaMode
-        {
-            get => parameters.IsRnaMode;
-            set { parameters.IsRnaMode = value; OnPropertyChanged(nameof(IsRnaMode)); }
-        }
+        public bool ExposeRnaToUser { get; internal set; }
+        public bool IsRnaMode { get; internal set; }
     }
 }

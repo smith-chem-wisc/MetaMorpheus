@@ -1,8 +1,11 @@
 ﻿using EngineLayer;
+using GuiFunctions;
+using MetaMorpheusGUI.Util;
 using Nett;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Windows;
 using TaskLayer;
 
 namespace MetaMorpheusGUI
@@ -13,11 +16,9 @@ namespace MetaMorpheusGUI
 
         #region Update GUI Displays on Global Changes Made
 
-        private static GlobalParamsViewModel _globals;
-        public static GlobalParamsViewModel Globals => _globals ??= new GlobalParamsViewModel(Params);
+        private static GuiGlobalParamsViewModel _globals;
+        public static GuiGlobalParamsViewModel Globals => _globals ??= new GuiGlobalParamsViewModel(Params);
 
-
- 
         // Call this method to inform the GUI that you made changes to  Globals
         public static void NotifyGlobalsChanged()
         {

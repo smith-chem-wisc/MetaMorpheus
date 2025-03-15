@@ -26,11 +26,14 @@
         </ResourceDictionary>
      </UserControl.Resources>
 
-    <Grid HorizontalAlignment="Stretch" Background="Transparent" Margin="0,0,0,0" >
+    <Grid HorizontalAlignment="Stretch" Background="Transparent" Margin="0,0,0,0"
+          Visibility="{Binding Source={x:Static local:UpdateGUISettings.Globals}, 
+                        Path=ExposeRnaToUser, 
+                        Converter={local:BooleanToVisibilityConverter} ,FallbackValue=Hidden}">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <StackPanel Grid.Column="0" Style="{StaticResource StackPanelStyle}" >
