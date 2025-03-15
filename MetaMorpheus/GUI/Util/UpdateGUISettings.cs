@@ -49,6 +49,7 @@ namespace MetaMorpheusGUI
             {
                 Params.AskAboutUpdating = false;
             }
+            NotifyGlobalsChanged();
             return fileExists;
         }
 

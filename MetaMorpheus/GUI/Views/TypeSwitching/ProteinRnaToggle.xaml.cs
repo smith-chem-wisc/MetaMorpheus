@@ -16,7 +16,7 @@ public partial class ProteinRnaToggle : UserControl
     {
         var checkBox = (CheckBox)sender;
         var checkState = checkBox.IsChecked;
-        UpdateGUISettings.Globals.IsProteinMode = checkState ?? true;
+        UpdateGUISettings.Globals.IsRnaMode = checkState ?? true;
         UpdateGUISettings.NotifyGlobalsChanged();
     }
 }
