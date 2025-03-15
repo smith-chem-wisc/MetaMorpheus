@@ -86,7 +86,7 @@
                 </Style.Triggers>
             </Style>
 
-            <!--Styling for the "important" buttons that should disapear in RNA mode-->
+            <!--Styling for the "important" buttons that should disappear in RNA mode-->
             <Style x:Key="ImportantButtonStyleNotForRna" TargetType="Button" BasedOn="{StaticResource ImportantButtonStyle}">
                 <Setter Property="Visibility" Value="Visible" />
                 <Style.Triggers>
@@ -148,8 +148,30 @@
                 <MenuItem Header="Add new averaging task" Click="AddAveragingTaskButton_OnClick" />
                 <MenuItem Header="Add new GPTMD task" Click="AddGPTMDTaskButton_Click" />
                 <MenuItem Header="Add new search task" Click="AddSearchTaskButton_Click" />
-                <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" />
-                <MenuItem Header="Add new glycopeptide task" Click="AddGlycoSearchTask_Click" />
+                <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" >
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
+                <MenuItem Header="Add new glycopeptide task" Click="AddGlycoSearchTask_Click" >
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="Load task from .toml file" Click="LoadTask_Click" />
             </ContextMenu>
@@ -270,7 +292,6 @@
             </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
-
     <!--Window content-->
     <Grid>
         <Grid.RowDefinitions>

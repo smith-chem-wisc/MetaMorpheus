@@ -23,6 +23,78 @@
                 <Setter Property="Height" Value="60"/>
                 <Setter Property="Margin" Value="0,0,0,0"/>
             </Style>
+
+            <!-- Checkbox that appears as a slider -->
+            <Style TargetType="{x:Type CheckBox}"
+                   x:Key="SwitchCheckBoxStyle">
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type CheckBox}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Grid Grid.Column="0"
+                                      Width="40"
+                                      Height="18">
+                                    <!--Hitbox-->
+                                    <Rectangle Fill="Transparent" />
+
+                                    <!--Toggle-Switch Outline-->
+                                    <Border CornerRadius="10"
+                                            BorderBrush="Black"
+                                            Background="{StaticResource LightAccentColor}"
+                                            BorderThickness="1"
+                                            x:Name="ToggleBorder">
+                                        <!--Dot in Toggle-Switch-->
+                                        <Ellipse Fill="Black"
+                                                 Height="10"
+                                                 Width="10"
+                                                 HorizontalAlignment="Left"
+                                                 Margin="4,0"
+                                                 VerticalAlignment="Center"
+                                                 x:Name="ToggleEllipse" />
+                                    </Border>
+                                </Grid>
+                                <ContentPresenter Grid.Column="1"
+                                                  Margin="4,0,0,0"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left" />
+                            </Grid>
+
+                            <ControlTemplate.Triggers>
+                                <!--Change colors and move dot to the right-->
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="ToggleEllipse"
+                                            Property="HorizontalAlignment"
+                                            Value="Right" />
+                                    <Setter TargetName="ToggleBorder"
+                                            Property="BorderBrush"
+                                            Value="{StaticResource LightRnaAccentColor}" />
+                                    <Setter TargetName="ToggleBorder"
+                                            Property="Background"
+                                            Value="{StaticResource LightRnaAccentColor}" />
+                                    <Setter TargetName="ToggleEllipse"
+                                            Property="Fill"
+                                            Value="White" />
+
+                                </Trigger>
+                                <Trigger Property="IsFocused" Value="True">
+                                    <Setter TargetName="ToggleBorder"
+                                            Property="BorderThickness"
+                                            Value="1.5" />
+                                    <Setter TargetName="ToggleBorder"
+                                            Property="BorderBrush"
+                                            Value="Black" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"></Setter>
+            </Style>
         </ResourceDictionary>
      </UserControl.Resources>
 

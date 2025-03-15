@@ -8,6 +8,7 @@
         <!--TODO: store these in a file and read them from disk, to let users style MetaMorpheus?-->
         <SolidColorBrush x:Key="SideBarMainColor" Color="#353b48" />
         <SolidColorBrush x:Key="AccentColor" Color="#0097e6" />
+        <SolidColorBrush x:Key="LightAccentColor" Color="#bdf0ff" />
         <SolidColorBrush x:Key="SecondaryButtonColor" Color="#2f3640" />
         <SolidColorBrush x:Key="BackgroundColor" Color="#f5f6fa" />
         <SolidColorBrush x:Key="DataGridBackgroundColor" Color="#f5f6fa" />
@@ -20,7 +21,9 @@
         <SolidColorBrush x:Key="ForegroundDarkBrush" Color="{StaticResource ForegroundDark}" />
 
         <SolidColorBrush x:Key="RnaAccentColor" Color="#a64ef9" />
+        <SolidColorBrush x:Key="LightRnaAccentColor" Color="#FFC4C4FF" />
         <SolidColorBrush x:Key="RnaSideBarMainColor" Color="#433d49" />
+        
         <!--Default button style for all of MetaMorpheus-->
         <!--<Style TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
@@ -60,75 +63,6 @@
             <Setter Property="Width" Value="40"></Setter>
         </Style>
 
-        <!-- Checkbox that appears as a slider -->
-        <Style TargetType="{x:Type CheckBox}"
-           x:Key="SwitchCheckBoxStyle">
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="{x:Type CheckBox}">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Grid Grid.Column="0"
-                              Width="40"
-                              Height="18">
-                                <!--Hitbox-->
-                                <Rectangle Fill="Transparent" />
-
-                                <!--Toggle-Switch Outline-->
-                                <Border CornerRadius="10" 
-                                    BorderBrush="Black"
-                                    BorderThickness="1"
-                                    x:Name="ToggleBorder">
-                                    <!--Dot in Toggle-Switch-->
-                                    <Ellipse Fill="Black" 
-                                         Height="10" 
-                                         Width="10" 
-                                         HorizontalAlignment="Left"
-                                         Margin="4,0"
-                                         VerticalAlignment="Center"
-                                         x:Name="ToggleEllipse"/>
-                                </Border>
-                            </Grid>
-                            <ContentPresenter Grid.Column="1"
-                                          Margin="4,0,0,0"
-                                          VerticalAlignment="Center"
-                                          HorizontalAlignment="Left"/>
-                        </Grid>
-
-                        <ControlTemplate.Triggers>
-                            <!--Change colors and move dot to the right-->
-                            <Trigger Property="IsChecked" Value="True">
-                                <Setter TargetName="ToggleEllipse"
-                                    Property="HorizontalAlignment"
-                                    Value="Right" />
-                                <Setter TargetName="ToggleBorder"
-                                    Property="BorderBrush"
-                                    Value="#5B72C2" />
-                                <Setter TargetName="ToggleBorder"
-                                    Property="Background"
-                                    Value="#5B72C2" />
-                                <Setter TargetName="ToggleEllipse"
-                                    Property="Fill"
-                                    Value="White" />
-
-                            </Trigger>
-                            <Trigger Property="IsFocused" Value="True">
-                                <Setter TargetName="ToggleBorder"
-                                    Property="BorderThickness"
-                                    Value="1.5" />
-                                <Setter TargetName="ToggleBorder"
-                                    Property="BorderBrush"
-                                    Value="Black"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Setter Property="HorizontalAlignment" Value="Left"/>
-            <Setter Property="FocusVisualStyle" Value="{x:Null}"></Setter>
-        </Style>
+        
     </Application.Resources>
 </Application>
