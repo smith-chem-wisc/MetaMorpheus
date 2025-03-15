@@ -29,5 +29,8 @@
         public bool UseSemiTrypsinParams { get; internal set; } = true;
         public bool UseArgCParams { get; internal set; } = true;
         public bool UseSpectralRecoveryParams { get; internal set; } = true;
+
+        // Rna Toggles
+        public bool IsProteomicsMode { get; internal set; } = true;
     }
 }

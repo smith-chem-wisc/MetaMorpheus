@@ -1,0 +1,52 @@
+﻿<UserControl x:Class="MetaMorpheusGUI.ProteinRnaToggle"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             mc:Ignorable="d" 
+             d:DesignHeight="50" d:DesignWidth="180"
+             Height="60" Width="180">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <Style x:Key="TextBoxStyle" TargetType="TextBox">
+                <Setter Property="Foreground" Value="{StaticResource TextColor1}"/>
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="BorderBrush" Value="Transparent"/>
+                <Setter Property="FontSize" Value="8"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="TextWrapping" Value="WrapWithOverflow" />
+                <Setter Property="Margin" Value="0,0,0,0"/>
+            </Style>
+            <Style x:Key="StackPanelStyle" TargetType="StackPanel">
+                <Setter Property="HorizontalAlignment" Value="Center"/>
+                <Setter Property="VerticalAlignment" Value="Top"/>
+                <Setter Property="Height" Value="60"/>
+                <Setter Property="Margin" Value="0,0,0,0"/>
+            </Style>
+        </ResourceDictionary>
+     </UserControl.Resources>
+
+    <Grid HorizontalAlignment="Stretch" Background="Transparent" Margin="0,0,0,0" >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <StackPanel Grid.Column="0" Style="{StaticResource StackPanelStyle}" >
+            <Image  Source="/Icons/protein_5.bmp" Height="40" />
+            <TextBox Text="PROTEOMICS" Style="{StaticResource TextBoxStyle}"/>
+        </StackPanel>
+
+        <CheckBox Grid.Column="1"  Name="ToggleCheckBox" VerticalAlignment="Top" HorizontalAlignment="Center"
+                  Style="{StaticResource SwitchCheckBoxStyle}" Margin="-10,14,-14,0" />
+
+        <StackPanel Grid.Column="2" Style="{StaticResource StackPanelStyle}"  >
+            <Image   Source="/Icons/rna_200.bmp" Height="40" />
+            <TextBox Text="TRANSCRIPTOMICS" Style="{StaticResource TextBoxStyle}"/>
+        </StackPanel> 
+    </Grid>
+</UserControl>

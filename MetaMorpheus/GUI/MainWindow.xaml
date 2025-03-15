@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
+        Drop="Window_Drop" AllowDrop="true" 
+        Background="{StaticResource BackgroundColor}" 
+        WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded"
         PreviewKeyDown="Window_PreviewKeyDown">
@@ -274,13 +276,14 @@
                         <RowDefinition Height="50"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition/>
+                        <RowDefinition/>
                     </Grid.RowDefinitions>
 
                     <!--Header label-->
                     <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <!--Text content-->
-                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
                         MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
                         as input,as well as spectra files in .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
                         (.msp) can be used to improve search results.
@@ -361,7 +364,16 @@
                         
                         <LineBreak />
                         <LineBreak />
+                        <LineBreak />
                         
+                        <ContentControl>
+                            <local:ProteinRnaToggle Grid.Row="1" Margin="20 0 0 0"
+                                                    VerticalAlignment="Top" HorizontalAlignment="Left" />
+                        </ContentControl>
+                        
+                        <LineBreak />
+                        <LineBreak />
+                        <LineBreak />
                         Visit the 
                         <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
                             MetaMorpheus wiki
@@ -373,12 +385,12 @@
                         <LineBreak />
                         <LineBreak />
                         <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
-                        <LineBreak />
                         
                         MetaMorpheus uses Thermo's RawFileReader reading tool. Copyright © 2016 by Thermo Fisher Scientific, Inc. All rights reserved.
                     </TextBlock>
+
+                    
+
                 </Grid>
             </TabItem>
 

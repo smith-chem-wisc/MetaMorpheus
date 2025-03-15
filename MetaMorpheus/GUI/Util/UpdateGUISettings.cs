@@ -30,7 +30,7 @@ namespace MetaMorpheusGUI
             return fileExists;
         }
 
-
+        public static bool IsProteinMode() => Params.IsProteomicsMode;
         public static bool UseNonSpecificRecommendedSettings()
         {
             bool useRecommendedSettings = false;
