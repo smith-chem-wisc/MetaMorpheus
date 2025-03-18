@@ -1,5 +1,5 @@
 ## Base image is the Alpine Linux distro with .NET Core runtime
-FROM docker pull mcr.microsoft.com/dotnet/runtime:8.0-noble-chiseled
+FROM mcr.microsoft.com/dotnet/runtime:8.0-noble-chiseled
 
 ## Copies contents of the installer folder into the Docker image
 ADD /InstalledFiles/ /metamorpheus/
