@@ -223,11 +223,11 @@ namespace EngineLayer.ClassicSearch
                     {
                         if (PeptideSpectralMatches[scan.ScanIndex] == null)
                         {
-                            PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons, 0);
+                            PeptideSpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons);
                         }
                         else
                         {
-                            PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                            PeptideSpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons);
                         }
                     }
                 }
