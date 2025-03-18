@@ -17,7 +17,7 @@ namespace EngineLayer
     {
         public const double ToleranceForScoreDifferentiation = 1e-9;
 
-        protected SpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0)
+        protected SpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
         {
             _BestMatchingBioPolymersWithSetMods = new List<SpectralMatchHypothesis>();
             ScanIndex = scanIndex;
@@ -34,13 +34,12 @@ namespace EngineLayer
             PrecursorScanEnvelopePeakCount = scan.PrecursorEnvelopePeakCount;
             PrecursorFractionalIntensity = scan.PrecursorFractionalIntensity;
             DigestionParams = commonParameters.DigestionParams;
-            Xcorr = xcorr;
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
             MsDataScan = scan.TheScan;
             SpectralAngle = -1;
 
-            AddOrReplace(peptide, score, notch, true, matchedFragmentIons, xcorr);
+            AddOrReplace(peptide, score, notch, true, matchedFragmentIons);
         }
 
         public MsDataScan MsDataScan { get; set; }
@@ -91,7 +90,6 @@ namespace EngineLayer
         public PsmData PsmData_forPEPandPercolator { get; set; }
 
         public double Score { get; private set; }
-        public double Xcorr;
         public double SpectralAngle { get; set; }
         public string NativeId; // this is a property of the scan. used for mzID writing
 
@@ -141,7 +139,7 @@ namespace EngineLayer
             }
         }
 
-        public void AddOrReplace(IBioPolymerWithSetMods pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons, double newXcorr)
+        public void AddOrReplace(IBioPolymerWithSetMods pwsm, double newScore, int notch, bool reportAllAmbiguity, List<MatchedFragmentIon> matchedFragmentIons)
         {
             if (newScore - Score > ToleranceForScoreDifferentiation) //if new score beat the old score, overwrite it
             {
@@ -153,7 +151,6 @@ namespace EngineLayer
                     RunnerUpScore = Score;
                 }
                 Score = newScore;
-                Xcorr = newXcorr;
             }
             else if (newScore - Score > -ToleranceForScoreDifferentiation && reportAllAmbiguity) //else if the same score and ambiguity is allowed
             {
@@ -345,7 +342,6 @@ namespace EngineLayer
             ScanIndex = psm.ScanIndex;
             FdrInfo = psm.FdrInfo;
             Score = psm.Score;
-            Xcorr = psm.Xcorr;
             RunnerUpScore = psm.RunnerUpScore;
             IsDecoy = psm.IsDecoy;
             IsContaminant = psm.IsContaminant;
