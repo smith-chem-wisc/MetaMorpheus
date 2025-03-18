@@ -15,7 +15,6 @@ using ClassExtensions = Chemistry.ClassExtensions;
 using Nett;
 using TaskLayer;
 using Omics.Modifications;
-using Omics.Digestion;
 
 namespace Test
 {

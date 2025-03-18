@@ -22,8 +22,6 @@ using Chemistry;
 using MzLibUtil;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using System.Reflection.Metadata.Ecma335;
-using ThermoFisher.CommonCore.Data.Business;
 
 namespace TaskLayer
 {
