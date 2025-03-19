@@ -37,13 +37,11 @@ namespace EngineLayer
             BioPolymersWithSetModsToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
             NativeId = scan.NativeId;
             RunnerUpScore = commonParameters.ScoreCutoff;
-            MsDataScan = scan.TheScan;
             SpectralAngle = -1;
 
             AddOrReplace(peptide, score, notch, true, matchedFragmentIons);
         }
 
-        public MsDataScan MsDataScan { get; set; }
         public ChemicalFormula ModsChemicalFormula { get; private set; } // these fields will be null if they are ambiguous
         public string FullSequence { get; protected set; }
         public string EssentialSequence { get; protected set; }
