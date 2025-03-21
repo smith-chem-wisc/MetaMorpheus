@@ -1,6 +1,5 @@
 ﻿using System.Windows.Controls;
 using System.Windows.Input;
-
 namespace MetaMorpheusGUI;
 
 /// <summary>
@@ -8,19 +7,10 @@ namespace MetaMorpheusGUI;
 /// </summary>
 public partial class ProteinRnaImageToggle : UserControl
 {
-    public ProteinRnaImageToggle()
-    {
-        InitializeComponent();
-    }
+    public ProteinRnaImageToggle() => InitializeComponent();
 
-    private void Protein_Click(object sender, MouseButtonEventArgs e)
-    {
-        UpdateGUISettings.Globals.IsRnaMode = false;
-    }
+    private void Protein_Click(object sender, MouseButtonEventArgs e) => UpdateGUISettings.Globals.IsRnaMode = false;
 
-    private void Rna_Click(object sender, MouseButtonEventArgs e)
-    {
-        UpdateGUISettings.Globals.IsRnaMode = true;
-    }
+    private void Rna_Click(object sender, MouseButtonEventArgs e) => UpdateGUISettings.Globals.IsRnaMode = true;
 }
 

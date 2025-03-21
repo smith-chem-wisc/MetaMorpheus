@@ -35,9 +35,7 @@
     <None Remove="Icons\mail.bmp" />
     <None Remove="Icons\mail_20.bmp" />
     <None Remove="Icons\MMnice.ico" />
-    <None Remove="Icons\protein_5.bmp" />
     <None Remove="Icons\proxl-ms.bmp" />
-    <None Remove="Icons\rna_200.bmp" />
     <None Remove="Icons\rna_4.bmp" />
     <None Remove="Icons\Slack_Mark_Web.bmp" />
     <None Remove="Icons\spritz20.png" />
@@ -100,13 +98,13 @@
     <Resource Include="Icons\MMnice.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Icons\protein_5.bmp">
+    <Resource Include="Icons\IconProtein.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Icons\proxl-ms.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Icons\rna_200.bmp">
+    <Resource Include="Icons\IconRna.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
     <Resource Include="Icons\Slack_Mark_Web.bmp">

@@ -1,6 +1,4 @@
-﻿using GuiFunctions;
-
-namespace MetaMorpheusGUI
+﻿namespace MetaMorpheusGUI
 {
     /// <summary>
     /// Gui Parameters that are written out to a toml file. 

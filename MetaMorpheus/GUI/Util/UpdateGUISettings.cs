@@ -1,11 +1,9 @@
 ﻿using EngineLayer;
-using GuiFunctions;
 using MetaMorpheusGUI.Util;
 using Nett;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
-using System.Windows;
 using TaskLayer;
 
 namespace MetaMorpheusGUI
@@ -53,6 +51,7 @@ namespace MetaMorpheusGUI
             NotifyGlobalsChanged();
             return fileExists;
         }
+
 
         public static bool UseNonSpecificRecommendedSettings()
         {

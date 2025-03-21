@@ -1185,7 +1185,7 @@ namespace MetaMorpheusGUI
             if (senderType == "TabControl")
             {
                 var selectedItem = (TabItem)MainWindowTabControl.SelectedItem;
-                var selectedItemHeader = selectedItem.Header?.ToString();
+                var selectedItemHeader = selectedItem.Header.ToString();
 
                 if (selectedItemHeader == "Visualize")
                 {
