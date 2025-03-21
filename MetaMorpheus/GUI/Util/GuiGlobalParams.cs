@@ -29,5 +29,9 @@
         public bool UseSemiTrypsinParams { get; internal set; } = true;
         public bool UseArgCParams { get; internal set; } = true;
         public bool UseSpectralRecoveryParams { get; internal set; } = true;
+
+        // Rna Toggles
+        public bool ExposeRnaToUser { get; internal set; }
+        public bool IsRnaMode { get; internal set; }
     }
 }
