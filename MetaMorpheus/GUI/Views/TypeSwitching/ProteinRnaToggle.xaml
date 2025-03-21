@@ -17,6 +17,7 @@
                 <Setter Property="TextWrapping" Value="WrapWithOverflow" />
                 <Setter Property="Margin" Value="0,0,0,0"/>
             </Style>
+            
             <Style x:Key="StackPanelStyle" TargetType="StackPanel">
                 <Setter Property="HorizontalAlignment" Value="Center"/>
                 <Setter Property="VerticalAlignment" Value="Top"/>
@@ -115,8 +116,9 @@
 
         <CheckBox Grid.Column="1"  Name="ToggleCheckBox" VerticalAlignment="Top" HorizontalAlignment="Center"
                   IsChecked="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode, Mode=TwoWay}"
-                  Style="{StaticResource SwitchCheckBoxStyle}" Margin="-10,14,-14,0" 
-                  />
+                  Style="{StaticResource SwitchCheckBoxStyle}" Margin="-10,14,-14,0" >
+            
+        </CheckBox>
 
         <StackPanel Grid.Column="2" Style="{StaticResource StackPanelStyle}" >
             <Image   Source="/Icons/rna_200.bmp" Height="40" />

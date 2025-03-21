@@ -100,11 +100,15 @@
     <Resource Include="Icons\MMnice.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Icons\protein_5.bmp" />
+    <Resource Include="Icons\protein_5.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Icons\proxl-ms.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
-    <Resource Include="Icons\rna_200.bmp" />
+    <Resource Include="Icons\rna_200.bmp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Resource>
     <Resource Include="Icons\Slack_Mark_Web.bmp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Resource>
