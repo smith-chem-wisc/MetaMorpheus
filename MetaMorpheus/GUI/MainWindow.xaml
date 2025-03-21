@@ -404,7 +404,7 @@
 
                         ● The 
 
-                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Averaging-Task" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Hyperlink NavigateUri="https://pubmed.ncbi.nlm.nih.gov/38487981/" RequestNavigate="Hyperlink_RequestNavigate">
                             averaging
                         </Hyperlink>
                         
@@ -460,17 +460,13 @@
                         
                         <LineBreak />
                         <LineBreak />
-
-                        <LineBreak />
-                        <LineBreak />
-
+                        
                         Visit the 
                         <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki" RequestNavigate="Hyperlink_RequestNavigate">
                             MetaMorpheus wiki
                         </Hyperlink> 
                         to learn more.
                         
-                        <LineBreak />
                         <LineBreak />
                         <LineBreak />
                         <LineBreak />

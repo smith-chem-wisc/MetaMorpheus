@@ -13,4 +13,3 @@ public partial class ProteinRnaImageToggle : UserControl
 
     private void Rna_Click(object sender, MouseButtonEventArgs e) => UpdateGUISettings.Globals.IsRnaMode = true;
 }
-
