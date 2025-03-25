@@ -23,6 +23,7 @@ using TaskLayer;
 using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
 using EngineLayer.FdrAnalysis;
+using Omics;
 
 namespace Test
 {
@@ -50,7 +51,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -85,7 +86,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
             var listOfSortedms2Scans = MetaMorpheusTask.GetMs2Scans(myMsDataFile, null, new CommonParameters()).OrderBy(b => b.PrecursorMass).ToArray();
 
@@ -316,7 +317,7 @@ namespace Test
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var proteinList = new List<Protein> { new Protein("PEPTIDE", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("PEPTIDE", null) };
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
@@ -378,7 +379,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var proteinList = new List<Protein> { new Protein("QXQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("QXQ", null) };
 
             var searchModes = new OpenSearchMode();
 
@@ -422,7 +423,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 null, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -476,7 +477,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 null, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -538,7 +539,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("LEEGPPVTTVLTR", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("LEEGPPVTTVLTR", null) };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 null, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -791,7 +792,7 @@ namespace Test
             };
             Dictionary<string, Modification> u = new Dictionary<string, Modification>();
 
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse,false,out var errors);
+            List<IBioPolymer> proteinList = ProteinDbLoader.LoadProteinFasta(myDatabase, true, DecoyType.Reverse,false,out var errors).Cast<IBioPolymer>().ToList();
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 fsp, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -835,7 +836,7 @@ namespace Test
                 scoreCutoff: 1,
                 addCompIons: true);
 
-            var proteinList = new List<Protein> { new Protein("K", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("K", null) };
 
             var indexEngine = new IndexingEngine(proteinList, new List<Modification>(), new List<Modification>(), null, null, null, 1, DecoyType.Reverse,
                 CommonParameters, null, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -868,7 +869,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 
@@ -920,7 +921,7 @@ namespace Test
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQXQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQXQ", null) };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 null, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -978,7 +979,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
+            var proteinList = new List<IBioPolymer> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 null, 100000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -1077,7 +1078,7 @@ namespace Test
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
+            var proteinList = new List<IBioPolymer> { new Protein("GGGGGMNNNKQQQGGGGG", "TestProtein") };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse, CommonParameters,
                 null, 100000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -1153,7 +1154,7 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             fixedModifications.Add(mod2);
 
-            var proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGGGGG", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("GGGGGCDQPKLLGIETPLPKKEGGGGG", null) };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
                 null, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -1186,7 +1187,7 @@ namespace Test
             //Check that there is no modification hanging out on the n-terminus
             Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
-            proteinList = new List<Protein> { new Protein("CDQPKLLGIETPLPKKEGGGGG", null) };
+            proteinList = new List<IBioPolymer> { new Protein("CDQPKLLGIETPLPKKEGGGGG", null) };
             guiltyPwsm = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]DQPKLLGIETPLPKKE", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
             guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
             myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
@@ -1212,7 +1213,7 @@ namespace Test
             //Check that there is a modification hanging out on the protein n-terminus
             Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
-            proteinList = new List<Protein> { new Protein("GGGGGCDQPKLLGIETPLPKKEGG", null) };
+            proteinList = new List<IBioPolymer> { new Protein("GGGGGCDQPKLLGIETPLPKKEGG", null) };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
                 null, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
@@ -1260,7 +1261,7 @@ namespace Test
             Modification mod2 = new Modification(_originalId: "Carbamidomethyl on C", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.", _monoisotopicMass: 57.02146372068994);
             fixedModifications.Add(mod2);
 
-            var proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
                 null, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -1292,7 +1293,7 @@ namespace Test
             //Check that there is no modification hanging out on the n-terminus
             Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
-            proteinList = new List<Protein> { new Protein("GGGGGDQPKLLGIETPLPKKEC", null) };
+            proteinList = new List<IBioPolymer> { new Protein("GGGGGDQPKLLGIETPLPKKEC", null) };
             guiltyPwsm = new PeptideWithSetModifications("GGDQPKLLGIETPLPKKEC[Common Fixed:Carbamidomethyl on C]", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod2 } });
             guiltyPwsm.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
             myMsDataFile = new TestDataFile(guiltyPwsm.MonoisotopicMass, fragments.Select(x => x.NeutralMass.ToMz(1)).ToArray());
@@ -1319,7 +1320,7 @@ namespace Test
             //Check that there is a modification hanging out on the protein n-terminus
             Assert.That(allPsmsArray[0].FullSequence, Is.EqualTo(guiltyPwsm.FullSequence));
 
-            proteinList = new List<Protein> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
+            proteinList = new List<IBioPolymer> { new Protein("GGDQPKLLGIETPLPKKECGGGGG", null) };
             indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.None, CommonParameters,
                 null, SearchParameters.MaxFragmentSize, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             indexResults = (IndexingResults)indexEngine.Run();
@@ -1351,7 +1352,7 @@ namespace Test
             DigestionParams dp = new DigestionParams("singleC", 14, 15, 15, 1024, InitiatorMethionineBehavior.Variable, 2, CleavageSpecificity.None, FragmentationTerminus.C);
             CommonParameters cp = new CommonParameters(digestionParams: dp);
             SearchParameters sp = new SearchParameters();
-            IndexingEngine indexingEngine = new IndexingEngine(new List<Protein> { protein }, null, null, null, null, null, 1, DecoyType.None, cp,
+            IndexingEngine indexingEngine = new IndexingEngine(new List<IBioPolymer> { protein }, null, null, null, null, null, 1, DecoyType.None, cp,
                 null, 4500, true, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             IndexingResults indexingResults = (IndexingResults)indexingEngine.Run();
 
@@ -1406,7 +1407,7 @@ namespace Test
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("GGGGGMNNNKQQQGGGGG", null) };
 
             var indexEngine = new IndexingEngine(proteinList, variableModifications, fixedModifications, null, null, null, 1, DecoyType.Reverse,
                 CommonParameters, null, SearchParameters.MaxFragmentSize, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
@@ -1532,7 +1533,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMNNNKQQQGGGGGGKKRKG", "TestProtein") };
+            var proteinList = new List<IBioPolymer> { new Protein("GGGGGMNNNKQQQGGGGGGKKRKG", "TestProtein") };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
@@ -1611,7 +1612,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<ProteolysisProduct> { new ProteolysisProduct(null, null, "test") }) };
+            var proteinList = new List<IBioPolymer> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<ProteolysisProduct> { new ProteolysisProduct(null, null, "test") }) };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
@@ -1687,7 +1688,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKGKKNKKGN", "hello") };
+            var proteinList = new List<IBioPolymer> { new Protein("MGGGGGMKNNNQQQGGGGKGKKNKKGN", "hello") };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
@@ -1779,7 +1780,7 @@ namespace Test
                 ii++;
             }
             List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
-            var proteinList = new List<Protein> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
+            var proteinList = new List<IBioPolymer> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
             List<DigestionMotif> motifs1 = new List<DigestionMotif>
             {
@@ -1800,8 +1801,8 @@ namespace Test
                 {"LK", false},
                 {"KLK", false}
             };
-            IEnumerable<PeptideWithSetModifications> PWSMs = proteinList[0].Digest(digestParams, new List<Modification>(), modsDictionary.Keys.ToList());
-            foreach (PeptideWithSetModifications PWSM in PWSMs)
+            IEnumerable<IBioPolymerWithSetMods> PWSMs = proteinList[0].Digest(digestParams, new List<Modification>(), modsDictionary.Keys.ToList());
+            foreach (IBioPolymerWithSetMods PWSM in PWSMs)
             {
                 if (found.TryGetValue(PWSM.BaseSequence, out bool b))
                 {
@@ -1825,7 +1826,7 @@ namespace Test
             List<Modification> modlist = new List<Modification> { mod };
             int modPositionInProtein = 1;
             var proteinListForSearch = new Protein("AAAGSAAVSGAGTPVAGPTGR", null, oneBasedModifications: new Dictionary<int, List<Modification>> { { modPositionInProtein, modlist } });
-            List<Protein> proteins = new List<Protein> { proteinListForSearch };
+            List<IBioPolymer> proteins = new List<IBioPolymer> { proteinListForSearch };
 
             //Prepare the scan
             double[] mz = { 101.814659, 101.851852, 101.856758, 101.920807, 101.957397, 101.993172, 102.029053, 102.035851, 102.065628, 102.102516, 102.123955, 102.129654, 102.136391, 102.144806, 102.173798, 102.182594, 102.19574, 102.201569, 102.208534, 102.227333, 102.231323, 102.237877, 102.266922, 110.071281, 124.284775, 125.057686, 129.101776, 136.075348, 141.059647, 141.067139, 147.112045, 152.296143, 157.095963, 159.321686, 159.391266, 159.461609, 159.505859, 159.530792, 159.567841, 159.673218, 159.688232, 159.708939, 159.717117, 159.744415, 159.883804, 169.132446, 175.118637, 175.639145, 185.091217, 185.629135, 185.649612, 198.086334, 202.961533, 225.122726, 230.112839, 232.139282, 247.539169, 256.128204, 257.129761, 269.123596, 283.467743, 287.133331, 304.127319, 306.832855, 307.01059, 307.281647, 313.149384, 314.151093, 329.183044, 358.160583, 360.700592, 365.218567, 370.208008, 372.185425, 373.445496, 382.170685, 383.1745, 400.180878, 401.178406, 415.016876, 425.206726, 430.238647, 431.253052, 438.198273, 439.226074, 442.213654, 453.207336, 454.210938, 467.186005, 470.226654, 471.218048, 472.219635, 487.260254, 488.259033, 498.980499, 524.244202, 525.244385, 528.277832, 541.27124, 542.254883, 543.258118, 558.296448, 559.29895, 602.023743, 637.564087, 638.122498, 638.68103, 639.24469, 641.322876, 642.328674, 651.320923, 665.653137, 665.812622, 678.225586, 678.837524, 684.52533, 699.105225, 702.819702, 710.320374, 718.544617, 731.125793, 731.804626, 732.479858, 732.635559, 745.458618, 754.418152, 755.42041, 770.024719, 835.083557, 855.465454, 883.47406, 884.485962, 885.430664, 894.471252, 912.484192, 913.487305, 983.525391, 984.515137, 1022.541321, 1040.545166, 1041.545166, 1109.568115, 1110.565918, 1122.717896, 1127.574707, 1128.582764, 1143.576172, 1192.367432, 1209.613403, 1226.649048, 1227.651123, 1255.27356, 1270.274414, 1273.796753, 1297.668091, 1298.676636, 1520.323364, 1541.422729, 1546.209839, 1639.540283, 1669.039673, 1670.780518, 1671.45459, 1671.927368, 1672.41272, 1673.799194, 1674.881836, 1687.070557 };
@@ -1898,18 +1899,18 @@ namespace Test
             CommonParameters cCleaveParams = new CommonParameters(digestionParams: new DigestionParams(protease: "singleC", initiatorMethionineBehavior: InitiatorMethionineBehavior.Cleave, fragmentationTerminus: FragmentationTerminus.C, searchModeType: CleavageSpecificity.None), addCompIons: true);
 
             //params for annotated and variable mods
-            List<Protein> proteinWithMods = new List<Protein> {new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein",
+            List<IBioPolymer> proteinWithMods = new List<IBioPolymer> {new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein",
                 oneBasedModifications: new Dictionary<int, List<Modification>>
                 {
                     { 2, new List<Modification>{GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"] } },
                     { 22, new List<Modification>{GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] } }
                 })
             };
-            List<Protein> proteinWithoutMods = new List<Protein> { new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein") };
+            List<IBioPolymer> proteinWithoutMods = new List<IBioPolymer> { new Protein("MAGIAAKLAKDREAAEGLGSHA", "testProtein") };
             List<Modification> empty = new List<Modification>();
             List<Modification> terminalVariableMods = new List<Modification> { GlobalVariables.AllModsKnownDictionary["N-acetylalanine on A"], GlobalVariables.AllModsKnownDictionary["Alanine amide on A"] };
 
-            List<(List<Protein> proteinList, List<Modification> variableMods)> variableParamsToTest = new List<(List<Protein> protein, List<Modification> variableMods)>
+            List<(List<IBioPolymer> proteinList, List<Modification> variableMods)> variableParamsToTest = new List<(List<IBioPolymer> protein, List<Modification> variableMods)>
             {
                 (proteinWithoutMods, terminalVariableMods),
                 (proteinWithMods, empty),
@@ -1993,7 +1994,7 @@ namespace Test
             Protein theProtein = new Protein("PEPTIDEK", "accession1");
             Protein theProtein2 = new Protein("ANTHERPEPKLNGEEPEPKSMTHERPEPSK", "accession2");
             Protein theProtein3 = new Protein("ANTHERPEPKLNGEEPEPKASWELASKTHEPEPSK", "accession3");
-            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<Protein> { theProtein, theProtein2, theProtein3 }, xmlName);
+            ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), new List<IBioPolymer> { theProtein, theProtein2, theProtein3 }, xmlName);
 
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"testFolder");
             Directory.CreateDirectory(outputFolder);

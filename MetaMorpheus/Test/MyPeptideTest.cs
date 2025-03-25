@@ -15,6 +15,7 @@ using System.IO;
 using System.Linq;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -153,7 +154,7 @@ namespace Test
             Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans = { new Ms2ScanWithSpecificMass(scan, 600, 1, null, new CommonParameters()) };
             CommonParameters CommonParameters = new CommonParameters(productMassTolerance: new PpmTolerance(5), scoreCutoff: 1, digestionParams: new DigestionParams(maxMissedCleavages: 0, minPeptideLength: 1, maxModificationIsoforms: int.MaxValue, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain));
 
-            var indexEngine = new IndexingEngine(new List<Protein> { prot }, new List<Modification>(), new List<Modification>(), null, null, null, 1, DecoyType.Reverse,
+            var indexEngine = new IndexingEngine(new List<IBioPolymer> { prot }, new List<Modification>(), new List<Modification>(), null, null, null, 1, DecoyType.Reverse,
                 CommonParameters, null, 30000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>());
             var indexResults = (IndexingResults)indexEngine.Run();
             var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, new OpenSearchMode(), 0, new List<string>());

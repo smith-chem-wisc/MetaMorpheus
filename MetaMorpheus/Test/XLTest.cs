@@ -22,6 +22,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -157,7 +158,7 @@ namespace Test
             };
 
             //Create databases contain two protein.
-            var proteinList = new List<Protein> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
+            var proteinList = new List<IBioPolymer> { new Protein("EKVLTSSAR", "Fake01"), new Protein("LSQKFPK", "Fake02") };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
@@ -394,9 +395,9 @@ namespace Test
             };
 
             //Create databases contain two protein.
-            List<Protein> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/YeastPol2.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
+            List<IBioPolymer> proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData/YeastPol2.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
                 ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, -1);
+                    ProteinDbLoader.UniprotOrganismRegex, -1).Cast<IBioPolymer>().ToList();
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
@@ -859,7 +860,7 @@ namespace Test
             };
 
             //Create databases contain two protein.
-            var proteinList = new List<Protein> { new Protein("VLTAR", "Fake01"), new Protein("LCQK", "Fake02") };
+            var proteinList = new List<IBioPolymer> { new Protein("VLTAR", "Fake01"), new Protein("LCQK", "Fake02") };
 
             ModificationMotif.TryGetMotif("M", out ModificationMotif motif1);
             Modification mod1 = new Modification(_originalId: "Oxidation of M", _modificationType: "Common Variable", _target: motif1, _locationRestriction: "Anywhere.", _monoisotopicMass: 15.99491461957);
@@ -882,7 +883,7 @@ namespace Test
             }
 
             //Generate digested peptide lists.
-            List<PeptideWithSetModifications> digestedList = new List<PeptideWithSetModifications>();
+            List<IBioPolymerWithSetMods> digestedList = new();
             foreach (var item in proteinList)
             {
                 var digested = item.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
@@ -1159,7 +1160,7 @@ namespace Test
 
             // search the data with the peptide WITHOUT the deadend mod annotated in the search database.
             // the search engine should be able to correctly identify the deadend mod on T
-            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), null, null, null,
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<IBioPolymer> { protein }, new List<Modification>(), new List<Modification>(), null, null, null,
                 0, DecoyType.None, new CommonParameters(), null, 1000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             List<(int, int, int)>[] candidates = new List<(int, int, int)>[scans.Length];
@@ -1379,7 +1380,7 @@ namespace Test
             List<List<(double, int, double)>> precursorss = new List<List<(double, int, double)>>
                 { new List<(double, int, double)> { (scans[0].PrecursorMass, scans[0].PrecursorCharge, scans[0].PrecursorMonoisotopicPeakMz)} };
 
-            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { protein }, new List<Modification>(), new List<Modification>(), null, null, null, 0, DecoyType.None,
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<IBioPolymer> { protein }, new List<Modification>(), new List<Modification>(), null, null, null, 0, DecoyType.None,
                 new CommonParameters(), null, 1000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             List<(int, int, int)>[] candidates = new List<(int, int, int)>[scans.Length];
@@ -1392,7 +1393,7 @@ namespace Test
             csms[0].First().ResolveAllAmbiguities();
             csms[0].First().SetFdrValues(0, 0, 0.1, 0, 0, 0, 0, 0);
 
-            WriteXlFile.WritePepXML_xl(csms.SelectMany(p => p).ToList(), new List<Protein>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
+            WriteXlFile.WritePepXML_xl(csms.SelectMany(p => p).ToList(), new List<IBioPolymer>(), "", new List<Modification> { deadend }, new List<Modification> { deadend }, new List<string>(), TestContext.CurrentContext.TestDirectory, "test", new CommonParameters(), new XlSearchParameters { Crosslinker = crosslinker });
             File.Delete(Path.Combine(TestContext.CurrentContext.TestDirectory, @"test.pep.XML"));
         }
 
@@ -1436,7 +1437,7 @@ namespace Test
                 "PVSEKVTKCCTESLVNRRPCFSALTPDETYVPKAFDEKLFTFHADICTLPDTEKQIKKQTALVELLKHKP" +
                 "KATEEQLKTVMENFVAFVDKCCAADDKEACFAVEGPKLVVSTQTALA", "BSA2");
 
-            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa, bsa2 }, new List<Modification>(), new List<Modification>(),
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<IBioPolymer> { bsa, bsa2 }, new List<Modification>(), new List<Modification>(),
                 null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             var secondCombinedParams = new CommonParameters(dissociationType: DissociationType.ETD, ms2childScanDissociationType: DissociationType.ETD,
@@ -1445,7 +1446,7 @@ namespace Test
             var fsp2 = new List<(string, CommonParameters)>();
             fsp2.Add((spectraFile, secondCombinedParams));
 
-            var secondIndexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), new List<Modification>(),
+            var secondIndexingResults = (IndexingResults)new IndexingEngine(new List<IBioPolymer> { bsa }, new List<Modification>(), new List<Modification>(),
                 null, null, null, 0, DecoyType.None, secondCombinedParams, fsp2, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             var csms = new List<CrosslinkSpectralMatch>[1];
@@ -1550,7 +1551,7 @@ namespace Test
 
             var fixedMods = GlobalVariables.AllModsKnown.Where(p => p.IdWithMotif == "Carbamidomethyl on C").ToList();
 
-            var indexingResults = (IndexingResults)new IndexingEngine(new List<Protein> { bsa }, new List<Modification>(), fixedMods,
+            var indexingResults = (IndexingResults)new IndexingEngine(new List<IBioPolymer> { bsa }, new List<Modification>(), fixedMods,
                null, null, null, 0, DecoyType.None, commonParameters, fsp, 5000, false, new List<FileInfo>(), TargetContaminantAmbiguity.RemoveContaminant, new List<string>()).Run();
 
             var csms = new List<CrosslinkSpectralMatch>[2];

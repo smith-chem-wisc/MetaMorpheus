@@ -8,6 +8,7 @@ using EngineLayer.ModernSearch;
 using IO.MzML;
 using MzLibUtil;
 using NUnit.Framework;
+using Omics;
 using Omics.Modifications;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
@@ -66,7 +67,7 @@ namespace Test
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var proteinList = new List<Protein>
+            var proteinList = new List<IBioPolymer>
             {
                 new Protein("MPKVYSYQEVAEHNGPENFWIIIDDKVYDVSQFKDEHPGGDEIIMDLGGQDATESFVDIGHSDEALRLLKGLYIGDVDKTSERVSVEKVSTSENQSKGSGTLVVILAILMLGVAYYLLNE", "P40312")
             };

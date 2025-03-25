@@ -12,6 +12,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics;
 using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
@@ -28,7 +29,7 @@ namespace Test
             var myMsDataFile = new TestDataFile();
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var proteinList = new List<Protein> { new Protein("QXQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("QXQ", null) };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new OpenSearchMode();
@@ -102,7 +103,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
 
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -177,7 +178,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
 
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -254,7 +255,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
 
             SearchParameters SearchParameters = new SearchParameters
             {
@@ -406,7 +407,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
 
             SearchParameters SearchParameters = new SearchParameters
             {

@@ -25,7 +25,7 @@ namespace Test
         private static MyTaskResults searchTaskResults;
         private static List<PsmFromTsv> tsvPsms;
         private static List<SpectralMatch> psms;
-        private static List<Protein> proteinList;
+        private static List<IBioPolymer> proteinList;
         private static MyFileManager myFileManager;
         private static List<string> rawSlices;
         private static List<DbForTask> databaseList;
@@ -54,7 +54,7 @@ namespace Test
             Loaders.LoadElements();
             string databasePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta");
             proteinList = ProteinDbLoader.LoadProteinFasta(databasePath, true, DecoyType.Reverse, false, out List<string> errors)
-                .Where(protein => protein.AppliedSequenceVariations != null).ToList();
+                .Where(protein => protein.AppliedSequenceVariations != null).Cast<IBioPolymer>().ToList();
             CommonParameters commonParameters = new CommonParameters();
 
 
@@ -65,14 +65,14 @@ namespace Test
                 MsDataScan scan = myFileManager.LoadFile(filePath, commonParameters).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
                     filePath, commonParameters);
-                Protein protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
+                var protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
 
                 //string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 //int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 //int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
 
                 PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
-                    readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
+                    readPsm.FullSequence, null, p: (Protein)protein, digestionParams: new DigestionParams(),
                     oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 1);
                 SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
