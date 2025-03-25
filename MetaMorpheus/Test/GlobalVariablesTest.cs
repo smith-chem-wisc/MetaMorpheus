@@ -1,7 +1,11 @@
 ﻿using EngineLayer;
 using NUnit.Framework;
+using Omics.Modifications;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Windows.Documents;
 
 namespace Test
 {
@@ -116,6 +120,15 @@ namespace Test
             Assert.That(AnalyteType.Peptide.GetBioPolymerLabel(), Is.EqualTo("Protein"));
             Assert.That(AnalyteType.Proteoform.GetBioPolymerLabel(), Is.EqualTo("Protein"));
             Assert.That(AnalyteType.Oligo.GetBioPolymerLabel(), Is.EqualTo("Transcript"));
+        }
+
+        [Test]
+        public static void RnaModsExist()
+        {
+            List<Modification> rnaMods = GlobalVariables.AllRnaModsKnown.ToList();
+
+            Assert.That(rnaMods.Count > 0);
+            Assert.That(rnaMods.Any(x => x.IdWithMotif == "Methylation on A"));
         }
     }
 }

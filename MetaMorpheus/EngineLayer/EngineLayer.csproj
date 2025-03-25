@@ -92,6 +92,9 @@
     <None Update="Mods\ProteaseMods.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Mods\RnaMods.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Mods\substitutions.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
