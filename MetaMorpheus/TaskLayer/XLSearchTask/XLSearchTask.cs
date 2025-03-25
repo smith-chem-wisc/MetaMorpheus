@@ -3,6 +3,7 @@ using EngineLayer.CrosslinkSearch;
 using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
+using Omics;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
@@ -45,7 +46,7 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters).Cast<Protein>().ToList();
+            List<IBioPolymer> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, XlSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
             CommonParameters.TotalPartitions = proteinList.Count() / 250;
             if (CommonParameters.TotalPartitions == 0) { CommonParameters.TotalPartitions = 1; }
 
@@ -109,9 +110,9 @@ namespace TaskLayer
                 //First round search.
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
-                    List<PeptideWithSetModifications> peptideIndex = null;
+                    List<IBioPolymerWithSetMods> peptideIndex = null;
 
-                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+                    List<IBioPolymer> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
 
@@ -151,9 +152,9 @@ namespace TaskLayer
                 //Pair the crosslink between two partitions. 
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
-                    List<PeptideWithSetModifications> peptideIndex_a = null;
+                    List<IBioPolymerWithSetMods> peptideIndex_a = null;
 
-                    List<Protein> proteinListSubset_a = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+                    List<IBioPolymer> proteinListSubset_a = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
 
@@ -166,7 +167,7 @@ namespace TaskLayer
 
                     for (int nextPartition = 0; nextPartition < CommonParameters.TotalPartitions; nextPartition++)
                     {
-                        List<PeptideWithSetModifications> peptideIndex_b = null;
+                        List<IBioPolymerWithSetMods> peptideIndex_b = null;
 
                         if(currentPartition == nextPartition)
                         {
@@ -174,7 +175,7 @@ namespace TaskLayer
                         }
                         else
                         {
-                            List<Protein> proteinListSubset_b = proteinList.GetRange(nextPartition * proteinList.Count() / combinedParams.TotalPartitions, ((nextPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (nextPartition * proteinList.Count() / combinedParams.TotalPartitions));
+                            List<IBioPolymer> proteinListSubset_b = proteinList.GetRange(nextPartition * proteinList.Count() / combinedParams.TotalPartitions, ((nextPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (nextPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                             Status("Getting fragment dictionary...", new List<string> { taskId });
 
