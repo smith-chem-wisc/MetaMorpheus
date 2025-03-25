@@ -14,6 +14,8 @@ using Proteomics.ProteolyticDigestion;
 using System.Globalization;
 using Omics.Modifications;
 using System.Threading.Tasks;
+using Omics;
+using Transcriptomics;
 
 namespace TaskLayer
 {
@@ -40,10 +42,10 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
-            List<Protein> proteinList = null;
-            Task<List<Protein>> proteinLoadingTask = new(() =>
+            List<IBioPolymer> proteinList = null;
+            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
             {
-                var proteins = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse,
+                var proteins = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse,
                     localizeableModificationTypes,
                     CommonParameters);
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
@@ -184,7 +186,9 @@ namespace TaskLayer
                 }
                 string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
-                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                var newModsActuallyWritten = GlobalVariables.AnalyteType.IsRnaMode()
+                    ? ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullName)
+                    : ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullName);
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
@@ -210,7 +214,9 @@ namespace TaskLayer
                 }
                 string outputXMLdbFullNameContaminants = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
-                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                var newModsActuallyWritten = GlobalVariables.AnalyteType.IsRnaMode()
+                    ? ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullNameContaminants)
+                    : ProteinDbWriter.WriteXmlDatabase(gptmdResults.Mods, proteinList.Where(b => !b.IsDecoy && b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullNameContaminants);
 
                 FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { taskId });
 
@@ -225,7 +231,8 @@ namespace TaskLayer
 
         private static IEnumerable<Tuple<double, double>> LoadCombos(List<Modification> modificationsThatCanBeCombined)
         {
-            using (StreamReader r = new StreamReader(Path.Combine(GlobalVariables.DataDir, "Data", @"combos.txt")))
+            string specificPath = GlobalVariables.AnalyteType.IsRnaMode() ? "rnaCombos.txt" : "combos.txt";
+            using (StreamReader r = new StreamReader(Path.Combine(GlobalVariables.DataDir, "Data", specificPath)))
             {
                 while (r.Peek() >= 0)
                 {

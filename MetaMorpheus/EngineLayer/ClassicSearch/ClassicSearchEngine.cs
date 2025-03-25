@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Omics.Modifications;
 using System.Collections.Concurrent;
 using EngineLayer.Util;
+using Omics;
 
 namespace EngineLayer.ClassicSearch
 {
@@ -17,7 +18,7 @@ namespace EngineLayer.ClassicSearch
     {
         private readonly SpectralLibrary SpectralLibrary;
         private readonly MassDiffAcceptor SearchMode;
-        private readonly List<Protein> Proteins;
+        private readonly List<IBioPolymer> Proteins;
         private readonly List<Modification> FixedModifications;
         private readonly List<Modification> VariableModifications;
         private readonly List<SilacLabel> SilacLabels;
@@ -32,7 +33,7 @@ namespace EngineLayer.ClassicSearch
 
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
-            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
+            List<IBioPolymer> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
             SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool writeDigestionCounts = false)
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
