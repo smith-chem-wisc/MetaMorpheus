@@ -24,6 +24,8 @@ using Easy.Common.Extensions;
 using Omics;
 using Transcriptomics;
 using UsefulProteomicsDatabases.Transcriptomics;
+using Transcriptomics.Digestion;
+using System.Runtime.ConstrainedExecution;
 
 namespace TaskLayer
 {
@@ -928,23 +930,38 @@ namespace TaskLayer
 
         private static void WritePeptideIndex(List<IBioPolymerWithSetMods> peptideIndex, string peptideIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            var stream = File.Create(peptideIndexFileName);
 
-            using (var file = File.Create(peptideIndexFileName))
+            if (GlobalVariables.AnalyteType.IsRnaMode())
             {
-                ser.Serialize(file, peptideIndex);
+                var ser = ISerializableSequence.GetSequenceSerializer<OligoWithSetMods>();
+                ser.Serialize(stream, peptideIndex.Cast<OligoWithSetMods>().ToList());
             }
+            else
+            {
+                var ser = ISerializableSequence.GetSequenceSerializer<PeptideWithSetModifications>();
+                ser.Serialize(stream, peptideIndex.Cast<PeptideWithSetModifications>().ToList());
+            }
+
+            stream.Close();
         }
 
         private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, List<IBioPolymer> allKnownProteins)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
-            var ser = new NetSerializer.Serializer(messageTypes);
             List<IBioPolymerWithSetMods> peptideIndex;
-            using (var file = File.OpenRead(peptideIndexFileName))
+            var stream = File.OpenRead(peptideIndexFileName);
+
+            if (GlobalVariables.AnalyteType.IsRnaMode())
             {
-                peptideIndex = (List<IBioPolymerWithSetMods>)ser.Deserialize(file);
+                var ser = ISerializableSequence.GetSequenceSerializer<OligoWithSetMods>();
+                peptideIndex = ((List<OligoWithSetMods>)ser.Deserialize(stream)).Cast<IBioPolymerWithSetMods>().ToList();
+            }
+            else
+            {
+                var ser = ISerializableSequence.GetSequenceSerializer<PeptideWithSetModifications>();
+                var temp = ser.Deserialize(stream);
+                var peps = (List<PeptideWithSetModifications>)temp;
+                peptideIndex = ((List<PeptideWithSetModifications>)ser.Deserialize(stream)).Cast<IBioPolymerWithSetMods>().ToList();
             }
 
             // populate dictionaries of known proteins for deserialization
