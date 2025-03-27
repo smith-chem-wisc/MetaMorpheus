@@ -16,14 +16,11 @@ namespace EngineLayer.Gptmd
     {
         // It is assumed that there is a one-to-one correspondence between the psms in AllIdentifications and the scans in AllScans
         private readonly List<SpectralMatch> AllIdentifications;
-        private readonly List<Ms2ScanWithSpecificMass> AllScans;
         private readonly IEnumerable<Tuple<double, double>> Combos;
         private readonly List<Modification> GptmdModifications;
         private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
         //The ScoreTolerance property is used to differentiatie when a PTM candidate is added to a peptide. We check the score at each position and then add that mod where the score is highest.
         private readonly double ScoreTolerance = 0.1;
-
-        public Ms2ScanWithSpecificMass[] ArrayOfSortedMS2Scans { get; init; }
         public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
 
         public GptmdEngine(
