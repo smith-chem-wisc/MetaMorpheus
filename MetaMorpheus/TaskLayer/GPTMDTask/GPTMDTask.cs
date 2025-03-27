@@ -32,7 +32,6 @@ namespace TaskLayer
         protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
         {
             MyFileManager myFileManager = new MyFileManager(true);
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             // start loading first spectra file in the background
             Task<MsDataFile> nextFileLoadingTask = new(() => myFileManager.LoadFile(currentRawFileList[0], SetAllFileSpecificCommonParams(CommonParameters, fileSettingsList[0])));
@@ -94,11 +93,8 @@ namespace TaskLayer
                 filePathToPrecursorMassTolerance.Add(filePath, fileTolerance);
             }
 
-            object lock1 = new object();
-            object lock2 = new object();
-
-            Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
-
+            // Store the psms from each file in one combined list
+            List<SpectralMatch> allPsms = new();
             for (int spectraFileIndex = 0; spectraFileIndex < currentRawFileList.Count; spectraFileIndex++)
             {
                 // Stop if canceled
@@ -151,16 +147,24 @@ namespace TaskLayer
                 new ClassicSearchEngine(psmArray, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, null, null, null, 
                     proteinList, searchMode, combinedParams, this.FileSpecificParameters, null, new List<string> { taskId, "Individual Spectra Files", origDataFile }, writeSpctralLibrary).Run();
 
-                var psmList = psmArray.Where(p => p != null).ToList();
-                new FdrAnalysisEngine(psmList, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
 
-                new GptmdEngine(psmList, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId },
-                    arrayOfMs2ScansSortedByMass, allModDictionary).Run();
+                var psmList = psmArray.Where(p => p != null).ToList();
+                foreach(var psm in psmList)
+                {
+                    psm.SetMs2Scan(arrayOfMs2ScansSortedByMass[psm.ScanIndex].TheScan);
+                }
+                allPsms.AddRange(psmList);
 
                 FinishedDataFile(origDataFile, new List<string> { taskId, "Individual Spectra Files", origDataFile });
                 ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", origDataFile }));
             }
             ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files" }));
+
+            // Run FDR analysis on allPsms
+            // GPTMD doesn't work as well if you do FDR on a file-by-file basis. Presumably this is because it takes multiple files to get enough PSMs for all the different notches
+            new FdrAnalysisEngine(allPsms, tempSearchMode.NumNotches, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, doPEP: false).Run();
+            Dictionary<string, HashSet<Tuple<int, Modification>>> allModDictionary = new();
+            new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary).Run();
 
             //Move this text after search because proteins don't get loaded until search begins.
             ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
