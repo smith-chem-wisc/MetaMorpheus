@@ -14,7 +14,9 @@ namespace EngineLayer.Gptmd
 {
     public class GptmdEngine : MetaMorpheusEngine
     {
+        // It is assumed that there is a one-to-one correspondence between the psms in AllIdentifications and the scans in AllScans
         private readonly List<SpectralMatch> AllIdentifications;
+        private readonly List<Ms2ScanWithSpecificMass> AllScans;
         private readonly IEnumerable<Tuple<double, double>> Combos;
         private readonly List<Modification> GptmdModifications;
         private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
@@ -32,7 +34,6 @@ namespace EngineLayer.Gptmd
             CommonParameters commonParameters, 
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
             List<string> nestedIds,
-            Ms2ScanWithSpecificMass[] dataScans,
             Dictionary<string, HashSet<Tuple<int, Modification>>> modDictionary) 
             : base(commonParameters, fileSpecificParameters, nestedIds)
         {
@@ -40,7 +41,6 @@ namespace EngineLayer.Gptmd
             GptmdModifications = gptmdModifications;
             Combos = combos;
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
-            ArrayOfSortedMS2Scans = dataScans;
             ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
         }
 
@@ -118,7 +118,7 @@ namespace EngineLayer.Gptmd
                                     {
                                         var scores = new List<double>();
                                         var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                                            ArrayOfSortedMS2Scans[psms[i].ScanIndex].TheScan.DissociationType.Value : CommonParameters.DissociationType;
+                                            psms[i].Ms2Scan.DissociationType.Value : CommonParameters.DissociationType;
 
                                         scores = CalculatePeptideScores(newPeptides, dissociationType, psms[i]);
 
@@ -205,7 +205,7 @@ namespace EngineLayer.Gptmd
                 var peptideTheorProducts = new List<Product>();
                 peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
-                var scan = ArrayOfSortedMS2Scans[psm.ScanIndex].TheScan;
+                var scan = psm.Ms2Scan;
                 var precursorMass = psm.ScanPrecursorMass;
                 var precursorCharge = psm.ScanPrecursorCharge;
                 var fileName = psm.FullFilePath;

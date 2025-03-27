@@ -70,6 +70,9 @@ namespace EngineLayer
         public double PrecursorFractionalIntensity { get; }
         public double ScanPrecursorMass { get; }
         public string FullFilePath { get; private set; }
+        /// <summary>
+        /// Refers to the index of the Ms2ScanWithSpecificMass in an array of Ms2ScansWithSpecificMass that is sorted by precursor mass
+        /// </summary>
         public int ScanIndex { get; }
         public int NumDifferentMatchingPeptides { get { return _BestMatchingBioPolymersWithSetMods.Count; } }
 
@@ -117,6 +120,24 @@ namespace EngineLayer
                 return this._BestMatchingBioPolymersWithSetMods.Select(p => Math.Round((this.ScanPrecursorMass - p.SpecificBioPolymer.MonoisotopicMass) / p.SpecificBioPolymer.MonoisotopicMass * 1e6, 2)).ToList();
             }
         }
+
+        #region GPTMD
+
+        /// <summary>
+        /// This property is only used by the GPTMD Task
+        /// </summary>
+        public MsDataScan Ms2Scan { get; private set; }
+
+        /// <summary>
+        /// This should only be called within the GPTMD Task
+        /// </summary>
+        /// <param name="scan"></param>
+        public void SetMs2Scan(MsDataScan scan)
+        {
+            Ms2Scan = scan;
+        }
+
+        #endregion
 
         #region Search
         public DigestionParams DigestionParams { get; }
