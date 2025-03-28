@@ -193,7 +193,8 @@ namespace Test
             string mzmlName = @"TMT_test\VA084TQ_6.mzML";
             string fastaName =  @"TMT_test\mouseTMT.fasta";
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestTmtOutput");
-            Directory.Delete(outputFolder, true);
+            if(Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
             var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(fastaName, false) }, outputFolder);
             engine.Run();
 
