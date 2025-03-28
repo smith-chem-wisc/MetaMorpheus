@@ -12,7 +12,7 @@ namespace EngineLayer.ModernSearch
     public class ModernSearchEngine : MetaMorpheusEngine
     {
         protected const int FragmentBinsPerDalton = 1000;
-        protected readonly List<int>[] FragmentIndex;
+        protected List<int>[] FragmentIndex { get; private set; }
         protected readonly SpectralMatch[] PeptideSpectralMatches;
         protected readonly Ms2ScanWithSpecificMass[] ListOfSortedMs2Scans;
         protected readonly List<PeptideWithSetModifications> PeptideIndex;
@@ -358,7 +358,7 @@ namespace EngineLayer.ModernSearch
                 }
                 else
                 {
-                    PeptideSpectralMatches[scanIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                    PeptideSpectralMatches[scanIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons);
                 }
             }
 
