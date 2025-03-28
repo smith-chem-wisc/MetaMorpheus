@@ -46,12 +46,8 @@ namespace TaskLayer
             if (MyMsDataFiles.TryGetValue(origDataFile, out MsDataFile value))
                 return value;
 
-            MyMsDataFiles.GetOrAdd(origDataFile, MsDataFileReader.GetDataFile(origDataFile));
-            if (MyMsDataFiles[origDataFile] is TimsTofFileReader timsTofReader)
-                timsTofReader.LoadAllStaticData(filter, commonParameters.MaxThreadsToUsePerFile);
-            else MyMsDataFiles[origDataFile].LoadAllStaticData();
-            return MyMsDataFiles[origDataFile];
-                //MsDataFileReader.GetDataFile(origDataFile).LoadAllStaticData(filter, commonParameters.MaxThreadsToUsePerFile));
+            return MyMsDataFiles.GetOrAdd(origDataFile,
+                MsDataFileReader.GetDataFile(origDataFile).LoadAllStaticData(filter, commonParameters.MaxThreadsToUsePerFile));
         }
 
         internal void DoneWithFile(string origDataFile)
