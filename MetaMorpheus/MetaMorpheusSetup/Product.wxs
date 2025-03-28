@@ -324,6 +324,9 @@
 	  <Component Id="src_System.Data.SqlClient.dll" Guid="46279896-7740-429F-A4B4-F4453F577F67">
 	  	<File Id="src_System.Data.SqlClient.dll" Name="System.Data.SqlClient.dll" Source="$(var.GUI_TargetDir)System.Data.SqlClient.dll" />
 	  </Component>
+	  <Component Id="src_System.Data.SQLite.dll" Guid="5CB69DD0-680A-4E49-9A93-74D0F4A10661">
+		<File Id="src_System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.dll" />
+	  </Component>
 	  <Component Id="src_System.Data.SQLite.EF6.dll" Guid="F9804BA5-D660-4079-8BB4-738DF62EAF7E">
 	  	<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />
 	  </Component>
@@ -347,7 +350,7 @@
       </Component>
       <Component Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Guid="F5EDAA70-06CD-49E7-932F-016C679B07C7">
         <File Id="src_ThermoFisher.CommonCore.RawFileReader.dll" Name="ThermoFisher.CommonCore.RawFileReader.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.RawFileReader.dll" />
-      </Component>	
+      </Component>
       <Component Id="src_BayesianEstimation.dll" Guid="100F4A2E-F4FE-4D25-8C5F-66A7092A2622">
         <File Id="src_BayesianEstimation.dll" Name="BayesianEstimation.dll" Source="$(var.GUI_TargetDir)BayesianEstimation.dll" />
       </Component>
