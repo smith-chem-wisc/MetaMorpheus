@@ -261,6 +261,21 @@
       <Component Id="src_itext.sign.dll" Guid="37F6B45B-B6C2-4E6B-9CBD-D3AFDCE3B45B">
         <File Id="src_itext.sign.dll" Name="itext.sign.dll" Source="$(var.GUI_TargetDir)itext.sign.dll" />
       </Component>
+	  <Component Id="src_BouncyCastle.Cryptography.dll" Guid="89AB7B00-40C4-4D9B-8CA0-F9E48DF0866A">
+	  	<File Id="src_BouncyCastle.Cryptography.dll" Name="BouncyCastle.Cryptography.dll" Source="$(var.GUI_TargetDir)BouncyCastle.Cryptography.dll" />
+	  </Component>
+	  <Component Id="src_ExCSS.dll" Guid="08836151-C7AC-42C1-9386-D05834CD4036">
+	  	<File Id="src_ExCSS.dll" Name="ExCSS.dll" Source="$(var.GUI_TargetDir)ExCSS.dll" />
+	  </Component>
+	  <Component Id="src_itext.commons.dll" Guid="83239B61-114F-428E-838D-A9A399F4F7FB">
+	  	<File Id="src_itext.commons.dll" Name="itext.commons.dll" Source="$(var.GUI_TargetDir)itext.commons.dll" />
+	  </Component>
+	  <Component Id="src_itext.pdfua.dll" Guid="883BC2DD-C3F6-4156-9538-4F77FED07ECE">
+	  	<File Id="src_itext.pdfua.dll" Name="itext.pdfua.dll" Source="$(var.GUI_TargetDir)itext.pdfua.dll" />
+	  </Component>
+	  <Component Id="src_Svg.dll" Guid="82015092-7ABD-4BF2-9069-0BA4C0C0E978">
+	  	<File Id="src_Svg.dll" Name="Svg.dll" Source="$(var.GUI_TargetDir)Svg.dll" />
+	  </Component>
       <Component Id="src_itext.styledxmlparser.dll" Guid="105FCEC7-A05E-45CF-8F38-BFA5EFA0559B">
         <File Id="src_itext.styledxmlparser.dll" Name="itext.styledxmlparser.dll" Source="$(var.GUI_TargetDir)itext.styledxmlparser.dll" />
       </Component>
@@ -273,6 +288,57 @@
 	  <Component Id="src_Omics.dll" Guid="B8F0F0A0-5F0B-4F0B-9F0B-0B0B0B0B0B0B">
 	    <File Id="src_Omics.dll" Name="Omics.dll" Source="$(var.GUI_TargetDir)Omics.dll" />
 	  </Component>
+	  <Component Id="src_Transcriptomics.dll" Guid="94E807A9-617E-4761-9B76-4435FB2B61EA">
+	  	<File Id="src_Transcriptomics.dll" Name="Transcriptomics.dll" Source="$(var.GUI_TargetDir)Transcriptomics.dll" />
+	  </Component>
+	  <Component Id="src_isodeclib.dll" Guid="0289908F-7EB7-41C5-8B73-4A4BFD501CCB">
+	  	<File Id="src_isodeclib.dll" Name="isodeclib.dll" Source="$(var.GUI_TargetDir)isodeclib.dll" />
+	  </Component>
+	  <Component Id="src_isogenmass.dll" Guid="8A6C1ECC-6081-4A6A-9325-2EC7855EB4BF">
+	  	<File Id="src_isogenmass.dll" Name="isogenmass.dll" Source="$(var.GUI_TargetDir)isogenmass.dll" />
+	  </Component>
+	  <Component Id="src_libmmd.dll" Guid="BE1DFE98-90FD-4577-8568-B438C21457DD">
+	  	<File Id="src_libmmd.dll" Name="libmmd.dll" Source="$(var.GUI_TargetDir)libmmd.dll" />
+	  </Component>
+	  <Component Id="src_svml_dispmd.dll" Guid="8FB6522C-298B-440D-A8CD-B96782220DFC">
+	  	<File Id="src_svml_dispmd.dll" Name="svml_dispmd.dll" Source="$(var.GUI_TargetDir)svml_dispmd.dll" />
+	  </Component>
+	  <Component Id="src_TopDownProteomics.dll" Guid="5FA064E8-F67E-44E3-A462-DBBC381247A5">
+	  	<File Id="src_TopDownProteomics.dll" Name="TopDownProteomics.dll" Source="$(var.GUI_TargetDir)TopDownProteomics.dll" />
+	  </Component>
+	  <Component Id="src_CsvHelper.dll" Guid="79F28320-5AF2-4825-9B9B-AC0776E753C1">
+	  	<File Id="src_CsvHelper.dll" Name="CsvHelper.dll" Source="$(var.GUI_TargetDir)CsvHelper.dll" />
+	  </Component>
+	  <Component Id="src_EntityFramework.dll" Guid="AAB0BE24-C695-42CE-9495-B804B0929589">
+	  	<File Id="src_EntityFramework.dll" Name="EntityFramework.dll" Source="$(var.GUI_TargetDir)EntityFramework.dll" />
+	  </Component>
+	  <Component Id="src_EntityFramework.SqlServer.dll" Guid="C8207F75-5358-4EEB-9E86-D648FAFDD735">
+	  	<File Id="src_EntityFramework.SqlServer.dll" Name="EntityFramework.SqlServer.dll" Source="$(var.GUI_TargetDir)EntityFramework.SqlServer.dll" />
+	  </Component>
+	  <Component Id="src_msvcp110.dll" Guid="36947FB1-E7F0-4580-A15C-66CB25D566C4">
+	  	<File Id="src_msvcp110.dll" Name="msvcp110.dll" Source="$(var.GUI_TargetDir)msvcp110.dll" />
+	  </Component>
+	  <Component Id="src_msvcr110.dll" Guid="4C52ED24-C962-42B7-AE53-0FF423D25E64">
+	  	<File Id="src_msvcr110.dll" Name="msvcr110.dll" Source="$(var.GUI_TargetDir)msvcr110.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SqlClient.dll" Guid="46279896-7740-429F-A4B4-F4453F577F67">
+	  	<File Id="src_System.Data.SqlClient.dll" Name="System.Data.SqlClient.dll" Source="$(var.GUI_TargetDir)System.Data.SqlClient.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SQLite.dll" Guid="5CB69DD0-680A-4E49-9A93-74D0F4A10661">
+	  	<File Id="src_System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.dll" />
+	  </Component>
+	  <Component Id="src_System.Data.SQLite.EF6.dll" Guid="F9804BA5-D660-4079-8BB4-738DF62EAF7E">
+	  	<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />
+	  </Component>
+	  <Component Id="src_System.Drawing.Common.dll" Guid="D0717D69-C8C8-422C-8E25-A32A422AEFCE">
+	  	<File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.GUI_TargetDir)System.Drawing.Common.dll" />
+	  </Component>
+	  <Component Id="src_System.Numerics.Tensors.dll" Guid="E82682ED-383F-4592-8B64-A0314FFB5481">
+	  	<File Id="src_System.Numerics.Tensors.dll" Name="System.Numerics.Tensors.dll" Source="$(var.GUI_TargetDir)System.Numerics.Tensors.dll" />
+	  </Component>
+      <Component Id="src_timsdata.dll" Guid="22BAA8D2-623B-493E-932E-666A27ECC5A0">
+      	<File Id="src_timsdata.dll" Name="timsdata.dll" Source="$(var.GUI_TargetDir)timsdata.dll" />
+      </Component>
       <Component Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Guid="F3DA60DB-CF5F-4671-9F3C-1033780261DD">
         <File Id="src_ThermoFisher.CommonCore.BackgroundSubtraction.dll" Name="ThermoFisher.CommonCore.BackgroundSubtraction.dll" Source="$(var.GUI_TargetDir)ThermoFisher.CommonCore.BackgroundSubtraction.dll" />
       </Component>
@@ -301,8 +367,11 @@
       <Component Id="src_BayesianEstimation.dll" Guid="100F4A2E-F4FE-4D25-8C5F-66A7092A2622">
         <File Id="src_BayesianEstimation.dll" Name="BayesianEstimation.dll" Source="$(var.GUI_TargetDir)BayesianEstimation.dll" />
       </Component>
-      <Component Id="src_Microsoft.ML.Core.dll" Guid="A5B34A93-481B-4B6A-868C-A0DB916CB37C">
-        <File Id="src_Microsoft.ML.Core.dll" Name="Microsoft.ML.Core.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Core.dll" />
+	  <Component Id="src_Microsoft.ML.Core.dll" Guid="A5B34A93-481B-4B6A-868C-A0DB916CB37C">
+	  	<File Id="src_Microsoft.ML.Core.dll" Name="Microsoft.ML.Core.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Core.dll" />
+	  </Component>
+      <Component Id="src_Microsoft.ML.dll" Guid="8721FB9E-AFC5-4685-A89F-ADCACD5742B6">
+        <File Id="src_Microsoft.ML.dll" Name="Microsoft.ML.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.dll" />
       </Component>
       <Component Id="src_Microsoft.ML.CpuMath.dll" Guid="5D8DCF19-98EB-4EF8-B4FF-4B039FB5CE95">
         <File Id="src_Microsoft.ML.CpuMath.dll" Name="Microsoft.ML.CpuMath.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.CpuMath.dll" />
@@ -328,9 +397,9 @@
       <Component Id="src_Microsoft.ML.Transforms.dll" Guid="9FF08BC2-8F99-4004-A4F0-3BB63014BB21">
         <File Id="src_Microsoft.ML.Transforms.dll" Name="Microsoft.ML.Transforms.dll" Source="$(var.GUI_TargetDir)Microsoft.ML.Transforms.dll" />
       </Component>
-	    <Component Id="src_Microsoft.Extensions.ObjectPool.dll" Guid="ADF5C3F3-BB96-4160-A36A-C05C5DC46494">
-		    <File Id="src_Microsoft.Extensions.ObjectPool.dll" Name="Microsoft.Extensions.ObjectPool.dll" Source="$(var.GUI_TargetDir)Microsoft.Extensions.ObjectPool.dll" />
-	    </Component>
+	  <Component Id="src_Microsoft.Extensions.ObjectPool.dll" Guid="ADF5C3F3-BB96-4160-A36A-C05C5DC46494">
+	   <File Id="src_Microsoft.Extensions.ObjectPool.dll" Name="Microsoft.Extensions.ObjectPool.dll" Source="$(var.GUI_TargetDir)Microsoft.Extensions.ObjectPool.dll" />
+	  </Component>
       <Component Id="src_MarkdownSharp.dll" Guid="5F6FD76A-5674-4E64-9727-1C97AD493FD5">
         <File Id="src_MarkdownSharp.dll" Name="MarkdownSharp.dll" Source="$(var.GUI_TargetDir)MarkdownSharp.dll" />
       </Component>

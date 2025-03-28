@@ -331,11 +331,11 @@ namespace TaskLayer
 
                 if (keyValuePairs.ContainsKey(csm.FullSequence + betaFullseq))
                 {
-                    keyValuePairs[csm.FullSequence + betaFullseq].AddProteinMatch(csm.BestMatchingBioPolymersWithSetMods.First(), csm.BioPolymersWithSetModsToMatchingFragments[csm.BestMatchingBioPolymersWithSetMods.First().Peptide]);
+                    keyValuePairs[csm.FullSequence + betaFullseq].AddProteinMatch(csm.BestMatchingBioPolymersWithSetMods.First());
 
                     if (csm.BetaPeptide != null)
                     {
-                        keyValuePairs[csm.FullSequence + betaFullseq].BetaPeptide.AddProteinMatch(csm.BetaPeptide.BestMatchingBioPolymersWithSetMods.First(), csm.BioPolymersWithSetModsToMatchingFragments[csm.BestMatchingBioPolymersWithSetMods.First().Peptide]);
+                        keyValuePairs[csm.FullSequence + betaFullseq].BetaPeptide.AddProteinMatch(csm.BetaPeptide.BestMatchingBioPolymersWithSetMods.First());
                     }
                 }
                 else
