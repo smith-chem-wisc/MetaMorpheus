@@ -585,7 +585,7 @@ namespace TaskLayer
                             if (!PeptidesToMatchingInternalFragments.Contains(currentPwsm))
                             {
                                 PeptidesToMatchingInternalFragments.Add(currentPwsm); //record that we've seen this peptide
-                                psm.BioPolymersWithSetModsToMatchingFragments[currentPwsm].AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
+                                thisPeptide.MatchedIons.AddRange(matchedIonsForAllAmbiguousPeptides[peptideIndex]); //add the matched ions
                             }
                         }
                     }
