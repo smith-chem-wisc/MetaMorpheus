@@ -1,11 +1,10 @@
-﻿using EngineLayer.SpectrumMatch;
-using Omics;
+﻿using Omics;
 using Omics.Fragmentation;
 using System;
 using System.Collections.Generic;
 // ReSharper disable ConditionIsAlwaysTrueOrFalse
 
-namespace EngineLayer;
+namespace EngineLayer.SpectrumMatch;
 
 /// <summary>
 /// Compares the information of two tentative spectral matches to determine which is better
@@ -47,7 +46,7 @@ public class BioPolymerNotchFragmentIonComparer : Comparer<(int notch, IBioPolym
 
         if (x.pwsm.FullSequence != y.pwsm.FullSequence)
             return -1 * string.Compare(x.pwsm.FullSequence, y.pwsm.FullSequence); // (reverse) Alphabetical ordering of full sequence
-            
+
         if (x.pwsm.Parent == null && y.pwsm.Parent == null)
             return 0;
         if (x.pwsm.Parent == null)
