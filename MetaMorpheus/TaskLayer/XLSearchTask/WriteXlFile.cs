@@ -12,6 +12,7 @@ using System.Xml.Serialization;
 using Easy.Common.Extensions;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
+using Omics;
 
 namespace TaskLayer
 {
@@ -88,7 +89,7 @@ namespace TaskLayer
             }
         }
 
-        public static void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<Protein> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, CommonParameters CommonParameters, XlSearchParameters XlSearchParameters)
+        public static void WritePepXML_xl(List<CrosslinkSpectralMatch> items, List<IBioPolymer> proteinList, string databasePath, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, string outputFolder, string fileName, CommonParameters CommonParameters, XlSearchParameters XlSearchParameters)
         {
             if (!items.Any())
             {

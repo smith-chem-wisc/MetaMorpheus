@@ -12,6 +12,7 @@ using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -21,7 +22,7 @@ namespace Test
         [Test]
         public static void TestIndexEngine()
         {
-            var proteinList = new List<Protein> { new Protein("MNNNKQQQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKQQQ", null) };
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
@@ -86,7 +87,7 @@ namespace Test
         [Test]
         public static void TestIndexEngineWithWeirdSeq()
         {
-            var proteinList = new List<Protein> { new Protein("MQXQ", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MQXQ", null) };
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
             var localizeableModifications = new List<Modification>();
@@ -135,7 +136,7 @@ namespace Test
         {
             var proteinList = ProteinDbLoader.LoadProteinFasta(Path.Combine(TestContext.CurrentContext.TestDirectory, @"indexEngineTestFasta.fasta"), true, DecoyType.Reverse, false, out var dbErrors,
                 ProteinDbLoader.UniprotAccessionRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotFullNameRegex, ProteinDbLoader.UniprotGeneNameRegex,
-                    ProteinDbLoader.UniprotOrganismRegex, -1);
+                    ProteinDbLoader.UniprotOrganismRegex, -1).Cast<IBioPolymer>().ToList();
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();

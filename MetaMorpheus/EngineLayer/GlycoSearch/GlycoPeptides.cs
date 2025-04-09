@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Chemistry;
 using Omics.Modifications;
+using Omics;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -153,7 +154,7 @@ namespace EngineLayer.GlycoSearch
             return score;
         }
 
-        public static PeptideWithSetModifications GenerateGlycopeptide(int position, PeptideWithSetModifications peptide, Glycan glycan)
+        public static PeptideWithSetModifications GenerateGlycopeptide(int position, IBioPolymerWithSetMods peptide, Glycan glycan)
         {
             Modification modification = Glycan.NGlycanToModification(glycan);
 
@@ -168,8 +169,8 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
-                peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+            var testPeptide = new PeptideWithSetModifications(peptide.Parent as Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
+                peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory, peptide.Description, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
             
             return testPeptide;
 
@@ -207,7 +208,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="peptide"></param>
         /// <param name="modPeptide"></param>
         /// <returns> product[], Fragments list</returns>
-        public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, List<ProductType> customIons, PeptideWithSetModifications peptide, PeptideWithSetModifications modPeptide)
+        public static List<Product> OGlyGetTheoreticalFragments(DissociationType dissociationType, List<ProductType> customIons, IBioPolymerWithSetMods peptide, IBioPolymerWithSetMods modPeptide)
         {
             List<Product> theoreticalProducts = new List<Product>();        
             HashSet<double> masses = new HashSet<double>();
@@ -307,7 +308,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="theModPositions"></param>
         /// <param name="peptide"></param>
         /// <returns> A modfiied peptide </returns>
-        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Route theModPositions, PeptideWithSetModifications peptide)
+        public static PeptideWithSetModifications OGlyGetTheoreticalPeptide(Route theModPositions, IBioPolymerWithSetMods peptide)
         {
             Modification[] modifications = new Modification[theModPositions.Mods.Count];
             for (int i = 0; i < theModPositions.Mods.Count; i++)
@@ -326,8 +327,8 @@ namespace EngineLayer.GlycoSearch
                 testMods.Add(theModPositions.Mods[i].Item1, modifications[i]);
             }
 
-            var testPeptide = new PeptideWithSetModifications(peptide.Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
-                peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory, peptide.PeptideDescription, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
+            var testPeptide = new PeptideWithSetModifications(peptide.Parent as Protein, peptide.DigestionParams, peptide.OneBasedStartResidue,
+                peptide.OneBasedEndResidue, peptide.CleavageSpecificityForFdrCategory, peptide.Description, peptide.MissedCleavages, testMods, peptide.NumFixedMods);
 
             return testPeptide;
         }

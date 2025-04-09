@@ -6,13 +6,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using MathNet.Numerics.Distributions;
+using Omics;
 
 namespace EngineLayer.CrosslinkSearch
 {
     public class CrosslinkSpectralMatch : PeptideSpectralMatch
     {
         public CrosslinkSpectralMatch(
-            PeptideWithSetModifications theBestPeptide,
+            IBioPolymerWithSetMods theBestPeptide,
             int notch,
             double score,
             int scanIndex,
@@ -186,15 +187,15 @@ namespace EngineLayer.CrosslinkSearch
             }
         }
 
-        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, PeptideWithSetModifications peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite)
+        public static List<int> GetPossibleCrosslinkerModSites(char[] crosslinkerModSites, IBioPolymerWithSetMods peptide, InitiatorMethionineBehavior initiatorMethionineBehavior, bool CrosslinkAtCleavageSite)
         {
             List<int> possibleXlPositions = null;
 
             bool wildcard = crosslinkerModSites.Any(p => p == 'X');
 
             var range = Enumerable.Range(0, peptide.BaseSequence.Length);
-            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidue != peptide.Protein.Length 
-                && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidue))
+            if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidue != peptide.Parent.Length 
+                && !(peptide.Parent as Proteomics.Protein)!.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidue))
             {
                 //The C termial cannot be crosslinked and cleaved.
                 range = Enumerable.Range(0, peptide.BaseSequence.Length - 1);

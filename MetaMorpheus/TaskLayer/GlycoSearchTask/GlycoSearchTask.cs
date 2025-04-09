@@ -13,6 +13,7 @@ using EngineLayer.FdrAnalysis;
 using System;
 using FlashLFQ;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace TaskLayer
 {
@@ -50,7 +51,7 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters).Cast<Protein>().ToList();
+            List<IBioPolymer> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
 
             MyFileManager myFileManager = new (_glycoSearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
@@ -111,10 +112,10 @@ namespace TaskLayer
 
                 for (int currentPartition = 0; currentPartition < CommonParameters.TotalPartitions; currentPartition++)
                 {
-                    List<PeptideWithSetModifications> peptideIndex = null;
+                    List<IBioPolymerWithSetMods> peptideIndex = null;
 
                     //When partition, the proteinList will be split for each Thread.
-                    List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
+                    List<IBioPolymer> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count() / combinedParams.TotalPartitions, ((currentPartition + 1) * proteinList.Count() / combinedParams.TotalPartitions) - (currentPartition * proteinList.Count() / combinedParams.TotalPartitions));
 
                     Status("Getting fragment dictionary...", new List<string> { taskId });
 

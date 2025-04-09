@@ -5,15 +5,14 @@ using MassSpectrometry;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
-using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
 using Readers;
 using TaskLayer;
+using Omics;
 
 namespace Test
 {
@@ -32,7 +31,7 @@ namespace Test
 
             var variableModifications = new List<Modification>();
             var fixedModifications = new List<Modification>();
-            var proteinList = new List<Protein> { new Protein("MNNNKNDNK", null) };
+            var proteinList = new List<IBioPolymer> { new Protein("MNNNKNDNK", null) };
 
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
 

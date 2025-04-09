@@ -21,6 +21,11 @@ using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
 using Easy.Common.Extensions;
+using Omics;
+using Transcriptomics;
+using UsefulProteomicsDatabases.Transcriptomics;
+using Transcriptomics.Digestion;
+using System.Runtime.ConstrainedExecution;
 
 namespace TaskLayer
 {
@@ -628,32 +633,43 @@ namespace TaskLayer
             return MyTaskResults;
         }
 
-        protected List<Protein> LoadProteins(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
+        #region BioPolymer Database Loading
+        
+        protected List<IBioPolymer> LoadBioPolymers(string taskId, List<DbForTask> dbFilenameList, bool searchTarget, DecoyType decoyType, List<string> localizeableModificationTypes, CommonParameters commonParameters)
         {
-            Status("Loading proteins...", new List<string> { taskId });
-            int emptyProteinEntries = 0;
-            List<Protein> proteinList = new List<Protein>();
+            Status($"Loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s...", new List<string> { taskId });
+            int emptyEntries = 0;
+            List<IBioPolymer> bioPolymerList = new();
             foreach (var db in dbFilenameList.Where(p => !p.IsSpectralLibrary))
             {
-                var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
-                proteinList = proteinList.Concat(dbProteinList).ToList();
-                emptyProteinEntries += emptyProteinEntriesForThisDb;
+                if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                {
+                    var dbOligoList = LoadOligoDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyOligoEntriesForThisDb, commonParameters);
+                    bioPolymerList = bioPolymerList.Concat(dbOligoList).ToList();
+                    emptyEntries += emptyOligoEntriesForThisDb;
+                }
+                else
+                {
+                    var dbProteinList = LoadProteinDb(db.FilePath, searchTarget, decoyType, localizeableModificationTypes, db.IsContaminant, out Dictionary<string, Modification> unknownModifications, out int emptyProteinEntriesForThisDb, commonParameters);
+                    bioPolymerList = bioPolymerList.Concat(dbProteinList).ToList();
+                    emptyEntries += emptyProteinEntriesForThisDb;
+                }
             }
-            if (!proteinList.Any())
+            if (!bioPolymerList.Any())
             {
-                Warn("Warning: No protein entries were found in the database");
+                Warn($"Warning: No {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s entries were found in the database");
             }
-            else if (emptyProteinEntries > 0)
+            else if (emptyEntries > 0)
             {
-                Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
+                Warn("Warning: " + emptyEntries + $" empty {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s entries ignored");
             }
 
             
 
-            if (!proteinList.Any(p => p.IsDecoy))
+            if (!bioPolymerList.Any(p => p.IsDecoy))
             {
-                Status("Done loading proteins", new List<string> { taskId });
-                return proteinList;
+                Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
+                return bioPolymerList;
             }
 
             // Sanitize the decoys
@@ -661,7 +677,7 @@ namespace TaskLayer
             // when looking for target/decoy collisions
 
             HashSet<string> targetPeptideSequences = new();
-            foreach(var protein in proteinList.Where(p => !p.IsDecoy))
+            foreach(var protein in bioPolymerList.Where(p => !p.IsDecoy))
             {
                 // When thinking about decoy collisions, we can ignore modifications
                 foreach(var peptide in protein.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
@@ -670,24 +686,24 @@ namespace TaskLayer
                 }
             }
             // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
-            for(int i = 0; i < proteinList.Count; i++)
+            for(int i = 0; i < bioPolymerList.Count; i++)
             {
-                if(proteinList[i].IsDecoy)
+                if(bioPolymerList[i].IsDecoy && bioPolymerList[i] is Protein prot)
                 {
-                    var peptidesToReplace = proteinList[i]
+                    var peptidesToReplace = bioPolymerList[i]
                         .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
                         .Select(p => p.BaseSequence)
                         .Where(targetPeptideSequences.Contains)
                         .ToList();
                     if(peptidesToReplace.Any())
                     {
-                        proteinList[i] = Protein.ScrambleDecoyProteinSequence(proteinList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
+                        bioPolymerList[i] = Protein.ScrambleDecoyProteinSequence(prot, commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
                     }
                 }
             }
 
             Status("Done loading proteins", new List<string> { taskId });
-            return proteinList;
+            return bioPolymerList;
         }
 
         protected SpectralLibrary LoadSpectralLibraries(string taskId, List<DbForTask> dbFilenameList)
@@ -733,6 +749,35 @@ namespace TaskLayer
             emptyEntriesCount = proteinList.Count(p => p.BaseSequence.Length == 0);
             return proteinList.Where(p => p.BaseSequence.Length > 0).ToList();
         }
+
+        protected List<RNA> LoadOligoDb(string fileName, bool generateTargets, DecoyType decoyType,
+            List<string> localizeableModificationTypes, bool isContaminant,
+            out Dictionary<string, Modification> um, out int emptyEntriesCount,
+            CommonParameters commonParameters)
+        {
+            List<string> dbErrors = new List<string>();
+            List<RNA> rnaList = new List<RNA>();
+
+            string theExtension = Path.GetExtension(fileName).ToLowerInvariant();
+            bool compressed = theExtension.EndsWith("gz"); // allows for .bgz and .tgz, too which are used on occasion
+            theExtension = compressed ? Path.GetExtension(Path.GetFileNameWithoutExtension(fileName)).ToLowerInvariant() : theExtension;
+
+            if (theExtension.Equals(".fasta") || theExtension.Equals(".fa"))
+            {
+                um = null;
+                rnaList = RnaDbLoader.LoadRnaFasta(fileName, generateTargets, decoyType, isContaminant, out dbErrors);
+            }
+            else
+            {
+                List<string> modTypesToExclude = GlobalVariables.AllRnaModTypesKnown.Where(b => !localizeableModificationTypes.Contains(b)).ToList();
+                rnaList = RnaDbLoader.LoadRnaXML(fileName, generateTargets, decoyType, isContaminant, GlobalVariables.AllRnaModsKnown, modTypesToExclude, out um, commonParameters.MaxThreadsToUsePerFile);
+            }
+
+            emptyEntriesCount = rnaList.Count(p => p.BaseSequence.Length == 0);
+            return rnaList.Where(p => p.BaseSequence.Length > 0).ToList();
+        }
+
+        #endregion
 
         protected void LoadModifications(string taskId, out List<Modification> variableModifications, out List<Modification> fixedModifications, out List<string> localizableModificationTypes)
         {
@@ -883,29 +928,44 @@ namespace TaskLayer
             return false;
         }
 
-        private static void WritePeptideIndex(List<PeptideWithSetModifications> peptideIndex, string peptideIndexFileName)
+        private static void WritePeptideIndex(List<IBioPolymerWithSetMods> peptideIndex, string peptideIndexFileName)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
-            var ser = new NetSerializer.Serializer(messageTypes);
+            var stream = File.Create(peptideIndexFileName);
 
-            using (var file = File.Create(peptideIndexFileName))
+            if (GlobalVariables.AnalyteType.IsRnaMode())
             {
-                ser.Serialize(file, peptideIndex);
+                var ser = ISerializableSequence.GetSequenceSerializer<OligoWithSetMods>();
+                ser.Serialize(stream, peptideIndex.Cast<OligoWithSetMods>().ToList());
             }
+            else
+            {
+                var ser = ISerializableSequence.GetSequenceSerializer<PeptideWithSetModifications>();
+                ser.Serialize(stream, peptideIndex.Cast<PeptideWithSetModifications>().ToList());
+            }
+
+            stream.Close();
         }
 
-        private static List<PeptideWithSetModifications> ReadPeptideIndex(string peptideIndexFileName, List<Protein> allKnownProteins)
+        private static List<IBioPolymerWithSetMods> ReadPeptideIndex(string peptideIndexFileName, List<IBioPolymer> allKnownProteins)
         {
-            var messageTypes = GetSubclassesAndItself(typeof(List<PeptideWithSetModifications>));
-            var ser = new NetSerializer.Serializer(messageTypes);
-            List<PeptideWithSetModifications> peptideIndex;
-            using (var file = File.OpenRead(peptideIndexFileName))
+            List<IBioPolymerWithSetMods> peptideIndex;
+            var stream = File.OpenRead(peptideIndexFileName);
+
+            if (GlobalVariables.AnalyteType.IsRnaMode())
             {
-                peptideIndex = (List<PeptideWithSetModifications>)ser.Deserialize(file);
+                var ser = ISerializableSequence.GetSequenceSerializer<OligoWithSetMods>();
+                peptideIndex = ((List<OligoWithSetMods>)ser.Deserialize(stream)).Cast<IBioPolymerWithSetMods>().ToList();
+            }
+            else
+            {
+                var ser = ISerializableSequence.GetSequenceSerializer<PeptideWithSetModifications>();
+                var temp = ser.Deserialize(stream);
+                var peps = (List<PeptideWithSetModifications>)temp;
+                peptideIndex = ((List<PeptideWithSetModifications>)ser.Deserialize(stream)).Cast<IBioPolymerWithSetMods>().ToList();
             }
 
             // populate dictionaries of known proteins for deserialization
-            Dictionary<string, Protein> proteinDictionary = new Dictionary<string, Protein>();
+            Dictionary<string, IBioPolymer> proteinDictionary = new();
             foreach (Protein protein in allKnownProteins)
             {
                 if (!proteinDictionary.ContainsKey(protein.Accession))
@@ -1024,7 +1084,7 @@ namespace TaskLayer
             return folder;
         }
 
-        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateIndexes(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<IBioPolymerWithSetMods> peptideIndex, ref List<int>[] fragmentIndex, ref List<int>[] precursorIndex, List<IBioPolymer> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -1093,7 +1153,7 @@ namespace TaskLayer
             }
         }
 
-        public void GenerateIndexes_PeptideOnly(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<PeptideWithSetModifications> peptideIndex, ref List<int>[] precursorIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateIndexes_PeptideOnly(IndexingEngine indexEngine, List<DbForTask> dbFilenameList, ref List<IBioPolymerWithSetMods> peptideIndex, ref List<int>[] precursorIndex, List<IBioPolymer> allKnownProteins, string taskId)
         {
             bool successfullyReadIndices = false;
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
@@ -1130,7 +1190,7 @@ namespace TaskLayer
             }
         }
 
-        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<Protein> allKnownProteins, string taskId)
+        public void GenerateSecondIndexes(IndexingEngine indexEngine, IndexingEngine secondIndexEngine, List<DbForTask> dbFilenameList, ref List<int>[] secondFragmentIndex, List<IBioPolymer> allKnownProteins, string taskId)
         {
             string pathToFolderWithIndices = GetExistingFolderWithIndices(indexEngine, dbFilenameList);
             if (!File.Exists(Path.Combine(pathToFolderWithIndices, SecondFragmentIndexFileName))) //if no indexes exist
@@ -1185,28 +1245,39 @@ namespace TaskLayer
         /// </summary>
         /// <param name="proteins"></param>
         /// <param name="tcAmbiguity"></param>
-        protected static void SanitizeProteinDatabase(List<Protein> proteins, TargetContaminantAmbiguity tcAmbiguity)
+        protected static void SanitizeProteinDatabase(List<IBioPolymer> proteins, TargetContaminantAmbiguity tcAmbiguity)
         {
-            foreach (var accessionGroup in proteins.GroupBy(p => p.Accession))
+            foreach (var accessionGroup in proteins.GroupBy(p => p.Accession).ToList())
             {
                 if (accessionGroup.Count() != 1) //if multiple proteins with the same accession
                 {
-                    List<Protein> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => p.ProteolysisProducts.Count()).ToList();
-                    List<Protein> proteinsToRemove = new List<Protein>();
+                    List<IBioPolymer> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => (p as Protein)?.ProteolysisProducts.Count()).ToList();
+                    List<IBioPolymer> proteinsToRemove = new();
                     if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
                     {
                         int proteinNumber = 1;
                         Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Protein " + accessionGroup.Key + " was renamed.");
-                        foreach (var originalProtein in proteinsWithThisAccession)
+                        foreach (var originalBioPolymer in proteinsWithThisAccession)
                         {
                             //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
                             //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
-                            var renamedProtein = new Protein(originalProtein.BaseSequence, originalProtein + "_D" + proteinNumber.ToString(), originalProtein.Organism,
-                                originalProtein.GeneNames.ToList(), originalProtein.OneBasedPossibleLocalizedModifications, originalProtein.ProteolysisProducts.ToList(), originalProtein.Name, originalProtein.FullName,
-                                originalProtein.IsDecoy, originalProtein.IsContaminant, originalProtein.DatabaseReferences.ToList(), originalProtein.SequenceVariations.ToList(), originalProtein.AppliedSequenceVariations,
-                                originalProtein.SampleNameForVariants, originalProtein.DisulfideBonds.ToList(), originalProtein.SpliceSites.ToList(), originalProtein.DatabaseFilePath);
-                            proteins.Add(renamedProtein);
-                            proteins.RemoveAll(p => p == originalProtein);
+                            if (originalBioPolymer is Protein p)
+                            {
+                                var renamedProtein = new Protein(originalBioPolymer.BaseSequence, originalBioPolymer + "_D" + proteinNumber.ToString(), originalBioPolymer.Organism,
+                                    originalBioPolymer.GeneNames.ToList(), originalBioPolymer.OneBasedPossibleLocalizedModifications, p.ProteolysisProducts.ToList(), originalBioPolymer.Name, originalBioPolymer.FullName,
+                                    originalBioPolymer.IsDecoy, originalBioPolymer.IsContaminant, p.DatabaseReferences.ToList(), p.SequenceVariations.ToList(), p.AppliedSequenceVariations,
+                                    p.SampleNameForVariants, p.DisulfideBonds.ToList(), p.SpliceSites.ToList(), originalBioPolymer.DatabaseFilePath);
+                                proteins.Add(renamedProtein);
+                                proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
+                            }
+                            else if (originalBioPolymer is RNA r)
+                            {
+                                var rename = new RNA(originalBioPolymer.BaseSequence, r.Name, originalBioPolymer + "_D" + proteinNumber.ToString(), r.Organism,
+                                    r.DatabaseFilePath, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.OneBasedPossibleLocalizedModifications, r.IsContaminant,
+                                    r.IsDecoy, r.GeneNames.ToList(), r.AdditionalDatabaseFields);
+                                proteins.Add(rename);
+                                proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
+                            }
                             proteinNumber++;
                         }
                     }
@@ -1236,8 +1307,8 @@ namespace TaskLayer
                         {
                             if (proteinsWithThisAccession.Count > 1)
                             {
-                                proteins.RemoveAll(p => p == protein);
-                                proteinsWithThisAccession.RemoveAll(p => p == protein);
+                                proteins.RemoveAll(p => ReferenceEquals(p, protein));
+                                proteinsWithThisAccession.RemoveAll(p => ReferenceEquals(p, protein));
                             }
                         }
 
@@ -1245,7 +1316,7 @@ namespace TaskLayer
                         // remove proteins so that only 1 protein with this accession remains
                         for (int i = 0; i < proteinsWithThisAccession.Count - 1; i++) //-1 to keep the last one (most mods)
                         {
-                            proteins.RemoveAll(p => p == proteinsWithThisAccession[i]);
+                            proteins.RemoveAll(p => ReferenceEquals(p, proteinsWithThisAccession[i]));
                         }
                     }
                 }

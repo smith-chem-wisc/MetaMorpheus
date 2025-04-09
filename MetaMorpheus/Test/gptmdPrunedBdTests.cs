@@ -10,6 +10,7 @@ using System.Linq;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -363,7 +364,7 @@ namespace Test
             List<Omics.Fragmentation.MatchedFragmentIon> matchedFragmentIons = new List<Omics.Fragmentation.MatchedFragmentIon>() { };
             MzSpectrum spectrum = new MzSpectrum(noiseData);
             MsDataScan scan = new MsDataScan(spectrum , 1, 1, true, Polarity.Unknown, 2, new MzLibUtil.MzRange(10, 1000), "", MZAnalyzerType.Orbitrap, 10000, null, noiseData, "");
-            testPostTaskParameters.ProteinList = new List<Protein>() { protein1, protein2 };
+            testPostTaskParameters.ProteinList = new List<IBioPolymer>() { protein1, protein2 };
             testPostTaskParameters.AllPsms = new List<SpectralMatch> { new PeptideSpectralMatch(peptideObserved, 0, 20, 1, new Ms2ScanWithSpecificMass(scan, 100, 1, @"", commonParam), commonParam, matchedFragmentIons) };
             testPostTaskParameters.SearchParameters = new SearchParameters();
             testPostTaskParameters.SearchParameters.WritePrunedDatabase = true;
@@ -441,7 +442,7 @@ namespace Test
             
             string path = @"temp";
 
-            var proteinList = new List<Protein> { protein1, protein2};
+            var proteinList = new List<IBioPolymer> { protein1, protein2};
             proteinList.AddRange(protein1Variants);
           
 

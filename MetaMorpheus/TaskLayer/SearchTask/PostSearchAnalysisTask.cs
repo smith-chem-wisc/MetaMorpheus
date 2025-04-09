@@ -121,7 +121,7 @@ namespace TaskLayer
 
             WriteFlashLFQResults();
 
-            if (Parameters.ProteinList.Any((p => p.AppliedSequenceVariations.Count > 0)))
+            if (Parameters.ProteinList.Any((p => p is Protein prot && prot.AppliedSequenceVariations.Count > 0)))
             {
                 WriteVariantResults();
             }
@@ -1044,6 +1044,7 @@ namespace TaskLayer
 
         private void WritePrunedDatabase()
         {
+            // TODO: Allow this to work for Oligos. 
             if (Parameters.SearchParameters.WritePrunedDatabase)
             {
                 Status("Writing Pruned Database...", new List<string> { Parameters.SearchTaskId });
@@ -1135,7 +1136,7 @@ namespace TaskLayer
                 Dictionary<SequenceVariation, Dictionary<int, List<Modification>>> originalSequenceVariantModifications = new Dictionary<SequenceVariation, Dictionary<int, List<Modification>>>();
 
                 // mods included in pruned database will only be confidently localized mods (peptide's FullSequence != null)
-                foreach (var nonVariantProtein in Parameters.ProteinList.Select(p => p.NonVariantProtein).Distinct())
+                foreach (var nonVariantProtein in Parameters.ProteinList.Where(p => p is Protein).Cast<Protein>().Select(p => p.NonVariantProtein).Distinct())
                 {
                     if (!nonVariantProtein.IsDecoy)
                     {
@@ -1278,17 +1279,19 @@ namespace TaskLayer
                     }
                 }
 
+                var toWrite = Parameters.ProteinList.Where(p => p is Protein).Cast<Protein>();
+
                 //writes all proteins
                 if (Parameters.DatabaseFilenameList.Any(b => !b.IsContaminant))
                 {
                     string outputXMLdbFullName = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => !b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), toWrite.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
                     FinishedWritingFile(outputXMLdbFullName, new List<string> { Parameters.SearchTaskId });
                 }
                 if (Parameters.DatabaseFilenameList.Any(b => b.IsContaminant))
                 {
                     string outputXMLdbFullNameContaminants = Path.Combine(Parameters.OutputFolder, string.Join("-", Parameters.DatabaseFilenameList.Where(b => b.IsContaminant).Select(b => Path.GetFileNameWithoutExtension(b.FilePath))) + "pruned.xml");
-                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), Parameters.ProteinList.Select(p => p.NonVariantProtein).Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
+                    ProteinDbWriter.WriteXmlDatabase(new Dictionary<string, HashSet<Tuple<int, Modification>>>(), toWrite.Where(b => !b.IsDecoy && b.IsContaminant).ToList(), outputXMLdbFullNameContaminants);
                     FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
                 }
 
@@ -1306,7 +1309,7 @@ namespace TaskLayer
                     FinishedWritingFile(outputXMLdbFullNameContaminants, new List<string> { Parameters.SearchTaskId });
                 }
 
-                foreach (var nonVariantProtein in Parameters.ProteinList.Select(p => p.NonVariantProtein).Distinct())
+                foreach (var nonVariantProtein in Parameters.ProteinList.Where(p => p is Protein).Cast<Protein>().Select(p => p.NonVariantProtein).Distinct())
                 {
                     if (!nonVariantProtein.IsDecoy)
                     {

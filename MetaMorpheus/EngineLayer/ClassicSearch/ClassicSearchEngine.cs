@@ -31,6 +31,7 @@ namespace EngineLayer.ClassicSearch
         private readonly object[] Locks;
         public readonly ConcurrentDictionary<(string Accession, string BaseSequence), int> DigestionCountDictionary; // Used to track the amount of digestion products from each protein when the option is enabled.
 
+        // From IBioPolymer List
         public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
             List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
             List<IBioPolymer> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
@@ -67,6 +68,14 @@ namespace EngineLayer.ClassicSearch
             // library spectra from their corresponding paired target peptides
             Proteins = spectralLibrary == null ? proteinList : proteinList.Where(p => !p.IsDecoy).ToList();
         }
+
+        // From Protein List
+        public ClassicSearchEngine(SpectralMatch[] globalPsms, Ms2ScanWithSpecificMass[] arrayOfSortedMS2Scans,
+            List<Modification> variableModifications, List<Modification> fixedModifications, List<SilacLabel> silacLabels, SilacLabel startLabel, SilacLabel endLabel,
+            List<Protein> proteinList, MassDiffAcceptor searchMode, CommonParameters commonParameters, List<(string FileName, CommonParameters Parameters)> fileSpecificParameters,
+            SpectralLibrary spectralLibrary, List<string> nestedIds, bool writeSpectralLibrary, bool writeDigestionCounts = false)
+            : this(globalPsms, arrayOfSortedMS2Scans, variableModifications, fixedModifications, silacLabels, startLabel, endLabel, proteinList.Cast<IBioPolymer>().ToList(),
+                  searchMode, commonParameters, fileSpecificParameters, spectralLibrary, nestedIds, writeSpectralLibrary, writeDigestionCounts) { }
 
         protected override MetaMorpheusEngineResults RunSpecific()
         {
