@@ -348,7 +348,9 @@ namespace Test
         public static void TestLibraryGeneration()
         {
             string thisTaskOutputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\FileOutput");
-            _ = Directory.CreateDirectory(thisTaskOutputFolder);
+            if(Directory.Exists(thisTaskOutputFolder))
+                Directory.Delete(thisTaskOutputFolder, true);
+            Directory.CreateDirectory(thisTaskOutputFolder);
 
             SearchTask task = Toml.ReadFile<SearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SpectralSearchTask.toml"), MetaMorpheusTask.tomlConfig);
             task.SearchParameters.WriteMzId = true;
@@ -368,10 +370,12 @@ namespace Test
             var lib = new SpectralLibrary(new List<string> { Path.Combine(thisTaskOutputFolder, matchingvalue) });
             var libPath = Path.Combine(thisTaskOutputFolder, matchingvalue);
            
-            string testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGenaration");
+            string testDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibraryGeneration");
             string outputDir = Path.Combine(testDir, @"SpectralLibraryTest");
 
-            _ = Directory.CreateDirectory(outputDir);
+            if(Directory.Exists(outputDir))
+                Directory.Delete(outputDir, true);
+            Directory.CreateDirectory(outputDir);
 
             SearchTask searchTask = new();
 
