@@ -1347,7 +1347,7 @@ namespace TaskLayer
                 foreach (var psm in psms)
                 {
                     IEnumerable<string> labelIonIntensities =
-                        GetMultiplexIonIntensities(psm.MsDataScan.MassSpectrum, reporterIonMzs, ionTolerance)
+                        GetMultiplexIonIntensities(psm, reporterIonMzs, ionTolerance)
                             .Select(d => d.ToString(CultureInfo.CurrentCulture));
 
                     output.Write(psm.ToString(Parameters.SearchParameters.ModsToWriteSelection, writePeptideLevelResults).Trim());
@@ -1400,30 +1400,34 @@ namespace TaskLayer
             return String.Join('\t', ionLabels);
         }
 
-        public static double[] GetMultiplexIonIntensities(MzSpectrum scan, double[] theoreticalIonMzs, Tolerance tolerance)
+        public static double[] GetMultiplexIonIntensities(SpectralMatch psm, double[] theoreticalIonMzs, Tolerance tolerance)
         {
-            int peakIndex = scan.GetClosestPeakIndex(theoreticalIonMzs[0]);
-            int lastPeakIndex = Math.Min(scan.GetClosestPeakIndex(theoreticalIonMzs.Last()) + 1, scan.XArray.Length - 1);
+            var diagnosticIons = psm.MatchedFragmentIons
+                .Where(ion => ion.NeutralTheoreticalProduct.ProductType == Omics.Fragmentation.ProductType.D)
+                .OrderBy(ion => ion.Mz)
+                .ToArray();
+            double[] expIonMzs = diagnosticIons.Select(ion => ion.Mz).ToArray(); 
             double[] ionIntensities = new double[theoreticalIonMzs.Length];
-            
-            for (int ionIndex = 0; ionIndex < ionIntensities.Length; ionIndex++)
+
+            int expIonIndex = 0;
+            for (int theoreticalIonIndex = 0; theoreticalIonIndex < ionIntensities.Length; theoreticalIonIndex++)
             {
-                while (peakIndex <= lastPeakIndex && 
-                       scan.XArray[peakIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[ionIndex]))
+                while (expIonIndex < expIonMzs.Length &&
+                       expIonMzs[expIonIndex] < tolerance.GetMinimumValue(theoreticalIonMzs[theoreticalIonIndex]))
                 {
-                    peakIndex++;
+                    expIonIndex++;
                 }
-                if (peakIndex > lastPeakIndex)
+                if (expIonIndex >= expIonMzs.Length)
                 {
                     break;
                 }
-                if (tolerance.Within(scan.XArray[peakIndex], theoreticalIonMzs[ionIndex]))
+                if (tolerance.Within(expIonMzs[expIonIndex], theoreticalIonMzs[theoreticalIonIndex]))
                 {
-                    ionIntensities[ionIndex] = scan.YArray[peakIndex];
-                    peakIndex++;
+                    ionIntensities[theoreticalIonIndex] = diagnosticIons[expIonIndex].Intensity;
+                    expIonIndex++;
                 }
             }
-            
+
             return ionIntensities;
         }
 

@@ -369,7 +369,7 @@ namespace Test
             Protein protForwardAsDecoy = new Protein(sequence: "VPEPTIDELPEPTIDEAPEPTIDE", accession: "DECOY", isDecoy: true);
             PeptideWithSetModifications pwsmV_D = new PeptideWithSetModifications(protForwardAsDecoy, new DigestionParams(), 1, 8, CleavageSpecificity.Full, "VPEPTIDE", 0, mod, 0, null);
 
-            csmOne.AddOrReplace(pwsmV_D, 3, 0, true, new List<MatchedFragmentIon>(), 0);
+            csmOne.AddOrReplace(pwsmV_D, 3, 0, true, new List<MatchedFragmentIon>());
             csmOne.ResolveAllAmbiguities();
             Assert.That(csmOne.BestMatchingBioPolymersWithSetMods.Count() == 1);
             Assert.That(!csmOne.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Parent.IsDecoy);
