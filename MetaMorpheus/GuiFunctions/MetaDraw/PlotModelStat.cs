@@ -11,7 +11,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Globalization;
-using ThermoFisher.CommonCore.Data.Business;
+using Readers;
 
 namespace GuiFunctions
 {
