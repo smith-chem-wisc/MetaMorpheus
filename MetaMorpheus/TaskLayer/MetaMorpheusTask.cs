@@ -688,7 +688,7 @@ namespace TaskLayer
             // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
             for(int i = 0; i < bioPolymerList.Count; i++)
             {
-                if(bioPolymerList[i].IsDecoy && bioPolymerList[i] is Protein prot)
+                if(bioPolymerList[i].IsDecoy)
                 {
                     var peptidesToReplace = bioPolymerList[i]
                         .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
@@ -697,7 +697,7 @@ namespace TaskLayer
                         .ToList();
                     if(peptidesToReplace.Any())
                     {
-                        bioPolymerList[i] = Protein.ScrambleDecoyProteinSequence(prot, commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
+                        bioPolymerList[i] = DecoySequenceValidator.ScrambleDecoyBioPolymer(bioPolymerList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
                     }
                 }
             }
@@ -959,9 +959,8 @@ namespace TaskLayer
             else
             {
                 var ser = ISerializableSequence.GetSequenceSerializer<PeptideWithSetModifications>();
-                var temp = ser.Deserialize(stream);
-                var peps = (List<PeptideWithSetModifications>)temp;
-                peptideIndex = ((List<PeptideWithSetModifications>)ser.Deserialize(stream)).Cast<IBioPolymerWithSetMods>().ToList();
+                var temp = (List<PeptideWithSetModifications>)ser.Deserialize(stream);
+                peptideIndex = temp.Cast<IBioPolymerWithSetMods>().ToList();
             }
 
             // populate dictionaries of known proteins for deserialization
@@ -1251,7 +1250,7 @@ namespace TaskLayer
             {
                 if (accessionGroup.Count() != 1) //if multiple proteins with the same accession
                 {
-                    List<IBioPolymer> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => (p as Protein)?.ProteolysisProducts.Count()).ToList();
+                    List<IBioPolymer> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => (p as Protein)?.TruncationProducts.Count()).ToList();
                     List<IBioPolymer> proteinsToRemove = new();
                     if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
                     {
@@ -1263,18 +1262,19 @@ namespace TaskLayer
                             //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
                             if (originalBioPolymer is Protein p)
                             {
-                                var renamedProtein = new Protein(originalBioPolymer.BaseSequence, originalBioPolymer + "_D" + proteinNumber.ToString(), originalBioPolymer.Organism,
-                                    originalBioPolymer.GeneNames.ToList(), originalBioPolymer.OneBasedPossibleLocalizedModifications, p.ProteolysisProducts.ToList(), originalBioPolymer.Name, originalBioPolymer.FullName,
-                                    originalBioPolymer.IsDecoy, originalBioPolymer.IsContaminant, p.DatabaseReferences.ToList(), p.SequenceVariations.ToList(), p.AppliedSequenceVariations,
-                                    p.SampleNameForVariants, p.DisulfideBonds.ToList(), p.SpliceSites.ToList(), originalBioPolymer.DatabaseFilePath);
+                                var renamedProtein = new Protein(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + proteinNumber.ToString(), originalBioPolymer.Organism,
+                                    originalBioPolymer.GeneNames, originalBioPolymer.OneBasedPossibleLocalizedModifications, p.TruncationProducts, originalBioPolymer.Name, originalBioPolymer.FullName,
+                                    originalBioPolymer.IsDecoy, originalBioPolymer.IsContaminant, p.DatabaseReferences, p.SequenceVariations, p.AppliedSequenceVariations,
+                                    p.SampleNameForVariants, p.DisulfideBonds, p.SpliceSites, originalBioPolymer.DatabaseFilePath);
                                 proteins.Add(renamedProtein);
                                 proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
                             }
                             else if (originalBioPolymer is RNA r)
                             {
-                                var rename = new RNA(originalBioPolymer.BaseSequence, r.Name, originalBioPolymer + "_D" + proteinNumber.ToString(), r.Organism,
-                                    r.DatabaseFilePath, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.OneBasedPossibleLocalizedModifications, r.IsContaminant,
-                                    r.IsDecoy, r.GeneNames.ToList(), r.AdditionalDatabaseFields);
+                                var rename = new RNA(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + proteinNumber.ToString(),
+                                    r.OneBasedPossibleLocalizedModifications, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.Name, r.Organism,
+                                    r.DatabaseFilePath, r.IsContaminant, r.IsDecoy, r.GeneNames, r.AdditionalDatabaseFields, r.TruncationProducts,
+                                    r.SequenceVariations, r.AppliedSequenceVariations, r.SampleNameForVariants, r.FullName);
                                 proteins.Add(rename);
                                 proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
                             }
