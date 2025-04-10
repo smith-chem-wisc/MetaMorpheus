@@ -1,11 +1,11 @@
 ﻿using EngineLayer;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.FdrAnalysis;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 
@@ -23,7 +23,7 @@ namespace TaskLayer
             return null;
         }
 
-        public MyTaskResults Run(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<Protein> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
+        public MyTaskResults Run(string outputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, List<CrosslinkSpectralMatch> allPsms, CommonParameters commonParameters, XlSearchParameters xlSearchParameters, List<IBioPolymer> proteinList, List<Modification> variableModifications, List<Modification> fixedModifications, List<string> localizeableModificationTypes, MyTaskResults MyTaskResults)
         {               
             // inter-crosslinks; different proteins are linked
             List<CrosslinkSpectralMatch> interCsms = allPsms.Where(p => p.CrossType == PsmCrossType.Inter).OrderByDescending(p => p.XLTotalScore).ToList();
@@ -258,7 +258,7 @@ namespace TaskLayer
                     precursorCharge: bestCsm.ScanPrecursorCharge,
                     peaks: bestCsm.MatchedFragmentIons,
                     rt: bestCsm.ScanRetentionTime,
-                    betaPeptide: bestCsm.BetaPeptide));
+                    betaPeaks: bestCsm.BetaPeptide.MatchedFragmentIons));
             }
 
             foreach (var singlePsmGroup in singlePsms.Where(c =>

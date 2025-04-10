@@ -5,6 +5,7 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using Omics.Modifications;
+using Omics;
 
 namespace TaskLayer
 {
@@ -14,7 +15,7 @@ namespace TaskLayer
         public string SearchTaskId { get; set; }
         public HashSet<DigestionParams> ListOfDigestionParams { get; set; }
         public GlycoSearchParameters GlycoSearchParameters { get; set; }
-        public List<Protein> ProteinList { get; set; }
+        public List<IBioPolymer> ProteinList { get; set; }
         public List<Modification> VariableModifications { get; set; }
         public List<Modification> FixedModifications { get; set; }
         public List<GlycoSpectralMatch> AllPsms { get; set; }

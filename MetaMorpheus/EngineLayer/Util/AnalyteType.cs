@@ -25,6 +25,7 @@ namespace EngineLayer
         public static string GetSpectralMatchExtension(this AnalyteType analyteType) => AnalyteTypes[analyteType].SpectralMatchExtension;
         public static string GetUniqueFormLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].UniqueFormLabel;
         public static string GetBioPolymerLabel(this AnalyteType analyteType) => AnalyteTypes[analyteType].BioPolymerLabel;
+        public static bool IsRnaMode(this AnalyteType analyteTpe) => analyteTpe == AnalyteType.Oligo;
     }
 
     /// <summary>

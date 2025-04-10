@@ -1,17 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
-using System.Windows;
 using Easy.Common.Extensions;
 using EngineLayer;
-using iText.StyledXmlParser.Jsoup;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 
 namespace GuiFunctions
 {

@@ -14,6 +14,7 @@ using System.Text;
 using Omics.Modifications;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
+using Easy.Common.Extensions;
 
 namespace EngineLayer
 {
@@ -25,7 +26,9 @@ namespace EngineLayer
         public static List<string> AcceptedSpectraFormats { get; private set; }
 
         private static List<Modification> _AllModsKnown;
+        private static List<Modification> _AllRnaModsKnown;
         private static HashSet<string> _AllModTypesKnown;
+        private static HashSet<string> _AllRnaModTypesKnown;
         private static List<Crosslinker> _KnownCrosslinkers;
         public static List<Modification> ProteaseMods = new List<Modification>();
 
@@ -48,9 +51,12 @@ namespace EngineLayer
         public static IEnumerable<Modification> UnimodDeserialized { get; private set; }
         public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; private set; }
-        public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
-        public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
+        public static IEnumerable<Modification> AllModsKnown => _AllModsKnown.AsEnumerable();
+        public static IEnumerable<Modification> AllRnaModsKnown => _AllRnaModsKnown.AsEnumerable();
+        public static IEnumerable<string> AllModTypesKnown => _AllModTypesKnown.AsEnumerable();
+        public static IEnumerable<string> AllRnaModTypesKnown => _AllRnaModTypesKnown.AsEnumerable();
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, Modification> AllRnaModsKnownDictionary { get; private set; }
         public static Dictionary<string, string> AvailableUniProtProteomes { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get; private set; }
@@ -74,6 +80,7 @@ namespace EngineLayer
             SetUpDataDirectory();
             LoadCrosslinkers();
             LoadModifications();
+            LoadRnaModifications();
             LoadGlycans();
             LoadCustomAminoAcids();
             SetUpGlobalSettings();
@@ -395,6 +402,8 @@ namespace EngineLayer
 
             foreach (var modFile in Directory.GetFiles(Path.Combine(DataDir, @"Mods")))
             {
+                if (modFile.Contains("RnaMods"))
+                    continue;
                 AddMods(PtmListLoader.ReadModsFromFile(modFile, out var errorMods), false);
             }
 
@@ -413,6 +422,26 @@ namespace EngineLayer
             ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
         }
 
+        private static void LoadRnaModifications()
+        {
+            _AllRnaModsKnown = new List<Modification>();
+            _AllRnaModTypesKnown = new HashSet<string>();
+            AllRnaModsKnownDictionary = new Dictionary<string, Modification>();
+
+            // load mod.txt
+            string modFile = Path.Combine(GlobalVariables.DataDir, "Mods", "RnaMods.txt");
+            foreach (var mod in PtmListLoader.ReadModsFromFile(modFile, out var errors))
+            {
+                _AllRnaModsKnown.Add(mod);
+            }
+
+            // populate mod types and dictionary
+            _AllRnaModsKnown.Select(mod => mod.ModificationType)
+                .Distinct()
+                .ForEach(type => _AllRnaModTypesKnown.Add(type));
+
+            AllRnaModsKnownDictionary = _AllRnaModsKnown.Where(p => p.OriginalId != "").ToDictionary(p => $"{p.IdWithMotif}");
+        }
         private static void LoadGlycans()
         {
             OGlycanLocations = new List<string>();

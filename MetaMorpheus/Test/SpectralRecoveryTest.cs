@@ -15,6 +15,7 @@ using TaskLayer.MbrAnalysis;
 using Omics;
 using UsefulProteomicsDatabases;
 using System.Threading;
+using Readers;
 
 namespace Test
 {
@@ -25,7 +26,7 @@ namespace Test
         private static MyTaskResults searchTaskResults;
         private static List<PsmFromTsv> tsvPsms;
         private static List<SpectralMatch> psms;
-        private static List<Protein> proteinList;
+        private static List<IBioPolymer> proteinList;
         private static MyFileManager myFileManager;
         private static List<string> rawSlices;
         private static List<DbForTask> databaseList;
@@ -47,14 +48,14 @@ namespace Test
             // This block of code converts from PsmFromTsv to SpectralMatch objects
 
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\AllPSMsTesting.psmtsv");
-            tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
+            tsvPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmtsvPath, out var warnings);
             psms = new List<SpectralMatch>();
             myFileManager = new MyFileManager(true);
 
             Loaders.LoadElements();
             string databasePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta");
             proteinList = ProteinDbLoader.LoadProteinFasta(databasePath, true, DecoyType.Reverse, false, out List<string> errors)
-                .Where(protein => protein.AppliedSequenceVariations != null).ToList();
+                .Where(protein => protein.AppliedSequenceVariations != null).Cast<IBioPolymer>().ToList();
             CommonParameters commonParameters = new CommonParameters();
 
 
@@ -65,14 +66,14 @@ namespace Test
                 MsDataScan scan = myFileManager.LoadFile(filePath, commonParameters).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
                     filePath, commonParameters);
-                Protein protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
+                var protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
 
                 //string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
                 //int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 //int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
 
                 PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
-                    readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
+                    readPsm.FullSequence, null, p: (Protein)protein, digestionParams: new DigestionParams(),
                     oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 1);
                 SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
@@ -153,9 +154,9 @@ namespace Test
             List<string> warnings;
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput\SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
-            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
+            List<PsmFromTsv> mbrPsms = SpectrumMatchTsvReader.ReadPsmTsv(mbrAnalysisPath, out warnings);
             // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
-            List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings);
+            List<PsmFromTsv> expectedMbrPsms = SpectrumMatchTsvReader.ReadPsmTsv(expectedHitsPath, out warnings);
 
             List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();

@@ -6,21 +6,15 @@ using System.Linq;
 using System.Text;
 using Omics.Modifications;
 using Proteomics;
+using Omics;
+using Readers;
 
 namespace EngineLayer.GlycoSearch
 {
     //Localization of multiple glycans on one peptides can be divide into the following groups based on the quanlity of the localization. Similar to Proteomform Level.
-    public enum LocalizationLevel
-    {
-        Level1,
-        Level1b,
-        Level2,
-        Level3
-    }
-
     public class GlycoSpectralMatch : SpectralMatch
     {
-        public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
+        public GlycoSpectralMatch(IBioPolymerWithSetMods theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)
             : base(theBestPeptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
         {
 
@@ -56,7 +50,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="peptide"> full peptide sequence ex. "PTLFKNVSLYK" </param>
         /// <param name="motifs"> modificatino AA ex. "S","T"</param>
         /// <returns> int[], the Modpositon index list ex.[9,3] </returns>
-        public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
+        public static List<int> GetPossibleModSites(IBioPolymerWithSetMods peptide, string[] motifs)
         {
             List<int> possibleModSites = new List<int>();
 

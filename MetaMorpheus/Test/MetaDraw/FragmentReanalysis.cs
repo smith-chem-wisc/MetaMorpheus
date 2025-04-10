@@ -89,7 +89,7 @@ namespace Test.MetaDraw
             var dataFile = MsDataFileReader.GetDataFile(myFile);
 
             // parse out psm and its respective scan
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             var psmToResearch = parsedPsms.First();
             var scan = dataFile.GetOneBasedScan(psmToResearch.Ms2ScanNumber);
 

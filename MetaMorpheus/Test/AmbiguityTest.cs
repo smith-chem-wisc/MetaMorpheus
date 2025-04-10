@@ -13,6 +13,9 @@ using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
+using Omics.BioPolymer;
+using Readers;
 
 namespace Test
 {
@@ -103,8 +106,8 @@ namespace Test
 
             var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
             string[] splitLine = psmLine.Split('\t');
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)].Equals("N|Y")); //column "Contaminant"
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)].Equals("T|C")); //column "Decoy/Contaminant/Target"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)].Equals("N|Y")); //column "Contaminant"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)].Equals("T|C")); //column "Decoy/Contaminant/Target"
 
 
             //KEEP ONLY TARGET
@@ -122,8 +125,8 @@ namespace Test
             //check that the psm file shows it's both a target and a contaminant
             psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)].Equals("N")); //column "Contaminant"
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)].Equals("T")); //column "Decoy/Contaminant/Target"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)].Equals("N")); //column "Contaminant"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)].Equals("T")); //column "Decoy/Contaminant/Target"
 
 
             //KEEP ONLY CONTAMINANT
@@ -141,8 +144,8 @@ namespace Test
             //check that the psm file shows it's both a target and a contaminant
             psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)].Equals("Y")); //column "Contaminant"
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)].Equals("C")); //column "Decoy/Contaminant/Target"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)].Equals("Y")); //column "Contaminant"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)].Equals("C")); //column "Decoy/Contaminant/Target"
 
 
             Directory.Delete(outputFolder, true);
@@ -158,23 +161,23 @@ namespace Test
                 ModificationMotif.TryGetMotif("A", out ModificationMotif motif);
                 Modification mod = new Modification(_originalId: "acetylation", _modificationType: "testModType", _target: motif, _chemicalFormula: ChemicalFormula.ParseFormula("C2H2O1"), _locationRestriction: "Anywhere.");
                 Protein xmlProtein = new Protein("APEPTIDE", "Test", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { mod } } });
-                List<Protein> proteins = new List<Protein> { fastaProtein, xmlProtein };
+                List<IBioPolymer> proteins = new List<IBioPolymer> { fastaProtein, xmlProtein };
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
                 Assert.That(proteins.First().OneBasedPossibleLocalizedModifications.Count != 0);
 
                 //reverse order and try again
-                proteins = new List<Protein> { xmlProtein, fastaProtein };
+                proteins = new List<IBioPolymer> { xmlProtein, fastaProtein };
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
                 Assert.That(proteins.First().OneBasedPossibleLocalizedModifications.Count != 0);
 
                 //same with no mods
-                xmlProtein = new Protein("APEPTIDE", "Test", proteolysisProducts: new List<ProteolysisProduct> { new ProteolysisProduct(1, 3, "zrWuzHere") });
-                proteins = new List<Protein> { xmlProtein, fastaProtein };
+                xmlProtein = new Protein("APEPTIDE", "Test", proteolysisProducts: new List<TruncationProduct> { new TruncationProduct(1, 3, "zrWuzHere") });
+                proteins = new List<IBioPolymer> { xmlProtein, fastaProtein };
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
-                Assert.That(proteins.First().ProteolysisProducts.Count() != 0);
+                Assert.That(((Protein)proteins.First()).TruncationProducts.Count() != 0);
             }
 
             [Test]
@@ -186,14 +189,14 @@ namespace Test
                 Protein contaminantProtein = new Protein("APEPTIDE", "Test", isContaminant: true);
                 Protein tDecoyProtein = new Protein("AEDITPEP", "DECOY_Test", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { mod } } });
                 Protein cDecoyProtein = new Protein("AEDITPEP", "DECOY_Test");
-                List<Protein> proteins = new List<Protein> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
+                List<IBioPolymer> proteins = new List<IBioPolymer> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
                 Assert.That(proteins.Count == 2);
                 Assert.That(!proteins[0].IsContaminant); //forward is target
                 Assert.That(proteins[0].OneBasedPossibleLocalizedModifications.Count == 1);
                 Assert.That(proteins[1].OneBasedPossibleLocalizedModifications.Count == 1);
 
-                proteins = new List<Protein> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
+                proteins = new List<IBioPolymer> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 2);
                 Assert.That(proteins[0].IsContaminant); //forward is contaminant

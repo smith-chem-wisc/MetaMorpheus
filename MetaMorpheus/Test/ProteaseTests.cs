@@ -5,6 +5,7 @@ using System.Linq;
 using EngineLayer;
 using Nett;
 using NUnit.Framework;
+using Readers;
 using TaskLayer;
 
 
@@ -28,7 +29,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
             Assert.That(psm.BaseSeq, Is.EqualTo("TTQNQKSQDVELWEGEVVKEL")); //base sequence ends in leucine as expected
             Directory.Delete(outputFolder,true);

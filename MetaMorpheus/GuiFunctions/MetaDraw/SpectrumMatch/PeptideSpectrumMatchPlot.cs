@@ -1,5 +1,4 @@
-﻿using EngineLayer;
-using MassSpectrometry;
+﻿using MassSpectrometry;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
@@ -9,6 +8,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
+using Readers;
 
 namespace GuiFunctions
 {

@@ -1,5 +1,4 @@
 ﻿using EngineLayer;
-using EngineLayer.GlycoSearch;
 using OxyPlot;
 using Omics.Fragmentation;
 using System;
@@ -8,6 +7,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Readers;
 
 namespace GuiFunctions
 {

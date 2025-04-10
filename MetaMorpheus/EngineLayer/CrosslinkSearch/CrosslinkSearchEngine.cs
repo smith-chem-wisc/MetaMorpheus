@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Omics.Modifications;
+using Omics;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -18,7 +19,7 @@ namespace EngineLayer.CrosslinkSearch
         protected readonly List<List<(double, int, double)>> Precursorss;
         protected readonly List<(int, int, int)>[] Candidates;
         protected readonly int NextPartition;
-        protected readonly List<PeptideWithSetModifications> NextPeptideIndex;
+        protected readonly List<IBioPolymerWithSetMods> NextPeptideIndex;
         // crosslinker molecule
         private readonly Crosslinker Crosslinker;
 
@@ -38,12 +39,12 @@ namespace EngineLayer.CrosslinkSearch
         private readonly double[] PrecursorMassTable;
         private readonly double[] NextPrecursorMassTable;
 
-        public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<PeptideWithSetModifications> peptideIndex,
+        public CrosslinkSearchEngine(List<CrosslinkSpectralMatch>[] globalCsms, Ms2ScanWithSpecificMass[] listOfSortedms2Scans, List<IBioPolymerWithSetMods> peptideIndex,
             List<int>[] fragmentIndex, List<int>[] secondFragmentIndex, int currentPartition, CommonParameters commonParameters, 
             List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters,
             Crosslinker crosslinker, int CrosslinkSearchTopNum, bool CleaveAtCrosslinkSite, bool quench_H2O, bool quench_NH2, bool quench_Tris, List<string> nestedIds, 
             List<(int, int, int)>[] candidates, int nextPartition, 
-            List<PeptideWithSetModifications> nextPeptideIndex, List<List<(double, int, double)>> precursorss)
+            List<IBioPolymerWithSetMods> nextPeptideIndex, List<List<(double, int, double)>> precursorss)
             : base(null, listOfSortedms2Scans, peptideIndex, fragmentIndex, currentPartition, commonParameters, fileSpecificParameters, new OpenSearchMode(), 0, nestedIds)
         {
             this.GlobalCsms = globalCsms;
@@ -706,7 +707,7 @@ namespace EngineLayer.CrosslinkSearch
             return localizedCrosslinkedSpectralMatch;
         }
 
-        private List<MatchedFragmentIon> ScoreChildScan(Ms2ScanWithSpecificMass parentScan, Ms2ScanWithSpecificMass childScan, int possibleSite, PeptideWithSetModifications mainPeptide, PeptideWithSetModifications otherPeptide)
+        private List<MatchedFragmentIon> ScoreChildScan(Ms2ScanWithSpecificMass parentScan, Ms2ScanWithSpecificMass childScan, int possibleSite, IBioPolymerWithSetMods mainPeptide, IBioPolymerWithSetMods otherPeptide)
         {
             bool shortMassAlphaMs3 = XLProductSearchMode.Accepts(childScan.PrecursorMass, mainPeptide.MonoisotopicMass + Crosslinker.CleaveMassShort) >= 0;
             bool longMassAlphaMs3 = XLProductSearchMode.Accepts(childScan.PrecursorMass, mainPeptide.MonoisotopicMass + Crosslinker.CleaveMassLong) >= 0;
@@ -730,9 +731,9 @@ namespace EngineLayer.CrosslinkSearch
                     mod.Add(otherExistingMod.Key, otherExistingMod.Value);
                 }
 
-                var peptideWithMod = new PeptideWithSetModifications(mainPeptide.Protein, mainPeptide.DigestionParams,
+                var peptideWithMod = new PeptideWithSetModifications(mainPeptide.Parent as Proteomics.Protein, mainPeptide.DigestionParams,
                     mainPeptide.OneBasedStartResidue, mainPeptide.OneBasedEndResidue,
-                    mainPeptide.CleavageSpecificityForFdrCategory, mainPeptide.PeptideDescription,
+                    mainPeptide.CleavageSpecificityForFdrCategory, mainPeptide.Description,
                     mainPeptide.MissedCleavages, mod, mainPeptide.NumFixedMods);
           
                     peptideWithMod.Fragment(CommonParameters.MS3ChildScanDissociationType, FragmentationTerminus.Both, childProducts);              
@@ -766,12 +767,12 @@ namespace EngineLayer.CrosslinkSearch
         /// <summary>
         /// Localizes the deadend mod to a residue
         /// </summary>
-        private CrosslinkSpectralMatch LocalizeDeadEndSite(PeptideWithSetModifications originalPeptide, Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters,
+        private CrosslinkSpectralMatch LocalizeDeadEndSite(IBioPolymerWithSetMods originalPeptide, Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters,
             List<int> possiblePositions, Modification deadEndMod, int notch, int scanIndex)
         {
             double bestScore = 0;
             List<MatchedFragmentIon> bestMatchingFragments = new List<MatchedFragmentIon>();
-            PeptideWithSetModifications bestLocalizedPeptide = null;
+            IBioPolymerWithSetMods bestLocalizedPeptide = null;
             int bestPosition = 0;
             List<Product> products = new List<Product>();
 
@@ -781,8 +782,8 @@ namespace EngineLayer.CrosslinkSearch
 
                 mods.Add(location + 1, deadEndMod);
  
-                var localizedPeptide = new PeptideWithSetModifications(originalPeptide.Protein, originalPeptide.DigestionParams, originalPeptide.OneBasedStartResidue,
-                    originalPeptide.OneBasedEndResidue, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.PeptideDescription, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
+                var localizedPeptide = new PeptideWithSetModifications(originalPeptide.Parent as Proteomics.Protein, originalPeptide.DigestionParams, originalPeptide.OneBasedStartResidue,
+                    originalPeptide.OneBasedEndResidue, originalPeptide.CleavageSpecificityForFdrCategory, originalPeptide.Description, originalPeptide.MissedCleavages, mods, originalPeptide.NumFixedMods);
 
                 localizedPeptide.Fragment(commonParameters.DissociationType, FragmentationTerminus.Both, products);
                 var matchedFragmentIons = MatchFragmentIons(theScan, products, commonParameters);
@@ -826,7 +827,7 @@ namespace EngineLayer.CrosslinkSearch
         /// <summary>
         /// Localizes the loop to a begin and end residue
         /// </summary>
-        private CrosslinkSpectralMatch LocalizeLoopSites(PeptideWithSetModifications originalPeptide, Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters,
+        private CrosslinkSpectralMatch LocalizeLoopSites(IBioPolymerWithSetMods originalPeptide, Ms2ScanWithSpecificMass theScan, CommonParameters commonParameters,
             List<int> possiblePositions, int notch, int scanIndex)
         {
             var possibleFragmentSets = CrosslinkedPeptide.XlLoopGetTheoreticalFragments(commonParameters.DissociationType, Loop, possiblePositions, originalPeptide);
