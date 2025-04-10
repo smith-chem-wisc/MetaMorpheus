@@ -187,9 +187,7 @@ namespace TaskLayer
                 }
                 string outputXMLdbFullName = Path.Combine(OutputFolder, string.Join("-", databaseNames) + "GPTMD.xml");
 
-                var newModsActuallyWritten = GlobalVariables.AnalyteType.IsRnaMode()
-                    ? ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<RNA>().ToList(), outputXMLdbFullName)
-                    : ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).Cast<Protein>().ToList(), outputXMLdbFullName);
+                var newModsActuallyWritten = ProteinDbWriter.WriteXmlDatabase(allModDictionary, proteinList.Where(b => !b.IsDecoy && !b.IsContaminant).ToList(), outputXMLdbFullName);
 
                 FinishedWritingFile(outputXMLdbFullName, new List<string> { taskId });
 
