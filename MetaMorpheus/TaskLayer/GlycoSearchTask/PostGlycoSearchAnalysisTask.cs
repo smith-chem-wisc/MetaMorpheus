@@ -13,6 +13,7 @@ using Proteomics.ProteolyticDigestion;
 using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
 using Omics;
+using Readers;
 
 namespace TaskLayer
 {
@@ -187,7 +188,7 @@ namespace TaskLayer
         private void WriteSummary(List<GlycoSpectralMatch> targetPsms, GlycoSearchParameters glycoSearchParameters, MyTaskResults MyTaskResults)
         {
             var gsms = targetPsms.Where(p => p.Routes != null).ToList();
-            var Level1gsms = gsms.Where(p => p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1).ToList();
+            var Level1gsms = gsms.Where(p => p.LocalizationLevel == LocalizationLevel.Level1).ToList();
             MyTaskResults.AddTaskSummaryText("All target PSMs within 1% FDR: " + (targetPsms?.
                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
             MyTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + (ProteinGroups?.
@@ -199,19 +200,19 @@ namespace TaskLayer
                     MyTaskResults.AddTaskSummaryText("All target O-Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 O-Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
                 case GlycoSearchType.NGlycanSearch:
                     MyTaskResults.AddTaskSummaryText("All target N-Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 N-Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
                 case GlycoSearchType.N_O_GlycanSearch:
                     MyTaskResults.AddTaskSummaryText("All target Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
             }
 

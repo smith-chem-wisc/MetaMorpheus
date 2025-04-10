@@ -24,6 +24,7 @@ using UsefulProteomicsDatabases;
 using static Nett.TomlObjectFactory;
 using EngineLayer.FdrAnalysis;
 using Omics;
+using Omics.BioPolymer;
 
 namespace Test
 {
@@ -128,7 +129,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
             Assert.That(psm.BaseSeq, Is.EqualTo("FTQTSGETTDADKEPAGEDK"));
             Assert.That(psm.DecoyContamTarget, Is.EqualTo("T"));
@@ -191,7 +192,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
             Assert.That(parsedPsms.Count, Is.EqualTo(385)); //total psm count
             Assert.That(parsedPsms.Count(p => p.QValue < 0.01), Is.EqualTo(218)); //psms with q-value < 0.01 as read from psmtsv, including decoys
@@ -1037,7 +1038,7 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
             Assert.That(parsedPsms.Count, Is.EqualTo(38)); //total psm count
 
@@ -1612,7 +1613,7 @@ namespace Test
                 ii++;
             }
 
-            var proteinList = new List<IBioPolymer> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<ProteolysisProduct> { new ProteolysisProduct(null, null, "test") }) };
+            var proteinList = new List<IBioPolymer> { new Protein("GGGGGMKNNNQQQGGGGKGG", null, null, null, null, new List<TruncationProduct> { new TruncationProduct(null, null, "test") }) };
 
             var productMassTolerance = new AbsoluteTolerance(0.01);
             var searchModes = new SinglePpmAroundZeroSearchMode(5);
@@ -1779,7 +1780,7 @@ namespace Test
                 modsDictionary.Add(mod, (ushort)ii);
                 ii++;
             }
-            List<ProteolysisProduct> protprod = new List<ProteolysisProduct> { new ProteolysisProduct(9, 21, "chain") };
+            List<TruncationProduct> protprod = new List<TruncationProduct> { new TruncationProduct(9, 21, "chain") };
             var proteinList = new List<IBioPolymer> { new Protein("MGGGGGMKNNNQQQGGGGKLKGKKNKKGN", "hello", null, null, null, protprod) };
 
             List<DigestionMotif> motifs1 = new List<DigestionMotif>

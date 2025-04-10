@@ -14,12 +14,12 @@ using System.Linq;
 using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using PsmFromTsv = EngineLayer.PsmFromTsv;
 using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Easy.Common.Extensions;
+using Omics.BioPolymer;
 using Readers;
 using static Nett.TomlObjectFactory;
 
@@ -414,8 +414,8 @@ namespace Test
 
             List<string> peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv")).ToList();
             var header = peptides[0].Split(new char[] { '\t' }).ToArray();
-            int indexOfPsmCountInTsv = Array.IndexOf(header, PsmTsvHeader.PsmCount);
-            int indexOfQValueInTsv = Array.IndexOf(header, PsmTsvHeader.QValue);
+            int indexOfPsmCountInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.PsmCount);
+            int indexOfQValueInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.QValue);
             Assert.That(indexOfPsmCountInTsv >= 0);
             Assert.That(indexOfQValueInTsv >= 0);
 
@@ -431,7 +431,7 @@ namespace Test
                 }
             }
 
-            var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
+            var psmsFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
             var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                     psm.QValue <= 0.01)
@@ -444,13 +444,13 @@ namespace Test
             Assert.That(psmOfInterest.PrecursorIntensity == 4634473.5);
 
             var lines = File.ReadAllLines(Path.Combine(outputFolder, @"AllPSMs.psmtsv")).ToList();
-            int indexOfPrecursorIntensity = Array.IndexOf(header, PsmTsvHeader.PrecursorIntensity);
+            int indexOfPrecursorIntensity = Array.IndexOf(header, SpectrumMatchFromTsvHeader.PrecursorIntensity);
             var copy = lines[lines.Count - 1].Split('\t').ToArray();
             copy[indexOfPrecursorIntensity] = copy[indexOfPrecursorIntensity] + "a";
             string line = string.Join("\t", copy);
             lines.Add(line);
             File.WriteAllLines(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), lines.ToArray());
-            var psmsFromTsvInvalid = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
+            var psmsFromTsvInvalid = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
             var psmInvalid = psmsFromTsvInvalid[psmsFromTsvInvalid.Count - 1];
             Assert.That(psmInvalid.PrecursorIntensity, Is.EqualTo(null));
 

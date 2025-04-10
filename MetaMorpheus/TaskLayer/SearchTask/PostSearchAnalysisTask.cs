@@ -20,8 +20,10 @@ using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
 using MzLibUtil;
+using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
+using ThermoFisher.CommonCore.Data;
 
 namespace TaskLayer
 {

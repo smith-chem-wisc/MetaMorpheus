@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using Omics;
 using Omics.Modifications;
+using Readers;
 
 
 namespace EngineLayer
@@ -164,19 +165,19 @@ namespace EngineLayer
 
         internal static void AddBasicMatchData(Dictionary<string, string> s, SpectralMatch psm)
         {
-            s[PsmTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
-            s[PsmTsvHeader.Ms2ScanNumber] = psm == null ? " " : psm.ScanNumber.ToString(CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.Ms2ScanRetentionTime] = psm == null ? " " : psm.ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.NumExperimentalPeaks] = psm == null ? " " : psm.ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.TotalIonCurrent] = psm == null ? " " : psm.TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.PrecursorScanNum] = psm == null ? " " : psm.PrecursorScanNumber.HasValue ? psm.PrecursorScanNumber.Value.ToString(CultureInfo.InvariantCulture) : "unknown";
-            s[PsmTsvHeader.PrecursorCharge] = psm == null ? " " : psm.ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.PrecursorIntensity] = psm == null ? " " : psm.PrecursorScanIntensity.ToString("F5", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.PrecursorMz] = psm == null ? " " : psm.ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.PrecursorMass] = psm == null ? " " : psm.ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
-            s[PsmTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.FileName] = psm == null ? " " : Path.GetFileNameWithoutExtension(psm.FullFilePath);
+            s[SpectrumMatchFromTsvHeader.Ms2ScanNumber] = psm == null ? " " : psm.ScanNumber.ToString(CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.Ms2ScanRetentionTime] = psm == null ? " " : psm.ScanRetentionTime.ToString("F5", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.NumExperimentalPeaks] = psm == null ? " " : psm.ScanExperimentalPeaks.ToString("F5", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.TotalIonCurrent] = psm == null ? " " : psm.TotalIonCurrent.ToString("F5", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.PrecursorScanNum] = psm == null ? " " : psm.PrecursorScanNumber.HasValue ? psm.PrecursorScanNumber.Value.ToString(CultureInfo.InvariantCulture) : "unknown";
+            s[SpectrumMatchFromTsvHeader.PrecursorCharge] = psm == null ? " " : psm.ScanPrecursorCharge.ToString("F5", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.PrecursorIntensity] = psm == null ? " " : psm.PrecursorScanIntensity.ToString("F5", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.PrecursorMz] = psm == null ? " " : psm.ScanPrecursorMonoisotopicPeakMz.ToString("F5", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.PrecursorMass] = psm == null ? " " : psm.ScanPrecursorMass.ToString("F5", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.Score] = psm == null ? " " : psm.Score.ToString("F3", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.DeltaScore] = psm == null ? " " : psm.DeltaScore.ToString("F3", CultureInfo.InvariantCulture);
+            s[SpectrumMatchFromTsvHeader.Notch] = psm == null ? " " : Resolve(psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Notch)).ResolvedString;
         }
 
         internal static void AddPeptideSequenceData(Dictionary<string, string> s, SpectralMatch sm, IReadOnlyDictionary<string, int> ModsToWritePruned)
@@ -185,51 +186,51 @@ namespace EngineLayer
 
             List<IBioPolymerWithSetMods> pepsWithMods = pepWithModsIsNull ? null : sm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).ToList();
 
-            s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (sm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
-            s[PsmTsvHeader.FullSequence] = pepWithModsIsNull ? " " : (sm.FullSequence != null ? sm.FullSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString);
-            s[PsmTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : (sm.EssentialSequence != null ? sm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString);
+            s[SpectrumMatchFromTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (sm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
+            s[SpectrumMatchFromTsvHeader.FullSequence] = pepWithModsIsNull ? " " : (sm.FullSequence != null ? sm.FullSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString);
+            s[SpectrumMatchFromTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : (sm.EssentialSequence != null ? sm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString);
             string geneString = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Parent.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), sm.FullSequence).ResolvedString;
-            s[PsmTsvHeader.AmbiguityLevel] = ProteoformLevelClassifier.ClassifyPrSM(s[PsmTsvHeader.FullSequence], geneString);
-            s[PsmTsvHeader.PsmCount] = pepWithModsIsNull ? " " : sm.PsmCount.ToString();
-            s[PsmTsvHeader.Mods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
-            s[PsmTsvHeader.ModsChemicalFormulas] = pepWithModsIsNull ? " " :
+            s[SpectrumMatchFromTsvHeader.AmbiguityLevel] = ProteoformLevelClassifier.ClassifyPrSM(s[SpectrumMatchFromTsvHeader.FullSequence], geneString);
+            s[SpectrumMatchFromTsvHeader.SpectrumMatchCount] = pepWithModsIsNull ? " " : sm.PsmCount.ToString();
+            s[SpectrumMatchFromTsvHeader.Mods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.ModsChemicalFormulas] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;
-            s[PsmTsvHeader.ModsCombinedChemicalFormula] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as Modification)))).ResolvedString;
-            s[PsmTsvHeader.NumVariableMods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).ResolvedString;
-            s[PsmTsvHeader.MissedCleavages] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).ResolvedString;
-            s[PsmTsvHeader.PeptideMonoMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
-            s[PsmTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorDa).ResolvedString;
-            s[PsmTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorPpm).ResolvedString;
-            s[PsmTsvHeader.ProteinAccession] = pepWithModsIsNull ? " " : (sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString);
-            s[PsmTsvHeader.ProteinName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
-            s[PsmTsvHeader.GeneName] = geneString;
-            s[PsmTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.Organism)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.ModsCombinedChemicalFormula] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => (c.Value as Modification)))).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.NumVariableMods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.MissedCleavages] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.MonoisotopicMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorDa).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorPpm).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.Accession] = pepWithModsIsNull ? " " : (sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString);
+            s[SpectrumMatchFromTsvHeader.Name] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.GeneName] = geneString;
+            s[SpectrumMatchFromTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.Organism)).ResolvedString;
 
             if (sm is PeptideSpectralMatch psm || sm is null)
             {
-                s[PsmTsvHeader.IdentifiedSequenceVariations] = pepWithModsIsNull ? " " :
+                s[SpectrumMatchFromTsvHeader.IdentifiedSequenceVariations] = pepWithModsIsNull ? " " :
                Resolve(pepsWithMods.Select(p => p as PeptideWithSetModifications)
                    .Select(b => string.Join(", ", b.Protein.AppliedSequenceVariations
                    .Where(av => b.IntersectsAndIdentifiesVariation(av).identifies)
                    .Select(av => b.SequenceVariantString(av, b.IntersectsAndIdentifiesVariation(av).intersects))))).ResolvedString;
-                s[PsmTsvHeader.SpliceSites] = pepWithModsIsNull ? " " :
+                s[SpectrumMatchFromTsvHeader.SpliceSites] = pepWithModsIsNull ? " " :
                     Resolve(pepsWithMods.Select(p => p as PeptideWithSetModifications)
                         .Select(b => string.Join(", ", b.Protein.SpliceSites
                         .Where(d => Includes(b, d))
                         .Select(d => $"{d.OneBasedBeginPosition.ToString()}-{d.OneBasedEndPosition.ToString()}")))).ResolvedString;
             }
 
-            s[PsmTsvHeader.Contaminant] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsContaminant ? "Y" : "N")).ResolvedString;
-            s[PsmTsvHeader.Decoy] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "Y" : "N")).ResolvedString;
-            s[PsmTsvHeader.PeptideDesicription] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Description)).ResolvedString;
-            s[PsmTsvHeader.StartAndEndResiduesInProtein] = pepWithModsIsNull ? " " :
+            s[SpectrumMatchFromTsvHeader.Contaminant] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsContaminant ? "Y" : "N")).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.Decoy] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "Y" : "N")).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.Description] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Description)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.StartAndEndResiduesInFullSequence] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => ($"[{b.OneBasedStartResidue.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidue.ToString(CultureInfo.InvariantCulture)}]")), sm.FullSequence).ResolvedString;
-            s[PsmTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousResidue.ToString())).ResolvedString;
-            s[PsmTsvHeader.NextAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextResidue.ToString())).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.PreviousResidue] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousResidue.ToString())).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.NextResidue] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextResidue.ToString())).ResolvedString;
 
             string theoreticalsSearched = " ";
-            s[PsmTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
-            s[PsmTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "D" : b.Parent.IsContaminant ? "C" : "T")).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.TheoreticalsSearched] = theoreticalsSearched;
+            s[SpectrumMatchFromTsvHeader.DecoyContaminantTarget] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "D" : b.Parent.IsContaminant ? "C" : "T")).ResolvedString;
         }
 
         /// <summary>
@@ -306,14 +307,14 @@ namespace EngineLayer
             }
 
             // save ion series strings to output dictionary
-            s[PsmTsvHeader.MatchedIonSeries] = nullPsm ? " " : seriesStringBuilder.ToString().TrimEnd(';');
-            s[PsmTsvHeader.MatchedIonMzRatios] = nullPsm ? " " : mzStringBuilder.ToString().TrimEnd(';');
-            s[PsmTsvHeader.MatchedIonMassDiffDa] = nullPsm ? " " : fragmentDaErrorStringBuilder.ToString().TrimEnd(';');
-            s[PsmTsvHeader.MatchedIonMassDiffPpm] = nullPsm ? " " : fragmentPpmErrorStringBuilder.ToString().TrimEnd(';');
-            s[PsmTsvHeader.MatchedIonIntensities] = nullPsm ? " " : fragmentIntensityStringBuilder.ToString().TrimEnd(';');
+            s[SpectrumMatchFromTsvHeader.MatchedIonSeries] = nullPsm ? " " : seriesStringBuilder.ToString().TrimEnd(';');
+            s[SpectrumMatchFromTsvHeader.MatchedIonMzRatios] = nullPsm ? " " : mzStringBuilder.ToString().TrimEnd(';');
+            s[SpectrumMatchFromTsvHeader.MatchedIonMassDiffDa] = nullPsm ? " " : fragmentDaErrorStringBuilder.ToString().TrimEnd(';');
+            s[SpectrumMatchFromTsvHeader.MatchedIonMassDiffPpm] = nullPsm ? " " : fragmentPpmErrorStringBuilder.ToString().TrimEnd(';');
+            s[SpectrumMatchFromTsvHeader.MatchedIonIntensities] = nullPsm ? " " : fragmentIntensityStringBuilder.ToString().TrimEnd(';');
 
             // number of matched ions
-            s[PsmTsvHeader.MatchedIonCounts] = nullPsm ? " " : matchedIons.Count.ToString();
+            s[SpectrumMatchFromTsvHeader.MatchedIonCounts] = nullPsm ? " " : matchedIons.Count.ToString();
         }
 
         internal static void AddMatchScoreData(Dictionary<string, string> s, SpectralMatch peptide, bool writePeptideLevelFdr = false)
@@ -326,9 +327,9 @@ namespace EngineLayer
                 localizedScores = GlobalVariables.CheckLengthOfOutput(("[" + string.Join(",", peptide.LocalizedScores.Select(b => b.ToString("F3", CultureInfo.InvariantCulture))) + "]"));
                 improvementPossible = (peptide.LocalizedScores.Max() - peptide.Score).ToString("F3", CultureInfo.InvariantCulture);
             }
-            s[PsmTsvHeader.SpectralAngle] = spectralAngle;
-            s[PsmTsvHeader.LocalizedScores] = localizedScores;
-            s[PsmTsvHeader.ImprovementPossible] = improvementPossible;
+            s[SpectrumMatchFromTsvHeader.SpectralAngle] = spectralAngle;
+            s[SpectrumMatchFromTsvHeader.LocalizedScores] = localizedScores;
+            s[SpectrumMatchFromTsvHeader.ImprovementPossible] = improvementPossible;
 
             string cumulativeTarget = " ";
             string cumulativeDecoy = " ";
@@ -351,14 +352,14 @@ namespace EngineLayer
                 PEP_Qvalue = peptide.GetFdrInfo(writePeptideLevelFdr).PEP_QValue.ToString();
             }
 
-            s[PsmTsvHeader.CumulativeTarget] = cumulativeTarget;
-            s[PsmTsvHeader.CumulativeDecoy] = cumulativeDecoy;
-            s[PsmTsvHeader.QValue] = qValue;
-            s[PsmTsvHeader.CumulativeTargetNotch] = cumulativeTargetNotch;
-            s[PsmTsvHeader.CumulativeDecoyNotch] = cumulativeDecoyNotch;
-            s[PsmTsvHeader.QValueNotch] = qValueNotch;
-            s[PsmTsvHeader.PEP] = PEP;
-            s[PsmTsvHeader.PEP_QValue] = PEP_Qvalue;
+            s[SpectrumMatchFromTsvHeader.CumulativeTarget] = cumulativeTarget;
+            s[SpectrumMatchFromTsvHeader.CumulativeDecoy] = cumulativeDecoy;
+            s[SpectrumMatchFromTsvHeader.QValue] = qValue;
+            s[SpectrumMatchFromTsvHeader.CumulativeTargetNotch] = cumulativeTargetNotch;
+            s[SpectrumMatchFromTsvHeader.CumulativeDecoyNotch] = cumulativeDecoyNotch;
+            s[SpectrumMatchFromTsvHeader.QValueNotch] = qValueNotch;
+            s[SpectrumMatchFromTsvHeader.PEP] = PEP;
+            s[SpectrumMatchFromTsvHeader.PEP_QValue] = PEP_Qvalue;
         }
     }
 }

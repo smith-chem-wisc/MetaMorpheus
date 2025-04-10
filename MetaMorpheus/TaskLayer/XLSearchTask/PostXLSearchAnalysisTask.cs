@@ -258,7 +258,7 @@ namespace TaskLayer
                     precursorCharge: bestCsm.ScanPrecursorCharge,
                     peaks: bestCsm.MatchedFragmentIons,
                     rt: bestCsm.ScanRetentionTime,
-                    betaPeptide: bestCsm.BetaPeptide));
+                    betaPeaks: bestCsm.BetaPeptide.MatchedFragmentIons));
             }
 
             foreach (var singlePsmGroup in singlePsms.Where(c =>

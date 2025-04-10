@@ -11,6 +11,7 @@ using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
+using Omics.BioPolymer;
 
 namespace Test
 {
@@ -304,7 +305,7 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
-            var Dlist = proteins[0].GetVariantProteins().SelectMany(vp => vp.Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications)).ToList();
+            var Dlist = proteins[0].GetVariantBioPolymers().SelectMany(vp => vp.Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications)).ToList();
             Assert.That(Dlist[0].NumFixedMods, Is.EqualTo(1));
 
             //check length
@@ -438,7 +439,7 @@ namespace Test
 
             var protein1 = new Protein("PEPVIDEKPEPT", "1", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 12, new List<Modification> { modToWrite } } }, sequenceVariations: variants);
             var protein2 = new Protein("PEPIDPEPT", "2", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 9, new List<Modification> { modToWrite } } });
-            var protein1Variants = protein1.GetVariantProteins(1,0);           
+            var protein1Variants = protein1.GetVariantBioPolymers(1,0);           
             
             string path = @"temp";
 

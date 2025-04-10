@@ -990,7 +990,7 @@ namespace GuiFunctions
                 {
                     lock (ThreadLocker)
                     {
-                        var psms = PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings);
+                        var psms = SpectrumMatchTsvReader.ReadPsmTsv(resultsFile, out List<string> warnings);
                         foreach (PsmFromTsv psm in psms)
                         {
                             if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)
