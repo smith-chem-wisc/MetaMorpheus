@@ -76,7 +76,7 @@ namespace Test
             var peptideTheorProducts = new List<Product>();
             Assert.That(psm_oneCharge[1].MatchedFragmentIons.Count == 12);
             var differences = psm[1].MatchedFragmentIons.Except(psm_oneCharge[1].MatchedFragmentIons);
-            psm[1].BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm[1].BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -174,7 +174,7 @@ namespace Test
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
             var differences = psm.MatchedFragmentIons.Except(psm_oneCharge.MatchedFragmentIons);
-            psm.BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)

@@ -140,7 +140,7 @@ namespace Test
             fsp.Add(("", CommonParameters));
 
             SpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), new List<MatchedFragmentIon>());
-            myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>(),0);
+            myPsm.AddOrReplace(pwsm2, 10, 0, true, new List<MatchedFragmentIon>());
             
             myPsm.ResolveAllAmbiguities();
 

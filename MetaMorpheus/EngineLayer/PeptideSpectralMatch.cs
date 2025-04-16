@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using EngineLayer.SpectrumMatch;
 using Omics;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -9,12 +10,12 @@ namespace EngineLayer
     public class PeptideSpectralMatch : SpectralMatch
     {
         public PeptideSpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex,
-            Ms2ScanWithSpecificMass scan, CommonParameters commonParameters,
-            List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0) : base(peptide, notch, score, scanIndex,
-            scan, commonParameters, matchedFragmentIons, xcorr)
+            Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons) 
+            : base(peptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
         {
 
         }
+
         #region Silac
             
 
@@ -25,15 +26,15 @@ namespace EngineLayer
         public void ResolveHeavySilacLabel(List<SilacLabel> labels, IReadOnlyDictionary<string, int> modsToWritePruned)
         {
             //FullSequence
-            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.FullSequence)).ResolvedString; //string, not value
+            FullSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence)).ResolvedString; //string, not value
             FullSequence = SilacConversions.GetAmbiguousLightSequence(FullSequence, labels, false);
 
             //BaseSequence
-            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.BaseSequence)).ResolvedString; //string, not value
+            BaseSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.BaseSequence)).ResolvedString; //string, not value
             BaseSequence = SilacConversions.GetAmbiguousLightSequence(BaseSequence, labels, true);
 
             //EssentialSequence
-            EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.Pwsm.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
+            EssentialSequence = PsmTsvWriter.Resolve(_BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.EssentialSequence(modsToWritePruned))).ResolvedString; //string, not value
             EssentialSequence = SilacConversions.GetAmbiguousLightSequence(EssentialSequence, labels, false);
         }
 
@@ -41,14 +42,12 @@ namespace EngineLayer
         /// This method is used by SILAC quantification to add heavy/light psms
         /// Don't have access to the scans at that point, so a new contructor is needed
         /// </summary>
-        public PeptideSpectralMatch Clone(List<(int Notch, IBioPolymerWithSetMods Peptide)> bestMatchingPeptides) => new PeptideSpectralMatch(this, bestMatchingPeptides);
+        public PeptideSpectralMatch Clone(List<SpectralMatchHypothesis> bestMatchingPeptides) => new PeptideSpectralMatch(this, bestMatchingPeptides);
         
-        protected PeptideSpectralMatch(SpectralMatch psm, List<(int Notch, IBioPolymerWithSetMods Peptide)> bestMatchingPeptides) 
+        protected PeptideSpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides) 
             : base(psm, bestMatchingPeptides)
         {
         }
         #endregion
-
-
     }
 }

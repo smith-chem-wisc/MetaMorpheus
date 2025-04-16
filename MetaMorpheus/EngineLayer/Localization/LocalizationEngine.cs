@@ -51,7 +51,7 @@ namespace EngineLayer.Localization
 
                         MsDataScan scan = MyMsDataFile.GetOneBasedScan(psm.ScanNumber);
                         Ms2ScanWithSpecificMass scanWithSpecificMass = new Ms2ScanWithSpecificMass(scan, psm.ScanPrecursorMonoisotopicPeakMz, psm.ScanPrecursorCharge, psm.FullFilePath, CommonParameters);
-                        IBioPolymerWithSetMods peptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                        IBioPolymerWithSetMods peptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
                         double massDifference = psm.ScanPrecursorMass - peptide.MonoisotopicMass;
 
                         // this section will iterate through all residues of the peptide and try to localize the mass-diff at each residue and report a score for each residue

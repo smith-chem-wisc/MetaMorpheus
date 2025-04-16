@@ -14,6 +14,9 @@ namespace Test
             string originalDataDir = GlobalVariables.DataDir.ToString();
             string customDataDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CustomDataDir");
 
+            if (Directory.Exists(customDataDir))
+                Directory.Delete(customDataDir, true);
+
             Assert.That(!Directory.Exists(customDataDir));
 
             // set the custom data directory + load it

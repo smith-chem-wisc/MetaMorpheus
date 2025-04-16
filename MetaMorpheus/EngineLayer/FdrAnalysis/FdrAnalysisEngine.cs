@@ -175,10 +175,10 @@ namespace EngineLayer.FdrAnalysis
                     // e.g. if the PSM matched to 1 target and 2 decoys, it counts as 2/3 decoy
                     double decoyHits = 0;
                     double totalHits = 0;
-                    var hits = psm.BestMatchingBioPolymersWithSetMods.GroupBy(p => p.Peptide.FullSequence);
+                    var hits = psm.BestMatchingBioPolymersWithSetMods.GroupBy(p => p.FullSequence);
                     foreach (var hit in hits)
                     {
-                        if (hit.First().Peptide.Parent.IsDecoy)
+                        if (hit.First().IsDecoy)
                         {
                             decoyHits++;
                         }

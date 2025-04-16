@@ -203,12 +203,12 @@ namespace EngineLayer.GlycoSearch
             sb.Append(ScanPrecursorCharge + "\t");
             sb.Append(ScanPrecursorMass + "\t");
 
-            var proteinAccessionString = Accession ?? PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide.Parent.Accession), FullSequence).ResolvedString;
+            var proteinAccessionString = Accession ?? PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession), FullSequence).ResolvedString;
             sb.Append(proteinAccessionString + "\t");
             sb.Append(Organism + "\t");
-            sb.Append(PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(b => b.Peptide.Parent.FullName), FullSequence).ResolvedString + "\t"); //protein name
-            int _FirstOneBasedStartResidueInProtein = OneBasedStartResidue.HasValue ? OneBasedStartResidue.Value : BestMatchingBioPolymersWithSetMods.First().Peptide.OneBasedStartResidue;
-            int _FirstOneBasedEndResidueInProtein = OneBasedEndResidue.HasValue ? OneBasedEndResidue.Value : BestMatchingBioPolymersWithSetMods.First().Peptide.OneBasedEndResidue; ;
+            sb.Append(PsmTsvWriter.Resolve(BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.Parent.FullName), FullSequence).ResolvedString + "\t"); //protein name
+            int _FirstOneBasedStartResidueInProtein = OneBasedStartResidue.HasValue ? OneBasedStartResidue.Value : BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.OneBasedStartResidue;
+            int _FirstOneBasedEndResidueInProtein = OneBasedEndResidue.HasValue ? OneBasedEndResidue.Value : BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.OneBasedEndResidue; ;
 
             if (OneBasedStartResidue.HasValue)
             {
@@ -220,9 +220,9 @@ namespace EngineLayer.GlycoSearch
             }
             
             sb.Append(BaseSequence + "\t");
-            sb.Append(BestMatchingBioPolymersWithSetMods.First().Peptide.PreviousResidue + "," + BestMatchingBioPolymersWithSetMods.First().Peptide.NextResidue + "\t");
+            sb.Append(BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.PreviousResidue + "," + BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.NextResidue + "\t");
             sb.Append(FullSequence + "\t");
-            sb.Append(BestMatchingBioPolymersWithSetMods.First().Peptide.AllModsOneIsNterminus.Count + "\t");
+            sb.Append(BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.AllModsOneIsNterminus.Count + "\t");
 
             sb.Append((BioPolymerWithSetModsMonoisotopicMass.HasValue ? BioPolymerWithSetModsMonoisotopicMass.Value.ToString() : "---")); sb.Append("\t");
             sb.Append(Score + "\t");

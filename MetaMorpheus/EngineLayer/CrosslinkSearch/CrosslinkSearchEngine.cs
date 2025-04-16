@@ -406,9 +406,9 @@ namespace EngineLayer.CrosslinkSearch
 
                         double betaMass = pre.Item1 - PrecursorMassTable[id] - Crosslinker.TotalMass;
 
-                        double betaMassLow = XLPrecusorSearchMode.GetAllowedPrecursorMassIntervalsFromObservedMass(betaMass).First().AllowedInterval.Minimum;
+                        double betaMassLow = XLPrecusorSearchMode.GetAllowedPrecursorMassIntervalsFromObservedMass(betaMass).First().Minimum;
 
-                        double betaMassHigh = XLPrecusorSearchMode.GetAllowedPrecursorMassIntervalsFromObservedMass(betaMass).First().AllowedInterval.Maximum;
+                        double betaMassHigh = XLPrecusorSearchMode.GetAllowedPrecursorMassIntervalsFromObservedMass(betaMass).First().Maximum;
 
                         int betaMassLowIndex = BinarySearchGetIndex(NextPrecursorMassTable, betaMassLow);
 

@@ -12,7 +12,7 @@ namespace EngineLayer.ModernSearch
     public class ModernSearchEngine : MetaMorpheusEngine
     {
         protected const int FragmentBinsPerDalton = 1000;
-        protected readonly List<int>[] FragmentIndex;
+        protected List<int>[] FragmentIndex { get; private set; }
         protected readonly SpectralMatch[] PeptideSpectralMatches;
         protected readonly Ms2ScanWithSpecificMass[] ListOfSortedMs2Scans;
         protected readonly List<PeptideWithSetModifications> PeptideIndex;
@@ -101,8 +101,8 @@ namespace EngineLayer.ModernSearch
             // this is just PRELIMINARY precursor-mass filtering	
             // additional checks are made later to ensure that the theoretical precursor mass is acceptable
             List<AllowedIntervalWithNotch> notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.PrecursorMass).ToList();
-            double lowestMassPeptideToLookFor = notches.Min(p => p.AllowedInterval.Minimum);
-            double highestMassPeptideToLookFor = notches.Max(p => p.AllowedInterval.Maximum);
+            double lowestMassPeptideToLookFor = notches.Min(p => p.Minimum);
+            double highestMassPeptideToLookFor = notches.Max(p => p.Maximum);
 
             // clear the scoring table to score the new scan (conserves memory compared to allocating a new array)
             Array.Clear(scoringTable, 0, scoringTable.Length);
@@ -358,7 +358,7 @@ namespace EngineLayer.ModernSearch
                 }
                 else
                 {
-                    PeptideSpectralMatches[scanIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                    PeptideSpectralMatches[scanIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons);
                 }
             }
 

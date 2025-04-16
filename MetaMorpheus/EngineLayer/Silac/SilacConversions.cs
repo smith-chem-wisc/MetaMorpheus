@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics.Modifications;
 using Omics;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer
 {
@@ -49,16 +50,16 @@ namespace EngineLayer
                 pwsm.AllModsOneIsNterminus,
                 pwsm.NumFixedMods,
                 labeledBaseSequence);
-            return psm.Clone(new List<(int Notch, IBioPolymerWithSetMods Peptide)> { (notch, labeledPwsm) });
+            return psm.Clone([new SpectralMatchHypothesis(notch, labeledPwsm, [], psm.Score)]);
         }
 
         public static PeptideSpectralMatch GetSilacPsm(PeptideSpectralMatch psm, SilacLabel silacLabel)
         {
-            List<(int Notch, IBioPolymerWithSetMods Peptide)> updatedBestMatchingPeptides = new List<(int Notch, IBioPolymerWithSetMods Peptide)>();
-            foreach ((int Notch, PeptideWithSetModifications Peptide) notchAndPwsm in psm.BestMatchingBioPolymersWithSetMods)
+            List<SpectralMatchHypothesis> updatedBestMatchingPeptides = new();
+            foreach (var notchAndPwsm in psm.BestMatchingBioPolymersWithSetMods)
             {
-                PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(silacLabel, notchAndPwsm.Peptide);
-                updatedBestMatchingPeptides.Add((notchAndPwsm.Notch, modifiedPwsm));
+                PeptideWithSetModifications modifiedPwsm = CreateSilacPwsm(silacLabel, notchAndPwsm.SpecificBioPolymer as PeptideWithSetModifications);
+                updatedBestMatchingPeptides.Add(new SpectralMatchHypothesis(notchAndPwsm.Notch, modifiedPwsm, notchAndPwsm.MatchedIons, psm.Score));
             }
             return psm.Clone(updatedBestMatchingPeptides) as PeptideSpectralMatch;
         }
@@ -69,11 +70,11 @@ namespace EngineLayer
             List<SpectralMatch> psmsToReturn = new List<SpectralMatch>();
             foreach (PeptideSpectralMatch psm in originalPsms)
             {
-                List<(int Notch, IBioPolymerWithSetMods Peptide)> originalPeptides = psm.BestMatchingBioPolymersWithSetMods.ToList();
-                List<(int Notch, IBioPolymerWithSetMods Peptide)> updatedPeptides = new List<(int Notch, IBioPolymerWithSetMods Peptide)>();
-                foreach ((int Notch, PeptideWithSetModifications Peptide) notchPwsm in originalPeptides)
+                List<SpectralMatchHypothesis> originalPeptides = psm.BestMatchingBioPolymersWithSetMods.ToList();
+                List<SpectralMatchHypothesis> updatedPeptides = new ();
+                foreach (var notchPwsm in originalPeptides)
                 {
-                    PeptideWithSetModifications pwsm = notchPwsm.Peptide;
+                    PeptideWithSetModifications pwsm = notchPwsm.SpecificBioPolymer as PeptideWithSetModifications;
                     SilacLabel label = GetRelevantLabelFromBaseSequence(pwsm.BaseSequence, labels);
                     Protein updatedProtein = pwsm.Protein;
                     if (label != null)
@@ -100,7 +101,7 @@ namespace EngineLayer
                         pwsm.AllModsOneIsNterminus,
                         pwsm.NumFixedMods,
                         pwsm.BaseSequence);
-                    updatedPeptides.Add((notchPwsm.Notch, updatedPwsm));
+                    updatedPeptides.Add(new (notchPwsm.Notch, updatedPwsm, notchPwsm.MatchedIons, psm.Score));
                 }
 
                 psmsToReturn.Add(psm.Clone(updatedPeptides));
@@ -655,10 +656,10 @@ namespace EngineLayer
                     if (peaksOfInterest.Count > 1)
                     {
                         //get isotopic envelopes that are shared by all
-                        List<int> scanIndex = peaksOfInterest.First().IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedMs1ScanIndex).ToList();
+                        List<int> scanIndex = peaksOfInterest.First().IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedScanIndex).ToList();
                         for (int i = 1; i < peaksOfInterest.Count; i++)
                         {
-                            List<int> currentScanIndexes = peaksOfInterest[i].IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedMs1ScanIndex).ToList();
+                            List<int> currentScanIndexes = peaksOfInterest[i].IsotopicEnvelopes.Select(x => x.IndexedPeak).Select(x => x.ZeroBasedScanIndex).ToList();
                             scanIndex = scanIndex.Intersect(currentScanIndexes).ToList();
                             if (scanIndex.Count == 0) //if there's no overlap, then we're done!
                             {
@@ -674,7 +675,7 @@ namespace EngineLayer
                                 ChromatographicPeak peakForThisPeptide = peaksOfInterest.Where(x => peptide.Sequence.Equals(x.Identifications.First().ModifiedSequence)).FirstOrDefault();
                                 if (peakForThisPeptide != null)
                                 {
-                                    double summedIntensity = peakForThisPeptide.IsotopicEnvelopes.Where(x => scanIndex.Contains(x.IndexedPeak.ZeroBasedMs1ScanIndex)).Select(x => x.Intensity).Sum();
+                                    double summedIntensity = peakForThisPeptide.IsotopicEnvelopes.Where(x => scanIndex.Contains(x.IndexedPeak.ZeroBasedScanIndex)).Select(x => x.Intensity).Sum();
                                     peptide.SetIntensity(kvp.Key, summedIntensity);
                                 }
                                 else //rare instance, cause unknown. Crash identified using 180524_LMuscle_30d_bio3.raw, Mus_Canonical_180122.xml, 1 missed cleavage

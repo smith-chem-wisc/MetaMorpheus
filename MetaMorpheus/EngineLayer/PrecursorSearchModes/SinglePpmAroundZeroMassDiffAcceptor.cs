@@ -21,12 +21,12 @@ namespace EngineLayer
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromTheoreticalMass(double peptideMonoisotopicMass)
         {
             var diff = PpmTolerance / 1e6 * peptideMonoisotopicMass;
-            yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff), 0);
+            yield return new AllowedIntervalWithNotch(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff, 0);
         }
         public override IEnumerable<AllowedIntervalWithNotch> GetAllowedPrecursorMassIntervalsFromObservedMass(double peptideMonoisotopicMass)
         {
             var diff = PpmTolerance / 1e6 * peptideMonoisotopicMass;
-            yield return new AllowedIntervalWithNotch(new DoubleRange(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff), 0);
+            yield return new AllowedIntervalWithNotch(peptideMonoisotopicMass - diff, peptideMonoisotopicMass + diff, 0);
         }
 
         public override string ToProseString()

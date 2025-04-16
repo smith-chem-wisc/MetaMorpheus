@@ -94,7 +94,7 @@ namespace TaskLayer.MbrAnalysis
                         {
                             break;
                         }
-                        IBioPolymerWithSetMods bestDonorPwsm = bestDonorPsm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                        IBioPolymerWithSetMods bestDonorPwsm = bestDonorPsm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                         IEnumerable<SpectralMatch> peptideSpectralMatches =
                             mcse.SearchAroundPeak(bestDonorPwsm, mbrPeak.Apex.IndexedPeak.RetentionTime);

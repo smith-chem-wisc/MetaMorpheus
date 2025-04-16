@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using EngineLayer.SpectrumMatch;
 using Omics;
 using Omics.Fragmentation;
 
@@ -12,14 +13,13 @@ namespace EngineLayer;
 public class OligoSpectralMatch : SpectralMatch
 {
     public OligoSpectralMatch(IBioPolymerWithSetMods peptide, int notch, double score, int scanIndex,
-        Ms2ScanWithSpecificMass scan, CommonParameters commonParameters,
-        List<MatchedFragmentIon> matchedFragmentIons, double xcorr = 0) : base(peptide, notch, score, scanIndex,
-        scan, commonParameters, matchedFragmentIons, xcorr)
+        Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons) 
+        : base(peptide, notch, score, scanIndex, scan, commonParameters, matchedFragmentIons)
     {
 
     }
 
-    protected OligoSpectralMatch(SpectralMatch psm, List<(int Notch, IBioPolymerWithSetMods Peptide)> bestMatchingPeptides)
+    protected OligoSpectralMatch(SpectralMatch psm, List<SpectralMatchHypothesis> bestMatchingPeptides)
         : base(psm, bestMatchingPeptides)
     {
     }
