@@ -20,6 +20,7 @@ using System.Linq;
 using System.Text;
 using Omics.Digestion;
 using Omics.Modifications;
+using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 
@@ -1489,7 +1490,7 @@ namespace Test
             WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
 
             // read results from TSV
-            var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
+            var psmFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(outputFile, out var warnings).First();
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count, Is.EqualTo(1));
             Assert.That(psmFromTsv.ChildScanMatchedIons.First().Key, Is.EqualTo(3));
@@ -1585,7 +1586,7 @@ namespace Test
             WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
 
             // read results from TSV
-            var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
+            var psmFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(outputFile, out var warnings).First();
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 4
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 4

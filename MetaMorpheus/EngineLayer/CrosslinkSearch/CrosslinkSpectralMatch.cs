@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MathNet.Numerics.Distributions;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -194,7 +193,7 @@ namespace EngineLayer.CrosslinkSearch
 
             var range = Enumerable.Range(0, peptide.BaseSequence.Length);
             if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidue != peptide.Protein.Length 
-                && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidue))
+                && !peptide.Protein.TruncationProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidue))
             {
                 //The C termial cannot be crosslinked and cleaved.
                 range = Enumerable.Range(0, peptide.BaseSequence.Length - 1);

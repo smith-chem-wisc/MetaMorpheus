@@ -1,4 +1,5 @@
-﻿using System;
+﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -205,7 +206,7 @@ namespace Test.MetaDraw
              
             // perform black magic to set the scan number of the MS2 to match the mzML file number
             var oldScanNum = psm.Ms2ScanNumber;
-            var field = typeof(PsmFromTsv).GetField("<Ms2ScanNumber>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var field = typeof(SpectrumMatchFromTsv).GetField("<Ms2ScanNumber>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             field?.SetValue(psm, 28819);
 
             // display psm and check display has correct number of annotations
