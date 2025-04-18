@@ -130,6 +130,7 @@ namespace Test
                         DoLabelFreeQuantification = true,
                         WriteSpectralLibrary = true,
                         MatchBetweenRuns = true,
+                        MbrFdrThreshold = 0.2,
                         DoSpectralRecovery = true,
                         WriteMzId = false,
                         WriteDecoys = false,
@@ -195,7 +196,8 @@ namespace Test
             referenceDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestSpectralRecoveryOutput\AllQuantifiedPeptides.tsv");
 
-            string[] peptideResults = File.ReadAllLines(referenceDataPath).Skip(1).ToArray();
+            string[] peptideResults = File.ReadAllLines(referenceDataPath).ToArray();
+            string[] header = peptideResults[0].Split("\t");
 
             foreach (string row in peptideResults)
             {
