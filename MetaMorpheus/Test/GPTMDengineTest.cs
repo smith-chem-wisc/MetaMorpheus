@@ -20,6 +20,7 @@ using System.IO;
 using System.Globalization;
 using NUnit.Framework.Internal;
 using Easy.Common;
+using Omics.BioPolymer;
 
 namespace Test
 {
@@ -47,7 +48,7 @@ namespace Test
             Assert.That(res.Mods.Count, Is.EqualTo(0));
 
             var parentProtein = new Protein(proteinSequence, accession, sequenceVariations: new List<SequenceVariation> { new SequenceVariation(1, "N", "A", sequenceVariantDescription) });
-            var variantProteins = parentProtein.GetVariantProteins();
+            var variantProteins = parentProtein.GetVariantBioPolymers();
             CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
 
             List<Modification> variableModifications = new List<Modification>();
@@ -148,7 +149,7 @@ namespace Test
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             var parentProtein = new Protein(proteinSequence, accession, sequenceVariations: new List<SequenceVariation> { new SequenceVariation(1, "N", variantAA, sequenceVariantDescription) });
-            var variantProteins = parentProtein.GetVariantProteins();
+            var variantProteins = parentProtein.GetVariantBioPolymers();
 
             CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
             List<Modification> variableModifications = new List<Modification>();
@@ -189,7 +190,7 @@ namespace Test
             Tolerance precursorMassTolerance = new PpmTolerance(10);
 
             var parentProtein = new Protein("NNNPPP", "protein", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(6, 6, "P", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
-            var variantProteins = parentProtein.GetVariantProteins();
+            var variantProteins = parentProtein.GetVariantBioPolymers();
 
             CommonParameters commonParameters = new CommonParameters(digestionParams: new DigestionParams(minPeptideLength: 5));
             List<Modification> variableModifications = new List<Modification>();
@@ -274,7 +275,7 @@ namespace Test
             var thisOk = unknownModifications;//for debugging
             var commonParamsAtThisPoint = task1.CommonParameters.DigestionParams; //for debugging
 
-            var digestedList = variantProteins[0].GetVariantProteins()[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
+            var digestedList = variantProteins[0].GetVariantBioPolymers()[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
             Assert.That(digestedList.Count, Is.EqualTo(4));
 
             //Set Peptide with 1 mod at position 3

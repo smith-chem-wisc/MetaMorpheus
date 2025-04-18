@@ -1,4 +1,5 @@
-﻿using EngineLayer;
+﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
+using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
@@ -990,7 +991,7 @@ namespace GuiFunctions
                 {
                     lock (ThreadLocker)
                     {
-                        var psms = PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings);
+                        var psms = SpectrumMatchTsvReader.ReadPsmTsv(resultsFile, out List<string> warnings);
                         foreach (PsmFromTsv psm in psms)
                         {
                             if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)

@@ -6,6 +6,7 @@ using EngineLayer;
 using System.Linq;
 using NUnit.Framework.Legacy;
 using Omics.Fragmentation;
+using Omics.SpectrumMatch;
 
 namespace Test
 {

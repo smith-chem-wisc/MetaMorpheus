@@ -11,7 +11,7 @@ using MathNet.Numerics;
 using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 using Omics.SpectrumMatch;
-using LocalizationLevel = EngineLayer.GlycoSearch.LocalizationLevel;
+using Readers;
 
 namespace EngineLayer
 {

@@ -14,12 +14,12 @@ using System.Linq;
 using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using PsmFromTsv = EngineLayer.PsmFromTsv;
 using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Easy.Common.Extensions;
+using Omics.BioPolymer;
 using Readers;
 using static Nett.TomlObjectFactory;
 
@@ -431,7 +431,7 @@ namespace Test
                 }
             }
 
-            var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
+            var psmsFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
             var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                     psm.QValue <= 0.01)
@@ -450,7 +450,7 @@ namespace Test
             string line = string.Join("\t", copy);
             lines.Add(line);
             File.WriteAllLines(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), lines.ToArray());
-            var psmsFromTsvInvalid = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
+            var psmsFromTsvInvalid = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
             var psmInvalid = psmsFromTsvInvalid[psmsFromTsvInvalid.Count - 1];
             Assert.That(psmInvalid.PrecursorIntensity, Is.EqualTo(null));
 

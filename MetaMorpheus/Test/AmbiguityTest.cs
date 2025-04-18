@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics.BioPolymer;
 using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
@@ -170,11 +171,11 @@ namespace Test
                 Assert.That(proteins.First().OneBasedPossibleLocalizedModifications.Count != 0);
 
                 //same with no mods
-                xmlProtein = new Protein("APEPTIDE", "Test", proteolysisProducts: new List<ProteolysisProduct> { new ProteolysisProduct(1, 3, "zrWuzHere") });
+                xmlProtein = new Protein("APEPTIDE", "Test", proteolysisProducts: new List<TruncationProduct> { new TruncationProduct(1, 3, "zrWuzHere") });
                 proteins = new List<Protein> { xmlProtein, fastaProtein };
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
-                Assert.That(proteins.First().ProteolysisProducts.Count() != 0);
+                Assert.That(proteins.First().TruncationProducts.Count() != 0);
             }
 
             [Test]

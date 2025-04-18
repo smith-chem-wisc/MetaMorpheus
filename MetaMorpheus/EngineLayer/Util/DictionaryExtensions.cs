@@ -152,18 +152,4 @@ public static class DictionaryExtensions
             }
         }
     }
-
-    /// <summary>
-    /// Determines whether the dictionary is null or has no elements.
-    /// </summary>
-    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
-    /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
-    /// <param name="dictionary">The dictionary to check.</param>
-    /// <returns>
-    /// <c>true</c> if the dictionary is null or has no elements; otherwise, <c>false</c>.
-    /// </returns>
-    public static bool IsNullOrEmpty<TKey, TValue>(this IDictionary<TKey, TValue> dictionary)
-    {
-        return dictionary == null || dictionary.Count == 0;
-    }
 }
