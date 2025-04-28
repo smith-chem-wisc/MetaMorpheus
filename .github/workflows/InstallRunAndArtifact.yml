@@ -48,8 +48,8 @@ jobs:
         run: |
           nuget install secure-file -ExcludeVersion
           secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret ${{ secrets.KEY_SECRET }}
-          
-      # This currently has issues and leads to Microsoft waringing the user that MetaMorpheus is untrusted. 
+
+      # This currently has issues and leads to Microsoft waringing the user that MetaMorpheus is untrusted.
       - name: Sign installer
         run: |
           $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "${{ secrets.KEY_CERT }}", "DefaultKeySet")
@@ -57,7 +57,7 @@ jobs:
 
       - name: Zip command-line version
         run: |
-          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\* "-x!*.xml"
+          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\* "-x!*.xml"
 
       # check that installer is greater than 1 kb to avoid pushing an empty artifact
       - name: Validate command-line zip artifact
@@ -92,7 +92,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 8.0.204
-          
+
       - name: Download installer artifact
         uses: actions/download-artifact@v4
         with:
@@ -116,7 +116,7 @@ jobs:
           $workspace = Get-Location
           Write-Host "Workspace directory tree for: $workspace"
           Show-Tree $workspace
-       
+
       - name: Microvinette with installed CMD.exe
         run: |
           $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
@@ -125,7 +125,7 @@ jobs:
             Write-Host "❌ CMD.exe search failed with exit code $LASTEXITCODE" -ForegroundColor Red
             exit $LASTEXITCODE
           }
-          
+
       - name: Generate Default TOMLs with installed CMD.dll
         run: |
           dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\EngineLayer\Data"
@@ -138,7 +138,7 @@ jobs:
             Write-Host "❌ CMD.dll search failed with exit code $LASTEXITCODE" -ForegroundColor Red
             exit $LASTEXITCODE
           }
-          
+
   test_build:
     name: Search with Built
     runs-on: windows-latest
@@ -156,15 +156,15 @@ jobs:
 
       - name: Build solution
         run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
-        
+
       - name: Generate Default TOMLs
         run: |
-          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\Data"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\Data"
 
       - name: Run search with built CMD.dll
         run: |
-          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\Data"
-          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\Data"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
           if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ Built CMD.dll search failed with exit code $LASTEXITCODE" -ForegroundColor Red
             exit $LASTEXITCODE
@@ -225,19 +225,19 @@ jobs:
 
           # Define whitelist for extra DLLs (install-only)
           $whitelistedExtraDlls = @(
-          
+
           )
 
           # Get all unique DLLs in the entire build repository
           # Define which folders to check in the repo
           $foldersToCheck = @(
-              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\${{ env.DOTNET_FRAMEWORK }}",
-              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}",
-              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\${{ env.DOTNET_FRAMEWORK }}",
-              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\${{ env.DOTNET_FRAMEWORK }}-windows",
-              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\${{ env.DOTNET_FRAMEWORK }}"
+              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\$env:DOTNET_FRAMEWORK-windows",
+              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK"
           )
-          
+
           # Collect DLLs and their source folders
           $buildDlls = @()
           $buildDllLocations = @{}
