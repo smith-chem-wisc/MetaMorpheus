@@ -6,14 +6,14 @@ on:
   pull_request:
     branches: [ "master" ]
 
+env:
+  DOTNET_VERSION: 8.0.204
+  DOTNET_FRAMEWORK: net8.0
+
 jobs:
   install:
     name: Create Installer Artifact
     runs-on: windows-latest
-
-    env:
-      DOTNET_VERSION: 8.0.204
-      DOTNET_FRAMEWORK: net8.0
 
     steps:
       - uses: actions/checkout@v4
@@ -91,7 +91,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Download installer artifact
         uses: actions/download-artifact@v4
@@ -149,7 +149,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Restore dependencies
         run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
@@ -182,7 +182,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Download installer artifact
         uses: actions/download-artifact@v4
