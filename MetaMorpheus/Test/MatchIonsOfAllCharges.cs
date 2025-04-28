@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
-using IO.MzML;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
@@ -18,6 +17,8 @@ using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
+using Readers;
+using Mzml = IO.MzML.Mzml;
 
 namespace Test
 {
@@ -76,7 +77,7 @@ namespace Test
             var peptideTheorProducts = new List<Product>();
             Assert.That(psm_oneCharge[1].MatchedFragmentIons.Count == 12);
             var differences = psm[1].MatchedFragmentIons.Except(psm_oneCharge[1].MatchedFragmentIons);
-            psm[1].BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm[1].BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -174,7 +175,7 @@ namespace Test
             //compare 2 results and evaluate the different matched ions
             var peptideTheorProducts = new List<Product>();
             var differences = psm.MatchedFragmentIons.Except(psm_oneCharge.MatchedFragmentIons);
-            psm.BestMatchingBioPolymersWithSetMods.First().Peptide.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+            psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Fragment(CommonParameters.DissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
             foreach (var ion in differences)
             {
                 foreach (var product in peptideTheorProducts)
@@ -499,7 +500,7 @@ namespace Test
 
 
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SLSNVIAHEISHSWTGNLVTNK.psmtsv");
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
 
             CollectionAssert.AreEqual(psms[0].MatchedIons.Select(p => (p.NeutralTheoreticalProduct.ProductType, p.NeutralTheoreticalProduct.FragmentNumber))
                     .OrderBy(p => p.Item1).ThenBy(p => p.Item2),

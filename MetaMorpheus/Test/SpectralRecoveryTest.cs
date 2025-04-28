@@ -15,6 +15,7 @@ using TaskLayer.MbrAnalysis;
 using Omics;
 using UsefulProteomicsDatabases;
 using System.Threading;
+using Readers;
 
 namespace Test
 {
@@ -47,7 +48,7 @@ namespace Test
             // This block of code converts from PsmFromTsv to SpectralMatch objects
 
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\AllPSMsTesting.psmtsv");
-            tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
+            tsvPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmtsvPath, out var warnings);
             psms = new List<SpectralMatch>();
             myFileManager = new MyFileManager(true);
 
@@ -129,6 +130,7 @@ namespace Test
                         DoLabelFreeQuantification = true,
                         WriteSpectralLibrary = true,
                         MatchBetweenRuns = true,
+                        MbrFdrThreshold = 0.2,
                         DoSpectralRecovery = true,
                         WriteMzId = false,
                         WriteDecoys = false,
@@ -153,9 +155,9 @@ namespace Test
             List<string> warnings;
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput\SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
-            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
+            List<PsmFromTsv> mbrPsms = SpectrumMatchTsvReader.ReadPsmTsv(mbrAnalysisPath, out warnings);
             // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
-            List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings);
+            List<PsmFromTsv> expectedMbrPsms = SpectrumMatchTsvReader.ReadPsmTsv(expectedHitsPath, out warnings);
 
             List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
@@ -194,7 +196,8 @@ namespace Test
             referenceDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestSpectralRecoveryOutput\AllQuantifiedPeptides.tsv");
 
-            string[] peptideResults = File.ReadAllLines(referenceDataPath).Skip(1).ToArray();
+            string[] peptideResults = File.ReadAllLines(referenceDataPath).ToArray();
+            string[] header = peptideResults[0].Split("\t");
 
             foreach (string row in peptideResults)
             {
@@ -259,7 +262,7 @@ namespace Test
 
             foreach (SpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
-                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                 MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
                     listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),

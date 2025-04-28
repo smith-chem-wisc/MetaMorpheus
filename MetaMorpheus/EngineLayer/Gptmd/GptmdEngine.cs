@@ -14,19 +14,31 @@ namespace EngineLayer.Gptmd
 {
     public class GptmdEngine : MetaMorpheusEngine
     {
+        // It is assumed that there is a one-to-one correspondence between the psms in AllIdentifications and the scans in AllScans
         private readonly List<SpectralMatch> AllIdentifications;
         private readonly IEnumerable<Tuple<double, double>> Combos;
         private readonly List<Modification> GptmdModifications;
         private readonly Dictionary<string, Tolerance> FilePathToPrecursorMassTolerance; // this exists because of file-specific tolerances
         //The ScoreTolerance property is used to differentiatie when a PTM candidate is added to a peptide. We check the score at each position and then add that mod where the score is highest.
         private readonly double ScoreTolerance = 0.1;
-        
-        public GptmdEngine(List<SpectralMatch> allIdentifications, List<Modification> gptmdModifications, IEnumerable<Tuple<double, double>> combos, Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, CommonParameters commonParameters, List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, List<string> nestedIds) : base(commonParameters, fileSpecificParameters, nestedIds)
+        public Dictionary<string, HashSet<Tuple<int, Modification>>> ModDictionary { get; init; }
+
+        public GptmdEngine(
+            List<SpectralMatch> allIdentifications, 
+            List<Modification> gptmdModifications, 
+            IEnumerable<Tuple<double, double>> combos, 
+            Dictionary<string, Tolerance> filePathToPrecursorMassTolerance, 
+            CommonParameters commonParameters, 
+            List<(string fileName, CommonParameters fileSpecificParameters)> fileSpecificParameters, 
+            List<string> nestedIds,
+            Dictionary<string, HashSet<Tuple<int, Modification>>> modDictionary) 
+            : base(commonParameters, fileSpecificParameters, nestedIds)
         {
             AllIdentifications = allIdentifications;
             GptmdModifications = gptmdModifications;
             Combos = combos;
             FilePathToPrecursorMassTolerance = filePathToPrecursorMassTolerance;
+            ModDictionary = modDictionary ?? new Dictionary<string, HashSet<Tuple<int, Modification>>>();
         }
 
         public static bool ModFits(Modification attemptToLocalize, IBioPolymer protein, int peptideOneBasedIndex, int peptideLength, int proteinOneBasedIndex)
@@ -72,13 +84,13 @@ namespace EngineLayer.Gptmd
             var psms = AllIdentifications.Where(b => b.FdrInfo.QValueNotch <= 0.05 && !b.IsDecoy).ToList();
             if (psms.Any() == false)
             {
-                return new GptmdResults(this, new Dictionary<string, HashSet<Tuple<int, Modification>>>(), 0);
+                return new GptmdResults(this, ModDictionary, 0);
             }
             Parallel.ForEach(Partitioner.Create(0, psms.Count), new ParallelOptions() { MaxDegreeOfParallelism = maxThreadsPerFile }, (range) =>
             {
                 for (int i = range.Item1; i < range.Item2; i++)
                 {
-                    foreach (var pepWithSetMods in psms[i].BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications))
+                    foreach (var pepWithSetMods in psms[i].BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer as PeptideWithSetModifications))
                     {
                         var isVariantProtein = pepWithSetMods.Parent != pepWithSetMods.Protein.NonVariantProtein;
                         var possibleModifications = GetPossibleMods(psms[i].ScanPrecursorMass, GptmdModifications, Combos, FilePathToPrecursorMassTolerance[psms[i].FullFilePath], pepWithSetMods);
@@ -103,7 +115,7 @@ namespace EngineLayer.Gptmd
                                     {
                                         var scores = new List<double>();
                                         var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
-                                            psms[i].MsDataScan.DissociationType.Value : CommonParameters.DissociationType;
+                                            psms[i].Ms2Scan.DissociationType.Value : CommonParameters.DissociationType;
 
                                         scores = CalculatePeptideScores(newPeptides, dissociationType, psms[i]);
 
@@ -175,13 +187,12 @@ namespace EngineLayer.Gptmd
                 }
             });
 
-            // Convert ConcurrentDictionary to Dictionary with HashSet
-            var finalModDictionary = modDict.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new HashSet<Tuple<int, Modification>>(kvp.Value)
-            );
-            return new GptmdResults(this, finalModDictionary, modsAdded);
+            //UpdateModDictionary(modDict);
+            foreach(var kvp in modDict)
+                ModDictionary.MergeOrCreate(kvp.Key, new HashSet<Tuple<int, Modification>>(kvp.Value));
+            return new GptmdResults(this, ModDictionary, modsAdded);
         }
+
         private List<double> CalculatePeptideScores(List<PeptideWithSetModifications> newPeptides, DissociationType dissociationType, SpectralMatch psm)
         {
             var scores = new List<double>();
@@ -191,17 +202,18 @@ namespace EngineLayer.Gptmd
                 var peptideTheorProducts = new List<Product>();
                 peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
 
-                var scan = psm.MsDataScan;
+                var scan = psm.Ms2Scan;
                 var precursorMass = psm.ScanPrecursorMass;
                 var precursorCharge = psm.ScanPrecursorCharge;
                 var fileName = psm.FullFilePath;
                 List<MatchedFragmentIon> matchedIons = MatchFragmentIons(new Ms2ScanWithSpecificMass(scan, precursorMass, precursorCharge, fileName, CommonParameters), peptideTheorProducts, CommonParameters, matchAllCharges: false);
 
-                scores.Add(CalculatePeptideScore(psm.MsDataScan, matchedIons, false));
+                scores.Add(CalculatePeptideScore(scan, matchedIons, false));
             }
 
             return scores;
         }
+
         private static void AddIndexedMod(ConcurrentDictionary<string, ConcurrentBag<Tuple<int, Modification>>> modDict, string proteinAccession, Tuple<int, Modification> indexedMod)
         {
             modDict.AddOrUpdate(proteinAccession,
@@ -212,6 +224,7 @@ namespace EngineLayer.Gptmd
                     return existingBag;
                 });
         }
+
         private static IEnumerable<Modification> GetPossibleMods(double totalMassToGetTo, IEnumerable<Modification> allMods, IEnumerable<Tuple<double, double>> combos, Tolerance precursorTolerance, PeptideWithSetModifications peptideWithSetModifications)
         {
             foreach (var Mod in allMods.Where(b => b.ValidModification == true))

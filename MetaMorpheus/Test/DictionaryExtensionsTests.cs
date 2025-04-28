@@ -3,6 +3,7 @@ using NUnit.Framework;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using MzLibUtil;
 
 namespace Test
 {
@@ -322,6 +323,68 @@ namespace Test
 
             // Assert
             Assert.That(result, Is.False);
+        }
+
+        [Test]
+        public void AddOrCreate_AddsValueToExistingKey_HashSet()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, HashSet<int>>
+            {
+                { "key1", new HashSet<int> { 1, 2 } }
+            };
+
+            // Act
+            dictionary.AddOrCreate("key1", 3);
+
+            // Assert
+            Assert.That(dictionary["key1"], Is.EquivalentTo(new HashSet<int> { 1, 2, 3 }));
+        }
+
+        [Test]
+        public void AddOrCreate_CreatesNewKeyWithHashSet()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, HashSet<int>>();
+
+            // Act
+            dictionary.AddOrCreate("key1", 1);
+
+            // Assert
+            Assert.That(dictionary.ContainsKey("key1"));
+            Assert.That(dictionary["key1"], Is.EquivalentTo(new HashSet<int> { 1 }));
+        }
+
+        [Test]
+        public void AddOrCreate_AddsMultipleValuesToNewKey_HashSet()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, HashSet<int>>();
+
+            // Act
+            dictionary.AddOrCreate("key1", 1);
+            dictionary.AddOrCreate("key1", 2);
+            dictionary.AddOrCreate("key1", 3);
+
+            // Assert
+            Assert.That(dictionary["key1"], Is.EquivalentTo(new HashSet<int> { 1, 2, 3 }));
+        }
+
+        [Test]
+        public void AddOrCreate_AddsMultipleValuesToExistingKey_HashSet()
+        {
+            // Arrange
+            var dictionary = new Dictionary<string, HashSet<int>>
+            {
+                { "key1", new HashSet<int> { 1 } }
+            };
+
+            // Act
+            dictionary.AddOrCreate("key1", 2);
+            dictionary.AddOrCreate("key1", 3);
+
+            // Assert
+            Assert.That(dictionary["key1"], Is.EquivalentTo(new HashSet<int> { 1, 2, 3 }));
         }
     }
 }

@@ -10,6 +10,7 @@ using Omics.Modifications;
 using Omics.SpectrumMatch;
 using pepXML.Generated;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
 
@@ -186,7 +187,7 @@ namespace TaskLayer
         private void WriteSummary(List<GlycoSpectralMatch> targetPsms, GlycoSearchParameters glycoSearchParameters, MyTaskResults MyTaskResults)
         {
             var gsms = targetPsms.Where(p => p.Routes != null).ToList();
-            var Level1gsms = gsms.Where(p => p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1).ToList();
+            var Level1gsms = gsms.Where(p => p.LocalizationLevel == LocalizationLevel.Level1).ToList();
             MyTaskResults.AddTaskSummaryText("All target PSMs within 1% FDR: " + (targetPsms?.
                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
             MyTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + (ProteinGroups?.
@@ -198,19 +199,19 @@ namespace TaskLayer
                     MyTaskResults.AddTaskSummaryText("All target O-Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 O-Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
                 case GlycoSearchType.NGlycanSearch:
                     MyTaskResults.AddTaskSummaryText("All target N-Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 N-Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
                 case GlycoSearchType.N_O_GlycanSearch:
                     MyTaskResults.AddTaskSummaryText("All target Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
             }
 
@@ -321,9 +322,9 @@ namespace TaskLayer
             {
                 foreach (var psm in _filteredPsms)
                 {
-                    List<Protein> proteinList = psm.BestMatchingBioPolymersWithSetMods.Select(p => ((PeptideWithSetModifications)p.Peptide).Protein).ToList();
+                    List<Protein> proteinList = psm.BestMatchingBioPolymersWithSetMods.Select(p => ((PeptideWithSetModifications)p.SpecificBioPolymer).Protein).ToList();
                     ProteinGroup newProteinGroup = new ProteinGroup(new HashSet<Protein>(proteinList),
-                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.Peptide).ToList())), new HashSet<PeptideWithSetModifications>());
+                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.SpecificBioPolymer).ToList())), new HashSet<PeptideWithSetModifications>());
 
                     if (_proteinGroups.Any(p => p.Equals(newProteinGroup)))
                     {
@@ -454,7 +455,7 @@ namespace TaskLayer
                 var accessionToPg = new Dictionary<string, FlashLFQ.ProteinGroup>();
                 foreach (var psm in unambiguousPsmsBelowOnePercentFdr)
                 {
-                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => ((PeptideWithSetModifications)b.Peptide).Protein).Distinct();
+                    var proteins = psm.BestMatchingBioPolymersWithSetMods.Select(b => ((PeptideWithSetModifications)b.SpecificBioPolymer).Protein).Distinct();
 
                     foreach (var protein in proteins)
                     {
