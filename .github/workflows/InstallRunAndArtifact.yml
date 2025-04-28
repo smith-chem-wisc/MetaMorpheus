@@ -57,7 +57,7 @@ jobs:
 
       - name: Zip command-line version
         run: |
-          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\$DOTNET_FRAMEWORK\* "-x!*.xml"
+          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\* "-x!*.xml"
 
       # check that installer is greater than 1 kb to avoid pushing an empty artifact
       - name: Validate command-line zip artifact
@@ -159,12 +159,12 @@ jobs:
 
       - name: Generate Default TOMLs
         run: |
-          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$DOTNET_FRAMEWORK\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$DOTNET_FRAMEWORK\Data"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\Data"
 
       - name: Run search with built CMD.dll
         run: |
-          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$DOTNET_FRAMEWORK\Data"
-          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$DOTNET_FRAMEWORK\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\Data"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
           if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ Built CMD.dll search failed with exit code $LASTEXITCODE" -ForegroundColor Red
             exit $LASTEXITCODE
@@ -231,11 +231,11 @@ jobs:
           # Get all unique DLLs in the entire build repository
           # Define which folders to check in the repo
           $foldersToCheck = @(
-              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\$DOTNET_FRAMEWORK",
-              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$DOTNET_FRAMEWORK",
-              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\$DOTNET_FRAMEWORK",
-              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\$DOTNET_FRAMEWORK-windows",
-              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$DOTNET_FRAMEWORK"
+              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\$env:DOTNET_FRAMEWORK-windows",
+              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK"
           )
 
           # Collect DLLs and their source folders
