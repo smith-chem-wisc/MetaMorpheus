@@ -13,6 +13,7 @@ jobs:
 
     env:
       DOTNET_VERSION: 8.0.204
+      DOTNET_FRAMEWORK: net8.0
 
     steps:
       - uses: actions/checkout@v4
@@ -56,7 +57,7 @@ jobs:
 
       - name: Zip command-line version
         run: |
-          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\net8.0\* "-x!*.xml"
+          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\* "-x!*.xml"
 
       # check that installer is greater than 1 kb to avoid pushing an empty artifact
       - name: Validate command-line zip artifact
@@ -158,12 +159,12 @@ jobs:
         
       - name: Generate Default TOMLs
         run: |
-          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\Data"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\Data"
 
       - name: Run search with built CMD.dll
         run: |
-          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\Data"
-          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\Data"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
           if ($LASTEXITCODE -ne 0) {
             Write-Host "❌ Built CMD.dll search failed with exit code $LASTEXITCODE" -ForegroundColor Red
             exit $LASTEXITCODE
@@ -219,7 +220,7 @@ jobs:
             "Microsoft.Extensions.Logging.Abstractions.dll",
             "Microsoft.Extensions.Logging.dll",
             "Microsoft.Extensions.Options.dll",
-            "Microsoft.Extensions.Primitives.dll",
+            "Microsoft.Extensions.Primitives.dll"
           )
 
           # Define whitelist for extra DLLs (install-only)
@@ -230,11 +231,11 @@ jobs:
           # Get all unique DLLs in the entire build repository
           # Define which folders to check in the repo
           $foldersToCheck = @(
-              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\net8.0",
-              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\net8.0",
-              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\net8.0",
-              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\net8.0-windows",
-              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\net8.0"
+              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\${{ env.DOTNET_FRAMEWORK }}",
+              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\${{ env.DOTNET_FRAMEWORK }}",
+              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\${{ env.DOTNET_FRAMEWORK }}",
+              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\${{ env.DOTNET_FRAMEWORK }}-windows",
+              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\${{ env.DOTNET_FRAMEWORK }}"
           )
           
           # Collect DLLs and their source folders
