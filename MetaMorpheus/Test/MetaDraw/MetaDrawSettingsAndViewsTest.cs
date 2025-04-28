@@ -11,6 +11,7 @@ using NUnit.Framework.Legacy;
 using OxyPlot;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 
 namespace Test.MetaDraw
 {
@@ -452,7 +453,7 @@ namespace Test.MetaDraw
         {
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings)
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out List<string> warnings)
                 .Where(p => p.AmbiguityLevel == "1").ToList();
             PsmFromTsv psm = psms.First(p =>
                 new PeptideWithSetModifications(p.FullSequence, GlobalVariables.AllModsKnownDictionary)
@@ -526,7 +527,7 @@ namespace Test.MetaDraw
             // object setup
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings);
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out List<string> warnings);
             Assert.That(warnings.Count, Is.EqualTo(0));
             List<PsmFromTsv> filteredChimeras =
                 psms.Where(p => p.QValue <= 0.01 && p.PEP <= 0.5 && p.PrecursorScanNum == 1557).ToList();

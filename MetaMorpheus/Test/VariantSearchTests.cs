@@ -12,6 +12,7 @@ using System.Linq;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Nett;
+using Omics.BioPolymer;
 using Omics.Modifications;
 
 namespace Test
@@ -80,7 +81,7 @@ namespace Test
                 new Protein("MPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "P", "PPP", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", new Dictionary<int, List<Modification>> {{ 5, new[] { mp }.ToList() } }) }),
                 new Protein("MPEPTIDEPEPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 4, "PTIDEPEPTIDE", "PPP", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) }),
             };
-            PeptideWithSetModifications pep = proteins[proteinIdx].GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).ToList()[peptideIdx];
+            PeptideWithSetModifications pep = proteins[proteinIdx].GetVariantBioPolymers().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).ToList()[peptideIdx];
 
             string xmlName = $"andguiaheov{proteinIdx.ToString()}.xml";
             ProteinDbWriter.WriteXmlDatabase(null, new List<Protein> { proteins[proteinIdx] }, xmlName);
