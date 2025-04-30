@@ -14,12 +14,12 @@ using System.Linq;
 using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using PsmFromTsv = EngineLayer.PsmFromTsv;
 using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Easy.Common.Extensions;
+using Omics.BioPolymer;
 using Readers;
 using static Nett.TomlObjectFactory;
 
@@ -207,7 +207,7 @@ namespace Test
                 {
                     foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, bestMatch.SpecificBioPolymer));
+                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(bestMatch));
                     }
                 }
             }
@@ -431,7 +431,7 @@ namespace Test
                 }
             }
 
-            var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
+            var psmsFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
             var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                     psm.QValue <= 0.01)
@@ -450,7 +450,7 @@ namespace Test
             string line = string.Join("\t", copy);
             lines.Add(line);
             File.WriteAllLines(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), lines.ToArray());
-            var psmsFromTsvInvalid = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
+            var psmsFromTsvInvalid = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
             var psmInvalid = psmsFromTsvInvalid[psmsFromTsvInvalid.Count - 1];
             Assert.That(psmInvalid.PrecursorIntensity, Is.EqualTo(null));
 
@@ -517,7 +517,7 @@ namespace Test
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
-            int count = SpectralMatch.GetCountComplementaryIons(psm1.BioPolymersWithSetModsToMatchingFragments, pwsm);
+            int count = SpectralMatch.GetCountComplementaryIons([], pwsm);
 
             //No Matched Fragment Ions Returns 0
             Assert.That(count, Is.EqualTo(0));
@@ -536,10 +536,7 @@ namespace Test
                 mfiList.Add(new MatchedFragmentIon(prod, 1, 1, 1));
             }
 
-            Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PTMF = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
-            PTMF.Add(pwsm, mfiList);
-
-            count = SpectralMatch.GetCountComplementaryIons(PTMF, pwsm);
+            count = SpectralMatch.GetCountComplementaryIons(mfiList, pwsm);
             //BioPolymersWithSetModsToMatchingFragments Contains one N and one C ion so intersection Returns 1
             Assert.That(count, Is.EqualTo(1));
         }
@@ -562,10 +559,8 @@ namespace Test
             Assert.That(longestSeries, Is.EqualTo(1));
 
             //matchedFragments == null returns 1
-            Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
-            PeptidesToMatchingFragments.Add(pwsm, null);
 
-            longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(PeptidesToMatchingFragments, pwsm);
+            longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(null, pwsm);
             Assert.That(longestSeries, Is.EqualTo(1));
         }
 
