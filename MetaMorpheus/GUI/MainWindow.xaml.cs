@@ -451,7 +451,7 @@ namespace MetaMorpheusGUI
                 notificationsTextBox.AppendText(message + Environment.NewLine);
                 Exception exception = e;
                 //Find Output Folder
-                string outputFolder = e.Data["folder"].ToString();
+                string outputFolder = e.Data.Contains("folder") ? e.Data["folder"].ToString() : null;
                 string tomlText = "";
                 if (Directory.Exists(outputFolder))
                 {
