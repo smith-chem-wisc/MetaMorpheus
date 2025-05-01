@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -17,7 +18,7 @@ namespace GuiFunctions
     /// </summary>
     public class PeptideSpectrumMatchPlot : SpectrumMatchPlot
     {
-        public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, PsmFromTsv psm, MsDataScan scan,
+        public PeptideSpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, SpectrumMatchFromTsv psm, MsDataScan scan,
             List<MatchedFragmentIon> matchedFragmentIons, bool annotateProperties = true, LibrarySpectrum librarySpectrum = null, bool stationarySequence = false)
             : base(plotView, psm, scan, matchedFragmentIons)
         {
