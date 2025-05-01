@@ -161,7 +161,7 @@ namespace Test
             Assert.That(0.004739, Is.EqualTo(psm.QValueNotch).Within(1E-04));
             Assert.That(psm.RetentionTime, Is.EqualTo(45.59512));
             Assert.That(psm.Score, Is.EqualTo(662.486));
-            Assert.That(psm.StartAndEndResiduesInProtein, Is.EqualTo("[2742 to 2761]"));
+            Assert.That(psm.StartAndEndResiduesInParentSequence, Is.EqualTo("[2742 to 2761]"));
             Assert.That(psm.TotalIonCurrent, Is.EqualTo(159644.25225));
             Assert.That(psm.VariantCrossingIons.Count, Is.EqualTo(0));
             property.SetValue(null, false);

@@ -12,6 +12,7 @@ using MzLibUtil;
 using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -198,14 +199,12 @@ namespace GuiFunctions
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
         }
 
-        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, PsmFromTsv psmToRematch)
+        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv psmToRematch)
         {
             if (psmToRematch.FullSequence.Contains('|'))
                 return psmToRematch.MatchedIons;
 
-            IBioPolymerWithSetMods bioPolymer = /*_isProtein ? */
-                new PeptideWithSetModifications(psmToRematch.FullSequence, GlobalVariables.AllModsKnownDictionary);
-            /*: new OligoWithSetMods(psmToRematch.FullSequence, GlobalVariables.AllRNAModsKnownDictionary);*/
+            IBioPolymerWithSetMods bioPolymer = psmToRematch.ToBioPolymerWithSetMods();
 
             List<Product> terminalProducts = new List<Product>();
             Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList(); 
