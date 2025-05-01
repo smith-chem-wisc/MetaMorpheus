@@ -642,7 +642,7 @@ namespace MetaMorpheusGUI
 
             foreach (var cell in dataGridScanNums.SelectedItems)
             {
-                var psm = (PsmFromTsv)cell;
+                var psm = (SpectrumMatchFromTsv)cell;
                 psms.Add(psm);
             }
 

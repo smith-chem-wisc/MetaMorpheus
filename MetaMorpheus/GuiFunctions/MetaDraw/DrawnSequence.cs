@@ -201,7 +201,7 @@ namespace GuiFunctions
         /// <param name="xShift"></param>
         public static void AnnotateModifications(SpectrumMatchFromTsv spectrumMatch, Canvas sequenceDrawingCanvas, string fullSequence, int yLoc, double? spacer = null, int xShift = 12, int chunkPositionInRow = 0, int annotationRow = 0, bool annotation = false)
         {
-            IBioPolymerWithSetMods peptide = spectrumMatch.ToBioPolymerWithSetMods();
+            var modDict = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(fullSequence, GlobalVariables.AllModsKnownDictionary);
 
             // read glycans if applicable
             List<Tuple<int, string, double>> localGlycans = null;
@@ -211,7 +211,7 @@ namespace GuiFunctions
             }
 
             // annotate mods
-            foreach (var mod in peptide.AllModsOneIsNterminus)
+            foreach (var mod in modDict)
             {
                 double xLocation = (mod.Key - 1) * (spacer ?? MetaDrawSettings.AnnotatedSequenceTextSpacing) - xShift;
                 // adjust for spacing in sequence annotation
