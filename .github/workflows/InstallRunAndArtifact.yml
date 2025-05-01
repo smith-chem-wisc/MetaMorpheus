@@ -1,0 +1,286 @@
+name: Install and Run
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  DOTNET_VERSION: 8.0.204
+  DOTNET_FRAMEWORK: net8.0
+
+jobs:
+  install:
+    name: Create Installer Artifact
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build solution
+        run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
+
+      - name: Build installer
+        run: |
+          msbuild ./MetaMorpheus/MetaMorpheusSetup/MetaMorpheusSetup.wixproj /p:Configuration=Release /verbosity=minimal /p:UseSharedCompilation=false
+          msbuild ./MetaMorpheus/Bootstrapper/Bootstrapper.wixproj /p:Configuration=Release /p:UseSharedCompilation=false
+
+      - name: Verify installer exists
+        run: |
+          if (!(Test-Path "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi")) {
+            Write-Host "❌ Installer build failed: MetaMorpheusInstaller.msi not found." -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Decrypt security certificate
+        run: |
+          nuget install secure-file -ExcludeVersion
+          secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret ${{ secrets.KEY_SECRET }}
+
+      # This currently has issues and leads to Microsoft waringing the user that MetaMorpheus is untrusted.
+      - name: Sign installer
+        run: |
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "${{ secrets.KEY_CERT }}", "DefaultKeySet")
+          Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
+
+      - name: Zip command-line version
+        run: |
+          7z a MetaMorpheus_CommandLine.zip .\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\* "-x!*.xml"
+
+      # check that installer is greater than 1 kb to avoid pushing an empty artifact
+      - name: Validate command-line zip artifact
+        run: |
+          if ((Get-Item MetaMorpheus_CommandLine.zip).length -lt 1kb) {
+            Write-Host "❌ The build failed because the command-line .zip did not build properly; it is empty." -ForegroundColor Red
+            exit 1
+          }
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MetaMorpheusInstaller
+          path: ./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi
+
+      - name: Upload command-line zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MetaMorpheus_CommandLine
+          path: MetaMorpheus_CommandLine.zip
+
+
+  test_installer:
+    name: Search with Installed
+    runs-on: windows-latest
+    needs: install
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MetaMorpheusInstaller
+
+      - name: Install MetaMorpheus MSI
+        run: |
+          Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$(Get-Location)\MetaMorpheusInstaller.msi`" /qn /l*v install.log" -Wait
+
+
+      - name: Display workspace directory tree
+        run: |
+          function Show-Tree ($path, $indent = "") {
+              Get-ChildItem -LiteralPath $path | ForEach-Object {
+                  Write-Host "$indent|- $($_.Name)"
+                  if ($_.PSIsContainer) {
+                      Show-Tree -path $_.FullName -indent ("$indent   ")
+                  }
+              }
+          }
+          $workspace = Get-Location
+          Write-Host "Workspace directory tree for: $workspace"
+          Show-Tree $workspace
+
+      - name: Microvinette with installed CMD.exe
+        run: |
+          $dataDir = "$(Get-Location)\MetaMorpheus\MetaMorpheus\Test\TestData"
+          & "C:\Program Files\MetaMorpheus\CMD.exe" --test -o "$dataDir\exe_output" -v minimal
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ CMD.exe search failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            exit $LASTEXITCODE
+          }
+
+      - name: Generate Default TOMLs with installed CMD.dll
+        run: |
+          dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\EngineLayer\Data"
+
+      - name: Run search with installed CMD.dll
+        run: |
+          $dataDir = "$(Get-Location)\MetaMorpheus\EngineLayer\Data"
+          dotnet "C:\Program Files\MetaMorpheus\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\dll_output" -v minimal
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ CMD.dll search failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            exit $LASTEXITCODE
+          }
+
+  test_build:
+    name: Search with Built
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build solution
+        run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
+
+      - name: Generate Default TOMLs
+        run: |
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\CMD.dll" -g -o "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\Data"
+
+      - name: Run search with built CMD.dll
+        run: |
+          $dataDir = "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\Data"
+          dotnet "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK\CMD.dll" -s "$dataDir\SmallCalibratible_Yeast.mzML" -d "$dataDir\SmallYeast.fasta" -t "$dataDir\SearchTask.toml" -o "$dataDir\built_dll_output" -v minimal
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "❌ Built CMD.dll search failed with exit code $LASTEXITCODE" -ForegroundColor Red
+            exit $LASTEXITCODE
+          }
+
+  ## Installs and builds. Verifies that the same dlls exist
+  validate_installer_contents:
+    name: Validate Installer Contents
+    runs-on: windows-latest
+    needs: install
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download installer artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MetaMorpheusInstaller
+
+      - name: Install MetaMorpheus MSI
+        run: |
+          Start-Process -FilePath msiexec.exe -ArgumentList "/i `"$(Get-Location)\MetaMorpheusInstaller.msi`" /qn /l*v install.log" -Wait
+
+      - name: Restore dependencies
+        run: dotnet restore ./MetaMorpheus/MetaMorpheus.sln
+
+      - name: Build solution
+        run: dotnet msbuild -v:minimal -p:Configuration=Release -p:UseSharedCompilation=false ./MetaMorpheus/
+
+      - name: Compare built DLLs to installed DLLs
+        run: |
+          $buildDir = $repoDir = Get-Location
+          $installDir = "C:\Program Files\MetaMorpheus"
+
+          # Get DLL names
+          $buildDlls = Get-ChildItem -Path $buildDir -Filter *.dll | Select-Object -ExpandProperty Name
+          $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name
+
+          # Define whitelist for missing DLLs (build-only) - Okay to not be installed
+          $whitelistedMissingDlls = @(
+            "System.Configuration.ConfigurationManager.dll",
+            "System.Security.Cryptography.ProtectedData.dll",
+            "System.Security.Permissions.dll",
+            "System.Windows.Extensions.dll",
+            "Microsoft.Win32.SystemEvents.dll",
+            "Microsoft.Extensions.DependencyInjection.Abstractions.dll",
+            "Microsoft.Extensions.DependencyInjection.dll",
+            "Microsoft.Extensions.Logging.Abstractions.dll",
+            "Microsoft.Extensions.Logging.dll",
+            "Microsoft.Extensions.Options.dll",
+            "Microsoft.Extensions.Primitives.dll"
+          )
+
+          # Define whitelist for extra DLLs (install-only)
+          $whitelistedExtraDlls = @(
+
+          )
+
+          # Get all unique DLLs in the entire build repository
+          # Define which folders to check in the repo
+          $foldersToCheck = @(
+              "$(Get-Location)\MetaMorpheus\EngineLayer\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\CMD\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\TaskLayer\bin\Release\$env:DOTNET_FRAMEWORK",
+              "$(Get-Location)\MetaMorpheus\GUI\bin\Release\$env:DOTNET_FRAMEWORK-windows",
+              "$(Get-Location)\MetaMorpheus\GuiFunctions\bin\Release\$env:DOTNET_FRAMEWORK"
+          )
+
+          # Collect DLLs and their source folders
+          $buildDlls = @()
+          $buildDllLocations = @{}
+
+          foreach ($folder in $foldersToCheck) {
+              if (Test-Path $folder) {
+                  Get-ChildItem -Path $folder -Filter *.dll | ForEach-Object {
+                      $dllName = $_.Name
+                      $buildDlls += $dllName
+                      $buildDllLocations[$dllName] = $folder
+                  }
+              }
+          }
+          $buildDlls = $buildDlls | Sort-Object -Unique
+
+          # Get installed DLLs
+          $installedDlls = Get-ChildItem -Path $installDir -Filter *.dll | Select-Object -ExpandProperty Name -Unique
+
+          # Find missing DLLs (in build, not in install), ignoring whitelist
+          $missingDlls = $buildDlls | Where-Object { $_ -notin $installedDlls -and $_ -notin $whitelistedMissingDlls }
+
+          # Find extra DLLs (in install, not in build), ignoring whitelist
+          $extraDlls = $installedDlls | Where-Object { $_ -notin $buildDlls -and $_ -notin $whitelistedExtraDlls }
+
+          $hasError = $false
+
+          if ($missingDlls.Count -gt 0) {
+              Write-Host "❌ Missing DLLs from installer (not whitelisted):" -ForegroundColor Red
+              $missingDlls | ForEach-Object {
+                  $sourceFolder = $buildDllLocations[$_]
+                  Write-Host "- $_ (from $sourceFolder)"
+              }
+              $hasError = $true
+          }
+
+          if ($extraDlls.Count -gt 0) {
+              Write-Host "❌ Extra/unexpected DLLs in installer:" -ForegroundColor Red
+              $extraDlls | ForEach-Object { Write-Host "- $_" }
+              $hasError = $true
+          }
+
+          if ($hasError) {
+              exit 1
+          } else {
+              Write-Host "✅ Installer DLLs match build output exactly." -ForegroundColor Green
+          }
