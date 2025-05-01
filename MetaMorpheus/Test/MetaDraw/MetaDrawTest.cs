@@ -174,7 +174,7 @@ namespace Test.MetaDraw
         public static void MetaDraw_TestStationarySequencePositioning()
         {
             var metadrawLogic = new MetaDrawLogic();
-            metadrawLogic.PsmResultFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv"));
+            metadrawLogic.SpectralMatchResultFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv"));
             metadrawLogic.SpectraFilePaths.Add(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchSingleSpectra.mzML"));
             var errors = metadrawLogic.LoadFiles(true, true);
             Assert.That(errors.Count == 1); // Singular error should be from not loading in the rest of the spectra that the search came from
@@ -216,7 +216,7 @@ namespace Test.MetaDraw
 
                 List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                        p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-                int psmStartResidue = int.Parse(psm.StartAndEndResiduesInProtein.Split("to")[0].Replace("[", ""));
+                int psmStartResidue = int.Parse(psm.StartAndEndResiduesInParentSequence.Split("to")[0].Replace("[", ""));
                 var startAA = (MetaDrawSettings.FirstAAonScreenIndex + psmStartResidue).ToString();
                 var endAA = (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen + psmStartResidue - 1).ToString();
 
@@ -244,7 +244,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -393,7 +393,7 @@ namespace Test.MetaDraw
             List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                    p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
-                psm.StartAndEndResiduesInProtein.Replace("[","").Replace("]","").Replace("to", "").Replace(" ", "").Length + 2);
+                psm.StartAndEndResiduesInParentSequence.Replace("[","").Replace("]","").Replace("to", "").Replace(" ", "").Length + 2);
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").Take(3).ToList();
@@ -435,7 +435,7 @@ namespace Test.MetaDraw
             matchedIons = modPsm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.AminoAcidPosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                 p.NeutralTheoreticalProduct.AminoAcidPosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
-                psm.StartAndEndResiduesInProtein.Replace("[", "").Replace("]", "").Replace("to", "").Replace(" ", "").Length + 2);
+                psm.StartAndEndResiduesInParentSequence.Replace("[", "").Replace("]", "").Replace("to", "").Replace(" ", "").Length + 2);
 
 
             // get scan from psm
@@ -446,7 +446,7 @@ namespace Test.MetaDraw
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
-            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
             Assert.That(!metadrawLogic.SpectraFilePaths.Any());
 
             // delete output
@@ -474,7 +474,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(csmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(csmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -562,7 +562,7 @@ namespace Test.MetaDraw
             Assert.That(childPlot.SpectrumLabel == "Scan: 3 Dissociation Type: ETD MsOrder: 2 Selected Mz: 492.02 RetentionTime: 23.9");
             Assert.That(childPlot.TheCanvas.Children.Count > 0);
             numAnnotatedResidues = csm.BaseSeq.Length;
-            numAnnotatedIons = csm.ChildScanMatchedIons[3].Concat(csm.BetaPeptideChildScanMatchedIons[3])
+            numAnnotatedIons = csm.ChildScanMatchedIons[3].Concat((csm as PsmFromTsv).BetaPeptideChildScanMatchedIons[3])
                 .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M);
             numAnnotatedMods = csm.FullSequence.Count(p => p == '[');
             Assert.That(childPlot.TheCanvas.Children.Count == numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods);
@@ -595,7 +595,7 @@ namespace Test.MetaDraw
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
-            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
             Assert.That(!metadrawLogic.SpectraFilePaths.Any());
 
             // delete output
@@ -628,7 +628,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             metadrawLogic.SpectralLibraryPaths.Add(library1);
             var errors = metadrawLogic.LoadFiles(true, true);
 
@@ -662,7 +662,7 @@ namespace Test.MetaDraw
             Assert.That(plotAxes.Count == 2);
 
             // write pdf
-            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.UniqueSequence == "LLDNAAADLAAISGQKPLITKAR(21)ITLNMGVGEAIADKK(14)").Take(1).ToList();
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => (p as PsmFromTsv).UniqueSequence == "LLDNAAADLAAISGQKPLITKAR(21)ITLNMGVGEAIADKK(14)").Take(1).ToList();
             metadrawLogic.ExportPlot(plotView, canvas, psmsToExport, parentChildView, outputFolder, out errors);
 
 
@@ -682,7 +682,7 @@ namespace Test.MetaDraw
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
-            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
             Assert.That(!metadrawLogic.SpectraFilePaths.Any());
             Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
 
@@ -710,7 +710,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -843,7 +843,7 @@ namespace Test.MetaDraw
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
-            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
             Assert.That(!metadrawLogic.SpectraFilePaths.Any());
 
             // delete output
@@ -871,7 +871,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
             Assert.That(!errors.Any());
             Assert.That(metadrawLogic.FilteredListOfPsms.Any());
@@ -966,14 +966,14 @@ namespace Test.MetaDraw
             }
 
             // test export of singlular plot
-            List<PsmFromTsv> firstChimeraGroup = metadrawLogic.FilteredListOfPsms
+            List<SpectrumMatchFromTsv> firstChimeraGroup = metadrawLogic.FilteredListOfPsms
                 .GroupBy(p => p.Ms2ScanNumber).First().ToList();
             metadrawLogic.DisplayChimeraSpectra(plotView, firstChimeraGroup, out errors);
             Assert.That(errors == null || !errors.Any());
             foreach (var exportType in MetaDrawSettings.ExportTypes)
             {
                 MetaDrawSettings.ExportType = exportType;
-                metadrawLogic.ExportPlot(plotView, null, new List<PsmFromTsv>() { firstChimeraGroup.First() }, null, outputFolder, out errors);
+                metadrawLogic.ExportPlot(plotView, null, new List<SpectrumMatchFromTsv>() { firstChimeraGroup.First() }, null, outputFolder, out errors);
                 Assert.That(errors == null || !errors.Any());
                 string sequence = illegalInFileName.Replace(firstChimeraGroup.First().FullSequence, string.Empty);
                 string filePathWithoutDirectory = firstChimeraGroup.First().Ms2ScanNumber + "_" 
@@ -989,7 +989,7 @@ namespace Test.MetaDraw
             ptmLegend.Arrange(new Rect(legendSize));
             ptmLegend.UpdateLayout();
             Vector ptmLegendVector = new(10, 10);
-            metadrawLogic.ExportPlot(plotView, null, new List<PsmFromTsv>() { firstChimeraGroup.First() }, null,
+            metadrawLogic.ExportPlot(plotView, null, new List<SpectrumMatchFromTsv>() { firstChimeraGroup.First() }, null,
                 outputFolder, out errors, ptmLegend, ptmLegendVector);
             Assert.That(errors == null || !errors.Any());
             string sequenceSeq = illegalInFileName.Replace(firstChimeraGroup.First().FullSequence, string.Empty);
@@ -999,7 +999,7 @@ namespace Test.MetaDraw
             Assert.That(File.Exists(Path.Combine(outputFolder, fileNameWithoutDirectory)));
 
             // test export of multiple plots
-            List<PsmFromTsv> secondChimeraGroup = metadrawLogic.FilteredListOfPsms
+            List<SpectrumMatchFromTsv> secondChimeraGroup = metadrawLogic.FilteredListOfPsms
                 .GroupBy(p => p.Ms2ScanNumber).ToList()[1].ToList();
             metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
             Assert.That(errors == null || !errors.Any());
@@ -1044,7 +1044,7 @@ namespace Test.MetaDraw
 
             // load results into metadraw (skipping spectra file, to produce an error msg)
             var metadrawLogic = new MetaDrawLogic();
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
 
             // this should produce an error because an expected spectra file is not present
             var errors = metadrawLogic.LoadFiles(loadSpectra: true, loadPsms: true);
@@ -1067,7 +1067,7 @@ namespace Test.MetaDraw
 
             // export to PDF should produce an error because spectra are not loaded
             MetaDrawSettings.NumberOfAAOnScreen = psmsFromTsv.First().BaseSeq.Length - 1;
-            metadrawLogic.ExportPlot(plotView, canvas, new List<PsmFromTsv> { psmsFromTsv.First() }, parentChildScanPlotsView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, canvas, new List<SpectrumMatchFromTsv> { psmsFromTsv.First() }, parentChildScanPlotsView, outputFolder, out errors);
             Assert.That(errors.Any());
 
             // clean up resources
@@ -1096,7 +1096,7 @@ namespace Test.MetaDraw
 
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
             var errors = metadrawLogic.LoadFiles(true, true);
             Assert.That(!errors.Any());
@@ -1118,7 +1118,7 @@ namespace Test.MetaDraw
             Assert.That(errors == null || !errors.Any());
 
             // export to PDF
-            metadrawLogic.ExportPlot(plotView, canvas, new List<PsmFromTsv> { metadrawLogic.FilteredListOfPsms.First() }, parentChildScanPlotsView, outputFolder, out errors);
+            metadrawLogic.ExportPlot(plotView, canvas, new List<SpectrumMatchFromTsv> { metadrawLogic.FilteredListOfPsms.First() }, parentChildScanPlotsView, outputFolder, out errors);
             Assert.That(!errors.Any());
 
             // clean up resources
@@ -1153,7 +1153,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             metadrawLogic.SpectralLibraryPaths.Add(library1);
             metadrawLogic.SpectralLibraryPaths.Add(library2);
             var errors = metadrawLogic.LoadFiles(true, true);
@@ -1195,7 +1195,7 @@ namespace Test.MetaDraw
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
-            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
             Assert.That(!metadrawLogic.SpectraFilePaths.Any());
             Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
 
@@ -1226,7 +1226,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -1271,7 +1271,7 @@ namespace Test.MetaDraw
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\InternalTest.mgf");
             string psmFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SequenceCoverageTestPSM.psmtsv");
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -1295,7 +1295,7 @@ namespace Test.MetaDraw
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\ms2mixed_bsa_xlink.mzML");
             string psmFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\XL_Intralinks_MIons.tsv");
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -1338,7 +1338,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             metadrawLogic.SpectralLibraryPaths.Add(library1);
             metadrawLogic.SpectralLibraryPaths.Add(library2);
             var errors = metadrawLogic.LoadFiles(true, true);
@@ -1383,7 +1383,7 @@ namespace Test.MetaDraw
 
             metadrawLogic.CleanUpPSMFiles();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
-            Assert.That(!metadrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metadrawLogic.SpectralMatchResultFilePaths.Any());
 
             metadrawLogic.CleanUpSpectralLibraryFiles();
             Assert.That(!metadrawLogic.SpectralLibraryPaths.Any());
@@ -1411,7 +1411,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -1433,7 +1433,7 @@ namespace Test.MetaDraw
             Assert.That(errors == null || !errors.Any());
 
             // export each file type and ensure they exist
-            var psmsToExport = new List<PsmFromTsv> { metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First() };
+            var psmsToExport = new List<SpectrumMatchFromTsv> { metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "QIVHDSGR").First() };
             MetaDrawSettings.NumberOfAAOnScreen = psmsToExport.First().BaseSeq.Length;
             metadrawLogic.ExportPlot(plotView, stationaryCanvas, psmsToExport, parentChildView, outputFolder, out errors);
             Assert.That(File.Exists(Path.Combine(outputFolder, @"120_QIVHDSGR.pdf")));
@@ -1485,7 +1485,7 @@ namespace Test.MetaDraw
             Assert.That(!warnings.Any());
 
             MetaDrawLogic metaDrawLogic = new();
-            metaDrawLogic.PsmResultFilePaths.Add(psmsPath);
+            metaDrawLogic.SpectralMatchResultFilePaths.Add(psmsPath);
             var errors = metaDrawLogic.LoadFiles(false, true);
             Assert.That(!errors.Any());
             Assert.That(metaDrawLogic.FilteredListOfPsms.Any());
@@ -1520,7 +1520,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -1620,11 +1620,11 @@ namespace Test.MetaDraw
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
-            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
-            ObservableCollection<PsmFromTsv> psms = new(parsedPsms);
+            List<SpectrumMatchFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadTsv(psmFile, out var warnings);
+            ObservableCollection<SpectrumMatchFromTsv> psms = new(parsedPsms);
 
             var psmDict = parsedPsms.GroupBy(p => p.FileNameWithoutExtension)
-                .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
+                .ToDictionary(p => p.Key, p => new ObservableCollection<SpectrumMatchFromTsv>(p));
 
             // check that fragment mass error was read in correctly
             Assert.That(Math.Round(-0.27631606125063707, 5), Is.EqualTo(Math.Round(psms[1].MatchedIons[1].MassErrorPpm, 5)));
@@ -1714,10 +1714,10 @@ namespace Test.MetaDraw
             List<string> warningsVariants = new List<string>();
             List<PsmFromTsv> parsedPsmsWithVariants;
             parsedPsmsWithVariants = SpectrumMatchTsvReader.ReadPsmTsv(variantFile, out warningsVariants);
-            ObservableCollection<PsmFromTsv> psmsWithVariants = new(parsedPsmsWithVariants);
+            ObservableCollection<SpectrumMatchFromTsv> psmsWithVariants = new(parsedPsmsWithVariants);
 
             var psmVariantDict = psmsWithVariants.GroupBy(p => p.FileNameWithoutExtension)
-                .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
+                .ToDictionary(p => p.Key, p => new ObservableCollection<SpectrumMatchFromTsv>(p));
 
             var variantPlot1 = new PlotModelStat("Precursor PPM Error vs. RT", psmsWithVariants, psmVariantDict);
             var variantSeries1 = variantPlot1.Model.Series.ToList()[0];

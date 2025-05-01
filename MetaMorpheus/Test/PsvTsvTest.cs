@@ -53,7 +53,7 @@ namespace Test
         {
             var metadrawLogic = new MetaDrawLogic();
             string psmFile = @"TestData\oglyco.psmtsv";
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(false, true);
 
             Assert.That(!errors.Any());
@@ -110,7 +110,7 @@ namespace Test
             foreach (var ambPsm in ambiguousPsms)
             {
                 PsmFromTsv disambiguatedPSM = new(ambPsm, ambPsm.FullSequence.Split("|")[0]);
-                Assert.That(disambiguatedPSM.StartAndEndResiduesInProtein == ambPsm.StartAndEndResiduesInProtein.Split("|")[0]);
+                Assert.That(disambiguatedPSM.StartAndEndResiduesInParentSequence == ambPsm.StartAndEndResiduesInParentSequence.Split("|")[0]);
                 Assert.That(disambiguatedPSM.BaseSeq == ambPsm.BaseSeq.Split("|")[0]);
                 Assert.That(disambiguatedPSM.EssentialSeq == ambPsm.EssentialSeq.Split("|")[0]);
                 Assert.That(disambiguatedPSM.ProteinAccession == ambPsm.ProteinAccession.Split("|")[0]);
@@ -125,12 +125,12 @@ namespace Test
                     Assert.That(disambiguatedPSM.MatchedIons[i] == ambPsm.MatchedIons[i]);
                 }
 
-                if (ambPsm.StartAndEndResiduesInProtein.Split("|").Count() > 1)
+                if (ambPsm.StartAndEndResiduesInParentSequence.Split("|").Count() > 1)
                 {
-                    for (int i = 1; i < ambPsm.StartAndEndResiduesInProtein.Split("|").Count(); i++)
+                    for (int i = 1; i < ambPsm.StartAndEndResiduesInParentSequence.Split("|").Count(); i++)
                     {
                         disambiguatedPSM = new(ambPsm, ambPsm.FullSequence.Split("|")[i], i);
-                        Assert.That(disambiguatedPSM.StartAndEndResiduesInProtein == ambPsm.StartAndEndResiduesInProtein.Split("|")[i]);
+                        Assert.That(disambiguatedPSM.StartAndEndResiduesInParentSequence == ambPsm.StartAndEndResiduesInParentSequence.Split("|")[i]);
                         Assert.That(disambiguatedPSM.BaseSeq == ambPsm.BaseSeq.Split("|")[i]);
                         Assert.That(disambiguatedPSM.EssentialSeq == ambPsm.EssentialSeq.Split("|")[i]);
                         Assert.That(disambiguatedPSM.ProteinAccession == ambPsm.ProteinAccession.Split("|")[i]);
