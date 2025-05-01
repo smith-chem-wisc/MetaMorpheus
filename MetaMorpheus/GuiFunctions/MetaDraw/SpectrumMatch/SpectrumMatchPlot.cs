@@ -441,7 +441,7 @@ namespace GuiFunctions
                     libraryIon.NeutralTheoreticalProduct.Terminus,
                     libraryIon.NeutralTheoreticalProduct.NeutralMass,
                     libraryIon.NeutralTheoreticalProduct.FragmentNumber,
-                    libraryIon.NeutralTheoreticalProduct.AminoAcidPosition,
+                    libraryIon.NeutralTheoreticalProduct.ResiduePosition,
                     libraryIon.NeutralTheoreticalProduct.NeutralLoss);
 
                 mirroredLibraryIons.Add(new MatchedFragmentIon(neutralProduct, libraryIon.Mz,
