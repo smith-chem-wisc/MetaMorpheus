@@ -425,15 +425,9 @@ namespace EngineLayer
             _AllRnaModTypesKnown = new HashSet<string>();
             AllRnaModsKnownDictionary = new Dictionary<string, Modification>();
 
-            //// load mod.txt
-            //string modFile = Path.Combine(GlobalVariables.DataDir, "Mods", "RnaMods.txt");
-            //foreach (var mod in PtmListLoader.ReadModsFromFile(modFile, out var errors))
-            //{
-            //    _AllRnaModsKnown.Add(mod);
-            //}
-
+            // RNA Mods is an embedded resources: It gets packed into the DLL so we do not need to worry about the installer. 
             var assembly = typeof(GlobalVariables).Assembly;
-            var resourceName = "MetaMorpheus.EngineLayer.Mods.RnaMods.txt";
+            var resourceName = "EngineLayer.Mods.RnaMods.txt";
 
             using (var stream = assembly.GetManifestResourceStream(resourceName))
             using (var reader = new StreamReader(stream))
