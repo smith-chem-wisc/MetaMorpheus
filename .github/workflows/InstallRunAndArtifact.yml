@@ -23,6 +23,13 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
+      - name: Debug secrets (do not print secret)
+        run: |
+          if [ -z "${{ secrets.KEY_SECRET }}" ]; then
+            echo "KEY_SECRET is not set!"
+          else
+            echo "KEY_SECRET is set."
+
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
