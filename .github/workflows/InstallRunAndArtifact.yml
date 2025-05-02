@@ -54,15 +54,26 @@ jobs:
           }
 
       - name: Decrypt security certificate
+        shell: pwsh
         run: |
+          if (-not $env:KEY_SECRET) {
+            Write-Host "⚠️ KEY_SECRET is not set. Skipping certificate decryption."
+            exit 0
+          }
+
           nuget install secure-file -ExcludeVersion
-          export KEY_SECRET=${{ secrets.KEY_SECRET }}
-          secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret "$KEY_SECRET"
+          secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret "$env:KEY_SECRET"
 
       # This currently has issues and leads to Microsoft waringing the user that MetaMorpheus is untrusted.
       - name: Sign installer
+        shell: pwsh
         run: |
-          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "${{ secrets.KEY_CERT }}", "DefaultKeySet")
+          if (-not $env:KEY_SECRET -or -not $env:KEY_CERT) {
+            Write-Host "⚠️ Certificate secrets not available. Skipping signing."
+            exit 0
+          }
+
+          $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2("MetaMorpheus/smith_MM_certificate.pfx", "$env:KEY_CERT", "DefaultKeySet")
           Set-AuthenticodeSignature -FilePath "./MetaMorpheus/MetaMorpheusSetup/bin/Release/MetaMorpheusInstaller.msi" -Certificate $cert
 
       - name: Zip command-line version
