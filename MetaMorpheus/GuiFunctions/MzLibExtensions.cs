@@ -1,11 +1,9 @@
 ﻿using System;
 using EngineLayer;
-using System.Collections.Generic;
 using MassSpectrometry;
 using Omics;
 using Proteomics.ProteolyticDigestion;
 using Readers;
-using Transcriptomics.Digestion;
 
 namespace GuiFunctions
 {
@@ -46,8 +44,8 @@ namespace GuiFunctions
 
         public static bool IsPeptide(this SpectrumMatchFromTsv sm)
         {
-            if (sm is OsmFromTsv)
-                return false;
+            //if (sm is OsmFromTsv)
+            //    return false;
             return true;
         }
 
@@ -61,19 +59,10 @@ namespace GuiFunctions
 
         public static SpectrumMatchFromTsv ReplaceFullSequence(this SpectrumMatchFromTsv sm, string fullSequence, string baseSequence = "")
         {
-            if (sm.IsPeptide())
+            //if (sm.IsPeptide())
                 return new PsmFromTsv(sm as PsmFromTsv, fullSequence, baseSequence: baseSequence);
-            else
-                return new OsmFromTsv(sm as OsmFromTsv, fullSequence, baseSequence: baseSequence);
-        }
-
-        public static IEnumerable<(int Start, int End)> GetStartAndEndPosition(this SpectrumMatchFromTsv sm)
-        {
-            foreach (var ambigSplit in sm.StartAndEndResiduesInParentSequence.Split('|'))
-            {
-                var split = ambigSplit.Replace("[", "").Replace("]", "").Split("to");
-                yield return (int.Parse(split[0]), int.Parse(split[1]));
-            }
+            //else
+            //    return new OsmFromTsv(sm as OsmFromTsv, fullSequence, baseSequence: baseSequence);
         }
     }
 }
