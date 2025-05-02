@@ -18,18 +18,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Debug secrets (PowerShell)
+        shell: pwsh
+        run: |
+          if (-not $env:KEY_SECRET) {
+            Write-Host "KEY_SECRET is not set!"
+          } else {
+            Write-Host "KEY_SECRET is set."
+          }
+          
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Debug secrets (do not print secret)
-        run: |
-          if [ -z "${{ secrets.KEY_SECRET }}" ]; then
-            echo "KEY_SECRET is not set!"
-          else
-            echo "KEY_SECRET is set."
-          fi
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
