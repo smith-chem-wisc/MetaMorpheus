@@ -29,6 +29,7 @@ jobs:
             echo "KEY_SECRET is not set!"
           else
             echo "KEY_SECRET is set."
+          fi
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
@@ -54,7 +55,8 @@ jobs:
       - name: Decrypt security certificate
         run: |
           nuget install secure-file -ExcludeVersion
-          secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret ${{ secrets.KEY_SECRET }}
+          export KEY_SECRET=${{ secrets.KEY_SECRET }}
+          secure-file/tools/secure-file -decrypt MetaMorpheus/smith_MM_certificate.pfx.enc -secret "$KEY_SECRET"
 
       # This currently has issues and leads to Microsoft waringing the user that MetaMorpheus is untrusted.
       - name: Sign installer
