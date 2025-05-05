@@ -1226,14 +1226,15 @@ namespace TaskLayer
         /// </summary>
         /// <param name="proteins"></param>
         /// <param name="tcAmbiguity"></param>
-        protected static void SanitizeProteinDatabase(List<IBioPolymer> proteins, TargetContaminantAmbiguity tcAmbiguity)
+        protected static void SanitizeProteinDatabase<TBioPolymer>(List<TBioPolymer> proteins, TargetContaminantAmbiguity tcAmbiguity)
+            where TBioPolymer : IBioPolymer
         {
             foreach (var accessionGroup in proteins.GroupBy(p => p.Accession))
             {
                 if (accessionGroup.Count() != 1) //if multiple proteins with the same accession
                 {
-                    List<IBioPolymer> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => p.TruncationProducts.Count()).ToList();
-                    List<IBioPolymer> proteinsToRemove = new();
+                    List<TBioPolymer> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => p.TruncationProducts.Count()).ToList();
+                    List<TBioPolymer> proteinsToRemove = new();
                     if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
                     {
                         int proteinNumber = 1;
@@ -1248,7 +1249,7 @@ namespace TaskLayer
                                     originalBioPolymer.GeneNames, originalBioPolymer.OneBasedPossibleLocalizedModifications, p.TruncationProducts, originalBioPolymer.Name, originalBioPolymer.FullName,
                                     originalBioPolymer.IsDecoy, originalBioPolymer.IsContaminant, p.DatabaseReferences, p.SequenceVariations, p.AppliedSequenceVariations,
                                     p.SampleNameForVariants, p.DisulfideBonds, p.SpliceSites, originalBioPolymer.DatabaseFilePath);
-                                proteins.Add(renamedProtein);
+                                proteins.Add((TBioPolymer)(IBioPolymer)renamedProtein);
                                 proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
                             }
                             else if (originalBioPolymer is RNA r)
@@ -1257,7 +1258,7 @@ namespace TaskLayer
                                     r.OneBasedPossibleLocalizedModifications, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.Name, r.Organism,
                                     r.DatabaseFilePath, r.IsContaminant, r.IsDecoy, r.GeneNames, r.AdditionalDatabaseFields, r.TruncationProducts,
                                     r.SequenceVariations, r.AppliedSequenceVariations, r.SampleNameForVariants, r.FullName);
-                                proteins.Add(rename);
+                                proteins.Add((TBioPolymer)(IBioPolymer)rename);
                                 proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
                             }
                         }
