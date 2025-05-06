@@ -372,7 +372,6 @@ namespace EngineLayer
 
             // best peptide q value
             sb.Append(BestPeptideQValue);
-            sb.Append("\t");
 
             return sb.ToString();
         }
