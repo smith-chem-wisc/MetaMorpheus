@@ -4,16 +4,15 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.Gptmd;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
-using Proteomics.ProteolyticDigestion;
 using System.Globalization;
 using Omics.Modifications;
 using System.Threading.Tasks;
+using Omics;
 
 namespace TaskLayer
 {
@@ -39,14 +38,14 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
-            List<Protein> proteinList = null;
-            Task<List<Protein>> proteinLoadingTask = new(() =>
+            List<IBioPolymer> proteinList = null;
+            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
             {
                 var proteins = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse,
                     localizeableModificationTypes,
                     CommonParameters);
                 SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
-                return proteins.Cast<Protein>().ToList();
+                return proteins;
             });
             proteinLoadingTask.Start();
 
