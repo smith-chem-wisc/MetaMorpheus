@@ -150,14 +150,14 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
-            List<Protein> proteinList = null;
-            Task<List<Protein>> proteinLoadingTask = new(() =>
+            List<IBioPolymer> bioPolymerList = null;
+            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
             {
                 var proteins = LoadBioPolymers(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType,
                     localizeableModificationTypes,
                     CommonParameters);
                 SanitizeProteinDatabase(proteins, SearchParameters.TCAmbiguity);
-                return proteins.Cast<Protein>().ToList();
+                return proteins;
             });
             proteinLoadingTask.Start();
 
@@ -245,20 +245,22 @@ namespace TaskLayer
                 // ensure proteins are loaded in before proceeding with search
                 switch (proteinLoadingTask.IsCompleted)
                 {
-                    case true when proteinList is null: // has finished loading but not been set
-                        proteinList = proteinLoadingTask.Result;
+                    case true when bioPolymerList is null: // has finished loading but not been set
+                        bioPolymerList = proteinLoadingTask.Result;
                         break;
-                    case true when proteinList.Any(): // has finished loading and already been set
+                    case true when bioPolymerList.Any(): // has finished loading and already been set
                         break;
                     case false: // has not finished loading
                         proteinLoadingTask.Wait();
-                        proteinList = proteinLoadingTask.Result;
+                        bioPolymerList = proteinLoadingTask.Result;
                         break;
                 }
 
                 // modern search
                 if (SearchParameters.SearchType == SearchType.Modern)
                 {
+                    // Assume modern search is for proteins. 
+                    var proteinList = bioPolymerList.Cast<Protein>().ToList();
                     for (int currentPartition = 0; currentPartition < combinedParams.TotalPartitions; currentPartition++)
                     {
                         List<PeptideWithSetModifications> peptideIndex = null;
@@ -331,13 +333,16 @@ namespace TaskLayer
                     //foreach terminus we're going to look at
                     foreach (CommonParameters paramToUse in paramsToUse)
                     {
+                        var proteinList = bioPolymerList.Cast<Protein>().ToList();
+
                         //foreach database partition
                         for (int currentPartition = 0; currentPartition < paramToUse.TotalPartitions; currentPartition++)
                         {
                             List<PeptideWithSetModifications> peptideIndex = null;
 
                             List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions,
-                                ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions));
+                                ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions))
+                                .Cast<Protein>().ToList(); // assume that only proteins are used in non-specific search
 
                             List<int>[] fragmentIndex = null;
                             List<int>[] precursorIndex = null;
@@ -377,7 +382,7 @@ namespace TaskLayer
                 {
                     Status("Starting search...", thisId);
                     var newClassicSearchEngine = new ClassicSearchEngine(fileSpecificPsms, arrayOfMs2ScansSortedByMass, variableModifications, fixedModifications, SearchParameters.SilacLabels,
-                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, proteinList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile);
+                       SearchParameters.StartTurnoverLabel, SearchParameters.EndTurnoverLabel, bioPolymerList, massDiffAcceptor, combinedParams, this.FileSpecificParameters, spectralLibrary, thisId,SearchParameters.WriteSpectralLibrary, SearchParameters.WriteDigestionProductCountFile);
                     var result = newClassicSearchEngine.Run();
 
                     // The same proteins (all of them) get digested with each classic search engine, therefor we only need to calculate this for the first file that runs
@@ -429,15 +434,15 @@ namespace TaskLayer
             }
 
             // Finish writing prose settings that depended on files being loaded in
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy)
-                + " non-decoy protein entries including " + proteinList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + bioPolymerList.Count(p => !p.IsDecoy)
+                + " non-decoy protein entries including " + bioPolymerList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
             {
                 SearchTaskResults = MyTaskResults,
                 SearchTaskId = taskId,
                 SearchParameters = SearchParameters,
-                ProteinList = proteinList,
+                ProteinList = bioPolymerList,
                 AllPsms = allPsms,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
