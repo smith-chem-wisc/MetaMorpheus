@@ -166,17 +166,17 @@ namespace TaskLayer
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
-            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
+            ProseCreatedWhileRunning.Append($"{(GlobalVariables.AnalyteType == AnalyteType.Oligo ? "Rnase" : "protease")} = " + CommonParameters.DigestionParams.Protease + "; ");
             ProseCreatedWhileRunning.Append("search for truncated proteins and proteolysis products = " + CommonParameters.AddTruncations + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
+            ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
             ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
-                "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = unspecified; " :
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif)) + "; ");
             ProseCreatedWhileRunning.Append("variable modifications = " + string.Join(", ", variableModifications.Select(m => m.IdWithMotif)) + "; ");
-            ProseCreatedWhileRunning.Append("max mods per peptide = " + CommonParameters.DigestionParams.MaxModsForPeptide + "; ");
+            ProseCreatedWhileRunning.Append($"max mods per {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} = " + CommonParameters.DigestionParams.MaxModsForPeptide + "; ");
             ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
             ProseCreatedWhileRunning.Append("precursor mass tolerance = " + CommonParameters.PrecursorMassTolerance + "; ");
             ProseCreatedWhileRunning.Append("product mass tolerance = " + CommonParameters.ProductMassTolerance + "; ");
@@ -435,7 +435,7 @@ namespace TaskLayer
 
             // Finish writing prose settings that depended on files being loaded in
             ProseCreatedWhileRunning.Append("The combined search database contained " + bioPolymerList.Count(p => !p.IsDecoy)
-                + " non-decoy protein entries including " + bioPolymerList.Count(p => p.IsContaminant) + " contaminant sequences. ");
+                + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + bioPolymerList.Count(p => p.IsContaminant) + " contaminant sequences. ");
 
             PostSearchAnalysisParameters parameters = new PostSearchAnalysisParameters
             {

@@ -56,10 +56,10 @@ namespace TaskLayer
             // write prose settings
             ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.Protease + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
+            ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinPeptideLength + "; ");
             ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ?
-                "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = unspecified; " :
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MaxPeptideLength + "; ");
             ProseCreatedWhileRunning.Append("initiator methionine behavior = " + CommonParameters.DigestionParams.InitiatorMethionineBehavior + "; ");
             ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
             ProseCreatedWhileRunning.Append("fixed modifications = " + string.Join(", ", fixedModifications.Select(m => m.IdWithMotif)) + "; ");
@@ -166,7 +166,7 @@ namespace TaskLayer
             new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary).Run();
 
             //Move this text after search because proteins don't get loaded until search begins.
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             // run GPTMD engine
             Status("Creating the GPTMD Database", new List<string> { taskId });
