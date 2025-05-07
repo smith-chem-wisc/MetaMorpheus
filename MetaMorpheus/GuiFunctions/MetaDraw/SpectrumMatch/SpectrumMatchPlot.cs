@@ -36,10 +36,10 @@ namespace GuiFunctions
         /// Matched fragment ions should only be passed in for glyco parent/child scan
         /// </summary>
         /// <param name="plotView">Where the plot is going</param>
-        /// <param name="psm">psm to plot</param>
+        /// <param name="sm">sm to plot</param>
         /// <param name="scan">spectrum to plot</param>
         /// <param name="matchedIons">glyco ONLY child matched ions</param>
-        public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, SpectrumMatchFromTsv psm,
+        public SpectrumMatchPlot(OxyPlot.Wpf.PlotView plotView, SpectrumMatchFromTsv sm,
             MsDataScan scan, List<MatchedFragmentIon> matchedIons = null) : base(plotView)
         {
             Model.Title = string.Empty;
@@ -48,15 +48,15 @@ namespace GuiFunctions
             matchedFragmentIons = new();
 
             DrawSpectrum();
-            if (matchedIons is null && psm is not null)
+            if (matchedIons is null && sm is not null)
             {
-                SpectrumMatch = psm;
+                SpectrumMatch = sm;
                 matchedFragmentIons = SpectrumMatch.MatchedIons;
                 AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
             }
-            else if (matchedIons is not null && psm is not null)
+            else if (matchedIons is not null && sm is not null)
             {
-                SpectrumMatch = psm;
+                SpectrumMatch = sm;
                 matchedFragmentIons = matchedIons;
                 AnnotateMatchedIons(false, matchedIons);
             }

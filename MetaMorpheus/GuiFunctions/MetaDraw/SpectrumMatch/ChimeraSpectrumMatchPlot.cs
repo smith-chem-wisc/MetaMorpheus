@@ -35,11 +35,11 @@ namespace GuiFunctions
         public List<SpectrumMatchFromTsv> SpectrumMatches { get; private set; }
         public Dictionary<string, List<SpectrumMatchFromTsv>> PsmsByProteinDictionary { get; private set; }
 
-        public ChimeraSpectrumMatchPlot(PlotView plotView, MsDataScan scan, List<SpectrumMatchFromTsv> psms) : base(plotView, null, scan)
+        public ChimeraSpectrumMatchPlot(PlotView plotView, MsDataScan scan, List<SpectrumMatchFromTsv> sms) : base(plotView, null, scan)
         {
-            SpectrumMatches = psms;
+            SpectrumMatches = sms;
             PsmsByProteinDictionary = SpectrumMatches.GroupBy(p => p.BaseSeq).ToDictionary(p => p.Key, p => p.ToList());
-            psms.Select(p => p.MatchedIons).ForEach(p => matchedFragmentIons.AddRange(p));
+            sms.Select(p => p.MatchedIons).ForEach(p => matchedFragmentIons.AddRange(p));
             
             AnnotateMatchedIons();
             ZoomAxes();
