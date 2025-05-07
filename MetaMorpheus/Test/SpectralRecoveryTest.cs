@@ -68,7 +68,7 @@ namespace Test
                     filePath, commonParameters);
                 Protein protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
 
-                //string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
+                //string[] startAndEndResidues = readPsm.StartAndEndResiduesInParentSequence.Split(" ");
                 //int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 //int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
 

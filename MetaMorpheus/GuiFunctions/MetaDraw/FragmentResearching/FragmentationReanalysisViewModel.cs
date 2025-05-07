@@ -12,6 +12,7 @@ using MzLibUtil;
 using Omics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -198,14 +199,12 @@ namespace GuiFunctions
             PossibleProducts.ForEach(product => product.Use = dissociationTypeProducts.Contains(product.ProductType));
         }
 
-        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, PsmFromTsv psmToRematch)
+        public List<MatchedFragmentIon> MatchIonsWithNewTypes(MsDataScan ms2Scan, SpectrumMatchFromTsv smToRematch)
         {
-            if (psmToRematch.FullSequence.Contains('|'))
-                return psmToRematch.MatchedIons;
+            if (smToRematch.FullSequence.Contains('|'))
+                return smToRematch.MatchedIons;
 
-            IBioPolymerWithSetMods bioPolymer = /*_isProtein ? */
-                new PeptideWithSetModifications(psmToRematch.FullSequence, GlobalVariables.AllModsKnownDictionary);
-            /*: new OligoWithSetMods(psmToRematch.FullSequence, GlobalVariables.AllRNAModsKnownDictionary);*/
+            IBioPolymerWithSetMods bioPolymer = smToRematch.ToBioPolymerWithSetMods();
 
             List<Product> terminalProducts = new List<Product>();
             Omics.Fragmentation.Peptide.DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom] = _productsToUse.ToList(); 
@@ -224,11 +223,11 @@ namespace GuiFunctions
             if (Math.Abs(commonParams.ProductMassTolerance.Value - ProductIonMassTolerance) > 0.00001)
                 commonParams.ProductMassTolerance = new PpmTolerance(ProductIonMassTolerance);
 
-            var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, psmToRematch.PrecursorMz,
-                psmToRematch.PrecursorCharge, psmToRematch.FileNameWithoutExtension, commonParams);
+            var specificMass = new Ms2ScanWithSpecificMass(ms2Scan, smToRematch.PrecursorMz,
+                smToRematch.PrecursorCharge, smToRematch.FileNameWithoutExtension, commonParams);
 
             return MetaMorpheusEngine.MatchFragmentIons(specificMass, allProducts, commonParams, false)
-                .Union(psmToRematch.MatchedIons.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType)))
+                .Union(smToRematch.MatchedIons.Where(p => _productsToUse.Contains(p.NeutralTheoreticalProduct.ProductType)))
                 .ToList();
         }
     }
