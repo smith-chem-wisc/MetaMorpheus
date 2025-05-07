@@ -62,7 +62,9 @@ namespace GuiFunctions
         public void AnnotateBaseSequence(string baseSequence, string fullSequence, int yLoc, List<MatchedFragmentIon> matchedFragmentIons, SpectrumMatchFromTsv match, 
             bool stationary = false, int annotationRow = 0, int chunkPositionInRow = 0)
         {
-            if (!Annotation && match is PsmFromTsv psm && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence)))
+            // Clear the canvas if we are plotting the NOT Sequence Coverage Map or if we are NOT plotting a Cross-Linked Peptide
+            // This is so that we can add the XL sequence to the same canvas by one call with the alpha sequence and one call with the beta sequence. 
+            if (!Annotation && (match is PsmFromTsv psm && (psm.BetaPeptideBaseSequence == null || !psm.BetaPeptideBaseSequence.Equals(baseSequence))))
             {
                 ClearCanvas(SequenceDrawingCanvas);
             }
@@ -245,13 +247,13 @@ namespace GuiFunctions
         /// </summary>
         /// <param name="lettersOnScreen"></param>
         /// <param name="firstLetterOnScreen"></param>
-        /// <param name="psm"></param>
+        /// <param name="sm"></param>
         /// <param name="canvas"></param>
-        public static void DrawStationarySequence(SpectrumMatchFromTsv psm, DrawnSequence stationarySequence, int yLoc)
+        public static void DrawStationarySequence(SpectrumMatchFromTsv sm, DrawnSequence stationarySequence, int yLoc)
         {
             ClearCanvas(stationarySequence.SequenceDrawingCanvas);
-            IBioPolymerWithSetMods peptide = psm.ToBioPolymerWithSetMods();
-            string baseSequence = psm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
+            IBioPolymerWithSetMods peptide = sm.ToBioPolymerWithSetMods();
+            string baseSequence = sm.BaseSeq.Substring(MetaDrawSettings.FirstAAonScreenIndex, MetaDrawSettings.NumberOfAAOnScreen);
             string fullSequence = baseSequence;
 
             // Trim full sequences selectively based upon what is show in scrollable sequence
@@ -263,49 +265,49 @@ namespace GuiFunctions
                 fullSequence = fullSequence.Insert(mod.Key - 1 - MetaDrawSettings.FirstAAonScreenIndex, "[" + mod.Value.ModificationType + ":" + mod.Value.IdWithMotif + "]");
             }
 
-            List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
+            List<MatchedFragmentIon> matchedIons = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > MetaDrawSettings.FirstAAonScreenIndex &&
                                                    p.NeutralTheoreticalProduct.ResiduePosition < (MetaDrawSettings.FirstAAonScreenIndex + MetaDrawSettings.NumberOfAAOnScreen)).ToList();
-            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, psm, true);
+            stationarySequence.AnnotateBaseSequence(baseSequence, fullSequence, yLoc, matchedIons, sm, true);
         }
 
         /// <summary>
         /// Draws the annotated sequence located below sequence coverage view taking into account the mutable display settings
         /// </summary>
-        /// <param name="psm"></param>
+        /// <param name="sm"></param>
         /// <param name="sequence"></param>
-        public static void DrawSequenceAnnotation(SpectrumMatchFromTsv psm, DrawnSequence sequence)
+        public static void DrawSequenceAnnotation(SpectrumMatchFromTsv sm, DrawnSequence sequence)
         {
             ClearCanvas(sequence.SequenceDrawingCanvas); 
             int segmentsPerRow = MetaDrawSettings.SequenceAnnotationSegmentPerRow;
             int residuesPerSegment = MetaDrawSettings.SequenceAnnotaitonResiduesPerSegment;
-            var bioPolymerWithSetMods = psm.ToBioPolymerWithSetMods();
+            var bioPolymerWithSetMods = sm.ToBioPolymerWithSetMods();
             var modDictionary = bioPolymerWithSetMods.AllModsOneIsNterminus.OrderByDescending(p => p.Key);
-            int numberOfRows = (int)Math.Ceiling(((double)psm.BaseSeq.Length / residuesPerSegment) / segmentsPerRow);
-            int remaining = psm.BaseSeq.Length;
+            int numberOfRows = (int)Math.Ceiling(((double)sm.BaseSeq.Length / residuesPerSegment) / segmentsPerRow);
+            int remaining = sm.BaseSeq.Length;
 
             sequence.SequenceDrawingCanvas.Height = 42 * numberOfRows + 10;
             // create an individual match for each chunk to be drawn
             List<SpectrumMatchFromTsv> segments = new();
             List<List<MatchedFragmentIon>> matchedIonSegments = new();
-            for (int i = 0; i < psm.BaseSeq.Length; i += residuesPerSegment)
+            for (int i = 0; i < sm.BaseSeq.Length; i += residuesPerSegment)
             {
                 // split base seq
                 string baseSequence;
                 List<MatchedFragmentIon> ions = new();
-                if (i + residuesPerSegment < psm.BaseSeq.Length)
+                if (i + residuesPerSegment < sm.BaseSeq.Length)
                 {
-                    baseSequence = psm.BaseSeq.Substring(i, residuesPerSegment);
-                    ions = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > i && p.NeutralTheoreticalProduct.ResiduePosition < (i + residuesPerSegment)).ToList();
-                    ions.AddRange(psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == i && p.NeutralTheoreticalProduct.Annotation.Contains('y')));
-                    ions.AddRange(psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == (i + residuesPerSegment) && p.NeutralTheoreticalProduct.Annotation.Contains('b')));
+                    baseSequence = sm.BaseSeq.Substring(i, residuesPerSegment);
+                    ions = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > i && p.NeutralTheoreticalProduct.ResiduePosition < (i + residuesPerSegment)).ToList();
+                    ions.AddRange(sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == i && p.NeutralTheoreticalProduct.Annotation.Contains('y')));
+                    ions.AddRange(sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == (i + residuesPerSegment) && p.NeutralTheoreticalProduct.Annotation.Contains('b')));
                     remaining -= residuesPerSegment;
                 }
                 else
                 {
-                    baseSequence = psm.BaseSeq.Substring(i, remaining);
-                    ions = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > i && p.NeutralTheoreticalProduct.ResiduePosition < (i + remaining)).ToList();
-                    ions.AddRange(psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == i && p.NeutralTheoreticalProduct.Annotation.Contains('y')));
-                    ions.AddRange(psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == (i + residuesPerSegment) && p.NeutralTheoreticalProduct.Annotation.Contains('b')));
+                    baseSequence = sm.BaseSeq.Substring(i, remaining);
+                    ions = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > i && p.NeutralTheoreticalProduct.ResiduePosition < (i + remaining)).ToList();
+                    ions.AddRange(sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == i && p.NeutralTheoreticalProduct.Annotation.Contains('y')));
+                    ions.AddRange(sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition == (i + residuesPerSegment) && p.NeutralTheoreticalProduct.Annotation.Contains('b')));
                     remaining -= remaining;
                 }
 
@@ -326,8 +328,8 @@ namespace GuiFunctions
                     
                 }
                 
-                SpectrumMatchFromTsv tempPsm = psm.ReplaceFullSequence(fullSequence, baseSequence);
-                segments.Add(tempPsm);
+                SpectrumMatchFromTsv tempSm = sm.ReplaceFullSequence(fullSequence, baseSequence);
+                segments.Add(tempSm);
                 matchedIonSegments.Add(ions);
             }
 
@@ -336,7 +338,7 @@ namespace GuiFunctions
             {
                 int startPosition = i * residuesPerSegment;
                 int endPosition = (i + 1) * residuesPerSegment;
-                List<MatchedFragmentIon> matchedIons = psm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > startPosition &&
+                List<MatchedFragmentIon> matchedIons = sm.MatchedIons.Where(p => p.NeutralTheoreticalProduct.ResiduePosition > startPosition &&
                                                        p.NeutralTheoreticalProduct.ResiduePosition < endPosition).ToList();
                 int currentRowZeroIndexed = i / segmentsPerRow;
                 int yLoc = 10 + (currentRowZeroIndexed * 42);
@@ -348,6 +350,7 @@ namespace GuiFunctions
 
         public void DrawCrossLinkSequence()
         {
+            // Crosslink is only for PSM
             var spectrumMatch = (PsmFromTsv)this.SpectrumMatch;
             if (spectrumMatch is null)
                 return;
