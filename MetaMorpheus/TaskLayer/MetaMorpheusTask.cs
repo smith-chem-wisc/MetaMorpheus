@@ -1237,7 +1237,7 @@ namespace TaskLayer
                     List<TBioPolymer> proteinsToRemove = new();
                     if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
                     {
-                        int proteinNumber = 1;
+                        int bioPolymerNumber = 1;
                         Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Protein " + accessionGroup.Key + " was renamed.");
                         foreach (var originalBioPolymer in proteinsWithThisAccession)
                         {
@@ -1245,7 +1245,7 @@ namespace TaskLayer
                             //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
                             if (originalBioPolymer is Protein p)
                             {
-                                var renamedProtein = new Protein(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + proteinNumber.ToString(), originalBioPolymer.Organism,
+                                var renamedProtein = new Protein(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber.ToString(), originalBioPolymer.Organism,
                                     originalBioPolymer.GeneNames, originalBioPolymer.OneBasedPossibleLocalizedModifications, p.TruncationProducts, originalBioPolymer.Name, originalBioPolymer.FullName,
                                     originalBioPolymer.IsDecoy, originalBioPolymer.IsContaminant, p.DatabaseReferences, p.SequenceVariations, p.AppliedSequenceVariations,
                                     p.SampleNameForVariants, p.DisulfideBonds, p.SpliceSites, originalBioPolymer.DatabaseFilePath);
@@ -1254,13 +1254,14 @@ namespace TaskLayer
                             }
                             else if (originalBioPolymer is RNA r)
                             {
-                                var rename = new RNA(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + proteinNumber.ToString(),
+                                var rename = new RNA(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber.ToString(),
                                     r.OneBasedPossibleLocalizedModifications, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.Name, r.Organism,
                                     r.DatabaseFilePath, r.IsContaminant, r.IsDecoy, r.GeneNames, r.AdditionalDatabaseFields, r.TruncationProducts,
                                     r.SequenceVariations, r.AppliedSequenceVariations, r.SampleNameForVariants, r.FullName);
                                 proteins.Add((TBioPolymer)(IBioPolymer)rename);
                                 proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
                             }
+                            bioPolymerNumber++;
                         }
                     }
                     else //if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant || tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
