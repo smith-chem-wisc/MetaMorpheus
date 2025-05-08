@@ -15,6 +15,7 @@ using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
+using Readers;
 
 namespace Test
 {
@@ -103,12 +104,14 @@ namespace Test
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            string psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
+            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"));
+            string headerLine = lines[0];
+            string psmLine = lines[1];
 
-            var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+            var headerSplits = headerLine.Split('\t');
             string[] splitLine = psmLine.Split('\t');
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)], Is.EqualTo("N|Y")); //column "Contaminant"
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)], Is.EqualTo("T|C")); //column "Decoy/Contaminant/Target"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)], Is.EqualTo("N|Y")); //column "Contaminant"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)], Is.EqualTo("T|C")); //column "Decoy/Contaminant/Target"
 
 
             //KEEP ONLY TARGET
