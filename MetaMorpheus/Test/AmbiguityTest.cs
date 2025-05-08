@@ -86,6 +86,8 @@ namespace Test
             string mzmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PEPTIDE.mzML");
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(msFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestContaminantAmbiguityOutput");
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
 
             //run a full modern search using two databases (the same database) but one is called a target and the other is called a contaminant
             //KEEP BOTH TARGET AND CONTAMINANT
@@ -116,13 +118,13 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
+            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task2", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
+            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
             Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)], Is.EqualTo("N")); //column "Contaminant"
             Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)], Is.EqualTo("T")); //column "Decoy/Contaminant/Target"
@@ -135,13 +137,13 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
+            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task3", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
+            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task3", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
             Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)], Is.EqualTo("Y")); //column "Contaminant"
             Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)], Is.EqualTo("C")); //column "Decoy/Contaminant/Target"
