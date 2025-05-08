@@ -190,18 +190,18 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.EssentialSequence] = pepWithModsIsNull ? " " : sm.EssentialSequence != null ? sm.EssentialSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.EssentialSequence(ModsToWritePruned))).ResolvedString;
             string geneString = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => string.Join(", ", b.Parent.GeneNames.Select(d => $"{d.Item1}:{d.Item2}"))), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.AmbiguityLevel] = ProteoformLevelClassifier.ClassifyPrSM(s[SpectrumMatchFromTsvHeader.FullSequence], geneString);
-            s[SpectrumMatchFromTsvHeader.PsmCount] = pepWithModsIsNull ? " " : sm.PsmCount.ToString();
+            s[SpectrumMatchFromTsvHeader.SpectrumMatchCount] = pepWithModsIsNull ? " " : sm.PsmCount.ToString();
             s[SpectrumMatchFromTsvHeader.Mods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.ModsChemicalFormulas] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(p => p.AllModsOneIsNterminus.Select(v => v.Value))).ResolvedString;
             s[SpectrumMatchFromTsvHeader.ModsCombinedChemicalFormula] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.AllModsOneIsNterminus.Select(c => c.Value as Modification))).ResolvedString;
             s[SpectrumMatchFromTsvHeader.NumVariableMods] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NumVariableMods)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MissedCleavages] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MissedCleavages.ToString(CultureInfo.InvariantCulture))).ResolvedString;
-            s[SpectrumMatchFromTsvHeader.PeptideMonoMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.MonoisotopicMass] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.MonoisotopicMass)).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffDa] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorDa).ResolvedString;
             s[SpectrumMatchFromTsvHeader.MassDiffPpm] = pepWithModsIsNull ? " " : Resolve(sm.PrecursorMassErrorPpm).ResolvedString;
-            s[SpectrumMatchFromTsvHeader.ProteinAccession] = pepWithModsIsNull ? " " : sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString;
-            s[SpectrumMatchFromTsvHeader.ProteinName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.Accession] = pepWithModsIsNull ? " " : sm.Accession != null ? sm.Accession : Resolve(pepsWithMods.Select(b => b.Parent.Accession), sm.FullSequence).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.Name] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.FullName), sm.FullSequence).ResolvedString;
             s[SpectrumMatchFromTsvHeader.GeneName] = geneString;
             s[SpectrumMatchFromTsvHeader.OrganismName] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.Organism)).ResolvedString;
 
@@ -222,10 +222,10 @@ namespace EngineLayer
             s[SpectrumMatchFromTsvHeader.Contaminant] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsContaminant ? "Y" : "N")).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Decoy] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Parent.IsDecoy ? "Y" : "N")).ResolvedString;
             s[SpectrumMatchFromTsvHeader.Description] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.Description)).ResolvedString;
-            s[SpectrumMatchFromTsvHeader.StartAndEndResiduesInProtein] = pepWithModsIsNull ? " " :
+            s[SpectrumMatchFromTsvHeader.StartAndEndResiduesInFullSequence] = pepWithModsIsNull ? " " :
                 Resolve(pepsWithMods.Select(b => $"[{b.OneBasedStartResidue.ToString(CultureInfo.InvariantCulture)} to {b.OneBasedEndResidue.ToString(CultureInfo.InvariantCulture)}]"), sm.FullSequence).ResolvedString;
-            s[SpectrumMatchFromTsvHeader.PreviousAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousResidue.ToString())).ResolvedString;
-            s[SpectrumMatchFromTsvHeader.NextAminoAcid] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextResidue.ToString())).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.PreviousResidue] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.PreviousResidue.ToString())).ResolvedString;
+            s[SpectrumMatchFromTsvHeader.NextResidue] = pepWithModsIsNull ? " " : Resolve(pepsWithMods.Select(b => b.NextResidue.ToString())).ResolvedString;
 
             string theoreticalsSearched = " ";
             s[SpectrumMatchFromTsvHeader.TheoreticalsSearched] = theoreticalsSearched;

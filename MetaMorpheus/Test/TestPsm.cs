@@ -414,7 +414,7 @@ namespace Test
 
             List<string> peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv")).ToList();
             var header = peptides[0].Split(new char[] { '\t' }).ToArray();
-            int indexOfPsmCountInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.PsmCount);
+            int indexOfPsmCountInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.SpectrumMatchCount);
             int indexOfQValueInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.QValue);
             Assert.That(indexOfPsmCountInTsv >= 0);
             Assert.That(indexOfQValueInTsv >= 0);
