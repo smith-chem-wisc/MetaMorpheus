@@ -90,6 +90,10 @@ namespace Test
             if (Directory.Exists(outputFolder))
                 Directory.Delete(outputFolder, true);
 
+            Console.WriteLine(File.ReadAllText(xmlName));
+            Console.WriteLine(File.Exists(mzmlName) ? "mzML file exists" : "mzML file missing");
+
+
             //run a full modern search using two databases (the same database) but one is called a target and the other is called a contaminant
             //KEEP BOTH TARGET AND CONTAMINANT
             SearchParameters modernSearchParams = new SearchParameters();
@@ -98,6 +102,7 @@ namespace Test
             SearchTask modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
+            Console.WriteLine($"Round One: {modernSearchParams.TCAmbiguity}");
             EverythingRunnerEngine engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
@@ -121,6 +126,7 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
+            Console.WriteLine($"Round Two: {modernSearchParams.TCAmbiguity}");
             engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task2", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
@@ -140,6 +146,7 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
+            Console.WriteLine($"Round Three: {modernSearchParams.TCAmbiguity}");
             engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task3", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
