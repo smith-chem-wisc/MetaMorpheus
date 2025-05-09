@@ -962,7 +962,7 @@ namespace TaskLayer
             // get digestion info from file
             var storedDigestParams = GetDigestionParamsFromFile(Path.Combine(Path.GetDirectoryName(peptideIndexFileName), "DigestionParameters.toml"));
 
-            // get non-serialized information for the peptides (proteins, mod info)
+            // get non-serialized information for the peptides (bioPolymers, mod info)
             foreach (var peptide in peptideIndex)
             {
                 peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary, storedDigestParams);
@@ -1218,90 +1218,93 @@ namespace TaskLayer
         }
 
         /// <summary>
-        /// Handle ambiguity when two theoretical proteins in the
+        /// Handle ambiguity when two theoretical bioPolymers in the
         /// search space have the same accession number.
         /// The accession must be unique for indexed searches
         ///
         /// RemoveAll is important because it references the location in memory, not the Equals
         /// </summary>
-        /// <param name="proteins"></param>
+        /// <param name="bioPolymers"></param>
         /// <param name="tcAmbiguity"></param>
-        protected static void SanitizeProteinDatabase<TBioPolymer>(List<TBioPolymer> proteins, TargetContaminantAmbiguity tcAmbiguity)
+        protected static void SanitizeBioPolymerDatabase<TBioPolymer>(List<TBioPolymer> bioPolymers, TargetContaminantAmbiguity tcAmbiguity)
             where TBioPolymer : IBioPolymer
         {
-            foreach (var accessionGroup in proteins.GroupBy(p => p.Accession))
+            List<TBioPolymer> toRemove = new();
+            foreach (var accessionGroup in bioPolymers.GroupBy(p => p.Accession)
+                         .Where(group => group.Count() > 1) // only keep the ones with multiple entries sharing an accession
+                         .Select(group => group.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count) // order by mods then truncation products (this is what was here before)
+                             .ThenBy(p => p.TruncationProducts.Count)
+                             .ToList()) // Individual Accession group to list from IEnumerable
+                         .ToList()) // Collapse entire group and sort enumerable to a list so we can modify the bioPolymers collection. 
             {
-                if (accessionGroup.Count() != 1) //if multiple proteins with the same accession
+                toRemove.Clear();
+                string accession = accessionGroup.First().Accession;
+                
+                if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
                 {
-                    List<TBioPolymer> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => p.TruncationProducts.Count()).ToList();
-                    List<TBioPolymer> proteinsToRemove = new();
-                    if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
+                    int bioPolymerNumber = 1;
+                    Warn("The protein '" + accession + "' has multiple entries. Protein accessions must be unique. Protein " + accession + " was renamed.");
+                    foreach (var originalBioPolymer in accessionGroup)
                     {
-                        int bioPolymerNumber = 1;
-                        Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Protein " + accessionGroup.Key + " was renamed.");
-                        foreach (var originalBioPolymer in proteinsWithThisAccession)
+                        //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
+                        //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
+                        IBioPolymer renamed;
+                        if (originalBioPolymer is RNA r)
                         {
-                            //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
-                            //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
-                            if (originalBioPolymer is Protein p)
-                            {
-                                var renamedProtein = new Protein(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber.ToString(), originalBioPolymer.Organism,
-                                    originalBioPolymer.GeneNames, originalBioPolymer.OneBasedPossibleLocalizedModifications, p.TruncationProducts, originalBioPolymer.Name, originalBioPolymer.FullName,
-                                    originalBioPolymer.IsDecoy, originalBioPolymer.IsContaminant, p.DatabaseReferences, p.SequenceVariations, p.AppliedSequenceVariations,
-                                    p.SampleNameForVariants, p.DisulfideBonds, p.SpliceSites, originalBioPolymer.DatabaseFilePath);
-                                proteins.Add((TBioPolymer)(IBioPolymer)renamedProtein);
-                                proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
-                            }
-                            else if (originalBioPolymer is RNA r)
-                            {
-                                var rename = new RNA(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber.ToString(),
-                                    r.OneBasedPossibleLocalizedModifications, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.Name, r.Organism,
-                                    r.DatabaseFilePath, r.IsContaminant, r.IsDecoy, r.GeneNames, r.AdditionalDatabaseFields, r.TruncationProducts,
-                                    r.SequenceVariations, r.AppliedSequenceVariations, r.SampleNameForVariants, r.FullName);
-                                proteins.Add((TBioPolymer)(IBioPolymer)rename);
-                                proteins.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
-                            }
-                            bioPolymerNumber++;
+                            renamed = new RNA(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber,
+                                r.OneBasedPossibleLocalizedModifications, r.FivePrimeTerminus, r.ThreePrimeTerminus, r.Name, r.Organism,
+                                r.DatabaseFilePath, r.IsContaminant, r.IsDecoy, r.GeneNames, r.AdditionalDatabaseFields, r.TruncationProducts,
+                                r.SequenceVariations, r.AppliedSequenceVariations, r.SampleNameForVariants, r.FullName);
                         }
-                    }
-                    else //if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant || tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
-                    {
-                        if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant)
+                        else
                         {
-                            // remove contaminants
-                            proteinsToRemove = proteinsWithThisAccession.Where(p => p.IsContaminant).ToList();
-                            if (proteinsToRemove.Any())
-                            {
-                                Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Contaminant protein " + accessionGroup.Key + " was ignored.");
-                            }
-                        }
-                        else //if (tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
-                        {
-                            // remove targets
-                            proteinsToRemove = proteinsWithThisAccession.Where(p => !p.IsDecoy && !p.IsContaminant).ToList();
-                            if (proteinsToRemove.Any())
-                            {
-                                Warn("The protein '" + accessionGroup.Key + "' has multiple entries. Protein accessions must be unique. Target protein " + accessionGroup.Key + " was ignored.");
-                            }
+                            Protein p = originalBioPolymer as Protein ?? throw new ArgumentException($"Database sanitization assumed BioPolymer was a protein when it was {originalBioPolymer.GetType()}");
+                            renamed = new Protein(originalBioPolymer.BaseSequence, originalBioPolymer.Accession + "_D" + bioPolymerNumber, originalBioPolymer.Organism,
+                                originalBioPolymer.GeneNames, originalBioPolymer.OneBasedPossibleLocalizedModifications, p.TruncationProducts, originalBioPolymer.Name, originalBioPolymer.FullName,
+                                originalBioPolymer.IsDecoy, originalBioPolymer.IsContaminant, p.DatabaseReferences, p.SequenceVariations, p.AppliedSequenceVariations,
+                                p.SampleNameForVariants, p.DisulfideBonds, p.SpliceSites, originalBioPolymer.DatabaseFilePath);
                         }
 
-                        //remove the proteins specified above
-                        foreach (var protein in proteinsToRemove)
-                        {
-                            if (proteinsWithThisAccession.Count > 1)
-                            {
-                                proteins.RemoveAll(p => ReferenceEquals(p, protein));
-                                proteinsWithThisAccession.RemoveAll(p => ReferenceEquals(p, protein));
-                            }
-                        }
-
-                        // most ambiguity should be handled by now, but for edge cases and decoys:
-                        // remove proteins so that only 1 protein with this accession remains
-                        for (int i = 0; i < proteinsWithThisAccession.Count - 1; i++) //-1 to keep the last one (most mods)
-                        {
-                            proteins.RemoveAll(p => ReferenceEquals(p, proteinsWithThisAccession[i]));
-                        }
+                        bioPolymers.Add((TBioPolymer)renamed);
+                        bioPolymers.RemoveAll(m => ReferenceEquals(m, originalBioPolymer));
+                        bioPolymerNumber++;
                     }
+
+                    continue;
+                }
+
+                // if we are not renaming, we need to remove the duplicates
+                if (tcAmbiguity == TargetContaminantAmbiguity.RemoveContaminant)
+                {
+                    // remove contaminants
+                    toRemove.AddRange(accessionGroup.Where(p => p.IsContaminant));
+                    if (toRemove.Any())
+                    {
+                        Warn("The protein '" + accession + "' has multiple entries. Protein accessions must be unique. Contaminant protein " + accession + " was ignored.");
+                    }
+                }
+                else if (tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
+                {
+                    // remove targets
+                    toRemove.AddRange(accessionGroup.Where(p => !p.IsDecoy && !p.IsContaminant));
+                    if (toRemove.Any())
+                    {
+                        Warn("The protein '" + accession + "' has multiple entries. Protein accessions must be unique. Target protein " + accession + " was ignored.");
+                    }
+                }
+
+                //remove the bioPolymers specified above
+                foreach (var protein in toRemove.Where(_ => accessionGroup.Count > 1))
+                {
+                    bioPolymers.RemoveAll(p => ReferenceEquals(p, protein));
+                    accessionGroup.RemoveAll(p => ReferenceEquals(p, protein));
+                }
+
+                // most ambiguity should be handled by now, but for edge cases and decoys:
+                // remove bioPolymers so that only 1 protein with this accession remains
+                for (int i = 0; i < accessionGroup.Count - 1; i++) //-1 to keep the last one (most mods)
+                {
+                    bioPolymers.RemoveAll(p => ReferenceEquals(p, accessionGroup[i]));
                 }
             }
         }

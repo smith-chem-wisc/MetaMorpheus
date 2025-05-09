@@ -168,20 +168,20 @@ namespace Test
                 Modification mod = new Modification(_originalId: "acetylation", _modificationType: "testModType", _target: motif, _chemicalFormula: ChemicalFormula.ParseFormula("C2H2O1"), _locationRestriction: "Anywhere.");
                 Protein xmlProtein = new Protein("APEPTIDE", "Test", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { mod } } });
                 List<Protein> proteins = new List<Protein> { fastaProtein, xmlProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
                 Assert.That(proteins.First().OneBasedPossibleLocalizedModifications.Count != 0);
 
                 //reverse order and try again
                 proteins = new List<Protein> { xmlProtein, fastaProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
                 Assert.That(proteins.First().OneBasedPossibleLocalizedModifications.Count != 0);
 
                 //same with no mods
                 xmlProtein = new Protein("APEPTIDE", "Test", proteolysisProducts: new List<TruncationProduct> { new TruncationProduct(1, 3, "zrWuzHere") });
                 proteins = new List<Protein> { xmlProtein, fastaProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
                 Assert.That(proteins.First().TruncationProducts.Count() != 0);
             }
@@ -196,14 +196,14 @@ namespace Test
                 Protein tDecoyProtein = new Protein("AEDITPEP", "DECOY_Test", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { mod } } });
                 Protein cDecoyProtein = new Protein("AEDITPEP", "DECOY_Test");
                 List<Protein> proteins = new List<Protein> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
                 Assert.That(proteins.Count == 2);
                 Assert.That(!proteins[0].IsContaminant); //forward is target
                 Assert.That(proteins[0].OneBasedPossibleLocalizedModifications.Count == 1);
                 Assert.That(proteins[1].OneBasedPossibleLocalizedModifications.Count == 1);
 
                 proteins = new List<Protein> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 2);
                 Assert.That(proteins[0].IsContaminant); //forward is contaminant
                 Assert.That(proteins[0].OneBasedPossibleLocalizedModifications.Count == 0); //contaminant doesn't have mods                
