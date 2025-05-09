@@ -9,7 +9,6 @@ using System.Linq;
 using System.Text;
 using Omics;
 using Omics.Modifications;
-using System;
 
 
 namespace EngineLayer
@@ -185,14 +184,6 @@ namespace EngineLayer
             bool pepWithModsIsNull = sm == null || sm.BestMatchingBioPolymersWithSetMods == null || !sm.BestMatchingBioPolymersWithSetMods.Any();
 
             List<IBioPolymerWithSetMods> pepsWithMods = pepWithModsIsNull ? null : sm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).ToList();
-
-            if (pepsWithMods != null)
-            {
-                foreach (var pep in pepsWithMods)
-                {
-                    Console.WriteLine($"Protein: {pep.Parent.Accession}, IsContaminant: {pep.Parent.IsContaminant}");
-                }
-            }
 
             s[PsmTsvHeader.BaseSequence] = pepWithModsIsNull ? " " : (sm.BaseSequence ?? Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.BaseSequence)).ResolvedString);
             s[PsmTsvHeader.FullSequence] = pepWithModsIsNull ? " " : (sm.FullSequence != null ? sm.FullSequence : Resolve(pepWithModsIsNull ? null : pepsWithMods.Select(b => b.FullSequence)).ResolvedString);

@@ -92,10 +92,6 @@ namespace Test
             if (Directory.Exists(outputFolder))
                 Directory.Delete(outputFolder, true);
 
-            Console.WriteLine(File.ReadAllText(xmlName));
-            Console.WriteLine(File.Exists(mzmlName) ? "mzML file exists" : "mzML file missing");
-
-
             //run a full modern search using two databases (the same database) but one is called a target and the other is called a contaminant
             //KEEP BOTH TARGET AND CONTAMINANT
             SearchParameters modernSearchParams = new SearchParameters();
@@ -104,36 +100,21 @@ namespace Test
             SearchTask modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            Console.WriteLine($"Round One: {modernSearchParams.TCAmbiguity}");
             EverythingRunnerEngine engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, 
                 new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
-            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"));
-            Console.WriteLine(lines.Length - 1 + "Psms");
-            string headerLine = lines[0];
-            var headerSplits = headerLine.Split('\t');
-            string psmLine = lines[1];
-            string[] splitLine = psmLine.Split('\t');
-            Console.WriteLine(psmLine);
-            Console.WriteLine("Contam:" + splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)]);
-            Console.WriteLine("Decoy:" + splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)]);
-
             //run the modern search again now that it's reading the index instead of writing it.
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            lines = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"));
-            Console.WriteLine(lines.Length - 1 + "Psms");
-            headerLine = lines[0];
-            headerSplits = headerLine.Split('\t');
-            psmLine = lines[1];
-            Console.WriteLine(psmLine);
-            Console.WriteLine("Contam:" + splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)]);
-            Console.WriteLine("Decoy:" + splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)]);
+            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"));
+            string headerLine = lines[0];
+            string psmLine = lines[1];
+            var headerSplits = headerLine.Split('\t');
+            string[] splitLine = psmLine.Split('\t');
 
             Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)], Is.EqualTo("N|Y")); //column "Contaminant"
             Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)], Is.EqualTo("T|C")); //column "Decoy/Contaminant/Target"
-
 
             //KEEP ONLY TARGET
             modernSearchParams = new SearchParameters();
@@ -142,7 +123,6 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            Console.WriteLine($"Round Two: {modernSearchParams.TCAmbiguity}");
             engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task2", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
@@ -162,7 +142,6 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            Console.WriteLine($"Round Three: {modernSearchParams.TCAmbiguity}");
             engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task3", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
