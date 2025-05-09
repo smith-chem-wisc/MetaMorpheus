@@ -4,6 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using EngineLayer;
 using NUnit.Framework;
 using Omics;
@@ -13,6 +14,7 @@ using Omics.Modifications;
 using TaskLayer;
 using Transcriptomics;
 using UsefulProteomicsDatabases;
+using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace Test.Transcriptomics;
 
@@ -73,12 +75,7 @@ public class RnaDatabaseLoadingTests
         var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false), new DbForTask(dbPath, true) };
 
         // Use reflection to access the protected LoadBioPolymers method
-        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-        if (loadBioPolymersMethod == null)
-        {
-            Assert.Fail("Failed to find the LoadBioPolymers method via reflection.");
-        }
-
+        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", BindingFlags.NonPublic | BindingFlags.Instance);
         var bioPolymers = (List<IBioPolymer>)loadBioPolymersMethod.Invoke(task, new object[]
         {
             "TestTaskId",
@@ -91,7 +88,7 @@ public class RnaDatabaseLoadingTests
 
         // Use reflection to access protected SanitizeBiopolymers method
         var sanitizeBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("SanitizeBioPolymerDatabase",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+            BindingFlags.NonPublic | BindingFlags.Static);
         var genericMethod = sanitizeBioPolymersMethod.MakeGenericMethod(typeof(IBioPolymer));
         genericMethod.Invoke(null, new object[] { bioPolymers, type });
 
@@ -131,6 +128,45 @@ public class RnaDatabaseLoadingTests
         Assert.That(exception.InnerException, Is.Not.Null);
         Assert.That(exception.InnerException, Is.TypeOf<ArgumentException>());
         Assert.That(exception.InnerException.Message, Does.Contain("Database sanitization assumed BioPolymer was a protein when it was Test.Transcriptomics.TestBioPolymer"));
+    }
+
+    [Test]
+    public void TwoTruncationsAndSequenceVariant_DbLoading()
+    {
+        GlobalVariables.AnalyteType = AnalyteType.Oligo;
+        var task = new SearchTask();
+        var commonParameters = new CommonParameters();
+        string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "TruncationAndVariantMods.xml");
+        var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
+
+        // Use reflection to access the protected LoadBioPolymers method
+        var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", BindingFlags.NonPublic | BindingFlags.Instance);
+        var rna = (List<IBioPolymer>)loadBioPolymersMethod.Invoke(task, new object[]
+        {
+            "TestTaskId",
+            dbsForTask,
+            true, // searchTarget
+            DecoyType.None,
+            new List<string>(), // localizeableModificationTypes
+            commonParameters
+        });
+
+        Assert.That(rna.All(p => p.SequenceVariations.Count == 1));
+        Assert.That(rna.All(p => p.OriginalNonVariantModifications.Count == 2));
+
+        List<IBioPolymer> targets = rna.Where(p => p.IsDecoy == false).ToList();
+        IBioPolymer variantTarget = targets.First(p => p.AppliedSequenceVariations.Count >= 1);
+        IBioPolymer nonVariantTarget = targets.First(p => p.AppliedSequenceVariations.Count == 0);
+
+        Assert.That(variantTarget.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(1));
+        Assert.That(nonVariantTarget.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
+
+        List<IBioPolymer> decoys = rna.Where(p => p.IsDecoy).ToList();
+        IBioPolymer variantDecoy = decoys.First(p => p.AppliedSequenceVariations.Count >= 1);
+        IBioPolymer nonVariantDecoy = decoys.First(p => p.AppliedSequenceVariations.Count == 0);
+
+        Assert.That(variantDecoy.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(1));
+        Assert.That(nonVariantDecoy.OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
     }
 }
 
