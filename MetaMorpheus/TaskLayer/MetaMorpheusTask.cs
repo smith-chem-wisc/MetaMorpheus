@@ -1234,7 +1234,7 @@ namespace TaskLayer
                          .Where(group => group.Count() > 1) // only keep the ones with multiple entries sharing an accession
                          .Select(group => group.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count) // order by mods then truncation products (this is what was here before)
                              .ThenBy(p => p.TruncationProducts.Count)
-                             .ToList()) // Individual Accession group to list from IEnumerable
+                             .ToList()) // Individual ordered accession group to list from IEnumerable
                          .ToList()) // Collapse entire group and sort enumerable to a list so we can modify the bioPolymers collection. 
             {
                 toRemove.Clear();
