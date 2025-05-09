@@ -1,9 +1,9 @@
 ﻿using EngineLayer;
 using FlashLFQ;
-using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using Omics.Modifications;
+using Omics;
 
 namespace TaskLayer
 {
@@ -12,7 +12,7 @@ namespace TaskLayer
         public MyTaskResults SearchTaskResults { get; set; }
         public string SearchTaskId { get; set; }
         public SearchParameters SearchParameters { get; set; }
-        public List<Protein> ProteinList { get; set; }
+        public List<IBioPolymer> ProteinList { get; set; }
         public List<Modification> VariableModifications { get; set; }
         public List<Modification> FixedModifications { get; set; }
         public Modification MultiplexModification { get; set; }

@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<mzLibProteinDb>
+  <entry>
+    <accession>20mer1</accession>
+    <name>20mer1</name>
+    <protein>
+      <recommendedName>
+        <fullName>20mer1</fullName>
+      </recommendedName>
+    </protein>
+    <gene />
+    <organism>
+      <name type="scientific">standard</name>
+    </organism>
+    <sequence length="20">GUACUGCCUCUAGUGAAGCA</sequence>
+  </entry>
+</mzLibProteinDb>
