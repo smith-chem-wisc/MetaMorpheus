@@ -472,10 +472,10 @@ namespace Test
                 var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => b.OriginalId.Equals("ok")).ToList()).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                PeptideWithSetModifications targetGood = targetDigested[0];
+                IBioPolymerWithSetMods targetGood = targetDigested[0];
 
-                PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
-                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod });
+                IBioPolymerWithSetMods targetWithUnknownMod = targetDigested[1];
+                MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { targetGood, targetWithUnknownMod });
 
                 Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }

@@ -5,6 +5,7 @@ using MzLibUtil;
 using Nett;
 using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
+using Omics.Digestion;
 using Omics.Fragmentation;
 
 namespace TaskLayer
@@ -23,8 +24,8 @@ namespace TaskLayer
                         PrecursorMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
-                    case nameof(Protease):
-                        Protease = keyValuePair.Value.Get<Protease>(); break;
+                    case nameof(DigestionAgent):
+                        DigestionAgent = keyValuePair.Value.Get<Protease>(); break;
                     case nameof(MinPeptideLength):
                         MinPeptideLength = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxPeptideLength):
@@ -56,7 +57,7 @@ namespace TaskLayer
 
         public Tolerance PrecursorMassTolerance { get; set; }
         public Tolerance ProductMassTolerance { get; set; }
-        public Protease Protease { get; set; }
+        public DigestionAgent DigestionAgent { get; set; }
         public int? MinPeptideLength { get; set; }
         public int? MaxPeptideLength { get; set; }
         public int? MaxMissedCleavages { get; set; }

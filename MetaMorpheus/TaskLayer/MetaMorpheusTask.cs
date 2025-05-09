@@ -462,7 +462,7 @@ namespace TaskLayer
             if (commonParams.DigestionParams is DigestionParams digestionParams)
             {
                 DigestionAgent
-                    protease = fileSpecificParams.Protease ??
+                    protease = fileSpecificParams.DigestionAgent ??
                                digestionParams.SpecificProtease; //set to specific for nonspecific searches to update
                 fileSpecificDigestionParams = new DigestionParams(
                     protease: protease.Name,

@@ -113,7 +113,7 @@ namespace Test
 
             FileSpecificParameters f = new(fileSpecificToml);
 
-            Assert.That(f.Protease.Name, Is.EqualTo("Asp-N"));
+            Assert.That(f.DigestionAgent.Name, Is.EqualTo("Asp-N"));
             Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(f.MaxMissedCleavages, Is.Null);
 
@@ -213,7 +213,7 @@ namespace Test
             Assert.That(fsp.MinPeptideLength, Is.EqualTo(0));
             Assert.That(fsp.PrecursorMassTolerance.Value, Is.EqualTo(5.0d));
             Assert.That(fsp.ProductMassTolerance.Value, Is.EqualTo(5.0d));
-            Assert.That(fsp.Protease.Name, Is.EqualTo("Asp-N"));
+            Assert.That(fsp.DigestionAgent.Name, Is.EqualTo("Asp-N"));
             Assert.That(fsp.SeparationType.ToString(), Is.EqualTo("HPLC"));
 
             filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams_bad.toml");

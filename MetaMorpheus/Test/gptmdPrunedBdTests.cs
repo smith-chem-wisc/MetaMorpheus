@@ -161,7 +161,7 @@ namespace Test
             var pepWithSetMods1 = digestedList[1];
 
             //Finally Write MZML file
-            Assert.AreEqual("PEP[ConnorModType:ConnorMod on P]TID", pepWithSetMods1.FullSequence);//this might be base sequence
+            Assert.That(pepWithSetMods1.FullSequence, Is.EqualTo("PEP[ConnorModType:ConnorMod on P]TID"));//this might be base sequence
             MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);

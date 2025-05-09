@@ -40,7 +40,7 @@ namespace Test
             List<Modification> variableModifications = new List<Modification> { new Modification(_originalId: "21", _target: motif, _locationRestriction: "Anywhere.", _monoisotopicMass: 21.981943) };
 
             List<IBioPolymerWithSetMods> allPeptidesWithSetModifications = parentProteinForMatch.Digest(commonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
-            Assert.AreEqual(4, allPeptidesWithSetModifications.Count());
+            Assert.That(allPeptidesWithSetModifications.Count(), Is.EqualTo(4));
             var ps = allPeptidesWithSetModifications.First();
 
             var pepWithSetModsForSpectrum = allPeptidesWithSetModifications[1];

@@ -179,25 +179,25 @@ namespace Test
 
             int idx = 0;
 
-            var pep1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep1 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep1.Single().FullSequence, Is.EqualTo("MNNNSK"));//this might be base
 
-            var pep1mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep1mod = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep1mod.Single().FullSequence, Is.EqualTo("MNNNS[HaHa:resMod on S]K"));//this might be base
 
-            var pep3 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep3 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep3.Single().FullSequence, Is.EqualTo("NNNSK"));//this might be base
 
-            var pep3mod = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep3mod = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep3mod.Single().FullSequence, Is.EqualTo("NNNS[HaHa:resMod on S]K"));//this might be base
 
-            var pep4 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep4.Single().FullSequence, Is.EqualTo("QQQI"));//this might be base
 
-            var pep4mod1 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4mod1 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep4mod1.Single().FullSequence, Is.EqualTo("QQQI[HaHa:iModOne on I]"));//this might be base
 
-            var pep4mod2 = new HashSet<PeptideWithSetModifications> { protDigest[idx++] };
+            var pep4mod2 = new HashSet<IBioPolymerWithSetMods> { protDigest[idx++] };
             Assert.That(pep4mod2.Single().FullSequence, Is.EqualTo("QQQI[HaHa:iModTwo on I]"));//this might be base
 
             var peptideList = new HashSet<IBioPolymerWithSetMods>();

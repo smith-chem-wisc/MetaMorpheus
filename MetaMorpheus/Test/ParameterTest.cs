@@ -30,7 +30,7 @@ namespace Test
             Assert.That(fsp.MinPeptideLength, Is.EqualTo(fspClone.MinPeptideLength));
             Assert.That(fsp.PrecursorMassTolerance, Is.EqualTo(fspClone.PrecursorMassTolerance));
             Assert.That(fsp.ProductMassTolerance, Is.EqualTo(fspClone.ProductMassTolerance));
-            Assert.That(fsp.Protease, Is.EqualTo(fspClone.Protease));
+            Assert.That(fsp.DigestionAgent, Is.EqualTo(fspClone.DigestionAgent));
             Assert.That(fsp.SeparationType, Is.EqualTo(fspClone.SeparationType));
             CollectionAssert.AreEqual(fsp.CustomIons, fspClone.CustomIons);
         }
@@ -130,7 +130,7 @@ namespace Test
             {
                 PrecursorMassTolerance = new PpmTolerance(10),
                 ProductMassTolerance = new PpmTolerance(30),
-                Protease = new Protease("Arg-C", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") }),
+                DigestionAgent = new Protease("Arg-C", CleavageSpecificity.Full, null, null, new List<DigestionMotif> { new DigestionMotif("K", null, 1, "") }),
                 MinPeptideLength = 1,
                 MaxPeptideLength = 50,
                 MaxMissedCleavages = 2,
@@ -143,11 +143,11 @@ namespace Test
             Assert.That(updatedParameters.DissociationType, Is.EqualTo(basicFileSpecificParameters.DissociationType));
             Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(basicFileSpecificParameters.ProductMassTolerance));
             Assert.That(updatedParameters.PrecursorMassTolerance, Is.EqualTo(basicFileSpecificParameters.PrecursorMassTolerance));
-            Assert.That(updatedParameters.DigestionParams.MaxModsForPeptide, Is.EqualTo(basicFileSpecificParameters.MaxModsForPeptide));
+            Assert.That(updatedParameters.DigestionParams.MaxMods, Is.EqualTo(basicFileSpecificParameters.MaxModsForPeptide));
             Assert.That(updatedParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(basicFileSpecificParameters.MaxMissedCleavages));
-            Assert.That(updatedParameters.DigestionParams.MinPeptideLength, Is.EqualTo(basicFileSpecificParameters.MinPeptideLength));
-            Assert.That(updatedParameters.DigestionParams.MaxPeptideLength, Is.EqualTo(basicFileSpecificParameters.MaxPeptideLength));
-            Assert.That(updatedParameters.DigestionParams.Protease, Is.EqualTo(basicFileSpecificParameters.Protease));
+            Assert.That(updatedParameters.DigestionParams.MinLength, Is.EqualTo(basicFileSpecificParameters.MinPeptideLength));
+            Assert.That(updatedParameters.DigestionParams.MaxLength, Is.EqualTo(basicFileSpecificParameters.MaxPeptideLength));
+            Assert.That(updatedParameters.DigestionParams.DigestionAgent, Is.EqualTo(basicFileSpecificParameters.DigestionAgent));
             Assert.That(updatedParameters.CustomIons, Is.EqualTo(basicFileSpecificParameters.CustomIons));
 
             Assert.That(updatedParameters.DoPrecursorDeconvolution, Is.EqualTo(notDefaultParameters.DoPrecursorDeconvolution));
@@ -164,7 +164,7 @@ namespace Test
             Assert.That(updatedParameters.TrimMsMsPeaks, Is.EqualTo(notDefaultParameters.TrimMsMsPeaks));
             Assert.That(updatedParameters.DeconvolutionMassTolerance, Is.EqualTo(notDefaultParameters.DeconvolutionMassTolerance));
             Assert.That(updatedParameters.MaxThreadsToUsePerFile, Is.EqualTo(notDefaultParameters.MaxThreadsToUsePerFile));
-            Assert.That(updatedParameters.DigestionParams.InitiatorMethionineBehavior, Is.EqualTo(notDefaultParameters.DigestionParams.InitiatorMethionineBehavior));
+            Assert.That(((DigestionParams)updatedParameters.DigestionParams).InitiatorMethionineBehavior, Is.EqualTo(((DigestionParams)notDefaultParameters.DigestionParams).InitiatorMethionineBehavior));
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
 

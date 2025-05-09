@@ -71,7 +71,7 @@ namespace Test
             var modPep3 = proteinList.First().Digest(CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList()[1];
             HashSet<IBioPolymerWithSetMods> value3 = new HashSet<IBioPolymerWithSetMods> { modPep3 };
             var compactPeptide3 = value3.First();
-            Assert.AreEqual("NNNK", value3.First().BaseSequence);
+            Assert.That(value3.First().BaseSequence, Is.EqualTo("NNNK"));
 
 
             Ms2ScanWithSpecificMass scanA = new Ms2ScanWithSpecificMass(new MsDataScan(new MzSpectrum(new double[] { 1 }, new double[] { 1 }, false), 2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null), 1, 1, null, new CommonParameters());
