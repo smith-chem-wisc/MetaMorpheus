@@ -14,6 +14,9 @@ using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
+using Readers;
+using Easy.Common.Extensions;
 
 namespace Test
 {
@@ -74,6 +77,7 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestContaminantAmbiguity()
         {
             //create an ms file and a database for the peptide
@@ -85,6 +89,8 @@ namespace Test
             string mzmlName = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\PEPTIDE.mzML");
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(msFile, mzmlName, false);
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestContaminantAmbiguityOutput");
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
 
             //run a full modern search using two databases (the same database) but one is called a target and the other is called a contaminant
             //KEEP BOTH TARGET AND CONTAMINANT
@@ -100,13 +106,14 @@ namespace Test
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            string psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
-
-            var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"));
+            string headerLine = lines[0];
+            string psmLine = lines[1];
+            var headerSplits = headerLine.Split('\t');
             string[] splitLine = psmLine.Split('\t');
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)].Equals("N|Y")); //column "Contaminant"
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)].Equals("T|C")); //column "Decoy/Contaminant/Target"
 
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)], Is.EqualTo("N|Y")); //column "Contaminant"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)], Is.EqualTo("T|C")); //column "Decoy/Contaminant/Target"
 
             //KEEP ONLY TARGET
             modernSearchParams = new SearchParameters();
@@ -115,16 +122,16 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
+            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task2", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
+            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)].Equals("N")); //column "Contaminant"
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)].Equals("T")); //column "Decoy/Contaminant/Target"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)], Is.EqualTo("N")); //column "Contaminant"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)], Is.EqualTo("T")); //column "Decoy/Contaminant/Target"
 
 
             //KEEP ONLY CONTAMINANT
@@ -134,16 +141,16 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
+            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task3", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
+            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task3", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)].Equals("Y")); //column "Contaminant"
-            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)].Equals("C")); //column "Decoy/Contaminant/Target"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.Contaminant)], Is.EqualTo("Y")); //column "Contaminant"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, PsmTsvHeader.DecoyContaminantTarget)], Is.EqualTo("C")); //column "Decoy/Contaminant/Target"
 
 
             Directory.Delete(outputFolder, true);
@@ -160,20 +167,20 @@ namespace Test
                 Modification mod = new Modification(_originalId: "acetylation", _modificationType: "testModType", _target: motif, _chemicalFormula: ChemicalFormula.ParseFormula("C2H2O1"), _locationRestriction: "Anywhere.");
                 Protein xmlProtein = new Protein("APEPTIDE", "Test", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { mod } } });
                 List<Protein> proteins = new List<Protein> { fastaProtein, xmlProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
                 Assert.That(proteins.First().OneBasedPossibleLocalizedModifications.Count != 0);
 
                 //reverse order and try again
                 proteins = new List<Protein> { xmlProtein, fastaProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
                 Assert.That(proteins.First().OneBasedPossibleLocalizedModifications.Count != 0);
 
                 //same with no mods
                 xmlProtein = new Protein("APEPTIDE", "Test", proteolysisProducts: new List<TruncationProduct> { new TruncationProduct(1, 3, "zrWuzHere") });
                 proteins = new List<Protein> { xmlProtein, fastaProtein };
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 1);
                 Assert.That(proteins.First().TruncationProducts.Count() != 0);
             }
@@ -188,14 +195,14 @@ namespace Test
                 Protein tDecoyProtein = new Protein("AEDITPEP", "DECOY_Test", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { mod } } });
                 Protein cDecoyProtein = new Protein("AEDITPEP", "DECOY_Test");
                 List<Protein> proteins = new List<Protein> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
                 Assert.That(proteins.Count == 2);
                 Assert.That(!proteins[0].IsContaminant); //forward is target
                 Assert.That(proteins[0].OneBasedPossibleLocalizedModifications.Count == 1);
                 Assert.That(proteins[1].OneBasedPossibleLocalizedModifications.Count == 1);
 
                 proteins = new List<Protein> { targetProtein, contaminantProtein, tDecoyProtein, cDecoyProtein }; //two decoys, one for target, one for contaminant
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveTarget);
                 Assert.That(proteins.Count == 2);
                 Assert.That(proteins[0].IsContaminant); //forward is contaminant
                 Assert.That(proteins[0].OneBasedPossibleLocalizedModifications.Count == 0); //contaminant doesn't have mods                
