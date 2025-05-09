@@ -12,6 +12,7 @@ using System.IO;
 using Omics.Digestion;
 using Omics.Modifications;
 using UsefulProteomicsDatabases;
+using System.Text.RegularExpressions;
 
 namespace Test
 {
@@ -81,7 +82,7 @@ namespace Test
                 new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 }, new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 });
 
             //string exectedProteinGroupToString = proteinGroup1.ToString();
-            string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t";
+            string exectedProteinGroupToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupToString));
 
 
@@ -89,9 +90,31 @@ namespace Test
             List<Protein> proteinList3 = new List<Protein> { prot3 };
             ProteinGroup proteinGroup3 = new ProteinGroup(new HashSet<Protein>(proteinList3),
                                new HashSet<PeptideWithSetModifications>(), new HashSet<PeptideWithSetModifications>());
-            string exectedProteinGroupWithDecoyToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0\t";
+            string exectedProteinGroupWithDecoyToString = "prot1|prot2\t|\t\t\t779.30073507823|778.3167194953201\t2\t\t\t2\t2\t\t\t\t\t\t0\tT\t0\t0\t0\t0\t0";
             Assert.That(proteinGroup1.ToString(), Is.EqualTo(exectedProteinGroupWithDecoyToString));
         }
+
+        [Test]
+        public static void TestProteinGroupStringAndHeaderHaveSameNumberOfTabs()
+        {
+            Protein prot1 = new Protein("MEDEEK", "prot1");
+            Protein prot2 = new Protein("MENEEK", "prot2");
+
+            PeptideWithSetModifications pwsm1 = new PeptideWithSetModifications(prot1, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+            PeptideWithSetModifications pwsm2 = new PeptideWithSetModifications(prot2, new DigestionParams(), 1, 3, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
+
+            List<Protein> proteinList1 = new List<Protein> { prot1, prot2 };
+
+            ProteinGroup proteinGroup1 = new ProteinGroup(new HashSet<Protein>(proteinList1),
+                new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 }, new HashSet<PeptideWithSetModifications>() { pwsm1, pwsm2 });
+
+            string pgHeader = proteinGroup1.GetTabSeparatedHeader();
+            string pgRow = proteinGroup1.ToString();
+            string[] headerFields = pgHeader.Split('\t');
+            string[] rowEntries = pgRow.Split("\t");
+            Assert.That(headerFields.Length, Is.EqualTo(rowEntries.Length));
+            Assert.That(Regex.Matches(pgHeader, @"\t").Count, Is.EqualTo(Regex.Matches(pgRow, @"\t").Count));
+        }   
 
         [Test]
         public static void ProteinGroupMergeTest()
