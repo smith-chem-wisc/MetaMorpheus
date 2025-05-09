@@ -146,7 +146,7 @@ public class RnaDatabaseLoadingTests
             "TestTaskId",
             dbsForTask,
             true, // searchTarget
-            DecoyType.None,
+            DecoyType.Reverse,
             new List<string>(), // localizeableModificationTypes
             commonParameters
         });
