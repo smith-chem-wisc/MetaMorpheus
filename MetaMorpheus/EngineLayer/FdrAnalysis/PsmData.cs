@@ -1,6 +1,8 @@
 ﻿using Microsoft.ML.Data;
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Text;
 
 namespace EngineLayer.FdrAnalysis
@@ -9,9 +11,36 @@ namespace EngineLayer.FdrAnalysis
     {
         public static readonly IImmutableDictionary<string, string[]> trainingInfos = new Dictionary<string, string[]>
         {
-            { "standard", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle" } },
-            { "top-down", new [] { "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle" } },
-            { "crosslink", new [] { "TotalMatchingFragmentCount", "AbsoluteAverageFragmentMassErrorFromMedian", "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity", "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra" } }
+            {
+                "standard", new[]
+                {
+                    "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore",
+                    "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "MissedCleavagesCount", 
+                    "Ambiguity", "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore",
+                    "IsVariantPeptide", "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle", 
+                }
+            },
+
+            {
+                "top-down", new[]
+                {
+                    "TotalMatchingFragmentCount", "Intensity", "PrecursorChargeDiffToMode", "DeltaScore", 
+                    "Notch", "ModsCount", "AbsoluteAverageFragmentMassErrorFromMedian", "Ambiguity", 
+                    "LongestFragmentIonSeries", "ComplementaryIonCount", "SpectralAngle",
+                    "HasSpectralAngle", "PeaksInPrecursorEnvelope", "ChimeraCount",
+                    "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
+                }
+            },
+
+            {
+                "crosslink",
+                new[]
+                {
+                    "TotalMatchingFragmentCount", "AbsoluteAverageFragmentMassErrorFromMedian",
+                    "PrecursorChargeDiffToMode", "DeltaScore", "AlphaIntensity", "BetaIntensity",
+                    "LongestFragmentIonSeries_Alpha", "LongestFragmentIonSeries_Beta", "IsInter", "IsIntra"
+                }
+            }
         }.ToImmutableDictionary();
 
         /// <summary>
@@ -42,7 +71,12 @@ namespace EngineLayer.FdrAnalysis
             { "IsInter", -1 },
             { "IsIntra", -1 },
             { "SpectralAngle", 1 },
-            { "HasSpectralAngle", 1 }
+            { "HasSpectralAngle", 1 },
+            { "PeaksInPrecursorEnvelope", 1 },
+            { "ChimeraCount", -1 },
+            { "MostAbundantPrecursorPeakIntensity", 1 },
+            { "PrecursorFractionalIntensity", 1 },
+            { "InternalIonCount", 1},
             }.ToImmutableDictionary();
 
         public string ToString(string searchType)
@@ -132,5 +166,20 @@ namespace EngineLayer.FdrAnalysis
 
         [LoadColumn(23)]
         public float HasSpectralAngle { get; set; }
+
+        [LoadColumn(24)]
+        public float PeaksInPrecursorEnvelope { get; set; }
+
+        [LoadColumn(25)]
+        public float ChimeraCount { get; set; }
+
+        [LoadColumn(26)]
+        public float MostAbundantPrecursorPeakIntensity { get; set; }
+
+        [LoadColumn(27)]
+        public float PrecursorFractionalIntensity { get; set; }
+
+        [LoadColumn(28)]
+        public float InternalIonCount { get; set; }
     }
 }

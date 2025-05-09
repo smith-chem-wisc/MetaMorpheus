@@ -79,9 +79,9 @@ namespace TaskLayer
                             + "\t" + item.BaseSequence.Length.ToString(CultureInfo.InvariantCulture)
                             + "\t" + (item.BetaPeptide.BaseSequence.Length + item.BaseSequence.Length).ToString(CultureInfo.InvariantCulture)
                             + "\t" + "-." + item.FullSequence + item.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + "--" + item.BetaPeptide.FullSequence + item.BetaPeptide.LinkPositions.First().ToString(CultureInfo.InvariantCulture) + ".-"
-                            + "\t" + item.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Parent.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + (item.XlProteinPos.HasValue ? item.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
-                            + "\t" + item.BetaPeptide.BestMatchingBioPolymersWithSetMods.First().Peptide.Parent.Accession.ToString(CultureInfo.InvariantCulture)
+                            + "\t" + item.BetaPeptide.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer.Parent.Accession.ToString(CultureInfo.InvariantCulture)
                                    + "(" + (item.BetaPeptide.XlProteinPos.HasValue ? item.BetaPeptide.XlProteinPos.Value.ToString(CultureInfo.InvariantCulture) : string.Empty) + ")"
                             );
                     }
@@ -200,7 +200,7 @@ namespace TaskLayer
             for (int i = 0; i < items.Count; i++)
             {
                 var mods = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
-                var alphaPeptide = items[i].BestMatchingBioPolymersWithSetMods.First().Peptide;
+                var alphaPeptide = items[i].BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                 foreach (var modification in alphaPeptide.AllModsOneIsNterminus)
                 {
@@ -278,7 +278,7 @@ namespace TaskLayer
                 }
                 else if (items[i].CrossType == PsmCrossType.Inter || items[i].CrossType == PsmCrossType.Intra || items[i].CrossType == PsmCrossType.Cross)
                 {
-                    var betaPeptide = items[i].BetaPeptide.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                    var betaPeptide = items[i].BetaPeptide.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
                     var modsBeta = new List<pepXML.Generated.modInfoDataTypeMod_aminoacid_mass>();
 
                     foreach (var mod in betaPeptide.AllModsOneIsNterminus)

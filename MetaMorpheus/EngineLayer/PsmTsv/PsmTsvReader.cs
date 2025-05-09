@@ -13,7 +13,7 @@ namespace EngineLayer
             List<PsmFromTsv> psms = new List<PsmFromTsv>();
             warnings = new List<string>();
 
-            StreamReader reader = null;
+            StreamReader reader;
             try
             {
                 reader = new StreamReader(filePath);
@@ -46,7 +46,7 @@ namespace EngineLayer
                 }
                 catch (Exception e)
                 {
-                    warnings.Add("Could not read line: " + lineCount);
+                    warnings.Add($"Could not read line: {lineCount} with error message: {e.Message}");
                 }
             }
 
@@ -71,6 +71,7 @@ namespace EngineLayer
             parsedHeader.Add(PsmTsvHeader.TotalIonCurrent, Array.IndexOf(spl, PsmTsvHeader.TotalIonCurrent));
             parsedHeader.Add(PsmTsvHeader.PrecursorScanNum, Array.IndexOf(spl, PsmTsvHeader.PrecursorScanNum));
             parsedHeader.Add(PsmTsvHeader.PrecursorCharge, Array.IndexOf(spl, PsmTsvHeader.PrecursorCharge));
+            parsedHeader.Add(PsmTsvHeader.PrecursorIntensity, Array.IndexOf(spl, PsmTsvHeader.PrecursorIntensity));
             parsedHeader.Add(PsmTsvHeader.PrecursorMz, Array.IndexOf(spl, PsmTsvHeader.PrecursorMz));
             parsedHeader.Add(PsmTsvHeader.PrecursorMass, Array.IndexOf(spl, PsmTsvHeader.PrecursorMass));
             parsedHeader.Add(PsmTsvHeader.Score, Array.IndexOf(spl, PsmTsvHeader.Score));

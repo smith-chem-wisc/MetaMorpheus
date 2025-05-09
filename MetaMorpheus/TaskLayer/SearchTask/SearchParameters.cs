@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using UsefulProteomicsDatabases;
 using EngineLayer;
 using Omics.Modifications;
-using Proteomics;
 
 namespace TaskLayer
 {
@@ -19,6 +18,7 @@ namespace TaskLayer
             UseSharedPeptidesForLFQ = false;
             DoSpectralRecovery = false;
             QuantifyPpmTol = 5;
+            MbrFdrThreshold = 0.01;
             SearchTarget = true;
             DecoyType = DecoyType.Reverse;
             DoHistogramAnalysis = false;
@@ -32,6 +32,7 @@ namespace TaskLayer
             WriteMzId = true;
             WritePepXml = false;
             IncludeModMotifInMzid = false;
+            WriteDigestionProductCountFile = false;
 
             ModsToWriteSelection = new Dictionary<string, int>
             {
@@ -67,6 +68,7 @@ namespace TaskLayer
         public bool ModPeptidesAreDifferent { get; set; }
         public bool NoOneHitWonders { get; set; }
         public bool MatchBetweenRuns { get; set; }
+        public double MbrFdrThreshold { get; set; }
         public bool Normalize { get; set; }
         public double QuantifyPpmTol { get; set; }
         public bool DoHistogramAnalysis { get; set; }
@@ -103,5 +105,6 @@ namespace TaskLayer
         public SilacLabel EndTurnoverLabel { get; set; } //used for SILAC turnover experiments
         public TargetContaminantAmbiguity TCAmbiguity { get; set; }
         public bool IncludeModMotifInMzid { get; set; }
+        public bool WriteDigestionProductCountFile { get; set; }
     }
 }

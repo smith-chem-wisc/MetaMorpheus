@@ -1,20 +1,21 @@
 ﻿using EngineLayer;
 using EngineLayer.ClassicSearch;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; 
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
-using System.DirectoryServices;
 using System.IO;
 using System.Linq;
 using System.Text;
-using Easy.Common.Extensions;
 using Omics.Modifications;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
 using Omics;
+using UsefulProteomicsDatabases;
+using System.Threading;
+using Readers;
 using Omics.Digestion;
 
 namespace Test
@@ -36,39 +37,55 @@ namespace Test
         [OneTimeSetUp]
         public void SpectralRecoveryTestSetup()
         {
+            string input = "MPGGGPEMDDYMETLKDEEDALWENVECNRHMLSRYINPAKLTPYLRQCKVIDEQDEDEVLNAPMLPSKINRAGRLLDILHTKGQRGYVVFLESLEFYYPELYKLVTGKEPTRRFSTIVVEEGHEGLTHFLMNEVIKLQQQMKAKDLQRCELLARLRQLEDEKKQMTLTRVELLTFQERYYKMKEERDSYNDELVKVKDDNYNLAMRYAQLSEEKNMAVMRSRDLQLEIDQLKHRLNKMEEECKLERNQSLKLKNDIENRPKKEQVLELERENEMLKTKNQELQSIIQAGKRSLPDSDKAILDILEHDRKEALEDRQELVNRIYNLQEEARQAEELRDKYLEEKEDLELKCSTLGKDCEMYKHRMNTVMLQLEEVERERDQAFHSRDEAQTQYSQCLIEKDKYRKQIRELEEKNDEMRIEMVRREACIVNLESKLRRLSKDSNNLDQSLPRNLPVTIISQDFGDASPRTNGQEADDSSTSEESPEDSKYFLPYHPPQRRMNLKGIQLQRAKSPISLKRTSDFQAKGHEEEGTDASPSSCGSLPITNSFTKMQPPRSRSSIMSITAEPPGNDSIVRRYKEDAPHRSTVEEDNDSGGFDALDLDDDSHERYSFGPSSIHSSSSSHQSEGLDAYDLEQVNLMFRKFSLERPFRPSVTSVGHVRGPGPSVQHTTLNGDSLTSQLTLLGGNARGSFVHSVKPGSLAEKAGLREGHQLLLLEGCIRGERQSVPLDTCTKEEAHWTIQRCSGPVTLHYKVNHEGYRKLVKDMEDGLITSGDSFYIRLNLNISSQLDACTMSLKCDDVVHVRDTMYQDRHEWLCARVDPFTDHDLDMGTIPSYSRAQQLLLVKLQRLMHRGSREEVDGTHHTLRALRNTLQPEEALSTSDPRVSPRLSRASFLFGQLLQFVSRSENKYKRMNSNERVRIISGSPLGSLARSSLDATKLLTEKQEELDPESELGKNLSLIPYSLVRAFYCERRRPVLFTPTVLAKTLVQRLLNSGGAMEFTICKSDIVTRDEFLRRQKTETIIYSREKNPNAFECIAPANIEAVAAKNKHCLLEAGIGCTRDLIKSNIYPIVLFIRVCEKNIKRFRKLLPRPETEEEFLRVCRLKEKELEALPCLYATVEPDMWGSVEELLRVVKDKIG";
+            string reversed = new string(input.Reverse().ToArray());
+            outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
+            if (Directory.Exists(outputFolder)) //automatically clean up the output folder if it exists
+            {
+                Directory.Delete(outputFolder, true);
+            }
+            Directory.CreateDirectory(outputFolder);
+
             // This block of code converts from PsmFromTsv to SpectralMatch objects
-            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\MSMSids.psmtsv");
-            tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
+
+            string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\AllPSMsTesting.psmtsv");
+            tsvPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmtsvPath, out var warnings);
             psms = new List<SpectralMatch>();
-            proteinList = new List<Protein>();
             myFileManager = new MyFileManager(true);
 
-            foreach (PsmFromTsv readPsm in tsvPsms)
+            Loaders.LoadElements();
+            string databasePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta");
+            proteinList = ProteinDbLoader.LoadProteinFasta(databasePath, true, DecoyType.Reverse, false, out List<string> errors)
+                .Where(protein => protein.AppliedSequenceVariations != null).ToList();
+            CommonParameters commonParameters = new CommonParameters();
+
+
+            foreach (PsmFromTsv readPsm in tsvPsms.Where(psm => !psm.FullSequence.Contains('['))) // Modifications break the parser
             {
                 string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                     "TestData", "SpectralRecoveryTest", readPsm.FileNameWithoutExtension + ".mzML");
-                MsDataScan scan = myFileManager.LoadFile(filePath, new CommonParameters()).GetOneBasedScan(readPsm.Ms2ScanNumber);
+                MsDataScan scan = myFileManager.LoadFile(filePath, commonParameters).GetOneBasedScan(readPsm.Ms2ScanNumber);
                 Ms2ScanWithSpecificMass ms2Scan = new Ms2ScanWithSpecificMass(scan, readPsm.PrecursorMz, readPsm.PrecursorCharge,
-                    filePath, new CommonParameters());
-                Protein protein = new(readPsm.BaseSeq, readPsm.ProteinAccession, readPsm.OrganismName,
-                    isDecoy: readPsm.DecoyContamTarget == "D",
-                    isContaminant: readPsm.DecoyContamTarget == "C");
-                string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
-                int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
-                int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
+                    filePath, commonParameters);
+                Protein protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
+
+                //string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
+                //int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
+                //int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
 
                 PeptideWithSetModifications pwsm = new PeptideWithSetModifications(
                     readPsm.FullSequence, null, p: protein, digestionParams: new DigestionParams(),
-                    oneBasedStartResidueInProtein: startResidue, oneBasedEndResidueInProtein: endResidue);
+                    oneBasedStartResidueInProtein: 1, oneBasedEndResidueInProtein: 1);
                 SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, readPsm.Score, readPsm.Ms2ScanNumber, ms2Scan,
                     new CommonParameters(), readPsm.MatchedIons);
+
                 psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0);
+                psm.ResolveAllAmbiguities();
                 if (readPsm.Ms2ScanNumber == 206 && readPsm.BaseSeq.Equals("HADIVTTTTHK")) psm.SetFdrValues(0, 0, 0, 0, 0, 0, 0.0046, 0); // Necessary for to be implemented "original pep" test
                 psms.Add(psm);
                 proteinList.Add(protein);
             }
 
-            Directory.CreateDirectory(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput"));
 
             numSpectraPerFile = new Dictionary<string, int[]> { { "K13_02ng_1min_frac1", new int[] { 8, 8 }
                 }, { "K13_20ng_1min_frac1", new int[] { 8, 8 } } };
@@ -77,7 +94,6 @@ namespace Test
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\K13_20ng_1min_frac1.mzML") };
             databaseList = new List<DbForTask>() {new DbForTask(
                 Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta"), false) };
-            outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
 
             SearchTask searchTask = new SearchTask
             {
@@ -87,9 +103,11 @@ namespace Test
                     WriteSpectralLibrary = false,
                     MatchBetweenRuns = false,
                     DoSpectralRecovery = false,
-                    WriteMzId = false
+                    WriteMzId = false,
+                    MassDiffAcceptorType = MassDiffAcceptorType.ThreeMM,
+                    WriteHighQValuePsms = true
                 },
-                CommonParameters = new CommonParameters()
+                CommonParameters = new CommonParameters(qValueCutoffForPepCalculation: 0.01)
             };
             searchTaskResults = searchTask.RunTask(outputFolder, databaseList, rawSlices, "name");
 
@@ -113,6 +131,7 @@ namespace Test
                         DoLabelFreeQuantification = true,
                         WriteSpectralLibrary = true,
                         MatchBetweenRuns = true,
+                        MbrFdrThreshold = 0.2,
                         DoSpectralRecovery = true,
                         WriteMzId = false,
                         WriteDecoys = false,
@@ -120,10 +139,10 @@ namespace Test
                         QuantifyPpmTol = 25
                     }
                 },
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, qValueCutoffForPepCalculation: 0.01),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
-                    (rawSlices[0], new CommonParameters()),
-                    (rawSlices[1], new CommonParameters())
+                    (rawSlices[0], new CommonParameters(qValueCutoffForPepCalculation: 0.01)),
+                    (rawSlices[1], new CommonParameters(qValueCutoffForPepCalculation: 0.01))
                 }
             };
 
@@ -134,21 +153,22 @@ namespace Test
         [Test]
         public static void SpectralRecoveryPostSearchAnalysisTest()
         {
-
             List<string> warnings;
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput\SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
-            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
+            List<PsmFromTsv> mbrPsms = SpectrumMatchTsvReader.ReadPsmTsv(mbrAnalysisPath, out warnings);
             // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
-            List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings);
+            List<PsmFromTsv> expectedMbrPsms = SpectrumMatchTsvReader.ReadPsmTsv(expectedHitsPath, out warnings);
 
             List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
             List<string> expectedMatches = mbrPsms.Select(p => p.BaseSeq).Intersect(expectedMbrPsms.Select(p => p.BaseSeq).ToList()).ToList();
 
+            // Changing Q-value calculation methods results in more PSMs being discovered, and so fewer spectra are available to be "recovered"
+            // (as they were identified in the orignal search)
             Assert.That(matches2ng.Count >= 2);
-            Assert.That(matches02ng.Count >= 8);
-            Assert.That(expectedMatches.Count >= 3); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
+            Assert.That(matches02ng.Count >= 10);
+            Assert.That(expectedMatches.Count >= 2); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
 
             //TODO: Add test for recovering fdrInfo from original. Currently, PsmTsvReader doesn't support the new columns, so it's hard to test
         }
@@ -177,7 +197,8 @@ namespace Test
             referenceDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestSpectralRecoveryOutput\AllQuantifiedPeptides.tsv");
 
-            string[] peptideResults = File.ReadAllLines(referenceDataPath).Skip(1).ToArray();
+            string[] peptideResults = File.ReadAllLines(referenceDataPath).ToArray();
+            string[] header = peptideResults[0].Split("\t");
 
             foreach (string row in peptideResults)
             {
@@ -232,17 +253,17 @@ namespace Test
                 proteinList, searchModes, commonParameters, null, sl, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
-            Assert.AreEqual(7, allPsmsArray.Length);
-            Assert.IsTrue(allPsmsArray[5].Score > 38);
-            Assert.AreEqual("VIHDNFGIVEGLMTTVHAITATQK", allPsmsArray[5].BaseSequence);
-            Assert.IsTrue(!allPsmsArray[5].IsDecoy);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(7));
+            Assert.That(allPsmsArray[5].Score > 38);
+            Assert.That(allPsmsArray[5].BaseSequence, Is.EqualTo("VIHDNFGIVEGLMTTVHAITATQK"));
+            Assert.That(!allPsmsArray[5].IsDecoy);
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
 
             foreach (SpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
-                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                 MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
                     listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),
@@ -254,14 +275,19 @@ namespace Test
                 SpectralMatch[] peptideSpectralMatches =
                     mcse.SearchAroundPeak(pwsm, allPsmsArray[5].ScanRetentionTime).ToArray();
 
-                Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);
+                Assert.That(peptideSpectralMatches[0].BaseSequence, Is.EqualTo(allPsmsArray[5].BaseSequence));
                 Assert.That(peptideSpectralMatches[0].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
             }
+            sl.CloseConnections();
         }
+
+
 
         [Test]
         public static void SpectralWriterTest()
         {
+            foreach (var specLibPath in Directory.GetFiles(outputFolder, "*.msp", SearchOption.AllDirectories))
+                File.Delete(specLibPath);
 
             PostSearchAnalysisTask postSearchTask = new PostSearchAnalysisTask()
             {
@@ -289,7 +315,7 @@ namespace Test
                         QuantifyPpmTol = 25
                     }
                 },
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, qValueCutoffForPepCalculation: 0.01),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters())
@@ -298,7 +324,7 @@ namespace Test
 
             postSearchTask.Run();
 
-            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
+            var path = outputFolder;
             var list = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
             string matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
             var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
@@ -308,13 +334,16 @@ namespace Test
 
             testLibraryWithoutDecoy.CloseConnections();
 
+            // Get rid of this file so it doesn't interfere with the next test
+            File.Delete(Path.Combine(path, matchingvalue));
+
             // new task with less than 100 psms.
             postSearchTask = new PostSearchAnalysisTask()
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
                     ProteinList = proteinList,
-                    AllPsms = psms.GetRange(0, 50),
+                    AllPsms = psms.GetRange(0, 80),
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
@@ -335,30 +364,34 @@ namespace Test
                         QuantifyPpmTol = 25
                     }
                 },
-                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect),
+                CommonParameters = new CommonParameters(dissociationType: DissociationType.Autodetect, qValueCutoffForPepCalculation: 0.01),
                 FileSpecificParameters = new List<(string FileName, CommonParameters Parameters)> {
                     (rawSlices[0], new CommonParameters()),
                     (rawSlices[1], new CommonParameters())
                 }
             };
-
             postSearchTask.Run();
 
+            // Find and open the new spectral library
+            list = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+            matchingvalue = list.Where(p => p.Contains("SpectralLibrary")).First().ToString();
             testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, matchingvalue) });
-
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
+
+            // When writing a new spectral library, we don't want it to have the exact same name as the old one.
+            // So, we make sure at least one second has passed
+            Thread.Sleep(new TimeSpan(0, 0, 1)); // Wait for the library to close
 
             // Test spectral library update
             postSearchTask.Parameters.SearchParameters.UpdateSpectralLibrary = true;
             postSearchTask.Parameters.SpectralLibrary = testLibraryWithoutDecoy;
             postSearchTask.Run();
-
             var libraryList = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
-            string updateLibraryPath = libraryList.First(p => p.Contains("SpectralLibrary") && !p.Contains(matchingvalue)).ToString();
+            string updateLibraryPath = libraryList.First(p => p.Contains("updateSpectralLibrary") && !p.Contains(matchingvalue)).ToString();
             var updatedLibraryWithoutDecoy = new SpectralLibrary(new List<string> { Path.Combine(path, updateLibraryPath) });
             Assert.That(updatedLibraryWithoutDecoy.TryGetSpectrum("EESGKPGAHVTVK", 2, out spectrum));
 
-            testLibraryWithoutDecoy.CloseConnections(); 
+            testLibraryWithoutDecoy.CloseConnections();
             updatedLibraryWithoutDecoy.CloseConnections();
         }
 
@@ -375,15 +408,13 @@ namespace Test
             sb.Append('\t');
             sb.Append("Initial Search PEP Q-Value");
 
-            Assert.AreEqual(sb.ToString(), SpectralRecoveryPSM.TabSeparatedHeader);
-
+            Assert.That(sb.ToString(), Is.EqualTo(SpectralRecoveryPSM.TabSeparatedHeader));
         }
 
         [OneTimeTearDown]
         public static void SpectralRecoveryTeardown()
         {
-            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput");
-            Directory.Delete(filePath, true);
+            Directory.Delete(outputFolder, true);
         }
     }
 }

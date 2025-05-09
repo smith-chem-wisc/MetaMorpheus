@@ -12,7 +12,7 @@ namespace EngineLayer.ModernSearch
     public class ModernSearchEngine : MetaMorpheusEngine
     {
         protected const int FragmentBinsPerDalton = 1000;
-        protected readonly List<int>[] FragmentIndex;
+        protected List<int>[] FragmentIndex { get; private set; }
         protected readonly SpectralMatch[] PeptideSpectralMatches;
         protected readonly Ms2ScanWithSpecificMass[] ListOfSortedMs2Scans;
         protected readonly List<PeptideWithSetModifications> PeptideIndex;
@@ -101,8 +101,8 @@ namespace EngineLayer.ModernSearch
             // this is just PRELIMINARY precursor-mass filtering	
             // additional checks are made later to ensure that the theoretical precursor mass is acceptable
             List<AllowedIntervalWithNotch> notches = MassDiffAcceptor.GetAllowedPrecursorMassIntervalsFromObservedMass(scan.PrecursorMass).ToList();
-            double lowestMassPeptideToLookFor = notches.Min(p => p.AllowedInterval.Minimum);
-            double highestMassPeptideToLookFor = notches.Max(p => p.AllowedInterval.Maximum);
+            double lowestMassPeptideToLookFor = notches.Min(p => p.Minimum);
+            double highestMassPeptideToLookFor = notches.Max(p => p.Maximum);
 
             // clear the scoring table to score the new scan (conserves memory compared to allocating a new array)
             Array.Clear(scoringTable, 0, scoringTable.Length);
@@ -358,7 +358,7 @@ namespace EngineLayer.ModernSearch
                 }
                 else
                 {
-                    PeptideSpectralMatches[scanIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons, 0);
+                    PeptideSpectralMatches[scanIndex].AddOrReplace(peptide, thisScore, notch, CommonParameters.ReportAllAmbiguity, matchedIons);
                 }
             }
 
@@ -400,7 +400,7 @@ namespace EngineLayer.ModernSearch
             double highestMassPeptideToLookFor, List<PeptideWithSetModifications> peptideIndex, MassDiffAcceptor massDiffAcceptor, double maxMassThatFragmentIonScoreIsDoubled, DissociationType dissociationType)
         {
             // get all theoretical fragments this experimental fragment could be
-            for (int i = 0; i < binsToSearch.Count; i++)
+            for (int i = 0; i < binsToSearch.Count; i++) //binsToSearch is the list of fragment in Spectra
             {
                 List<int> peptideIdsInThisBin = FragmentIndex[binsToSearch[i]];
 
@@ -410,11 +410,11 @@ namespace EngineLayer.ModernSearch
                 // get index for highest mass allowed
                 int highestPeptideMassIndex = peptideIdsInThisBin.Count - 1;
 
-                if (!Double.IsInfinity(highestMassPeptideToLookFor))
+                if (!Double.IsInfinity(highestMassPeptideToLookFor)) //check if the highest mass is infinity
                 {
-                    highestPeptideMassIndex = BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, highestMassPeptideToLookFor, peptideIndex);
+                    highestPeptideMassIndex = BinarySearchBinForPrecursorIndex(peptideIdsInThisBin, highestMassPeptideToLookFor, peptideIndex); //get index for maximum monoisotopic allowed
 
-                    for (int j = highestPeptideMassIndex; j < peptideIdsInThisBin.Count; j++)
+                    for (int j = highestPeptideMassIndex; j < peptideIdsInThisBin.Count; j++) //find the highest peptide mass index 
                     {
                         int nextId = peptideIdsInThisBin[j];
                         var nextPep = peptideIndex[nextId];
@@ -432,7 +432,7 @@ namespace EngineLayer.ModernSearch
                 if (dissociationType == DissociationType.LowCID)
                 {
                     // add intensity for each peptide candidate in the scoring table up to the maximum allowed precursor mass
-                    for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
+                    for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++) 
                     {
                         int id = peptideIdsInThisBin[j];
 
@@ -447,14 +447,14 @@ namespace EngineLayer.ModernSearch
                     }
                 }
                 else
-                {
-                    // add +1 score for each peptide candidate in the scoring table up to the maximum allowed precursor mass
-                    for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++)
+                {   
+                    // account the peptide index shown in the bin
+                    for (int j = lowestPeptideMassIndex; j <= highestPeptideMassIndex; j++) // iterate through the peptide index in the bin
                     {
                         int id = peptideIdsInThisBin[j];
                         scoringTable[id]++;
 
-                        // add possible search results to the hashset of id's
+                        // if the score of the peptide >3 (counts > 3 times), and the mass difference is accepted, add the peptide to the list of peptides possibly observed
                         if (scoringTable[id] == byteScoreCutoff && massDiffAcceptor.Accepts(scanPrecursorMass, peptideIndex[id].MonoisotopicMass) >= 0)
                         {
                             idsOfPeptidesPossiblyObserved.Add(id);

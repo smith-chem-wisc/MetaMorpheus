@@ -35,6 +35,7 @@ namespace EngineLayer
             int totalPartitions = 1, 
             double qValueThreshold = 0.01,
             double pepQValueThreshold = 1.0,
+            double qValueCutoffForPepCalculation = 0.005,
             double scoreCutoff = 5, 
             int? numberOfPeaksToKeepPerWindow = 200, 
             double? minimumAllowedIntensityRatioToBasePeak = 0.01, 
@@ -55,7 +56,8 @@ namespace EngineLayer
             int minVariantDepth = 1, 
             bool addTruncations = false,
             DeconvolutionParameters precursorDeconParams = null,
-            DeconvolutionParameters productDeconParams = null)
+            DeconvolutionParameters productDeconParams = null,
+            bool useMostAbundantPrecursorIntensity = true)
 
         {
             TaskDescriptor = taskDescriptor;
@@ -67,6 +69,7 @@ namespace EngineLayer
             TotalPartitions = totalPartitions;
             QValueThreshold = qValueThreshold;
             PepQValueThreshold = pepQValueThreshold;
+            QValueCutoffForPepCalculation = qValueCutoffForPepCalculation;
             ScoreCutoff = scoreCutoff;
             NumberOfPeaksToKeepPerWindow = numberOfPeaksToKeepPerWindow;
             MinimumAllowedIntensityRatioToBasePeak = minimumAllowedIntensityRatioToBasePeak;
@@ -87,6 +90,7 @@ namespace EngineLayer
             SeparationType = separationType;
             MS2ChildScanDissociationType = ms2childScanDissociationType;
             MS3ChildScanDissociationType = ms3childScanDissociationType;
+            UseMostAbundantPrecursorIntensity = useMostAbundantPrecursorIntensity;
 
             CustomIons = DissociationTypeCollection.ProductsFromDissociationType[DissociationType.Custom];
             // reset custom fragmentation product types to default empty list
@@ -136,8 +140,8 @@ namespace EngineLayer
             get => PrecursorDeconvolutionParameters.MaxAssumedChargeState;
             private set => PrecursorDeconvolutionParameters.MaxAssumedChargeState = value;
         }
-        [TomlIgnore] public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
-        [TomlIgnore] public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
+        public DeconvolutionParameters PrecursorDeconvolutionParameters { get; private set; }
+        public DeconvolutionParameters ProductDeconvolutionParameters { get; private set; }
         [TomlIgnore] public Tolerance DeconvolutionMassTolerance { get; private set; }
         public int TotalPartitions { get; set; }
         public Tolerance ProductMassTolerance { get; set; } // public setter required for calibration task
@@ -156,6 +160,11 @@ namespace EngineLayer
         /// </summary>
         public double PepQValueThreshold { get; private set; }
         public double ScoreCutoff { get; private set; }
+        /// <summary>
+        /// This parameter determines which PSMs/Peptides will be used as postive training examples
+        /// when training the GBDT model for PEP. 
+        /// </summary>
+        public double QValueCutoffForPepCalculation { get; set; }
         public IDigestionParams DigestionParams { get; private set; }
         public bool ReportAllAmbiguity { get; private set; }
         public int? NumberOfPeaksToKeepPerWindow { get; private set; }
@@ -175,6 +184,8 @@ namespace EngineLayer
 
         public DissociationType MS2ChildScanDissociationType { get; private set; }
         public DissociationType MS3ChildScanDissociationType { get; private set; }
+
+        public bool UseMostAbundantPrecursorIntensity { get; set; }
         
         public CommonParameters Clone()
         {
@@ -222,6 +233,7 @@ namespace EngineLayer
                                 TotalPartitions,
                                 QValueThreshold,
                                 PepQValueThreshold,
+                                QValueCutoffForPepCalculation,
                                 ScoreCutoff,
                                 NumberOfPeaksToKeepPerWindow,
                                 MinimumAllowedIntensityRatioToBasePeak,

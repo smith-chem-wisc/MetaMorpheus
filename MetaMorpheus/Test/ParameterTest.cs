@@ -5,9 +5,9 @@ using Nett;
 using NUnit.Framework;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
-using System;
 using System.Collections.Generic;
 using System.IO;
+using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using TaskLayer;
@@ -23,15 +23,15 @@ namespace Test
             var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
             FileSpecificParameters fsp = new FileSpecificParameters(fileSpecificToml);
             FileSpecificParameters fspClone = fsp.Clone();
-            Assert.AreEqual(fsp.DissociationType, fspClone.DissociationType);
-            Assert.AreEqual(fsp.MaxMissedCleavages, fspClone.MaxMissedCleavages);
-            Assert.AreEqual(fsp.MaxModsForPeptide, fspClone.MaxModsForPeptide);
-            Assert.AreEqual(fsp.MaxPeptideLength, fspClone.MaxPeptideLength);
-            Assert.AreEqual(fsp.MinPeptideLength, fspClone.MinPeptideLength);
-            Assert.AreEqual(fsp.PrecursorMassTolerance, fspClone.PrecursorMassTolerance);
-            Assert.AreEqual(fsp.ProductMassTolerance, fspClone.ProductMassTolerance);
-            Assert.AreEqual(fsp.Protease, fspClone.Protease);
-            Assert.AreEqual(fsp.SeparationType, fspClone.SeparationType);
+            Assert.That(fsp.DissociationType, Is.EqualTo(fspClone.DissociationType));
+            Assert.That(fsp.MaxMissedCleavages, Is.EqualTo(fspClone.MaxMissedCleavages));
+            Assert.That(fsp.MaxModsForPeptide, Is.EqualTo(fspClone.MaxModsForPeptide));
+            Assert.That(fsp.MaxPeptideLength, Is.EqualTo(fspClone.MaxPeptideLength));
+            Assert.That(fsp.MinPeptideLength, Is.EqualTo(fspClone.MinPeptideLength));
+            Assert.That(fsp.PrecursorMassTolerance, Is.EqualTo(fspClone.PrecursorMassTolerance));
+            Assert.That(fsp.ProductMassTolerance, Is.EqualTo(fspClone.ProductMassTolerance));
+            Assert.That(fsp.Protease, Is.EqualTo(fspClone.Protease));
+            Assert.That(fsp.SeparationType, Is.EqualTo(fspClone.SeparationType));
             CollectionAssert.AreEqual(fsp.CustomIons, fspClone.CustomIons);
         }
 
@@ -78,53 +78,53 @@ namespace Test
 
             //check that the defaults are not the same as the not defaults.
             //IF ONE OF THESE FAILS, PLEASE UPDATE THE "notDefaultParameters"
-            Assert.AreNotEqual(defaultParameters.DissociationType, notDefaultParameters.DissociationType);
-            Assert.AreNotEqual(defaultParameters.DoPrecursorDeconvolution, notDefaultParameters.DoPrecursorDeconvolution);
-            Assert.AreNotEqual(defaultParameters.UseProvidedPrecursorInfo, notDefaultParameters.UseProvidedPrecursorInfo);
-            Assert.AreNotEqual(defaultParameters.DeconvolutionIntensityRatio, notDefaultParameters.DeconvolutionIntensityRatio);
-            Assert.AreNotEqual(defaultParameters.DeconvolutionMaxAssumedChargeState, notDefaultParameters.DeconvolutionMaxAssumedChargeState);
-            Assert.AreNotEqual(defaultParameters.ReportAllAmbiguity, notDefaultParameters.ReportAllAmbiguity);
-            Assert.AreNotEqual(defaultParameters.AddCompIons, notDefaultParameters.AddCompIons);
-            Assert.AreNotEqual(defaultParameters.TotalPartitions, notDefaultParameters.TotalPartitions);
-            Assert.AreNotEqual(defaultParameters.ScoreCutoff, notDefaultParameters.ScoreCutoff);
-            Assert.AreNotEqual(defaultParameters.NumberOfPeaksToKeepPerWindow, notDefaultParameters.NumberOfPeaksToKeepPerWindow);
-            Assert.AreNotEqual(defaultParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
-            Assert.AreNotEqual(defaultParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
-            Assert.AreNotEqual(defaultParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
-            Assert.AreNotEqual(defaultParameters.ProductMassTolerance, notDefaultParameters.ProductMassTolerance);
-            Assert.AreNotEqual(defaultParameters.PrecursorMassTolerance, notDefaultParameters.PrecursorMassTolerance);
-            Assert.AreNotEqual(defaultParameters.DeconvolutionMassTolerance, notDefaultParameters.DeconvolutionMassTolerance);
-            Assert.AreNotEqual(defaultParameters.MaxThreadsToUsePerFile, notDefaultParameters.MaxThreadsToUsePerFile);
-            Assert.AreNotEqual(defaultParameters.DigestionParams, notDefaultParameters.DigestionParams);
-            Assert.AreNotEqual(defaultParameters.ListOfModsVariable, notDefaultParameters.ListOfModsVariable);
-            Assert.AreNotEqual(defaultParameters.ListOfModsFixed, notDefaultParameters.ListOfModsFixed);
-            Assert.AreNotEqual(defaultParameters.CustomIons, notDefaultParameters.CustomIons);
+            Assert.That(defaultParameters.DissociationType, Is.Not.EqualTo(notDefaultParameters.DissociationType));
+            Assert.That(defaultParameters.DoPrecursorDeconvolution, Is.Not.EqualTo(notDefaultParameters.DoPrecursorDeconvolution));
+            Assert.That(defaultParameters.UseProvidedPrecursorInfo, Is.Not.EqualTo(notDefaultParameters.UseProvidedPrecursorInfo));
+            Assert.That(defaultParameters.DeconvolutionIntensityRatio, Is.Not.EqualTo(notDefaultParameters.DeconvolutionIntensityRatio));
+            Assert.That(defaultParameters.DeconvolutionMaxAssumedChargeState, Is.Not.EqualTo(notDefaultParameters.DeconvolutionMaxAssumedChargeState));
+            Assert.That(defaultParameters.ReportAllAmbiguity, Is.Not.EqualTo(notDefaultParameters.ReportAllAmbiguity));
+            Assert.That(defaultParameters.AddCompIons, Is.Not.EqualTo(notDefaultParameters.AddCompIons));
+            Assert.That(defaultParameters.TotalPartitions, Is.Not.EqualTo(notDefaultParameters.TotalPartitions));
+            Assert.That(defaultParameters.ScoreCutoff, Is.Not.EqualTo(notDefaultParameters.ScoreCutoff));
+            Assert.That(defaultParameters.NumberOfPeaksToKeepPerWindow, Is.Not.EqualTo(notDefaultParameters.NumberOfPeaksToKeepPerWindow));
+            Assert.That(defaultParameters.MinimumAllowedIntensityRatioToBasePeak, Is.Not.EqualTo(notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak));
+            Assert.That(defaultParameters.TrimMs1Peaks, Is.Not.EqualTo(notDefaultParameters.TrimMs1Peaks));
+            Assert.That(defaultParameters.TrimMsMsPeaks, Is.Not.EqualTo(notDefaultParameters.TrimMsMsPeaks));
+            Assert.That(defaultParameters.ProductMassTolerance, Is.Not.EqualTo(notDefaultParameters.ProductMassTolerance));
+            Assert.That(defaultParameters.PrecursorMassTolerance, Is.Not.EqualTo(notDefaultParameters.PrecursorMassTolerance));
+            Assert.That(defaultParameters.DeconvolutionMassTolerance, Is.Not.EqualTo(notDefaultParameters.DeconvolutionMassTolerance));
+            Assert.That(defaultParameters.MaxThreadsToUsePerFile, Is.Not.EqualTo(notDefaultParameters.MaxThreadsToUsePerFile));
+            Assert.That(defaultParameters.DigestionParams, Is.Not.EqualTo(notDefaultParameters.DigestionParams));
+            Assert.That(defaultParameters.ListOfModsVariable, Is.Not.EqualTo(notDefaultParameters.ListOfModsVariable));
+            Assert.That(defaultParameters.ListOfModsFixed, Is.Not.EqualTo(notDefaultParameters.ListOfModsFixed));
+            Assert.That(defaultParameters.CustomIons, Is.Not.EqualTo(notDefaultParameters.CustomIons));
 
             FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
             CommonParameters updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, emptyFileSpecificParameters);
 
             //CHECK THAT NOTHING CHANGED
-            Assert.AreEqual(updatedParameters.DissociationType, notDefaultParameters.DissociationType);
-            Assert.AreEqual(updatedParameters.DoPrecursorDeconvolution, notDefaultParameters.DoPrecursorDeconvolution);
-            Assert.AreEqual(updatedParameters.UseProvidedPrecursorInfo, notDefaultParameters.UseProvidedPrecursorInfo);
-            Assert.AreEqual(updatedParameters.DeconvolutionIntensityRatio, notDefaultParameters.DeconvolutionIntensityRatio);
-            Assert.AreEqual(updatedParameters.DeconvolutionMaxAssumedChargeState, notDefaultParameters.DeconvolutionMaxAssumedChargeState);
-            Assert.AreEqual(updatedParameters.ReportAllAmbiguity, notDefaultParameters.ReportAllAmbiguity);
-            Assert.AreEqual(updatedParameters.AddCompIons, notDefaultParameters.AddCompIons);
-            Assert.AreEqual(updatedParameters.TotalPartitions, notDefaultParameters.TotalPartitions);
-            Assert.AreEqual(updatedParameters.ScoreCutoff, notDefaultParameters.ScoreCutoff);
-            Assert.AreEqual(updatedParameters.NumberOfPeaksToKeepPerWindow, notDefaultParameters.NumberOfPeaksToKeepPerWindow);
-            Assert.AreEqual(updatedParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
-            Assert.AreEqual(updatedParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
-            Assert.AreEqual(updatedParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
-            Assert.AreEqual(updatedParameters.ProductMassTolerance, notDefaultParameters.ProductMassTolerance);
-            Assert.AreEqual(updatedParameters.PrecursorMassTolerance, notDefaultParameters.PrecursorMassTolerance);
-            Assert.AreEqual(updatedParameters.DeconvolutionMassTolerance, notDefaultParameters.DeconvolutionMassTolerance);
-            Assert.AreEqual(updatedParameters.MaxThreadsToUsePerFile, notDefaultParameters.MaxThreadsToUsePerFile);
-            Assert.AreEqual(updatedParameters.DigestionParams, notDefaultParameters.DigestionParams);
-            Assert.AreEqual(updatedParameters.ListOfModsVariable, notDefaultParameters.ListOfModsVariable);
-            Assert.AreEqual(updatedParameters.ListOfModsFixed, notDefaultParameters.ListOfModsFixed);
-            Assert.AreEqual(updatedParameters.CustomIons, notDefaultParameters.CustomIons);
+            Assert.That(updatedParameters.DissociationType, Is.EqualTo(notDefaultParameters.DissociationType));
+            Assert.That(updatedParameters.DoPrecursorDeconvolution, Is.EqualTo(notDefaultParameters.DoPrecursorDeconvolution));
+            Assert.That(updatedParameters.UseProvidedPrecursorInfo, Is.EqualTo(notDefaultParameters.UseProvidedPrecursorInfo));
+            Assert.That(updatedParameters.DeconvolutionIntensityRatio, Is.EqualTo(notDefaultParameters.DeconvolutionIntensityRatio));
+            Assert.That(updatedParameters.DeconvolutionMaxAssumedChargeState, Is.EqualTo(notDefaultParameters.DeconvolutionMaxAssumedChargeState));
+            Assert.That(updatedParameters.ReportAllAmbiguity, Is.EqualTo(notDefaultParameters.ReportAllAmbiguity));
+            Assert.That(updatedParameters.AddCompIons, Is.EqualTo(notDefaultParameters.AddCompIons));
+            Assert.That(updatedParameters.TotalPartitions, Is.EqualTo(notDefaultParameters.TotalPartitions));
+            Assert.That(updatedParameters.ScoreCutoff, Is.EqualTo(notDefaultParameters.ScoreCutoff));
+            Assert.That(updatedParameters.NumberOfPeaksToKeepPerWindow, Is.EqualTo(notDefaultParameters.NumberOfPeaksToKeepPerWindow));
+            Assert.That(updatedParameters.MinimumAllowedIntensityRatioToBasePeak, Is.EqualTo(notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak));
+            Assert.That(updatedParameters.TrimMs1Peaks, Is.EqualTo(notDefaultParameters.TrimMs1Peaks));
+            Assert.That(updatedParameters.TrimMsMsPeaks, Is.EqualTo(notDefaultParameters.TrimMsMsPeaks));
+            Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(notDefaultParameters.ProductMassTolerance));
+            Assert.That(updatedParameters.PrecursorMassTolerance, Is.EqualTo(notDefaultParameters.PrecursorMassTolerance));
+            Assert.That(updatedParameters.DeconvolutionMassTolerance, Is.EqualTo(notDefaultParameters.DeconvolutionMassTolerance));
+            Assert.That(updatedParameters.MaxThreadsToUsePerFile, Is.EqualTo(notDefaultParameters.MaxThreadsToUsePerFile));
+            Assert.That(updatedParameters.DigestionParams, Is.EqualTo(notDefaultParameters.DigestionParams));
+            Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
+            Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
+            Assert.That(updatedParameters.CustomIons, Is.EqualTo(notDefaultParameters.CustomIons));
 
             FileSpecificParameters basicFileSpecificParameters = new FileSpecificParameters
             {
@@ -140,33 +140,33 @@ namespace Test
             };
             updatedParameters = MetaMorpheusTask.SetAllFileSpecificCommonParams(notDefaultParameters, basicFileSpecificParameters);
             //CHECK THAT SOMETHINGS CHANGED AND OTHERS DIDN'T
-            Assert.AreEqual(updatedParameters.DissociationType, basicFileSpecificParameters.DissociationType);
-            Assert.AreEqual(updatedParameters.ProductMassTolerance, basicFileSpecificParameters.ProductMassTolerance);
-            Assert.AreEqual(updatedParameters.PrecursorMassTolerance, basicFileSpecificParameters.PrecursorMassTolerance);
-            Assert.AreEqual(updatedParameters.DigestionParams.MaxMods, basicFileSpecificParameters.MaxModsForPeptide);
-            Assert.AreEqual(updatedParameters.DigestionParams.MaxMissedCleavages, basicFileSpecificParameters.MaxMissedCleavages);
-            Assert.AreEqual(updatedParameters.DigestionParams.MinLength, basicFileSpecificParameters.MinPeptideLength);
-            Assert.AreEqual(updatedParameters.DigestionParams.MaxLength, basicFileSpecificParameters.MaxPeptideLength);
-            Assert.AreEqual(updatedParameters.DigestionParams.DigestionAgent, basicFileSpecificParameters.Protease);
-            Assert.AreEqual(updatedParameters.CustomIons, basicFileSpecificParameters.CustomIons);
+            Assert.That(updatedParameters.DissociationType, Is.EqualTo(basicFileSpecificParameters.DissociationType));
+            Assert.That(updatedParameters.ProductMassTolerance, Is.EqualTo(basicFileSpecificParameters.ProductMassTolerance));
+            Assert.That(updatedParameters.PrecursorMassTolerance, Is.EqualTo(basicFileSpecificParameters.PrecursorMassTolerance));
+            Assert.That(updatedParameters.DigestionParams.MaxModsForPeptide, Is.EqualTo(basicFileSpecificParameters.MaxModsForPeptide));
+            Assert.That(updatedParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(basicFileSpecificParameters.MaxMissedCleavages));
+            Assert.That(updatedParameters.DigestionParams.MinPeptideLength, Is.EqualTo(basicFileSpecificParameters.MinPeptideLength));
+            Assert.That(updatedParameters.DigestionParams.MaxPeptideLength, Is.EqualTo(basicFileSpecificParameters.MaxPeptideLength));
+            Assert.That(updatedParameters.DigestionParams.Protease, Is.EqualTo(basicFileSpecificParameters.Protease));
+            Assert.That(updatedParameters.CustomIons, Is.EqualTo(basicFileSpecificParameters.CustomIons));
 
-            Assert.AreEqual(updatedParameters.DoPrecursorDeconvolution, notDefaultParameters.DoPrecursorDeconvolution);
-            Assert.AreEqual(updatedParameters.UseProvidedPrecursorInfo, notDefaultParameters.UseProvidedPrecursorInfo);
-            Assert.AreEqual(updatedParameters.DeconvolutionIntensityRatio, notDefaultParameters.DeconvolutionIntensityRatio);
-            Assert.AreEqual(updatedParameters.DeconvolutionMaxAssumedChargeState, notDefaultParameters.DeconvolutionMaxAssumedChargeState);
-            Assert.AreEqual(updatedParameters.ReportAllAmbiguity, notDefaultParameters.ReportAllAmbiguity);
-            Assert.AreEqual(updatedParameters.AddCompIons, notDefaultParameters.AddCompIons);
-            Assert.AreEqual(updatedParameters.TotalPartitions, notDefaultParameters.TotalPartitions);
-            Assert.AreEqual(updatedParameters.ScoreCutoff, notDefaultParameters.ScoreCutoff);
-            Assert.AreEqual(updatedParameters.NumberOfPeaksToKeepPerWindow, notDefaultParameters.NumberOfPeaksToKeepPerWindow);
-            Assert.AreEqual(updatedParameters.MinimumAllowedIntensityRatioToBasePeak, notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak);
-            Assert.AreEqual(updatedParameters.TrimMs1Peaks, notDefaultParameters.TrimMs1Peaks);
-            Assert.AreEqual(updatedParameters.TrimMsMsPeaks, notDefaultParameters.TrimMsMsPeaks);
-            Assert.AreEqual(updatedParameters.DeconvolutionMassTolerance, notDefaultParameters.DeconvolutionMassTolerance);
-            Assert.AreEqual(updatedParameters.MaxThreadsToUsePerFile, notDefaultParameters.MaxThreadsToUsePerFile);
-            Assert.AreEqual(((DigestionParams)updatedParameters.DigestionParams).InitiatorMethionineBehavior, ((DigestionParams)notDefaultParameters.DigestionParams).InitiatorMethionineBehavior);
-            Assert.AreEqual(updatedParameters.ListOfModsVariable, notDefaultParameters.ListOfModsVariable);
-            Assert.AreEqual(updatedParameters.ListOfModsFixed, notDefaultParameters.ListOfModsFixed);
+            Assert.That(updatedParameters.DoPrecursorDeconvolution, Is.EqualTo(notDefaultParameters.DoPrecursorDeconvolution));
+            Assert.That(updatedParameters.UseProvidedPrecursorInfo, Is.EqualTo(notDefaultParameters.UseProvidedPrecursorInfo));
+            Assert.That(updatedParameters.DeconvolutionIntensityRatio, Is.EqualTo(notDefaultParameters.DeconvolutionIntensityRatio));
+            Assert.That(updatedParameters.DeconvolutionMaxAssumedChargeState, Is.EqualTo(notDefaultParameters.DeconvolutionMaxAssumedChargeState));
+            Assert.That(updatedParameters.ReportAllAmbiguity, Is.EqualTo(notDefaultParameters.ReportAllAmbiguity));
+            Assert.That(updatedParameters.AddCompIons, Is.EqualTo(notDefaultParameters.AddCompIons));
+            Assert.That(updatedParameters.TotalPartitions, Is.EqualTo(notDefaultParameters.TotalPartitions));
+            Assert.That(updatedParameters.ScoreCutoff, Is.EqualTo(notDefaultParameters.ScoreCutoff));
+            Assert.That(updatedParameters.NumberOfPeaksToKeepPerWindow, Is.EqualTo(notDefaultParameters.NumberOfPeaksToKeepPerWindow));
+            Assert.That(updatedParameters.MinimumAllowedIntensityRatioToBasePeak, Is.EqualTo(notDefaultParameters.MinimumAllowedIntensityRatioToBasePeak));
+            Assert.That(updatedParameters.TrimMs1Peaks, Is.EqualTo(notDefaultParameters.TrimMs1Peaks));
+            Assert.That(updatedParameters.TrimMsMsPeaks, Is.EqualTo(notDefaultParameters.TrimMsMsPeaks));
+            Assert.That(updatedParameters.DeconvolutionMassTolerance, Is.EqualTo(notDefaultParameters.DeconvolutionMassTolerance));
+            Assert.That(updatedParameters.MaxThreadsToUsePerFile, Is.EqualTo(notDefaultParameters.MaxThreadsToUsePerFile));
+            Assert.That(updatedParameters.DigestionParams.InitiatorMethionineBehavior, Is.EqualTo(notDefaultParameters.DigestionParams.InitiatorMethionineBehavior));
+            Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
+            Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
 
         }
     }

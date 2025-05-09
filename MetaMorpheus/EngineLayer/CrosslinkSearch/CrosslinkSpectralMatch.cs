@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MathNet.Numerics.Distributions;
 
 namespace EngineLayer.CrosslinkSearch
 {
@@ -25,7 +24,7 @@ namespace EngineLayer.CrosslinkSearch
             XLTotalScore = score;
             _BestMatchingBioPolymersWithSetMods.Clear();
 
-            _BestMatchingBioPolymersWithSetMods.Add((0, theBestPeptide));
+            _BestMatchingBioPolymersWithSetMods.Add(new SpectrumMatch.SpectralMatchHypothesis(0, theBestPeptide, matchedFragmentIons, score));
 
         }
 
@@ -127,8 +126,8 @@ namespace EngineLayer.CrosslinkSearch
 
             if (csm.Accession == null)
             {
-                var alphaProteins = csm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide.Parent.Accession).ToList();
-                var betaProteins = csm.BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide.Parent.Accession).ToList();
+                var alphaProteins = csm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession).ToList();
+                var betaProteins = csm.BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer.Parent.Accession).ToList();
 
                 foreach (var alpha in alphaProteins)
                 {
@@ -194,7 +193,7 @@ namespace EngineLayer.CrosslinkSearch
 
             var range = Enumerable.Range(0, peptide.BaseSequence.Length);
             if (!CrosslinkAtCleavageSite && peptide.OneBasedEndResidue != peptide.Protein.Length 
-                && !peptide.Protein.ProteolysisProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidue))
+                && !peptide.Protein.TruncationProducts.Any(x => x.OneBasedEndPosition == peptide.OneBasedEndResidue))
             {
                 //The C termial cannot be crosslinked and cleaved.
                 range = Enumerable.Range(0, peptide.BaseSequence.Length - 1);
@@ -373,7 +372,7 @@ namespace EngineLayer.CrosslinkSearch
             }
 
             sb.Append("\t"); //Intentionally left empty for readability in the tsv file.
-            List<PeptideWithSetModifications> pepsWithMods = BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide as PeptideWithSetModifications).ToList();
+            List<PeptideWithSetModifications> pepsWithMods = BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications).ToList();
             var proteinAccessionString = Accession ?? PsmTsvWriter.Resolve(pepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
             sb.Append(proteinAccessionString + "\t");
             sb.Append(XlProteinPos + (XlProteinPosLoop.HasValue ? "~" + XlProteinPosLoop.Value : null) + "\t");
@@ -422,7 +421,7 @@ namespace EngineLayer.CrosslinkSearch
             if (BetaPeptide != null)
             {
                 sb.Append("\t"); //Intentionally left empty for readability in the tsv file.
-                List<PeptideWithSetModifications> betaPepsWithMods = BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide as PeptideWithSetModifications).ToList();
+                List<PeptideWithSetModifications> betaPepsWithMods = BetaPeptide.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications).ToList();
                 var betaProteinAccessionString = BetaPeptide.Accession ?? PsmTsvWriter.Resolve(betaPepsWithMods.Select(b => b.Protein.Accession), FullSequence).ResolvedString;
                 sb.Append(betaProteinAccessionString + "\t");
                 sb.Append(BetaPeptide.XlProteinPos + "\t");

@@ -1,8 +1,12 @@
 ﻿
 namespace EngineLayer
 {
+    /// <summary>
+    /// The structure of the glycan
+    /// </summary>
     public class Node
     {
+
         public Node(char v)
         {
             Value = v;

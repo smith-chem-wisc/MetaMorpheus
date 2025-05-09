@@ -11,7 +11,7 @@ using MathNet.Numerics;
 using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 using Omics.SpectrumMatch;
-using LocalizationLevel = EngineLayer.GlycoSearch.LocalizationLevel;
+using Readers;
 
 namespace EngineLayer
 {
@@ -26,12 +26,14 @@ namespace EngineLayer
         public string FileNameWithoutExtension { get; }
         public int PrecursorScanNum { get; }
         public int PrecursorCharge { get; }
+
+        public double? PrecursorIntensity { get; }
         public double PrecursorMz { get; }
         public double PrecursorMass { get; }
         public double Score { get; }
         public string ProteinAccession { get; }
         public double? SpectralAngle { get; }
-        public List<MatchedFragmentIon> MatchedIons { get; }
+        public List<MatchedFragmentIon> MatchedIons { get; set; }
         public Dictionary<int, List<MatchedFragmentIon>> ChildScanMatchedIons { get; } // this is only used in crosslink for now, but in the future will be used for other experiment types
         public double QValue { get; }
 
@@ -126,6 +128,7 @@ namespace EngineLayer
             }
 
             PrecursorCharge = (int)double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorCharge]].Trim(), CultureInfo.InvariantCulture);
+            PrecursorIntensity = (parsedHeader[PsmTsvHeader.PrecursorIntensity] < 0) ? null : Double.TryParse(spl[parsedHeader[PsmTsvHeader.PrecursorIntensity]].Trim(), out double value) ? value : null;
             PrecursorMz = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMz]].Trim(), CultureInfo.InvariantCulture);
             PrecursorMass = double.Parse(spl[parsedHeader[PsmTsvHeader.PrecursorMass]].Trim(), CultureInfo.InvariantCulture);
             BaseSeq = RemoveParentheses(spl[parsedHeader[PsmTsvHeader.BaseSequence]].Trim());
@@ -207,19 +210,31 @@ namespace EngineLayer
                 BetaPeptideChildScanMatchedIons.Remove(Ms2ScanNumber);
             }
 
-            //For Glyco            
-            GlycanMass = (parsedHeader[PsmTsvHeader_Glyco.GlycanMass] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader_Glyco.GlycanMass]], CultureInfo.InvariantCulture);
-            GlycanComposition = (parsedHeader[PsmTsvHeader_Glyco.GlycanComposition] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanComposition]];
-            GlycanStructure = (parsedHeader[PsmTsvHeader_Glyco.GlycanStructure] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanStructure]];
-            var localizationLevel = (parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel]];
-            if (localizationLevel != null)
+            //For Glyco
+            try // Try is so that glyco and non-glyco psms can be read from the same file
             {
-                if (localizationLevel.Equals("NA"))
-                    GlycanLocalizationLevel = null;
-                else
-                    GlycanLocalizationLevel = (LocalizationLevel)Enum.Parse(typeof(LocalizationLevel), localizationLevel);
+                GlycanMass = (parsedHeader[PsmTsvHeader_Glyco.GlycanMass] < 0) ? null : (double?)double.Parse(spl[parsedHeader[PsmTsvHeader_Glyco.GlycanMass]], CultureInfo.InvariantCulture);
+                GlycanComposition = (parsedHeader[PsmTsvHeader_Glyco.GlycanComposition] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanComposition]];
+                GlycanStructure = (parsedHeader[PsmTsvHeader_Glyco.GlycanStructure] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanStructure]];
+                var localizationLevel = (parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.GlycanLocalizationLevel]];
+                if (localizationLevel != null)
+                {
+                    if (localizationLevel.Equals("NA"))
+                        GlycanLocalizationLevel = null;
+                    else
+                        GlycanLocalizationLevel = (LocalizationLevel)Enum.Parse(typeof(LocalizationLevel), localizationLevel);
+                }
+                LocalizedGlycan = (parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan]];
+
             }
-            LocalizedGlycan = (parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan] < 0) ? null : spl[parsedHeader[PsmTsvHeader_Glyco.LocalizedGlycan]];
+            catch
+            {
+                GlycanMass = null;
+                GlycanComposition = null;
+                GlycanStructure = null;
+                GlycanLocalizationLevel = null;
+                LocalizedGlycan = null;
+            }
         }
 
         /// <summary>

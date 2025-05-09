@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -25,13 +26,18 @@ namespace GuiFunctions
         public bool DrawStationarySequence { get; set; } = true;
         public bool DrawNumbersUnderStationary { get; set; } = true;
         public bool ShowLegend { get; set; } = true;
-        public List<bool> SpectrumDescriptionValues { get; set; }
+        public List<string> SpectrumDescriptionValues { get; set; }
         public List<string> ProductTypeToColorValues { get; set; }
         public List<string> BetaProductTypeToColorValues { get; set; }
         public List<string> ModificationTypeToColorValues { get; set; }
         public List<string> CoverageTypeToColorValues { get; set; }
         public string UnannotatedPeakColor { get; set; }
         public string InternalIonColor { get; set; }
+        public int AnnotatedFontSize { get; set; } = 14;
+        public int AxisTitleTextSize { get; set; } = 14;
+        public int AxisLabelTextSize { get; set; } = 12;
+        public double StrokeThicknessUnannotated { get; set; } = 0.7;
+        public double StrokeThicknessAnnotated { get; set; } = 1.0;
 
         // filter settings
         public bool ShowDecoys { get; set; } = false;

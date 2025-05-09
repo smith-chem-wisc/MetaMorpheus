@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ApplicationManifest>app1.manifest</ApplicationManifest>
     <Configurations>Debug;Release</Configurations>
     <DebugType>full</DebugType>
@@ -19,12 +19,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.7.82" />
-    <PackageReference Include="Microsoft.ML" Version="2.0.0" />
-    <PackageReference Include="Microsoft.ML.CpuMath" Version="2.0.0" />
-    <PackageReference Include="Microsoft.ML.FastTree" Version="2.0.0" />
+    <PackageReference Include="CommandLineParser" Version="2.9.1" />
+    <PackageReference Include="Microsoft.ML" Version="3.0.1" />
+    <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
+    <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
     <PackageReference Include="Microsoft.NETCore.App" Version="2.2.8" />
-    <PackageReference Include="mzLib" Version="1.0.549" />
+    <PackageReference Include="mzLib" Version="1.0.562" />
     <PackageReference Include="Nett" Version="0.15.0" />
   </ItemGroup>
 

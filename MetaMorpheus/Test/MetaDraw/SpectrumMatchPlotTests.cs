@@ -1,10 +1,9 @@
-﻿using System;
+﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Controls;
 using EngineLayer;
 using GuiFunctions;
@@ -12,6 +11,7 @@ using NUnit.Framework;
 using OxyPlot;
 using OxyPlot.Annotations;
 using Omics.Fragmentation;
+using Readers;
 using TaskLayer;
 
 namespace Test.MetaDraw
@@ -30,6 +30,7 @@ namespace Test.MetaDraw
         [OneTimeSetUp]
         public void Setup()
         {
+            
             outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_PeakAnnotaitonTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
@@ -172,6 +173,82 @@ namespace Test.MetaDraw
 
             var annotation = ((TextAnnotation)plotView.Model.Annotations[testCase.FragmentIndex]);
             Assert.That(annotation.TextColor, Is.EqualTo(testCase.ExpectedColor));
+        }
+
+        [Test]
+        public static void TestCrossLinkSpectrumMatchPlot()
+        { 
+            // set up file paths
+            var outputFolderPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestCrossLinkSpectrumMatchPlot");
+            var psmFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "XlTestData", "XL_Interlinks.tsv");
+            var dataFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "XlTestData", "2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML");
+
+            Directory.CreateDirectory(outputFolderPath);
+
+            // load in files
+            MetaDrawLogic metaDrawLogic = new MetaDrawLogic();
+            metaDrawLogic.SpectraFilePaths.Add(dataFilePath);
+            metaDrawLogic.PsmResultFilePaths.Add(psmFilePath);
+
+            var errors = metaDrawLogic.LoadFiles(true, true);
+
+            Assert.That(!errors.Any());
+            Assert.That(metaDrawLogic.FilteredListOfPsms.Any());
+
+            // load in gui components
+            var plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
+            var canvas = new Canvas();
+            var scrollableCanvas = new Canvas();
+            var stationaryCanvas = new Canvas();
+            var sequenceAnnotationCanvas = new Canvas();
+            var parentChildView = new ParentChildScanPlotsView();
+            var psm = metaDrawLogic.FilteredListOfPsms.First(p => p.FullSequence == "GVTVDKMTELR(6)");
+             
+            // perform black magic to set the scan number of the MS2 to match the mzML file number
+            var oldScanNum = psm.Ms2ScanNumber;
+            var field = typeof(SpectrumMatchFromTsv).GetField("<Ms2ScanNumber>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            field?.SetValue(psm, 28819);
+
+            // display psm and check display has correct number of annotations
+            metaDrawLogic.DisplaySequences(stationaryCanvas, scrollableCanvas, sequenceAnnotationCanvas, psm);
+            int alphaPeptideAnnotations = psm.BaseSeq.Length + psm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType is ProductType.b or ProductType.y);
+            int betaPeptideAnnotations = psm.BetaPeptideBaseSequence.Length + psm.BetaPeptideMatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType is ProductType.b or ProductType.y);
+            int crossLinkerAnnotations = 1;
+            int sequenceDisplayAnnotationCount =
+                alphaPeptideAnnotations + betaPeptideAnnotations + crossLinkerAnnotations;
+            Assert.That(stationaryCanvas.Children.Count, Is.EqualTo(sequenceDisplayAnnotationCount));
+            Assert.That(scrollableCanvas.Children.Count, Is.EqualTo(alphaPeptideAnnotations));
+
+            var alphaPeptideSpectralMatchAnnotationCount = psm.MatchedIons.Count;
+            var betaPeptideSpectralMatchAnnotationCount = psm.BetaPeptideMatchedIons.Count;
+            var csmPlotIonAnnotationCount = alphaPeptideSpectralMatchAnnotationCount + betaPeptideSpectralMatchAnnotationCount;
+            metaDrawLogic.DisplaySpectrumMatch(plotView, psm, parentChildView, out errors);
+            Assert.That(plotView.Model.Annotations.Count, Is.EqualTo(csmPlotIonAnnotationCount + 1)); // Plus One for the annotation text describing the csm
+
+            var scan = MsDataFileReader.GetDataFile(dataFilePath).LoadAllStaticData().GetOneBasedScan(oldScanNum);
+            var csmPlot = new CrosslinkSpectrumMatchPlot(plotView, psm, scan, stationaryCanvas, false);
+            Assert.That(csmPlot.Model.Annotations.Count, Is.EqualTo(csmPlotIonAnnotationCount));
+
+            // test each export type
+            foreach (var exportType in MetaDrawSettings.ExportTypes)
+            {
+                MetaDrawSettings.ExportType = exportType;
+                metaDrawLogic.ExportPlot(plotView, canvas, new List<PsmFromTsv>() { psm }, parentChildView,
+                    outputFolderPath, out errors);
+
+                Assert.That(File.Exists(Path.Combine(outputFolderPath, @$"{psm.Ms2ScanNumber}_{psm.FullSequence}{psm.BetaPeptideBaseSequence}.{exportType}")));
+            }
+
+            // clean up resources
+            metaDrawLogic.CleanUpSpectraFiles();
+            Assert.That(!metaDrawLogic.SpectraFilePaths.Any());
+
+            metaDrawLogic.CleanUpPSMFiles();
+            Assert.That(!metaDrawLogic.FilteredListOfPsms.Any());
+            Assert.That(!metaDrawLogic.PsmResultFilePaths.Any());
+
+            // delete output
+            Directory.Delete(outputFolderPath, true);
         }
     }
 }

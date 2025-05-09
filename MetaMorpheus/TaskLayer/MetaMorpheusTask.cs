@@ -23,6 +23,7 @@ using Omics.Modifications;
 using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
+using Easy.Common.Extensions;
 
 namespace TaskLayer
 {
@@ -67,19 +68,46 @@ namespace TaskLayer
                         tmlString.Value == "AverageDdaScansWithOverlap"
                             ? SpectraFileAveragingType.AverageDdaScans
                             : Enum.Parse<SpectraFileAveragingType>(tmlString.Value))))
+            .ConfigureType<IDigestionParams>(type => type
+                .WithConversionFor<TomlTable>(c => c
+                    .FromToml(tmlTable =>
+                        tmlTable.ContainsKey("Protease")
+                            ? tmlTable.Get<DigestionParams>()
+                            : throw new NotImplementedException("Placeholder for Rna Digestion Params"))))
             .ConfigureType<DigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
-            .ConfigureType<IDigestionParams>(type => type
+            // Switch on DeconvolutionParameters
+            .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
-                    .FromToml(tmlTable =>
-                         tmlTable.ContainsKey("Protease") 
-                            ? tmlTable.Get<DigestionParams>()
-                            : throw new NotImplementedException("Placeholder for Rna Digestion Params"))))
-        );
-
+                    .FromToml(tmlTable => tmlTable.Get<string>("DeconvolutionType") switch
+                        {
+                            "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
+                            "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
+                            _ => throw new MetaMorpheusException("Unrecognized deconvolution type in toml")
+                        })))
+            // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
+            .ConfigureType<ClassicDeconvolutionParameters>(type => type
+                .CreateInstance(() => new ClassicDeconvolutionParameters(1, 20, 4, 3))
+                .IgnoreProperty(p => p.IntensityRatioLimit)
+                .IgnoreProperty(p => p.DeconvolutionTolerancePpm))
+            .ConfigureType<IsoDecDeconvolutionParameters>(type => type
+                .CreateInstance(() => new IsoDecDeconvolutionParameters())
+                .IgnoreProperty(p => p.Verbose)
+                .IgnoreProperty(p => p.PeakWindow)
+                .IgnoreProperty(p => p.PeakThreshold)
+                .IgnoreProperty(p => p.MinPeaks)
+                .IgnoreProperty(p => p.PlusOneIntWindow)
+                .IgnoreProperty(p => p.MinScoreDiff)
+                .IgnoreProperty(p => p.IsoLength)
+                .IgnoreProperty(p => p.MassDiffC)
+                .IgnoreProperty(p => p.MinusOneAreasZero)
+                .IgnoreProperty(p => p.IsotopeThreshold)
+                .IgnoreProperty(p => p.ZScoreThreshold))
+        
+            );
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
@@ -141,7 +169,7 @@ namespace TaskLayer
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
-                    List<(double, int)> precursors = new List<(double, int)>();
+                    var precursors = new List<(double MonoPeakMz, int Charge, double Intensity, int PeakCount, double? FractionalIntensity)>();
 
                     for (int i = partitionRange.Item1; i < partitionRange.Item2; i++)
                     {
@@ -175,34 +203,57 @@ namespace TaskLayer
                                     precursorSpectrum.MassSpectrum, commonParameters.PrecursorDeconvolutionParameters))
                                 {
                                     double monoPeakMz = envelope.MonoisotopicMass.ToMz(envelope.Charge);
-                                    precursors.Add((monoPeakMz, envelope.Charge));
+                                    int peakCount = envelope.Peaks.Count();
+                                    double intensity = 1;
+                                    if (commonParameters.UseMostAbundantPrecursorIntensity) 
+                                    { 
+                                        intensity = envelope.Peaks.Max(p => p.intensity); 
+                                    }
+                                    else
+                                    {
+                                        intensity = envelope.Peaks.Sum(p => p.intensity);
+                                    }
+
+                                    var fractionalIntensity = envelope.TotalIntensity /
+                                          (double)precursorSpectrum.MassSpectrum.YArray
+                                          [
+                                              precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Minimum)
+                                              ..
+                                              precursorSpectrum.MassSpectrum.GetClosestPeakIndex(ms2scan.IsolationRange.Maximum)
+                                          ].Sum();
+                                    precursors.Add((monoPeakMz, envelope.Charge, intensity, peakCount,
+                                        fractionalIntensity));
                                 }
                             }
                         }
 
-                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue)
+                        //if use precursor info from scan header and scan header has charge state
+                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue) 
                         {
                             int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
 
+                            //still from scan header
                             if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                             {
                                 double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
+                                double precursorIntensity = ms2scan.SelectedIonMonoisotopicGuessIntensity ?? 1;
 
                                 if (!precursors.Any(b =>
                                     commonParameters.DeconvolutionMassTolerance.Within(
                                         precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
                                 {
-                                    precursors.Add((precursorMZ, precursorCharge));
+                                    precursors.Add((precursorMZ, precursorCharge, precursorIntensity, 1, null));
                                 }
                             }
                             else
                             {
                                 double precursorMZ = ms2scan.SelectedIonMZ.Value;
+                                double precursorIntensity = ms2scan.SelectedIonIntensity ?? 1;
                                 if (!precursors.Any(b =>
                                     commonParameters.DeconvolutionMassTolerance.Within(
                                         precursorMZ.ToMass(precursorCharge), b.Item1.ToMass(b.Item2))))
                                 {
-                                    precursors.Add((precursorMZ, precursorCharge));
+                                    precursors.Add((precursorMZ, precursorCharge, precursorIntensity, 1, null));
                                 }
                             }
                         }
@@ -231,8 +282,9 @@ namespace TaskLayer
                         foreach (var precursor in precursors)
                         {
                             // assign precursor for this MS2 scan
-                            var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.Item1,
-                                precursor.Item2, fullFilePath, commonParameters, neutralExperimentalFragments);
+                            var scan = new Ms2ScanWithSpecificMass(ms2scan, precursor.MonoPeakMz,
+                                precursor.Charge, fullFilePath, commonParameters, neutralExperimentalFragments,
+                                precursor.Intensity, precursor.PeakCount, precursor.FractionalIntensity);
 
                             // assign precursors for MS2 child scans
                             if (ms2ChildScans != null)
@@ -245,8 +297,9 @@ namespace TaskLayer
                                     {
                                         childNeutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(ms2ChildScan, commonParameters);
                                     }
-                                    var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.Item1,
-                                        precursor.Item2, fullFilePath, commonParameters, childNeutralExperimentalFragments);
+                                    var theChildScan = new Ms2ScanWithSpecificMass(ms2ChildScan, precursor.MonoPeakMz,
+                                        precursor.Charge, fullFilePath, commonParameters, childNeutralExperimentalFragments,
+                                        precursor.Intensity, precursor.PeakCount, precursor.FractionalIntensity);
                                     scan.ChildScans.Add(theChildScan);
                                 }
                             }
@@ -476,7 +529,8 @@ namespace TaskLayer
                 minVariantDepth: commonParams.MinVariantDepth,
                 addTruncations: commonParams.AddTruncations,
                 precursorDeconParams: commonParams.PrecursorDeconvolutionParameters,
-                productDeconParams: commonParams.ProductDeconvolutionParameters );
+                productDeconParams: commonParams.ProductDeconvolutionParameters,
+                useMostAbundantPrecursorIntensity: commonParams.UseMostAbundantPrecursorIntensity);
 
             return returnParams;
         }
@@ -562,37 +616,35 @@ namespace TaskLayer
                 throw;
             }
 
+            var proseFilePath = Path.Combine(output_folder, "AutoGeneratedManuscriptProse.txt");
+            using (StreamWriter file = new StreamWriter(proseFilePath))
             {
-                var proseFilePath = Path.Combine(output_folder, "AutoGeneratedManuscriptProse.txt");
-                using (StreamWriter file = new StreamWriter(proseFilePath))
+                file.WriteLine("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
+		        file.WriteLine();
+                file.Write(ProseCreatedWhileRunning.ToString());
+                file.WriteLine(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
+		        file.WriteLine();
+                file.WriteLine("The total time to perform the " + TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
+                file.WriteLine();
+                file.WriteLine("Published works using MetaMorpheus software are encouraged to cite the appropriate publications listed in the reference guide, found here: https://github.com/smith-chem-wisc/MetaMorpheus/blob/master/README.md.");
+                file.WriteLine();
+                file.WriteLine("Spectra files: ");
+                file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
+                file.WriteLine("Databases:");
+
+                foreach (var proteinDb in currentProteinDbFilenameList)
                 {
-                    file.WriteLine("The data analysis was performed using MetaMorpheus version " + GlobalVariables.MetaMorpheusVersion + ", available at " + "https://github.com/smith-chem-wisc/MetaMorpheus.");
-                    file.Write(ProseCreatedWhileRunning.ToString());
-                    file.WriteLine(SystemInfo.SystemProse().Replace(Environment.NewLine, "") + " ");
-                    file.WriteLine("The total time to perform the " + TaskType + " task on " + currentRawDataFilepathList.Count + " spectra file(s) was " + String.Format("{0:0.00}", MyTaskResults.Time.TotalMinutes) + " minutes.");
-                    file.WriteLine();
-                    file.WriteLine("Published works using MetaMorpheus software are encouraged to cite: Solntsev, S. K.; Shortreed, M. R.; Frey, B. L.; Smith, L. M. Enhanced Global Post-translational Modification Discovery with MetaMorpheus. Journal of Proteome Research. 2018, 17 (5), 1844-1851.");
-
-                    file.WriteLine();
-                    file.WriteLine("Spectra files: ");
-                    file.WriteLine(string.Join(Environment.NewLine, currentRawDataFilepathList.Select(b => '\t' + b)));
-                    file.WriteLine("Databases:");
-
-                    foreach (var proteinDb in currentProteinDbFilenameList)
+                    if (proteinDb.IsContaminant)
                     {
-                        if (proteinDb.IsContaminant)
-                        {
-                            file.Write(string.Join(Environment.NewLine, '\t' + "Contaminants " + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                        }
-                        else
-                        {
-                            file.Write(string.Join(Environment.NewLine, '\t' + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
-                        }
+                        file.Write(string.Join(Environment.NewLine, '\t' + "Contaminants " + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
+                    }
+                    else
+                    {
+                        file.Write(string.Join(Environment.NewLine, '\t' + proteinDb.FilePath + " Downloaded on: " + File.GetCreationTime(proteinDb.FilePath).ToString()));
                     }
                 }
-                FinishedWritingFile(proseFilePath, new List<string> { displayName });
             }
-
+            FinishedWritingFile(proseFilePath, new List<string> { displayName });
             MetaMorpheusEngine.FinishedSingleEngineHandler -= SingleEngineHandlerInTask;
             return MyTaskResults;
         }
@@ -616,6 +668,46 @@ namespace TaskLayer
             {
                 Warn("Warning: " + emptyProteinEntries + " empty protein entries ignored");
             }
+
+            
+
+            if (!proteinList.Any(p => p.IsDecoy))
+            {
+                Status("Done loading proteins", new List<string> { taskId });
+                return proteinList;
+            }
+
+            // Sanitize the decoys
+            // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
+            // when looking for target/decoy collisions
+
+            HashSet<string> targetPeptideSequences = new();
+            foreach(var protein in proteinList.Where(p => !p.IsDecoy))
+            {
+                // When thinking about decoy collisions, we can ignore modifications
+                foreach(var peptide in protein.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
+                {
+                    targetPeptideSequences.Add(peptide.BaseSequence);
+                }
+            }
+            // Now, we iterate through the decoys and scramble the sequences that correspond to target peptides
+            for(int i = 0; i < proteinList.Count; i++)
+            {
+                if(proteinList[i].IsDecoy)
+                {
+                    var peptidesToReplace = proteinList[i]
+                        .Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>())
+                        .Select(p => p.BaseSequence)
+                        .Where(targetPeptideSequences.Contains)
+                        .ToList();
+                    if(peptidesToReplace.Any())
+                    {
+                        proteinList[i] = DecoySequenceValidator.ScrambleDecoyBioPolymer(proteinList[i], commonParameters.DigestionParams, forbiddenSequences: targetPeptideSequences, peptidesToReplace);
+                    }
+                }
+            }
+
+            Status("Done loading proteins", new List<string> { taskId });
             return proteinList;
         }
 
@@ -681,14 +773,14 @@ namespace TaskLayer
             }
         }
 
-        protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned)
+        protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
         {
             using (StreamWriter output = new StreamWriter(filePath))
             {
                 output.WriteLine(SpectralMatch.GetTabSeparatedHeader());
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults));
                 }
             }
         }
@@ -1097,11 +1189,11 @@ namespace TaskLayer
                 && commonParameters.DigestionParams is DigestionParams { Protease: not null } 
                 && commonParameters.DigestionParams.DigestionAgent.Name == "top-down")
             {
-                GlobalVariables.AnalyteType = "Proteoform";
+                GlobalVariables.AnalyteType = AnalyteType.Proteoform;
             }
             else
             {
-                GlobalVariables.AnalyteType = "Peptide";
+                GlobalVariables.AnalyteType = AnalyteType.Peptide;
             }
         }
 
@@ -1120,7 +1212,7 @@ namespace TaskLayer
             {
                 if (accessionGroup.Count() != 1) //if multiple proteins with the same accession
                 {
-                    List<Protein> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => p.ProteolysisProducts.Count()).ToList();
+                    List<Protein> proteinsWithThisAccession = accessionGroup.OrderBy(p => p.OneBasedPossibleLocalizedModifications.Count).ThenBy(p => p.TruncationProducts.Count()).ToList();
                     List<Protein> proteinsToRemove = new List<Protein>();
                     if (tcAmbiguity == TargetContaminantAmbiguity.RenameProtein)
                     {
@@ -1131,7 +1223,7 @@ namespace TaskLayer
                             //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
                             //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
                             var renamedProtein = new Protein(originalProtein.BaseSequence, originalProtein + "_D" + proteinNumber.ToString(), originalProtein.Organism,
-                                originalProtein.GeneNames.ToList(), originalProtein.OneBasedPossibleLocalizedModifications, originalProtein.ProteolysisProducts.ToList(), originalProtein.Name, originalProtein.FullName,
+                                originalProtein.GeneNames.ToList(), originalProtein.OneBasedPossibleLocalizedModifications, originalProtein.TruncationProducts.ToList(), originalProtein.Name, originalProtein.FullName,
                                 originalProtein.IsDecoy, originalProtein.IsContaminant, originalProtein.DatabaseReferences.ToList(), originalProtein.SequenceVariations.ToList(), originalProtein.AppliedSequenceVariations,
                                 originalProtein.SampleNameForVariants, originalProtein.DisulfideBonds.ToList(), originalProtein.SpliceSites.ToList(), originalProtein.DatabaseFilePath);
                             proteins.Add(renamedProtein);

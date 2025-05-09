@@ -4,7 +4,9 @@ using System.IO;
 using TaskLayer;
 using EngineLayer;
 using System.Linq;
+using NUnit.Framework.Legacy;
 using Omics.Fragmentation;
+using Omics.SpectrumMatch;
 
 namespace Test
 {
@@ -27,7 +29,7 @@ namespace Test
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
             var sections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length > 1);
-            Assert.AreEqual(sections.Length, 48);
+            Assert.That(sections.Length, Is.EqualTo(48));
 
             var resultsPath_Inter = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Interlinks.tsv"));
             Assert.That(resultsPath_Inter.Length > 1);
@@ -51,6 +53,7 @@ namespace Test
             string myFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\2017-11-21_XL_DSSO_Ribosome_RT60min_28800-28898.mzML");
             string myDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\RibosomeGO.fasta");
 
+            if (Directory.Exists(outputFolder)) Directory.Delete(outputFolder, true);
             Directory.CreateDirectory(outputFolder);
 
             XLSearchTask xLSearch = new XLSearchTask
@@ -66,7 +69,7 @@ namespace Test
             var resultsPath = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Intralinks.tsv"));
             var sections = resultsPath[1].Split('\t');
             Assert.That(resultsPath.Length > 1);
-            Assert.AreEqual(sections.Length, 48);
+            Assert.That(sections.Length, Is.EqualTo(48));
 
             var resultsPath_Inter = File.ReadAllLines(Path.Combine(outputFolder, @"XL_Interlinks.tsv"));
             Assert.That(resultsPath_Inter.Length > 1);
@@ -96,9 +99,9 @@ namespace Test
             Assert.That(interLinkSpectrum is CrosslinkLibrarySpectrum);
             CrosslinkLibrarySpectrum interSpectrum = (CrosslinkLibrarySpectrum)interLinkSpectrum;
             Assert.That(interSpectrum.BetaPeptideSpectrum.MatchedFragmentIons.Count, Is.EqualTo(13));
-            Assert.AreEqual(interSpectrum.AlphaPeptideSequence, "GVTVDKMTELR");
-            Assert.AreEqual(interSpectrum.BetaPeptideSequence, "SFTFVTKTPPAAVLLK");
-            Assert.True(interSpectrum.BetaPeptideSpectrum.IsBetaPeptide);
+            Assert.That(interSpectrum.AlphaPeptideSequence, Is.EqualTo("GVTVDKMTELR"));
+            Assert.That(interSpectrum.BetaPeptideSequence, Is.EqualTo("SFTFVTKTPPAAVLLK"));
+            Assert.That(interSpectrum.BetaPeptideSpectrum.IsBetaPeptide);
             interLinkSpectrum.MatchedFragmentIons.Add(new MatchedFragmentIon(productWithNeutralLoss, 100, 100, 1));
             CrosslinkLibrarySpectrum spectrumDup = (CrosslinkLibrarySpectrum)interLinkSpectrum;
             spectrumDup.BetaPeptideSpectrum.MatchedFragmentIons.Add(new MatchedFragmentIon(productWithNeutralLoss20, 100, 100, 1));

@@ -14,6 +14,7 @@ using System.Text;
 using Omics.Modifications;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
+using Easy.Common.Extensions;
 
 namespace EngineLayer
 {
@@ -25,7 +26,9 @@ namespace EngineLayer
         public static List<string> AcceptedSpectraFormats { get; private set; }
 
         private static List<Modification> _AllModsKnown;
+        private static List<Modification> _AllRnaModsKnown;
         private static HashSet<string> _AllModTypesKnown;
+        private static HashSet<string> _AllRnaModTypesKnown;
         private static List<Crosslinker> _KnownCrosslinkers;
         public static List<Modification> ProteaseMods = new List<Modification>();
 
@@ -34,7 +37,7 @@ namespace EngineLayer
         private static char[] _InvalidAminoAcids;
 
         // this affects output labels, etc. and can be changed to "Proteoform" for top-down searches
-        public static string AnalyteType;
+        public static AnalyteType AnalyteType;
 
         public static List<string> ErrorsReadingMods;
 
@@ -49,8 +52,11 @@ namespace EngineLayer
         public static IEnumerable<Modification> UniprotDeseralized { get; private set; }
         public static UsefulProteomicsDatabases.Generated.obo PsiModDeserialized { get; private set; }
         public static IEnumerable<Modification> AllModsKnown { get { return _AllModsKnown.AsEnumerable(); } }
+        public static IEnumerable<Modification> AllRnaModsKnown { get { return _AllRnaModsKnown.AsEnumerable(); } }
         public static IEnumerable<string> AllModTypesKnown { get { return _AllModTypesKnown.AsEnumerable(); } }
+        public static IEnumerable<string> AllRnaModTypesKnown { get { return _AllRnaModTypesKnown.AsEnumerable(); } }
         public static Dictionary<string, Modification> AllModsKnownDictionary { get; private set; }
+        public static Dictionary<string, Modification> AllRnaModsKnownDictionary { get; private set; }
         public static Dictionary<string, string> AvailableUniProtProteomes { get; private set; }
         public static Dictionary<string, DissociationType> AllSupportedDissociationTypes { get; private set; }
         public static List<string> SeparationTypes { get; private set; }
@@ -62,10 +68,9 @@ namespace EngineLayer
 
         public static void SetUpGlobalVariables()
         {
-            Loaders.LoadElements();
             AcceptedDatabaseFormats = new List<string> { ".fasta", ".fa", ".xml", ".msp" };
             AcceptedSpectraFormats = new List<string> { ".raw", ".mzml", ".mgf" };
-            AnalyteType = "Peptide";
+            AnalyteType = AnalyteType.Peptide;
             _InvalidAminoAcids = new char[] { 'X', 'B', 'J', 'Z', ':', '|', ';', '[', ']', '{', '}', '(', ')', '+', '-' };
             ExperimentalDesignFileName = "ExperimentalDesign.tsv";
             SeparationTypes = new List<string> { { "HPLC" }, { "CZE" } };
@@ -74,6 +79,7 @@ namespace EngineLayer
             SetUpDataDirectory();
             LoadCrosslinkers();
             LoadModifications();
+            LoadRnaModifications();
             LoadGlycans();
             LoadCustomAminoAcids();
             SetUpGlobalSettings();
@@ -411,6 +417,34 @@ namespace EngineLayer
             }
             ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
             ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
+        }
+
+        private static void LoadRnaModifications()
+        {
+            _AllRnaModsKnown = new List<Modification>();
+            _AllRnaModTypesKnown = new HashSet<string>();
+            AllRnaModsKnownDictionary = new Dictionary<string, Modification>();
+
+            // RNA Mods is an embedded resources: It gets packed into the DLL so we do not need to worry about the installer. 
+            var assembly = typeof(GlobalVariables).Assembly;
+            var resourceName = "EngineLayer.Mods.RnaMods.txt";
+
+            using (var stream = assembly.GetManifestResourceStream(resourceName))
+            using (var reader = new StreamReader(stream))
+            {
+                string fileContent = reader.ReadToEnd();
+                foreach (var mod in PtmListLoader.ReadModsFromString(fileContent, out var errors))
+                {
+                    _AllRnaModsKnown.Add(mod);
+                }
+            }
+
+            // populate mod types and dictionary
+            _AllRnaModsKnown.Select(mod => mod.ModificationType)
+                .Distinct()
+                .ForEach(type => _AllRnaModTypesKnown.Add(type));
+
+            AllRnaModsKnownDictionary = _AllRnaModsKnown.Where(p => p.OriginalId != "").ToDictionary(p => $"{p.IdWithMotif}");
         }
 
         private static void LoadGlycans()

@@ -71,7 +71,8 @@ namespace Test
                 new List<string> { mzmlFilePath },
                 null);
 
-            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count());
+
+            Assert.That(File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count(), Is.EqualTo(3));
             Directory.Delete(output_folder, true);
             File.Delete(proteinDbFilePath);
             File.Delete(mzmlFilePath);
@@ -148,20 +149,19 @@ namespace Test
         {
             var bin = new Bin(71);
             bin.IdentifyAA(1);
-            Assert.AreEqual("Add Alanine", bin.AA);
+            Assert.That(bin.AA, Is.EqualTo("Add Alanine"));
 
             bin = new Bin(-56.1);
             bin.IdentifyAA(1);
-            Assert.AreEqual("Remove Glycine", bin.AA);
-
+            Assert.That(bin.AA, Is.EqualTo("Remove Glycine"));
 
             bin = new Bin(114.102);
             bin.IdentifyAA(1);
-            Assert.AreEqual("Add Aspartic Acid|Add (Glycine+Glycine)|Add Asparagine", bin.AA);
+            Assert.That(bin.AA, Is.EqualTo("Add Aspartic Acid|Add (Glycine+Glycine)|Add Asparagine"));
 
             bin = new Bin(-142.156);
             bin.IdentifyAA(1);
-            Assert.AreEqual("Remove (Alanine+Alanine)", bin.AA);
+            Assert.That(bin.AA, Is.EqualTo("Remove (Alanine+Alanine)"));
         }
 
         [Test]
@@ -169,8 +169,8 @@ namespace Test
         {
             var bin = new Bin(77.987066);
             bin.IdentifyUnimodBins(0.001);
-            Assert.AreEqual("Methylphosphonate on Y|Methylphosphonate on T|Methylphosphonate on S", bin.UnimodId);
-            Assert.AreEqual("CH3O2P", bin.UnimodFormulas);
+            Assert.That(bin.UnimodId, Is.EqualTo("Methylphosphonate on Y|Methylphosphonate on T|Methylphosphonate on S"));
+            Assert.That(bin.UnimodFormulas, Is.EqualTo("CH3O2P"));
         }
     }
 }

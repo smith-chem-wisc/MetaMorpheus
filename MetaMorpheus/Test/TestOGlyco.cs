@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework;
+using NUnit.Framework; 
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -13,13 +13,14 @@ using UsefulProteomicsDatabases;
 using Nett;
 using EngineLayer.GlycoSearch;
 using FlashLFQ;
-using NUnit.Framework.Internal;
 using SpectralAveraging;
-using Chemistry;
+using NUnit.Framework.Legacy;
+using Omics.Modifications;
+using Easy.Common.Extensions;
+using static Nett.TomlObjectFactory;
+using TopDownProteomics;
 using MzLibUtil;
 using Readers;
-using System.Text;
-using Omics.Modifications;
 
 namespace Test
 {
@@ -27,7 +28,6 @@ namespace Test
     public class TestOGlyco
     {
         private static GlycanBox[] OGlycanBoxes { get; set; }
-
 
         [OneTimeSetUp]
         public static void Setup()
@@ -40,7 +40,81 @@ namespace Test
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            Assert.AreEqual(OGlycanBoxes.Count(), 454);
+            Assert.That(OGlycanBoxes.Count(), Is.EqualTo(454));
+        }
+
+        [Test]
+        public static void OGlycanTest_GetGlycanBox_Decoy()
+        {
+            GlycanBox[] OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).ToArray();
+            Assert.That(OGlycanBoxes.All(p => p.TargetDecoy = true));
+
+            GlycanBox[] OGlycanBoxes_withDecoys = GlycanBox.BuildOGlycanBoxes(3, true).ToArray();
+            var group_target = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == true);
+            var group_decoy = OGlycanBoxes_withDecoys.GroupBy(p => p.TargetDecoy == false);
+            Assert.That(group_target.Count() == group_decoy.Count());
+        }
+
+        [Test]
+        public static void GlycoTest_WritingSummary()  // In order to test writing function on different search type ex. O-Search, N-search, N-O search, make sure we have the corresponding search Rseult file.
+        {
+            string outputFolder_NSearch = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder_NSearch);
+
+            var glycoSearchTask_NSearch = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigNGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            DbForTask db = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P16150.fasta"), false);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask_NSearch) }, new List<string> { spectraFile }, new List<DbForTask> { db }, outputFolder_NSearch).Run();
+
+            Directory.Delete(outputFolder_NSearch, true);
+
+
+            string outputFolder_NOSearch = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder_NOSearch);
+
+            var glycoSearchTask_NOSearch = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfigN_OGlycoTest_Run.toml"), MetaMorpheusTask.tomlConfig);
+
+            string spectraFile_NOSearch = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\2019_09_16_StcEmix_35trig_EThcD25_rep1_9906.mgf");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask_NOSearch) }, new List<string> { spectraFile_NOSearch }, new List<DbForTask> { db }, outputFolder_NOSearch).Run();
+
+            Directory.Delete(outputFolder_NOSearch, true);
+        }
+
+
+        [Test]
+        public static void OGlycanTest_IsobaricCase()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\Glyco_Isobaric_testing.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.DoParsimony = false;
+            glycoSearchTask._glycoSearchParameters.DoQuantification = true;
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false; //turn off the diagnostic filter
+
+            DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
+            DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), true);
+
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML");
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
+            
+            string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");            
+            var glycanLevel_filterOFF = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+                .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
+
+            
+            Assert.That(glycanLevel_filterOFF != LocalizationLevel.Level1 && glycanLevel_filterOFF != LocalizationLevel.Level1b);
+            Directory.Delete(outputFolder, true);
+
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = true;
+            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
+            var glycanLevel_filterON = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var error) //load the PSMs data from the "csv file" and bulid the objects
+                .Where(p => p.Ms2ScanNumber == 161 && p.BaseSeq == "HTSVQTTSSGSGPFTDVR").ToList()[0].GlycanLocalizationLevel;
+
+            Assert.That(glycanLevel_filterON == LocalizationLevel.Level1);
+            Directory.Delete(outputFolder, true);
+
         }
 
         [Test]
@@ -59,40 +133,43 @@ namespace Test
             //Combination test
             var kcombs = Glycan.GetKCombs(input, 3);
 
-            Assert.AreEqual(kcombs.Count(), 10);
+            Assert.That(kcombs.Count(), Is.EqualTo(10));
 
             var allcombs = Glycan.GetKCombs(input, 5);
 
-            Assert.AreEqual(allcombs.Count(), 1);
+            Assert.That(allcombs.Count(), Is.EqualTo(1));
 
             //Combination test with repetition
             var kcombs_rep = Glycan.GetKCombsWithRept(input, 3);
 
-            Assert.AreEqual(kcombs_rep.Count(), 35);
+            Assert.That(kcombs_rep.Count(), Is.EqualTo(35));
 
             var allcombs_rep = Glycan.GetKCombsWithRept(input, 5);
 
-            Assert.AreEqual(allcombs_rep.Count(), 126);
+            Assert.That(allcombs_rep.Count(), Is.EqualTo(126));
 
             //Permutation test
             var kperm = Glycan.GetPermutations(input, 3);
 
-            Assert.AreEqual(kperm.Count(), 60);
+            Assert.That(kperm.Count(), Is.EqualTo(60));
 
             var allperm = Glycan.GetPermutations(input, 5).ToList();
 
-            Assert.AreEqual(allperm.Count(), 120);
+            Assert.That(allperm.Count(), Is.EqualTo(120));
 
             //Permutation test with repetition
             var kperm_rep = Glycan.GetPermutationsWithRept(input, 3);
 
-            Assert.AreEqual(kperm_rep.Count(), 125);
+            Assert.That(kperm_rep.Count(), Is.EqualTo(125));
         }
 
         [Test]
         public static void OGlycoTest_OGlycanChildIons()
         {
-            var glycan = GlycanBox.GlobalOGlycans[5];
+            // Reload the glycan database to test the child ions.
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
+
+            var glycan = GlycanBox.GlobalOGlycans[5]; // we use the glycan (N(H)(N(H)))
 
             Assert.That(glycan.Ions.Count == 5);
 
@@ -104,6 +181,18 @@ namespace Test
 
             var coreIons = GlycanDatabase.OGlycanCompositionFragments(kind);
             Assert.That(coreIons.Count() == 6);
+
+            //The following code is to test the glycan with complex structure, only to pass the converage.
+
+            var testKind = GlycanDatabase.String2Kind("HexNAc(2)Hex(4)Fuc(2)NeuAc(1)Xylose(1)");
+            
+            var testGlycanIons = GlycanDatabase.OGlycanCompositionFragments(testKind);
+
+
+            var testKind_smallGlycan = GlycanDatabase.String2Kind("HexNAc(1)");
+
+            var testGlycanIons_smallGlycan = GlycanDatabase.OGlycanCompositionFragments(testKind_smallGlycan);
+
         }
 
         [Test]
@@ -125,6 +214,21 @@ namespace Test
             Assert.That(alphaPeptide.Length == 8);
             Assert.That(alphaPeptide.First().BaseSequence == "MPLFKNTSV");
         }
+        [Test]
+        public static void OGlycanTest_Kdn()
+        {
+            var kind = new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 2 };
+            double mass = Glycan.GetMass(kind) / 1E5;
+            string name = Glycan.GetKindString(kind);
+            Assert.That(name, Is.EqualTo("H1N1K2"));
+            Assert.That(mass, Is.EqualTo(865.27013));
+
+            string kdnGlycan = "HexNAc(2)Hex(2)Kdn(1)";
+            string kdnGlycan2 = "N(H)H(N)K";
+            var expectedKind = new byte[] { 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+            Assert.That(GlycanDatabase.String2Kind(kdnGlycan), Is.EqualTo(expectedKind));
+            Assert.That(Glycan.GetKind(kdnGlycan2), Is.EqualTo(expectedKind));
+        }
 
         [Test]
         public static void GlycoTest_MotifExist()
@@ -134,8 +238,8 @@ namespace Test
             Assert.That(exist);
         }
 
-        [Test]
-        public static void OxoniumIonAnalysis()
+        [Test] // In this test, there are 272 and 294 oxonium ions in the scan, but the glycanBox doesn't contain these HexNAc ions.
+        public static void DiagonsticFilter()
         {
             Assert.That(Glycan.AllOxoniumIons[4] == 13805550);
             Assert.That(Glycan.AllOxoniumIons[5] == 14406607);
@@ -156,8 +260,8 @@ namespace Test
             //Get glycanBox          
             var glycanBox = OGlycanBoxes[19];
 
-            var satifyOxonium = GlycoPeptides.OxoniumIonsAnalysis(oxoniumIonIntensities, glycanBox);
-            Assert.That(satifyOxonium);
+            var satifyOxonium = GlycoPeptides.DiagonsticFilter(oxoniumIonIntensities, glycanBox);
+            Assert.That(!satifyOxonium);
         
         }
 
@@ -192,13 +296,12 @@ namespace Test
         {
             //Get glycanBox
             var glycanBox = OGlycanBoxes[24];
-
             Protein protein = new Protein("TVYLGASK", "");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
 
             List<int> modPos = new List<int> { 2, 8 };
 
-            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[24]);
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox);
             Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]VYLGAS[O-Glycosylation:H1N1A1 on X]K");
 
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
@@ -375,7 +478,6 @@ namespace Test
             }
             HashSet<int> allPeaks = new HashSet<int>(binsToSearch);
 
-
             //Graph Localization
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
 
@@ -438,7 +540,7 @@ namespace Test
 
             Directory.CreateDirectory(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData"));
             var task2 = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSearchTaskconfig_ETD_Run3.toml"), MetaMorpheusTask.tomlConfig);
-            task2._glycoSearchParameters.OxoniumIonFilt = true;
+            task2._glycoSearchParameters.OxoniumIonFilt = true; //turn on the diagnostic filter
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", task2) }, new List<string> { spectraFile }, new List<DbForTask> { db }, Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData")).Run();
             var resultsExist = File.Exists(Path.Combine(Environment.CurrentDirectory, @"TESTGlycoData\Task\oglyco.psmtsv"));
             Assert.That(!resultsExist);
@@ -465,6 +567,7 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
 
+
         [Test]
         public static void OGlycoTest_Run5()
         {
@@ -477,8 +580,251 @@ namespace Test
             DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
             DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), true);
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML");
-            new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile }, new List<DbForTask> { targetDbForTask, contaminDbForTask }, outputFolder).Run();
+            new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                new List<string> { spectraFile },
+                new List<DbForTask> { targetDbForTask, contaminDbForTask }, 
+                outputFolder).Run();
 
+
+            // TODO: Test output, make sure the values on the results.txt really reflect the number counted in the csv files
+            // Parse values from results.txt
+            string resultsTextPath = Directory.GetFiles(outputFolder, "allResults.txt", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(); // Try to find the file name "allResults.txt" in the output folder
+            if (resultsTextPath is null)
+                Assert.Fail("Results file not found.");
+            string[] allResultTxtLines = File.ReadAllLines(resultsTextPath); //read all lines from the file
+            Assert.That(allResultTxtLines.Length > 0); // make sure there are lines in the file
+
+            //For PSMs
+            var allPsmLine = allResultTxtLines.First(p => p.Contains("target PSMs within"));
+            int psmCount = int.Parse(allPsmLine.Split(':').Last().Trim());
+
+            //For ProteinGroups
+            var proteinGroupLine = allResultTxtLines.First(p => p.Contains("protein groups within"));
+            int proteinGroupCount = int.Parse(proteinGroupLine.Split(':').Last().Trim());
+
+            //For GlycoPSMs
+            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("O-Glyco PSMs within"));
+            int glycoPsmCount = int.Parse(glycoPsmLine.Split(':').Last().Trim()); // read the number of glyco PSMs from the results file
+
+            //For Level1GlycoPSMs
+            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 O-Glyco PSMs within"));
+            int level1Psmcount = int.Parse(level1PsmLine.Split(':').Last().Trim()); // read the number of Level1-PSMs from the results file
+
+            // Parse counted number from csv files
+
+            //For PSMs
+            var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
+            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            .Where(p => p.QValue <= 0.01).ToList();
+            Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
+            int readInPsmsCount = onePercentPsms1.Count;
+
+            //For ProteinGroups
+            var allProteinGroupsPath = Path.Combine(outputFolder, "Task", "_AllProteinGroups.tsv");
+            string[] proteinGroupHeaders = File.ReadAllLines(allProteinGroupsPath).First().Split("\t");
+            int readInProteinCount = File.ReadAllLines(Path.Combine(outputFolder, "Task", "_AllProteinGroups.tsv")).Skip(1)
+                .Select(line => line.Split('\t'))
+                .Count(p => double.TryParse(p[Array.IndexOf(proteinGroupHeaders, "Protein QValue")], out double qVaule) && qVaule < 0.01);
+
+            //For GlycoPSMs
+            string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");
+            List<PsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+                .Where(p => p.QValue <= 0.01).ToList(); // the filtering (Q<0.01)
+            int readInGlycoPsmCount = onePercentoGlycoPsms.Count; // the gPSMs number with Fdr<0.01
+            Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
+
+            //For Level1GlycoPSMs
+            int readInLevel1GlycoPsmCount = onePercentoGlycoPsms.Count(p => p.GlycanLocalizationLevel == LocalizationLevel.Level1); //the level1 gPSMs number
+
+            //Compare the numbers
+            Assert.That(psmCount, Is.EqualTo(readInPsmsCount));
+            Assert.That(proteinGroupCount, Is.EqualTo(readInProteinCount));
+            Assert.That(glycoPsmCount, Is.EqualTo(readInGlycoPsmCount));
+            Assert.That(level1Psmcount, Is.EqualTo(readInLevel1GlycoPsmCount));
+
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void OGlycoTest_Run5_WriteContaminants()
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSnip.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.WriteContaminants = true; // write contaminants to the output folder
+
+            DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
+            DbForTask contaminDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P13987_contaminant.fasta"), true);
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML");
+            new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                new List<string> { spectraFile },
+                new List<DbForTask> { targetDbForTask, contaminDbForTask },
+                outputFolder).Run();
+
+
+            // TODO: Test output, make sure the values on the results.txt really reflect the number counted in the csv files
+            // Parse values from results.txt
+            string resultsTextPath = Directory.GetFiles(outputFolder, "allResults.txt", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(); // Try to find the file name "allResults.txt" in the output folder
+            if (resultsTextPath is null)
+                Assert.Fail("Results file not found.");
+            string[] allResultTxtLines = File.ReadAllLines(resultsTextPath); //read all lines from the file
+            Assert.That(allResultTxtLines.Length > 0); // make sure there are lines in the file
+
+            //For PSMs
+            var allPsmLine = allResultTxtLines.First(p => p.Contains("target PSMs within"));
+            int psmCount = int.Parse(allPsmLine.Split(':').Last().Trim());
+
+            //For ProteinGroups
+            var proteinGroupLine = allResultTxtLines.First(p => p.Contains("protein groups within"));
+            int proteinGroupCount = int.Parse(proteinGroupLine.Split(':').Last().Trim());
+
+            //For GlycoPSMs
+            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("O-Glyco PSMs within"));
+            int glycoPsmCount = int.Parse(glycoPsmLine.Split(':').Last().Trim()); // read the number of glyco PSMs from the results file
+
+            //For Level1GlycoPSMs
+            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 O-Glyco PSMs within"));
+            int level1Psmcount = int.Parse(level1PsmLine.Split(':').Last().Trim()); // read the number of Level1-PSMs from the results file
+
+            // Parse counted number from csv files
+
+            //For PSMs
+            var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
+            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList();
+            Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
+            int readInPsmsCount = onePercentPsms1.Count;
+
+            //For ProteinGroups
+            var allProteinGroupsPath = Path.Combine(outputFolder, "Task", "_AllProteinGroups.tsv");
+            string[] proteinGroupHeaders = File.ReadAllLines(allProteinGroupsPath).First().Split("\t");
+            int readInProteinCount = File.ReadAllLines(Path.Combine(outputFolder, "Task", "_AllProteinGroups.tsv")).Skip(1)
+                .Select(line => line.Split('\t'))
+                .Count(p => double.TryParse(p[Array.IndexOf(proteinGroupHeaders, "Protein QValue")], out double qVaule)
+                && qVaule < 0.01 && p[Array.IndexOf(proteinGroupHeaders, "Protein Decoy/Contaminant/Target")] != "C"
+                && p[Array.IndexOf(proteinGroupHeaders, "Protein Decoy/Contaminant/Target")] != "D");
+
+            //For GlycoPSMs
+            string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");
+            List<PsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+                .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList(); // the filtering (Q<0.01)
+            int readInGlycoPsmCount = onePercentoGlycoPsms.Count; // the gPSMs number with Fdr<0.01
+            Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
+
+            //For Level1GlycoPSMs
+            int readInLevel1GlycoPsmCount = onePercentoGlycoPsms.Count(p => p.GlycanLocalizationLevel == LocalizationLevel.Level1); //the level1 gPSMs number
+
+            //Compare the numbers
+            Assert.That(psmCount, Is.EqualTo(readInPsmsCount));
+            Assert.That(proteinGroupCount, Is.EqualTo(readInProteinCount));
+            Assert.That(glycoPsmCount, Is.EqualTo(readInGlycoPsmCount));
+            Assert.That(level1Psmcount, Is.EqualTo(readInLevel1GlycoPsmCount));
+
+
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
+        public static void OGlycoTest_Run5_WriteDecoys() // Test writing decoys, and make sure we can filter the decoys PSMs
+        {
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TESTGlycoData");
+            Directory.CreateDirectory(outputFolder);
+
+            var glycoSearchTask = Toml.ReadFile<GlycoSearchTask>(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoSnip.toml"), MetaMorpheusTask.tomlConfig);
+            glycoSearchTask._glycoSearchParameters.WriteContaminants = true;
+            glycoSearchTask._glycoSearchParameters.WriteDecoys = true;
+            glycoSearchTask._glycoSearchParameters.DecoyType = DecoyType.Reverse;
+            glycoSearchTask.CommonParameters = new CommonParameters(dissociationType: DissociationType.HCD, trimMsMsPeaks: false, 
+                precursorMassTolerance: new PpmTolerance(6), productMassTolerance: new PpmTolerance(10), qValueThreshold: 1, 
+                pepQValueThreshold: 1, scoreCutoff: 1);
+
+            DbForTask targetDbForTask = new(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoProteinFASTA_7proteins.fasta"), false);
+            DbForTask dbContaminant = new DbForTask(Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\P02649.fasta"), true);
+
+            List<string> copiedSpectraFiles = new();
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\GlycoPepMix_snip.mzML"); // in order to get enough PSMs to test the filtering, we will copy the spectra file 19 times then get one decpys PSMs in the filterPSMs (Fdr <= 0.01, 1 decoys out of 200 target)
+            for(int i = 0; i < 19 ; i++)                    
+            {
+                var copyPath = Path.Combine(TestContext.CurrentContext.TestDirectory, $@"GlycoTestData\Copy{i}GlycoPepMix_snip.mzML");
+                if (!File.Exists(copyPath))
+                    File.Copy(spectraFile, copyPath);
+                copiedSpectraFiles.Add(copyPath);
+            }
+
+            new EverythingRunnerEngine(
+                new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) },
+                new List<string> { spectraFile, copiedSpectraFiles},
+                new List<DbForTask> { targetDbForTask, dbContaminant},
+                outputFolder).Run();
+
+
+            // TODO: Test output, make sure the values on the results.txt really reflect the number counted in the csv files
+            // Parse values from results.txt
+            string resultsTextPath = Directory.GetFiles(outputFolder, "allResults.txt", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(); // Try to find the file name "allResults.txt" in the output folder
+            if (resultsTextPath is null)
+                Assert.Fail("Results file not found.");
+            string[] allResultTxtLines = File.ReadAllLines(resultsTextPath); //read all lines from the file
+            Assert.That(allResultTxtLines.Length > 0); // make sure there are lines in the file
+
+            //For PSMs
+            var allPsmLine = allResultTxtLines.First(p => p.Contains("target PSMs within"));
+            int psmCount = int.Parse(allPsmLine.Split(':').Last().Trim());
+
+            //For ProteinGroups
+            var proteinGroupLine = allResultTxtLines.First(p => p.Contains("protein groups within"));
+            int proteinGroupCount = int.Parse(proteinGroupLine.Split(':').Last().Trim());
+
+            //For GlycoPSMs
+            var glycoPsmLine = allResultTxtLines.First(p => p.Contains("O-Glyco PSMs within"));
+            int glycoPsmCount = int.Parse(glycoPsmLine.Split(':').Last().Trim()); // read the number of glyco PSMs from the results file
+
+            //For Level1GlycoPSMs
+            var level1PsmLine = allResultTxtLines.First(p => p.Contains("Level 1 O-Glyco PSMs within"));
+            int level1Psmcount = int.Parse(level1PsmLine.Split(':').Last().Trim()); // read the number of Level1-PSMs from the results file
+
+            // Parse counted number from csv files
+
+            //For PSMs
+            var allPsmPath = Path.Combine(outputFolder, "Task", "AllPSMs.psmtsv");
+            List<PsmFromTsv> onePercentPsms1 = SpectrumMatchTsvReader.ReadPsmTsv(allPsmPath, out var errors2)
+            .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList();
+            Assert.That(errors2.Count == 0);// if we cannot find the file, we will get an error message
+            int readInPsmsCount = onePercentPsms1.Count;
+
+            //For ProteinGroups
+            var allProteinGroupsPath = Path.Combine(outputFolder, "Task", "_AllProteinGroups.tsv");
+            string[] proteinGroupHeaders = File.ReadAllLines(allProteinGroupsPath).First().Split("\t");
+            int readInProteinCount = File.ReadAllLines(Path.Combine(outputFolder, "Task", "_AllProteinGroups.tsv")).Skip(1)
+                .Select(line => line.Split('\t'))
+                .Count(p => double.TryParse(p[Array.IndexOf(proteinGroupHeaders, "Protein QValue")], out double qVaule)
+                && qVaule < 0.01 && p[Array.IndexOf(proteinGroupHeaders, "Protein Decoy/Contaminant/Target")] != "C" //filter the contaminants
+                && p[Array.IndexOf(proteinGroupHeaders, "Protein Decoy/Contaminant/Target")] != "D"); // filter the decoys
+
+            //For GlycoPSMs
+            string oGlycoPath = Path.Combine(outputFolder, "Task", "oglyco.psmtsv");
+            List<PsmFromTsv> onePercentoGlycoPsms = SpectrumMatchTsvReader.ReadPsmTsv(oGlycoPath, out var errors) //load the PSMs data from the "csv file" and bulid the objects
+                .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget != "C" && p.DecoyContamTarget != "D").ToList(); // the filtering (Q<0.01, decoy and contaminat)
+            int readInGlycoPsmCount = onePercentoGlycoPsms.Count; // the gPSMs number with Fdr<0.01
+            Assert.That(errors.Count == 0);// if we cannot find the file, we will get an error message
+
+            //For Level1GlycoPSMs
+            int readInLevel1GlycoPsmCount = onePercentoGlycoPsms.Count(p => p.GlycanLocalizationLevel == LocalizationLevel.Level1); //the level1 gPSMs number
+
+            //Compare the numbers
+            Assert.That(psmCount, Is.EqualTo(readInPsmsCount));
+            Assert.That(proteinGroupCount, Is.EqualTo(readInProteinCount));
+            Assert.That(glycoPsmCount, Is.EqualTo(readInGlycoPsmCount));
+            Assert.That(level1Psmcount, Is.EqualTo(readInLevel1GlycoPsmCount));
+
+
+            copiedSpectraFiles.ForEach(p => File.Delete(p));
             Directory.Delete(outputFolder, true);
         }
 
@@ -555,7 +901,6 @@ namespace Test
             Assert.That(errors[0].Contains("Condition \"condition1\" biorep 1 fraction 1 techrep 1 is missing!"));
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -569,7 +914,6 @@ namespace Test
                 "results.txt",
                 "seen_oglyco_localization.tsv"
             };
-
 
             List<string> expectedIndividualFileOutput = new()
             {
@@ -592,7 +936,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -732,7 +1076,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -788,8 +1132,6 @@ namespace Test
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968seen_oglyco_localization.tsv"
             };
 
-
-
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolder).ToList();
             List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
@@ -801,7 +1143,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -857,8 +1199,6 @@ namespace Test
                 "2019_09_16_StcEmix_35trig_EThcD25_rep1_4999-5968seen_no_glyco_localization.tsv"
             };
 
-
-
             List<string> output = Directory.GetFiles(outputFolder).Select(f => Path.GetFileName(f)).ToList();
             List<string> outputFolders = Directory.GetDirectories(outputFolder).ToList();
             List<string> individualOutputFolders = Directory.GetDirectories(outputFolders.FirstOrDefault()).ToList();
@@ -870,7 +1210,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -944,7 +1284,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolder, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q8WXI7.3", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q8WXI7.3"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -980,7 +1320,6 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -998,7 +1337,6 @@ namespace Test
                 "seen_oglyco_localization.tsv"
             };
 
-
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllProteinGroups.tsv",
@@ -1010,7 +1348,6 @@ namespace Test
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
-
 
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
@@ -1024,7 +1361,7 @@ namespace Test
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "_AllProteinGroups.tsv"));
             string[] proteinGroupFields = allProteinGroups[1].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             File.Delete(experimentalDesignFilePath);
             Directory.Delete(outputFolder, true);
@@ -1060,7 +1397,6 @@ namespace Test
             Assert.That(!errors.Any());
             Assert.That(readIn.Count == 2);
 
-
             new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("Task", glycoSearchTask) }, new List<string> { spectraFile1, spectraFile2 }, new List<DbForTask> { db }, outputFolder).Run();
 
             List<string> expectedOutput = new()
@@ -1077,7 +1413,6 @@ namespace Test
                 "seen_oglyco_localization.tsv"
             };
 
-
             List<string> expectedIndividualFileOutput = new()
             {
                 "171025_06subset_1_AllPSMs.psmtsv",
@@ -1088,7 +1423,6 @@ namespace Test
                 "171025_06subset_1protein_oglyco_localization.tsv",
                 "171025_06subset_1seen_oglyco_localization.tsv",
             };
-
 
             string outputFolderWithTask = Path.Combine(outputFolder, "Task");
             List<string> output = Directory.GetFiles(outputFolderWithTask).Select(f => Path.GetFileName(f)).ToList();
@@ -1180,9 +1514,9 @@ namespace Test
             CollectionAssert.AreEquivalent(expectedIndividualFileOutput, individualOutputs);
 
             string[] allProteinGroups = File.ReadAllLines(Path.Combine(outputFolderWithTask, "AllQuantifiedProteins.tsv"));
-            string[] proteinGroupFields = allProteinGroups[1].Split('\t');
+            string[] proteinGroupFields = allProteinGroups[2].Split('\t');
 
-            Assert.AreEqual("Q9GZM5", proteinGroupFields[0]);
+            Assert.That(proteinGroupFields[0], Is.EqualTo("Q9GZM5"));
 
             Directory.Delete(outputFolder, true);
         }
@@ -1264,9 +1598,11 @@ namespace Test
             Directory.Delete(outputFolder, true);
         }
         [Test]
-        [TestCase(false, 2, 1, 1)]
-        [TestCase(true, 2, 3, 1)]
-        [TestCase(true, 2, 3, 2)]
+        [TestCase(false, 2, 1, 1)] // pre output: 1 intensity column, post output: 2 intensity column
+        [TestCase(true, 2, 3, 1)]  // pre output: 1 intensity column, post output: 6 intensity column
+        [TestCase(true, 2, 3, 2)]  // pre output: 1 intensity column, post output: 12 intensity column
+
+
         public static void TestGlycoProteinQuantFileHeaders(bool hasDefinedExperimentalDesign, int bioreps, int fractions, int techreps)
         {
             string condition = hasDefinedExperimentalDesign ? "TestCondition" : "";
@@ -1316,8 +1652,8 @@ namespace Test
             List<string> splitHeader = lines[0].Split(new char[] { '\t' }).ToList();
             List<string> intensityColumnHeaders = splitHeader.Where(p => p.Contains("Intensity", StringComparison.OrdinalIgnoreCase)).ToList();
 
-            Assert.That(intensityColumnHeaders.Count == 1);
-
+            Assert.That(intensityColumnHeaders.Count == bioreps* fractions* techreps); // We change the search funtion allowed to get the PSMs from the duplicate file.
+                                                                                       // Ex. we have 2 bioreps, 3 fractions, 1 techrep, then we get 6 intensity columns
             Directory.Delete(outputFolder, true);
         }
         [Test]

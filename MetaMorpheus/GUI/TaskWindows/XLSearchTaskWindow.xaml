@@ -72,22 +72,22 @@
                                     <Label x:Name="lblCrosslinker" Content="Crosslinker Type" />
                                     <ComboBox x:Name="cbCrosslinkers" />
                                 </StackPanel>
-                                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5">
+                                <StackPanel Orientation="Horizontal" Grid.Row="0" Grid.Column="1" Margin="5" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label x:Name="lblQuenchMethods" Content="Quench Methods" />
-                                    <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" Margin="2" />
+                                    <CheckBox x:Name="ckbQuenchH2O"  VerticalAlignment="Center" Content="H2O" Margin="2"/>
                                     <CheckBox x:Name="ckbQuenchTris"  VerticalAlignment="Center" Content="Tris" Margin="2" />
                                     <CheckBox x:Name="ckbQuenchNH2"  VerticalAlignment="Center" Content="NH2" Margin="2" />
                                 </StackPanel>
                             </Grid>
                             <StackPanel Orientation="Horizontal" Grid.Row="1" Grid.Column="1" Margin="5">
                                 <Label Content="Keep top N candidates" />
-                                <TextBox x:Name="txtXLTopNum" PreviewTextInput="CheckIfNumber" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
+                                <local:IntegerTexBoxControl x:Name="txtXLTopNum" Width="45" Margin="2" IsEnabled="{Binding IsChecked, ElementName=ckbXLTopNum}" />
                             </StackPanel>
                             <StackPanel Orientation="Horizontal" Margin="5" Grid.Row="0" Grid.Column="1">
                                 <Label x:Name="ionsToSearchLabel" Content="MS2 Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label.ToolTip>
                                         <TextBlock>
-                                                        The type of fragmentation.
+                                            Main fragmentation method used. If using triggered fragmentation methods, for example EThcD, set this to the triggering fragmentation method. 
                                         </TextBlock>
                                     </Label.ToolTip>
                                 </Label>
@@ -95,7 +95,9 @@
                                 <Label x:Name="ms2childScanIonsToSearchLabel" Content="MS2 Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label.ToolTip>
                                         <TextBlock>
-                                                        The type of fragmentation of the child scan (second MS2, or MS3).
+                                            Leave blank if not using triggered fragmentation scans.
+                                            <LineBreak/>
+                                            If using combined fragmentation methods, set this to the second dissociation type. For example, if using HCD to trigger ETD, set this dissociation type as ETD.    
                                         </TextBlock>
                                     </Label.ToolTip>
                                 </Label>
@@ -103,15 +105,31 @@
                                 <Label x:Name="ms3childScanIonsToSearchLabel" Content="MS3 Child Scan Dissocation" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                     <Label.ToolTip>
                                         <TextBlock>
-                                                        The type of fragmentation of the child scan (second MS2, or MS3).
+                                                        Set this to fragmentation type of any MS3 scans. Leave blank if not using triggered fragmentation methods.  
                                         </TextBlock>
                                     </Label.ToolTip>
                                 </Label>
                                 <ComboBox x:Name="MS3ChildScanDissociationTypeComboBox" AllowDrop="False" HorizontalAlignment="Center" VerticalAlignment="Center" DropDownClosed="CustomFragmentationHandler"/>
                             </StackPanel>
-                            <StackPanel>
-                                <CheckBox x:Name="ckbAddCompIon"  VerticalAlignment="Center" Content="Generate Complementary Ions" Margin="2" />
-                                <CheckBox x:Name="ckbCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="Crosslink At Cleavage Site" Margin="2" />
+                            <StackPanel ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                <CheckBox x:Name="ckbAddCompIon"  VerticalAlignment="Center" Content="Generate Complementary Ions" Margin="2">
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Generates experimental (not theoretical) complementary ions for each MS2.
+                                            <LineBreak />
+                                            Useful for localization of modifications.
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
+                                <CheckBox x:Name="ckbCrosslinkAtCleavageSite"  VerticalAlignment="Center" Content="Crosslink At Cleavage Site" Margin="2" >
+                                    <CheckBox.ToolTip>
+                                        <TextBlock>
+                                            Amine-amine crosslinkers, such as DSS or DSSO, prevent the C-terminal cleavage of lysine by Trypsin.
+                                            <LineBreak/>
+                                            Check the box to override the default behavior and allow cleavage at crosslinker sites. 
+                                        </TextBlock>
+                                    </CheckBox.ToolTip>
+                                </CheckBox>
                             </StackPanel>
                         </StackPanel>
                     </Expander>
@@ -129,31 +147,18 @@
                             </Style>
                         </Expander.Style>
                         <StackPanel>
-                            <GroupBox Header="File Load Parameters">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="1*" />
-                                        <ColumnDefinition Width="1*" />
-                                    </Grid.ColumnDefinitions>
-                                    <StackPanel>
-                                        <StackPanel Margin="5">
-                                            <CheckBox x:Name="useProvidedPrecursor" Content="Use Provided Precursor"/>
-                                            <CheckBox x:Name="deconvolutePrecursors" Content="Deconvolute Precursors"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Grid>
-                            </GroupBox>
+                            <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
                             <GroupBox Header="Peak Trimming">
                                 <StackPanel>
                                     <CheckBox x:Name="trimMs1" Content="Trim MS1 Peaks"/>
                                     <CheckBox x:Name="trimMsMs" Content="Trim MS2 Peaks"/>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Top N peaks" />
-                                        <TextBox x:Name="TopNPeaksTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
+                                        <local:IntegerTexBoxControl x:Name="TopNPeaksTextBox" Width="45" />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Minimum ratio" />
-                                        <TextBox x:Name="MinRatioTextBox"  PreviewTextInput="CheckIfNumber" Width="45" />
+                                        <local:DoubleTextBoxControl x:Name="MinRatioTextBox" Width="45" />
                                     </StackPanel>
                                 </StackPanel>
                             </GroupBox>
@@ -167,7 +172,7 @@
                                         <CheckBox x:Name="checkBoxDecoy" Content="Generate decoy proteins" Margin="5" DockPanel.Dock="Top" />
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label1" Content="Max Missed Cleavages" />
-                                            <TextBox x:Name="missedCleavagesTextBox" PreviewTextInput="CheckIfNumber"  Width="45" TextChanged="NonSpecificUpdate"/>
+                                            <local:IntegerTexBoxControl x:Name="missedCleavagesTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label_Copy" Content="Protease" />
@@ -175,7 +180,7 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="1">
                                             <Label x:Name="label2" Content="Number of Database Partitions" />
-                                            <TextBox x:Name="numberOfDatabaseSearchesTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="numberOfDatabaseSearchesTextBox" Width="45" />
                                         </StackPanel>
                                     </StackPanel>
                                     <StackPanel Grid.Column="1">
@@ -189,13 +194,13 @@
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="label55_Copy" Content="Max Modification Isoforms" />
-                                            <TextBox x:Name="maxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="maxModificationIsoformsTextBox" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                            <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox" Width="45" />
                                             <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                            <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" TextChanged="NonSpecificUpdate"/>
+                                            <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" TextChanged="NonSpecificUpdate"/>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>
@@ -223,11 +228,11 @@
                                     <StackPanel Grid.Column="2">
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label x:Name="ffdf" Content="Minimum score allowed:" />
-                                            <TextBox x:Name="minScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" />
+                                            <local:IntegerTexBoxControl x:Name="minScoreAllowed" Width="45" />
                                         </StackPanel>
                                         <StackPanel Orientation="Horizontal" Margin="5">
                                             <Label Content="Max Threads" />
-                                            <TextBox x:Name="maxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                            <local:IntegerTexBoxControl x:Name="maxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                                 <TextBox.ToolTip>
                                                     <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
@@ -235,7 +240,7 @@
                                                         Enter a lower number to limit CPU usage.
                                                     </TextBlock>
                                                 </TextBox.ToolTip>
-                                            </TextBox>
+                                            </local:IntegerTexBoxControl>
                                         </StackPanel>
                                     </StackPanel>
                                 </Grid>

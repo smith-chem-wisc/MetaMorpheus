@@ -8,6 +8,8 @@ using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
 using Omics.Digestion;
 using Omics.Modifications;
+using Easy.Common.Extensions;
+using EngineLayer.SpectrumMatch;
 
 namespace Test
 {
@@ -59,42 +61,45 @@ namespace Test
             mfi.Add(new MatchedFragmentIon(p, 1, 1, 1));
             SpectralMatch myPsm = new PeptideSpectralMatch(pwsm1, 0, 10, 0, scan, new CommonParameters(), mfi);
 
-            myPsm.AddOrReplace(pwsm2, 10, 0, true, mfi, 10);
+            myPsm.AddOrReplace(pwsm2, 10, 0, true, mfi);
 
             myPsm.ResolveAllAmbiguities();
 
             //Here we have a situation where there are two mods at the same position with different chemical formuala. They cannot be resolved and so the return value is null.
-            Assert.IsNull(myPsm.ModsChemicalFormula);
+            Assert.That(myPsm.ModsChemicalFormula, Is.Null);
+            var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
 
             string myPsmString = myPsm.ToString();
             string[] myPsmStringSplit = myPsmString.Split('\t');
-            string ppmErrorString = myPsmStringSplit[24];
+            var ppmErrorIndex = headerSplits.IndexOf(PsmTsvHeader.MassDiffPpm);
+            string ppmErrorString = myPsmStringSplit[ppmErrorIndex];
 
             //The two different mods produce two separate mass errors, which are both then reported
-            Assert.AreEqual("0.00000|11801.30000", ppmErrorString);
+            Assert.That(ppmErrorString, Is.EqualTo("0.00000|11801.30000"));
 
             //Make sure we see produt ion neutral losses in the output.
-            string matchedIonSeries = myPsmStringSplit[39];
-            Assert.AreEqual("[(b1-5.00)+1]", matchedIonSeries);
-
+            var matchedIonSeriesIndex = headerSplits.IndexOf(PsmTsvHeader.MatchedIonSeries);
+            string matchedIonSeries = myPsmStringSplit[matchedIonSeriesIndex];
+            Assert.That(matchedIonSeries, Is.EqualTo("[(b1-5.00)+1]"));
 
             //removing one of the peptides to reset for the next test
-            myPsm.RemoveThisAmbiguousPeptide(0, pwsm2);
+            var tentativeSpectralMatch = new SpectralMatchHypothesis(0, pwsm2, mfi, myPsm.Score);
+            myPsm.RemoveThisAmbiguousPeptide(tentativeSpectralMatch);
 
             PeptideWithSetModifications pwsm3 = new PeptideWithSetModifications(protein1, new DigestionParams(), 2, 9, CleavageSpecificity.Unknown, null, 0, allModsOneIsNterminus1, 0);
-            myPsm.AddOrReplace(pwsm3, 10, 0, true, mfi, 10);
+            myPsm.AddOrReplace(pwsm3, 10, 0, true, mfi);
 
             myPsm.ResolveAllAmbiguities();
 
             //Now we have removed one of the peptides with a different chemical formual and replaced it with a mod that has the same chemical formula as the remaining original best peptide
             //Here we have a situation where there are two mods at the same position have the same chemical formuala and they can be resolved and so the return value the chemical formual of the mod.
-            Assert.AreEqual("C", myPsm.ModsChemicalFormula.Formula.ToString());
+            Assert.That(myPsm.ModsChemicalFormula.Formula.ToString(), Is.EqualTo("C"));
 
             myPsmString = myPsm.ToString();
             myPsmStringSplit = myPsmString.Split('\t');
-            ppmErrorString = myPsmStringSplit[24];
+            ppmErrorString = myPsmStringSplit[ppmErrorIndex];
 
-            Assert.AreEqual("0.00000", ppmErrorString);
+            Assert.That(ppmErrorString, Is.EqualTo("0.00000"));
         }
     }
 }

@@ -3,7 +3,7 @@ using EngineLayer;
 using FlashLFQ;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework;
+using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -12,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Omics.Modifications;
 using TaskLayer;
 

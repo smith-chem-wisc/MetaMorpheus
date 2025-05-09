@@ -63,12 +63,6 @@ namespace EngineLayer.Calibration
             //generate new scans
             MsDataScan[] calibratedScans = new MsDataScan[originalScans.Count];
 
-            //hard copy original scans
-            for (int i = 0; i < originalScans.Count; i++)
-            {
-                calibratedScans[i] = originalScans[i];
-            }
-
             //apply a smoothing function, so that outlier scans aren't wildly shifted
             double[] ms1SmoothedErrors = SmoothErrors(ms1RelativeErrors);
             double[] ms2SmoothedErrors = new double[ms2RelativeErrors.Length];

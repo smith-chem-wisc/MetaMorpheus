@@ -48,10 +48,10 @@ namespace Test.MetaDraw
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(10, parsedPsms.Count);
-            Assert.AreEqual(0, warnings.Count);
+            Assert.That(parsedPsms.Count, Is.EqualTo(10));
+            Assert.That(warnings.Count, Is.EqualTo(0));
 
             Directory.Delete(folderPath, true);
         }
@@ -62,11 +62,11 @@ namespace Test.MetaDraw
         {
             //test if the reader still works when psm file doesn't contain spectral angle as header.
             string noSA = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\noSAreaderTest.psmtsv");
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(noSA, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(noSA, out var warnings);
 
 
-            Assert.AreEqual(15, parsedPsms.Count);
-            Assert.AreEqual(0, warnings.Count);
+            Assert.That(parsedPsms.Count, Is.EqualTo(15));
+            Assert.That(warnings.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -84,11 +84,11 @@ namespace Test.MetaDraw
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
-            Assert.AreEqual(-1, parsedPsms.First().SpectralAngle);
-            Assert.AreEqual(10, parsedPsms.Count);
-            Assert.AreEqual(0, warnings.Count);
+            Assert.That(parsedPsms.First().SpectralAngle, Is.EqualTo(-1));
+            Assert.That(parsedPsms.Count, Is.EqualTo(10));
+            Assert.That(warnings.Count, Is.EqualTo(0));
 
             Directory.Delete(folderPath, true);
         }
@@ -99,7 +99,7 @@ namespace Test.MetaDraw
         {
             string baseSequence = "ASDF(+8.01)ASDF";
             string cleanedSequence = PsmFromTsv.RemoveParentheses(baseSequence);
-            Assert.IsTrue(cleanedSequence.Equals("ASDFASDF"));
+            Assert.That(cleanedSequence.Equals("ASDFASDF"));
         }
 
         [Test]
@@ -119,7 +119,7 @@ namespace Test.MetaDraw
 
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("XL_Intralinks.tsv"));
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
 
             Directory.Delete(folderPath, true);
         }
@@ -131,14 +131,14 @@ namespace Test.MetaDraw
             List<string> warnings = new List<string>();
             List<PsmFromTsv> psms;
 
-            psms = PsmTsvReader.ReadTsv(myFile, out warnings);  // test will fail if the order of psms is changed to something other than top to bottom row
+            psms = SpectrumMatchTsvReader.ReadPsmTsv(myFile, out warnings);  // test will fail if the order of psms is changed to something other than top to bottom row
 
             // check that variant psm properties are being parsed correctly
-            Assert.AreEqual("", psms[0].IdentifiedSequenceVariations);
-            Assert.AreEqual("A147T", psms[1].IdentifiedSequenceVariations);
+            Assert.That(psms[0].IdentifiedSequenceVariations, Is.EqualTo(""));
+            Assert.That(psms[1].IdentifiedSequenceVariations, Is.EqualTo("A147T"));
 
-            Assert.AreEqual("541-541", psms[0].SpliceSites);
-            Assert.AreEqual("", psms[1].SpliceSites);
+            Assert.That(psms[0].SpliceSites, Is.EqualTo("541-541"));
+            Assert.That(psms[1].SpliceSites, Is.EqualTo(""));
 
             // check that the correct ions are being added to VariantCrossingIons
             List<List<string>> expected = new List<List<string>>();
@@ -162,10 +162,10 @@ namespace Test.MetaDraw
             {
                 IEnumerable<string> actualIons = psms[i].VariantCrossingIons.Select(p => p.NeutralTheoreticalProduct.Annotation);
                 foreach (string expectedIon in expected[i])
-                    Assert.IsTrue(actualIons.Contains(expectedIon),
+                    Assert.That(actualIons.Contains(expectedIon),
                        "VariantCrossingIons should contain ion " + expectedIon + " in file " + psms[i].FileNameWithoutExtension + ".");
                 foreach (string actualIon in actualIons)
-                    Assert.IsTrue(expected[i].Contains(actualIon),
+                    Assert.That(expected[i].Contains(actualIon),
                         "VariantCrossingIons should not contain ion " + actualIon + " in file " + psms[i].FileNameWithoutExtension + ".");
             }
         }
@@ -222,7 +222,7 @@ namespace Test.MetaDraw
 
 
                 var expected = modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + startAA.Length + endAA.Length + 2;
-                Assert.AreEqual(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, expected);
+                Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, Is.EqualTo(expected));
             }
         }
 
@@ -437,6 +437,12 @@ namespace Test.MetaDraw
             Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count == modifiedBaseSeq.Length + matchedIons.Count + fullSequence.Count(p => p == '[') + 
                 psm.StartAndEndResiduesInProtein.Replace("[", "").Replace("]", "").Replace("to", "").Replace(" ", "").Length + 2);
 
+
+            // get scan from psm
+            var scan = metadrawLogic.GetMs2ScanFromPsm(psm);
+            Assert.That(scan.OneBasedScanNumber, Is.EqualTo(psm.Ms2ScanNumber));
+            Assert.That(scan.MsnOrder, Is.EqualTo(2));
+
             // clean up resources
             metadrawLogic.CleanUpResources();
             Assert.That(!metadrawLogic.FilteredListOfPsms.Any());
@@ -650,7 +656,7 @@ namespace Test.MetaDraw
 
             // test that library peaks were drawn in the mirror plot (these peaks have negative intensities)
             var mirrorPlotPeaks = plotSeries.Where(p => ((LineSeries)p).Points[1].Y < 0).ToList();
-            Assert.AreEqual(mirrorPlotPeaks.Count, 59);
+            Assert.That(mirrorPlotPeaks.Count, Is.EqualTo(59));
 
             var plotAxes = plotView.Model.Axes;
             Assert.That(plotAxes.Count == 2);
@@ -690,12 +696,13 @@ namespace Test.MetaDraw
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"MetaDraw_GlycoSearchTaskTest");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\leukosialin.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"GlycoTestData\sliced_glyco_hcd_ethcd.raw");
-
+            
             // run task
             CommonParameters commonParameters = new CommonParameters(dissociationType: DissociationType.HCD, ms2childScanDissociationType: DissociationType.EThcD);
 
             Directory.CreateDirectory(outputFolder);
             var glycoSearchTask = new GlycoSearchTask() { CommonParameters = commonParameters };
+            glycoSearchTask._glycoSearchParameters.OxoniumIonFilt = false; //turn off the diagnostic filter, because the case we use have 272,294 oxonium ions but assigned the N1H1 to that.
             glycoSearchTask.RunTask(outputFolder, new List<DbForTask> { new DbForTask(proteinDatabase, false) }, new List<string> { spectraFile }, "");
 
             var psmFile = Path.Combine(outputFolder, @"oglyco.psmtsv");
@@ -727,7 +734,7 @@ namespace Test.MetaDraw
                 Assert.That(psmObj.FullSequence.Contains(filterString));
                 c++;
             }
-            Assert.Greater(c, 0);
+            Assert.That(c > 0);
 
             // test text search filter (filter by MS2 scan number)
             filterString = @"2";
@@ -740,7 +747,7 @@ namespace Test.MetaDraw
                 Assert.That(psmObj.Ms2ScanNumber.ToString().Contains(filterString));
                 c++;
             }
-            Assert.Greater(c, 0);
+            Assert.That(c > 0);
 
             // draw PSM
             var plotView = new OxyPlot.Wpf.PlotView(){Name = "plotView"};
@@ -764,48 +771,47 @@ namespace Test.MetaDraw
             Assert.That((int)peakPoints[1].Y == 3847);
 
             var plotAxes = plotView.Model.Axes;
-            Assert.AreEqual(2, plotAxes.Count);
+            Assert.That(plotAxes.Count, Is.EqualTo(2));
 
             // test that base sequence annotation was drawn
-            Assert.Greater(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count, 0);
+            Assert.That(metadrawLogic.StationarySequence.SequenceDrawingCanvas.Children.Count > 0);
 
             // test that the plots were drawn in the parent/child view
-            Assert.AreEqual(2, parentChildView.Plots.Count);
+            Assert.That(parentChildView.Plots.Count, Is.EqualTo(2));
 
             // test parent scan
             var parentPlot = parentChildView.Plots[0];
-            Assert.AreEqual("Scan: 27 Dissociation Type: HCD MsOrder: 2 Selected Mz: 924.12 Retention Time: 32.65", parentPlot.SpectrumLabel);
+            Assert.That(parentPlot.SpectrumLabel, Is.EqualTo("Scan: 27 Dissociation Type: HCD MsOrder: 2 Selected Mz: 924.12 Retention Time: 32.65"));
             int numAnnotatedResidues = psm.BaseSeq.Length;
             int numAnnotatedIons = psm.MatchedIons.Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M
                 && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
             int numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
-            Assert.AreEqual(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods, parentPlot.TheCanvas.Children.Count);
+            Assert.That(parentPlot.TheCanvas.Children.Count, Is.EqualTo(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods));
 
             peak = (LineSeries)parentPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
-            Assert.AreEqual(101.07, Math.Round(peakPoints[0].X, 2)); // m/z
-            Assert.AreEqual(101.07, (Math.Round(peakPoints[1].X, 2)));
-            Assert.AreEqual(0, (int)peakPoints[0].Y); // intensity
-            Assert.AreEqual(3847, (int)peakPoints[1].Y);
+            Assert.That(Math.Round(peakPoints[0].X, 2), Is.EqualTo(101.07)); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2), Is.EqualTo(101.07));
+            Assert.That((int)peakPoints[0].Y, Is.EqualTo(0)); // intensity
+            Assert.That((int)peakPoints[1].Y, Is.EqualTo(3847));
 
             // test child scan
             var childPlot = parentChildView.Plots[1];
-            Assert.AreEqual("Scan: 30 Dissociation Type: EThcD MsOrder: 2 Selected Mz: 924.12 RetentionTime: 32.66",
-                childPlot.SpectrumLabel);
-            Assert.Greater(childPlot.TheCanvas.Children.Count, 0);
+            Assert.That(childPlot.SpectrumLabel, Is.EqualTo("Scan: 30 Dissociation Type: EThcD MsOrder: 2 Selected Mz: 924.12 RetentionTime: 32.66"));
+            Assert.That(childPlot.TheCanvas.Children.Count > 0);
             numAnnotatedResidues = psm.BaseSeq.Length;
             numAnnotatedIons = psm.ChildScanMatchedIons[30]
                 .Count(p => p.NeutralTheoreticalProduct.ProductType != ProductType.M
                 && p.NeutralTheoreticalProduct.ProductType != ProductType.D);
             numAnnotatedMods = psm.FullSequence.Count(p => p == '[');
-            Assert.AreEqual(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods, childPlot.TheCanvas.Children.Count);
+            Assert.That(childPlot.TheCanvas.Children.Count, Is.EqualTo(numAnnotatedResidues + numAnnotatedIons + numAnnotatedMods));
 
             peak = (LineSeries)childPlot.Plot.Model.Series[0]; // the first m/z peak
             peakPoints = peak.Points;
-            Assert.AreEqual(126.06, Math.Round(peakPoints[0].X, 2)); // m/z
-            Assert.AreEqual(126.06, Math.Round(peakPoints[1].X, 2));
-            Assert.AreEqual(0, (int)peakPoints[0].Y); // intensity
-            Assert.AreEqual(8496, (int)peakPoints[1].Y);
+            Assert.That(Math.Round(peakPoints[0].X, 2), Is.EqualTo(126.06)); // m/z
+            Assert.That(Math.Round(peakPoints[1].X, 2), Is.EqualTo(126.06));
+            Assert.That((int)peakPoints[0].Y, Is.EqualTo(0)); // intensity
+            Assert.That((int)peakPoints[1].Y, Is.EqualTo(8496));
 
             // write pdf
             var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-Glycosylation:H1N1 on X]SEPLSSK").ToList();
@@ -873,7 +879,7 @@ namespace Test.MetaDraw
             // fix the scan number due to the trimmed spectra file
             foreach (var psm in metadrawLogic.FilteredListOfPsms)
             {
-                var type = psm.GetType();
+                var type = typeof(SpectrumMatchFromTsv);
                 var field = type.GetField("<Ms2ScanNumber>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
                 field.SetValue(psm, psm.Ms2ScanNumber + 27300);
             }
@@ -1021,8 +1027,6 @@ namespace Test.MetaDraw
             Directory.Delete(outputFolder, true);
         }
 
-  
-
         [Test]
         public static void TestMetaDrawErrors()
         {
@@ -1051,7 +1055,7 @@ namespace Test.MetaDraw
             errors = metadrawLogic.LoadFiles(loadSpectra: false, loadPsms: true);
             Assert.That(!errors.Any());
 
-            var psmsFromTsv = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            var psmsFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             var plotView = new OxyPlot.Wpf.PlotView();
             var canvas = new Canvas();
             var scrollableCanvas = new Canvas();
@@ -1074,17 +1078,13 @@ namespace Test.MetaDraw
         }
 
         [Test]
-        [NonParallelizable]
         public static void TestMetaDrawLoadingWithWeirdFileNames()
         {
             // test loading when the file has a periods, commas, spaces in the name
             string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestMetaDrawLoadingWithWeirdFileNames");
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
-            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
+            string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
 
-            string pathWithPeriodInIt = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML");
-            File.Copy(spectraFile, pathWithPeriodInIt, true);
-            spectraFile = pathWithPeriodInIt;
 
             Directory.CreateDirectory(outputFolder);
 
@@ -1097,7 +1097,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             var metadrawLogic = new MetaDrawLogic();
             metadrawLogic.PsmResultFilePaths.Add(psmFile);
-            metadrawLogic.SpectraFilePaths.Add(pathWithPeriodInIt);
+            metadrawLogic.SpectraFilePaths.Add(spectraFile);
             var errors = metadrawLogic.LoadFiles(true, true);
             Assert.That(!errors.Any());
 
@@ -1123,11 +1123,6 @@ namespace Test.MetaDraw
 
             // clean up resources
             metadrawLogic.CleanUpResources();
-
-            // delete output
-           
-
-            File.Delete(pathWithPeriodInIt);
             Directory.Delete(outputFolder, true);
         }
 
@@ -1262,7 +1257,7 @@ namespace Test.MetaDraw
             }
 
             //check that the proteoform classification was correct
-            Assert.IsTrue(metadrawLogic.FilteredListOfPsms[0].AmbiguityLevel.Equals("1"));
+            Assert.That(metadrawLogic.FilteredListOfPsms[0].AmbiguityLevel.Equals("1"));
 
             // delete output
             Directory.Delete(outputFolder, true);
@@ -1486,7 +1481,7 @@ namespace Test.MetaDraw
         public static void EnsureNoCrashesWithNGlyco()
         {
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "GlycoTestData", "nglyco_f5.psmtsv");
-            var psmOfInterest = PsmTsvReader.ReadTsv(psmsPath, out var warnings).First(p => p.FullSequence.Contains("LLSTEGSQ"));
+            var psmOfInterest = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out var warnings).First(p => p.FullSequence.Contains("LLSTEGSQ"));
             Assert.That(!warnings.Any());
 
             MetaDrawLogic metaDrawLogic = new();
@@ -1625,100 +1620,100 @@ namespace Test.MetaDraw
             searchTask.RunTask(folderPath, new List<DbForTask> { db }, new List<string> { myFile }, "metadraw");
             string psmFile = Directory.GetFiles(folderPath).First(f => f.Contains("AllPSMs.psmtsv"));
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             ObservableCollection<PsmFromTsv> psms = new(parsedPsms);
 
             var psmDict = parsedPsms.GroupBy(p => p.FileNameWithoutExtension)
                 .ToDictionary(p => p.Key, p => new ObservableCollection<PsmFromTsv>(p));
 
             // check that fragment mass error was read in correctly
-            Assert.AreEqual(Math.Round(-0.27631606125063707, 5), Math.Round(psms[1].MatchedIons[1].MassErrorPpm, 5));
-            
+            Assert.That(Math.Round(-0.27631606125063707, 5), Is.EqualTo(Math.Round(psms[1].MatchedIons[1].MassErrorPpm, 5)));
+
             // check aspects of each histogram type:
             var plot = new PlotModelStat("Histogram of Precursor Masses", psms, psmDict);
             // Ensure axes are labeled correctly, and intervals are correct
-            Assert.AreEqual(2, plot.Model.Axes.Count);
-            Assert.AreEqual("Count", plot.Model.Axes[1].Title);
-            Assert.AreEqual(0, plot.Model.Axes[1].AbsoluteMinimum);
-            Assert.AreEqual(60, plot.Model.Axes[0].IntervalLength);
+            Assert.That(plot.Model.Axes.Count, Is.EqualTo(2));
+            Assert.That(plot.Model.Axes[1].Title, Is.EqualTo("Count"));
+            Assert.That(plot.Model.Axes[1].AbsoluteMinimum, Is.EqualTo(0));
+            Assert.That(plot.Model.Axes[0].IntervalLength, Is.EqualTo(60));
 
             var plot2 = new PlotModelStat("Histogram of Precursor Charges", psms, psmDict);
             var series2 = plot2.Model.Series.ToList()[0];
             var items2 = (List<OxyPlot.Series.ColumnItem>)series2.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series2);
-            Assert.AreEqual(items2[0].Value, 9);
-            Assert.AreEqual(items2[1].Value, 1);
+            Assert.That(items2[0].Value, Is.EqualTo(9));
+            Assert.That(items2[1].Value, Is.EqualTo(1));
 
             var plot3 = new PlotModelStat("Histogram of Precursor PPM Errors (around 0 Da mass-difference notch only)",
                 psms, psmDict);
             var series3 = plot3.Model.Series.ToList()[0];
             var items3 = (List<OxyPlot.Series.ColumnItem>)series3.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series3);
-            Assert.AreEqual(items3[7].Value, 2);
+            Assert.That(items3[7].Value, Is.EqualTo(2));
 
             var plot4 = new PlotModelStat("Histogram of Fragment Charges",
                 psms, psmDict);
             var series4 = plot4.Model.Series.ToList()[0];
             var items4 = (List<OxyPlot.Series.ColumnItem>)series4.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series4);
-            Assert.AreEqual(items4[0].Value, 101);
+            Assert.That(items4[0].Value, Is.EqualTo(101));
 
             var plot5 = new PlotModelStat("Histogram of Precursor m/z",
                 psms, psmDict);
             var series5 = plot5.Model.Series.ToList()[0];
             var items5 = (List<OxyPlot.Series.ColumnItem>)series5.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series5);
-            Assert.AreEqual(items5.Count, 5);
-            Assert.AreEqual(items5[0].Value, 5);
+            Assert.That(items5.Count, Is.EqualTo(5));
+            Assert.That(items5[0].Value, Is.EqualTo(5));
 
             var plot6 = new PlotModelStat("Histogram of PTM Spectral Counts",
                 psms, psmDict);
             var series6 = plot6.Model.Series.ToList()[0];
             var items6 = (List<OxyPlot.Series.ColumnItem>)series6.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series6);
-            Assert.AreEqual(items6.Count, 1);
-            Assert.AreEqual(items6[0].Value, 2);
+            Assert.That(items6.Count, Is.EqualTo(1));
+            Assert.That(items6[0].Value, Is.EqualTo(2));
 
             var plot7 = new PlotModelStat("Precursor PPM Error vs. RT",
                 psms, psmDict);
             var series7 = plot7.Model.Series.ToList()[0];
             var points7 = (List<OxyPlot.Series.ScatterPoint>)series7.GetType()
                 .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series7);
-            Assert.AreEqual(points7.Count, 9);
-            Assert.AreEqual(points7[1].X, 42.07841);
-            Assert.AreEqual(points7[1].Y, -1.48);
-            Assert.AreEqual(points7[1].Tag, "LSRIDTPK");
+            Assert.That(points7.Count, Is.EqualTo(9));
+            Assert.That(points7[1].X, Is.EqualTo(42.07841));
+            Assert.That(points7[1].Y, Is.EqualTo(-1.48));
+            Assert.That(points7[1].Tag, Is.EqualTo("LSRIDTPK"));
 
             var plot8 = new PlotModelStat("Predicted RT vs. Observed RT",
                 psms, psmDict);
             var series8 = plot8.Model.Series.ToList()[0];
             var points8 = (List<OxyPlot.Series.ScatterPoint>)series8.GetType()
                 .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(series8);
-            Assert.AreEqual(points8.Count, 10);
-            Assert.AreEqual(points8[7].X, 42.06171);
-            Assert.AreEqual(points8[7].Y, 19.00616880619646);
-            Assert.AreEqual(points8[7].Tag, "AFISYHDEAQK");
+            Assert.That(points8.Count, Is.EqualTo(10));
+            Assert.That(points8[7].X, Is.EqualTo(42.06171));
+            Assert.That(points8[7].Y, Is.EqualTo(19.00616880619646));
+            Assert.That(points8[7].Tag, Is.EqualTo("AFISYHDEAQK"));
 
             var plot9 = new PlotModelStat("Histogram of Fragment PPM Errors",
                 psms, psmDict);
             var series9 = plot9.Model.Series.ToList()[0];
             var items9 = (List<OxyPlot.Series.ColumnItem>)series9.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series9);
-            Assert.AreEqual(items9[11].Value, 18);
+            Assert.That(items9[11].Value, Is.EqualTo(18));
 
             var plot10 = new PlotModelStat("Histogram of Hydrophobicity scores",
                 psms, psmDict);
             var series10 = plot10.Model.Series.ToList()[0];
             var items10 = (List<OxyPlot.Series.ColumnItem>)series10.GetType()
                 .GetProperty("Items", BindingFlags.Public | BindingFlags.Instance).GetValue(series10);
-            Assert.AreEqual(items10.Count, 5);
-            Assert.AreEqual(items10[1].Value, 3);
+            Assert.That(items10.Count, Is.EqualTo(5));
+            Assert.That(items10[1].Value, Is.EqualTo(3));
 
             //test variant plotting
             string variantFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\VariantCrossTest.psmtsv");
             List<string> warningsVariants = new List<string>();
             List<PsmFromTsv> parsedPsmsWithVariants;
-            parsedPsmsWithVariants = PsmTsvReader.ReadTsv(variantFile, out warningsVariants);
+            parsedPsmsWithVariants = SpectrumMatchTsvReader.ReadPsmTsv(variantFile, out warningsVariants);
             ObservableCollection<PsmFromTsv> psmsWithVariants = new(parsedPsmsWithVariants);
 
             var psmVariantDict = psmsWithVariants.GroupBy(p => p.FileNameWithoutExtension)
@@ -1728,20 +1723,19 @@ namespace Test.MetaDraw
             var variantSeries1 = variantPlot1.Model.Series.ToList()[0];
             var variantPoints1 = (List<OxyPlot.Series.ScatterPoint>)variantSeries1.GetType()
                 .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries1);
-            Assert.AreEqual(variantPoints1.Count, 1);
-            Assert.AreEqual(variantPoints1[0].X, 97.8357);
-            Assert.AreEqual(variantPoints1[0].Y, 0.35);
-            Assert.AreEqual(variantPoints1[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
+            Assert.That(variantPoints1.Count, Is.EqualTo(1));
+            Assert.That(variantPoints1[0].X, Is.EqualTo(97.8357));
+            Assert.That(variantPoints1[0].Y, Is.EqualTo(0.35));
+            Assert.That(variantPoints1[0].Tag, Is.EqualTo("MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK"));
 
             var variantPlot2 = new PlotModelStat("Predicted RT vs. Observed RT", psmsWithVariants, psmVariantDict);
             var variantSeries2 = variantPlot2.Model.Series.ToList()[0];
             var variantPoints2 = (List<OxyPlot.Series.ScatterPoint>)variantSeries2.GetType()
                 .GetProperty("Points", BindingFlags.Public | BindingFlags.Instance).GetValue(variantSeries2);
-            Assert.AreEqual(variantPoints2.Count, 1);
-            Assert.AreEqual(variantPoints2[0].X, 97.8357);
-            Assert.AreEqual(variantPoints2[0].Y, 16.363848874371111);
-            Assert.AreEqual(variantPoints2[0].Tag, "MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK");
-
+            Assert.That(variantPoints2.Count, Is.EqualTo(1));
+            Assert.That(variantPoints2[0].X, Is.EqualTo(97.8357));
+            Assert.That(variantPoints2[0].Y, Is.EqualTo(16.363848874371111));
+            Assert.That(variantPoints2[0].Tag, Is.EqualTo("MQVDQEEPHVEEQQQQTPAENKAESEEMETSQAGSK"));
 
             Directory.Delete(folderPath, true);
         }

@@ -39,7 +39,7 @@ UniProt = 2
 
 [CommonParameters]
 TaskDescriptor = "SearchTask"
-MaxThreadsToUsePerFile = 1
+MaxThreadsToUsePerFile = 2
 ListOfModsFixed = "Common Fixed\tCarbamidomethyl on C\t\tCommon Fixed\tCarbamidomethyl on U"
 ListOfModsVariable = "Common Variable\tOxidation on M"
 DoPrecursorDeconvolution = true

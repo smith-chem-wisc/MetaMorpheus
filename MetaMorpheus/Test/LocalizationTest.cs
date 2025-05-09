@@ -26,7 +26,7 @@ namespace Test
             DigestionParams digestionParams = new DigestionParams(protease: p.Name, maxMissedCleavages: 8, minPeptideLength: 1, maxPeptideLength: 9, initiatorMethionineBehavior: InitiatorMethionineBehavior.Retain);
             var peps = prot.Digest(digestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            Assert.AreEqual(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9, peps.Count);
+            Assert.That(peps.Count, Is.EqualTo(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9));
         }
 
         [Test]
@@ -59,11 +59,11 @@ namespace Test
             f.Run();
 
             // single peak matches
-            Assert.AreEqual(1, newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).Count());//including b1 now
-            Assert.AreEqual(1, newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).Count());
+            Assert.That(newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.b).Count(), Is.EqualTo(1));//including b1 now
+            Assert.That(newPsm.MatchedFragmentIons.Where(p => p.NeutralTheoreticalProduct.ProductType == ProductType.y).Count(), Is.EqualTo(1));
 
             // when localizing, three peaks match
-            Assert.IsTrue(newPsm.LocalizedScores[1] > 4 && newPsm.LocalizedScores[1] < 5);//we have another matched ion
+            Assert.That(newPsm.LocalizedScores[1] > 4 && newPsm.LocalizedScores[1] < 5);//we have another matched ion
         }
 
         [Test]
@@ -71,23 +71,23 @@ namespace Test
         {
             List<ProductType> allIonTypes = new List<ProductType> { ProductType.b, ProductType.c, ProductType.zPlusOne, ProductType.y };
             List<List<ProductType>> separated = ProductTypeMethods.SeparateIonsByTerminus(allIonTypes);
-            Assert.IsTrue(separated.Count == 2);
-            Assert.IsTrue(separated[0].Count == 2);
-            Assert.IsTrue(separated[1].Count == 2);
-            Assert.IsTrue(separated[0].Contains(ProductType.b));
-            Assert.IsTrue(separated[0].Contains(ProductType.c));
-            Assert.IsTrue(separated[1].Contains(ProductType.y));
-            Assert.IsTrue(separated[1].Contains(ProductType.zPlusOne));
+            Assert.That(separated.Count == 2);
+            Assert.That(separated[0].Count == 2);
+            Assert.That(separated[1].Count == 2);
+            Assert.That(separated[0].Contains(ProductType.b));
+            Assert.That(separated[0].Contains(ProductType.c));
+            Assert.That(separated[1].Contains(ProductType.y));
+            Assert.That(separated[1].Contains(ProductType.zPlusOne));
             List<List<ProductType>> nOnly = ProductTypeMethods.SeparateIonsByTerminus(separated[0]);
-            Assert.IsTrue(nOnly.Count == 1);
-            Assert.IsTrue(nOnly[0].Count == 2);
-            Assert.IsTrue(nOnly[0].Contains(ProductType.b));
-            Assert.IsTrue(nOnly[0].Contains(ProductType.c));
+            Assert.That(nOnly.Count == 1);
+            Assert.That(nOnly[0].Count == 2);
+            Assert.That(nOnly[0].Contains(ProductType.b));
+            Assert.That(nOnly[0].Contains(ProductType.c));
             List<List<ProductType>> cOnly = ProductTypeMethods.SeparateIonsByTerminus(separated[1]);
-            Assert.IsTrue(cOnly.Count == 1);
-            Assert.IsTrue(cOnly[0].Count == 2);
-            Assert.IsTrue(cOnly[0].Contains(ProductType.y));
-            Assert.IsTrue(cOnly[0].Contains(ProductType.zPlusOne));
+            Assert.That(cOnly.Count == 1);
+            Assert.That(cOnly[0].Count == 2);
+            Assert.That(cOnly[0].Contains(ProductType.y));
+            Assert.That(cOnly[0].Contains(ProductType.zPlusOne));
         }
     }
 }

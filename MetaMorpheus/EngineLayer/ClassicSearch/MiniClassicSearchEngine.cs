@@ -1,9 +1,9 @@
-﻿using MassSpectrometry;
+﻿using EngineLayer.Util;
+using MassSpectrometry;
 using MassSpectrometry.MzSpectra;
 using MzLibUtil;
 using Omics;
 using Omics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -61,14 +61,14 @@ namespace EngineLayer.ClassicSearch
             }
 
             // score each scan that has an acceptable precursor mass
-            IEnumerable<ScanWithIndexAndNotchInfo> acceptableScans = GetAcceptableScans(donorPwsm.MonoisotopicMass, peakApexRT, SearchMode); // GetAcceptableScans is asynchronous, in case you care
+            IEnumerable<ExtendedScanWithIndexAndNotchInfo> acceptableScans = GetAcceptableScans(donorPwsm.MonoisotopicMass, peakApexRT, SearchMode); // GetAcceptableScans is asynchronous, in case you care
             if (!acceptableScans.Any())
             {
                 return null;
             }
 
             List<SpectralMatch> acceptablePsms = new();
-            foreach (ScanWithIndexAndNotchInfo scan in acceptableScans)
+            foreach (ExtendedScanWithIndexAndNotchInfo scan in acceptableScans)
             {
                 var dissociationType = FileSpecificParameters.DissociationType == DissociationType.Autodetect ?
                     scan.TheScan.TheScan.DissociationType.Value : FileSpecificParameters.DissociationType;
@@ -93,7 +93,7 @@ namespace EngineLayer.ClassicSearch
                 double thisScore = MetaMorpheusEngine.CalculatePeptideScore(scan.TheScan.TheScan, matchedIons);
 
                 // Add psm to list
-                acceptablePsms.Add(new PeptideSpectralMatch(donorPwsm, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, FileSpecificParameters, matchedIons, 0));
+                acceptablePsms.Add(new PeptideSpectralMatch(donorPwsm, scan.Notch, thisScore, scan.ScanIndex, scan.TheScan, FileSpecificParameters, matchedIons));
             }
 
             IEnumerable<SpectralMatch> matchedSpectra = acceptablePsms.Where(p => p != null);
@@ -129,18 +129,16 @@ namespace EngineLayer.ClassicSearch
                         if (psms[i] != null)
                         {
                             Ms2ScanWithSpecificMass scan = arrayOfSortedMs2Scans[psms[i].ScanIndex];
-                            List<(int, IBioPolymerWithSetMods)> pwsms = new();
                             List<double> pwsmSpectralAngles = new();
-                            foreach (var (Notch, Peptide) in psms[i].BestMatchingBioPolymersWithSetMods)
+                            foreach (var bestMatch in psms[i].BestMatchingBioPolymersWithSetMods)
                             {
                                 //if peptide is target, directly look for the target's spectrum in the spectral library
-                                if (!Peptide.Parent.IsDecoy && spectralLibrary.TryGetSpectrum(Peptide.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
+                                if (!bestMatch.IsDecoy && spectralLibrary.TryGetSpectrum(bestMatch.FullSequence, scan.PrecursorCharge, out var librarySpectrum))
                                 {
                                     SpectralSimilarity s = new SpectralSimilarity(scan.TheScan.MassSpectrum, librarySpectrum.XArray, librarySpectrum.YArray,
                                         SpectralSimilarity.SpectrumNormalizationScheme.SquareRootSpectrumSum, fileSpecificParameters.ProductMassTolerance.Value, false);
                                     if (s.SpectralContrastAngle().HasValue)
                                     {
-                                        pwsms.Add((Notch, Peptide));
                                         pwsmSpectralAngles.Add((double)s.SpectralContrastAngle());
                                     }
                                 }
@@ -159,21 +157,20 @@ namespace EngineLayer.ClassicSearch
             }
         }
 
-        private IEnumerable<ScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, double apexRT, MassDiffAcceptor searchMode)
+        private IEnumerable<ExtendedScanWithIndexAndNotchInfo> GetAcceptableScans(double peptideMonoisotopicMass, double apexRT, MassDiffAcceptor searchMode)
         {
             Ms2ScanWithSpecificMass[] arrayOfSortedMs2Scans = GetScansInWindow(apexRT);
             double[] myScanPrecursorMasses = arrayOfSortedMs2Scans.Select(p => p.PrecursorMass).ToArray();
             foreach (AllowedIntervalWithNotch allowedIntervalWithNotch in searchMode.GetAllowedPrecursorMassIntervalsFromTheoreticalMass(peptideMonoisotopicMass).ToList())
             {
-                DoubleRange allowedInterval = allowedIntervalWithNotch.AllowedInterval;
-                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedInterval.Minimum, myScanPrecursorMasses);
+                int scanIndex = GetFirstScanWithMassOverOrEqual(allowedIntervalWithNotch.Minimum, myScanPrecursorMasses);
                 if (scanIndex < arrayOfSortedMs2Scans.Length)
                 {
                     var scanMass = myScanPrecursorMasses[scanIndex];
-                    while (scanMass <= allowedInterval.Maximum)
+                    while (scanMass <= allowedIntervalWithNotch.Maximum)
                     {
                         var scan = arrayOfSortedMs2Scans[scanIndex];
-                        yield return new ScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
+                        yield return new ExtendedScanWithIndexAndNotchInfo(scan, allowedIntervalWithNotch.Notch, scanIndex);
                         scanIndex++;
                         if (scanIndex == arrayOfSortedMs2Scans.Length)
                         {

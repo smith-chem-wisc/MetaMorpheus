@@ -1,7 +1,5 @@
-﻿using EngineLayer;
-using IO.Mgf;
-using IO.MzML;
-using IO.ThermoRawFileReader;
+﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
+using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using MassSpectrometry;
@@ -20,8 +18,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using Easy.Common.Extensions;
-using EngineLayer.CrosslinkSearch;
-using Org.BouncyCastle.Asn1.X509.Qualified;
 using Readers;
 using System.Threading;
 using Omics.Fragmentation;
@@ -601,6 +597,13 @@ namespace GuiFunctions
 
         }
 
+        public MsDataScan GetMs2ScanFromPsm(PsmFromTsv spectralMatch)
+        {
+            return !MsDataFiles.TryGetValue(spectralMatch.FileNameWithoutExtension, out MsDataFile spectraFile) 
+                ? null 
+                : spectraFile.GetOneBasedScanFromDynamicConnection(spectralMatch.Ms2ScanNumber);
+        }
+
         /// <summary>
         /// Exports the sequence coverage view to an image file
         /// </summary>
@@ -779,7 +782,7 @@ namespace GuiFunctions
             {
                 FilteredListOfPsms.Clear();
 
-                var filteredChimericPsms = ChimericPsms.Where(p => MetaDrawSettings.FilterAcceptsPsm(p));
+                var filteredChimericPsms = ChimericPsms.Where(MetaDrawSettings.FilterAcceptsPsm);
                 foreach (var psm in filteredChimericPsms)
                 {
                     if (filteredChimericPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
@@ -988,7 +991,7 @@ namespace GuiFunctions
                 {
                     lock (ThreadLocker)
                     {
-                        var psms = PsmTsvReader.ReadTsv(resultsFile, out List<string> warnings);
+                        var psms = SpectrumMatchTsvReader.ReadPsmTsv(resultsFile, out List<string> warnings);
                         foreach (PsmFromTsv psm in psms)
                         {
                             if (fileNamesWithoutExtension.Contains(psm.FileNameWithoutExtension) || !haveLoadedSpectra)

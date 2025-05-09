@@ -6,7 +6,6 @@ using EngineLayer;
 using TaskLayer;
 using System.Collections.Generic;
 using Omics.Fragmentation;
-using System.Globalization;
 using Proteomics;
 using MassSpectrometry;
 using EngineLayer.ClassicSearch;
@@ -31,7 +30,7 @@ namespace Test
 
             testLibraryWithoutDecoy.TryGetSpectrum("ALAVDGAGKPGAEE", 2, out var test1);
 
-            Assert.AreEqual(test1.ChargeState, 2);
+            Assert.That(test1.ChargeState, Is.EqualTo(2));
 
             var frags = new List<(double mz, double intensity, ProductType ProductType, int fragmentNumber, int charge, double ppm)>
             {
@@ -98,7 +97,7 @@ namespace Test
 
             testLibraryWithoutDecoy.TryGetSpectrum("ALAVDGAGKPGAEE", 2, out test1);
 
-            Assert.AreEqual(test1.ChargeState, 2);
+            Assert.That(test1.ChargeState, Is.EqualTo(2));
 
             for (int i = 0; i < frags.Count; i++)
             {
@@ -184,11 +183,12 @@ namespace Test
             bool writeSpectralLibrary = false;
             new ClassicSearchEngine(allPsmsArray, listOfSortedms2Scans, variableModifications, fixedModifications, null, null, null,
                 proteinList, searchModes, commonParameters,null, sl, new List<string>(), writeSpectralLibrary).Run();
-             
+
             // Single search mode
-            Assert.AreEqual(7, allPsmsArray.Length);
-            Assert.IsTrue(allPsmsArray[5].Score > 38);
-            Assert.AreEqual("VIHDNFGIVEGLMTTVHAITATQK", allPsmsArray[5].BaseSequence);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(7));
+            Assert.That(allPsmsArray[5].Score > 38);
+            Assert.That(allPsmsArray[5].BaseSequence, Is.EqualTo("VIHDNFGIVEGLMTTVHAITATQK"));
+
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
@@ -228,10 +228,10 @@ namespace Test
                 proteinList, searchModes, commonParameters, null, sl, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
-            Assert.AreEqual(7, allPsmsArray.Length);
-            Assert.IsTrue(allPsmsArray[5].Score > 38);
-            Assert.AreEqual("VIHDNFGIVEGLMTTVHAITATQK", allPsmsArray[5].BaseSequence);
-            Assert.IsTrue(allPsmsArray[5].IsDecoy);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(7));
+            Assert.That(allPsmsArray[5].Score > 38);
+            Assert.That(allPsmsArray[5].BaseSequence, Is.EqualTo("VIHDNFGIVEGLMTTVHAITATQK"));
+            Assert.That(allPsmsArray[5].IsDecoy);
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.69).Within(0.01));
@@ -245,13 +245,13 @@ namespace Test
 
             var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
             var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
-            Assert.That(librarySpectra[0].MatchedFragmentIons[9].NeutralTheoreticalProduct.NeutralLoss == 97.976895573);
-            Assert.That(librarySpectra[0].MatchedFragmentIons[11].NeutralTheoreticalProduct.NeutralLoss == 97.976895573);
-            Assert.That(librarySpectra[0].MatchedFragmentIons[13].NeutralTheoreticalProduct.NeutralLoss == 97.976895573);
-            Assert.That(librarySpectra[0].MatchedFragmentIons[23].NeutralTheoreticalProduct.NeutralLoss == 97.976895573);
+            Assert.That(librarySpectra[0].MatchedFragmentIons[9].NeutralTheoreticalProduct.NeutralLoss, Is.EqualTo(97.976895573));
+            Assert.That(librarySpectra[0].MatchedFragmentIons[11].NeutralTheoreticalProduct.NeutralLoss, Is.EqualTo(97.976895573));
+            Assert.That(librarySpectra[0].MatchedFragmentIons[13].NeutralTheoreticalProduct.NeutralLoss, Is.EqualTo(97.976895573));
+            Assert.That(librarySpectra[0].MatchedFragmentIons[23].NeutralTheoreticalProduct.NeutralLoss, Is.EqualTo(97.976895573));
 
             testLibraryWithoutDecoy.TryGetSpectrum("ASVSELAC[Common Fixed:Carbamidomethyl on C]IYSALILHDDEVTVTEDKINALIKAAGVNVEPFWPGLFAKALANVNIGSLIC[Common Fixed:Carbamidomethyl on C]NVGAGGPAPAAGAAPAGGPAPSTAAAPAEEKKVEAKKEES[Common Biological:Phosphorylation on S]EES[Common Biological:Phosphorylation on S]DDDMGFGLFD", 11, out var test1);
-            Assert.AreEqual(test1.ChargeState, 11);
+            Assert.That(test1.ChargeState, Is.EqualTo(11));
             var frags = new List<(double mz, double intensity, ProductType ProductType, int fragmentNumber, int charge, double neutralLoss)>
             {
                  (474.22253552109225, 0.12327031966337068, ProductType.b, 5, 1, 0.0),
@@ -309,7 +309,7 @@ namespace Test
 
             testLibraryWithoutDecoy.TryGetSpectrum("ASVSELAC[Common Fixed:Carbamidomethyl on C]IYSALILHDDEVTVTEDKINALIKAAGVNVEPFWPGLFAKALANVNIGSLIC[Common Fixed:Carbamidomethyl on C]NVGAGGPAPAAGAAPAGGPAPSTAAAPAEEKKVEAKKEES[Common Biological:Phosphorylation on S]EES[Common Biological:Phosphorylation on S]DDDMGFGLFD", 11, out test1);
 
-            Assert.AreEqual(test1.ChargeState, 11);
+            Assert.That(test1.ChargeState, Is.EqualTo(11));
             double maxOfIntensity = frags.Select(p => p.intensity).ToList().Max();
             for (int i = 0; i < frags.Count; i++)
             {
@@ -336,17 +336,17 @@ namespace Test
             var testLibraryWithoutDecoy = new SpectralLibrary(new List<string> { path });
             var librarySpectra = testLibraryWithoutDecoy.GetAllLibrarySpectra().ToList();
 
-            Assert.That(librarySpectra.Count == 5);
+            Assert.That(librarySpectra.Count, Is.EqualTo(5));
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("VGIVPGEVIAPGM[Common Variable:Oxidation on M]R", 3, out var spectrum1));
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("C[Common Fixed:Carbamidomethyl on C]TSC[Common Fixed:Carbamidomethyl on C]NGQGIKFVTR", 3, out var spectrum2));
-            Assert.AreEqual(spectrum2.PrecursorMz, 543.2608252287667);
-            Assert.AreEqual(spectrum2.RetentionTime, 2789.812255859375);
+            Assert.That(spectrum2.PrecursorMz, Is.EqualTo(543.2608252287667));
+            Assert.That(spectrum2.RetentionTime, Is.EqualTo(2789.812255859375));
 
             testLibraryWithoutDecoy.TryGetSpectrum("YHPDKNPSEEAAEK", 3, out var test1);
 
-            Assert.AreEqual(test1.PrecursorMz, 538.9179945621);
-            Assert.AreEqual(test1.RetentionTime, 1361.375244140625);
-            Assert.AreEqual(test1.ChargeState, 3);
+            Assert.That(test1.PrecursorMz, Is.EqualTo(538.9179945621));
+            Assert.That(test1.RetentionTime, Is.EqualTo(1361.375244140625));
+            Assert.That(test1.ChargeState, Is.EqualTo(3));
 
             var frags = new List<(double mz, double intensity, ProductType ProductType, int fragmentNumber, int charge, double ppm)>
             {
@@ -386,15 +386,15 @@ namespace Test
             Assert.That(librarySpectra.Count == 5);
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("VGIVPGEVIAPGM[Common Variable:Oxidation on M]R", 3, out var spectrum3));
             Assert.That(testLibraryWithoutDecoy.TryGetSpectrum("C[Common Fixed:Carbamidomethyl on C]TSC[Common Fixed:Carbamidomethyl on C]NGQGIKFVTR", 3, out var spectrum4));
-            Assert.AreEqual(spectrum4.PrecursorMz, 543.2608252287667);
-            Assert.AreEqual(spectrum4.RetentionTime, 2789.812255859375);
+            Assert.That(spectrum4.PrecursorMz, Is.EqualTo(543.2608252287667));
+            Assert.That(spectrum4.RetentionTime, Is.EqualTo(2789.812255859375));
 
 
             testLibraryWithoutDecoy.TryGetSpectrum("YHPDKNPSEEAAEK", 3, out test1);
 
-            Assert.AreEqual(test1.PrecursorMz, 538.9179945621);
-            Assert.AreEqual(test1.RetentionTime, 1361.375244140625);
-            Assert.AreEqual(test1.ChargeState, 3);
+            Assert.That(test1.PrecursorMz, Is.EqualTo(538.9179945621));
+            Assert.That(test1.RetentionTime, Is.EqualTo(1361.375244140625));
+            Assert.That(test1.ChargeState, Is.EqualTo(3));
             double maxOfIntensity = frags.Select(p => p.intensity).ToList().Max();
             for (int i = 0; i < frags.Count; i++)
             {

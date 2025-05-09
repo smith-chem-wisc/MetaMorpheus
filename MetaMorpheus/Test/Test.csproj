@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <IsPackable>false</IsPackable>
     <Configurations>Debug;Release</Configurations>
     <DebugType>full</DebugType>
+	<EnableWindowsTargeting>true</EnableWindowsTargeting>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -16,17 +17,17 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <PackageReference Include="coverlet.msbuild" Version="3.2.0">
+    <PackageReference Include="coverlet.msbuild" Version="6.0.2">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.ML" Version="2.0.0" />
-    <PackageReference Include="Microsoft.ML.CpuMath" Version="2.0.0" />
-    <PackageReference Include="Microsoft.ML.FastTree" Version="2.0.0" />
-    <PackageReference Include="mzLib" Version="1.0.549" />
-    <PackageReference Include="NUnit" Version="3.13.3" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.2.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+    <PackageReference Include="Microsoft.ML" Version="3.0.1" />
+    <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
+    <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
+    <PackageReference Include="mzLib" Version="1.0.562" />
+    <PackageReference Include="NUnit" Version="4.1.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
   </ItemGroup>
   
   <ItemGroup>
@@ -99,6 +100,12 @@
     <None Update="GlycoTestData\GlycoProteinFASTA_7proteins.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfigNGlycoTest_Run.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\GlycoSearchTaskconfigN_OGlycoTest_Run.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="GlycoTestData\GlycoSearchTaskconfigOGlycoTest_Run2.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -109,6 +116,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\GlycoSnip.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="GlycoTestData\Glyco_Isobaric_testing.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="GlycoTestData\NGlycanSearchTaskconfig.toml">
@@ -186,6 +196,15 @@
     <None Update="indexEngineTestFasta.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="MetaDraw\105MetaDrawSettingsSavedEditedForTestCoverageFailures.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="MetaDraw\105MetaDrawSettingsSavedEditedForTestCoverageSuccess.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="MetaDraw\105MetaDrawSettingsSaved.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="sliced-db.fa">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -196,6 +215,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="SlicedSearchTaskConfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\bosTaurusEnamPruned.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\customBCZ.toml">
@@ -282,7 +304,31 @@
     <None Update="TestData\MbrAnalysisTest\MsMsids.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\mouseOne.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\mouseOne.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\mouseTwo.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\ModificationAnalysis\modificationAnalysis.fasta">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\ModificationAnalysis\modificationAnalysis.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\ModificationAnalysis\GPTMDTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\ModificationAnalysis\SearchTaskconfig.toml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\myPrositLib.msp">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\NonSpecificSearchToml.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\noSAreaderTest.psmtsv">
@@ -318,7 +364,13 @@
     <None Update="TestData\sliced_b6_2.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\S.m,al. lC,al.ib r.at,i ble_Ye.ast.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SmallCalibratible_Yeast.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\SmallCalibratible_Yeast.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\smalldb.fasta">
@@ -384,6 +436,9 @@
     <None Update="TestData\SpectralLibrarySearch\yeast2fake_pdeep_lib.msp">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\SpectralRecoveryTest\AllPSMsTesting.psmtsv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralRecoveryTest\ExpectedMBRHits.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -397,9 +452,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\SpectralRecoveryTest\K13_20ng_1min_frac1.mzML">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="TestData\SpectralRecoveryTest\MsMsids.psmtsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TestData\TaGe_SA_A549_3_snip_2.mzML">
@@ -559,6 +611,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="TopDownTestData\TDGPTMDSearchSingleSpectra.mzML">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TopDownTestData\TopDownSearchToml.toml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Update="Transcriptomics\TestData\GUACUG_NegativeMode_Sliced.mzML">

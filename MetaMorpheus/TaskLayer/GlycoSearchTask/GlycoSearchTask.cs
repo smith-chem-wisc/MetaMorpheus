@@ -13,6 +13,7 @@ using EngineLayer.FdrAnalysis;
 using System;
 using FlashLFQ;
 using Omics;
+using Readers;
 using UsefulProteomicsDatabases;
 
 namespace TaskLayer
@@ -152,7 +153,7 @@ namespace TaskLayer
             var filteredAllPsms = new List<GlycoSpectralMatch>();
 
             //For each ms2scan, try to find the best candidate psm from the psms list. Do the localizaiton analysis. Add it into filteredAllPsms.
-            foreach (var gsmsPerScan in GsmPerScans.GroupBy(p => p.ScanNumber))
+            foreach (var gsmsPerScan in GsmPerScans.GroupBy(p => (p.ScanNumber, p.FullFilePath)))
             {
                 var glycos = RemoveSimilarSequenceDuplicates(gsmsPerScan.OrderByDescending(p=>p.Score).ToList());
 

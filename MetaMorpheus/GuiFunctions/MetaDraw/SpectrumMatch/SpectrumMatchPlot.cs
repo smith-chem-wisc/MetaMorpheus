@@ -4,19 +4,13 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using System.Windows;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using Chemistry;
-using Easy.Common.Extensions;
 using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
 using MassSpectrometry;
-using MassSpectrometry.MzSpectra;
 using mzPlot;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
@@ -24,7 +18,6 @@ using OxyPlot;
 using OxyPlot.Annotations;
 using OxyPlot.Axes;
 using OxyPlot.Series;
-using Canvas = System.Windows.Controls.Canvas;
 using FontWeights = OxyPlot.FontWeights;
 using HorizontalAlignment = OxyPlot.HorizontalAlignment;
 using VerticalAlignment = OxyPlot.VerticalAlignment;
@@ -89,7 +82,8 @@ namespace GuiFunctions
                 MinorStep = 200,
                 MajorTickSize = 2,
                 TitleFontWeight = FontWeights.Bold,
-                TitleFontSize = 14
+                TitleFontSize = MetaDrawSettings.AxisTitleTextSize,
+                FontSize = MetaDrawSettings.AxisLabelTextSize,
             });
 
             Model.Axes.Add(new LinearAxis
@@ -105,7 +99,8 @@ namespace GuiFunctions
                 StringFormat = "0e-0",
                 MajorTickSize = 2,
                 TitleFontWeight = FontWeights.Bold,
-                TitleFontSize = 14,
+                TitleFontSize = MetaDrawSettings.AxisTitleTextSize,
+                FontSize = MetaDrawSettings.AxisLabelTextSize,
                 AxisTitleDistance = 10,
                 ExtraGridlines = new double[] { 0 },
                 ExtraGridlineColor = OxyColors.Black,

@@ -420,7 +420,7 @@ namespace Test
             Scans = ScansHere.ToArray();
         }
 
-        public string FilePath
+        public new string FilePath
         {
             get
             {
@@ -436,7 +436,7 @@ namespace Test
             }
         }
 
-        public void ReplaceFirstScanArrays(double[] mz, double[] intensities)
+        public void ReplaceFirstMs1ScanArrays(double[] mz, double[] intensities)
         {
             MzSpectrum massSpectrum = new MzSpectrum(mz, intensities, false);
             Scans[0] = new MsDataScan(massSpectrum, Scans[0].OneBasedScanNumber, Scans[0].MsnOrder, Scans[0].IsCentroid, Scans[0].Polarity, Scans[0].RetentionTime, Scans[0].ScanWindowRange, Scans[0].ScanFilter, Scans[0].MzAnalyzer, massSpectrum.SumOfAllY, Scans[0].InjectionTime, null, Scans[0].NativeId);

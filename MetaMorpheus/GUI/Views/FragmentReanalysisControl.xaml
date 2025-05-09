@@ -1,0 +1,82 @@
+﻿<UserControl x:Class="MetaMorpheusGUI.FragmentReanalysisControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+    <Grid d:DataContext="{x:Type guiFunctions:FragmentationReanalysisViewModel}" >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- All options in the header -->
+        <Grid Grid.Row="0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="2*"/>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="3*"/>
+                <ColumnDefinition Width="3*"/>
+            </Grid.ColumnDefinitions>
+
+            <Button Grid.Row="0" Grid.Column="0" x:Name="SearchButton" Content="Search"
+                    VerticalAlignment="Center" Margin="5 3"
+                    VerticalContentAlignment="Center" Click="SearchWithNewIons_OnClick" />
+
+            <CheckBox Grid.Row="0" Grid.Column="1" Content="Persist?" VerticalAlignment="Center"
+                      IsChecked="{Binding Persist}"
+                      Margin="5 3" ToolTip="Research each identification as they are selected" />
+
+            <StackPanel Grid.Row="0" Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                <TextBlock Text="Set Dissociation Type: " VerticalAlignment="Center" />
+                <ComboBox x:Name="DissociationTypeComboBox" ItemsSource="{Binding DissociationTypes}"
+                          SelectedItem="{Binding SelectedDissociationType}"
+                          Margin="5 3" VerticalContentAlignment="Center" Width="80"
+                          HorizontalContentAlignment="Center"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                <TextBlock Text="Mass Tolerance (ppm): " VerticalAlignment="Center" />
+                <local:DoubleTextBoxControl Text="{Binding ProductIonMassTolerance, FallbackValue=20}"
+                                            HorizontalAlignment="Center" HorizontalContentAlignment="Center"
+                                            VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                            BorderThickness="1" />
+            </StackPanel>
+
+            <StackPanel Grid.Row="0" Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Left">
+                <CheckBox Content="Use internal ions of minimum length " IsChecked="{Binding UseInternalIons}"
+                          HorizontalContentAlignment="Right" VerticalAlignment="Center" />
+                <local:IntegerTexBoxControl Text="{Binding MinInternalIonLength, FallbackValue=10}"
+                                            HorizontalAlignment="Center" HorizontalContentAlignment="Center"
+                                            IsEnabled="{Binding UseInternalIons}"
+                                            VerticalAlignment="Center" VerticalContentAlignment="Center"
+                                            BorderThickness="1" />
+            </StackPanel>
+        </Grid>
+
+        <!-- Fragment ion type display -->
+        <ListView Grid.Row="1" Grid.Column="0" Background="{StaticResource BackgroundColor}"
+          ItemsSource="{Binding PossibleProducts}" BorderThickness="0">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <CheckBox IsChecked="{Binding Use}" />
+                        <TextBlock Text="{Binding TypeString}"></TextBlock>
+                    </StackPanel>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            <ListView.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <UniformGrid Columns="6"/>
+                </ItemsPanelTemplate>
+            </ListView.ItemsPanel>
+        </ListView>
+    </Grid>
+</UserControl>
