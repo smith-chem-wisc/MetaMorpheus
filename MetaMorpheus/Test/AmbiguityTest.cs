@@ -100,8 +100,7 @@ namespace Test
             SearchTask modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            EverythingRunnerEngine engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, 
-                new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
+            EverythingRunnerEngine engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
             engine.Run();

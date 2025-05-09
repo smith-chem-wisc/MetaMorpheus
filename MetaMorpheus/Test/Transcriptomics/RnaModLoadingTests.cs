@@ -21,4 +21,10 @@ public class RnaModLoadingTests
         Assert.That(GlobalVariables.AllRnaModsKnownDictionary, Is.Not.Null);
         Assert.That(GlobalVariables.AllRnaModsKnownDictionary, Is.Not.Empty);
     }
+
+    [Test]
+    public static void RnaDbLoading_ModsLoadFromXml()
+    {
+
+    }
 }
