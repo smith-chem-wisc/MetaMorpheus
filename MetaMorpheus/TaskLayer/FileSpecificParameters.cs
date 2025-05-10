@@ -24,7 +24,10 @@ namespace TaskLayer
                         PrecursorMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
+
+                    // Support old tomls that labeled by Digestion Agent Type
                     case nameof(DigestionAgent):
+                    case "Rnase":
                     case "Protease":
                         if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
                             DigestionAgent = keyValuePair.Value.Get<Rnase>(); 

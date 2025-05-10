@@ -84,14 +84,6 @@ namespace TaskLayer
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.Name)
                     .FromToml(tmlString => RnaseDictionary.Dictionary[tmlString.Value])))
-            .ConfigureType<IHasChemicalFormula>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => custom.ThisChemicalFormula.Formula)
-                    .FromToml(tmlString => ChemicalFormula.ParseFormula(tmlString.Value))))
-            .ConfigureType<List<IHasChemicalFormula>>(type => type
-                .WithConversionFor<TomlString>(convert => convert
-                    .ToToml(custom => string.Join("\t", custom.Select(p => p.ThisChemicalFormula.Formula)))
-                    .FromToml(tmlString => GetChemicalFormulasFromString(tmlString.Value))))
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
@@ -893,13 +885,6 @@ namespace TaskLayer
         private static List<(string, string)> GetModsFromString(string value)
         {
             return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => (b.Split('\t').First(), b.Split('\t').Last())).ToList();
-        }
-
-        private static List<IHasChemicalFormula> GetChemicalFormulasFromString(string value)
-        {
-            return value.Split("\t", StringSplitOptions.RemoveEmptyEntries)
-                .Select(b => (IHasChemicalFormula)ChemicalFormula.ParseFormula(b.Trim()))
-                .ToList();
         }
 
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)

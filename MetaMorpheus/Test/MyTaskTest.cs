@@ -44,6 +44,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters()
             };
+            task2.CommonParameters.DigestionParams.MaxLength = int.MaxValue - 3;
 
             SearchTask task3 = new()
             {

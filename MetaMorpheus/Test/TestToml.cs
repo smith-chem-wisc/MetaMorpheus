@@ -126,6 +126,32 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
+        public static void TestTomlForSpecficFiles_Rna()
+        {
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic_RNA.toml"), MetaMorpheusTask.tomlConfig);
+            var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
+            Assert.That(tomlSettingsList["Rnase"].Value.Get<string>(), Is.EqualTo("RNase U2"));
+            Assert.That(tomlSettingsList["DissociationType"].Value.Get<string>(), Is.EqualTo("ETD"));
+            Assert.That(!tomlSettingsList.ContainsKey("maxMissedCleavages"));
+            Assert.That(!tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
+
+            FileSpecificParameters f = new(fileSpecificToml);
+
+            Assert.That(f.DigestionAgent.Name, Is.EqualTo("RNase U2"));
+            Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
+            Assert.That(f.MaxMissedCleavages, Is.Null);
+
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(digestionParams: new RnaDigestionParams(maxMissedCleavages: 2)), f);
+
+            Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo("RNase U2"));
+            Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));
+            Assert.That(c.DigestionParams.MaxMissedCleavages, Is.EqualTo(2));
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
+        }
+
+        [Test]
         public static void TestBadFileSpecificProtease()
         {
             
@@ -313,8 +339,10 @@ namespace Test
         }
 
         [Test]
+        [NonParallelizable]
         public static void TestDigestionParamsTomlReadingWriting_Rna()
         {
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
             var digestionParams = new RnaDigestionParams();
             var commonParams = new CommonParameters(digestionParams: digestionParams);
             var searchTask = new SearchTask();
@@ -353,6 +381,7 @@ namespace Test
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionParams.DigestionAgent.Name));
 
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
             File.Delete(filePath);
         }
 

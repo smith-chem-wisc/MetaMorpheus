@@ -493,11 +493,11 @@ namespace TaskLayer
             Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
             Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
 
-            foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
+            foreach (IDigestionParams dp in Parameters.ListOfDigestionParams)
             {
-                if (!proteaseSortedPsms.ContainsKey(dp.Protease))
+                if (!proteaseSortedPsms.ContainsKey(dp.DigestionAgent))
                 {
-                    proteaseSortedPsms.Add(dp.Protease, new List<SpectralMatch>());
+                    proteaseSortedPsms.Add(dp.DigestionAgent, new List<SpectralMatch>());
                 }
             }
             foreach (var psm in psmsForQuantification)
