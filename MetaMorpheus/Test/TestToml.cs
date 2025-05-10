@@ -11,6 +11,7 @@ using Omics.Digestion;
 using Omics.Fragmentation;
 using SpectralAveraging;
 using TaskLayer;
+using Transcriptomics.Digestion;
 
 namespace Test
 {
@@ -113,15 +114,41 @@ namespace Test
 
             FileSpecificParameters f = new(fileSpecificToml);
 
-            Assert.That(f.Protease.Name, Is.EqualTo("Asp-N"));
+            Assert.That(f.DigestionAgent.Name, Is.EqualTo("Asp-N"));
             Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(f.MaxMissedCleavages, Is.Null);
 
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
-            Assert.That(c.DigestionParams.Protease.Name, Is.EqualTo("Asp-N"));
+            Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo("Asp-N"));
             Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(c.DigestionParams.MaxMissedCleavages, Is.EqualTo(2));
+        }
+
+        [Test]
+        [NonParallelizable]
+        public static void TestTomlForSpecficFiles_Rna()
+        {
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic_RNA.toml"), MetaMorpheusTask.tomlConfig);
+            var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
+            Assert.That(tomlSettingsList["Rnase"].Value.Get<string>(), Is.EqualTo("RNase U2"));
+            Assert.That(tomlSettingsList["DissociationType"].Value.Get<string>(), Is.EqualTo("ETD"));
+            Assert.That(!tomlSettingsList.ContainsKey("maxMissedCleavages"));
+            Assert.That(!tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
+
+            FileSpecificParameters f = new(fileSpecificToml);
+
+            Assert.That(f.DigestionAgent.Name, Is.EqualTo("RNase U2"));
+            Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
+            Assert.That(f.MaxMissedCleavages, Is.Null);
+
+            CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(digestionParams: new RnaDigestionParams(maxMissedCleavages: 2)), f);
+
+            Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo("RNase U2"));
+            Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));
+            Assert.That(c.DigestionParams.MaxMissedCleavages, Is.EqualTo(2));
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
         }
 
         [Test]
@@ -213,7 +240,7 @@ namespace Test
             Assert.That(fsp.MinPeptideLength, Is.EqualTo(0));
             Assert.That(fsp.PrecursorMassTolerance.Value, Is.EqualTo(5.0d));
             Assert.That(fsp.ProductMassTolerance.Value, Is.EqualTo(5.0d));
-            Assert.That(fsp.Protease.Name, Is.EqualTo("Asp-N"));
+            Assert.That(fsp.DigestionAgent.Name, Is.EqualTo("Asp-N"));
             Assert.That(fsp.SeparationType.ToString(), Is.EqualTo("HPLC"));
 
             filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams_bad.toml");
@@ -268,17 +295,22 @@ namespace Test
             searchTask.CommonParameters = commonParams;
 
             // check that digestion params are correct in search task
+            var digestion = searchTask.CommonParameters.DigestionParams as DigestionParams;
+            if (digestion is null)
+            {
+                Assert.Fail("Digestion params are not of type DigestionParams");
+            }
             Assert.That(searchTask.CommonParameters.DigestionParams.FragmentationTerminus, Is.EqualTo(digestionParams.FragmentationTerminus));
             Assert.That(searchTask.CommonParameters.DigestionParams.SearchModeType, Is.EqualTo(digestionParams.SearchModeType));
-            Assert.That(searchTask.CommonParameters.DigestionParams.InitiatorMethionineBehavior, Is.EqualTo(digestionParams.InitiatorMethionineBehavior));
+            Assert.That(digestion.InitiatorMethionineBehavior, Is.EqualTo(digestionParams.InitiatorMethionineBehavior));
             Assert.That(searchTask.CommonParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(digestionParams.MaxMissedCleavages));
             Assert.That(searchTask.CommonParameters.DigestionParams.MaxModificationIsoforms, Is.EqualTo(digestionParams.MaxModificationIsoforms));
-            Assert.That(searchTask.CommonParameters.DigestionParams.MinPeptideLength, Is.EqualTo(digestionParams.MinPeptideLength));
-            Assert.That(searchTask.CommonParameters.DigestionParams.MaxPeptideLength, Is.EqualTo(digestionParams.MaxPeptideLength));
-            Assert.That(searchTask.CommonParameters.DigestionParams.Protease.Name, Is.EqualTo(digestionParams.Protease.Name));
-            Assert.That(searchTask.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac, Is.EqualTo(digestionParams.GeneratehUnlabeledProteinsForSilac));
-            Assert.That(searchTask.CommonParameters.DigestionParams.KeepNGlycopeptide, Is.EqualTo(digestionParams.KeepNGlycopeptide));
-            Assert.That(searchTask.CommonParameters.DigestionParams.KeepOGlycopeptide, Is.EqualTo(digestionParams.KeepOGlycopeptide));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MinLength, Is.EqualTo(digestionParams.MinLength));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
+            Assert.That(searchTask.CommonParameters.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionParams.Protease.Name));
+            Assert.That(digestion.GeneratehUnlabeledProteinsForSilac, Is.EqualTo(digestionParams.GeneratehUnlabeledProteinsForSilac));
+            Assert.That(digestion.KeepNGlycopeptide, Is.EqualTo(digestionParams.KeepNGlycopeptide));
+            Assert.That(digestion.KeepOGlycopeptide, Is.EqualTo(digestionParams.KeepOGlycopeptide));
 
             // write and read file 
             string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testDigestionParams.toml");
@@ -286,20 +318,72 @@ namespace Test
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
 
             // check that digestion params are correct in search task
+            digestion = searchTaskLoaded.CommonParameters.DigestionParams as DigestionParams;
+            if (digestion is null)
+            {
+                Assert.Fail("Digestion params are not of type DigestionParams");
+            }
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.FragmentationTerminus, Is.EqualTo(digestionParams.FragmentationTerminus));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.SearchModeType, Is.EqualTo(digestionParams.SearchModeType));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.InitiatorMethionineBehavior, Is.EqualTo(digestionParams.InitiatorMethionineBehavior));
+            Assert.That(digestion.InitiatorMethionineBehavior, Is.EqualTo(digestionParams.InitiatorMethionineBehavior));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(digestionParams.MaxMissedCleavages));
             Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxModificationIsoforms, Is.EqualTo(digestionParams.MaxModificationIsoforms));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MinPeptideLength, Is.EqualTo(digestionParams.MinPeptideLength));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxPeptideLength, Is.EqualTo(digestionParams.MaxPeptideLength));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.Protease.Name, Is.EqualTo(digestionParams.Protease.Name));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac, Is.EqualTo(digestionParams.GeneratehUnlabeledProteinsForSilac));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.KeepNGlycopeptide, Is.EqualTo(digestionParams.KeepNGlycopeptide));
-            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.KeepOGlycopeptide, Is.EqualTo(digestionParams.KeepOGlycopeptide));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MinLength, Is.EqualTo(digestionParams.MinLength));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionParams.Protease.Name));
+            Assert.That(digestion.GeneratehUnlabeledProteinsForSilac, Is.EqualTo(digestionParams.GeneratehUnlabeledProteinsForSilac));
+            Assert.That(digestion.KeepNGlycopeptide, Is.EqualTo(digestionParams.KeepNGlycopeptide));
+            Assert.That(digestion.KeepOGlycopeptide, Is.EqualTo(digestionParams.KeepOGlycopeptide));
 
             File.Delete(filePath);
         }
-        
+
+        [Test]
+        [NonParallelizable]
+        public static void TestDigestionParamsTomlReadingWriting_Rna()
+        {
+            GlobalVariables.AnalyteType = AnalyteType.Oligo;
+            var digestionParams = new RnaDigestionParams();
+            var commonParams = new CommonParameters(digestionParams: digestionParams);
+            var searchTask = new SearchTask();
+            searchTask.CommonParameters = commonParams;
+
+            // check that digestion params are correct in search task
+            var digestion = searchTask.CommonParameters.DigestionParams as RnaDigestionParams;
+            if (digestion is null)
+            {
+                Assert.Fail("Digestion params are not of type RnaDigestionParams");
+            }
+            Assert.That(searchTask.CommonParameters.DigestionParams.FragmentationTerminus, Is.EqualTo(digestionParams.FragmentationTerminus));
+            Assert.That(searchTask.CommonParameters.DigestionParams.SearchModeType, Is.EqualTo(digestionParams.SearchModeType));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(digestionParams.MaxMissedCleavages));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MaxModificationIsoforms, Is.EqualTo(digestionParams.MaxModificationIsoforms));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MinLength, Is.EqualTo(digestionParams.MinLength));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
+            Assert.That(searchTask.CommonParameters.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionParams.DigestionAgent.Name));
+
+            // write and read file 
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testDigestionParams.toml");
+            Toml.WriteFile(searchTask, filePath, MetaMorpheusTask.tomlConfig);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+
+            // check that digestion params are correct in search task
+            digestion = searchTaskLoaded.CommonParameters.DigestionParams as RnaDigestionParams;
+            if (digestion is null)
+            {
+                Assert.Fail("Digestion params are not of type DigestionParams");
+            }
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.FragmentationTerminus, Is.EqualTo(digestionParams.FragmentationTerminus));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.SearchModeType, Is.EqualTo(digestionParams.SearchModeType));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(digestionParams.MaxMissedCleavages));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxModificationIsoforms, Is.EqualTo(digestionParams.MaxModificationIsoforms));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MinLength, Is.EqualTo(digestionParams.MinLength));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionParams.DigestionAgent.Name));
+
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
+            File.Delete(filePath);
+        }
+
     }
 }

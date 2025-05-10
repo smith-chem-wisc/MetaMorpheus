@@ -18,7 +18,7 @@ namespace TaskLayer
     public static class MzIdentMLWriter
     {
         public static void WriteMzIdentMl(IEnumerable<SpectralMatch> psms, List<EngineLayer.ProteinGroup> groups, List<Modification> variableMods, 
-            List<Modification> fixedMods, List<SilacLabel> silacLabels, List<Protease> proteases, Tolerance productTolerance, 
+            List<Modification> fixedMods, List<SilacLabel> silacLabels, List<DigestionAgent> proteases, Tolerance productTolerance, 
             Tolerance parentTolerance, int missedCleavages, string outputPath, bool appendMotifToModNames)
         {
 
@@ -563,7 +563,7 @@ namespace TaskLayer
             };
 
             int protease_index = 0;
-            foreach (Protease protease in proteases)
+            foreach (DigestionAgent protease in proteases)
             {
                 _mzid.AnalysisProtocolCollection.SpectrumIdentificationProtocol[0].Enzymes.Enzyme[protease_index] = new mzIdentML110.Generated.EnzymeType()
                 {
@@ -578,8 +578,8 @@ namespace TaskLayer
                         {
                             new mzIdentML110.Generated.CVParamType
                             {
-                                accession = protease.PsiMsAccessionNumber,
-                                name = protease.PsiMsName,
+                                accession = protease is Protease prot ? prot.PsiMsAccessionNumber : protease.Name,
+                                name = protease is Protease prot2 ? prot2.PsiMsName: protease.Name,
                                 cvRef = "PSI-MS"
                             }
                         }

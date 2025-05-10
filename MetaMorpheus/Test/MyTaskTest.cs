@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
+using Omics;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
@@ -42,6 +44,7 @@ namespace Test
             {
                 CommonParameters = new CommonParameters()
             };
+            task2.CommonParameters.DigestionParams.MaxLength = int.MaxValue - 3;
 
             SearchTask task3 = new()
             {
@@ -81,9 +84,9 @@ namespace Test
 
             Assert.That(digestedList.Count, Is.EqualTo(3));
 
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
+            IBioPolymerWithSetMods pepWithSetMods1 = digestedList[0];
 
-            PeptideWithSetModifications pepWithSetMods2 = digestedList[2];
+            IBioPolymerWithSetMods pepWithSetMods2 = digestedList[2];
 
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
@@ -91,7 +94,7 @@ namespace Test
             Protein ParentProteinToNotInclude = new("MPEPTIDEK", "accession2", "organism", new List<Tuple<string, string>>(), dictHere);
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             Protein proteinWithChain = new("MAACNNNCAA", "accession3", "organism", new List<Tuple<string, string>>(), new Dictionary<int, List<Modification>>(), new List<TruncationProduct> { new TruncationProduct(4, 8, "chain") }, "name2", "fullname2");
 
@@ -244,9 +247,9 @@ namespace Test
 
             Assert.That(digestedList.Count, Is.EqualTo(3));
 
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
+            var pepWithSetMods1 = digestedList[0];
 
-            PeptideWithSetModifications pepWithSetMods2 = digestedList[2];
+            var pepWithSetMods2 = digestedList[2];
 
             var dictHere = new Dictionary<int, List<Modification>>();
             ModificationMotif.TryGetMotif("E", out ModificationMotif motif);
@@ -255,12 +258,12 @@ namespace Test
             digestedList = ParentProteinToNotInclude.Digest(task1.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
             Assert.That(digestedList.Count, Is.EqualTo(4));
 
-            MsDataFile myMsDataFile1 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile1 = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             string mzmlName1 = @"ok1.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile1, mzmlName1, false);
 
-            MsDataFile myMsDataFile2 = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
+            MsDataFile myMsDataFile2 = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetMods1, pepWithSetMods2, digestedList[1] });
 
             string mzmlName2 = @"ok2.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile2, mzmlName2, false);
@@ -316,9 +319,9 @@ namespace Test
 
             var targetDigested = theProteins[0].Digest(task.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().ToList()).ToList();
 
-            PeptideWithSetModifications targetGood = targetDigested.First();
+            var targetGood = targetDigested.First();
 
-            TestDataFile myMsDataFile = new(new List<PeptideWithSetModifications> { targetGood });
+            TestDataFile myMsDataFile = new(new List<IBioPolymerWithSetMods> { targetGood });
 
             var ms1IntensityList = myMsDataFile.GetOneBasedScan(1).MassSpectrum.YArray.ToList();
 
@@ -407,10 +410,10 @@ namespace Test
                 var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => b.OriginalId.Equals("ok")).ToList()).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                PeptideWithSetModifications targetGood = targetDigested[0];
+                var targetGood = targetDigested[0];
 
-                PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
-                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod });
+                var targetWithUnknownMod = targetDigested[1];
+                MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { targetGood, targetWithUnknownMod });
 
                 Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
@@ -470,10 +473,10 @@ namespace Test
                 var targetDigested = theProteins[0].Digest(task1.CommonParameters.DigestionParams, fixedModifications, GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => b.OriginalId.Equals("ok")).ToList()).ToList();
 
                 ModificationMotif.TryGetMotif("T", out ModificationMotif motif);
-                PeptideWithSetModifications targetGood = targetDigested[0];
+                IBioPolymerWithSetMods targetGood = targetDigested[0];
 
-                PeptideWithSetModifications targetWithUnknownMod = targetDigested[1];
-                MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { targetGood, targetWithUnknownMod });
+                IBioPolymerWithSetMods targetWithUnknownMod = targetDigested[1];
+                MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { targetGood, targetWithUnknownMod });
 
                 Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
             }
@@ -553,7 +556,7 @@ namespace Test
             Assert.That(setList1.Count, Is.EqualTo(4));
 
             //Finally Write MZML file
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { setList1[0], setList1[1], setList1[2], setList1[3], setList1[0], setList1[1] });
             string mzmlName = @"singleProteinWithRepeatedMods.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 

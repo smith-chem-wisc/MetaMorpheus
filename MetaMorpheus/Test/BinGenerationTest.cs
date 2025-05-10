@@ -11,6 +11,7 @@ using EngineLayer.HistogramAnalysis;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -54,7 +55,7 @@ namespace Test
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
             var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification> { mod }).Last();
 
-            List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
+            var pepsWithSetMods = new List<IBioPolymerWithSetMods> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
             MsDataFile myMsDataFile = new TestDataFile(pepsWithSetMods);
 
             List<Protein> proteinList = new List<Protein> { prot1, prot2, prot3, prot4 };
@@ -116,8 +117,8 @@ namespace Test
             var pep1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
             var pep2 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).Last();
 
-            List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
-            List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
+            var listForFile1 = new List<IBioPolymerWithSetMods> { pep1, pep2 };
+            var listForFile2 = new List<IBioPolymerWithSetMods> { pep2 };
             MsDataFile myMsDataFile1 = new TestDataFile(listForFile1);
             MsDataFile myMsDataFile2 = new TestDataFile(listForFile2);
 

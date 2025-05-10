@@ -34,6 +34,7 @@
       <ComponentGroupRef Id="Appsrc_NGlycan_files" />
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
+      <ComponentGroupRef Id="Appsrc_Digestion_files" />
       <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
@@ -125,7 +126,10 @@
 
           <!--ProteolyticDigestion Folder-->
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
-          
+
+			<!--Digestion Folder-->
+          <Directory Id="MetaAppDigestionFolder" Name="Digestion" />
+			
           <!--Contaminants Folder-->
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
 
@@ -675,6 +679,22 @@
         <File ReadOnly="no" Id="Appsrc_ProteolyticDigestion_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)ProteolyticDigestion\proteases.tsv" />
       </Component>
     </ComponentGroup>
+  </Fragment>
+
+  <!--Builds the App Rnases folder-->
+  <Fragment>
+	  <ComponentGroup Id="Appsrc_Digestion_files" Directory="MetaAppDigestionFolder">
+		  <Component Id="RemoveDigestion" Condition="OVERWRITEAPPDATA">
+
+			  <RemoveFolder Id="MetaAppDigestionFolder" On="both" />
+			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+		  </Component>
+		  <Component Id="Appsrc_Digestion_rnases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E" Condition="OVERWRITEAPPDATA">
+
+			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+			  <File ReadOnly="no" Id="Appsrc_Digestion_rnases.tsv" Name="rnases.tsv" Source="$(var.GUI_TargetDir)Digestion\rnases.tsv" />
+		  </Component>
+	  </ComponentGroup>
   </Fragment>
 
   <!--Builds the App Contaminants folder-->

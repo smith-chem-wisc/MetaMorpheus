@@ -15,6 +15,7 @@ using Omics.Modifications;
 using TopDownProteomics;
 using UsefulProteomicsDatabases;
 using Easy.Common.Extensions;
+using Transcriptomics.Digestion;
 
 namespace EngineLayer
 {
@@ -417,6 +418,7 @@ namespace EngineLayer
             }
             ProteaseMods = UsefulProteomicsDatabases.PtmListLoader.ReadModsFromFile(Path.Combine(DataDir, @"Mods", @"ProteaseMods.txt"), out var errors).ToList();
             ProteaseDictionary.Dictionary = ProteaseDictionary.LoadProteaseDictionary(Path.Combine(DataDir, @"ProteolyticDigestion", @"proteases.tsv"), ProteaseMods);
+            RnaseDictionary.Dictionary = RnaseDictionary.LoadRnaseDictionary(Path.Combine(DataDir, @"Digestion", @"rnases.tsv"));
         }
 
         private static void LoadRnaModifications()

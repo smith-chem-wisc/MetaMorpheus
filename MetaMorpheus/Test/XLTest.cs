@@ -23,6 +23,7 @@ using Omics.Modifications;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -883,7 +884,7 @@ namespace Test
             }
 
             //Generate digested peptide lists.
-            List<PeptideWithSetModifications> digestedList = new List<PeptideWithSetModifications>();
+            var digestedList = new List<IBioPolymerWithSetMods>();
             foreach (var item in proteinList)
             {
                 var digested = item.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
