@@ -53,7 +53,6 @@ namespace Test
             psms = new List<SpectralMatch>();
             myFileManager = new MyFileManager(true);
 
-            Loaders.LoadElements();
             string databasePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta");
             proteinList = ProteinDbLoader.LoadProteinFasta(databasePath, true, DecoyType.Reverse, false, out List<string> errors)
                 .Where(protein => protein.AppliedSequenceVariations != null).ToList();
@@ -122,7 +121,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<IDigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
@@ -299,7 +298,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<IDigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
@@ -348,7 +347,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<IDigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),

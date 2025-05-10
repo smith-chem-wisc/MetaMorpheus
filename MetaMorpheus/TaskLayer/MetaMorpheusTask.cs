@@ -15,15 +15,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Omics;
 using Omics.Digestion;
-using Omics.Fragmentation;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
-using Easy.Common.Extensions;
+using Transcriptomics.Digestion;
 
 namespace TaskLayer
 {
@@ -73,8 +71,13 @@ namespace TaskLayer
                     .FromToml(tmlTable =>
                         tmlTable.ContainsKey("Protease")
                             ? tmlTable.Get<DigestionParams>()
-                            : throw new NotImplementedException("Placeholder for Rna Digestion Params"))))
+                            : tmlTable.Get<RnaDigestionParams>())))
             .ConfigureType<DigestionParams>(type => type
+                .IgnoreProperty(p => p.DigestionAgent)
+                .IgnoreProperty(p => p.MaxMods)
+                .IgnoreProperty(p => p.MaxLength)
+                .IgnoreProperty(p => p.MinLength))
+            .ConfigureType<RnaDigestionParams>(type => type
                 .IgnoreProperty(p => p.DigestionAgent)
                 .IgnoreProperty(p => p.MaxMods)
                 .IgnoreProperty(p => p.MaxLength)
@@ -106,7 +109,6 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MinusOneAreasZero)
                 .IgnoreProperty(p => p.IsotopeThreshold)
                 .IgnoreProperty(p => p.ZScoreThreshold))
-        
             );
        
 
@@ -478,11 +480,22 @@ namespace TaskLayer
                     searchModeType: digestionParams.SearchModeType
                 );
             }
-            else // Placeholder for when we add RNA digestion
-                throw new NotImplementedException();
+            else
+            {
+                var digestionAgent = fileSpecificParams.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent;
 
+                fileSpecificDigestionParams = new RnaDigestionParams(
+                    rnase: digestionAgent.Name,
+                    maxMissedCleavages: maxMissedCleavages,
+                    minLength: minPeptideLength,
+                    maxLength: maxPeptideLength,
+                    maxMods: maxModsForPeptide,
 
-            
+                    //NEED THESE OR THEY'LL BE OVERWRITTEN
+                    maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
+                    fragmentationTerminus: commonParams.DigestionParams.FragmentationTerminus
+                    );
+            }
 
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
@@ -1183,18 +1196,16 @@ namespace TaskLayer
 
             // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
             // that bottom-up and top-down data is not being searched in the same task
+            if (commonParameters == null || commonParameters.DigestionParams == null)
+                return;
 
-            if (commonParameters != null
-                && commonParameters.DigestionParams != null
-                && commonParameters.DigestionParams is DigestionParams { Protease: not null } 
-                && commonParameters.DigestionParams.DigestionAgent.Name == "top-down")
+            GlobalVariables.AnalyteType = commonParameters.DigestionParams switch
             {
-                GlobalVariables.AnalyteType = AnalyteType.Proteoform;
-            }
-            else
-            {
-                GlobalVariables.AnalyteType = AnalyteType.Peptide;
-            }
+                RnaDigestionParams => AnalyteType.Oligo,
+                DigestionParams { Protease: not null } when commonParameters.DigestionParams.DigestionAgent.Name == "top-down" 
+                    => AnalyteType.Proteoform,
+                _ => AnalyteType.Peptide
+            };
         }
 
         /// <summary>

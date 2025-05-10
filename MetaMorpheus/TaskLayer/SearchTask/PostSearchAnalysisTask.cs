@@ -20,8 +20,6 @@ using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
 using MzLibUtil;
-using Proteomics.AminoAcidPolymer;
-using System.Text.Json.Serialization;
 using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
@@ -970,19 +968,18 @@ namespace TaskLayer
                         mzidFilePath = Path.Combine(Parameters.IndividualResultsOutputFolder, strippedFileName + ".mzID");
                     }
 
-                        
-                        MzIdentMLWriter.WriteMzIdentMl(
-                            psmsForThisFile,
-                            subsetProteinGroupsForThisFile, 
-                            Parameters.VariableModifications, 
-                            Parameters.FixedModifications, 
-                            Parameters.SearchParameters.SilacLabels,
-                            new List<Protease> { ((DigestionParams)CommonParameters.DigestionParams).Protease },
-                            CommonParameters.ProductMassTolerance,
-                            CommonParameters.PrecursorMassTolerance,
-                            CommonParameters.DigestionParams.MaxMissedCleavages,
-                            mzidFilePath,
-                            Parameters.SearchParameters.IncludeModMotifInMzid);
+                    MzIdentMLWriter.WriteMzIdentMl(
+                        psmsForThisFile,
+                        subsetProteinGroupsForThisFile, 
+                        Parameters.VariableModifications, 
+                        Parameters.FixedModifications, 
+                        Parameters.SearchParameters.SilacLabels,
+                        [CommonParameters.DigestionParams.DigestionAgent],
+                        CommonParameters.ProductMassTolerance,
+                        CommonParameters.PrecursorMassTolerance,
+                        CommonParameters.DigestionParams.MaxMissedCleavages,
+                        mzidFilePath,
+                        Parameters.SearchParameters.IncludeModMotifInMzid);
 
                     FinishedWritingFile(mzidFilePath, new List<string> { Parameters.SearchTaskId, "Individual Spectra Files", fullFilePath });
                 }

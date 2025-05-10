@@ -535,14 +535,9 @@ namespace Test
             Assert.That(modPruned.ElementAt(1).OneBasedPossibleLocalizedModifications.Count().Equals(1));
         }
 
-
-
-
         [Test]
         public static void TestContaminantGPTMD()
         {
-            //Create GPTMD Task
-            //Create Search Task
             GptmdTask task1 = new GptmdTask
             {
                 CommonParameters = new CommonParameters(),

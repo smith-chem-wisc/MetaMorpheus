@@ -442,7 +442,7 @@ namespace TaskLayer
                 AllPsms = allPsms,
                 VariableModifications = variableModifications,
                 FixedModifications = fixedModifications,
-                ListOfDigestionParams = new HashSet<IDigestionParams>(fileSpecificCommonParams.Select(p => p.DigestionParams)),
+                ListOfDigestionParams = [..fileSpecificCommonParams.Select(p => p.DigestionParams)],
                 CurrentRawFileList = currentRawFileList,
                 MyFileManager = myFileManager,
                 NumNotches = numNotches,

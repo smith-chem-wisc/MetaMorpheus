@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using EngineLayer;
 using MzLibUtil;
 using Nett;
@@ -7,6 +6,7 @@ using Proteomics.ProteolyticDigestion;
 using MassSpectrometry;
 using Omics.Digestion;
 using Omics.Fragmentation;
+using Transcriptomics.Digestion;
 
 namespace TaskLayer
 {
@@ -25,7 +25,11 @@ namespace TaskLayer
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(DigestionAgent):
-                        DigestionAgent = keyValuePair.Value.Get<Protease>(); break;
+                        if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                            DigestionAgent = keyValuePair.Value.Get<Rnase>(); 
+                        else
+                            DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        break;
                     case nameof(MinPeptideLength):
                         MinPeptideLength = keyValuePair.Value.Get<int>(); break;
                     case nameof(MaxPeptideLength):

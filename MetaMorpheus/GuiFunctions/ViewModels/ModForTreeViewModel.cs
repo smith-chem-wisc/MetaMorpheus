@@ -24,7 +24,10 @@ namespace GuiFunctions
 
         public bool Use
         {
-            get => _isChecked;
+            get
+            {
+                return _isChecked;
+            }
             set
             {
                 _isChecked = value;

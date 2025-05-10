@@ -82,7 +82,6 @@ namespace TaskLayer
             {
                 NewDatabases = new List<DbForTask>()
             };
-            var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));
 
             var filePathToPrecursorMassTolerance = new Dictionary<string, Tolerance>();
             for (int i = 0; i < currentRawFileList.Count; i++)

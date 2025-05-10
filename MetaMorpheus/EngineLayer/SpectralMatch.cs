@@ -140,6 +140,7 @@ namespace EngineLayer
         #endregion
 
         #region Search
+
         public IDigestionParams DigestionParams { get; }
 
         public static BioPolymerNotchFragmentIonComparer BioPolymerNotchFragmentIonComparer = new();
