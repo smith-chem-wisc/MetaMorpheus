@@ -34,6 +34,7 @@
       <ComponentGroupRef Id="Appsrc_NGlycan_files" />
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
+      <ComponentGroupRef Id="Appsrc_Digestion_files" />
       <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
@@ -125,7 +126,10 @@
 
           <!--ProteolyticDigestion Folder-->
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
-          
+
+			<!--Digestion Folder-->
+          <Directory Id="MetaAppDigestionFolder" Name="Digestion" />
+			
           <!--Contaminants Folder-->
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
 
