@@ -11,6 +11,7 @@ using Omics.Digestion;
 using Omics.Fragmentation;
 using SpectralAveraging;
 using TaskLayer;
+using Transcriptomics.Digestion;
 
 namespace Test
 {
@@ -310,6 +311,50 @@ namespace Test
 
             File.Delete(filePath);
         }
-        
+
+        [Test]
+        public static void TestDigestionParamsTomlReadingWriting_Rna()
+        {
+            var digestionParams = new RnaDigestionParams();
+            var commonParams = new CommonParameters(digestionParams: digestionParams);
+            var searchTask = new SearchTask();
+            searchTask.CommonParameters = commonParams;
+
+            // check that digestion params are correct in search task
+            var digestion = searchTask.CommonParameters.DigestionParams as RnaDigestionParams;
+            if (digestion is null)
+            {
+                Assert.Fail("Digestion params are not of type RnaDigestionParams");
+            }
+            Assert.That(searchTask.CommonParameters.DigestionParams.FragmentationTerminus, Is.EqualTo(digestionParams.FragmentationTerminus));
+            Assert.That(searchTask.CommonParameters.DigestionParams.SearchModeType, Is.EqualTo(digestionParams.SearchModeType));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(digestionParams.MaxMissedCleavages));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MaxModificationIsoforms, Is.EqualTo(digestionParams.MaxModificationIsoforms));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MinLength, Is.EqualTo(digestionParams.MinLength));
+            Assert.That(searchTask.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
+            Assert.That(searchTask.CommonParameters.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionParams.DigestionAgent.Name));
+
+            // write and read file 
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testDigestionParams.toml");
+            Toml.WriteFile(searchTask, filePath, MetaMorpheusTask.tomlConfig);
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(filePath, MetaMorpheusTask.tomlConfig);
+
+            // check that digestion params are correct in search task
+            digestion = searchTaskLoaded.CommonParameters.DigestionParams as RnaDigestionParams;
+            if (digestion is null)
+            {
+                Assert.Fail("Digestion params are not of type DigestionParams");
+            }
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.FragmentationTerminus, Is.EqualTo(digestionParams.FragmentationTerminus));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.SearchModeType, Is.EqualTo(digestionParams.SearchModeType));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxMissedCleavages, Is.EqualTo(digestionParams.MaxMissedCleavages));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxModificationIsoforms, Is.EqualTo(digestionParams.MaxModificationIsoforms));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MinLength, Is.EqualTo(digestionParams.MinLength));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.MaxLength, Is.EqualTo(digestionParams.MaxLength));
+            Assert.That(searchTaskLoaded.CommonParameters.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionParams.DigestionAgent.Name));
+
+            File.Delete(filePath);
+        }
+
     }
 }

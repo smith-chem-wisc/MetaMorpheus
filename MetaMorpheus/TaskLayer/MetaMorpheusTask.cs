@@ -22,6 +22,7 @@ using Omics.SpectrumMatch;
 using SpectralAveraging;
 using UsefulProteomicsDatabases;
 using Transcriptomics.Digestion;
+using Proteomics.AminoAcidPolymer;
 
 namespace TaskLayer
 {
@@ -78,10 +79,19 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MaxLength)
                 .IgnoreProperty(p => p.MinLength))
             .ConfigureType<RnaDigestionParams>(type => type
-                .IgnoreProperty(p => p.DigestionAgent)
-                .IgnoreProperty(p => p.MaxMods)
-                .IgnoreProperty(p => p.MaxLength)
-                .IgnoreProperty(p => p.MinLength))
+                .IgnoreProperty(p => p.DigestionAgent))
+            .ConfigureType<Rnase>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.Name)
+                    .FromToml(tmlString => RnaseDictionary.Dictionary[tmlString.Value])))
+            .ConfigureType<IHasChemicalFormula>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.ThisChemicalFormula.Formula)
+                    .FromToml(tmlString => ChemicalFormula.ParseFormula(tmlString.Value))))
+            .ConfigureType<List<IHasChemicalFormula>>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => string.Join("\t", custom.Select(p => p.ThisChemicalFormula.Formula)))
+                    .FromToml(tmlString => GetChemicalFormulasFromString(tmlString.Value))))
             // Switch on DeconvolutionParameters
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
@@ -884,7 +894,14 @@ namespace TaskLayer
         {
             return value.Split(new string[] { "\t\t" }, StringSplitOptions.RemoveEmptyEntries).Select(b => (b.Split('\t').First(), b.Split('\t').Last())).ToList();
         }
-        
+
+        private static List<IHasChemicalFormula> GetChemicalFormulasFromString(string value)
+        {
+            return value.Split("\t", StringSplitOptions.RemoveEmptyEntries)
+                .Select(b => (IHasChemicalFormula)ChemicalFormula.ParseFormula(b.Trim()))
+                .ToList();
+        }
+
         private void SingleEngineHandlerInTask(object sender, SingleEngineFinishedEventArgs e)
         {
             MyTaskResults.AddResultText(e.ToString());
