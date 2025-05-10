@@ -25,6 +25,7 @@ namespace TaskLayer
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(DigestionAgent):
+                    case "Protease":
                         if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
                             DigestionAgent = keyValuePair.Value.Get<Rnase>(); 
                         else
