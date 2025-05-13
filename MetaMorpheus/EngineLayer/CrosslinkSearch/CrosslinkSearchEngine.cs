@@ -320,6 +320,7 @@ namespace EngineLayer.CrosslinkSearch
                 possibleMatches = new List<CrosslinkSpectralMatch>();
             }
 
+            // We are going to make the assumption that the XL search engine is only ran with proteins. If implemented for other BioPolymers in the future, this should be revised. 
             var initiatorMethionine = ((DigestionParams)CommonParameters.DigestionParams).InitiatorMethionineBehavior;
             foreach (var id in idsOfPeptidesPossiblyObserved)
             {
