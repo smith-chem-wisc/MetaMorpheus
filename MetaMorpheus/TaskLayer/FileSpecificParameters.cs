@@ -24,15 +24,32 @@ namespace TaskLayer
                         PrecursorMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
                     case nameof(ProductMassTolerance):
                         ProductMassTolerance = keyValuePair.Value.Get<Tolerance>(); break;
+                    case nameof(DigestionAgent): // Support new tomls that labeled by Digestion Agent Type instead of specific type
+                        string valueString = keyValuePair.Value.Get<string>();
 
-                    // Support old tomls that labeled by Digestion Agent Type
-                    case nameof(DigestionAgent):
-                    case "Rnase":
-                    case "Protease":
-                        if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
-                            DigestionAgent = keyValuePair.Value.Get<Rnase>(); 
-                        else
+                        // If type is top-down we only have the analyte type to go off of. 
+                        // This should be updated if there is ever an Rnase and Protease that share a same name. 
+                        if (valueString.Contains("top-down"))
+                        {
+                            if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
+                                DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                            else
+                                DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        }
+
+                        // If type is not top-down we can check the digestion agent dictionaries. 
+                        if (ProteaseDictionary.Dictionary.ContainsKey(valueString))
                             DigestionAgent = keyValuePair.Value.Get<Protease>();
+                        else if (RnaseDictionary.Dictionary.ContainsKey(valueString))
+                            DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                        else
+                            throw new MetaMorpheusException("Unrecognized digestion agent type \"" + valueString + "\" in file-specific parameters toml");
+                        break;
+                    case "Rnase": // Support old tomls that labeled by Digestion Agent Type instead of DigestionAgent
+                        DigestionAgent = keyValuePair.Value.Get<Rnase>();
+                        break;
+                    case "Protease": // Support old tomls that labeled by Digestion Agent Type instead of DigestionAgent
+                        DigestionAgent = keyValuePair.Value.Get<Protease>();
                         break;
                     case nameof(MinPeptideLength):
                         MinPeptideLength = keyValuePair.Value.Get<int>(); break;

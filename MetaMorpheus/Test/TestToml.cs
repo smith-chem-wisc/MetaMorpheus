@@ -103,49 +103,55 @@ namespace Test
         }
 
         [Test]
-        public static void TestTomlForSpecficFiles()
+        [TestCase("testFileSpecfic_Protease.toml", "Asp-N")]
+        [TestCase("testFileSpecfic_DigestionAgent.toml", "Asp-N")]
+        [TestCase("testFileSpecfic_DigestionAgent_TopDown.toml", "top-down")]
+        public static void TestTomlForSpecficFiles(string path, string digestionAgentName)
         {
-            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", path), MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
-            Assert.That(tomlSettingsList["Protease"].Value.Get<string>(), Is.EqualTo("Asp-N"));
+            Assert.That(tomlSettingsList.First().Value.Value.Get<string>(), Is.EqualTo(digestionAgentName));
             Assert.That(tomlSettingsList["DissociationType"].Value.Get<string>(), Is.EqualTo("ETD"));
             Assert.That(!tomlSettingsList.ContainsKey("maxMissedCleavages"));
             Assert.That(!tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
 
             FileSpecificParameters f = new(fileSpecificToml);
 
-            Assert.That(f.DigestionAgent.Name, Is.EqualTo("Asp-N"));
+            Assert.That(f.DigestionAgent.Name, Is.EqualTo(digestionAgentName));
             Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(f.MaxMissedCleavages, Is.Null);
 
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(), f);
 
-            Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo("Asp-N"));
+            Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionAgentName));
             Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(c.DigestionParams.MaxMissedCleavages, Is.EqualTo(2));
         }
 
         [Test]
         [NonParallelizable]
-        public static void TestTomlForSpecficFiles_Rna()
+        [TestCase("testFileSpecfic_RNA_Rnase.toml", "RNase U2")]
+        [TestCase("testFileSpecfic_RNA_DigestionAgent.toml", "RNase U2")]
+        [TestCase("testFileSpecfic_RNA_DigestionAgent_TopDown.toml", "top-down")]
+        public static void TestTomlForSpecficFiles_Rna(string path, string digestionAgentName)
         {
             GlobalVariables.AnalyteType = AnalyteType.Oligo;
-            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic_RNA.toml"), MetaMorpheusTask.tomlConfig);
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", path), MetaMorpheusTask.tomlConfig);
             var tomlSettingsList = fileSpecificToml.ToDictionary(p => p.Key);
-            Assert.That(tomlSettingsList["Rnase"].Value.Get<string>(), Is.EqualTo("RNase U2"));
+            Assert.That(tomlSettingsList.First().Value.Value.Get<string>(), Is.EqualTo(digestionAgentName));
             Assert.That(tomlSettingsList["DissociationType"].Value.Get<string>(), Is.EqualTo("ETD"));
             Assert.That(!tomlSettingsList.ContainsKey("maxMissedCleavages"));
             Assert.That(!tomlSettingsList.ContainsKey("InitiatorMethionineBehavior"));
 
             FileSpecificParameters f = new(fileSpecificToml);
 
-            Assert.That(f.DigestionAgent.Name, Is.EqualTo("RNase U2"));
+            Assert.That(f.DigestionAgent.Name, Is.EqualTo(digestionAgentName));
             Assert.That(f.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(f.MaxMissedCleavages, Is.Null);
 
             CommonParameters c = MetaMorpheusTask.SetAllFileSpecificCommonParams(new CommonParameters(digestionParams: new RnaDigestionParams(maxMissedCleavages: 2)), f);
 
-            Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo("RNase U2"));
+            Assert.That(c.DigestionParams.DigestionAgent.Name, Is.EqualTo(digestionAgentName));
             Assert.That(c.DissociationType, Is.EqualTo(DissociationType.ETD));
             Assert.That(c.DigestionParams.MaxMissedCleavages, Is.EqualTo(2));
             GlobalVariables.AnalyteType = AnalyteType.Peptide;
@@ -228,7 +234,7 @@ namespace Test
         [Test]
         public static void FileSpecificParametersTest()
         {
-            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml");
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testFileParams.toml");
 
             var fileSpecificToml = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
@@ -243,7 +249,7 @@ namespace Test
             Assert.That(fsp.DigestionAgent.Name, Is.EqualTo("Asp-N"));
             Assert.That(fsp.SeparationType.ToString(), Is.EqualTo("HPLC"));
 
-            filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams_bad.toml");
+            filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testFileParams_bad.toml");
 
             var fileSpecificTomlBad = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
@@ -258,7 +264,7 @@ namespace Test
         [Test]
         public static void TestFileSpecificAndCommonParametersNameEquality()
         {
-            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileParams.toml");
+            var filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testFileParams.toml");
             var fileSpecificToml = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
 
             FileSpecificParameters fileSpecificParameters = new(fileSpecificToml);

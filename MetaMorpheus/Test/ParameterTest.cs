@@ -19,9 +19,18 @@ namespace Test
     public static class ParameterTest
     {
         [Test]
-        public static void TestFileSpecificParametersClone()
+        [TestCase("testFileSpecfic_Protease.toml")]
+        [TestCase("testFileSpecfic_DigestionAgent.toml")]
+        [TestCase("testFileSpecfic_DigestionAgent_TopDown.toml")]
+        [TestCase("testFileSpecfic_RNA_Rnase.toml")]
+        [TestCase("testFileSpecfic_RNA_DigestionAgent.toml")]
+        [TestCase("testFileSpecfic_RNA_DigestionAgent_TopDown.toml")]
+        public static void TestFileSpecificParametersClone(string filePath)
         {
-            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "testFileSpecfic.toml"), MetaMorpheusTask.tomlConfig);
+            if (filePath.Contains("RNA"))
+                GlobalVariables.AnalyteType = AnalyteType.Oligo;
+
+            var fileSpecificToml = Toml.ReadFile(Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", filePath), MetaMorpheusTask.tomlConfig);
             FileSpecificParameters fsp = new FileSpecificParameters(fileSpecificToml);
             FileSpecificParameters fspClone = fsp.Clone();
             Assert.That(fsp.DissociationType, Is.EqualTo(fspClone.DissociationType));
@@ -34,6 +43,7 @@ namespace Test
             Assert.That(fsp.DigestionAgent, Is.EqualTo(fspClone.DigestionAgent));
             Assert.That(fsp.SeparationType, Is.EqualTo(fspClone.SeparationType));
             CollectionAssert.AreEqual(fsp.CustomIons, fspClone.CustomIons);
+            GlobalVariables.AnalyteType = AnalyteType.Peptide;
         }
 
         [Test]
@@ -300,6 +310,42 @@ namespace Test
             Assert.That(updatedParameters.MaxThreadsToUsePerFile, Is.EqualTo(notDefaultParameters.MaxThreadsToUsePerFile));
             Assert.That(updatedParameters.ListOfModsVariable, Is.EqualTo(notDefaultParameters.ListOfModsVariable));
             Assert.That(updatedParameters.ListOfModsFixed, Is.EqualTo(notDefaultParameters.ListOfModsFixed));
+        }
+
+
+        [Test]
+        public static void SetAllFileSpecificParams_ThrowsOnUnknownDigestionParameterType()
+        {
+            BadDigestionParams badDigestion = new();
+            CommonParameters defaultParameters = new CommonParameters(digestionParams: badDigestion);
+
+            FileSpecificParameters emptyFileSpecificParameters = new FileSpecificParameters();
+
+            Assert.That(() => MetaMorpheusTask.SetAllFileSpecificCommonParams(defaultParameters, emptyFileSpecificParameters),
+                Throws.TypeOf<MetaMorpheusException>()
+                    .With.Message.Contain("Unrecognized digestion parameters of type"));
+        }
+
+        [Test]
+        public static void ReadFileSpecificParametersFromToml_ThrowsOnUnknownDigestionAgent()
+        {
+            string filePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testFileParams_bad_DigestionAgent.toml");
+
+            var fileSpecificTomlBad = Toml.ReadFile(filePath, MetaMorpheusTask.tomlConfig);
+            Assert.Throws<MetaMorpheusException>(() => new FileSpecificParameters(fileSpecificTomlBad));
+        }
+
+        class BadDigestionParams : IDigestionParams
+        {
+            public int MaxMissedCleavages { get; set; }
+            public int MinLength { get; set; }
+            public int MaxLength { get; set; }
+            public int MaxModificationIsoforms { get; set; }
+            public int MaxMods { get; set; }
+            public DigestionAgent DigestionAgent { get; }
+            public FragmentationTerminus FragmentationTerminus { get; }
+            public CleavageSpecificity SearchModeType { get; }
+            public IDigestionParams Clone(FragmentationTerminus? newTerminus = null) => this;
         }
     }
 }

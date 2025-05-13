@@ -462,42 +462,31 @@ namespace TaskLayer
             int maxMissedCleavages = fileSpecificParams.MaxMissedCleavages ?? commonParams.DigestionParams.MaxMissedCleavages;
             int maxModsForPeptide = fileSpecificParams.MaxModsForPeptide ?? commonParams.DigestionParams.MaxMods;
 
-            IDigestionParams fileSpecificDigestionParams;
-            if (commonParams.DigestionParams is DigestionParams digestionParams)
+            // set file-specific digestion params based upon the type of digestion params
+            IDigestionParams fileSpecificDigestionParams = commonParams.DigestionParams switch
             {
-                DigestionAgent
-                    protease = fileSpecificParams.DigestionAgent ??
-                               digestionParams.SpecificProtease; //set to specific for nonspecific searches to update
-                fileSpecificDigestionParams = new DigestionParams(
-                    protease: protease.Name,
+                DigestionParams digestionParams => new DigestionParams(
+                    protease: (fileSpecificParams.DigestionAgent ?? digestionParams.SpecificProtease).Name,
                     maxMissedCleavages: maxMissedCleavages,
                     minPeptideLength: minPeptideLength,
                     maxPeptideLength: maxPeptideLength,
                     maxModsForPeptides: maxModsForPeptide,
-
-                    //NEED THESE OR THEY'LL BE OVERWRITTEN
                     maxModificationIsoforms: digestionParams.MaxModificationIsoforms,
                     initiatorMethionineBehavior: digestionParams.InitiatorMethionineBehavior,
                     fragmentationTerminus: digestionParams.FragmentationTerminus,
                     searchModeType: digestionParams.SearchModeType
-                );
-            }
-            else
-            {
-                var digestionAgent = fileSpecificParams.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent;
-
-                fileSpecificDigestionParams = new RnaDigestionParams(
-                    rnase: digestionAgent.Name,
+                ),
+                RnaDigestionParams => new RnaDigestionParams(
+                    rnase: (fileSpecificParams.DigestionAgent ?? commonParams.DigestionParams.DigestionAgent).Name,
                     maxMissedCleavages: maxMissedCleavages,
                     minLength: minPeptideLength,
                     maxLength: maxPeptideLength,
                     maxMods: maxModsForPeptide,
-
-                    //NEED THESE OR THEY'LL BE OVERWRITTEN
                     maxModificationIsoforms: commonParams.DigestionParams.MaxModificationIsoforms,
                     fragmentationTerminus: commonParams.DigestionParams.FragmentationTerminus
-                    );
-            }
+                ),
+                _ => throw new MetaMorpheusException($"Unrecognized digestion parameters of type {commonParams.DigestionParams.GetType().FullName} in MetaMorpheusTask.SetAllFileSpecificCommonParams")
+            };
 
             // set the rest of the file-specific parameters
             Tolerance precursorMassTolerance = fileSpecificParams.PrecursorMassTolerance ?? commonParams.PrecursorMassTolerance;
