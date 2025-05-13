@@ -545,9 +545,9 @@ namespace Test.MetaDraw
             // object setup
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
-            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out List<string> warnings);
+            List<SpectrumMatchFromTsv> psms = SpectrumMatchTsvReader.ReadTsv(psmsPath, out List<string> warnings);
             Assert.That(warnings.Count, Is.EqualTo(0));
-            List<PsmFromTsv> filteredChimeras =
+            List<SpectrumMatchFromTsv> filteredChimeras =
                 psms.Where(p => p.QValue <= 0.01 && p.PEP <= 0.5 && p.PrecursorScanNum == 1557).ToList();
             Assert.That(filteredChimeras.Count, Is.EqualTo(3));
 
@@ -562,7 +562,7 @@ namespace Test.MetaDraw
 
             // test chimera legend overflow colors
             // more unique proteins than colored
-            List<PsmFromTsv> overflowInducingProteins = psms.DistinctBy(p => p.BaseSeq)
+            List<SpectrumMatchFromTsv> overflowInducingProteins = psms.DistinctBy(p => p.BaseSeq)
                 .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.Keys.Count + 1).ToList();
             chimeraLegend = new(overflowInducingProteins);
             Assert.That(chimeraLegend.ChimeraLegendItems.Values.DistinctBy(p =>
@@ -575,7 +575,7 @@ namespace Test.MetaDraw
             // more unique proteoforms than colored
             overflowInducingProteins = psms
                 .Take(ChimeraSpectrumMatchPlot.ColorByProteinDictionary.First().Value.Count)
-                .Select(p => p = new(p, overflowInducingProteins.First().FullSequence, 0,
+                .Select(p => p = new PsmFromTsv(p as PsmFromTsv, overflowInducingProteins.First().FullSequence, 0,
                     overflowInducingProteins.First().BaseSeq)).ToList();
             Assert.That(overflowInducingProteins.All(p => p.BaseSeq == overflowInducingProteins.First().BaseSeq));
             Assert.That(overflowInducingProteins.All(p =>
@@ -597,7 +597,7 @@ namespace Test.MetaDraw
             chimeraLegendItem = new(null, OxyColors.Chocolate);
             Assert.That(chimeraLegendItem.Name == "No Modifications");
 
-            chimeraLegend = new ChimeraLegendViewModel(new List<PsmFromTsv>() { psms.First() });
+            chimeraLegend = new ChimeraLegendViewModel(new List<SpectrumMatchFromTsv>() { psms.First() });
             Assert.That(chimeraLegend.DisplaySharedIonLabel == false);
         }
 
