@@ -10,6 +10,8 @@ using System.Windows;
 using EngineLayer;
 using Omics.Modifications;
 using Proteomics.ProteolyticDigestion;
+using Readers;
+using Omics;
 
 namespace GuiFunctions
 {
@@ -49,7 +51,7 @@ namespace GuiFunctions
 
         #region Constructor
 
-        public PtmLegendViewModel(PsmFromTsv psm, double offset = 0) : base()
+        public PtmLegendViewModel(SpectrumMatchFromTsv psm, double offset = 0) : base()
         {
             ParseModsFromPsmTsv(psm);
             TopOffset = offset;
@@ -100,10 +102,10 @@ namespace GuiFunctions
 
         #endregion
 
-        private void ParseModsFromPsmTsv(PsmFromTsv psm)
+        private void ParseModsFromPsmTsv(SpectrumMatchFromTsv psm)
         {
-            PeptideWithSetModifications peptide = new(psm.FullSequence, GlobalVariables.AllModsKnownDictionary);
-            List<Modification> mods = peptide.AllModsOneIsNterminus.Values.ToList();
+            IBioPolymerWithSetMods bioPolymerWithSetMods = psm.ToBioPolymerWithSetMods();
+            List<Modification> mods = bioPolymerWithSetMods.AllModsOneIsNterminus.Values.ToList();
             foreach (var mod in mods.Distinct())
             {
                 var modItem = new PtmLegendItemViewModel(mod.IdWithMotif);
