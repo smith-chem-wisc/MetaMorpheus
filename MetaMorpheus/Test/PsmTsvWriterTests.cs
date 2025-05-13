@@ -10,6 +10,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using Easy.Common.Extensions;
 using EngineLayer.SpectrumMatch;
+using Readers;
 
 namespace Test
 {
@@ -71,14 +72,14 @@ namespace Test
 
             string myPsmString = myPsm.ToString();
             string[] myPsmStringSplit = myPsmString.Split('\t');
-            var ppmErrorIndex = headerSplits.IndexOf(PsmTsvHeader.MassDiffPpm);
+            var ppmErrorIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.MassDiffPpm);
             string ppmErrorString = myPsmStringSplit[ppmErrorIndex];
 
             //The two different mods produce two separate mass errors, which are both then reported
             Assert.That(ppmErrorString, Is.EqualTo("0.00000|11801.30000"));
 
             //Make sure we see produt ion neutral losses in the output.
-            var matchedIonSeriesIndex = headerSplits.IndexOf(PsmTsvHeader.MatchedIonSeries);
+            var matchedIonSeriesIndex = headerSplits.IndexOf(SpectrumMatchFromTsvHeader.MatchedIonSeries);
             string matchedIonSeries = myPsmStringSplit[matchedIonSeriesIndex];
             Assert.That(matchedIonSeries, Is.EqualTo("[(b1-5.00)+1]"));
 
