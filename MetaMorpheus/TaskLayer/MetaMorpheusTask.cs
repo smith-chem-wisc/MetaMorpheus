@@ -665,7 +665,7 @@ namespace TaskLayer
             // We are not generating decoys, so just return the read in database
             if (!bioPolymerList.Any(p => p.IsDecoy))
             {
-                Status("Done loading proteins", new List<string> { taskId });
+                Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
                 return bioPolymerList;
             }
 
@@ -698,7 +698,7 @@ namespace TaskLayer
                 }
             }
 
-            Status("Done loading proteins", new List<string> { taskId });
+            Status($"Done loading {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s", new List<string> { taskId });
             return bioPolymerList;
         }
 
@@ -962,7 +962,7 @@ namespace TaskLayer
             // get digestion info from file
             var storedDigestParams = GetDigestionParamsFromFile(Path.Combine(Path.GetDirectoryName(peptideIndexFileName), "DigestionParameters.toml"));
 
-            // get non-serialized information for the peptides (bioPolymers, mod info)
+            // get non-serialized information for the peptides (proteins, mod info)
             foreach (var peptide in peptideIndex)
             {
                 peptide.SetNonSerializedPeptideInfo(GlobalVariables.AllModsKnownDictionary, proteinDictionary, storedDigestParams);
@@ -1012,7 +1012,7 @@ namespace TaskLayer
                     return null;
                 }
 
-                // all directories in the same directory as the protein database
+                // all directories in the same directory as the bioPolymer database
                 DirectoryInfo[] directories = indexDirectory.GetDirectories();
 
                 // look in each subdirectory to find indexes folder
@@ -1224,8 +1224,6 @@ namespace TaskLayer
         ///
         /// RemoveAll is important because it references the location in memory, not the Equals
         /// </summary>
-        /// <param name="bioPolymers"></param>
-        /// <param name="tcAmbiguity"></param>
         protected static void SanitizeBioPolymerDatabase<TBioPolymer>(List<TBioPolymer> bioPolymers, TargetContaminantAmbiguity tcAmbiguity)
             where TBioPolymer : IBioPolymer
         {
@@ -1246,7 +1244,7 @@ namespace TaskLayer
                     Warn("The protein '" + accession + "' has multiple entries. Protein accessions must be unique. Protein " + accession + " was renamed.");
                     foreach (var originalBioPolymer in accessionGroup)
                     {
-                        //accession is private and there's no clone method, so we need to make a whole new protein... TODO: put this in mzlib
+                        //accession is private and there's no clone method, so we need to make a whole new bioPolymer... TODO: put this in mzlib
                         //use PROTEIN_D1 instead of PROTEIN_1 so it doesn't look like an isoform (D for Duplicate)
                         IBioPolymer renamed;
                         if (originalBioPolymer is RNA r)
@@ -1294,14 +1292,14 @@ namespace TaskLayer
                 }
 
                 //remove the bioPolymers specified above
-                foreach (var protein in toRemove.Where(_ => accessionGroup.Count > 1))
+                foreach (var bioPolymer in toRemove.Where(_ => accessionGroup.Count > 1))
                 {
-                    bioPolymers.RemoveAll(p => ReferenceEquals(p, protein));
-                    accessionGroup.RemoveAll(p => ReferenceEquals(p, protein));
+                    bioPolymers.RemoveAll(p => ReferenceEquals(p, bioPolymer));
+                    accessionGroup.RemoveAll(p => ReferenceEquals(p, bioPolymer));
                 }
 
                 // most ambiguity should be handled by now, but for edge cases and decoys:
-                // remove bioPolymers so that only 1 protein with this accession remains
+                // remove bioPolymers so that only 1 bioPolymer with this accession remains
                 for (int i = 0; i < accessionGroup.Count - 1; i++) //-1 to keep the last one (most mods)
                 {
                     bioPolymers.RemoveAll(p => ReferenceEquals(p, accessionGroup[i]));

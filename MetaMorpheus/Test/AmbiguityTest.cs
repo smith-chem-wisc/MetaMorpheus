@@ -15,9 +15,6 @@ using Omics.Modifications;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using Omics;
-using Readers;
-using Easy.Common.Extensions;
 
 namespace Test
 {
@@ -78,7 +75,6 @@ namespace Test
         }
 
         [Test]
-        [NonParallelizable]
         public static void TestContaminantAmbiguity()
         {
             //create an ms file and a database for the peptide
@@ -107,14 +103,12 @@ namespace Test
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            string[] lines = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"));
-            string headerLine = lines[0];
-            string psmLine = lines[1];
-            var headerSplits = headerLine.Split('\t');
-            string[] splitLine = psmLine.Split('\t');
+            string psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
 
-            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)], Is.EqualTo("N|Y")); //column "Contaminant"
-            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)], Is.EqualTo("T|C")); //column "Decoy/Contaminant/Target"
+            var headerSplits = SpectralMatch.GetTabSeparatedHeader().Split('\t');
+            string[] splitLine = psmLine.Split('\t');
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)].Equals("N|Y")); //column "Contaminant"
+            Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.DecoyContaminantTarget)].Equals("T|C")); //column "Decoy/Contaminant/Target"
 
             //KEEP ONLY TARGET
             modernSearchParams = new SearchParameters();
@@ -123,13 +117,13 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task2", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
+            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task2", "AllPSMs.psmtsv"))[1];
+            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
 
             Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)].Equals("N")); //column "Contaminant"
@@ -144,13 +138,13 @@ namespace Test
             modernTask = new SearchTask();
             modernTask.SearchParameters = modernSearchParams;
 
-            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task3", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
+            engine = new EverythingRunnerEngine(new List<(string, MetaMorpheusTask)> { ("task1", modernTask) }, new List<string> { mzmlName }, new List<DbForTask> { new DbForTask(xmlName, false), new DbForTask(xmlName, true) }, outputFolder);
             engine.Run();
             //run the modern search again now that it's reading the index instead of writing it.
             engine.Run();
 
             //check that the psm file shows it's both a target and a contaminant
-            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task3", "AllPSMs.psmtsv"))[1];
+            psmLine = File.ReadAllLines(Path.Combine(outputFolder, "task1", "AllPSMs.psmtsv"))[1];
             splitLine = psmLine.Split('\t');
 
             Assert.That(splitLine[Array.IndexOf(headerSplits, SpectrumMatchFromTsvHeader.Contaminant)].Equals("Y")); //column "Contaminant"
