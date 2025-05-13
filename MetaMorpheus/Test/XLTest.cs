@@ -24,6 +24,7 @@ using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
+using Transcriptomics.Digestion;
 
 namespace Test
 {
@@ -917,6 +918,16 @@ namespace Test
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.That(newPsms.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public static void XlTest_ThrowsOnRnaDigestionParameters()
+        {
+            var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
+
+            Assert.That(() => new CrosslinkSearchEngine([], [], [], [], [], 1, commonParameters, [], new Crosslinker(), 1, false, false, false, false, [], [], 1, [], []),
+                Throws.TypeOf<ArgumentException>()
+                    .With.Message.Contain("Cross-link search engine does not currently support digestion of type"));
         }
 
         [Test]
