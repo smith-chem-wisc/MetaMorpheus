@@ -13,6 +13,7 @@ using Omics.Digestion;
 using Omics.Modifications;
 using TaskLayer;
 using Transcriptomics;
+using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
 using UsefulProteomicsDatabases.Transcriptomics;
 
@@ -135,9 +136,21 @@ public class RnaDatabaseLoadingTests
     {
         GlobalVariables.AnalyteType = AnalyteType.Oligo;
         var task = new SearchTask();
-        var commonParameters = new CommonParameters();
+        var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams("RNase T1"));
         string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "Transcriptomics", "TestData", "TruncationAndVariantMods.xml");
         var dbsForTask = new List<DbForTask> { new DbForTask(dbPath, false) };
+
+        // Use reflection to access the protected LoadModifications method
+        var loadModificationsMethod = typeof(MetaMorpheusTask).GetMethod("LoadModifications", BindingFlags.NonPublic | BindingFlags.Instance);
+        object[] modArgs = new object[]
+        {
+            "TestTaskId",
+            null, // variableModifications (out)
+            null, // fixedModifications (out)
+            null  // localizableModificationTypes (out)
+        };
+        loadModificationsMethod.Invoke(task, modArgs);
+        var localizableModificationTypes = (List<string>)modArgs[3];
 
         // Use reflection to access the protected LoadBioPolymers method
         var loadBioPolymersMethod = typeof(MetaMorpheusTask).GetMethod("LoadBioPolymers", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -147,7 +160,7 @@ public class RnaDatabaseLoadingTests
             dbsForTask,
             true, // searchTarget
             DecoyType.Reverse,
-            new List<string>(), // localizeableModificationTypes
+            localizableModificationTypes, // pass the loaded localizable mods
             commonParameters
         });
 

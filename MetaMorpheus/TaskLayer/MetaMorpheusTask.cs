@@ -697,10 +697,10 @@ namespace TaskLayer
             // TODO: Fix this so that it accounts for multi-protease searches. Currently, we only consider the first protease
             // when looking for target/decoy collisions
             HashSet<string> targetPeptideSequences = new();
-            foreach(var protein in bioPolymerList.Where(p => !p.IsDecoy))
+            foreach(var bioPolymer in bioPolymerList.Where(p => !p.IsDecoy))
             {
                 // When thinking about decoy collisions, we can ignore modifications
-                foreach(var peptide in protein.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
+                foreach(var peptide in bioPolymer.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()))
                 {
                     targetPeptideSequences.Add(peptide.BaseSequence);
                 }
@@ -774,9 +774,30 @@ namespace TaskLayer
         {
             // load modifications
             Status("Loading modifications...", taskId);
-            variableModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            fixedModifications = GlobalVariables.AllModsKnown.OfType<Modification>().Where(b => CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif))).ToList();
-            localizableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
+            switch (GlobalVariables.AnalyteType)
+            {
+                case AnalyteType.Oligo:
+                    variableModifications = GlobalVariables.AllRnaModsKnown
+                        .Where(b => CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif)))
+                        .ToList();
+                    fixedModifications = GlobalVariables.AllRnaModsKnown
+                        .Where(b => CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif)))
+                        .ToList();
+                    localizableModificationTypes = GlobalVariables.AllRnaModTypesKnown.ToList();
+                    break;
+
+                case AnalyteType.Peptide:
+                case AnalyteType.Proteoform:
+                default:
+                    variableModifications = GlobalVariables.AllModsKnown
+                        .Where(b => CommonParameters.ListOfModsVariable.Contains((b.ModificationType, b.IdWithMotif)))
+                        .ToList();
+                    fixedModifications = GlobalVariables.AllModsKnown
+                        .Where(b => CommonParameters.ListOfModsFixed.Contains((b.ModificationType, b.IdWithMotif)))
+                        .ToList();
+                    localizableModificationTypes = GlobalVariables.AllModTypesKnown.ToList();
+                    break;
+            }
 
             var recognizedVariable = variableModifications.Select(p => p.IdWithMotif);
             var recognizedFixed = fixedModifications.Select(p => p.IdWithMotif);
