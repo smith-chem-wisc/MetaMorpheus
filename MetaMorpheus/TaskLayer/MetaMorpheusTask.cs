@@ -4,8 +4,6 @@ using EngineLayer.Indexing;
 using MassSpectrometry;
 using MzLibUtil;
 using Nett;
-using Proteomics;
-using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,16 +13,18 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SpectralAveraging;
+using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
-using SpectralAveraging;
-using UsefulProteomicsDatabases;
+using Proteomics;
+using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
+using Transcriptomics.Digestion;
+using UsefulProteomicsDatabases;
 using UsefulProteomicsDatabases.Transcriptomics;
-using Omics;
-using Proteomics.AminoAcidPolymer;
 
 namespace TaskLayer
 {
