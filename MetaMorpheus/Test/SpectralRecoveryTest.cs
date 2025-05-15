@@ -115,7 +115,7 @@ namespace Test
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
-                    ProteinList = proteinList,
+                    ProteinList = proteinList.Cast<IBioPolymer>().ToList(),
                     AllPsms = psms,
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
@@ -292,7 +292,7 @@ namespace Test
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
-                    ProteinList = proteinList,
+                    ProteinList = proteinList.Cast<IBioPolymer>().ToList(),
                     AllPsms = psms,
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
@@ -341,7 +341,7 @@ namespace Test
             {
                 Parameters = new PostSearchAnalysisParameters()
                 {
-                    ProteinList = proteinList,
+                    ProteinList = proteinList.Cast<IBioPolymer>().ToList(),
                     AllPsms = psms.GetRange(0, 80),
                     CurrentRawFileList = rawSlices,
                     DatabaseFilenameList = databaseList,
