@@ -1,4 +1,4 @@
-﻿using Chemistry;
+using Chemistry;
 using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
@@ -24,7 +24,7 @@ using UsefulProteomicsDatabases;
 using Transcriptomics;
 using UsefulProteomicsDatabases.Transcriptomics;
 using Omics;
-using Transcriptomics.Digestion;
+using Proteomics.AminoAcidPolymer;
 
 namespace TaskLayer
 {
