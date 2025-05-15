@@ -20,6 +20,7 @@ using UsefulProteomicsDatabases;
 using TaskLayer.MbrAnalysis;
 using Chemistry;
 using MzLibUtil;
+using Omics.Digestion;
 using Omics.BioPolymer;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
@@ -363,7 +364,7 @@ namespace TaskLayer
             List<SilacLabel> allSilacLabels = Parameters.SearchParameters.SilacLabels;
             SilacLabel startLabel = Parameters.SearchParameters.StartTurnoverLabel;
             SilacLabel endLabel = Parameters.SearchParameters.EndTurnoverLabel;
-            bool quantifyUnlabeledPeptides = Parameters.ListOfDigestionParams.Any(x => x.GeneratehUnlabeledProteinsForSilac);
+            bool quantifyUnlabeledPeptides = Parameters.ListOfDigestionParams.Any(x => x is DigestionParams { GeneratehUnlabeledProteinsForSilac: true });
             if (Parameters.SearchParameters.SilacLabels != null)
             {
                 bool turnoverWithMultipleLabels = startLabel != null && endLabel != null; //used to check multiple labels
@@ -490,13 +491,14 @@ namespace TaskLayer
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
             //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-            Dictionary<Protease, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<SpectralMatch>>();
+            Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
+            Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
 
-            foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
+            foreach (IDigestionParams dp in Parameters.ListOfDigestionParams)
             {
-                if (!proteaseSortedPsms.ContainsKey(dp.Protease))
+                if (!proteaseSortedPsms.ContainsKey(dp.DigestionAgent))
                 {
-                    proteaseSortedPsms.Add(dp.Protease, new List<SpectralMatch>());
+                    proteaseSortedPsms.Add(dp.DigestionAgent, new List<SpectralMatch>());
                 }
             }
             foreach (var psm in psmsForQuantification)
@@ -506,7 +508,7 @@ namespace TaskLayer
                     psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
 
-                proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
+                proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
             }
 
             // pass PSM info to FlashLFQ
@@ -969,11 +971,11 @@ namespace TaskLayer
 
                     MzIdentMLWriter.WriteMzIdentMl(
                         psmsForThisFile,
-                        subsetProteinGroupsForThisFile,
-                        Parameters.VariableModifications,
-                        Parameters.FixedModifications,
+                        subsetProteinGroupsForThisFile, 
+                        Parameters.VariableModifications, 
+                        Parameters.FixedModifications, 
                         Parameters.SearchParameters.SilacLabels,
-                        new List<Protease> { CommonParameters.DigestionParams.Protease },
+                        [CommonParameters.DigestionParams.DigestionAgent],
                         CommonParameters.ProductMassTolerance,
                         CommonParameters.PrecursorMassTolerance,
                         CommonParameters.DigestionParams.MaxMissedCleavages,
@@ -1766,7 +1768,7 @@ namespace TaskLayer
             using (StreamWriter output = new StreamWriter(writtenFileForPercolator))
             {
                 string searchType;
-                if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.Protease.Name != null && psmList[0].DigestionParams.Protease.Name == "top-down")
+                if (psmList.Where(p => p != null).Any() && psmList[0].DigestionParams.DigestionAgent.Name != null && psmList[0].DigestionParams.DigestionAgent.Name == "top-down")
                 {
                     searchType = "top-down";
                 }
