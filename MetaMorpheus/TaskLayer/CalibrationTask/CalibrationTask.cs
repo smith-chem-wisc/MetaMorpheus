@@ -49,7 +49,7 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters);
+            List<Protein> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse, localizeableModificationTypes, CommonParameters).Cast<Protein>().ToList();
 
             // write prose settings
             _ = ProseCreatedWhileRunning.Append("The following calibration settings were used: ");
