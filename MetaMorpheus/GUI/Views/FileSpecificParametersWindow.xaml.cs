@@ -12,6 +12,7 @@ using Proteomics.ProteolyticDigestion;
 using System.Globalization;
 using System.Windows.Media;
 using MassSpectrometry;
+using Omics.Digestion;
 
 namespace MetaMorpheusGUI
 {
@@ -82,7 +83,7 @@ namespace MetaMorpheusGUI
             if (fileSpecificProteaseEnabled.IsChecked.Value)
             {
                 fileSpecificParameterExists = true;
-                parametersToWrite.Protease = (Protease)fileSpecificProtease.SelectedItem;
+                parametersToWrite.DigestionAgent = (Protease)fileSpecificProtease.SelectedItem;
             }
             if (fileSpecificDissociationTypesEnabled.IsChecked.Value)
             {
@@ -207,11 +208,11 @@ namespace MetaMorpheusGUI
         {
             // use default settings to populate
             var defaultParams = new CommonParameters();
-            Protease tempProtease = defaultParams.DigestionParams.Protease;
-            int tempMinPeptideLength = defaultParams.DigestionParams.MinPeptideLength;
-            int tempMaxPeptideLength = defaultParams.DigestionParams.MaxPeptideLength;
+            DigestionAgent tempProtease = defaultParams.DigestionParams.DigestionAgent;
+            int tempMinPeptideLength = defaultParams.DigestionParams.MinLength;
+            int tempMaxPeptideLength = defaultParams.DigestionParams.MaxLength;
             int tempMaxMissedCleavages = defaultParams.DigestionParams.MaxMissedCleavages;
-            int tempMaxModsForPeptide = defaultParams.DigestionParams.MaxModsForPeptide;
+            int tempMaxModsForPeptide = defaultParams.DigestionParams.MaxMods;
             var tempPrecursorMassTolerance = defaultParams.PrecursorMassTolerance;
             var tempProductMassTolerance = defaultParams.ProductMassTolerance;
             DissociationType tempDissociationType = defaultParams.DissociationType; 
@@ -238,9 +239,9 @@ namespace MetaMorpheusGUI
                         tempProductMassTolerance = fileSpecificParams.ProductMassTolerance;
                         fileSpecificProductMassTolEnabled.IsChecked = true;
                     }
-                    if (fileSpecificParams.Protease != null)
+                    if (fileSpecificParams.DigestionAgent != null)
                     {
-                        tempProtease = (fileSpecificParams.Protease);
+                        tempProtease = (fileSpecificParams.DigestionAgent);
                         fileSpecificProteaseEnabled.IsChecked = true;
                     }
                     if (fileSpecificParams.DissociationType != null)

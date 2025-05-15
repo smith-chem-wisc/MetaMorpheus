@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Omics;
 using System;
+using Omics.Digestion;
 using EngineLayer.CrosslinkSearch;
 using EngineLayer.SpectrumMatch;
 
@@ -139,8 +140,8 @@ namespace EngineLayer
         #endregion
 
         #region Search
-        
-        public DigestionParams DigestionParams { get; }
+
+        public IDigestionParams DigestionParams { get; }
 
         public static BioPolymerNotchFragmentIonComparer BioPolymerNotchFragmentIonComparer = new();
 

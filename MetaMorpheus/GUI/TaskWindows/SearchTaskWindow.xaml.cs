@@ -162,22 +162,92 @@ namespace MetaMorpheusGUI
         private void UpdateFieldsFromTask(SearchTask task)
         {
             MetaMorpheusTask.DetermineAnalyteType(TheTask.CommonParameters);
-            ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
+            if (task.CommonParameters.DigestionParams is DigestionParams digestionParams)
+            {
+                ProteaseComboBox.SelectedItem = digestionParams.SpecificProtease; //needs to be first, so nonspecific can override if necessary
+                //do these in if statements so as not to trigger the change
+                if (task.SearchParameters.SearchType == SearchType.NonSpecific && digestionParams.SearchModeType == CleavageSpecificity.None)
+                {
+                    NonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
+                    if (digestionParams.SpecificProtease.Name.Equals("singleC") || digestionParams.SpecificProtease.Name.Equals("singleN"))
+                    {
+                        ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
+                    }
+                    else
+                    {
+                        ProteaseComboBox.SelectedItem = digestionParams.SpecificProtease;
+                    }
+                }
+
+                //If SILAC turnover
+                if (task.SearchParameters.StartTurnoverLabel != null || task.SearchParameters.EndTurnoverLabel != null)
+                {
+                    task.SearchParameters.SilacLabels = null; //reset if between runs
+                    CheckBoxSILAC.IsChecked = true;
+                    var startLabel = task.SearchParameters.StartTurnoverLabel;
+                    if (startLabel != null)
+                    {
+                        SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(startLabel, SilacModificationWindow.ExperimentType.Start);
+                        if (startLabel.AdditionalLabels != null)
+                        {
+                            foreach (SilacLabel additionalLabel in startLabel.AdditionalLabels)
+                            {
+                                infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Start));
+                            }
+                        }
+                        StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                    }
+                    else //it's unlabeled for the start condition
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Start));
+                    }
+                    var endLabel = task.SearchParameters.EndTurnoverLabel;
+                    if (endLabel != null)
+                    {
+                        SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(endLabel, SilacModificationWindow.ExperimentType.End);
+                        if (endLabel.AdditionalLabels != null)
+                        {
+                            foreach (SilacLabel additionalLabel in endLabel.AdditionalLabels)
+                            {
+                                infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.End));
+                            }
+                        }
+                        StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                    }
+                    else //it's unlabeled for the end condition
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.End));
+                    }
+                }
+                //else if SILAC multiplex
+                else if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
+                {
+                    CheckBoxSILAC.IsChecked = true;
+                    List<SilacLabel> labels = task.SearchParameters.SilacLabels;
+                    foreach (SilacLabel label in labels)
+                    {
+                        SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label, SilacModificationWindow.ExperimentType.Multiplex);
+                        if (label.AdditionalLabels != null)
+                        {
+                            foreach (SilacLabel additionalLabel in label.AdditionalLabels)
+                            {
+                                infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Multiplex));
+                            }
+                        }
+                        StaticSilacLabelsObservableCollection.Add(infoToAdd);
+                    }
+                    if (digestionParams.GeneratehUnlabeledProteinsForSilac)
+                    {
+                        StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Multiplex));
+                    }
+                }
+
+                CheckBoxQuantifyUnlabeledForSilac.IsChecked = digestionParams.GeneratehUnlabeledProteinsForSilac;
+                InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)digestionParams.InitiatorMethionineBehavior;
+            }
             ClassicSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Classic;
             ModernSearchRadioButton.IsChecked = task.SearchParameters.SearchType == SearchType.Modern;
-            //do these in if statements so as not to trigger the change
-            if (task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType == CleavageSpecificity.None)
-            {
-                NonSpecificSearchRadioButton.IsChecked = true; //when this is changed it overrides the protease
-                if (task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleC") || task.CommonParameters.DigestionParams.SpecificProtease.Name.Equals("singleN"))
-                {
-                    ProteaseComboBox.SelectedItem = ProteaseDictionary.Dictionary["non-specific"];
-                }
-                else
-                {
-                    ProteaseComboBox.SelectedItem = task.CommonParameters.DigestionParams.SpecificProtease;
-                }
-            }
+            
             if (task.SearchParameters.SearchType == SearchType.NonSpecific && task.CommonParameters.DigestionParams.SearchModeType != CleavageSpecificity.None)
             {
                 SemiSpecificSearchRadioButton.IsChecked = true;
@@ -194,71 +264,7 @@ namespace MetaMorpheusGUI
             {
                 CheckBoxLFQwSpectralRecovery.IsChecked = task.SearchParameters.DoSpectralRecovery;
             }
-            //If SILAC turnover
-            if (task.SearchParameters.StartTurnoverLabel != null || task.SearchParameters.EndTurnoverLabel != null)
-            {
-                task.SearchParameters.SilacLabels = null; //reset if between runs
-                CheckBoxSILAC.IsChecked = true;
-                var startLabel = task.SearchParameters.StartTurnoverLabel;
-                if (startLabel != null)
-                {
-                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(startLabel, SilacModificationWindow.ExperimentType.Start);
-                    if (startLabel.AdditionalLabels != null)
-                    {
-                        foreach (SilacLabel additionalLabel in startLabel.AdditionalLabels)
-                        {
-                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Start));
-                        }
-                    }
-                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                }
-                else //it's unlabeled for the start condition
-                {
-                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Start));
-                }
-                var endLabel = task.SearchParameters.EndTurnoverLabel;
-                if (endLabel != null)
-                {
-                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(endLabel, SilacModificationWindow.ExperimentType.End);
-                    if (endLabel.AdditionalLabels != null)
-                    {
-                        foreach (SilacLabel additionalLabel in endLabel.AdditionalLabels)
-                        {
-                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.End));
-                        }
-                    }
-                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                }
-                else //it's unlabeled for the end condition
-                {
-                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.End));
-                }
-            }
-            //else if SILAC multiplex
-            else if (task.SearchParameters.SilacLabels != null && task.SearchParameters.SilacLabels.Count != 0)
-            {
-                CheckBoxSILAC.IsChecked = true;
-                List<SilacLabel> labels = task.SearchParameters.SilacLabels;
-                foreach (SilacLabel label in labels)
-                {
-                    SilacInfoForDataGrid infoToAdd = new SilacInfoForDataGrid(label, SilacModificationWindow.ExperimentType.Multiplex);
-                    if (label.AdditionalLabels != null)
-                    {
-                        foreach (SilacLabel additionalLabel in label.AdditionalLabels)
-                        {
-                            infoToAdd.AddAdditionalLabel(new SilacInfoForDataGrid(additionalLabel, SilacModificationWindow.ExperimentType.Multiplex));
-                        }
-                    }
-                    StaticSilacLabelsObservableCollection.Add(infoToAdd);
-                }
-                if (task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac)
-                {
-                    StaticSilacLabelsObservableCollection.Add(new SilacInfoForDataGrid(SilacModificationWindow.ExperimentType.Multiplex));
-                }
-            }
-
-
-            CheckBoxQuantifyUnlabeledForSilac.IsChecked = task.CommonParameters.DigestionParams.GeneratehUnlabeledProteinsForSilac;
+            
             PeakFindingToleranceTextBox.Text = task.SearchParameters.QuantifyPpmTol.ToString(CultureInfo.InvariantCulture);
             CheckBoxMatchBetweenRuns.IsChecked = task.SearchParameters.MatchBetweenRuns;
             MbrFdrThresholdTextBox.Text = task.SearchParameters.MbrFdrThreshold.ToString(CultureInfo.InvariantCulture);
@@ -271,12 +277,11 @@ namespace MetaMorpheusGUI
             RadioButtonReverseDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Reverse;
             RadioButtonSlideDecoy.IsChecked = task.SearchParameters.DecoyType == DecoyType.Slide;
             MissedCleavagesTextBox.Text = task.CommonParameters.DigestionParams.MaxMissedCleavages == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxMissedCleavages.ToString(CultureInfo.InvariantCulture);
-            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinPeptideLength.ToString(CultureInfo.InvariantCulture);
-            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxPeptideLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxPeptideLength.ToString(CultureInfo.InvariantCulture);
+            MinPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MinLength.ToString(CultureInfo.InvariantCulture);
+            MaxPeptideLengthTextBox.Text = task.CommonParameters.DigestionParams.MaxLength == int.MaxValue ? "" : task.CommonParameters.DigestionParams.MaxLength.ToString(CultureInfo.InvariantCulture);
             MaxFragmentMassTextBox.Text = task.SearchParameters.MaxFragmentSize.ToString(CultureInfo.InvariantCulture); //put after max peptide length to allow for override of auto
             maxModificationIsoformsTextBox.Text = task.CommonParameters.DigestionParams.MaxModificationIsoforms.ToString(CultureInfo.InvariantCulture);
-            MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxModsForPeptide.ToString(CultureInfo.InvariantCulture);
-            InitiatorMethionineBehaviorComboBox.SelectedIndex = (int)task.CommonParameters.DigestionParams.InitiatorMethionineBehavior;
+            MaxModNumTextBox.Text = task.CommonParameters.DigestionParams.MaxMods.ToString(CultureInfo.InvariantCulture);
             DissociationTypeComboBox.SelectedItem = task.CommonParameters.DissociationType.ToString();
             SeparationTypeComboBox.SelectedItem = task.CommonParameters.SeparationType.ToString();
             NTerminalIons.IsChecked = task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.Both || task.CommonParameters.DigestionParams.FragmentationTerminus == FragmentationTerminus.N;
