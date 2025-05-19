@@ -183,7 +183,7 @@ namespace EngineLayer
                                     }
 
                                     // create any new associations that need to be made
-                                    foreach (PeptideSpectralMatch psm in baseSequence.Value)
+                                    foreach (SpectralMatch psm in baseSequence.Value)
                                     {
                                         var tentativeMatch = psm.BestMatchingBioPolymersWithSetMods.First();
                                         IBioPolymerWithSetMods originalPeptide = tentativeMatch.SpecificBioPolymer;
