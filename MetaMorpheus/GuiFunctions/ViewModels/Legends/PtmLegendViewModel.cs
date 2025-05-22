@@ -20,6 +20,17 @@ namespace GuiFunctions
     /// </summary>
     public class PtmLegendViewModel : LegendViewModel
     {
+        public double LegendVerticalOffset
+        {
+            get
+            {
+                // These are magic numbers that help make the sizing work. 
+                var offset =  (MetaDrawSettings.SpectrumDescription.Count(p => p.Value) + 2)
+                    * MetaDrawSettings.SpectrumDescriptionFontSize
+                    * 1.4;
+                return offset;
+            }
+        }
 
         /// <summary>
         /// Segments per row in the sequence annotation 
