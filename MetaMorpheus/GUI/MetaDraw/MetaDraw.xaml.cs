@@ -1,8 +1,6 @@
-global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
-using MassSpectrometry;
 using OxyPlot;
 using System;
 using System.Collections.Generic;

@@ -247,7 +247,7 @@
                                                 <!-- sets vertical offset for ptm legend -->
                                                 <Separator Background="Transparent" Height="{Binding Path=DataContext.TopOffset, ElementName=ChildScanPtmLegendControl}" />
                                                 <!-- actual ptm legend -->
-                                                <local:PtmLegendControl x:Name="ChildScanPtmLegendControl" DataContext="{Binding}"/>
+                                                <local:PtmLegendControl x:Name="ChildScanPtmLegendControl" DataContext="{Binding}" />
                                             </StackPanel>
                                         </Grid>
 
