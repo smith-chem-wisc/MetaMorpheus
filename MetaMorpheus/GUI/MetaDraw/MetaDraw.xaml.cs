@@ -960,20 +960,33 @@ namespace MetaMorpheusGUI
         {
             if (dataGridScanNums.SelectedItem == null)
                 return;
-            double width = SequenceAnnotationArea.ActualWidth;
+
+            // Get the total width of the sequence annotation area
+            double totalWidth = SequenceAnnotationArea.ActualWidth;
+
+            // Estimate the width of the description area by the length of the text and the font size
+            var description = plotView.ActualModel.Annotations.First(p => p is PlotTextAnnotation anno && anno.Text.Contains("\r\n")) as PlotTextAnnotation;
+            double descriptionWidth = -description!.X;
+
+            // Define the offset (gap) you want between the sequence and the description
+            double rightOffset = 10.0; 
+
+            // Calculate the available width for the sequence
+            double availableWidth = totalWidth - descriptionWidth - rightOffset;
+            if (availableWidth < 0) 
+                availableWidth = 0;
+
+            // Use the scrolling sequence offset to determine where to start
             double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
             if (reset)
-            {
                 offset = 0;
-            }
+
             SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
             if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
-            {
                 psm = (SpectrumMatchFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
-            }
 
-            int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
-            int firstLetterOnScreen = (int)Math.Round((offset) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            int lettersOnScreen = (int)Math.Round((availableWidth) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            int firstLetterOnScreen = (int)Math.Round((offset - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
             if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
             {
                 lettersOnScreen = psm.BaseSeq.Length - firstLetterOnScreen;
