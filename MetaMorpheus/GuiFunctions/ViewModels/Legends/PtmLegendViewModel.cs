@@ -20,11 +20,13 @@ namespace GuiFunctions
     /// </summary>
     public class PtmLegendViewModel : LegendViewModel
     {
+        public double SpectrumDescriptionFontSize => GuiFunctions.MetaDrawSettings.SpectrumDescriptionFontSize;
+
         public double LegendVerticalOffset
         {
             get
             {
-                // These are magic numbers that help make the sizing work. 
+                // These are magic numbers that help make the legend always below the description
                 var offset =  (MetaDrawSettings.SpectrumDescription.Count(p => p.Value) + 2)
                     * MetaDrawSettings.SpectrumDescriptionFontSize
                     * 1.4;

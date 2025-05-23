@@ -964,12 +964,22 @@ namespace MetaMorpheusGUI
             // Get the total width of the sequence annotation area
             double totalWidth = SequenceAnnotationArea.ActualWidth;
 
-            // Estimate the width of the description area by the length of the text and the font size
-            var description = plotView.ActualModel.Annotations.First(p => p is PlotTextAnnotation anno && anno.Text.Contains("\r\n")) as PlotTextAnnotation;
-            double descriptionWidth = -description!.X;
+            // Get the width of the description area or take a guess
+            double descriptionWidth;
+            if (plotView.Model != null)
+            {
+                var description =
+                    plotView.ActualModel.Annotations.First(p =>
+                        p is PlotTextAnnotation anno && anno.Text.Contains("\r\n")) as PlotTextAnnotation;
+                descriptionWidth = -description!.X - 60;
+            }
+            else
+            {
+                descriptionWidth = 160;
+            }
 
             // Define the offset (gap) you want between the sequence and the description
-            double rightOffset = 10.0; 
+            double rightOffset = 0.0; 
 
             // Calculate the available width for the sequence
             double availableWidth = totalWidth - descriptionWidth - rightOffset;
@@ -986,7 +996,7 @@ namespace MetaMorpheusGUI
                 psm = (SpectrumMatchFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
 
             int lettersOnScreen = (int)Math.Round((availableWidth) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
-            int firstLetterOnScreen = (int)Math.Round((offset - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            int firstLetterOnScreen = (int)Math.Round((offset) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
             if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
             {
                 lettersOnScreen = psm.BaseSeq.Length - firstLetterOnScreen;

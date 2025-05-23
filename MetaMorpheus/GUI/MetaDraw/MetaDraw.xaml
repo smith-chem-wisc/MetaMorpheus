@@ -239,15 +239,14 @@
 
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="165" />
-                                                <ColumnDefinition Width="8" />
+                                                <ColumnDefinition Width="{Binding Path=Width, ElementName=ChildScanPtmLegendControl}" />
                                             </Grid.ColumnDefinitions>
 
                                             <StackPanel Grid.Column="1"  VerticalAlignment="Top">
                                                 <!-- sets vertical offset for ptm legend -->
                                                 <Separator Background="Transparent" Height="{Binding Path=DataContext.LegendVerticalOffset, ElementName=ChildScanPtmLegendControl}" />
                                                 <!-- actual ptm legend -->
-                                                <local:PtmLegendControl x:Name="ChildScanPtmLegendControl"   DataContext="{Binding}" />
+                                                <local:PtmLegendControl x:Name="ChildScanPtmLegendControl" DataContext="{Binding}" Margin="30 0" />
                                             </StackPanel>
                                         </Grid>
 

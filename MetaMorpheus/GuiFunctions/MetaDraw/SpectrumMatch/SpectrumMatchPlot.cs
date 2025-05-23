@@ -28,7 +28,7 @@ namespace GuiFunctions
 {
     public class SpectrumMatchPlot : Plot
     {
-        public static int MaxCharactersPerDescriptionLine = 28;
+        public static int MaxCharactersPerDescriptionLine = 32;
         protected List<MatchedFragmentIon> matchedFragmentIons;
         public MsDataScan Scan { get; protected set; }
         public SpectrumMatchFromTsv SpectrumMatch { get; set; }
