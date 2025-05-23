@@ -1,8 +1,6 @@
-global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
-using MassSpectrometry;
 using OxyPlot;
 using System;
 using System.Collections.Generic;
@@ -299,15 +297,14 @@ namespace MetaMorpheusGUI
             // add ptm legend if desired
             if (MetaDrawSettings.ShowLegend)
             {
-                
                 int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
                 if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
                 {
-                    descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) / 26.0);
+                    descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) / (double)SpectrumMatchPlot.MaxCharactersPerDescriptionLine);
                 }
                 if (psm.Accession.Length > 10)
                     descriptionLineCount++;
-                double verticalOffset = descriptionLineCount * 14;
+                double verticalOffset = descriptionLineCount * 1.4 * MetaDrawSettings.SpectrumDescriptionFontSize;
                 
                 PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
                 ChildScanPtmLegendControl.DataContext = PtmLegend;
@@ -960,19 +957,42 @@ namespace MetaMorpheusGUI
         {
             if (dataGridScanNums.SelectedItem == null)
                 return;
-            double width = SequenceAnnotationArea.ActualWidth;
-            double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
-            if (reset)
+
+            // Get the total width of the sequence annotation area
+            double totalWidth = SequenceAnnotationArea.ActualWidth;
+
+            // Get the width of the description area or take a guess
+            double descriptionWidth;
+            if (plotView.Model != null)
             {
-                offset = 0;
+                var description =
+                    plotView.ActualModel.Annotations.First(p =>
+                        p is PlotTextAnnotation anno && anno.Text.Contains("\r\n")) as PlotTextAnnotation;
+                descriptionWidth = -description!.X - 60;
             }
-            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
-            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+            else
             {
-                psm = (SpectrumMatchFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+                descriptionWidth = 160;
             }
 
-            int lettersOnScreen = (int)Math.Round((width - 10) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
+            // Define the offset (gap) you want between the sequence and the description
+            double rightOffset = 0.0; 
+
+            // Calculate the available width for the sequence
+            double availableWidth = totalWidth - descriptionWidth - rightOffset;
+            if (availableWidth < 0) 
+                availableWidth = 0;
+
+            // Use the scrolling sequence offset to determine where to start
+            double offset = wholeSequenceCoverageHorizontalScroll.HorizontalOffset;
+            if (reset)
+                offset = 0;
+
+            SpectrumMatchFromTsv psm = (SpectrumMatchFromTsv)dataGridScanNums.SelectedItem;
+            if (AmbiguousSequenceOptionBox.Items.Count > 1 && AmbiguousSequenceOptionBox.SelectedItem != null)
+                psm = (SpectrumMatchFromTsv)AmbiguousSequenceOptionBox.SelectedItem;
+
+            int lettersOnScreen = (int)Math.Round((availableWidth) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
             int firstLetterOnScreen = (int)Math.Round((offset) / MetaDrawSettings.AnnotatedSequenceTextSpacing, 0);
             if ((firstLetterOnScreen + lettersOnScreen) > psm.BaseSeq.Length)
             {

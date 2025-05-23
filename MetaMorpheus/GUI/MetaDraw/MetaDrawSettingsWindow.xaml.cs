@@ -79,6 +79,7 @@ namespace MetaMorpheusGUI
             UnannotatedPeakSizeBox.Text = MetaDrawSettings.StrokeThicknessUnannotated.ToString(CultureInfo.InvariantCulture);
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
+            SpectrumDescriptionFontSizeBox.Text = MetaDrawSettings.SpectrumDescriptionFontSize.ToString();
 
             ExportFileFormatComboBox.ItemsSource = MetaDrawSettings.ExportTypes;
             ExportFileFormatComboBox.SelectedItem = MetaDrawSettings.ExportType;
@@ -123,6 +124,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.LocalizationLevelEnd = (LocalizationLevel)System.Enum.Parse(typeof(LocalizationLevel), CmbGlycanLocalizationLevelEnd.SelectedItem.ToString());
             MetaDrawSettings.ExportType = ExportFileFormatComboBox.SelectedItem.ToString();
             MetaDrawSettings.AmbiguityFilter = AmbiguityFilteringComboBox.SelectedItem.ToString();
+            MetaDrawSettings.SpectrumDescriptionFontSize = double.TryParse(SpectrumDescriptionFontSizeBox.Text, out double spectrumDescriptionFontSize) ? spectrumDescriptionFontSize : 10;
             if (!ShowInternalIonsCheckBox.IsChecked.Value)
                 MetaDrawSettings.InternalIonColor = OxyColors.Transparent;
             SettingsView.Save();
