@@ -299,15 +299,14 @@ namespace MetaMorpheusGUI
             // add ptm legend if desired
             if (MetaDrawSettings.ShowLegend)
             {
-                
                 int descriptionLineCount = MetaDrawSettings.SpectrumDescription.Count(p => p.Value);
                 if (psm.Name.IsNotNullOrEmptyOrWhiteSpace())
                 {
-                    descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) / 26.0);
+                    descriptionLineCount += (int)Math.Floor((psm.Name.Length - 20) / (double)SpectrumMatchPlot.MaxCharactersPerDescriptionLine);
                 }
                 if (psm.Accession.Length > 10)
                     descriptionLineCount++;
-                double verticalOffset = descriptionLineCount * 14;
+                double verticalOffset = descriptionLineCount * 1.4 * MetaDrawSettings.SpectrumDescriptionFontSize;
                 
                 PtmLegend = new PtmLegendViewModel(psm, verticalOffset);
                 ChildScanPtmLegendControl.DataContext = PtmLegend;

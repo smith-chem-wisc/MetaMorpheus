@@ -574,7 +574,7 @@ namespace GuiFunctions
 
             double fontSize = MetaDrawSettings.SpectrumDescriptionFontSize;
             string annotationText = text.ToString();
-            double averageCharWidth = 0.48; // Adjust as needed for your font
+            double averageCharWidth = 0.48; // Magic number determined by trial and error
             int maxLineLength = Math.Min(annotationText.Split('\n').Max(line => line.Length), MaxCharactersPerDescriptionLine);
             double estimatedWidth = fontSize * averageCharWidth * maxLineLength;
 
@@ -649,7 +649,7 @@ namespace GuiFunctions
             pX += X;
             pY += Y;
 
-            // Custom line spacing
+            // Ensure text does not overlay in Y dimension. 
             double lineSpacing = 1.2; // 20% extra space
             double lineHeight = FontSize * lineSpacing;
 
@@ -665,13 +665,11 @@ namespace GuiFunctions
                     TextColor,
                     Font,
                     FontSize,
-                    FontWeight,
-                    0,
-                    HorizontalAlignment.Left);
+                    FontWeight);
             }
         }
 
-        private string WrapLongLines(string text, int firstLineLimit = 46, int wrapLineLimit = 46, string indent = "   ")
+        private string WrapLongLines(string text, int firstLineLimit = 32, int wrapLineLimit = 29, string indent = "   ")
         {
             var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
             var result = new StringBuilder();
