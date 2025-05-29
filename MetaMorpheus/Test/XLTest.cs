@@ -20,8 +20,11 @@ using System.Linq;
 using System.Text;
 using Omics.Digestion;
 using Omics.Modifications;
+using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
+using Transcriptomics.Digestion;
 
 namespace Test
 {
@@ -882,7 +885,7 @@ namespace Test
             }
 
             //Generate digested peptide lists.
-            List<PeptideWithSetModifications> digestedList = new List<PeptideWithSetModifications>();
+            var digestedList = new List<IBioPolymerWithSetMods>();
             foreach (var item in proteinList)
             {
                 var digested = item.Digest(commonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
@@ -915,6 +918,16 @@ namespace Test
 
             var newPsms = possiblePsms.Where(p => p != null).ToList();
             Assert.That(newPsms.Count, Is.EqualTo(1));
+        }
+
+        [Test]
+        public static void XlTest_ThrowsOnRnaDigestionParameters()
+        {
+            var commonParameters = new CommonParameters(digestionParams: new RnaDigestionParams());
+
+            Assert.That(() => new CrosslinkSearchEngine([], [], [], [], [], 1, commonParameters, [], new Crosslinker(), 1, false, false, false, false, [], [], 1, [], []),
+                Throws.TypeOf<ArgumentException>()
+                    .With.Message.Contain("Cross-link search engine does not currently support digestion of type"));
         }
 
         [Test]
@@ -1489,7 +1502,7 @@ namespace Test
             WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
 
             // read results from TSV
-            var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
+            var psmFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(outputFile, out var warnings).First();
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count, Is.EqualTo(1));
             Assert.That(psmFromTsv.ChildScanMatchedIons.First().Key, Is.EqualTo(3));
@@ -1585,7 +1598,7 @@ namespace Test
             WriteXlFile.WritePsmCrossToTsv(new List<CrosslinkSpectralMatch> { csm }, outputFile, 2);
 
             // read results from TSV
-            var psmFromTsv = PsmTsvReader.ReadTsv(outputFile, out var warnings).First();
+            var psmFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(outputFile, out var warnings).First();
 
             Assert.That(psmFromTsv.ChildScanMatchedIons.Count == 4
                 && psmFromTsv.ChildScanMatchedIons.First().Key == 4

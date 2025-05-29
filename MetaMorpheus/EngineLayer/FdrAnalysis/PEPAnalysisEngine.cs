@@ -510,15 +510,15 @@ namespace EngineLayer
                 deltaScore = (float)Math.Round(psm.DeltaScore / normalizationFactor * multiplier, 0);
                 notch = tentativeSpectralMatch.Notch;
                 modCount = Math.Min((float)tentativeSpectralMatch.SpecificBioPolymer.AllModsOneIsNterminus.Keys.Count(), 10);
-                if (psm.BioPolymersWithSetModsToMatchingFragments[tentativeSpectralMatch.SpecificBioPolymer]?.Count() > 0)
+                if (tentativeSpectralMatch.MatchedIons?.Count() > 0)
                 {
                     absoluteFragmentMassError = (float)Math.Min(100.0, Math.Round(10.0 * Math.Abs(GetAverageFragmentMassError(tentativeSpectralMatch.MatchedIons) - FileSpecificMedianFragmentMassErrors[Path.GetFileName(psm.FullFilePath)])));
                 }
 
-                ambiguity = Math.Min((float)(psm.BioPolymersWithSetModsToMatchingFragments.Keys.Count - 1), 10);
+                ambiguity = Math.Min((float)(psm.BestMatchingBioPolymersWithSetMods.Count() - 1), 10);
                 //ambiguity = 10; // I'm pretty sure that you shouldn't train on ambiguity and its skewing the results
-                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, tentativeSpectralMatch.SpecificBioPolymer) / normalizationFactor * multiplier, 0);
-                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(psm.BioPolymersWithSetModsToMatchingFragments, tentativeSpectralMatch.SpecificBioPolymer) / normalizationFactor * multiplier, 0);
+                longestSeq = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(tentativeSpectralMatch) / normalizationFactor * multiplier, 0);
+                complementaryIonCount = (float)Math.Round(SpectralMatch.GetCountComplementaryIons(tentativeSpectralMatch) / normalizationFactor * multiplier, 0);
                 isVariantPeptide = PeptideIsVariant(tentativeSpectralMatch.SpecificBioPolymer);
                 spectralAngle = (float)psm.SpectralAngle;
                 if (chimeraCountDictionary.TryGetValue(psm.ChimeraIdString, out int val))
@@ -532,7 +532,7 @@ namespace EngineLayer
                     hasSpectralAngle = 1;
                 }
 
-                if (psm.DigestionParams.Protease.Name != "top-down")
+                if (psm.DigestionParams.DigestionAgent.Name != "top-down")
                 {
                     missedCleavages = tentativeSpectralMatch.SpecificBioPolymer.MissedCleavages;
                     bool fileIsCzeSeparationType = FileSpecificParametersDictionary.ContainsKey(Path.GetFileName(psm.FullFilePath)) && FileSpecificParametersDictionary[Path.GetFileName(psm.FullFilePath)].SeparationType == "CZE";
@@ -564,11 +564,11 @@ namespace EngineLayer
             else
             {
                 CrosslinkSpectralMatch csm = (CrosslinkSpectralMatch)psm;
-                PeptideWithSetModifications selectedAlphaPeptide = csm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications).First();
-                PeptideWithSetModifications selectedBetaPeptide = csm.BetaPeptide?.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications).First();
+                var selectedAlphaPeptide = csm.BestMatchingBioPolymersWithSetMods.First();
+                var selectedBetaPeptide = csm.BetaPeptide?.BestMatchingBioPolymersWithSetMods.First();
 
-                float alphaNormalizationFactor = selectedAlphaPeptide.BaseSequence.Length;
-                float betaNormalizationFactor = selectedBetaPeptide == null ? (float)0 : selectedBetaPeptide.BaseSequence.Length;
+                float alphaNormalizationFactor = selectedAlphaPeptide.SpecificBioPolymer.BaseSequence.Length;
+                float betaNormalizationFactor = selectedBetaPeptide == null ? (float)0 : selectedBetaPeptide.SpecificBioPolymer.BaseSequence.Length;
                 float totalNormalizationFactor = alphaNormalizationFactor + betaNormalizationFactor;
 
                 totalMatchingFragmentCount = (float)Math.Round(csm.XLTotalScore / totalNormalizationFactor * 10, 0);
@@ -576,17 +576,17 @@ namespace EngineLayer
                 //Compute fragment mass error
                 int alphaCount = 0;
                 float alphaError = 0;
-                if (csm.BioPolymersWithSetModsToMatchingFragments[selectedAlphaPeptide]?.Count > 0)
+                if (selectedAlphaPeptide.MatchedIons?.Count > 0)
                 {
-                    alphaCount = csm.BioPolymersWithSetModsToMatchingFragments[selectedAlphaPeptide].Count;
-                    alphaError = Math.Abs(GetAverageFragmentMassError(csm.BioPolymersWithSetModsToMatchingFragments[selectedAlphaPeptide]));
+                    alphaCount = selectedAlphaPeptide.MatchedIons.Count;
+                    alphaError = Math.Abs(GetAverageFragmentMassError(selectedAlphaPeptide.MatchedIons));
                 }
                 int betaCount = 0;
                 float betaError = 0;
-                if (selectedBetaPeptide != null && csm.BetaPeptide.BioPolymersWithSetModsToMatchingFragments[selectedBetaPeptide]?.Count > 0)
+                if (selectedBetaPeptide != null && selectedBetaPeptide.MatchedIons?.Count > 0)
                 {
-                    betaCount = csm.BetaPeptide.BioPolymersWithSetModsToMatchingFragments[selectedBetaPeptide].Count;
-                    betaError = Math.Abs(GetAverageFragmentMassError(csm.BetaPeptide.BioPolymersWithSetModsToMatchingFragments[selectedBetaPeptide]));
+                    betaCount = selectedBetaPeptide.MatchedIons.Count;
+                    betaError = Math.Abs(GetAverageFragmentMassError(selectedBetaPeptide.MatchedIons));
                 }
 
                 float averageError = 0;
@@ -602,8 +602,8 @@ namespace EngineLayer
                 chargeDifference = -Math.Abs(ChargeStateMode - psm.ScanPrecursorCharge);
                 alphaIntensity = (float)Math.Min(100, Math.Round((csm.Score - (int)csm.Score) / alphaNormalizationFactor * 100.0, 0));
                 betaIntensity = csm.BetaPeptide == null ? (float)0 : (float)Math.Min(100.0, Math.Round((csm.BetaPeptide.Score - (int)csm.BetaPeptide.Score) / betaNormalizationFactor * 100.0, 0));
-                longestFragmentIonSeries_Alpha = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(csm.BioPolymersWithSetModsToMatchingFragments, selectedAlphaPeptide) / alphaNormalizationFactor * 10.0, 0);
-                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : SpectralMatch.GetLongestIonSeriesBidirectional(csm.BetaPeptide.BioPolymersWithSetModsToMatchingFragments, selectedBetaPeptide) / betaNormalizationFactor;
+                longestFragmentIonSeries_Alpha = (float)Math.Round(SpectralMatch.GetLongestIonSeriesBidirectional(selectedAlphaPeptide) / alphaNormalizationFactor * 10.0, 0);
+                longestFragmentIonSeries_Beta = selectedBetaPeptide == null ? (float)0 : SpectralMatch.GetLongestIonSeriesBidirectional(selectedBetaPeptide) / betaNormalizationFactor;
                 longestFragmentIonSeries_Beta = (float)Math.Round(longestFragmentIonSeries_Beta * 10.0, 0);
                 isInter = Convert.ToSingle(csm.CrossType == PsmCrossType.Inter);
                 isIntra = Convert.ToSingle(csm.CrossType == PsmCrossType.Intra);
@@ -1017,11 +1017,11 @@ namespace EngineLayer
             foreach (SpectralMatch psm in psms)
             {
                 {
-                    foreach (KeyValuePair<IBioPolymerWithSetMods, List<MatchedFragmentIon>> peptide_MFI in psm.BioPolymersWithSetModsToMatchingFragments)
+                    foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        if (peptide_MFI.Value != null && peptide_MFI.Value.Count > 0)
+                        if (bestMatch.MatchedIons is { Count: > 0 })
                         {
-                            averageMassErrors.Add(GetAverageFragmentMassError(peptide_MFI.Value));
+                            averageMassErrors.Add(GetAverageFragmentMassError(bestMatch.MatchedIons));
                         }
                     }
                 }

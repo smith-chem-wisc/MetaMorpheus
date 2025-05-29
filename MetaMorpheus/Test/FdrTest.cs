@@ -17,6 +17,7 @@ using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
+using Omics.BioPolymer;
 
 namespace Test
 {
@@ -55,12 +56,12 @@ namespace Test
 
             var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0];
-            PeptideWithSetModifications pep2 = digested[1];
-            PeptideWithSetModifications pep3 = digested[2];
-            PeptideWithSetModifications pep4 = digested[3];
+            var pep1 = digested[0];
+            var pep2 = digested[1];
+            var pep3 = digested[2];
+            var pep4 = digested[3];
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep1, pep2, pep3 });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
@@ -115,12 +116,12 @@ namespace Test
 
             var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0];
-            PeptideWithSetModifications pep2 = digested[1];
-            PeptideWithSetModifications pep3 = digested[2];
-            PeptideWithSetModifications pep4 = digested[3];
+            var pep1 = digested[0];
+            var pep2 = digested[1];
+            var pep3 = digested[2];
+            var pep4 = digested[3];
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep1, pep2, pep3 });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
@@ -236,7 +237,7 @@ namespace Test
             }
 
             var maxPsmData = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
-            Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Count() - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = (double)bestMatch.SpecificBioPolymer.BaseSequence.Length;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
@@ -286,7 +287,7 @@ namespace Test
             var anMzSpectrum = new MzSpectrum(new double[] { 1, 1 }, new double[] { 2, 2 }, true);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(anMzSpectrum, 1, 1, true, Polarity.Negative, 2, null, "", MZAnalyzerType.Orbitrap, 2, null, null, null), 1, 1, "path", new CommonParameters());
             Protein variantProtein = new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
-            PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
+            IBioPolymerWithSetMods varPep = variantProtein.GetVariantBioPolymers().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
 
             Product prod = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
             List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(prod, 1, 1.0, 1) };
@@ -468,7 +469,7 @@ namespace Test
             }
 
             var maxPsmData = pepEngine.CreateOnePsmDataEntry("top-down", maxScorePsm, bestMatch, !bestMatch.SpecificBioPolymer.Parent.IsDecoy);
-            Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Count() - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = 1;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));

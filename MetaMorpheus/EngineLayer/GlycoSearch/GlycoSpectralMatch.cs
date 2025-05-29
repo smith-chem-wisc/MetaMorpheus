@@ -5,19 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Omics.Modifications;
-using Proteomics;
+using Readers;
 
 namespace EngineLayer.GlycoSearch
 {
     //Localization of multiple glycans on one peptides can be divide into the following groups based on the quanlity of the localization. Similar to Proteomform Level.
-    public enum LocalizationLevel
-    {
-        Level1,
-        Level1b,
-        Level2,
-        Level3
-    }
-
     public class GlycoSpectralMatch : SpectralMatch
     {
         public GlycoSpectralMatch(PeptideWithSetModifications theBestPeptide, int notch, double score, int scanIndex, Ms2ScanWithSpecificMass scan, CommonParameters commonParameters, List<MatchedFragmentIon> matchedFragmentIons)

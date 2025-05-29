@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -115,15 +116,15 @@ namespace GuiFunctions
             InitializeDictionaries();
         }
 
-        public static bool FilterAcceptsPsm(PsmFromTsv psm)
+        public static bool FilterAcceptsPsm(SpectrumMatchFromTsv sm)
         {
-            if (psm.QValue <= QValueFilter
-                 && (psm.QValueNotch == null || psm.QValueNotch <= QValueFilter)
-                 && (psm.DecoyContamTarget == "T" || (psm.DecoyContamTarget == "D" && ShowDecoys) || (psm.DecoyContamTarget == "C" && ShowContaminants))
-                 && (psm.GlycanLocalizationLevel == null || psm.GlycanLocalizationLevel >= LocalizationLevelStart && psm.GlycanLocalizationLevel <= LocalizationLevelEnd))
+            if (sm.QValue <= QValueFilter
+                 && (sm.QValueNotch == null || sm.QValueNotch <= QValueFilter)
+                 && (sm.DecoyContamTarget == "T" || (sm.DecoyContamTarget == "D" && ShowDecoys) || (sm.DecoyContamTarget == "C" && ShowContaminants))
+                 && (!sm.IsCrossLinkedPeptide() || (sm is PsmFromTsv { BetaPeptideBaseSequence: not null } psm && (!psm.GlycanLocalizationLevel.HasValue || psm.GlycanLocalizationLevel.Value >= LocalizationLevelStart && psm.GlycanLocalizationLevel.Value <= LocalizationLevelEnd))))
             {
                 // Ambiguity filtering conditionals, should only be hit if Ambiguity Filtering is selected
-                if (AmbiguityFilter == "No Filter" || psm.AmbiguityLevel == AmbiguityFilter)
+                if (AmbiguityFilter == "No Filter" || sm.AmbiguityLevel == AmbiguityFilter)
                 {
                     return true;
                 }
@@ -319,6 +320,15 @@ namespace GuiFunctions
             ProductTypeToColor[ProductType.zDot] = OxyColors.Orange;
             ProductTypeToColor[ProductType.D] = OxyColors.DodgerBlue;
             ProductTypeToColor[ProductType.M] = OxyColors.Firebrick;
+
+            // default color of each fragment to annotate
+            BetaProductTypeToColor = ((ProductType[])Enum.GetValues(typeof(ProductType))).ToDictionary(p => p, p => OxyColors.Aqua);
+            BetaProductTypeToColor[ProductType.b] = OxyColors.LightBlue;
+            BetaProductTypeToColor[ProductType.y] = OxyColors.OrangeRed;
+            BetaProductTypeToColor[ProductType.zDot] = OxyColors.LightGoldenrodYellow;
+            BetaProductTypeToColor[ProductType.c] = OxyColors.Orange;
+            BetaProductTypeToColor[ProductType.D] = OxyColors.AliceBlue;
+            BetaProductTypeToColor[ProductType.M] = OxyColors.LightCoral;
         }
 
         /// <summary>

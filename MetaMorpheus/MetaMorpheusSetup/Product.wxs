@@ -34,6 +34,7 @@
       <ComponentGroupRef Id="Appsrc_NGlycan_files" />
       <ComponentGroupRef Id="Appsrc_OGlycan_files" />
       <ComponentGroupRef Id="Appsrc_ProteolyticDigestion_files" />
+      <ComponentGroupRef Id="Appsrc_Digestion_files" />
       <ComponentGroupRef Id="Appsrc_Proteomes_files" />
       <ComponentGroupRef Id="Appsrc_Contaminants_files" />
       <ComponentGroupRef Id="ExcelDefaults" />
@@ -125,7 +126,10 @@
 
           <!--ProteolyticDigestion Folder-->
           <Directory Id="MetaAppProteolyticDigestionFolder" Name="ProteolyticDigestion" />
-          
+
+			<!--Digestion Folder-->
+          <Directory Id="MetaAppDigestionFolder" Name="Digestion" />
+			
           <!--Contaminants Folder-->
           <Directory Id="MetaAppContaminantsFolder" Name="Contaminants" />
 
@@ -260,6 +264,12 @@
       </Component>
       <Component Id="src_itext.sign.dll" Guid="37F6B45B-B6C2-4E6B-9CBD-D3AFDCE3B45B">
         <File Id="src_itext.sign.dll" Name="itext.sign.dll" Source="$(var.GUI_TargetDir)itext.sign.dll" />
+      </Component>
+      <Component Id="src_itext.bouncy_castle_adapter.dll" Guid="5648E5A3-B648-42B6-B706-7B02721816A2">
+        <File Id="src_itext.bouncy_castle_adapter.dll" Name="itext.bouncy-castle-adapter.dll" Source="$(var.GUI_TargetDir)itext.bouncy-castle-adapter.dll" />
+      </Component>
+      <Component Id="src_itext.bouncy_castle_connector.dll" Guid="F1AE1D39-6FC8-4D7B-8BE7-A8B7765B601D">
+        <File Id="src_itext.bouncy_castle_connector.dll" Name="itext.bouncy-castle-connector.dll" Source="$(var.GUI_TargetDir)itext.bouncy-castle-connector.dll" />
       </Component>
 	  <Component Id="src_BouncyCastle.Cryptography.dll" Guid="89AB7B00-40C4-4D9B-8CA0-F9E48DF0866A">
 	  	<File Id="src_BouncyCastle.Cryptography.dll" Name="BouncyCastle.Cryptography.dll" Source="$(var.GUI_TargetDir)BouncyCastle.Cryptography.dll" />
@@ -669,6 +679,22 @@
         <File ReadOnly="no" Id="Appsrc_ProteolyticDigestion_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)ProteolyticDigestion\proteases.tsv" />
       </Component>
     </ComponentGroup>
+  </Fragment>
+
+  <!--Builds the App Rnases folder-->
+  <Fragment>
+	  <ComponentGroup Id="Appsrc_Digestion_files" Directory="MetaAppDigestionFolder">
+		  <Component Id="RemoveDigestion" Condition="OVERWRITEAPPDATA">
+
+			  <RemoveFolder Id="MetaAppDigestionFolder" On="both" />
+			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+		  </Component>
+		  <Component Id="Appsrc_Digestion_rnases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E" Condition="OVERWRITEAPPDATA">
+
+			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
+			  <File ReadOnly="no" Id="Appsrc_Digestion_rnases.tsv" Name="rnases.tsv" Source="$(var.GUI_TargetDir)Digestion\rnases.tsv" />
+		  </Component>
+	  </ComponentGroup>
   </Fragment>
 
   <!--Builds the App Contaminants folder-->

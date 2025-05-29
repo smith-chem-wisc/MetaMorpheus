@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
-using IO.MzML;
 using MzLibUtil;
 using NUnit.Framework;
 using Proteomics;
@@ -18,6 +17,8 @@ using NUnit.Framework.Legacy;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
+using Readers;
+using Mzml = IO.MzML.Mzml;
 
 namespace Test
 {
@@ -503,7 +504,7 @@ namespace Test
 
 
             string psmsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SpectralLibrarySearch\SLSNVIAHEISHSWTGNLVTNK.psmtsv");
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmsPath, out List<string> warnings).Where(p => p.AmbiguityLevel == "1").ToList();
 
             CollectionAssert.AreEqual(psms[0].MatchedIons.Select(p => (p.NeutralTheoreticalProduct.ProductType, p.NeutralTheoreticalProduct.FragmentNumber))
                     .OrderBy(p => p.Item1).ThenBy(p => p.Item2),

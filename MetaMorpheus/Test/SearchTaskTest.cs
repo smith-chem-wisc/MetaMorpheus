@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using Omics.Digestion;
 using Omics.Modifications;
+using Readers;
 using TaskLayer;
 
 namespace Test
@@ -203,7 +204,7 @@ namespace Test
             string outputPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestInternal\AllPSMs.psmtsv");
             //var output = File.ReadAllLines(outputPath);
             //read the psmtsv
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(outputPath, out var warning);
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(outputPath, out var warning);
             Assert.That(psms.Count == 1);
             //check that it's been disambiguated
             Assert.That(!(psms[0].FullSequence.Contains("|")));
@@ -233,7 +234,7 @@ namespace Test
             taskList = new List<(string, MetaMorpheusTask)> { ("TestInternal", searchTask) };
             engine = new EverythingRunnerEngine(taskList, new List<string> { myFile }, new List<DbForTask> { new DbForTask(myDatabase, false) }, Environment.CurrentDirectory);
             engine.Run();
-            psms = PsmTsvReader.ReadTsv(outputPath, out warning);
+            psms = SpectrumMatchTsvReader.ReadPsmTsv(outputPath, out warning);
             Assert.That(psms.Count == 1);
             Assert.That(psms[0].MatchedIons.Count == numTotalFragments);
 
@@ -453,7 +454,7 @@ namespace Test
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
             MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<DigestionAgent>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
             var file = File.ReadAllLines(path);
@@ -495,7 +496,7 @@ namespace Test
             string path = Path.Combine(TestContext.CurrentContext.TestDirectory, "ResIdOutput.mzID");
 
             MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<DigestionAgent>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, true);
 
             var file = File.ReadAllLines(path);
@@ -511,7 +512,7 @@ namespace Test
 
             // test again w/ NOT appending motifs onto mod names
             MzIdentMLWriter.WriteMzIdentMl(new List<SpectralMatch> { psm }, new List<ProteinGroup>(), new List<Modification>(),
-                new List<Modification>(), new List<SilacLabel>(), new List<Protease>(), new PpmTolerance(20), new PpmTolerance(20),
+                new List<Modification>(), new List<SilacLabel>(), new List<DigestionAgent>(), new PpmTolerance(20), new PpmTolerance(20),
                 0, path, false);
 
             file = File.ReadAllLines(path);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -51,7 +52,7 @@ namespace Test.MetaDraw
             // load results into metadraw
             metadrawLogic = new MetaDrawLogic();
             metadrawLogic.SpectraFilePaths.Add(spectraFile);
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(true, true);
 
             Assert.That(!errors.Any());
@@ -71,7 +72,7 @@ namespace Test.MetaDraw
         private string outputFolder;
         private MetaDrawLogic metadrawLogic;
         private OxyPlot.Wpf.PlotView plotView;
-        private PsmFromTsv psm;
+        private SpectrumMatchFromTsv psm;
         private ParentChildScanPlotsView parentChildView;
         public record PeakAnnotationTestCase(bool AnnotatePeaks, bool AnnotateCharges,
             bool AnnotateMass, bool SubAndSuper, string ExpectedAnnotation, OxyColor ExpectedColor, int FragmentIndex);
@@ -187,7 +188,7 @@ namespace Test.MetaDraw
             // load in files
             MetaDrawLogic metaDrawLogic = new MetaDrawLogic();
             metaDrawLogic.SpectraFilePaths.Add(dataFilePath);
-            metaDrawLogic.PsmResultFilePaths.Add(psmFilePath);
+            metaDrawLogic.SpectralMatchResultFilePaths.Add(psmFilePath);
 
             var errors = metaDrawLogic.LoadFiles(true, true);
 
@@ -201,11 +202,11 @@ namespace Test.MetaDraw
             var stationaryCanvas = new Canvas();
             var sequenceAnnotationCanvas = new Canvas();
             var parentChildView = new ParentChildScanPlotsView();
-            var psm = metaDrawLogic.FilteredListOfPsms.First(p => p.FullSequence == "GVTVDKMTELR(6)");
+            var psm = metaDrawLogic.FilteredListOfPsms.First(p => p.FullSequence == "GVTVDKMTELR(6)") as PsmFromTsv;
              
             // perform black magic to set the scan number of the MS2 to match the mzML file number
             var oldScanNum = psm.Ms2ScanNumber;
-            var field = typeof(PsmFromTsv).GetField("<Ms2ScanNumber>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            var field = typeof(SpectrumMatchFromTsv).GetField("<Ms2ScanNumber>k__BackingField", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             field?.SetValue(psm, 28819);
 
             // display psm and check display has correct number of annotations
@@ -232,7 +233,7 @@ namespace Test.MetaDraw
             foreach (var exportType in MetaDrawSettings.ExportTypes)
             {
                 MetaDrawSettings.ExportType = exportType;
-                metaDrawLogic.ExportPlot(plotView, canvas, new List<PsmFromTsv>() { psm }, parentChildView,
+                metaDrawLogic.ExportPlot(plotView, canvas, new List<SpectrumMatchFromTsv>() { psm }, parentChildView,
                     outputFolderPath, out errors);
 
                 Assert.That(File.Exists(Path.Combine(outputFolderPath, @$"{psm.Ms2ScanNumber}_{psm.FullSequence}{psm.BetaPeptideBaseSequence}.{exportType}")));
@@ -244,7 +245,7 @@ namespace Test.MetaDraw
 
             metaDrawLogic.CleanUpPSMFiles();
             Assert.That(!metaDrawLogic.FilteredListOfPsms.Any());
-            Assert.That(!metaDrawLogic.PsmResultFilePaths.Any());
+            Assert.That(!metaDrawLogic.SpectralMatchResultFilePaths.Any());
 
             // delete output
             Directory.Delete(outputFolderPath, true);

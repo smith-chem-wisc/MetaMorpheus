@@ -14,12 +14,12 @@ using System.Linq;
 using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
-using PsmFromTsv = EngineLayer.PsmFromTsv;
 using Omics;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
 using Easy.Common.Extensions;
+using Omics.BioPolymer;
 using Readers;
 using static Nett.TomlObjectFactory;
 
@@ -33,7 +33,7 @@ namespace Test
         public static void TestPsmHeader()
         {
             CommonParameters commonParameters = new CommonParameters();
-            PeptideWithSetModifications pepWithSetMods = new Protein(
+            var pepWithSetMods = new Protein(
                 "MQQQQQQQ",
                 "accession1",
                 "org",
@@ -207,7 +207,7 @@ namespace Test
                 {
                     foreach (var bestMatch in psm.BestMatchingBioPolymersWithSetMods)
                     {
-                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(psm.BioPolymersWithSetModsToMatchingFragments, bestMatch.SpecificBioPolymer));
+                        longestSeriesObserved.Add(SpectralMatch.GetLongestIonSeriesBidirectional(bestMatch));
                     }
                 }
             }
@@ -296,8 +296,8 @@ namespace Test
             List<Modification> mods = new List<Modification>();
             CommonParameters commonParameters = new CommonParameters();
 
-            PeptideWithSetModifications target = new Protein("PEPTIDE", "TARGET").Digest(commonParameters.DigestionParams, mods, mods).First();
-            PeptideWithSetModifications decoy = new Protein("PEPTIDE", "DECOY", isDecoy: true).Digest(commonParameters.DigestionParams, mods, mods).First();
+            var target = new Protein("PEPTIDE", "TARGET").Digest(commonParameters.DigestionParams, mods, mods).First();
+            var decoy = new Protein("PEPTIDE", "DECOY", isDecoy: true).Digest(commonParameters.DigestionParams, mods, mods).First();
 
             MsDataFile msDataFile = new TestDataFile(target);
             MsDataScan msDataScan = msDataFile.GetOneBasedScan(2);
@@ -322,8 +322,8 @@ namespace Test
             CommonParameters commonParameters = new CommonParameters();
             List<Modification> mods = new List<Modification>();
 
-            PeptideWithSetModifications target = new Protein("PEPTIDE", "").Digest(commonParameters.DigestionParams, mods, mods).First();
-            PeptideWithSetModifications decoy = new Protein("PEPTIDEL", "", isDecoy: true).Digest(commonParameters.DigestionParams, mods, mods).First();
+            var target = new Protein("PEPTIDE", "").Digest(commonParameters.DigestionParams, mods, mods).First();
+            var decoy = new Protein("PEPTIDEL", "", isDecoy: true).Digest(commonParameters.DigestionParams, mods, mods).First();
 
             MsDataFile msDataFile = new TestDataFile(target);
             MsDataScan msDataScan = msDataFile.GetOneBasedScan(2);
@@ -352,15 +352,15 @@ namespace Test
         {
             Protein p1 = new Protein("PEPTIDE", null);
             CommonParameters commonParameters = new CommonParameters();
-            PeptideWithSetModifications pep1 = p1.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            var pep1 = p1.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
 
             Protein p2 = new Protein("PEPTIDE", null);
-            PeptideWithSetModifications pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            var pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
 
             Protein p3 = new Protein("PEPTIDE", null);
-            PeptideWithSetModifications pep3 = p3.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            var pep3 = p3.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep1, pep2, pep3 });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, 0, 1, null, new CommonParameters());
@@ -414,8 +414,8 @@ namespace Test
 
             List<string> peptides = File.ReadAllLines(Path.Combine(outputFolder, @"AllPeptides.psmtsv")).ToList();
             var header = peptides[0].Split(new char[] { '\t' }).ToArray();
-            int indexOfPsmCountInTsv = Array.IndexOf(header, PsmTsvHeader.PsmCount);
-            int indexOfQValueInTsv = Array.IndexOf(header, PsmTsvHeader.QValue);
+            int indexOfPsmCountInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.SpectrumMatchCount);
+            int indexOfQValueInTsv = Array.IndexOf(header, SpectrumMatchFromTsvHeader.QValue);
             Assert.That(indexOfPsmCountInTsv >= 0);
             Assert.That(indexOfQValueInTsv >= 0);
 
@@ -431,7 +431,7 @@ namespace Test
                 }
             }
 
-            var psmsFromTsv = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
+            var psmsFromTsv = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"AllPSMs.psmtsv"), out var warnings);
             var allUnambiguousPsms = psmsFromTsv.Where(psm => psm.FullSequence != null);
             var unambiguousPsmsLessThanOnePercentFdr = allUnambiguousPsms.Where(psm =>
                     psm.QValue <= 0.01)
@@ -444,13 +444,13 @@ namespace Test
             Assert.That(psmOfInterest.PrecursorIntensity == 4634473.5);
 
             var lines = File.ReadAllLines(Path.Combine(outputFolder, @"AllPSMs.psmtsv")).ToList();
-            int indexOfPrecursorIntensity = Array.IndexOf(header, PsmTsvHeader.PrecursorIntensity);
+            int indexOfPrecursorIntensity = Array.IndexOf(header, SpectrumMatchFromTsvHeader.PrecursorIntensity);
             var copy = lines[lines.Count - 1].Split('\t').ToArray();
             copy[indexOfPrecursorIntensity] = copy[indexOfPrecursorIntensity] + "a";
             string line = string.Join("\t", copy);
             lines.Add(line);
             File.WriteAllLines(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), lines.ToArray());
-            var psmsFromTsvInvalid = PsmTsvReader.ReadTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
+            var psmsFromTsvInvalid = SpectrumMatchTsvReader.ReadPsmTsv(Path.Combine(outputFolder, @"TestInvalidPSMs.psmtsv"), out var warnings1);
             var psmInvalid = psmsFromTsvInvalid[psmsFromTsvInvalid.Count - 1];
             Assert.That(psmInvalid.PrecursorIntensity, Is.EqualTo(null));
 
@@ -517,7 +517,7 @@ namespace Test
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
-            int count = SpectralMatch.GetCountComplementaryIons(psm1.BioPolymersWithSetModsToMatchingFragments, pwsm);
+            int count = SpectralMatch.GetCountComplementaryIons([], pwsm);
 
             //No Matched Fragment Ions Returns 0
             Assert.That(count, Is.EqualTo(0));
@@ -536,10 +536,7 @@ namespace Test
                 mfiList.Add(new MatchedFragmentIon(prod, 1, 1, 1));
             }
 
-            Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PTMF = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
-            PTMF.Add(pwsm, mfiList);
-
-            count = SpectralMatch.GetCountComplementaryIons(PTMF, pwsm);
+            count = SpectralMatch.GetCountComplementaryIons(mfiList, pwsm);
             //BioPolymersWithSetModsToMatchingFragments Contains one N and one C ion so intersection Returns 1
             Assert.That(count, Is.EqualTo(1));
         }
@@ -562,10 +559,8 @@ namespace Test
             Assert.That(longestSeries, Is.EqualTo(1));
 
             //matchedFragments == null returns 1
-            Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>> PeptidesToMatchingFragments = new Dictionary<IBioPolymerWithSetMods, List<MatchedFragmentIon>>();
-            PeptidesToMatchingFragments.Add(pwsm, null);
 
-            longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(PeptidesToMatchingFragments, pwsm);
+            longestSeries = SpectralMatch.GetLongestIonSeriesBidirectional(null, pwsm);
             Assert.That(longestSeries, Is.EqualTo(1));
         }
 
@@ -575,12 +570,12 @@ namespace Test
             CommonParameters commonParameters = new CommonParameters();
 
             Protein p1 = new Protein("PEPTIDEPEPTIDE", null);
-            PeptideWithSetModifications pep1 = p1.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
+            var pep1 = p1.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList().First();
 
             Protein p2 = new Protein("GGGGGGGGGGGGGGKPEPTIDEPEPTIDE", null);
-            PeptideWithSetModifications pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList()[1];
+            var pep2 = p2.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList()[1];
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2 });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep1, pep2 });
 
             //psm 1 - test first and last amino acid positions, along with one internal Amino Acid position
             Product productC3 = new Product(ProductType.y, FragmentationTerminus.C, 0, 3, 12, 0);

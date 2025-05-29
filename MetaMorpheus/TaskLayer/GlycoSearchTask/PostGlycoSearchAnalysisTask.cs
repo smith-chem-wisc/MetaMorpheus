@@ -6,10 +6,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FlashLFQ;
+using Omics.Digestion;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
 using pepXML.Generated;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
 
@@ -186,7 +188,7 @@ namespace TaskLayer
         private void WriteSummary(List<GlycoSpectralMatch> targetPsms, GlycoSearchParameters glycoSearchParameters, MyTaskResults MyTaskResults)
         {
             var gsms = targetPsms.Where(p => p.Routes != null).ToList();
-            var Level1gsms = gsms.Where(p => p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1).ToList();
+            var Level1gsms = gsms.Where(p => p.LocalizationLevel == LocalizationLevel.Level1).ToList();
             MyTaskResults.AddTaskSummaryText("All target PSMs within 1% FDR: " + (targetPsms?.
                            Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
             MyTaskResults.AddTaskSummaryText("All target protein groups within 1% FDR: " + (ProteinGroups?.
@@ -198,19 +200,19 @@ namespace TaskLayer
                     MyTaskResults.AddTaskSummaryText("All target O-Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 O-Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
                 case GlycoSearchType.NGlycanSearch:
                     MyTaskResults.AddTaskSummaryText("All target N-Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 N-Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
                 case GlycoSearchType.N_O_GlycanSearch:
                     MyTaskResults.AddTaskSummaryText("All target Glyco PSMs within 1% FDR: " + (gsms?.
                             Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant) ?? 0));
                     MyTaskResults.AddTaskSummaryText("All target Level 1 Glyco PSMs within 1% FDR: " + (Level1gsms
-                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == EngineLayer.GlycoSearch.LocalizationLevel.Level1) ?? 0));
+                        ?.Count(p => p.FdrInfo.QValue <= 0.01 && !p.IsDecoy && !p.IsContaminant && p.LocalizationLevel == LocalizationLevel.Level1) ?? 0));
                     break;
             }
 
@@ -475,8 +477,8 @@ namespace TaskLayer
             // the peptides should still be quantified but not considered for protein quantification
             var undefinedPg = new FlashLFQ.ProteinGroup("UNDEFINED", "", "");
             //sort the unambiguous psms by protease to make MBR compatible with multiple proteases
-            Dictionary<Protease, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<Protease, List<SpectralMatch>>();
-            Dictionary<Protease, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<Protease, FlashLfqResults>();
+            Dictionary<DigestionAgent, List<SpectralMatch>> proteaseSortedPsms = new Dictionary<DigestionAgent, List<SpectralMatch>>();
+            Dictionary<DigestionAgent, FlashLfqResults> proteaseSortedFlashLFQResults = new Dictionary<DigestionAgent, FlashLfqResults>();
 
             foreach (DigestionParams dp in Parameters.ListOfDigestionParams)
             {
@@ -492,7 +494,7 @@ namespace TaskLayer
                     psmToProteinGroups.Add(psm, new List<FlashLFQ.ProteinGroup> { undefinedPg });
                 }
 
-                proteaseSortedPsms[psm.DigestionParams.Protease].Add(psm);
+                proteaseSortedPsms[psm.DigestionParams.DigestionAgent].Add(psm);
             }
 
             // pass PSM info to FlashLFQ
