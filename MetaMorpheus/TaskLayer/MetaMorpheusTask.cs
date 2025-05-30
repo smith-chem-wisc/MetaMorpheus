@@ -779,12 +779,14 @@ namespace TaskLayer
 
         protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
         {
+            
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                output.WriteLine(SpectralMatch.GetTabSeparatedHeader());
+                bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column));
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column));
                 }
             }
         }
