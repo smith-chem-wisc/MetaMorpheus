@@ -15,6 +15,7 @@ using Omics.Modifications;
 using Readers;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using SpectrumMatchFromTsvHeader = EngineLayer.SpectrumMatchFromTsvHeader;
 
 namespace Test
 {

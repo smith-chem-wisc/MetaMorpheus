@@ -22,6 +22,7 @@ using Easy.Common.Extensions;
 using Omics.BioPolymer;
 using Readers;
 using static Nett.TomlObjectFactory;
+using SpectrumMatchFromTsvHeader = EngineLayer.SpectrumMatchFromTsvHeader;
 
 namespace Test
 {
