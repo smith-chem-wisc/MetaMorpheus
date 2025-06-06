@@ -1,5 +1,4 @@
 ﻿using MassSpectrometry;
-using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -7,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Chemistry;
 using Omics.Modifications;
+using EngineLayer.ModSearch;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -438,7 +438,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var c in local_c_fragments)
             {
-                var newMass = c.NeutralMass + localOGlycanBox.Mass;
+                var newMass = c.NeutralMass + localOGlycanBox.Mass.Value;  // use the value to get the double value of the mass.
                 newFragments.Add(newMass);
             }
 
@@ -446,7 +446,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var z in local_z_fragments)
             {
-                var newMass = z.NeutralMass + (OGlycanBox.Mass - localOGlycanBox.Mass);
+                var newMass = z.NeutralMass + (OGlycanBox.Mass.Value - localOGlycanBox.Mass.Value);
                 newFragments.Add(newMass);
             }
 
@@ -456,7 +456,7 @@ namespace EngineLayer.GlycoSearch
         //Find FragmentMass for the fragments that doesn't contain localization Information. For example, "A|TAABBS|B", c1 and c7, z1 and z7, z8 ion don't contain localization information.
         public static List<double> GetUnlocalFragment(List<Product> products, int[] modPoses, ModBox OGlycanBox)
         {
-            var mass = OGlycanBox.Mass;
+            var mass = OGlycanBox.Mass.Value;
 
             List<double> newFragments = new List<double>();
             var c_fragments = products.Where(p => p.ProductType == ProductType.c && p.AminoAcidPosition < modPoses.First() - 1).Select(p => p.NeutralMass);
