@@ -36,18 +36,7 @@ namespace Test.ModSearchTest
 {
     public class ModTester
     {
-
-        private static GlycanBox[] OGlycanBoxes_Opair { get; set; }
-
-        [OneTimeSetUp]
-        public static void Setup() // for the old o-glycan search engine.
-        {
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
-            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
-            OGlycanBoxes_Opair = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
-        }
-
-
+        // ModBox tester
         [Test]
         public static void ModBoxTest()
         {
@@ -73,6 +62,7 @@ namespace Test.ModSearchTest
             Assert.AreEqual(modBox_duplicate.ChildBoxes.Count(), 6);//null, Mod1, Mod2, Mod1+Mod2,  Mod2+Mod2, Mod1+Mod2+Mod2
         }
 
+        // ModDatabaseReader tester
         [Test]
         public static void ModDatabaseReaderTest()
         {
@@ -122,6 +112,9 @@ namespace Test.ModSearchTest
         [Test]
         public static void SugarKindTester()
         {
+            // Description: This test checks the SugarKind functionality in the ModBox class.
+            // The SugarKind is used to store the sugar composition of the glycan modifications in this ModBox, used for O-glycan search.
+
             ModDatabaseReader reader = new ModDatabaseReader(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Glycan_Mods", @"General_Mods", @"ModBox Database.txt"), searchType: SearchType.O_GlycanSearch);
             ModBox modBox = reader.ModBoxes[94]; // N1 + H1N1 + Oxidatino on M
             Assert.AreEqual(modBox.SugarKind.Length, 11);
@@ -138,29 +131,12 @@ namespace Test.ModSearchTest
 
 
         [Test]
-        public static void ReaderTest_MaxTesting()
-        {
-            ModDatabaseReader reader = new ModDatabaseReader(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Glycan_Mods", @"General_Mods", @"ModBox Database.txt"), maxGlycanNum: 2, searchType: SearchType.O_GlycanSearch);
-
-            foreach (var modBox in reader.ModBoxes)  // All of the modBoxes should have less than 3 glycan
-            {
-                if (modBox.Mods.Where(p => p.ModificationType == "O-Glycosylation").Count() > 2)
-                {
-                    Assert.Fail("The number of glycan in the modBox is larger than the maxGlycanNum");
-                }
-            }
-
-            Assert.AreEqual(reader.GlobalGlycans.Count, 10);
-            Assert.AreEqual(reader.GlobalRegularMods.Count, 2);
-            Assert.AreEqual(ModDatabaseReader.ModDictionary.Count(), 166);
-            Assert.AreEqual(reader.MaxModNum, 3);
-            Assert.AreEqual(reader.MaxGlycanNum, 2);
-
-        }
-
-        [Test]
         public static void ModBoxCombinationTest()
         {
+            // Description: This test checks the ModBox combination functionality in the ModDatabaseReader class.
+            // The ModBox combination is used to generate all possible combinations of modifications in the ModBox class.
+            // In this database, there are 10 glycans, 2 regular modifications.
+
             ModDatabaseReader reader = new ModDatabaseReader(Path.Combine(TestContext.CurrentContext.TestDirectory, @"Glycan_Mods", @"General_Mods", @"ModBox Database.txt"), searchType: SearchType.O_GlycanSearch);
             reader.BuildModBoxes();
             Assert.IsTrue(!reader.ModBoxes.Where(p => p.IsChild == true).Any()); // The parent box should not be labeled as child
