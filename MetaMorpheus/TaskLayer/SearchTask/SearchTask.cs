@@ -156,8 +156,8 @@ namespace TaskLayer
                 var proteins = LoadBioPolymers(taskId, dbFilenameList, SearchParameters.SearchTarget, SearchParameters.DecoyType,
                     localizeableModificationTypes,
                     CommonParameters);
-                SanitizeProteinDatabase(proteins, SearchParameters.TCAmbiguity);
-                return proteins;
+                SanitizeBioPolymerDatabase(proteins, SearchParameters.TCAmbiguity);
+                return proteins.Cast<Protein>().ToList();
             });
             proteinLoadingTask.Start();
 
