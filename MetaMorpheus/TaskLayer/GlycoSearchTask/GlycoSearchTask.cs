@@ -52,7 +52,7 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // load proteins
-            List<Protein> proteinList = LoadProteins(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters);
+            List<Protein> proteinList = LoadBioPolymers(taskId, dbFilenameList, true, _glycoSearchParameters.DecoyType, localizeableModificationTypes, CommonParameters).Cast<Protein>().ToList();
 
             MyFileManager myFileManager = new (_glycoSearchParameters.DisposeOfFileWhenDone);
             var fileSpecificCommonParams = fileSettingsList.Select(b => SetAllFileSpecificCommonParams(CommonParameters, b));

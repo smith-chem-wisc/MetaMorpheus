@@ -43,11 +43,11 @@ namespace TaskLayer
             List<Protein> proteinList = null;
             Task<List<Protein>> proteinLoadingTask = new(() =>
             {
-                var proteins = LoadProteins(taskId, dbFilenameList, true, DecoyType.Reverse,
+                var proteins = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse,
                     localizeableModificationTypes,
                     CommonParameters);
-                SanitizeProteinDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
-                return proteins;
+                SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
+                return proteins.Cast<Protein>().ToList();
             });
             proteinLoadingTask.Start();
 
