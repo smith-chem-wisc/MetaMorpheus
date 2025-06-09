@@ -1839,6 +1839,8 @@ namespace TaskLayer
             }
         }
 
+        #region Results.txt helpers
+
         /// <summary>
         /// This is a handy dictionary to keep track of the PSM, peptide and protein count results at the
         ///  "All" level and at the individual raw file level.
@@ -1910,6 +1912,8 @@ namespace TaskLayer
         {
             Parameters.SearchTaskResults.AddPsmPeptideProteinSummaryText(AllResultsTotals());
         }
+
+        #endregion
 
         private void WritePeptideQuantificationResultsToTsv(FlashLfqResults flashLFQResults, string outputFolder, string fileName, List<string> nestedIds)
         {

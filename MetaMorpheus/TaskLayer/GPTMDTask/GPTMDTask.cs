@@ -10,7 +10,6 @@ using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
 using System.Globalization;
-using Omics.Digestion;
 using Omics.Modifications;
 using System.Threading.Tasks;
 using Omics;
@@ -47,7 +46,7 @@ namespace TaskLayer
                     localizeableModificationTypes,
                     CommonParameters);
                 SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
-                return proteins.Cast<Protein>().ToList();
+                return proteins;
             });
             proteinLoadingTask.Start();
 

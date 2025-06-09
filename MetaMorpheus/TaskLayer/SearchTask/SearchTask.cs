@@ -157,7 +157,7 @@ namespace TaskLayer
                     localizeableModificationTypes,
                     CommonParameters);
                 SanitizeBioPolymerDatabase(proteins, SearchParameters.TCAmbiguity);
-                return proteins.Cast<Protein>().ToList();
+                return proteins;
             });
             proteinLoadingTask.Start();
 
