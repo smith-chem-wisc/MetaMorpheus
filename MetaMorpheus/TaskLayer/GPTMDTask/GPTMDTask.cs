@@ -4,17 +4,16 @@ using EngineLayer.FdrAnalysis;
 using EngineLayer.Gptmd;
 using MassSpectrometry;
 using MzLibUtil;
-using Proteomics;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UsefulProteomicsDatabases;
-using Proteomics.ProteolyticDigestion;
 using System.Globalization;
-using Omics.Digestion;
 using Omics.Modifications;
 using System.Threading.Tasks;
+using Omics;
+using Proteomics.ProteolyticDigestion;
 
 namespace TaskLayer
 {
@@ -40,14 +39,14 @@ namespace TaskLayer
             LoadModifications(taskId, out var variableModifications, out var fixedModifications, out var localizeableModificationTypes);
 
             // start loading proteins in the background
-            List<Protein> proteinList = null;
-            Task<List<Protein>> proteinLoadingTask = new(() =>
+            List<IBioPolymer> proteinList = null;
+            Task<List<IBioPolymer>> proteinLoadingTask = new(() =>
             {
                 var proteins = LoadBioPolymers(taskId, dbFilenameList, true, DecoyType.Reverse,
                     localizeableModificationTypes,
                     CommonParameters);
                 SanitizeBioPolymerDatabase(proteins, TargetContaminantAmbiguity.RemoveContaminant);
-                return proteins.Cast<Protein>().ToList();
+                return proteins;
             });
             proteinLoadingTask.Start();
 
@@ -56,13 +55,13 @@ namespace TaskLayer
             IEnumerable<Tuple<double, double>> combos = LoadCombos(gptmdModifications).ToList();
 
             // write prose settings
-            ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: "); 
-            ProseCreatedWhileRunning.Append("protease = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
+            ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: ");
+            ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
-            ProseCreatedWhileRunning.Append("minimum peptide length = " + CommonParameters.DigestionParams.MinLength + "; ");
+            ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
             ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?
-                "maximum peptide length = unspecified; " :
-                "maximum peptide length = " + CommonParameters.DigestionParams.MaxLength + "; ");
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = unspecified; " :
+                $"maximum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MaxLength + "; ");
             if (CommonParameters.DigestionParams is DigestionParams digestionParams)
                 ProseCreatedWhileRunning.Append("initiator methionine behavior = " + digestionParams.InitiatorMethionineBehavior + "; ");
             ProseCreatedWhileRunning.Append("max modification isoforms = " + CommonParameters.DigestionParams.MaxModificationIsoforms + "; ");
@@ -170,7 +169,7 @@ namespace TaskLayer
             new GptmdEngine(allPsms, gptmdModifications, combos, filePathToPrecursorMassTolerance, CommonParameters, this.FileSpecificParameters, new List<string> { taskId }, allModDictionary).Run();
 
             //Move this text after search because proteins don't get loaded until search begins.
-            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + " non-decoy protein entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
+            ProseCreatedWhileRunning.Append("The combined search database contained " + proteinList.Count(p => !p.IsDecoy) + $" non-decoy {GlobalVariables.AnalyteType.GetBioPolymerLabel().ToLower()} entries including " + proteinList.Where(p => p.IsContaminant).Count() + " contaminant sequences. ");
 
             // run GPTMD engine
             Status("Creating the GPTMD Database", new List<string> { taskId });
