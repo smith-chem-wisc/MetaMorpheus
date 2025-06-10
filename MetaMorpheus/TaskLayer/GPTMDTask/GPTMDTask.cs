@@ -56,7 +56,7 @@ namespace TaskLayer
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following G-PTM-D settings were used: ");
-            ProseCreatedWhileRunning.Append($"{(GlobalVariables.AnalyteType == AnalyteType.Oligo ? "Rnase" : "protease")} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
+            ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
             ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?

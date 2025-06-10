@@ -53,7 +53,7 @@ namespace TaskLayer
 
             // write prose settings
             _ = ProseCreatedWhileRunning.Append("The following calibration settings were used: ");
-            _ = ProseCreatedWhileRunning.Append($"{(GlobalVariables.AnalyteType == AnalyteType.Oligo ? "Rnase" : "protease")} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
+            _ = ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
             _ = ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             _ = ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
             _ = ProseCreatedWhileRunning.Append(CommonParameters.DigestionParams.MaxLength == int.MaxValue ?

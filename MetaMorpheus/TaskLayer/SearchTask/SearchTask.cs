@@ -166,7 +166,7 @@ namespace TaskLayer
 
             // write prose settings
             ProseCreatedWhileRunning.Append("The following search settings were used: ");
-            ProseCreatedWhileRunning.Append($"{(GlobalVariables.AnalyteType == AnalyteType.Oligo ? "Rnase" : "protease")} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
+            ProseCreatedWhileRunning.Append($"{GlobalVariables.AnalyteType.GetDigestionAgentLabel()} = " + CommonParameters.DigestionParams.DigestionAgent + "; ");
             ProseCreatedWhileRunning.Append("search for truncated proteins and proteolysis products = " + CommonParameters.AddTruncations + "; ");
             ProseCreatedWhileRunning.Append("maximum missed cleavages = " + CommonParameters.DigestionParams.MaxMissedCleavages + "; ");
             ProseCreatedWhileRunning.Append($"minimum {GlobalVariables.AnalyteType.GetUniqueFormLabel().ToLower()} length = " + CommonParameters.DigestionParams.MinLength + "; ");
@@ -343,7 +343,7 @@ namespace TaskLayer
 
                             List<Protein> proteinListSubset = proteinList.GetRange(currentPartition * proteinList.Count / paramToUse.TotalPartitions,
                                 ((currentPartition + 1) * proteinList.Count / paramToUse.TotalPartitions) - (currentPartition * proteinList.Count / paramToUse.TotalPartitions))
-                                .Cast<Protein>().ToList(); // assume that only proteins are used in non-specific search
+                                .ToList(); // assume that only proteins are used in non-specific search
 
                             List<int>[] fragmentIndex = null;
                             List<int>[] precursorIndex = null;
