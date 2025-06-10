@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Reflection;
 using GuiFunctions;
 using NUnit.Framework;
 using TaskLayer;
@@ -39,6 +40,29 @@ namespace Test.GuiTests
             // Switch back to Custom, should restore
             vm.SelectedType = customModel;
             Assert.That(vm.CustomMdac, Is.EqualTo("abc123"));
+        }
+
+        [Test]
+        public void SelectedType_CrashesOnUnknownType()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
+            // Create a fake/invalid enum value not present in MassDiffAcceptorType
+            var invalidType = (MassDiffAcceptorType)9999;
+
+            // Use reflection to call the private CreateModel method with the invalid type
+            var method = typeof(MassDifferenceAcceptorSelectionViewModel)
+                .GetMethod("CreateModel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            try
+            {
+                method.Invoke(vm, new object[] { invalidType });
+                Assert.Fail("Expected NotImplementedException was not thrown.");
+            }
+            catch (TargetInvocationException ex)
+            {
+                Assert.That(ex.InnerException, Is.TypeOf<NotImplementedException>());
+                Assert.That(ex.InnerException.Message, Is.EqualTo("No model implemented for type: 9999"));
+            }
         }
 
         [Test]

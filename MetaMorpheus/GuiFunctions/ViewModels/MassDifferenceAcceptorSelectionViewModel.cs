@@ -73,7 +73,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             MassDiffAcceptorType.ModOpen => "-187 and Up",
             MassDiffAcceptorType.Open => "Accept all",
             MassDiffAcceptorType.Custom => "Custom",
-            _ => throw new NotImplementedException(),
+            _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
         string toolTip = type switch
@@ -86,7 +86,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             MassDiffAcceptorType.ModOpen => "An \"open-mass\" search that allows mass-differences between observed and theoretical precursor masses of -187 Da to infinity (observed can be infinitely more massive than the theoretical).\r\nThe purpose of this search type is to detect mass-differences corresponding to PTMs, amino acid variants, sample handling artifacts, etc.\r\nPlease use \"Modern Search\" mode when using this search type.",
             MassDiffAcceptorType.Open => "An \"open-mass\" search that allows mass-differences between observed and theoretical precursor masses of -infinity to infinity. The purpose of this search type is to detect mass-differences corresponding to PTMs, amino acid variants, sample handling artifacts, etc. Please use \"Modern Search\" mode when using this search type.",
             MassDiffAcceptorType.Custom => "A custom mass difference acceptor may be specified in multiple ways: * To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by \"ppmAroundZero\" or \"daltonsAroundZero\", followed by the numeric value corresponding to the interval width. Examples: * CustomPpmInterval ppmAroundZero 5 * CustomDaltonInterval daltonsAroundZero 2.1 * To accept a variety of pre-specified mass differences, use a custom name, followed by \"dot\", followed by a custom bin width, followed by comma separated acceptable mass differences. Examples: * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052 * CustomOxidationAllowed dot 0.1 da 0,16 * To accept mass differences in pre-specified dalton intervals, use a custom name, followed by \"interval\", followed by comma separated mass intervals in brackets. Example: * CustomPositiveIntervalAcceptror interval [0,200]",
-            _ => throw new NotImplementedException(),
+            _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
         int positiveMissedMonos = type switch
@@ -99,7 +99,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             MassDiffAcceptorType.ModOpen => 0,
             MassDiffAcceptorType.Open => 0,
             MassDiffAcceptorType.Custom => 0,
-            _ => throw new NotImplementedException(),
+            _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
         int negativeMissedMonos = type switch
@@ -112,7 +112,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             MassDiffAcceptorType.ModOpen => 0,
             MassDiffAcceptorType.Open => 0,
             MassDiffAcceptorType.Custom => 0,
-            _ => throw new NotImplementedException(),
+            _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
         return new MassDifferenceAcceptorTypeModel
