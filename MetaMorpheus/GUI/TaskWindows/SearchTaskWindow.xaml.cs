@@ -38,7 +38,7 @@ namespace MetaMorpheusGUI
         private readonly ObservableCollection<SilacInfoForDataGrid> StaticSilacLabelsObservableCollection = new ObservableCollection<SilacInfoForDataGrid>();
         private bool AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
         private CustomFragmentationWindow CustomFragmentationWindow;
-        private MassDifferenceAcceptorViewModel _massDifferenceAcceptorViewModel;
+        private MassDifferenceAcceptorSelectionViewModel _massDifferenceAcceptorViewModel;
         private string _defaultMultiplexType = "TMT10";
         private DeconHostViewModel DeconHostViewModel;
 
@@ -52,7 +52,7 @@ namespace MetaMorpheusGUI
             AutomaticallyAskAndOrUpdateParametersBasedOnProtease = false;
             PopulateChoices();
             UpdateFieldsFromTask(TheTask);
-            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true; 
+            AutomaticallyAskAndOrUpdateParametersBasedOnProtease = true;
             DeisotopingControl.DataContext = DeconHostViewModel;
             MassDifferenceAcceptorControl.DataContext = _massDifferenceAcceptorViewModel;
 
@@ -681,6 +681,22 @@ namespace MetaMorpheusGUI
             else
             {
                 TheTask.SearchParameters.DecoyType = DecoyType.None;
+            }
+
+            // Custom Mdac will be "" for all non-custom types, so no need to check for those.
+            if (_massDifferenceAcceptorViewModel.CustomMdac != string.Empty)
+            {
+                try
+                {
+                    MassDiffAcceptor customMassDiffAcceptor =
+                        SearchTask.GetMassDiffAcceptor(null, MassDiffAcceptorType.Custom, _massDifferenceAcceptorViewModel.CustomMdac);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Could not parse custom mass difference acceptor: " + ex.Message, "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
             }
 
             TheTask.SearchParameters.MassDiffAcceptorType = _massDifferenceAcceptorViewModel.SelectedType.Type;

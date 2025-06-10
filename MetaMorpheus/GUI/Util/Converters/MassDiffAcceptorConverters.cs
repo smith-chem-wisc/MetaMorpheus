@@ -33,31 +33,11 @@ public class EnumToBooleanConverter : IMultiValueConverter
         return new object[] { Binding.DoNothing, Binding.DoNothing };
     }
 }
-internal class KeyValuePairConverter : BaseValueConverter<KeyValuePairConverter>
-{
-    public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        var vm = parameter as (double TargetMz, PpmTolerance PpmTolerance)? ?? (0, null);
 
-        if (value is double doubleValue)
-        {
-            // Adjust these values and logic according to your tolerance object
-
-            if (vm.PpmTolerance.Within(vm.TargetMz, doubleValue))
-            {
-                return System.Windows.Media.Brushes.LightGreen; // Value is within tolerance, highlight as green
-            }
-        }
-
-        // If not within tolerance, return a default background color (e.g., transparent)
-        return System.Windows.Media.Brushes.Transparent;
-    }
-
-    public override object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-    {
-        throw new NotImplementedException();
-    }
-}
+/// <summary>
+/// Converts a MassDiffAcceptorType to a Visibility value.
+/// Used to determine if the custom text window should be displayed based upon the selected mass diff acceptor type
+/// </summary>
 public class MassDifferenceAcceptorTypeToCustomTextBoxVisibilityConverter : BaseValueConverter<MassDifferenceAcceptorTypeToCustomTextBoxVisibilityConverter>
 {
     public override object Convert(object value, Type targetType, object parameter, CultureInfo culture)

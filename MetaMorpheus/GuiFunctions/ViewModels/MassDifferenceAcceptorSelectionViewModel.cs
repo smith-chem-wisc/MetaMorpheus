@@ -6,11 +6,14 @@ using TaskLayer;
 
 namespace GuiFunctions;
 
-public class MassDifferenceAcceptorViewModel : BaseViewModel
+/// <summary>
+/// Controls the selection of different mass diff acceptors in the GUI and Custom Mdac handling. 
+/// </summary>
+public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 {
     private string _cachedCustomMdac = string.Empty;
     public ObservableCollection<MassDifferenceAcceptorTypeModel> MassDiffAcceptorTypes { get; }
-    public MassDifferenceAcceptorViewModel(MassDiffAcceptorType selectedType, string customText) : base()
+    public MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType selectedType, string customText) : base()
     {
         // Almost every piece of this constructor is order dependent. Be careful when changing. 
         var models = Enum.GetValues<MassDiffAcceptorType>().Select(CreateModel);
@@ -123,6 +126,9 @@ public class MassDifferenceAcceptorViewModel : BaseViewModel
     }
 }
 
+/// <summary>
+/// A single MassDiff acceptor type and all relevant GUI display information
+/// </summary>
 public class MassDifferenceAcceptorTypeModel : IEquatable<MassDiffAcceptorType>, IEquatable<MassDifferenceAcceptorTypeModel>
 {
     public int PositiveMissedMonos { get; init; }
@@ -156,10 +162,10 @@ public class MassDifferenceAcceptorTypeModel : IEquatable<MassDiffAcceptorType>,
 }
 
 [ExcludeFromCodeCoverage] // For design time gui display only
-public class MassDifferenceAcceptorModel : MassDifferenceAcceptorViewModel
+public class MassDifferenceAcceptorSelectionModel : MassDifferenceAcceptorSelectionViewModel
 {
-    public static MassDifferenceAcceptorModel Instance => new MassDifferenceAcceptorModel();
-    public MassDifferenceAcceptorModel() : base(MassDiffAcceptorType.TwoMM, "")
+    public static MassDifferenceAcceptorSelectionModel Instance => new MassDifferenceAcceptorSelectionModel();
+    public MassDifferenceAcceptorSelectionModel() : base(MassDiffAcceptorType.TwoMM, "")
     {
 
     }

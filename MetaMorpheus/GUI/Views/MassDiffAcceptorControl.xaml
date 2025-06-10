@@ -25,7 +25,7 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorModel.Instance}">
+    <Grid d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorSelectionModel.Instance}">
         <GroupBox Header="Mass Difference Acceptor Criterion" x:Name="MassDiffAcceptorGroupBox">
             <Grid>
                 <Grid.ColumnDefinitions>

@@ -15,7 +15,7 @@ namespace Test.GuiTests
             foreach (MassDiffAcceptorType type in Enum.GetValues<MassDiffAcceptorType>())
             {
                 string customText = "custom";
-                var vm = new MassDifferenceAcceptorViewModel(type, customText);
+                var vm = new MassDifferenceAcceptorSelectionViewModel(type, customText);
 
                 Assert.That(vm.MassDiffAcceptorTypes.Select(m => m.Type), Is.EquivalentTo(Enum.GetValues<MassDiffAcceptorType>()));
                 Assert.That(vm.SelectedType.Type, Is.EqualTo(type));
@@ -26,7 +26,7 @@ namespace Test.GuiTests
         [Test]
         public void SelectedType_CachesAndRestoresCustomMdac()
         {
-            var vm = new MassDifferenceAcceptorViewModel(MassDiffAcceptorType.Exact, "");
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Exact, "");
             var customModel = vm.MassDiffAcceptorTypes.First(m => m.Type == MassDiffAcceptorType.Custom);
             var exactModel = vm.MassDiffAcceptorTypes.First(m => m.Type == MassDiffAcceptorType.Exact);
 
@@ -44,7 +44,7 @@ namespace Test.GuiTests
         [Test]
         public void CustomMdac_Property_SetAndGet()
         {
-            var vm = new MassDifferenceAcceptorViewModel(MassDiffAcceptorType.Custom, "");
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
             bool propertyChangedFired = false;
             vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.CustomMdac)) propertyChangedFired = true; };
 
@@ -90,7 +90,7 @@ namespace Test.GuiTests
         [Test]
         public void MassDifferenceAcceptorTypeModel_Equality_MissedMonosIsCorrect()
         {
-            var host = new MassDifferenceAcceptorViewModel(MassDiffAcceptorType.OneMM, "");
+            var host = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.OneMM, "");
             var model1 = host.MassDiffAcceptorTypes.First(p => p.Type == MassDiffAcceptorType.OneMM);
 
             Assert.That(model1.PositiveMissedMonos, Is.EqualTo(1));
@@ -120,8 +120,8 @@ namespace Test.GuiTests
         [Test]
         public void MassDifferenceAcceptorModel_Instance_ReturnsDefault()
         {
-            var instance = MassDifferenceAcceptorModel.Instance;
-            Assert.That(instance, Is.TypeOf<MassDifferenceAcceptorModel>());
+            var instance = MassDifferenceAcceptorSelectionModel.Instance;
+            Assert.That(instance, Is.TypeOf<MassDifferenceAcceptorSelectionModel>());
             Assert.That(instance.SelectedType.Type, Is.EqualTo(MassDiffAcceptorType.TwoMM));
             Assert.That(instance.CustomMdac, Is.EqualTo(""));
         }
