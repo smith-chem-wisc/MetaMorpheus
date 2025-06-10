@@ -8,6 +8,8 @@ namespace EngineLayer
 {
     public class Ms2ScanWithSpecificMass
     {
+        // Most of the processing here is done on the deconvoluted masses. SO we can make the do all of the processing in mzlib with a derived class
+        // We just need to make sure all of the neutral mass outputs are correct. This should translate to charged fragment ions. 
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam, 
             IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null)
         {
@@ -23,6 +25,7 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
 
+          
             if (commonParam.DissociationType != DissociationType.LowCID)
             {
                 ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
@@ -65,22 +68,22 @@ namespace EngineLayer
             var neutralExperimentalFragmentMasses =
                 Deconvoluter.Deconvolute(scan, commonParam.ProductDeconvolutionParameters, scan.MassSpectrum.Range).ToList();
 
-            if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
+            if (!commonParam.AssumeOrphanPeaksAreZ1Fragments || scan.MassSpectrum is NeutralMassSpectrum)
+                return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
+
+            HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
+                .SelectMany(p => p.Peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
+
+            for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
             {
-                HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
-                    .SelectMany(p => p.Peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
+                double mz = scan.MassSpectrum.XArray[i];
+                double intensity = scan.MassSpectrum.YArray[i];
 
-                for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
+                if (!alreadyClaimedMzs.Contains(ClassExtensions.RoundedDouble(mz).Value))
                 {
-                    double mz = scan.MassSpectrum.XArray[i];
-                    double intensity = scan.MassSpectrum.YArray[i];
-
-                    if (!alreadyClaimedMzs.Contains(ClassExtensions.RoundedDouble(mz).Value))
-                    {
-                        neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
-                            new List<(double mz, double intensity)> { (mz, intensity) },
-                            mz.ToMass(1), 1, intensity, 0));
-                    }
+                    neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
+                        new List<(double mz, double intensity)> { (mz, intensity) },
+                        mz.ToMass(1), 1, intensity, 0));
                 }
             }
 

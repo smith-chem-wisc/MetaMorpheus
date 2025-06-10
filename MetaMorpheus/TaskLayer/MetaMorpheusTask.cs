@@ -24,6 +24,8 @@ using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
 using UsefulProteomicsDatabases;
+using Easy.Common.Extensions;
+using Readers;
 using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace TaskLayer
@@ -172,6 +174,66 @@ namespace TaskLayer
                 return scansWithPrecursors;
             }
 
+            // short circuit for already deconvoluted files
+            if (myMSDataFile is MsAlign align)
+            {
+                // if only ms2align, no precursor scans
+                if (align.All(scan => scan.MsnOrder == 2))
+                {
+                    for (int i = 0; i < ms2Scans.Length; i++)
+                    {
+
+                        scansWithPrecursors[i] = new List<Ms2ScanWithSpecificMass>()
+                        {
+                            new Ms2ScanWithSpecificMass(ms2Scans[i], ms2Scans[i].SelectedIonMonoisotopicGuessMz!.Value,
+                                ms2Scans[i].SelectedIonChargeStateGuess!.Value, fullFilePath, commonParameters, null,
+                                ms2Scans[i].SelectedIonIntensity ?? 1)
+                        };
+                    }
+                    return scansWithPrecursors;
+                }
+
+                // If precursor scans are present
+                var groups = align.GroupBy(p => p.OneBasedPrecursorScanNumber)
+                    .ToDictionary(p => p.Key, p => p.ToArray());
+                scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[groups.Count];
+
+                for (var index = 0; index < groups.Count; index++)
+                {
+                    var precursorScanNumber = groups.ElementAt(index).Key;
+                    var fragmentationScans = groups.ElementAt(index).Value;
+                    var localScansWithPrecursors = new List<Ms2ScanWithSpecificMass>(fragmentationScans.Length);
+
+                    // no precursor scan
+                    if (precursorScanNumber is null)
+                    {
+                        for (int i = 0; i < fragmentationScans.Length; i++)
+                        {
+                            localScansWithPrecursors[i] = new Ms2ScanWithSpecificMass(ms2Scans[i],
+                                ms2Scans[i].SelectedIonMonoisotopicGuessMz!.Value,
+                                ms2Scans[i].SelectedIonChargeStateGuess!.Value, fullFilePath, commonParameters, null,
+                                ms2Scans[i].SelectedIonIntensity ?? 1);
+                        }
+                    }
+                    else
+                    {
+                        // TODO: use the ms1.align to determine if chimeric spectra occurred
+                        double sumOfIntensity = fragmentationScans.Sum(p => p.SelectedIonIntensity ?? 1);
+                        for (int i = 0; i < fragmentationScans.Length; i++)
+                        {
+                            localScansWithPrecursors[i] = new Ms2ScanWithSpecificMass(ms2Scans[i],
+                                ms2Scans[i].SelectedIonMonoisotopicGuessMz!.Value,
+                                ms2Scans[i].SelectedIonChargeStateGuess!.Value, fullFilePath, commonParameters, null,
+                                ms2Scans[i].SelectedIonIntensity!.Value / sumOfIntensity);
+                        }
+                    }
+
+                    scansWithPrecursors[index] = localScansWithPrecursors;
+                }
+
+                return scansWithPrecursors;
+            }
+
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
@@ -187,6 +249,9 @@ namespace TaskLayer
                         if (ms2scan.OneBasedPrecursorScanNumber.HasValue)
                         {
                             MsDataScan precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
+
+                            if (precursorSpectrum is null)
+                                goto PrecursorFromScanHeader;
 
                             try
                             {
@@ -234,6 +299,7 @@ namespace TaskLayer
                         }
 
                         //if use precursor info from scan header and scan header has charge state
+                        PrecursorFromScanHeader:
                         if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue) 
                         {
                             int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
