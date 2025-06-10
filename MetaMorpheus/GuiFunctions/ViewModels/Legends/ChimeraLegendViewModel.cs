@@ -8,9 +8,11 @@ using System.Threading.Tasks;
 using System.Windows;
 using EngineLayer;
 using GuiFunctions.ViewModels.Legends;
+using Omics;
 using OxyPlot;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
 
 namespace GuiFunctions
 {
@@ -43,7 +45,7 @@ namespace GuiFunctions
 
         #endregion
 
-        public ChimeraLegendViewModel(List<PsmFromTsv> chimericIDs, double offset = 0) : base()
+        public ChimeraLegendViewModel(List<SpectrumMatchFromTsv> chimericIDs, double offset = 0) : base()
         {
             TopOffset = offset;
             ChimeraLegendItems = new();
@@ -54,7 +56,7 @@ namespace GuiFunctions
         /// Populates legend items dictionary from a list of PsmTsv
         /// </summary>
         /// <param name="chimericIDs"></param>
-        public void ParseLegendItemsFromPsms(List<PsmFromTsv> chimericIDs)
+        public void ParseLegendItemsFromPsms(List<SpectrumMatchFromTsv> chimericIDs)
         {
             var groupedByProtein = chimericIDs.GroupBy(p => p.BaseSeq).OrderByDescending(p => p.Count());
 
@@ -86,10 +88,9 @@ namespace GuiFunctions
                         color = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1];
                     }
 
-                    PeptideWithSetModifications peptideWithSetMods =
-                        new(protein.ToList()[i].FullSequence.Split("|")[0], GlobalVariables.AllModsKnownDictionary);
+                    IBioPolymerWithSetMods bioPolymerWithSetMods = protein.ElementAt(i).ToBioPolymerWithSetMods(protein.ElementAt(i).FullSequence.Split("|")[0]);
                     var modsString = String.Join(", ",
-                        peptideWithSetMods.AllModsOneIsNterminus.Select(p => p.Key + " - " + p.Value.IdWithMotif));
+                        bioPolymerWithSetMods.AllModsOneIsNterminus.Select(p => p.Key + " - " + p.Value.IdWithMotif));
                     ChimeraLegendItems[protein.Key].Add(new(modsString, color));
                 }
                 proteinIndex++;

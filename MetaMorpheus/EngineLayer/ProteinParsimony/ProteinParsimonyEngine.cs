@@ -96,7 +96,7 @@ namespace EngineLayer
             // that have unevenly-shared modifications
             if (!_treatModPeptidesAsDifferentPeptides)
             {
-                foreach (var protease in _fdrFilteredPsms.GroupBy(p => p.DigestionParams.Protease))
+                foreach (var protease in _fdrFilteredPsms.GroupBy(p => p.DigestionParams.DigestionAgent))
                 {
                     Dictionary<string, List<SpectralMatch>> sequenceWithPsms = new Dictionary<string, List<SpectralMatch>>();
 
@@ -183,7 +183,7 @@ namespace EngineLayer
                                     }
 
                                     // create any new associations that need to be made
-                                    foreach (PeptideSpectralMatch psm in baseSequence.Value)
+                                    foreach (SpectralMatch psm in baseSequence.Value)
                                     {
                                         var tentativeMatch = psm.BestMatchingBioPolymersWithSetMods.First();
                                         IBioPolymerWithSetMods originalPeptide = tentativeMatch.SpecificBioPolymer;

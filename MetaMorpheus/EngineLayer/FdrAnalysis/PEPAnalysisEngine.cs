@@ -532,7 +532,7 @@ namespace EngineLayer
                     hasSpectralAngle = 1;
                 }
 
-                if (psm.DigestionParams.Protease.Name != "top-down")
+                if (psm.DigestionParams.DigestionAgent.Name != "top-down")
                 {
                     missedCleavages = tentativeSpectralMatch.SpecificBioPolymer.MissedCleavages;
                     bool fileIsCzeSeparationType = FileSpecificParametersDictionary.ContainsKey(Path.GetFileName(psm.FullFilePath)) && FileSpecificParametersDictionary[Path.GetFileName(psm.FullFilePath)].SeparationType == "CZE";

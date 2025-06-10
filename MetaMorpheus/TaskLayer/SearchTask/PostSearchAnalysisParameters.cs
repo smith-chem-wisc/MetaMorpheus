@@ -3,6 +3,7 @@ using FlashLFQ;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System.Collections.Generic;
+using Omics.Digestion;
 using Omics.Modifications;
 
 namespace TaskLayer
@@ -16,7 +17,7 @@ namespace TaskLayer
         public List<Modification> VariableModifications { get; set; }
         public List<Modification> FixedModifications { get; set; }
         public Modification MultiplexModification { get; set; }
-        public HashSet<DigestionParams> ListOfDigestionParams { get; set; }
+        public HashSet<IDigestionParams> ListOfDigestionParams { get; set; }
         public List<SpectralMatch> AllPsms { get; set; }
         public FlashLfqResults FlashLfqResults { get; set; }
         public int NumNotches { get; set; }
