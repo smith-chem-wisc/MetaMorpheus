@@ -1,6 +1,8 @@
 ﻿using EngineLayer;
+using MetaMorpheusGUI.Util;
 using Nett;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using TaskLayer;
 
@@ -9,6 +11,25 @@ namespace MetaMorpheusGUI
     public static class UpdateGUISettings
     {
         public static GuiGlobalParams Params { get; internal set; }
+
+        #region Update GUI Displays on Global Changes Made
+
+        private static GuiGlobalParamsViewModel _globals;
+        public static GuiGlobalParamsViewModel Globals => _globals ??= new GuiGlobalParamsViewModel(Params);
+
+        // Call this method to inform the GUI that you made changes to  Globals
+        public static void NotifyGlobalsChanged()
+        {
+            OnStaticPropertyChanged(nameof(Globals));
+        }
+
+        public static event PropertyChangedEventHandler PropertyChanged;
+        private static void OnStaticPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(null, new PropertyChangedEventArgs(propertyName));
+        }
+
+        #endregion
 
         public static bool LoadGUISettings()
         {
@@ -27,6 +48,7 @@ namespace MetaMorpheusGUI
             {
                 Params.AskAboutUpdating = false;
             }
+            NotifyGlobalsChanged();
             return fileExists;
         }
 
