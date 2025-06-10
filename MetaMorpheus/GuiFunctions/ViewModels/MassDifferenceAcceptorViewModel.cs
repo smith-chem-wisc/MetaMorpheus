@@ -125,15 +125,15 @@ public class MassDifferenceAcceptorViewModel : BaseViewModel
 
 public class MassDifferenceAcceptorTypeModel : IEquatable<MassDiffAcceptorType>, IEquatable<MassDifferenceAcceptorTypeModel>
 {
-    public int PositiveMissedMonos { get; set; }
-    public int NegativeMissedMonos { get; set; }
-    public MassDiffAcceptorType Type { get; set; }
-    public string Label { get; set; }
-    public string ToolTip { get; set; }
+    public int PositiveMissedMonos { get; init; }
+    public int NegativeMissedMonos { get; init; }
+    public MassDiffAcceptorType Type { get; init; }
+    public string Label { get; init; }
+    public string ToolTip { get; init; }
 
     public bool Equals(MassDifferenceAcceptorTypeModel other)
     {
-        return Type == other.Type;
+        return Type == other!.Type;
     }
 
     public bool Equals(MassDiffAcceptorType other)
@@ -155,7 +155,7 @@ public class MassDifferenceAcceptorTypeModel : IEquatable<MassDiffAcceptorType>,
     }
 }
 
-[ExcludeFromCodeCoverage]
+[ExcludeFromCodeCoverage] // For design time gui display only
 public class MassDifferenceAcceptorModel : MassDifferenceAcceptorViewModel
 {
     public static MassDifferenceAcceptorModel Instance => new MassDifferenceAcceptorModel();
