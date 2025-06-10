@@ -5,10 +5,9 @@ using System.IO;
 using System.Linq;
 using EngineLayer;
 using FlashLFQ;
-using GuiFunctions;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
-using Readers;
+using NUnit.Framework;
+using NUnit.Framework.Legacy;
 using SpectralAveraging;
 using TaskLayer;
 using Mzml = IO.MzML.Mzml;
@@ -162,7 +161,17 @@ namespace Test
             Assert.That(originalMs1Scans.Count == averagedMs1Scans.Count);
             for (var i = 0; i < averagedMs2Scans.Count; i++)
             {
-                Assert.That(originalMs2Scans[i].MassSpectrum.Equals(averagedMs2Scans[i].MassSpectrum));
+                CollectionAssert.AreEqual(originalMs2Scans[i].MassSpectrum.YArray, averagedMs2Scans[i].MassSpectrum.YArray);
+
+                var originalX = originalMs2Scans[i].MassSpectrum.XArray;
+                var averagedX = averagedMs2Scans[i].MassSpectrum.XArray;
+                Assert.That(originalX.Length, Is.EqualTo(averagedX.Length));
+
+                // check that the x values are the same within mzLib writer rounding toleranceS
+                for (var j = 0; j < originalX.Length; j++)
+                {
+                    Assert.That(originalX[j], Is.EqualTo(averagedX[j]).Within(0.0001));
+                }
             }
 
             Directory.Delete(testPath, true);

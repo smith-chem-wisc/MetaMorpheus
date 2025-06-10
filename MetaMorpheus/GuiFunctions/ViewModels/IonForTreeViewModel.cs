@@ -66,7 +66,7 @@ namespace GuiFunctions
                 color = MetaDrawSettings.BetaProductTypeToColor[IonType];
             else
                 color = MetaDrawSettings.ProductTypeToColor[IonType];
-            SelectedColor = AddSpaces(color.GetColorName());
+            SelectedColor = AddSpaces(MetaDrawSettings.PossibleColors[color]);
             ColorBrush = DrawnSequence.ParseColorBrushFromOxyColor(color);
         }
 

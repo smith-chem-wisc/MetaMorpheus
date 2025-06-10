@@ -45,6 +45,13 @@
                         </TextBox.Style>
                     </TextBox>
                 </StackPanel>
+                <GroupBox Header="File Loading Parameters" DockPanel.Dock="Top">
+                    <Expander x:Name="FileLoadExpander" >
+                        <StackPanel>
+                            <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding}"/>
+                        </StackPanel>
+                    </Expander>
+                </GroupBox>
                 <GroupBox Header="Search Parameters" DockPanel.Dock="Top">
                     <Expander x:Name="SearchModeExpander">
                         <StackPanel>
@@ -92,13 +99,13 @@
                                 <StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="maxMissedCleavageLabel" Content="Max Missed Cleavages" />
-                                        <TextBox x:Name="MissedCleavagesTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
+                                        <local:IntegerTexBoxControl x:Name="MissedCleavagesTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     Maximum number of missed proteolytic cleavages allowed.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="proteaseLabel" Content="Protease" />
@@ -114,47 +121,47 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="lblMinPeptideLength" Content="Min Peptide Len" />
-                                        <TextBox x:Name="MinPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MinPeptideLengthTextBox"  Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The minimum allowed peptide length. Must be a positive, non-zero integer.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                     <Label x:Name="lblMaxPeptideLength" Content="Max Peptide Len" />
-                                        <TextBox x:Name="MaxPeptideLengthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
+                                        <local:IntegerTexBoxControl x:Name="MaxPeptideLengthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" TextChanged="ProteaseSpecificUpdate">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The maximum allowed peptide length. Leave empty for no limitation.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="LbMinVariantDepth" Content="Min read depth for variants" />
-                                        <TextBox x:Name="MinVariantDepthTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MinVariantDepthTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The minimum number of reads to consider a nucleic acid sequence variant.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="LbMaxHeterozygousVariants" Content="Max heterozygous variants for combinitorics" />
-                                        <TextBox x:Name="MaxHeterozygousVariantsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MaxHeterozygousVariantsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The maximum number of heterozygous variants for combinitorics.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="MinimumScoreLabel" Content="Minimum score allowed:" />
-                                        <TextBox x:Name="MinScoreAllowed" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MinScoreAllowed" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The minimum MetaMorpheus score allowed for a PSM to be reportable.
@@ -162,7 +169,7 @@
                                                     Decreasing this number increases search time.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                 </StackPanel>
                                 <StackPanel Grid.Column="1">
@@ -188,17 +195,17 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="MaxModsPerPeptideLabel" Content="Max Mods Per Peptide" />
-                                        <TextBox x:Name="MaxModsPerPeptideTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MaxModsPerPeptideTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                     The maximum number of modifications allowed on a single isoform.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="MaxModificationIsoformsLabel" Content="Max Modification Isoforms" />
-                                        <TextBox x:Name="MaxModificationIsoformsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MaxModificationIsoformsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         The maximum number of isoforms (sequences with modifications) allowed from a given unmodified "base-sequence". 
@@ -206,7 +213,7 @@
                                                         This prevents highly ambiguous regions from greatly expanding the search space.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label x:Name="ionsToSearchLabel" Content="Dissociation Type" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
@@ -220,7 +227,7 @@
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Margin="5">
                                         <Label Content="Max Threads" />
-                                        <TextBox x:Name="MaxThreadsTextBox" PreviewTextInput="CheckIfNumber" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
+                                        <local:IntegerTexBoxControl x:Name="MaxThreadsTextBox" Width="45" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
                                             <TextBox.ToolTip>
                                                 <TextBlock>
                                                         By default, MetaMorpheus uses this machine's number of threads minus one to maximize search speed while letting you use your computer for other purposes.
@@ -228,7 +235,7 @@
                                                         Enter a lower number to limit CPU usage.
                                                 </TextBlock>
                                             </TextBox.ToolTip>
-                                        </TextBox>
+                                        </local:IntegerTexBoxControl>
                                     </StackPanel>
                                 </StackPanel>
                             </Grid>

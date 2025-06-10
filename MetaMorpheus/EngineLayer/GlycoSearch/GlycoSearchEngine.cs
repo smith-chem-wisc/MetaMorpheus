@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using EngineLayer;
 using MassSpectrometry;
+using EngineLayer.SpectrumMatch;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -260,10 +261,9 @@ namespace EngineLayer.GlycoSearch
 
                             if (preString == currentString) //If peptides have the same sequence and their score is almost the same
                             {
-                                foreach ((int, PeptideWithSetModifications Peptide) bestMatchPeptide in gsm.BestMatchingBioPolymersWithSetMods) // We should add tje new ProteinMatch to the gsm. 
+                                foreach (SpectralMatchHypothesis bestMatchPeptide in gsm.BestMatchingBioPolymersWithSetMods) // We should add tje new ProteinMatch to the gsm. 
                                 {                                                                                                               // Because the indentical sequence may from the different protein.
-                                    GlobalGsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide, gsm.BioPolymersWithSetModsToMatchingFragments[bestMatchPeptide.Peptide]);
-
+                                    GlobalGsms[scanIndex].Last().AddProteinMatch(bestMatchPeptide);
                                 }
                             }
                             else

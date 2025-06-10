@@ -1,15 +1,18 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Omics.BioPolymer;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
+using Org.BouncyCastle.Asn1;
 
 namespace Test
 {
@@ -60,11 +63,11 @@ namespace Test
             // ensures that protein out put contains the correct number of proteins to match the following conditions.
             // all proteins in DB have baseSequence!=null (not ambiguous)
             // all proteins that belong to a protein group are written to DB
-            Assert.AreEqual(18, proteins.Count);
+            Assert.That(proteins.Count, Is.EqualTo(18));
             int totalNumberOfMods = proteins.Sum(p => p.OneBasedPossibleLocalizedModifications.Count + p.SequenceVariations.Sum(sv => sv.OneBasedModifications.Count));
 
             //tests that modifications are being done correctly
-            Assert.AreEqual(0, totalNumberOfMods);
+            Assert.That(totalNumberOfMods, Is.EqualTo(8));
             Directory.Delete(outputFolder, true);
         }
 
@@ -134,15 +137,15 @@ namespace Test
                 DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out Dictionary<string, Modification> ok);
 
             //Dictionary 'ok' contains unknown modifications. There are no unknown modifications in this test.
-            Assert.AreEqual(0, ok.Count);
+            Assert.That(ok.Count, Is.EqualTo(0));
             //One protein is read from the .xml database and one decoy is created. Therefore, the list of proteins contains 2 entries.
-            Assert.AreEqual(2, protein.Count);
+            Assert.That(protein.Count, Is.EqualTo(2));
             //The original database had two localized mods on the protein. Therefore. both protein and decoy should have two mods.
-            Assert.AreEqual(2, protein[0].OneBasedPossibleLocalizedModifications.Count);
+            Assert.That(protein[0].OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
             List<int> foundResidueIndicies = protein[0].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             List<int> expectedResidueIndices = new List<int>() { 1, 3 };
             Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
-            Assert.AreEqual(2, protein[1].OneBasedPossibleLocalizedModifications.Count);
+            Assert.That(protein[1].OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(2));
             foundResidueIndicies = protein[1].OneBasedPossibleLocalizedModifications.Select(k => k.Key).ToList();
             expectedResidueIndices = new List<int>() { 4, 6 }; //originally modified residues are now at the end in the decoy
             Assert.That(foundResidueIndicies, Is.EquivalentTo(expectedResidueIndices));
@@ -152,14 +155,14 @@ namespace Test
 
             var digestedList = protein[0].Digest(task1.CommonParameters.DigestionParams, new List<Modification> { },
                 variableModifications).ToList();
-            Assert.AreEqual(4, digestedList.Count);
+            Assert.That(digestedList.Count, Is.EqualTo(4));
 
             //Set Peptide with 1 mod at position 3
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[1];
+            var pepWithSetMods1 = digestedList[1];
 
             //Finally Write MZML file
-            Assert.AreEqual("PEP[ConnorModType:ConnorMod on P]TID", pepWithSetMods1.FullSequence);//this might be base sequence
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications> { pepWithSetMods1 });
+            Assert.That(pepWithSetMods1.FullSequence, Is.EqualTo("PEP[ConnorModType:ConnorMod on P]TID"));//this might be base sequence
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods> { pepWithSetMods1 });
             string mzmlName = @"hello.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
 
@@ -173,14 +176,14 @@ namespace Test
 
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
             //check length
-            Assert.AreEqual(1, proteins[0].OneBasedPossibleLocalizedModifications.Count);
+            Assert.That(proteins[0].OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(1));
             //check location (key)
-            Assert.AreEqual(true, proteins[0].OneBasedPossibleLocalizedModifications.ContainsKey(3));
+            Assert.That(proteins[0].OneBasedPossibleLocalizedModifications.ContainsKey(3), Is.EqualTo(true));
             List<Modification> listOfMods = proteins[0].OneBasedPossibleLocalizedModifications[3];
             //check Type, count, ID
-            Assert.AreEqual(listOfMods[0].ModificationType, "ConnorModType");
-            Assert.AreEqual(listOfMods[0].IdWithMotif, "ConnorMod on P");
-            Assert.AreEqual(listOfMods.Count, 1);
+            Assert.That(listOfMods[0].ModificationType, Is.EqualTo("ConnorModType"));
+            Assert.That(listOfMods[0].IdWithMotif, Is.EqualTo("ConnorMod on P"));
+            Assert.That(listOfMods.Count, Is.EqualTo(1));
             Directory.Delete(outputFolder, true);
             File.Delete(xmlName);
             File.Delete(mzmlName);
@@ -284,14 +287,14 @@ namespace Test
             var digestedList = protein[0].Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications).ToList();
 
             //Set Peptide with 1 mod at position 3
-            PeptideWithSetModifications pepWithSetMods1 = digestedList[0];
-            PeptideWithSetModifications pepWithSetMods2 = digestedList[1];
-            PeptideWithSetModifications pepWithSetMods3 = digestedList[2];
-            PeptideWithSetModifications pepWithSetMods4 = digestedList[3];
-            PeptideWithSetModifications pepWithSetMods5 = digestedList[4];
+            var pepWithSetMods1 = digestedList[0];
+            var pepWithSetMods2 = digestedList[1];
+            var pepWithSetMods3 = digestedList[2];
+            var pepWithSetMods4 = digestedList[3];
+            var pepWithSetMods5 = digestedList[4];
 
             //CUSTOM PEP
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { pepWithSetMods1, pepWithSetMods2, pepWithSetMods3, pepWithSetMods4, pepWithSetMods5 });
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -303,26 +306,26 @@ namespace Test
             engine.Run();
             string final = Path.Combine(MySetUpClass.outputFolder, "task5", "selectedModspruned.xml");
             var proteins = ProteinDbLoader.LoadProteinXML(final, true, DecoyType.Reverse, new List<Modification>(), false, new List<string>(), out ok);
-            var Dlist = proteins[0].GetVariantProteins().SelectMany(vp => vp.Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications)).ToList();
-            Assert.AreEqual(Dlist[0].NumFixedMods, 1);
+            var Dlist = proteins[0].GetVariantBioPolymers().SelectMany(vp => vp.Digest(task5.CommonParameters.DigestionParams, fixedModifications, variableModifications)).ToList();
+            Assert.That(Dlist[0].NumFixedMods, Is.EqualTo(1));
 
             //check length
-            Assert.AreEqual(proteins[0].OneBasedPossibleLocalizedModifications.Count, 3);
+            Assert.That(proteins[0].OneBasedPossibleLocalizedModifications.Count, Is.EqualTo(3));
             List<Modification> listOfLocalMods = new List<Modification>();
             listOfLocalMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[2]);
             listOfLocalMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[3]);
             listOfLocalMods.AddRange(proteins[0].OneBasedPossibleLocalizedModifications[11]);
 
             //check Type, count, ID
-            Assert.AreEqual(listOfLocalMods[0].ModificationType, "Common Fixed");
-            Assert.AreEqual(listOfLocalMods[2].ModificationType, "missing");
-            Assert.IsFalse(listOfLocalMods.Contains(connorMod)); //make sure that mod set not to show up is not in mod list
+            Assert.That(listOfLocalMods[0].ModificationType, Is.EqualTo("Common Fixed"));
+            Assert.That(listOfLocalMods[2].ModificationType, Is.EqualTo("missing"));
+            Assert.That(!listOfLocalMods.Contains(connorMod)); //make sure that mod set not to show up is not in mod list
 
-            Assert.AreEqual(listOfLocalMods[0].IdWithMotif, "Default(Mod in DB and Observed) on P");
-            Assert.AreEqual(listOfLocalMods[1].IdWithMotif, "ModToAlwaysAppear on P");
+            Assert.That(listOfLocalMods[0].IdWithMotif, Is.EqualTo("Default(Mod in DB and Observed) on P"));
+            Assert.That(listOfLocalMods[1].IdWithMotif, Is.EqualTo("ModToAlwaysAppear on P"));
             //Makes sure Mod that was not in the DB but was observed is in pruned DB
-            Assert.AreEqual(listOfLocalMods[2].IdWithMotif, "ModObservedNotinDB on E");
-            Assert.AreEqual(listOfLocalMods.Count, 3);
+            Assert.That(listOfLocalMods[2].IdWithMotif, Is.EqualTo("ModObservedNotinDB on E"));
+            Assert.That(listOfLocalMods.Count, Is.EqualTo(3));
             Directory.Delete(outputFolder, true);
             File.Delete(mzmlName);
             File.Delete(xmlName);
@@ -380,7 +383,7 @@ namespace Test
             numSpectraPerFile.Add("", stuffForSpectraFile);
             testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -437,7 +440,7 @@ namespace Test
 
             var protein1 = new Protein("PEPVIDEKPEPT", "1", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 12, new List<Modification> { modToWrite } } }, sequenceVariations: variants);
             var protein2 = new Protein("PEPIDPEPT", "2", oneBasedModifications: new Dictionary<int, List<Modification>> { { 1, new List<Modification> { modToNotWrite } }, { 9, new List<Modification> { modToWrite } } });
-            var protein1Variants = protein1.GetVariantProteins(1,0);           
+            var protein1Variants = protein1.GetVariantBioPolymers(1,0);           
             
             string path = @"temp";
 
@@ -485,7 +488,7 @@ namespace Test
             numSpectraPerFile.Add("", stuffForSpectraFile);
             testPostTaskParameters.NumMs2SpectraPerFile = numSpectraPerFile;
 
-            MsDataFile myMsDataFile = new TestDataFile(new List<PeptideWithSetModifications>
+            MsDataFile myMsDataFile = new TestDataFile(new List<IBioPolymerWithSetMods>
             { peptideObserved});
             string mzmlName = @"newMzml.mzML";
             Readers.MzmlMethods.CreateAndWriteMyMzmlWithCalibratedSpectra(myMsDataFile, mzmlName, false);
@@ -517,10 +520,10 @@ namespace Test
             var proteinsLoaded = ProteinDbLoader.LoadProteinXML(path, true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods);
 
             // assert that mods on proteins are the same before/after task is run            
-            Assert.AreEqual(protein1Variants.First().Accession, proteinsLoaded.First().Accession);
-            Assert.AreEqual(protein1Variants.First().OneBasedPossibleLocalizedModifications.Count(), proteinsLoaded.First().OneBasedPossibleLocalizedModifications.Count());
-            Assert.AreEqual(protein2.OneBasedPossibleLocalizedModifications.Count(), proteinsLoaded.ElementAt(1).OneBasedPossibleLocalizedModifications.Count());
-           
+            Assert.That(protein1Variants.First().Accession, Is.EqualTo(proteinsLoaded.First().Accession));
+            Assert.That(protein1Variants.First().OneBasedPossibleLocalizedModifications.Count(), Is.EqualTo(proteinsLoaded.First().OneBasedPossibleLocalizedModifications.Count()));
+            Assert.That(protein2.OneBasedPossibleLocalizedModifications.Count(), Is.EqualTo(proteinsLoaded.ElementAt(1).OneBasedPossibleLocalizedModifications.Count()));
+
             // assert that protein pruned DB has correct proteins mods
             var proteinPruned = ProteinDbLoader.LoadProteinXML(Path.Combine(TestContext.CurrentContext.TestDirectory, @"PrunedDbTest/fakeDbproteinPruned.xml"), true, DecoyType.None, GlobalVariables.AllModsKnown, false, new List<string>(), out var unknownMods1);
             Assert.That(proteinPruned.Count().Equals(1));
@@ -530,6 +533,39 @@ namespace Test
             Assert.That(modPruned.Count().Equals(2));
             Assert.That(modPruned.ElementAt(0).OneBasedPossibleLocalizedModifications.Count().Equals(1));
             Assert.That(modPruned.ElementAt(1).OneBasedPossibleLocalizedModifications.Count().Equals(1));
+        }
+
+        [Test]
+        public static void TestContaminantGPTMD()
+        {
+            GptmdTask task1 = new GptmdTask
+            {
+                CommonParameters = new CommonParameters(),
+                GptmdParameters = new GptmdParameters
+                {
+                    ListOfModsGptmd = GlobalVariables.AllModsKnown.Where(b =>
+                        b.ModificationType.Equals("Common Artifact")
+                        || b.ModificationType.Equals("Common Biological")
+                        || b.ModificationType.Equals("Metal")
+                        || b.ModificationType.Equals("Less Common")
+                        ).Select(b => (b.ModificationType, b.IdWithMotif)).ToList()
+                }
+            };
+
+            List<(string, MetaMorpheusTask)> taskList = new List<(string, MetaMorpheusTask)> { ("task1", task1) };
+            string mzmlName = @"TestData\PrunedDbSpectra.mzml";
+            string fastaName = @"TestData\DbForPrunedDb.fasta";
+            string contaminantName = @"DatabaseTests\ProteaseModTest.fasta";
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestPrunedGeneration");
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { mzmlName },
+                new List<DbForTask> { new DbForTask(fastaName, false), new DbForTask(contaminantName, true) },
+                outputFolder);
+            engine.Run();
+            string final = Path.Combine(MySetUpClass.outputFolder, "task1", "DbForPrunedDbGPTMD.xml");
+            string contaminantFinal = Path.Combine(MySetUpClass.outputFolder, "task1", "ProteaseModTestGPTMD.xml");
+            Assert.That(File.Exists(final));
+            Assert.That(File.Exists(contaminantFinal));
+            Directory.Delete(outputFolder, true);
         }
     }
 }

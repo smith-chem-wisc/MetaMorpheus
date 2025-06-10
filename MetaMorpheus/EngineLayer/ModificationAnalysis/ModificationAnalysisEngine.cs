@@ -59,7 +59,7 @@ namespace EngineLayer.ModificationAnalysis
             HashSet<(string, string, int)> modsOnProteins = new HashSet<(string, string, int)>();
             foreach (var psm in forObserved)
             {
-                var singlePeptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                var singlePeptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
                 foreach (var modInProtein in singlePeptide.Parent.OneBasedPossibleLocalizedModifications.Where(b => b.Key >= singlePeptide.OneBasedStartResidue && b.Key <= singlePeptide.OneBasedEndResidue))
 
                     foreach (var huh in modInProtein.Value)
@@ -70,7 +70,7 @@ namespace EngineLayer.ModificationAnalysis
             HashSet<(string, string, int)> modsSeenAndLocalized = new HashSet<(string, string, int)>();
             foreach (var psm in forUnambiguouslyLocalized)
             {
-                var singlePeptide = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                var singlePeptide = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
                 foreach (var nice in singlePeptide.AllModsOneIsNterminus)
                 {
                     int locInProtein;
@@ -117,7 +117,7 @@ namespace EngineLayer.ModificationAnalysis
                 if (unlocalizedFormulas.ContainsKey(representativePsm.ModsChemicalFormula))
                     unlocalizedFormulas[representativePsm.ModsChemicalFormula] += 1;
                 else
-                    unlocalizedFormulas.Add(representativePsm.ModsChemicalFormula, 1);
+                    unlocalizedFormulas.Add(representativePsm.ModsChemicalFormula, 1); 
             }
 
             myAnalysisResults.CountOfEachModSeenOnProteins = modsOnProteins.GroupBy(b => b.Item2).ToDictionary(b => b.Key, b => b.Count());

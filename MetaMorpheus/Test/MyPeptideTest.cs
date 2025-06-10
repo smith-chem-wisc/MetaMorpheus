@@ -1,11 +1,11 @@
-﻿                                                                                                                                                                                                            using Chemistry;
+﻿using Chemistry;
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.Indexing;
 using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -13,8 +13,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-                                                                                                                                                                                                            using Omics.Modifications;
-                                                                                                                                                                                                            using UsefulProteomicsDatabases;
+using Omics.Modifications;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {
@@ -54,7 +54,7 @@ namespace Test
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpectralLibrary);
 
             cse.Run();
-            Assert.AreEqual(3, globalPsms[0].MatchedFragmentIons.Count);
+            Assert.That(globalPsms[0].MatchedFragmentIons.Count, Is.EqualTo(3));
         }
 
         [Test]
@@ -90,8 +90,8 @@ namespace Test
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpectralLibrary);
 
             cse.Run();
-            Assert.Less(globalPsms[0].Score, 2);
-            Assert.Greater(globalPsms[0].Score, 1);
+            Assert.That(globalPsms[0].Score < 2);
+            Assert.That(globalPsms[0].Score > 1);
         }
 
         [Test]
@@ -127,8 +127,8 @@ namespace Test
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpetralLibrary);
 
             cse.Run();
-            Assert.Less(globalPsms[0].Score, 2);
-            Assert.Greater(globalPsms[0].Score, 1);
+            Assert.That(globalPsms[0].Score < 2);
+            Assert.That(globalPsms[0].Score > 1);
         }
 
         [Test]
@@ -159,8 +159,8 @@ namespace Test
             var cse = new ModernSearchEngine(globalPsms, arrayOfSortedMS2Scans, indexResults.PeptideIndex, indexResults.FragmentIndex, 0, CommonParameters, null, new OpenSearchMode(), 0, new List<string>());
 
             cse.Run();
-            Assert.Less(globalPsms[0].Score, 2);
-            Assert.Greater(globalPsms[0].Score, 1);
+            Assert.That(globalPsms[0].Score < 2);
+            Assert.That(globalPsms[0].Score > 1);
         }
 
         [Test]
@@ -188,7 +188,7 @@ namespace Test
                 new List<Protein> { prot }, new OpenSearchMode(), CommonParameters, null, null, new List<string>(), writeSpetralLibrary);
 
             cse.Run();
-            Assert.IsNull(globalPsms[0]);
+            Assert.That(globalPsms[0], Is.Null);
         }
     }
 }

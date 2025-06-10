@@ -11,7 +11,7 @@
     <Grid DataContext="{Binding}" d:DataContext="{x:Type guiFunctions:PtmLegendViewModel}">
         <StackPanel>
             <StackPanel Visibility="{Binding Visibility, Converter={local:BooleanToVisibilityConverter}}" >
-                    <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="12" FontWeight="DemiBold" />
+                <TextBlock Text="{Binding Header}" HorizontalAlignment="Center" TextAlignment="Center" FontSize="{Binding SpectrumDescriptionFontSize}" FontWeight="DemiBold" />
 
                     <!-- each ptm in the viewmodel -->
                     <ItemsControl ItemsSource="{Binding LegendItemViewModels}" >
@@ -19,7 +19,7 @@
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                     <TextBlock Text="{Binding Name}" Margin="5 0 5 0" Width="Auto" TextAlignment="Left"
-                                               FontSize="12" FontWeight="DemiBold" HorizontalAlignment="Left"/>
+                                               FontSize="{Binding DataContext.SpectrumDescriptionFontSize, RelativeSource={RelativeSource AncestorType=UserControl}}" FontWeight="DemiBold" HorizontalAlignment="Left"/>
                                     <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
                                              Fill="{Binding ColorBrush}" Margin="10 0 0 0" />
                                 </StackPanel>

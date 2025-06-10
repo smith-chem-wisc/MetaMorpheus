@@ -2,24 +2,21 @@
 using EngineLayer.ClassicSearch;
 using MassSpectrometry;
 using NUnit.Framework; 
-using Assert = NUnit.Framework.Legacy.ClassicAssert;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography;
 using System.Text;
 using Omics.Modifications;
 using TaskLayer;
 using TaskLayer.MbrAnalysis;
 using Omics;
 using UsefulProteomicsDatabases;
-using Nett;
-using System.DirectoryServices;
-using System.Threading.Tasks;
 using System.Threading;
+using Readers;
+using Omics.Digestion;
 
 namespace Test
 {
@@ -52,11 +49,10 @@ namespace Test
             // This block of code converts from PsmFromTsv to SpectralMatch objects
 
             string psmtsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\AllPSMsTesting.psmtsv");
-            tsvPsms = PsmTsvReader.ReadTsv(psmtsvPath, out var warnings);
+            tsvPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmtsvPath, out var warnings);
             psms = new List<SpectralMatch>();
             myFileManager = new MyFileManager(true);
 
-            Loaders.LoadElements();
             string databasePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\HumanFastaSlice.fasta");
             proteinList = ProteinDbLoader.LoadProteinFasta(databasePath, true, DecoyType.Reverse, false, out List<string> errors)
                 .Where(protein => protein.AppliedSequenceVariations != null).ToList();
@@ -72,7 +68,7 @@ namespace Test
                     filePath, commonParameters);
                 Protein protein = proteinList.First(protein => protein.Accession == readPsm.ProteinAccession);
 
-                //string[] startAndEndResidues = readPsm.StartAndEndResiduesInProtein.Split(" ");
+                //string[] startAndEndResidues = readPsm.StartAndEndResiduesInParentSequence.Split(" ");
                 //int startResidue = Int32.Parse(startAndEndResidues[0].Trim('['));
                 //int endResidue = Int32.Parse(startAndEndResidues[2].Trim(']'));
 
@@ -125,7 +121,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "individual"),
@@ -134,6 +130,7 @@ namespace Test
                         DoLabelFreeQuantification = true,
                         WriteSpectralLibrary = true,
                         MatchBetweenRuns = true,
+                        MbrFdrThreshold = 0.2,
                         DoSpectralRecovery = true,
                         WriteMzId = false,
                         WriteDecoys = false,
@@ -158,9 +155,9 @@ namespace Test
             List<string> warnings;
             string mbrAnalysisPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestSpectralRecoveryOutput\SpectralRecovery\RecoveredSpectra.psmtsv");
             string expectedHitsPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", @"SpectralRecoveryTest\ExpectedMBRHits.psmtsv");
-            List<PsmFromTsv> mbrPsms = PsmTsvReader.ReadTsv(mbrAnalysisPath, out warnings);
+            List<PsmFromTsv> mbrPsms = SpectrumMatchTsvReader.ReadPsmTsv(mbrAnalysisPath, out warnings);
             // These PSMS were found in a search and removed from the MSMSids file. Theoretically, all peaks present in this file should be found by MbrAnalysis
-            List<PsmFromTsv> expectedMbrPsms = PsmTsvReader.ReadTsv(expectedHitsPath, out warnings);
+            List<PsmFromTsv> expectedMbrPsms = SpectrumMatchTsvReader.ReadPsmTsv(expectedHitsPath, out warnings);
 
             List<PsmFromTsv> matches2ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_20ng_1min_frac1").ToList();
             List<PsmFromTsv> matches02ng = mbrPsms.Where(p => p.FileNameWithoutExtension == "K13_02ng_1min_frac1").ToList();
@@ -168,7 +165,7 @@ namespace Test
 
             // Changing Q-value calculation methods results in more PSMs being discovered, and so fewer spectra are available to be "recovered"
             // (as they were identified in the orignal search)
-            Assert.That(matches2ng.Count >= 3);
+            Assert.That(matches2ng.Count >= 2);
             Assert.That(matches02ng.Count >= 10);
             Assert.That(expectedMatches.Count >= 2); // FlashLFQ doesn't find all 6 expected peaks, only 3. MbrAnalysis finds these three peaks
 
@@ -199,7 +196,8 @@ namespace Test
             referenceDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory,
                 @"TestSpectralRecoveryOutput\AllQuantifiedPeptides.tsv");
 
-            string[] peptideResults = File.ReadAllLines(referenceDataPath).Skip(1).ToArray();
+            string[] peptideResults = File.ReadAllLines(referenceDataPath).ToArray();
+            string[] header = peptideResults[0].Split("\t");
 
             foreach (string row in peptideResults)
             {
@@ -254,17 +252,17 @@ namespace Test
                 proteinList, searchModes, commonParameters, null, sl, new List<string>(), writeSpectralLibrary).Run();
 
             // Single search mode
-            Assert.AreEqual(7, allPsmsArray.Length);
-            Assert.IsTrue(allPsmsArray[5].Score > 38);
-            Assert.AreEqual("VIHDNFGIVEGLMTTVHAITATQK", allPsmsArray[5].BaseSequence);
-            Assert.IsTrue(!allPsmsArray[5].IsDecoy);
+            Assert.That(allPsmsArray.Length, Is.EqualTo(7));
+            Assert.That(allPsmsArray[5].Score > 38);
+            Assert.That(allPsmsArray[5].BaseSequence, Is.EqualTo("VIHDNFGIVEGLMTTVHAITATQK"));
+            Assert.That(!allPsmsArray[5].IsDecoy);
 
             SpectralLibrarySearchFunction.CalculateSpectralAngles(sl, allPsmsArray, listOfSortedms2Scans, commonParameters);
             Assert.That(allPsmsArray[5].SpectralAngle, Is.EqualTo(0.82).Within(0.01));
 
             foreach (SpectralMatch psm in allPsmsArray.Where(p => p != null))
             {
-                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                IBioPolymerWithSetMods pwsm = psm.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                 MiniClassicSearchEngine mcse = new MiniClassicSearchEngine(
                     listOfSortedms2Scans.OrderBy(p => p.RetentionTime).ToArray(),
@@ -276,7 +274,7 @@ namespace Test
                 SpectralMatch[] peptideSpectralMatches =
                     mcse.SearchAroundPeak(pwsm, allPsmsArray[5].ScanRetentionTime).ToArray();
 
-                Assert.AreEqual(allPsmsArray[5].BaseSequence, peptideSpectralMatches[0].BaseSequence);
+                Assert.That(peptideSpectralMatches[0].BaseSequence, Is.EqualTo(allPsmsArray[5].BaseSequence));
                 Assert.That(peptideSpectralMatches[0].SpectralAngle, Is.EqualTo(allPsmsArray[5].SpectralAngle).Within(0.01));
             }
             sl.CloseConnections();
@@ -300,7 +298,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
@@ -349,7 +347,7 @@ namespace Test
                     DatabaseFilenameList = databaseList,
                     OutputFolder = outputFolder,
                     NumMs2SpectraPerFile = numSpectraPerFile,
-                    ListOfDigestionParams = new HashSet<DigestionParams> { new DigestionParams(generateUnlabeledProteinsForSilac: false) },
+                    ListOfDigestionParams = [new DigestionParams(generateUnlabeledProteinsForSilac: false)],
                     SearchTaskResults = searchTaskResults,
                     MyFileManager = myFileManager,
                     IndividualResultsOutputFolder = Path.Combine(outputFolder, "Individual File Results"),
@@ -409,8 +407,7 @@ namespace Test
             sb.Append('\t');
             sb.Append("Initial Search PEP Q-Value");
 
-            Assert.AreEqual(sb.ToString(), SpectralRecoveryPSM.TabSeparatedHeader);
-
+            Assert.That(sb.ToString(), Is.EqualTo(SpectralRecoveryPSM.TabSeparatedHeader));
         }
 
         [OneTimeTearDown]

@@ -40,6 +40,9 @@ namespace EngineLayer.Calibration
             MinMS1isotopicPeaksNeededForConfirmedIdentification = minMS1isotopicPeaksNeededForConfirmedIdentification;
         }
 
+        private readonly object _ms1Lock = new();
+        private readonly object _ms2Lock = new();
+
         protected override MetaMorpheusEngineResults RunSpecific()
         {
             Status("Extracting data points:");
@@ -51,9 +54,6 @@ namespace EngineLayer.Calibration
             int numMs2MassChargeCombinationsThatAreIgnoredBecauseOfTooManyPeaks = 0;
             List<LabeledDataPoint> Ms1List = new List<LabeledDataPoint>();
             List<LabeledDataPoint> Ms2List = new List<LabeledDataPoint>();
-
-            object lockObj = new object();
-            object lockObj2 = new object();
 
             int maxThreadsPerFile = CommonParameters.MaxThreadsToUsePerFile;
             int[] threads = Enumerable.Range(0, maxThreadsPerFile).ToArray();
@@ -71,10 +71,10 @@ namespace EngineLayer.Calibration
                     int ms2scanNumber = identification.ScanNumber;
                     int peptideCharge = identification.ScanPrecursorCharge;
                     //skip if ambiguous
-                    if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.Peptide.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
+                    if (identification.FullSequence == null || identification.BestMatchingBioPolymersWithSetMods.Any(p => p.SpecificBioPolymer.AllModsOneIsNterminus.Any(m => m.Value.ChemicalFormula == null)))
                         continue;
 
-                    var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().Peptide;
+                    var representativeSinglePeptide = identification.BestMatchingBioPolymersWithSetMods.First().SpecificBioPolymer;
 
                     // Get the peptide, don't forget to add the modifications!!!!
                     var SequenceWithChemicalFormulas = representativeSinglePeptide.SequenceWithChemicalFormulas;
@@ -85,7 +85,7 @@ namespace EngineLayer.Calibration
 
                     List<LabeledDataPoint> ms2tuple = SearchMS2Spectrum(GoodScans[matchIndex], identification, ProductMassTolerance);
 
-                    lock (lockObj2)
+                    lock (_ms2Lock)
                     {
                         Ms2List.AddRange(ms2tuple);
                     }
@@ -102,7 +102,7 @@ namespace EngineLayer.Calibration
 
                     var ms1tupleForward = SearchMS1Spectra(theoreticalMasses, theoreticalIntensities, ms2scanNumber, 1, peptideCharge, identification);
 
-                    lock (lockObj)
+                    lock (_ms1Lock)
                     {
                         Ms1List.AddRange(ms1tupleBack.Item1);
                         numMs1MassChargeCombinationsConsidered += ms1tupleBack.Item2;
@@ -236,6 +236,9 @@ namespace EngineLayer.Calibration
                 double theoreticalMass = matchedIon.NeutralTheoreticalProduct.NeutralMass;
                 //get envelopes that match
                 var envelopesThatMatch = isotopicEnvelopes.Where(x => ms2Tolerance.Within(x.MonoisotopicMass, theoreticalMass)).OrderBy(x => Math.Abs(x.MonoisotopicMass - theoreticalMass)).ToList();
+                
+                if(envelopesThatMatch.Count == 0)
+                    continue;
                 //only allow one envelope per charge state
                 bool[] chargeStateFound = new bool[envelopesThatMatch.Max(x => x.Charge) + 1];
 

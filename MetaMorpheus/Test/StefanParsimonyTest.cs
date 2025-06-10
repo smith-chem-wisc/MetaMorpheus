@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -144,10 +144,10 @@ namespace Test
             // because modified peptides were NOT considered as unique, 
             // then there should be one ambiguous protein group after parsimony, 
             // and two protein accessions for each peptide
-            Assert.AreEqual(1, countOfProteinGroups);
-            Assert.AreEqual(2, results.SortedAndScoredProteinGroups.First().Proteins.Count);
-            Assert.IsNull(psm1.Accession);
-            Assert.IsNull(psm2.Accession);
+            Assert.That(countOfProteinGroups, Is.EqualTo(1));
+            Assert.That(results.SortedAndScoredProteinGroups.First().Proteins.Count, Is.EqualTo(2));
+            Assert.That(psm1.Accession, Is.Null);
+            Assert.That(psm2.Accession, Is.Null);
         }
 
         [Test]
@@ -179,7 +179,7 @@ namespace Test
             };
 
             // this PSM has a target and a decoy
-            psms[0].AddOrReplace(pep2, 1, 0, true, new List<MatchedFragmentIon>() { mfiC3, mfiC4 }, 0);
+            psms[0].AddOrReplace(pep2, 1, 0, true, new List<MatchedFragmentIon>() { mfiC3, mfiC4 });
 
             psms.ForEach(p => p.ResolveAllAmbiguities());
             psms.ForEach(p => p.SetFdrValues(0, 0, 0, 0, 0, 0, 0, 0));
@@ -238,8 +238,8 @@ namespace Test
             ProteinScoringAndFdrEngine proteinScoringEngine = new ProteinScoringAndFdrEngine(proteinParsimonyResult.ProteinGroups, psms, false, true, true, new CommonParameters(), null, new List<string>());
             ProteinScoringAndFdrResults results = (ProteinScoringAndFdrResults)proteinScoringEngine.Run();
 
-            Assert.IsTrue(results.SortedAndScoredProteinGroups.Count == 3);
-            Assert.IsTrue(results.SortedAndScoredProteinGroups[1].QValue == 0.5);
+            Assert.That(results.SortedAndScoredProteinGroups.Count == 3);
+            Assert.That(results.SortedAndScoredProteinGroups[1].QValue == 0.5);
         }
     }
 }

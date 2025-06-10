@@ -1,10 +1,7 @@
 ﻿using EngineLayer;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
-using System.Threading;
 
 namespace Test
 {
@@ -16,6 +13,9 @@ namespace Test
         {
             string originalDataDir = GlobalVariables.DataDir.ToString();
             string customDataDir = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CustomDataDir");
+
+            if (Directory.Exists(customDataDir))
+                Directory.Delete(customDataDir, true);
 
             Assert.That(!Directory.Exists(customDataDir));
 
@@ -81,6 +81,41 @@ namespace Test
             Assert.That(GlobalVariables.GetFileExtension(test7, getUncompressedExtension: false) == ".fasta.bGZ");
             Assert.That(GlobalVariables.GetFileExtension(test7, getUncompressedExtension: true) == ".fasta");
             Assert.That(GlobalVariables.GetFilenameWithoutExtension(test7) == "my.Fi.le");
+        }
+
+        [Test]
+        public static void TestGetSpectralMatchLabel()
+        {
+            Assert.That(AnalyteType.Peptide.GetSpectralMatchLabel(), Is.EqualTo("PSM"));
+            Assert.That(AnalyteType.Proteoform.GetSpectralMatchLabel(), Is.EqualTo("PSM"));
+            Assert.That(AnalyteType.Oligo.GetSpectralMatchLabel(), Is.EqualTo("OSM"));
+        }
+
+        [Test]
+        public static void TestGetSpectralMatchExtension()
+        {
+            Assert.That(AnalyteType.Peptide.GetSpectralMatchExtension(), Is.EqualTo("psmtsv"));
+            Assert.That(AnalyteType.Proteoform.GetSpectralMatchExtension(), Is.EqualTo("psmtsv"));
+            Assert.That(AnalyteType.Oligo.GetSpectralMatchExtension(), Is.EqualTo("osmtsv"));
+        }
+
+        [Test]
+        public static void TestGetUniqueFormLabel()
+        {
+            Assert.That(AnalyteType.Peptide.GetUniqueFormLabel(), Is.EqualTo("Peptide"));
+            Assert.That(AnalyteType.Peptide.ToString(), Is.EqualTo("Peptide"));
+            Assert.That(AnalyteType.Proteoform.GetUniqueFormLabel(), Is.EqualTo("Proteoform"));
+            Assert.That(AnalyteType.Proteoform.ToString(), Is.EqualTo("Proteoform"));
+            Assert.That(AnalyteType.Oligo.GetUniqueFormLabel(), Is.EqualTo("Oligo"));
+            Assert.That(AnalyteType.Oligo.ToString(), Is.EqualTo("Oligo"));
+        }
+
+        [Test]
+        public static void TestGetBioPolymerLabel()
+        {
+            Assert.That(AnalyteType.Peptide.GetBioPolymerLabel(), Is.EqualTo("Protein"));
+            Assert.That(AnalyteType.Proteoform.GetBioPolymerLabel(), Is.EqualTo("Protein"));
+            Assert.That(AnalyteType.Oligo.GetBioPolymerLabel(), Is.EqualTo("Transcript"));
         }
     }
 }

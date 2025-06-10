@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using EngineLayer;
 using Nett;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
+using Readers;
 using TaskLayer;
 
 
@@ -30,9 +29,9 @@ namespace Test
 
             string psmFile = Path.Combine(outputFolder, @"SearchTOML\AllPSMs.psmtsv");
 
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
             PsmFromTsv psm = parsedPsms.First();
-            Assert.AreEqual("TTQNQKSQDVELWEGEVVKEL", psm.BaseSeq); //base sequence ends in leucine as expected
+            Assert.That(psm.BaseSeq, Is.EqualTo("TTQNQKSQDVELWEGEVVKEL")); //base sequence ends in leucine as expected
             Directory.Delete(outputFolder,true);
         }
     }

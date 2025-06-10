@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Omics.Digestion;
 using Omics.Fragmentation;
 using Omics.Modifications;
@@ -13,6 +13,8 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework.Legacy;
+using Omics.SpectrumMatch;
+using Readers;
 
 namespace Test
 {
@@ -23,24 +25,24 @@ namespace Test
         public static void ReadOGlycoSinglePsms()
         {
             string psmFile = @"TestData\oglycoSinglePsms.psmtsv";
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-            Assert.AreEqual(2, parsedPsms.Count);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            Assert.That(parsedPsms.Count, Is.EqualTo(2));
         }
 
         [Test]
         public static void ReadOGlycoPsms()
         {
             string psmFile = @"TestData\oglyco.psmtsv";
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-            Assert.AreEqual(9, parsedPsms.Count);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            Assert.That(parsedPsms.Count, Is.EqualTo(9));
         }
 
         [Test]
         public static void ReadExcelEditedPsms()
         {
             string psmFile = @"TestData\ExcelEditedPeptide.psmtsv";
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-            Assert.AreEqual(1, parsedPsms.Count);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            Assert.That(parsedPsms.Count, Is.EqualTo(1));
             IEnumerable<string> expectedIons = new string[] { "y3+1", "y4+1", "b4+1", "b5+1", "b6+1", "b8+1" };
             Assert.That(6 == parsedPsms[0].MatchedIons.Select(p => p.Annotation).Intersect(expectedIons).Count());
             Assert.That("TADDYTWEGDVGNDNAYQKFVK", Is.EqualTo(parsedPsms[0].FullSequence));
@@ -51,7 +53,7 @@ namespace Test
         {
             var metadrawLogic = new MetaDrawLogic();
             string psmFile = @"TestData\oglyco.psmtsv";
-            metadrawLogic.PsmResultFilePaths.Add(psmFile);
+            metadrawLogic.SpectralMatchResultFilePaths.Add(psmFile);
             var errors = metadrawLogic.LoadFiles(false, true);
 
             Assert.That(!errors.Any());
@@ -61,8 +63,8 @@ namespace Test
         public static void CrosslinkPsmFromTsvTest()
         {
             string psmFile = @"XlTestData\XL_Intralinks_MIons.tsv";
-            List<PsmFromTsv> parsedPsms = PsmTsvReader.ReadTsv(psmFile, out var warnings);
-            Assert.AreEqual(1, parsedPsms.Count);
+            List<PsmFromTsv> parsedPsms = SpectrumMatchTsvReader.ReadPsmTsv(psmFile, out var warnings);
+            Assert.That(parsedPsms.Count, Is.EqualTo(1));
             Assert.That(parsedPsms[0].UniqueSequence, Is.EqualTo("EKVLTSSAR(2)SLGKVGTR(4)"));
         }
 
@@ -71,12 +73,12 @@ namespace Test
         {
             string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData\XL_Intralinks_MIons.tsv");
             List<string> warnings = new();
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).ToList();
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmTsvPath, out warnings).ToList();
             Assert.That(warnings.Count == 0);
 
             CrosslinkLibrarySpectrum librarySpectrum = psms[0].ToLibrarySpectrum() as CrosslinkLibrarySpectrum;
-            Assert.IsNotNull(librarySpectrum);
-            Assert.AreEqual("Name: EKVLTSSAR(2)SLGKVGTR(4)/4", librarySpectrum.ToString().Split('\n')[0].Trim());
+            Assert.That(librarySpectrum, !Is.Null);
+            Assert.That(librarySpectrum.ToString().Split('\n')[0].Trim(), Is.EqualTo("Name: EKVLTSSAR(2)SLGKVGTR(4)/4"));
 
             // This test would be better if MatchedIon.equals method worked, but it breaks because the mz comparison is implemented incorrectly.
             CollectionAssert.AreEquivalent(librarySpectrum.MatchedFragmentIons.Select(ion => ion.Annotation), psms[0].MatchedIons.Select(ion => ion.Annotation));
@@ -89,7 +91,7 @@ namespace Test
             // initialize values
             string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
             List<string> warnings = new();
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings);
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmTsvPath, out warnings);
             PsmFromTsv psm = psms.First();
 
             // non ambiguous construction should not be successful
@@ -108,7 +110,7 @@ namespace Test
             foreach (var ambPsm in ambiguousPsms)
             {
                 PsmFromTsv disambiguatedPSM = new(ambPsm, ambPsm.FullSequence.Split("|")[0]);
-                Assert.That(disambiguatedPSM.StartAndEndResiduesInProtein == ambPsm.StartAndEndResiduesInProtein.Split("|")[0]);
+                Assert.That(disambiguatedPSM.StartAndEndResiduesInParentSequence == ambPsm.StartAndEndResiduesInParentSequence.Split("|")[0]);
                 Assert.That(disambiguatedPSM.BaseSeq == ambPsm.BaseSeq.Split("|")[0]);
                 Assert.That(disambiguatedPSM.EssentialSeq == ambPsm.EssentialSeq.Split("|")[0]);
                 Assert.That(disambiguatedPSM.ProteinAccession == ambPsm.ProteinAccession.Split("|")[0]);
@@ -123,12 +125,12 @@ namespace Test
                     Assert.That(disambiguatedPSM.MatchedIons[i] == ambPsm.MatchedIons[i]);
                 }
 
-                if (ambPsm.StartAndEndResiduesInProtein.Split("|").Count() > 1)
+                if (ambPsm.StartAndEndResiduesInParentSequence.Split("|").Count() > 1)
                 {
-                    for (int i = 1; i < ambPsm.StartAndEndResiduesInProtein.Split("|").Count(); i++)
+                    for (int i = 1; i < ambPsm.StartAndEndResiduesInParentSequence.Split("|").Count(); i++)
                     {
                         disambiguatedPSM = new(ambPsm, ambPsm.FullSequence.Split("|")[i], i);
-                        Assert.That(disambiguatedPSM.StartAndEndResiduesInProtein == ambPsm.StartAndEndResiduesInProtein.Split("|")[i]);
+                        Assert.That(disambiguatedPSM.StartAndEndResiduesInParentSequence == ambPsm.StartAndEndResiduesInParentSequence.Split("|")[i]);
                         Assert.That(disambiguatedPSM.BaseSeq == ambPsm.BaseSeq.Split("|")[i]);
                         Assert.That(disambiguatedPSM.EssentialSeq == ambPsm.EssentialSeq.Split("|")[i]);
                         Assert.That(disambiguatedPSM.ProteinAccession == ambPsm.ProteinAccession.Split("|")[i]);
@@ -157,7 +159,7 @@ namespace Test
         {
             string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
             List<string> warnings = new();
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).Take(20).ToList();
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmTsvPath, out warnings).Take(20).ToList();
             Assert.That(warnings.Count == 0);
 
             // psm with single modificaiton
@@ -220,7 +222,7 @@ namespace Test
         {
             string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
             List<string> warnings = new();
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).Take(3).ToList();
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmTsvPath, out warnings).Take(3).ToList();
             Assert.That(warnings.Count == 0);
 
             Assert.That(psms[0].FullSequence.Equals(psms[0].ToString()));
@@ -233,7 +235,7 @@ namespace Test
         {
             string psmTsvPath = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\TDGPTMDSearchResults.psmtsv");
             List<string> warnings = new();
-            List<PsmFromTsv> psms = PsmTsvReader.ReadTsv(psmTsvPath, out warnings).Take(3).ToList();
+            List<PsmFromTsv> psms = SpectrumMatchTsvReader.ReadPsmTsv(psmTsvPath, out warnings).Take(3).ToList();
             Assert.That(warnings.Count == 0);
 
             string librarySpectrum = psms[0].ToLibrarySpectrum().ToString();
@@ -241,8 +243,7 @@ namespace Test
             string expectedLibrarySpectrum = File.ReadAllText(Path.Combine(TestContext.CurrentContext.TestDirectory, @"TopDownTestData\simple.msp"));
 
             //not a great way to test equality but we are experiencing a great deal of 10th digit rounding differences
-            Assert.AreEqual(Regex.Matches(expectedLibrarySpectrum, "ppm").Count, Regex.Matches(librarySpectrum, "ppm").Count);
-
+            Assert.That(Regex.Matches(expectedLibrarySpectrum, "ppm").Count, Is.EqualTo(Regex.Matches(librarySpectrum, "ppm").Count));
 
             //the code below tests the addition and correct output for neutral loss fragments
             Product p = new Product(ProductType.bWaterLoss, FragmentationTerminus.N, 1, 1, 1, 18);
@@ -296,32 +297,32 @@ namespace Test
             //second highest score 9. delta score 1
             PeptideSpectralMatch psmTwo = new(pepOne, 0, 8, 0, ms2ScanOneMzTen, commonParams,
                 new List<MatchedFragmentIon>());
-            psmTwo.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmTwo.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>());
 
             //second highest score 9. delta score 0.1
             PeptideSpectralMatch psmThree = new(pepOne, 0, 8.90000000000000000000000000000, 0, ms2ScanOneMzTen, commonParams,
                 new List<MatchedFragmentIon>());
-            psmThree.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmThree.AddOrReplace(pepTwo, 9, 0, true, new List<MatchedFragmentIon>());
 
             //third highest score delta score 1. ppm error -888657.54 low
             PeptideSpectralMatch psmFour = new(pepOne, 0, 7, 0, ms2ScanOneMzTwenty, commonParams,
                 new List<MatchedFragmentIon>());
-            psmFour.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmFour.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>());
 
             //third highest score 8. delta score 1. ppm error -947281.29 high
             PeptideSpectralMatch psmFive = new(pepOne, 0, 7, 0, ms2ScanOneMzTen, commonParams,
                 new List<MatchedFragmentIon>());
-            psmFive.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmFive.AddOrReplace(pepFour, 8, 0, true, new List<MatchedFragmentIon>());
 
             //fourth highest score 7. delta score 1. same ppm error
             PeptideSpectralMatch psmSix = new(pepOne, 0, 6, 0, ms2ScanTwoMzTwenty, commonParams,
                 new List<MatchedFragmentIon>());
-            psmSix.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmSix.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>());
 
             //fourth highest score 7. delta score 1. same ppm error
             PeptideSpectralMatch psmSeven = new(pepOne, 0, 6, 0, ms2ScanThreeMzTwenty, commonParams,
                 new List<MatchedFragmentIon>());
-            psmSeven.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>(), 0);
+            psmSeven.AddOrReplace(pepSix, 7, 0, true, new List<MatchedFragmentIon>());
 
             List<PeptideSpectralMatch> psms = new List<PeptideSpectralMatch> { psmFour, psmOne, psmThree, psmSeven, psmTwo, psmFive, psmSix };
             psms.ForEach(j => j.ResolveAllAmbiguities());
@@ -329,24 +330,24 @@ namespace Test
 
             List<PeptideSpectralMatch> orderedPsms = psms.OrderByDescending(p => p).ToList();
 
-            Assert.AreEqual(10, orderedPsms[0].Score);
-            Assert.AreEqual(9, orderedPsms[1].Score);
-            Assert.AreEqual(9, orderedPsms[2].Score);
-            Assert.AreEqual(8, orderedPsms[3].Score);
-            Assert.AreEqual(8, orderedPsms[4].Score);
-            Assert.AreEqual(7, orderedPsms[5].Score);
-            Assert.AreEqual(7, orderedPsms[6].Score);
+            Assert.That(orderedPsms[0].Score, Is.EqualTo(10));
+            Assert.That(orderedPsms[1].Score, Is.EqualTo(9));
+            Assert.That(orderedPsms[2].Score, Is.EqualTo(9));
+            Assert.That(orderedPsms[3].Score, Is.EqualTo(8));
+            Assert.That(orderedPsms[4].Score, Is.EqualTo(8));
+            Assert.That(orderedPsms[5].Score, Is.EqualTo(7));
+            Assert.That(orderedPsms[6].Score, Is.EqualTo(7));
 
-            Assert.AreEqual(5, orderedPsms[0].RunnerUpScore);
-            Assert.AreEqual(8.9, orderedPsms[1].RunnerUpScore);
-            Assert.AreEqual(8, orderedPsms[2].RunnerUpScore);
-            Assert.AreEqual(7, orderedPsms[3].RunnerUpScore);
-            Assert.AreEqual(7, orderedPsms[4].RunnerUpScore);
-            Assert.AreEqual(6, orderedPsms[5].RunnerUpScore);
-            Assert.AreEqual(6, orderedPsms[6].RunnerUpScore);
+            Assert.That(orderedPsms[0].RunnerUpScore, Is.EqualTo(5));
+            Assert.That(orderedPsms[1].RunnerUpScore, Is.EqualTo(8.9));
+            Assert.That(orderedPsms[2].RunnerUpScore, Is.EqualTo(8));
+            Assert.That(orderedPsms[3].RunnerUpScore, Is.EqualTo(7));
+            Assert.That(orderedPsms[4].RunnerUpScore, Is.EqualTo(7));
+            Assert.That(orderedPsms[5].RunnerUpScore, Is.EqualTo(6));
+            Assert.That(orderedPsms[6].RunnerUpScore, Is.EqualTo(6));
 
-            Assert.IsTrue(Math.Abs(orderedPsms[3].PrecursorMassErrorPpm.First()) < Math.Abs(orderedPsms[4].PrecursorMassErrorPpm.First()));
-            Assert.IsTrue(orderedPsms[5].ScanNumber < orderedPsms[6].ScanNumber);
+            Assert.That(Math.Abs(orderedPsms[3].PrecursorMassErrorPpm.First()) < Math.Abs(orderedPsms[4].PrecursorMassErrorPpm.First()));
+            Assert.That(orderedPsms[5].ScanNumber < orderedPsms[6].ScanNumber);
         }
     }
 }

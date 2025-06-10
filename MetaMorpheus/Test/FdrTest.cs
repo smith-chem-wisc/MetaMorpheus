@@ -2,11 +2,9 @@
 using EngineLayer;
 using EngineLayer.ClassicSearch;
 using EngineLayer.FdrAnalysis;
-using EngineLayer.Indexing;
-using EngineLayer.ModernSearch;
 using MassSpectrometry;
 using MzLibUtil;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -19,11 +17,7 @@ using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
-using Org.BouncyCastle.Utilities.Collections;
-using OxyPlot;
-using static iText.Svg.SvgConstants;
-using System.Reflection;
-using UsefulProteomicsDatabases.Generated;
+using Omics.BioPolymer;
 
 namespace Test
 {
@@ -37,18 +31,18 @@ namespace Test
             Modification am = new Modification(_originalId: "Ammonia loss");
             List<Modification> real = new List<Modification> { ac, am };
 
-            Assert.IsTrue(PepAnalysisEngine.ContainsModificationsThatShiftMobility(real));
-            Assert.AreEqual(2, PepAnalysisEngine.CountModificationsThatShiftMobility(real));
+            Assert.That(PepAnalysisEngine.ContainsModificationsThatShiftMobility(real));
+            Assert.That(PepAnalysisEngine.CountModificationsThatShiftMobility(real), Is.EqualTo(2));
 
             Modification fac = new Modification(_originalId: "fake Acetylation");
             Modification fam = new Modification(_originalId: "fake Ammonia loss");
             List<Modification> fake = new List<Modification> { fac, fam };
 
-            Assert.IsFalse(PepAnalysisEngine.ContainsModificationsThatShiftMobility(fake));
-            Assert.AreEqual(0, PepAnalysisEngine.CountModificationsThatShiftMobility(fake));
+            Assert.That(!PepAnalysisEngine.ContainsModificationsThatShiftMobility(fake));
+            Assert.That(PepAnalysisEngine.CountModificationsThatShiftMobility(fake), Is.EqualTo(0));
 
-            Assert.IsTrue(PepAnalysisEngine.ContainsModificationsThatShiftMobility(real.Concat(fake)));
-            Assert.AreEqual(2, PepAnalysisEngine.CountModificationsThatShiftMobility(real.Concat(fake)));
+            Assert.That(PepAnalysisEngine.ContainsModificationsThatShiftMobility(real.Concat(fake)));
+            Assert.That(PepAnalysisEngine.CountModificationsThatShiftMobility(real.Concat(fake)), Is.EqualTo(2));
         }
 
         [Test]
@@ -62,12 +56,12 @@ namespace Test
 
             var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0];
-            PeptideWithSetModifications pep2 = digested[1];
-            PeptideWithSetModifications pep3 = digested[2];
-            PeptideWithSetModifications pep4 = digested[3];
+            var pep1 = digested[0];
+            var pep2 = digested[1];
+            var pep3 = digested[2];
+            var pep4 = digested[3];
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep1, pep2, pep3 });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
@@ -81,7 +75,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, pep3.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
             SpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, commonParameters, new List<MatchedFragmentIon>());
 
-            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(), 0);
+            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>());
 
             var newPsms = new List<SpectralMatch> { psm1, psm2, psm3 };
             foreach (SpectralMatch psm in newPsms)
@@ -95,20 +89,20 @@ namespace Test
 
             fdr.Run();
 
-            Assert.AreEqual(2, searchModes.NumNotches);
-            Assert.AreEqual(0, newPsms[0].FdrInfo.CumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[0].FdrInfo.CumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[1].FdrInfo.CumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[1].FdrInfo.CumulativeTargetNotch);
-            Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoyNotch);
-            Assert.AreEqual(1, newPsms[2].FdrInfo.CumulativeTargetNotch);
+            Assert.That(searchModes.NumNotches, Is.EqualTo(2));
+            Assert.That(newPsms[0].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
+            Assert.That(newPsms[0].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
+            Assert.That(newPsms[1].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
+            Assert.That(newPsms[1].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
+            Assert.That(newPsms[2].FdrInfo.CumulativeDecoyNotch, Is.EqualTo(0));
+            Assert.That(newPsms[2].FdrInfo.CumulativeTargetNotch, Is.EqualTo(1));
 
-            Assert.AreEqual(0, newPsms[0].FdrInfo.CumulativeDecoy);
-            Assert.AreEqual(1, newPsms[0].FdrInfo.CumulativeTarget);
-            Assert.AreEqual(0, newPsms[1].FdrInfo.CumulativeDecoy);
-            Assert.AreEqual(2, newPsms[1].FdrInfo.CumulativeTarget);
-            Assert.AreEqual(0, newPsms[2].FdrInfo.CumulativeDecoy);
-            Assert.AreEqual(3, newPsms[2].FdrInfo.CumulativeTarget);
+            Assert.That(newPsms[0].FdrInfo.CumulativeDecoy, Is.EqualTo(0));
+            Assert.That(newPsms[0].FdrInfo.CumulativeTarget, Is.EqualTo(1));
+            Assert.That(newPsms[1].FdrInfo.CumulativeDecoy, Is.EqualTo(0));
+            Assert.That(newPsms[1].FdrInfo.CumulativeTarget, Is.EqualTo(2));
+            Assert.That(newPsms[2].FdrInfo.CumulativeDecoy, Is.EqualTo(0));
+            Assert.That(newPsms[2].FdrInfo.CumulativeTarget, Is.EqualTo(3));
         }
 
         [Test]
@@ -122,12 +116,12 @@ namespace Test
 
             var digested = p.Digest(commonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).ToList();
 
-            PeptideWithSetModifications pep1 = digested[0];
-            PeptideWithSetModifications pep2 = digested[1];
-            PeptideWithSetModifications pep3 = digested[2];
-            PeptideWithSetModifications pep4 = digested[3];
+            var pep1 = digested[0];
+            var pep2 = digested[1];
+            var pep3 = digested[2];
+            var pep4 = digested[3];
 
-            TestDataFile t = new TestDataFile(new List<PeptideWithSetModifications> { pep1, pep2, pep3 });
+            TestDataFile t = new TestDataFile(new List<IBioPolymerWithSetMods> { pep1, pep2, pep3 });
 
             MsDataScan mzLibScan1 = t.GetOneBasedScan(2);
             Ms2ScanWithSpecificMass scan1 = new Ms2ScanWithSpecificMass(mzLibScan1, pep1.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
@@ -141,7 +135,7 @@ namespace Test
             Ms2ScanWithSpecificMass scan3 = new Ms2ScanWithSpecificMass(mzLibScan3, pep3.MonoisotopicMass.ToMz(1), 1, null, new CommonParameters());
             SpectralMatch psm3 = new PeptideSpectralMatch(pep3, 0, 1, 2, scan3, commonParameters, new List<MatchedFragmentIon>());
 
-            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>(), 0);
+            psm3.AddOrReplace(pep4, 1, 1, true, new List<MatchedFragmentIon>());
 
             var newPsms = new List<SpectralMatch> { psm1, psm2, psm3 };
             foreach (SpectralMatch psm in newPsms)
@@ -187,7 +181,7 @@ namespace Test
             List<string> sequences = new List<string>();
             foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Peptide.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence).ToList();
                 sequences.Add(String.Join("|", ss));
             }
 
@@ -212,7 +206,7 @@ namespace Test
             fileSpecificRetTimeHI_behavior.Add("TaGe_SA_HeLa_04_subset_longestSeq.mzML", HI_Time_avg_dev);
 
             int chargeStateMode = 4;
-            var (notch, pwsm) = maxScorePsm.BestMatchingBioPolymersWithSetMods.First();
+            var bestMatch = maxScorePsm.BestMatchingBioPolymersWithSetMods.First();
             Dictionary<string, float> massError = new Dictionary<string, float>
             {
                 { Path.GetFileName(maxScorePsm.FullFilePath), 0 }
@@ -242,19 +236,19 @@ namespace Test
                 }             
             }
 
-            var maxPsmData = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, pwsm, notch, !pwsm.Parent.IsDecoy);
-            Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
-            double normalizationFactor = (double)pwsm.BaseSequence.Length;
+            var maxPsmData = pepEngine.CreateOnePsmDataEntry("standard", maxScorePsm, bestMatch, !bestMatch.IsDecoy);
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Count() - 1, Is.EqualTo(maxPsmData.Ambiguity));
+            double normalizationFactor = (double)bestMatch.SpecificBioPolymer.BaseSequence.Length;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             float maxPsmIntensity = Math.Min(50, (float)Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
             Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(52.0).Within(0.05));
-            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
-            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
-            Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
+            Assert.That((float)0, Is.EqualTo(maxPsmData.IsVariantPeptide));
 
             List<SpectralMatch> psmCopyForCZETest = nonNullPsms.ToList();
             List<SpectralMatch> psmCopyForPEPFailure = nonNullPsms.ToList();
@@ -286,14 +280,14 @@ namespace Test
 
             pepEngine = new PepAnalysisEngine(moreNonNullPSMs, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             string metrics = pepEngine.ComputePEPValuesForAllPSMs();
-            Assert.GreaterOrEqual(32, trueCount);
+            Assert.That(32 >= trueCount);
 
             //Test Variant Peptide as Input is identified as such as part of PEP calculation input much of the next several lines simply necessry to create a psm.
 
             var anMzSpectrum = new MzSpectrum(new double[] { 1, 1 }, new double[] { 2, 2 }, true);
             Ms2ScanWithSpecificMass scan = new Ms2ScanWithSpecificMass(new MsDataScan(anMzSpectrum, 1, 1, true, Polarity.Negative, 2, null, "", MZAnalyzerType.Orbitrap, 2, null, null, null), 1, 1, "path", new CommonParameters());
             Protein variantProtein = new Protein("MPEPPPTIDE", "protein3", sequenceVariations: new List<SequenceVariation> { new SequenceVariation(4, 6, "PPP", "P", @"1\t50000000\t.\tA\tG\t.\tPASS\tANN=G||||||||||||||||\tGT:AD:DP\t1/1:30,30:30", null) });
-            PeptideWithSetModifications varPep = variantProtein.GetVariantProteins().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
+            IBioPolymerWithSetMods varPep = variantProtein.GetVariantBioPolymers().SelectMany(p => p.Digest(CommonParameters.DigestionParams, null, null)).FirstOrDefault();
 
             Product prod = new Product(ProductType.b, FragmentationTerminus.N, 1, 1, 1, 0);
             List<MatchedFragmentIon> mfi = new List<MatchedFragmentIon> { new MatchedFragmentIon(prod, 1, 1.0, 1) };
@@ -305,7 +299,7 @@ namespace Test
             nonNullPsms.Add(variantPSM);
             foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Peptide.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence).ToList();
                 sequences.Add(String.Join("|", ss));
             }
 
@@ -315,7 +309,7 @@ namespace Test
             {
                 sequenceToPsmCount.Add(grp.Key, grp.Count());
             }
-            var (vnotch, vpwsm) = variantPSM.BestMatchingBioPolymersWithSetMods.First();
+            var variantMatch = variantPSM.BestMatchingBioPolymersWithSetMods.First();
 
             massError.Add(Path.GetFileName(variantPSM.FullFilePath), 0);
 
@@ -334,9 +328,9 @@ namespace Test
             }
 
 
-            PsmData variantPsmData = pepEngine.CreateOnePsmDataEntry("standard", variantPSM, vpwsm, vnotch, !maxScorePsm.IsDecoy);
+            PsmData variantPsmData = pepEngine.CreateOnePsmDataEntry("standard", variantPSM, variantMatch, !maxScorePsm.IsDecoy);
 
-            Assert.AreEqual((float)1, variantPsmData.IsVariantPeptide);
+            Assert.That(variantPsmData.IsVariantPeptide, Is.EqualTo((float)1));
 
             //TEST CZE
             fsp = new List<(string fileName, CommonParameters fileSpecificParameters)>();
@@ -368,13 +362,13 @@ namespace Test
 
             pepEngine = new PepAnalysisEngine(moreNonNullPSMsCZE, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             metrics = pepEngine.ComputePEPValuesForAllPSMs();
-            Assert.GreaterOrEqual(32, trueCount);
+            Assert.That(32 >= trueCount);
 
             //TEST PEP calculation failure
             psmCopyForPEPFailure.RemoveAll(x => x.IsDecoy);
             pepEngine = new PepAnalysisEngine(psmCopyForPEPFailure, "standard", fsp, Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\"));
             string result = pepEngine.ComputePEPValuesForAllPSMs();
-            Assert.AreEqual("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples.", result);
+            Assert.That(result, Is.EqualTo("Posterior error probability analysis failed. This can occur for small data sets when some sample groups are missing positive or negative training examples."));
 
             //Run PEP with no output folder;
             //There is no assertion here. We simply want to show that PEP calculation does not fail with null folder.
@@ -435,7 +429,7 @@ namespace Test
             List<string> sequences = new List<string>();
             foreach (SpectralMatch psm in nonNullPsms)
             {
-                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Peptide.FullSequence).ToList();
+                var ss = psm.BestMatchingBioPolymersWithSetMods.Select(b => b.SpecificBioPolymer.FullSequence).ToList();
                 sequences.Add(String.Join(" | ", ss));
             }
             var s = sequences.GroupBy(i => i);
@@ -449,7 +443,7 @@ namespace Test
             Dictionary<string, Dictionary<int, Tuple<double, double>>> fileSpecificRetTemHI_behaviorModifiedPeptides = new Dictionary<string, Dictionary<int, Tuple<double, double>>>();
 
             int chargeStateMode = 4;
-            var (notch, pwsm) = maxScorePsm.BestMatchingBioPolymersWithSetMods.First();
+            var bestMatch = maxScorePsm.BestMatchingBioPolymersWithSetMods.First();
 
             Dictionary<string, float> massError = new Dictionary<string, float>
             {
@@ -474,19 +468,19 @@ namespace Test
                 }
             }
 
-            var maxPsmData = pepEngine.CreateOnePsmDataEntry("top-down", maxScorePsm, pwsm, notch, !pwsm.Parent.IsDecoy);
-            Assert.That(maxScorePsm.BioPolymersWithSetModsToMatchingFragments.Count - 1, Is.EqualTo(maxPsmData.Ambiguity));
+            var maxPsmData = pepEngine.CreateOnePsmDataEntry("top-down", maxScorePsm, bestMatch, !bestMatch.SpecificBioPolymer.Parent.IsDecoy);
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Count() - 1, Is.EqualTo(maxPsmData.Ambiguity));
             double normalizationFactor = 1;
             float maxPsmDeltaScore = (float)Math.Round(maxScorePsm.DeltaScore / normalizationFactor * 10.0, 0);
             Assert.That(maxPsmDeltaScore, Is.EqualTo(maxPsmData.DeltaScore).Within(0.05));
             float maxPsmIntensity = (float)Math.Min(50, Math.Round((maxScorePsm.Score - (int)maxScorePsm.Score) / normalizationFactor * 100.0, 0));
             Assert.That(maxPsmIntensity, Is.EqualTo(maxPsmData.Intensity).Within(0.05));
-            Assert.AreEqual(maxPsmData.HydrophobicityZScore, float.NaN);
-            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
-            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
+            Assert.That(maxPsmData.HydrophobicityZScore, Is.EqualTo(float.NaN));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().MissedCleavages, Is.EqualTo(maxPsmData.MissedCleavagesCount));
+            Assert.That(maxScorePsm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer).First().AllModsOneIsNterminus.Values.Count(), Is.EqualTo(maxPsmData.ModsCount));
             Assert.That(maxScorePsm.Notch ?? 0, Is.EqualTo(maxPsmData.Notch));
             Assert.That(-Math.Abs(chargeStateMode - maxScorePsm.ScanPrecursorCharge), Is.EqualTo(maxPsmData.PrecursorChargeDiffToMode));
-            Assert.AreEqual((float)0, maxPsmData.IsVariantPeptide);
+            Assert.That((float)0, Is.EqualTo(maxPsmData.IsVariantPeptide));
         }
 
         [Test]
@@ -503,8 +497,8 @@ namespace Test
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
             SpectralMatch psm = new PeptideSpectralMatch(pwsm, 0, 1, 1, scan, new CommonParameters(), new List<MatchedFragmentIon>());
-            psm.AddOrReplace(pwsm, 1, 1, true, new List<MatchedFragmentIon>(), 0);
-            psm.AddOrReplace(pwsm, 1, 2, true, new List<MatchedFragmentIon>(), 0);
+            psm.AddOrReplace(pwsm, 1, 1, true, new List<MatchedFragmentIon>());
+            psm.AddOrReplace(pwsm, 1, 2, true, new List<MatchedFragmentIon>());
             psm.SetFdrValues(1, 0, 0, 1, 0, 0, 1, 0);
             psm.PeptideFdrInfo = new FdrInfo();
 
@@ -513,21 +507,13 @@ namespace Test
             List<double> pepValuePredictions = new List<double> { 1.0d, 0.99d, 0.9d };
 
             PepAnalysisEngine.GetIndiciesOfPeptidesToRemove(indiciesOfPeptidesToRemove, pepValuePredictions);
-            Assert.AreEqual(1, indiciesOfPeptidesToRemove.Count);
-            Assert.AreEqual(2, indiciesOfPeptidesToRemove.FirstOrDefault());
-            Assert.AreEqual(2, pepValuePredictions.Count);
+            Assert.That(indiciesOfPeptidesToRemove.Count, Is.EqualTo(1));
+            Assert.That(indiciesOfPeptidesToRemove.FirstOrDefault(), Is.EqualTo(2));
+            Assert.That(pepValuePredictions.Count, Is.EqualTo(2));
 
-            List<int> notches = new List<int>();
-            List<IBioPolymerWithSetMods> peptides = new List<IBioPolymerWithSetMods>();
-            foreach (var bmp in psm.BestMatchingBioPolymersWithSetMods)
-            {
-                notches.Add(bmp.Notch);
-                peptides.Add(bmp.Peptide);
-            }
-
-            PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, notches, peptides, pepValuePredictions, ref ambiguousPeptidesRemovedCount);
-            Assert.AreEqual(1, ambiguousPeptidesRemovedCount);
-            Assert.AreEqual(2, psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Notch).ToList().Count);
+            PepAnalysisEngine.RemoveBestMatchingPeptidesWithLowPEP(psm, indiciesOfPeptidesToRemove, psm.BestMatchingBioPolymersWithSetMods.ToList(), ref ambiguousPeptidesRemovedCount);
+            Assert.That(ambiguousPeptidesRemovedCount, Is.EqualTo(1));
+            Assert.That(psm.BestMatchingBioPolymersWithSetMods.Select(b => b.Notch).ToList().Count, Is.EqualTo(2));
         }
 
         [Test]
@@ -546,14 +532,14 @@ namespace Test
             Assert.That(stDevsToChange.ContainsKey(0));
             Assert.That(stDevsToChange.ContainsKey(1));
             Assert.That(stDevsToChange.ContainsKey(3));
-            Assert.AreEqual(3, stDevsToChange.Keys.Count);
+            Assert.That(stDevsToChange.Keys.Count, Is.EqualTo(3));
 
             PepAnalysisEngine.UpdateOutOfRangeStDevsWithGlobalAverage(stDevsToChange, averagesCommaStandardDeviations);
 
-            Assert.AreEqual(1.0d, averagesCommaStandardDeviations[0].Item2);
-            Assert.AreEqual(1.0d, averagesCommaStandardDeviations[1].Item2);
+            Assert.That(averagesCommaStandardDeviations[0].Item2, Is.EqualTo(1.0d));
+            Assert.That(averagesCommaStandardDeviations[1].Item2, Is.EqualTo(1.0d));
             Assert.That(1.1d, Is.EqualTo(averagesCommaStandardDeviations[2].Item2).Within(0.01));
-            Assert.AreEqual(1.0d, averagesCommaStandardDeviations[3].Item2);
+            Assert.That(averagesCommaStandardDeviations[3].Item2, Is.EqualTo(1.0d));
         }
 
         [Test]
@@ -678,17 +664,17 @@ namespace Test
                     2, 1, true, Polarity.Positive, double.NaN, null, null, MZAnalyzerType.Orbitrap, double.NaN, null, null, "scan=1", double.NaN, null, null, double.NaN, null, DissociationType.AnyActivationType, 1, null),
                 100, 1, null, new CommonParameters(), null);
 
-            SpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>(), 0);
+            SpectralMatch psm1 = new PeptideSpectralMatch(new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0), 0, 10, 1, scanB, new CommonParameters(), new List<MatchedFragmentIon>());
 
             PeptideWithSetModifications pwsm = new PeptideWithSetModifications(new Protein("PEPTIDE", "ACCESSION", "ORGANISM"), new DigestionParams(), 1, 2, CleavageSpecificity.Full, "", 0, new Dictionary<int, Modification>(), 0);
 
-            psm1.AddOrReplace(pwsm, 10, 1, true, new List<MatchedFragmentIon>(), 0);
+            psm1.AddOrReplace(pwsm, 10, 1, true, new List<MatchedFragmentIon>());
 
-            Assert.AreEqual(2, psm1.BestMatchingBioPolymersWithSetMods.Count());
+            Assert.That(psm1.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(2));
 
-            psm1.RemoveThisAmbiguousPeptide(1, pwsm);
+            psm1.RemoveThisAmbiguousPeptide(psm1.BestMatchingBioPolymersWithSetMods.ElementAt(1));
 
-            Assert.AreEqual(1, psm1.BestMatchingBioPolymersWithSetMods.Count());
+            Assert.That(psm1.BestMatchingBioPolymersWithSetMods.Count(), Is.EqualTo(1));
         }
 
         [Test]
@@ -717,7 +703,7 @@ namespace Test
                 "LongestFragmentIonSeries", "ComplementaryIonCount", "HydrophobicityZScore", "IsVariantPeptide",
                 "IsDeadEnd", "IsLoop", "SpectralAngle", "HasSpectralAngle"
             };
-            Assert.AreEqual(expectedTrainingInfoStandard, trainingInfoStandard);
+            Assert.That(trainingInfoStandard, Is.EqualTo(expectedTrainingInfoStandard));
 
             searchType = "top-down";
             string[] trainingInfoTopDown = PsmData.trainingInfos[searchType];
@@ -728,7 +714,7 @@ namespace Test
                 "ComplementaryIonCount", "SpectralAngle", "HasSpectralAngle", "PeaksInPrecursorEnvelope",
                 "ChimeraCount", "MostAbundantPrecursorPeakIntensity", "PrecursorFractionalIntensity", "InternalIonCount"
             };
-            Assert.AreEqual(expectedTrainingInfoTopDown, trainingInfoTopDown);
+            Assert.That(trainingInfoTopDown, Is.EqualTo(expectedTrainingInfoTopDown));
 
             List<string> positiveAttributes = new List<string>
             {
@@ -745,11 +731,11 @@ namespace Test
 
             foreach (string attribute in positiveAttributes)
             {
-                Assert.AreEqual(1, PsmData.assumedAttributeDirection[attribute]);
+                Assert.That(PsmData.assumedAttributeDirection[attribute], Is.EqualTo(1));
             }
             foreach (string attribute in negativeAttributes)
             {
-                Assert.AreEqual(-1, PsmData.assumedAttributeDirection[attribute]);
+                Assert.That(PsmData.assumedAttributeDirection[attribute], Is.EqualTo(-1));
             }
 
             PsmData pd = new PsmData
@@ -786,10 +772,10 @@ namespace Test
             };
 
             string standardToString = "\t0\t1\t2\t3\t4\t5\t6\t7\t8\t9\t10\t11\t12\t17\t18\t21\t22";
-            Assert.AreEqual(standardToString, pd.ToString("standard"));
+            Assert.That(pd.ToString("standard"), Is.EqualTo(standardToString));
 
             string topDownToString = "\t0\t1\t2\t3\t4\t5\t6\t8\t9\t10\t21\t22\t23\t24\t25\t26\t27";
-            Assert.AreEqual(topDownToString, pd.ToString("top-down"));
+            Assert.That(pd.ToString("top-down"), Is.EqualTo(topDownToString));
         }
     }
 }

@@ -1,6 +1,6 @@
 ﻿using EngineLayer;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using System;
@@ -11,6 +11,7 @@ using EngineLayer.HistogramAnalysis;
 using Omics.Modifications;
 using TaskLayer;
 using UsefulProteomicsDatabases;
+using Omics;
 
 namespace Test
 {
@@ -54,7 +55,7 @@ namespace Test
             Protein prot4 = new Protein("MNNDNNNN", "prot4");
             var pep3_10 = prot4.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification> { mod }).Last();
 
-            List<PeptideWithSetModifications> pepsWithSetMods = new List<PeptideWithSetModifications> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
+            var pepsWithSetMods = new List<IBioPolymerWithSetMods> { pep1_0, pep1_10, pep2_0, pep2_10, pep3_10 };
             MsDataFile myMsDataFile = new TestDataFile(pepsWithSetMods);
 
             List<Protein> proteinList = new List<Protein> { prot1, prot2, prot3, prot4 };
@@ -70,7 +71,8 @@ namespace Test
                 new List<string> { mzmlFilePath },
                 null);
 
-            Assert.AreEqual(3, File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count());
+
+            Assert.That(File.ReadLines(Path.Combine(output_folder, @"MassDifferenceHistogram.tsv")).Count(), Is.EqualTo(3));
             Directory.Delete(output_folder, true);
             File.Delete(proteinDbFilePath);
             File.Delete(mzmlFilePath);
@@ -115,8 +117,8 @@ namespace Test
             var pep1 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).First();
             var pep2 = prot1.Digest(st.CommonParameters.DigestionParams, new List<Modification>(), new List<Modification>()).Last();
 
-            List<PeptideWithSetModifications> listForFile1 = new List<PeptideWithSetModifications> { pep1, pep2 };
-            List<PeptideWithSetModifications> listForFile2 = new List<PeptideWithSetModifications> { pep2 };
+            var listForFile1 = new List<IBioPolymerWithSetMods> { pep1, pep2 };
+            var listForFile2 = new List<IBioPolymerWithSetMods> { pep2 };
             MsDataFile myMsDataFile1 = new TestDataFile(listForFile1);
             MsDataFile myMsDataFile2 = new TestDataFile(listForFile2);
 
@@ -147,20 +149,19 @@ namespace Test
         {
             var bin = new Bin(71);
             bin.IdentifyAA(1);
-            Assert.AreEqual("Add Alanine", bin.AA);
+            Assert.That(bin.AA, Is.EqualTo("Add Alanine"));
 
             bin = new Bin(-56.1);
             bin.IdentifyAA(1);
-            Assert.AreEqual("Remove Glycine", bin.AA);
-
+            Assert.That(bin.AA, Is.EqualTo("Remove Glycine"));
 
             bin = new Bin(114.102);
             bin.IdentifyAA(1);
-            Assert.AreEqual("Add Aspartic Acid|Add (Glycine+Glycine)|Add Asparagine", bin.AA);
+            Assert.That(bin.AA, Is.EqualTo("Add Aspartic Acid|Add (Glycine+Glycine)|Add Asparagine"));
 
             bin = new Bin(-142.156);
             bin.IdentifyAA(1);
-            Assert.AreEqual("Remove (Alanine+Alanine)", bin.AA);
+            Assert.That(bin.AA, Is.EqualTo("Remove (Alanine+Alanine)"));
         }
 
         [Test]
@@ -168,8 +169,8 @@ namespace Test
         {
             var bin = new Bin(77.987066);
             bin.IdentifyUnimodBins(0.001);
-            Assert.AreEqual("Methylphosphonate on Y|Methylphosphonate on T|Methylphosphonate on S", bin.UnimodId);
-            Assert.AreEqual("CH3O2P", bin.UnimodFormulas);
+            Assert.That(bin.UnimodId, Is.EqualTo("Methylphosphonate on Y|Methylphosphonate on T|Methylphosphonate on S"));
+            Assert.That(bin.UnimodFormulas, Is.EqualTo("CH3O2P"));
         }
     }
 }

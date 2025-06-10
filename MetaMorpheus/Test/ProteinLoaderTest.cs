@@ -1,5 +1,5 @@
 ﻿using EngineLayer;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
 using TaskLayer;
@@ -48,7 +48,7 @@ namespace Test
 
             protected override MyTaskResults RunSpecific(string OutputFolder, List<DbForTask> dbFilenameList, List<string> currentRawFileList, string taskId, FileSpecificParameters[] fileSettingsList)
             {
-                LoadProteins("", dbFilenameList, true, DecoyType.None, new List<string>(), new CommonParameters());
+                LoadBioPolymers("", dbFilenameList, true, DecoyType.None, new List<string>(), new CommonParameters());
                 return null;
             }
         }

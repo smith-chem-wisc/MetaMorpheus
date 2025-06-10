@@ -372,7 +372,6 @@ namespace EngineLayer
 
             // best peptide q value
             sb.Append(BestPeptideQValue);
-            sb.Append("\t");
 
             return sb.ToString();
         }
@@ -404,7 +403,7 @@ namespace EngineLayer
                 {
                     psm.GetAminoAcidCoverage();
 
-                    foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods.Select(psm => psm.Peptide as PeptideWithSetModifications).DistinctBy(pep => pep.FullSequence))
+                    foreach (var peptide in psm.BestMatchingBioPolymersWithSetMods.Select(psm => psm.SpecificBioPolymer as PeptideWithSetModifications).DistinctBy(pep => pep.FullSequence))
                     {
                         // might be unambiguous but also shared; make sure this protein group contains this peptide+protein combo
                         if (Proteins.Contains(peptide.Protein))
@@ -436,7 +435,7 @@ namespace EngineLayer
                     psm.GetAminoAcidCoverage();
                     if (psm.FragmentCoveragePositionInPeptide == null) continue;
                     //loop through each peptide within the psm
-                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.Peptide as PeptideWithSetModifications)
+                    IEnumerable<PeptideWithSetModifications> pwsms = psm.BestMatchingBioPolymersWithSetMods.Select(p => p.SpecificBioPolymer as PeptideWithSetModifications)
                         .Where(p => p.Protein.Accession == protein.Accession);
                     foreach (PeptideWithSetModifications pwsm in pwsms)
                     {
@@ -648,7 +647,7 @@ namespace EngineLayer
                     AllPsmsBelowOnePercentFDR.Where(p => p.FullFilePath.Equals(fullFilePath)));
             var allPeptidesForThisFile =
                 new HashSet<PeptideWithSetModifications>(
-                    allPsmsForThisFile.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.Peptide as PeptideWithSetModifications)));
+                    allPsmsForThisFile.SelectMany(p => p.BestMatchingBioPolymersWithSetMods.Select(v => v.SpecificBioPolymer as PeptideWithSetModifications)));
             var allUniquePeptidesForThisFile =
                 new HashSet<PeptideWithSetModifications>(UniquePeptides.Intersect(allPeptidesForThisFile));
 

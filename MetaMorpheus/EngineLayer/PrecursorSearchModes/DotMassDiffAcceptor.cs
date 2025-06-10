@@ -12,7 +12,7 @@ namespace EngineLayer
 
         public DotMassDiffAcceptor(string FileNameAddition, IEnumerable<double> acceptableMassShifts, Tolerance tol) : base(FileNameAddition)
         {
-            AcceptableSortedMassShifts = acceptableMassShifts.OrderBy(b => b).ToArray();
+            AcceptableSortedMassShifts = acceptableMassShifts.OrderBy(Math.Abs).ThenBy(p => p < 0).ToArray();
             Tolerance = tol;
             NumNotches = AcceptableSortedMassShifts.Length;
         }
@@ -36,7 +36,8 @@ namespace EngineLayer
         {
             for (int j = 0; j < AcceptableSortedMassShifts.Length; j++)
             {
-                yield return new AllowedIntervalWithNotch(Tolerance.GetRange(peptideMonoisotopicMass + AcceptableSortedMassShifts[j]), j);
+                var mass = peptideMonoisotopicMass + AcceptableSortedMassShifts[j];
+                yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), j);
             }
         }
 
@@ -44,7 +45,8 @@ namespace EngineLayer
         {
             for (int j = 0; j < AcceptableSortedMassShifts.Length; j++)
             {
-                yield return new AllowedIntervalWithNotch(Tolerance.GetRange(peptideMonoisotopicMass - AcceptableSortedMassShifts[j]), j);
+                var mass = peptideMonoisotopicMass - AcceptableSortedMassShifts[j];
+                yield return new AllowedIntervalWithNotch(Tolerance.GetMinimumValue(mass), Tolerance.GetMaximumValue(mass), j);
             }
         }
 

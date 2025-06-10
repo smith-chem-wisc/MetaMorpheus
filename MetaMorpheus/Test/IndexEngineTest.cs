@@ -1,7 +1,7 @@
 ﻿using EngineLayer;
 using EngineLayer.Indexing;
 using MassSpectrometry;
-using NUnit.Framework; using Assert = NUnit.Framework.Legacy.ClassicAssert;
+using NUnit.Framework;
 using Proteomics;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
@@ -53,14 +53,14 @@ namespace Test
 
             var results = (IndexingResults)engine.Run();
 
-            Assert.AreEqual(5, results.PeptideIndex.Count);
+            Assert.That(results.PeptideIndex.Count, Is.EqualTo(5));
 
             var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
 
-            Assert.AreEqual(5, digestedList.Count);
+            Assert.That(digestedList.Count, Is.EqualTo(5));
             foreach (PeptideWithSetModifications peptide in digestedList)
             {
-                Assert.Contains(peptide, results.PeptideIndex);
+                Assert.That(results.PeptideIndex.Contains(peptide));
 
                 var fragments = new List<Product>();
                 peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
@@ -78,7 +78,7 @@ namespace Test
                     List<int> fragmentBin = results.FragmentIndex[integerMassRepresentation];
 
                     // this list should contain this peptide!
-                    Assert.Contains(positionInPeptideIndex, fragmentBin);
+                    Assert.That(fragmentBin.Contains(positionInPeptideIndex));
                 }
             }
         }
@@ -124,10 +124,10 @@ namespace Test
 
             var results = (IndexingResults)engine.Run();
 
-            Assert.AreEqual(1, results.PeptideIndex.Count);
+            Assert.That(results.PeptideIndex.Count, Is.EqualTo(1));
 
-            Assert.IsNaN(results.PeptideIndex[0].MonoisotopicMass);
-            Assert.AreEqual(30000000 + 1, results.FragmentIndex.Length);
+            Assert.That(results.PeptideIndex[0].MonoisotopicMass, Is.NaN);
+            Assert.That(results.FragmentIndex.Length, Is.EqualTo(30000000 + 1));
         }
 
         [Test]
@@ -164,7 +164,7 @@ namespace Test
 
             var results = (IndexingResults)engine.Run();
 
-            Assert.AreEqual(10, results.PeptideIndex.Count);
+            Assert.That(results.PeptideIndex.Count, Is.EqualTo(10));
 
             var bubba = results.FragmentIndex;
             var tooBubba = results.PrecursorIndex;
@@ -173,10 +173,10 @@ namespace Test
             var digestedList = proteinList[0].Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications).ToList();
             digestedList.AddRange(proteinList[1].Digest(CommonParameters.DigestionParams, new List<Modification>(), variableModifications));
 
-            Assert.AreEqual(10, digestedList.Count);
+            Assert.That(digestedList.Count, Is.EqualTo(10));
             foreach (PeptideWithSetModifications peptide in digestedList)
             {
-                Assert.Contains(peptide, results.PeptideIndex);
+                Assert.That(results.PeptideIndex.Contains(peptide));
 
                 var fragments = new List<Product>();
                 peptide.Fragment(CommonParameters.DissociationType, FragmentationTerminus.Both, fragments);
@@ -194,12 +194,12 @@ namespace Test
                     List<int> fragmentBin = results.FragmentIndex[integerMassRepresentation];
 
                     // this list should contain this peptide!
-                    Assert.Contains(positionInPeptideIndex, fragmentBin);
+                    Assert.That(fragmentBin.Contains(positionInPeptideIndex));
                 }
             }
             foreach (var fdfd in digestedList)
             {
-                Assert.Contains(fdfd, results.PeptideIndex);
+                Assert.That(results.PeptideIndex.Contains(fdfd));
             }
         }
     }
