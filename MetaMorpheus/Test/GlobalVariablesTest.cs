@@ -117,5 +117,13 @@ namespace Test
             Assert.That(AnalyteType.Proteoform.GetBioPolymerLabel(), Is.EqualTo("Protein"));
             Assert.That(AnalyteType.Oligo.GetBioPolymerLabel(), Is.EqualTo("Transcript"));
         }
+        
+        [Test]
+        public static void TestDigestionAgentLabel()
+        {
+            Assert.That(AnalyteType.Peptide.GetDigestionAgentLabel(), Is.EqualTo("Protease"));
+            Assert.That(AnalyteType.Proteoform.GetDigestionAgentLabel(), Is.EqualTo("Protease"));
+            Assert.That(AnalyteType.Oligo.GetDigestionAgentLabel(), Is.EqualTo("RNase"));
+        }
     }
 }

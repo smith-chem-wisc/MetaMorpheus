@@ -348,7 +348,15 @@ namespace MetaMorpheusGUI
                 }
                 else
                 {
-                    propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
+                    // Hacky fix for some of the properties in IQuantifiableRecord that are only populated as needed by FlashLFQ
+                    try
+                    {
+                        propertyView.Rows.Add(temp[i].Name, temp[i].GetValue(psm, null));
+                    }
+                    catch
+                    {
+                        // do nothing
+                    }
                 }
             }
 
