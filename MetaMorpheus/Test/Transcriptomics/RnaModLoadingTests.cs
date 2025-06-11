@@ -1,5 +1,14 @@
 using NUnit.Framework;
 using EngineLayer;
+using Omics.Modifications;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Transcriptomics;
+using UsefulProteomicsDatabases.Transcriptomics;
+using UsefulProteomicsDatabases;
+using Omics;
+using TaskLayer;
 
 namespace Test.Transcriptomics;
 

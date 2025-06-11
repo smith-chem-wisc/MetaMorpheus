@@ -160,6 +160,11 @@
                                 then add a new item to SpectrumDescripion Dictionary in Settings, 
                                 finally update PeptideSpectrumMatchPlot.AnnotateProperties() -->
                                     <StackPanel>
+                                        <StackPanel Orientation="Horizontal" Margin="5 0" >
+                                            <Label Content="Font Size:" Width="165"/>
+                                        <local:DoubleTextBoxControl x:Name ="SpectrumDescriptionFontSizeBox" Width="80" Height="24" 
+                                                                        VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                        </StackPanel>
                                         <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
                                         <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
                                         <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>

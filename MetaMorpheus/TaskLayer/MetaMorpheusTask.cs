@@ -19,12 +19,12 @@ using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
+using UsefulProteomicsDatabases;
+using UsefulProteomicsDatabases.Transcriptomics;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
-using UsefulProteomicsDatabases;
-using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace TaskLayer
 {
@@ -1321,7 +1321,7 @@ namespace TaskLayer
                     toRemove.AddRange(accessionGroup.Where(p => p.IsContaminant));
                     if (toRemove.Any())
                     {
-                        Warn("The protein '" + accession + "' has multiple entries. Protein accessions must be unique. Contaminant protein " + accession + " was ignored.");
+                        Warn($"The {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s '" + accession + $"' has multiple entries. {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s accessions must be unique. Contaminant {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s " + accession + " was ignored.");
                     }
                 }
                 else if (tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
@@ -1330,7 +1330,7 @@ namespace TaskLayer
                     toRemove.AddRange(accessionGroup.Where(p => !p.IsDecoy && !p.IsContaminant));
                     if (toRemove.Any())
                     {
-                        Warn("The protein '" + accession + "' has multiple entries. Protein accessions must be unique. Target protein " + accession + " was ignored.");
+                        Warn($"The {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s '" + accession + $"' has multiple entries. {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s accessions must be unique. Target {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s " + accession + " was ignored.");
                     }
                 }
 
