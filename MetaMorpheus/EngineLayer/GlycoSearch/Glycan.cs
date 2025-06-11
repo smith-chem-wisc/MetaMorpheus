@@ -6,6 +6,7 @@ using System;
 using Proteomics;
 using MassSpectrometry;
 using Omics.Modifications;
+using UsefulProteomicsDatabases.Generated;
 
 namespace EngineLayer
 {
@@ -24,15 +25,51 @@ namespace EngineLayer
         public byte[] IonKind { get; set; }
     }
 
-    public class Glycan
+    public class Glycan :  Modification
     {
-        public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy)
+        public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy, string motif, bool IsOglycan = true) 
+            : base( _monoisotopicMass: mass / 1E5, _locationRestriction: "Anywhere.")
         {
             Struc = struc;
             Mass = mass;
             Kind = kind;
             Ions = ions;
             Decoy = decoy;
+
+            Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
+            // Generate the neural loss and diagnostic ions for O_glycan.
+            if (IsOglycan && Ions != null)
+            {
+                List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                neutralLosses.Add(DissociationType.HCD, lossMasses);
+                neutralLosses.Add(DissociationType.CID, lossMasses);
+                neutralLosses.Add(DissociationType.EThcD, lossMasses);
+                base.ModificationType = "O-Glycosylation"; // Set the modification type to N-Glycosylation.
+            }
+
+            // Generate the neural loss and diagnostic ions for N_glycan.
+            else if (!IsOglycan && Ions != null)
+            {
+                List<double> lossMasses = Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
+                neutralLosses.Add(DissociationType.HCD, lossMasses);
+                neutralLosses.Add(DissociationType.CID, lossMasses);
+                neutralLosses.Add(DissociationType.EThcD, lossMasses);
+                base.ModificationType = "N-Glycosylation"; // Set the modification type to N-Glycosylation.
+            }
+
+            Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
+            diagnosticIons.Add(DissociationType.HCD, DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.CID, DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.EThcD, DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+
+
+            ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
+            var id = Glycan.GetKindString(Kind);
+
+            base.OriginalId = id; // Set the original ID to the glycan kind string, which is unique for each glycan.
+            Target = finalMotif; // Set the target motif for the modification.
+            NeutralLosses = neutralLosses; // Set the neutral losses for the modification.
+            DiagnosticIons = diagnosticIons; // Set the diagnostic ions for the modification.
         }
 
         public Glycan(byte[] kind)
