@@ -113,7 +113,16 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MinusOneAreasZero)
                 .IgnoreProperty(p => p.IsotopeThreshold)
                 .IgnoreProperty(p => p.ZScoreThreshold))
-            );
+            // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
+            .ConfigureType<Averagine>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.GetType().Name)
+                    .FromToml(_ => new Averagine())))
+            .ConfigureType<OxyriboAveragine>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.GetType().Name)
+                    .FromToml(_ => new OxyriboAveragine())))
+        );
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
