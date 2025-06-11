@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using Chemistry;
 using System;
+using EngineLayer.GlycoSearch;
 using Proteomics;
 using MassSpectrometry;
 using Omics.Modifications;
@@ -27,7 +28,7 @@ namespace EngineLayer
 
     public class Glycan :  Modification
     {
-        public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy, string motif, bool IsOglycan = true) 
+        public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy, string motif, GlycanType type = GlycanType.O_glycan) 
             : base( _monoisotopicMass: mass / 1E5, _locationRestriction: "Anywhere.")
         {
             Struc = struc;
@@ -38,23 +39,24 @@ namespace EngineLayer
 
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
             // Generate the neural loss and diagnostic ions for O_glycan.
-            if (IsOglycan && Ions != null)
+            if (type == GlycanType.O_glycan && Ions != null)
             {
                 List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
                 neutralLosses.Add(DissociationType.HCD, lossMasses);
                 neutralLosses.Add(DissociationType.CID, lossMasses);
                 neutralLosses.Add(DissociationType.EThcD, lossMasses);
-                base.ModificationType = "O-Glycosylation"; // Set the modification type to N-Glycosylation.
+                ModificationType = "O-Glycosylation"; // Set the modification type to N-Glycosylation.
             }
 
             // Generate the neural loss and diagnostic ions for N_glycan.
-            else if (!IsOglycan && Ions != null)
+            else if (type == GlycanType.N_glycan && Ions != null)
             {
                 List<double> lossMasses = Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
                 neutralLosses.Add(DissociationType.HCD, lossMasses);
                 neutralLosses.Add(DissociationType.CID, lossMasses);
                 neutralLosses.Add(DissociationType.EThcD, lossMasses);
-                base.ModificationType = "N-Glycosylation"; // Set the modification type to N-Glycosylation.
+                ModificationType = "N-Glycosylation"; // Set the modification type to N-Glycosylation.
+                
             }
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
@@ -66,10 +68,10 @@ namespace EngineLayer
             ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
             var id = Glycan.GetKindString(Kind);
 
-            base.OriginalId = id; // Set the original ID to the glycan kind string, which is unique for each glycan.
+            OriginalId = id; // Set the original ID to the glycan kind string, which is unique for each glycan.
             Target = finalMotif; // Set the target motif for the modification.
             NeutralLosses = neutralLosses; // Set the neutral losses for the modification.
-            DiagnosticIons = diagnosticIons; // Set the diagnostic ions for the modification.
+            base.DiagnosticIons = diagnosticIons; // Set the diagnostic ions for the modification.
         }
 
         public Glycan(byte[] kind)
@@ -82,7 +84,9 @@ namespace EngineLayer
         public string Struc { get; private set; } // Glycan structure string represented the glycan structure and linkage. Ex. (N(H(A))(N(H(A))(F)))
         public int Mass { get; private set; }
 
-         
+        public enum Type; // GlycanType N_glycan, O_glycan, Undefined;
+
+
         public byte[] Kind { get; private set; }  // Glycans are composed of several types of mono suagr. In Kind, each number correspond to one type (corresponded order as Glycan.CharMassDic).
         public string Composition                 // Glycan composition string. Ex. H2N2A2F1.
         {
