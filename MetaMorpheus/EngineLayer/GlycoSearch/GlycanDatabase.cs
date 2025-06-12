@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using System.Linq;
+using EngineLayer.GlycoSearch;
 
 namespace EngineLayer
 {
@@ -68,20 +69,37 @@ namespace EngineLayer
 
                     var kind = String2Kind(line);  // Convert the database string to kind[] format (byte array).
 
-                    var glycan = new Glycan(kind); // Use the kind[] to create a glycan object.
-                    glycan.GlyId = id++;
-                    if (ToGenerateIons)
+                    if (IsOGlycanSearch)
                     {
-                        if (IsOGlycanSearch)
+                        var oGlycan_S = new Glycan(kind, "S", GlycanType.O_glycan); // Use the kind[] to create a glycan object.  
+                        oGlycan_S.GlyId = id;
+                        id++;
+                        if (ToGenerateIons)
                         {
-                            glycan.Ions = OGlycanCompositionCombinationChildIons(kind);
+                            oGlycan_S.Ions = OGlycanCompositionCombinationChildIons(kind);
                         }
-                        else
+                        yield return oGlycan_S; // Output the first glycan  
+
+                        var oGlycan_T = new Glycan(kind, "T", GlycanType.O_glycan); // Use the kind[] to create a glycan object.  
+                        oGlycan_T.GlyId = id;
+                        id++;
+                        if (ToGenerateIons)
                         {
-                            glycan.Ions = NGlycanCompositionFragments(kind);
+                            oGlycan_T.Ions = OGlycanCompositionCombinationChildIons(kind);
                         }
+                        yield return oGlycan_T; // Output the second glycan  
                     }
-                    yield return glycan;
+                    else
+                    {
+                        var nGlycan = new Glycan(kind, "N", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
+                        nGlycan.GlyId = id;
+                        id++;
+                        if (ToGenerateIons)
+                        {
+                            nGlycan.Ions = OGlycanCompositionCombinationChildIons(kind);
+                        }
+                        yield return nGlycan;
+                    }
                 }
             }
         }
@@ -118,8 +136,21 @@ namespace EngineLayer
                 int id = 1;
                 while (glycans.Peek() != -1)
                 {
-                    string line = glycans.ReadLine();                         // Read the line from the database file. Ex. (N(H(A))(A))
-                    yield return Glycan.Struct2Glycan(line, id++, IsOGlycan); // Directly convert the string to Glycan object.
+                    string line = glycans.ReadLine();   // Read the line from the database file. Ex. (N(H(A))(A))
+
+                    // For each O-glycan, two versions will be generated: one modified on serine (S), and the other on threonine (T).
+                    if (IsOGlycan)
+                    {
+                        foreach (var glycan in Glycan.Struct2Glycan(line, id+2, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.  
+                        {
+                            yield return glycan;
+                        }
+                    }
+                    //For N-glycan, we only generate one kind of N-glycan.
+                    else
+                    {
+                        yield return Glycan.Struct2Glycan(line, id++, IsOGlycan).FirstOrDefault(); // For N-Glycan, we only return the first Glycan object.
+                    }
                 }
             }
         }

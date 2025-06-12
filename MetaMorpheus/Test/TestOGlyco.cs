@@ -32,15 +32,14 @@ namespace Test
         [OneTimeSetUp]
         public static void Setup()
         {
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
-            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
             OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
         }
 
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            Assert.That(OGlycanBoxes.Count(), Is.EqualTo(454));
+            Assert.That(OGlycanBoxes.Count(), Is.EqualTo(2924));
         }
 
         [Test]
@@ -167,7 +166,7 @@ namespace Test
         public static void OGlycoTest_OGlycanChildIons()
         {
             // Reload the glycan database to test the child ions.
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
 
             var glycan = GlycanBox.GlobalOGlycans[5]; // we use the glycan (N(H)(N(H)))
 

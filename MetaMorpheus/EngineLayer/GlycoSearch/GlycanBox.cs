@@ -70,23 +70,6 @@ namespace EngineLayer
         }
 
         /// <summary>
-        /// Convert the glycan into Modification type for MetaMorpheus to manipulate sequences. In the future we may able to combine the two type together.
-        /// </summary>
-        /// <param name="globalOGlycans"></param>
-        /// <returns></returns>
-        public static Modification[] BuildGlobalOGlycanModifications(Glycan[] globalOGlycans)
-        {
-            Modification[] globalOGlycanModifications = new Modification[globalOGlycans.Length];
-
-            for (int i = 0; i < GlobalOGlycans.Length; i++)
-            {
-                globalOGlycanModifications[i] = Glycan.OGlycanToModification(globalOGlycans[i]);
-            }
-            return globalOGlycanModifications;
-        }
-
-
-        /// <summary>
         /// Generate all possible child/fragment box of the specific glycanBox. The childBoxes is uesd for LocalizationGraph.
         /// </summary>
         /// <param name="maxNum"></param>

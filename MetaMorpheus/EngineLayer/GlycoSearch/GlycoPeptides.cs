@@ -155,10 +155,7 @@ namespace EngineLayer.GlycoSearch
 
         public static PeptideWithSetModifications GenerateGlycopeptide(int position, PeptideWithSetModifications peptide, Glycan glycan)
         {
-            Modification modification = Glycan.NGlycanToModification(glycan);
-
-
-            Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, modification } };
+            Dictionary<int, Modification> testMods = new Dictionary<int, Modification> { { position, glycan } };
 
             if (!peptide.AllModsOneIsNterminus.Keys.Contains(position))
             {
