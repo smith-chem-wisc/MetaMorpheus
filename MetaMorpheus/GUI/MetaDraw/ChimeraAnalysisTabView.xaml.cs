@@ -29,15 +29,9 @@ namespace MetaMorpheusGUI
                 MessageBox.Show("No chimera group found for this PSM");
                 return;
             }
-            //dataContext.Ms1ChimeraPlot = new Ms1ChimeraPlot(ms1ChimeraOverlaPlot, chimeraGroup);
-            //dataContext.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ms2ChimeraPlot, chimeraGroup, 2000);
+            dataContext.Ms1ChimeraPlot = new Ms1ChimeraPlot(ms1ChimeraOverlaPlot, chimeraGroup);
+            dataContext.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(ms2ChimeraPlot, chimeraGroup);
             dataContext.ChimeraDrawnSequence = new ChimeraDrawnSequence(chimeraSequenceCanvas, chimeraGroup, dataContext);
-
-            if (MetaDrawSettings.ShowLegend)
-            {
-                //ChimeraLegendControlInTab.DataContext = ChimeraLegend;
-            }
-
 
             //MetaDrawLogic.CurrentlyDisplayedPlots.Add(ChimeraAnalysisTabViewModel.Ms1ChimeraPlot);
             //MetaDrawLogic.CurrentlyDisplayedPlots.Add(ChimeraAnalysisTabViewModel.ChimeraSpectrumMatchPlot);

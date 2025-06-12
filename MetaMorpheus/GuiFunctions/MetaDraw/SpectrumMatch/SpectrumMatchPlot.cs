@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Chemistry;
+using Easy.Common.Extensions;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
@@ -171,7 +172,7 @@ namespace GuiFunctions
         /// <param name="isBetaPeptide">is a beta x-linked peptide</param>
         /// <param name="useLiteralPassedValues"></param>
         protected void AnnotatePeak(MatchedFragmentIon matchedIon, bool isBetaPeptide,
-            bool useLiteralPassedValues = false, OxyColor? ionColorNullable = null)
+            bool useLiteralPassedValues = false, OxyColor? ionColorNullable = null, string annotation = null)
         {
             OxyColor ionColor;
             if (ionColorNullable == null)
@@ -231,27 +232,36 @@ namespace GuiFunctions
             {
                 string peakAnnotationText = prefix;
 
-                if (MetaDrawSettings.SubAndSuperScriptIons)
-                    foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
-                    {
-                        if (char.IsDigit(character))
-                            peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
-                        else switch (character)
+                if (annotation.IsNullOrEmpty())
+                {
+                    if (MetaDrawSettings.SubAndSuperScriptIons)
+                        foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
                         {
-                            case '-':
-                                peakAnnotationText += "\u208B"; // sub scripted Hyphen
-                                break;
-                            case '[':
-                            case ']':
-                                continue;
-                            default:
-                                peakAnnotationText += character;
-                                break;
+                            if (char.IsDigit(character))
+                                peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
+                            else
+                                switch (character)
+                                {
+                                    case '-':
+                                        peakAnnotationText += "\u208B"; // sub scripted Hyphen
+                                        break;
+                                    case '[':
+                                    case ']':
+                                        continue;
+                                    default:
+                                        peakAnnotationText += character;
+                                        break;
+                                }
                         }
-                    }
+                    else
+                        peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
+                }
                 else
-                    peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
-                
+                {
+                    peakAnnotationText += annotation;
+                    intensity += intensity * 0.05;
+                }
+
                 if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
                     !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
                 {

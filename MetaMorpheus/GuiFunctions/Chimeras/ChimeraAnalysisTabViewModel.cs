@@ -18,6 +18,8 @@ namespace GuiFunctions;
 public class ChimeraAnalysisTabViewModel : BaseViewModel
 {
     #region Displayed in GUI
+    public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
+    public Ms1ChimeraPlot Ms1ChimeraPlot { get; set; }
     public List<ChimeraGroupViewModel> ChimeraGroupViewModels { get; set; }
 
     private ChimeraGroupViewModel _selectedChimeraGroup;

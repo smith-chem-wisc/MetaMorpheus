@@ -1,6 +1,4 @@
-﻿using Chemistry;
-using EngineLayer;
-using MassSpectrometry;
+﻿using MassSpectrometry;
 using OxyPlot;
 using Omics.Fragmentation;
 using System.Collections.Generic;
@@ -10,15 +8,10 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Easy.Common.Extensions;
 using OxyPlot.Wpf;
-using Proteomics.ProteolyticDigestion;
 using Point = System.Windows.Point;
-using Vector = System.Windows.Vector;
 using Canvas = System.Windows.Controls.Canvas;
-using LinearAxis = OxyPlot.Axes.LinearAxis;
-using LineSeries = OxyPlot.Series.LineSeries;
-using Plot = mzPlot.Plot;
-using TextAnnotation = OxyPlot.Annotations.TextAnnotation;
 using Readers;
+using System;
 
 namespace GuiFunctions
 {
@@ -46,13 +39,35 @@ namespace GuiFunctions
             RefreshChart();
         }
 
+        public ChimeraSpectrumMatchPlot(PlotView plotView, ChimeraGroupViewModel chimeraGroupVm, double mzMax = double.MaxValue) : base(plotView, null,
+            chimeraGroupVm.Ms2Scan)
+        {
+
+            AnnotateMatchedIonsFromChimeraGroupVm(chimeraGroupVm);
+            if (Math.Abs(mzMax - double.MaxValue) > 0.001)
+            {
+                Model.Axes[0].Maximum = mzMax;
+            }
+
+            RefreshChart();
+        }
+
+        private void AnnotateMatchedIonsFromChimeraGroupVm(ChimeraGroupViewModel chimeraGroupVm)
+        {
+            foreach (var ionGroup in chimeraGroupVm.MatchedFragmentIonsByColor)
+            {
+                var color = ionGroup.Key;
+                ionGroup.Value.ForEach(p => AnnotatePeak(p.Item1, false, false, color));
+            }
+        }
+
         /// <summary>
         /// Annotates the matched ions based upon the protein of origin, and the unique proteoform ID's
         /// </summary>
         protected void AnnotateMatchedIons()
         {
             var allMatchedIons = new List<MatchedFragmentIon>();
-            List<(string, MatchedFragmentIon)> allDrawnIons = new();
+            List<(string, MatchedFragmentIon)> allDrawnIons = [];
             var overflowColors = OverflowColors;
 
             var proteinIndex = 0;
@@ -118,8 +133,8 @@ namespace GuiFunctions
             height = height > 0 ? height : 300;
             var tempModelPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "temp." + MetaDrawSettings.ExportType);
             var tempLegendPngPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(path), "legend.png");
-            List<System.Drawing.Bitmap> bitmaps = new();
-            List<Point> points = new();
+            List<System.Drawing.Bitmap> bitmaps = [];
+            List<Point> points = [];
             var dpiScale = MetaDrawSettings.CanvasPdfExportDpi / 96.0;
 
             // export model as png and load as bitmap
@@ -166,37 +181,46 @@ namespace GuiFunctions
         static ChimeraSpectrumMatchPlot()
         {
             MultipleProteinSharedColor = OxyColors.Black;
-            ColorByProteinDictionary = new();
-            ColorByProteinDictionary.Add(0, new List<OxyColor>()
+            ColorByProteinDictionary = new()
             {
-                OxyColors.Blue, OxyColors.SkyBlue, OxyColors.CornflowerBlue,
-                OxyColors.DarkBlue, OxyColors.CadetBlue, OxyColors.SteelBlue, OxyColors.DodgerBlue
-            });
-            ColorByProteinDictionary.Add(1, new List<OxyColor>()
-            {
-                OxyColors.Red, OxyColors.LightCoral, OxyColors.PaleVioletRed,
-                OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
-            });
-            ColorByProteinDictionary.Add(2, new List<OxyColor>()
-            {
-                OxyColors.Green, OxyColors.MediumSpringGreen, OxyColors.LightGreen,
-                OxyColors.Linen, OxyColors.SpringGreen, OxyColors.Chartreuse, OxyColors.DarkSeaGreen
-            });
-            ColorByProteinDictionary.Add(3, new List<OxyColor>()
-            {
-                OxyColors.Purple, OxyColors.MediumPurple, OxyColors.Violet,
-                OxyColors.Plum, OxyColors.Orchid, OxyColors.BlueViolet, OxyColors.Magenta
-            });
-            ColorByProteinDictionary.Add(4, new List<OxyColor>()
-            {
-                OxyColors.Brown, OxyColors.SaddleBrown, OxyColors.Sienna, OxyColors.Chocolate,
-                OxyColors.SandyBrown, OxyColors.Chocolate, OxyColors.Peru, OxyColors.Tan
-            });
-            ColorByProteinDictionary.Add(5, new List<OxyColor>()
-            {
-                OxyColors.Gold, OxyColors.DarkGoldenrod, OxyColors.Wheat, OxyColors.Goldenrod,
-                OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
-            });
+                {
+                    0, [
+                        OxyColors.Blue, OxyColors.MediumBlue, OxyColors.CornflowerBlue,
+                        OxyColors.DarkBlue, OxyColors.CadetBlue, OxyColors.SteelBlue, OxyColors.DodgerBlue,
+                        OxyColors.AliceBlue, OxyColors.DarkSlateBlue, OxyColors.DeepSkyBlue, OxyColors.DodgerBlue
+                    ]
+                },
+                {
+                    1, [
+                        OxyColors.Red, OxyColors.LightCoral, OxyColors.PaleVioletRed,
+                        OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
+                    ]
+                },
+                {
+                    2, [
+                        OxyColors.Green, OxyColors.MediumSpringGreen, OxyColors.LightGreen,
+                        OxyColors.Linen, OxyColors.SpringGreen, OxyColors.Chartreuse, OxyColors.DarkSeaGreen
+                    ]
+                },
+                {
+                    3, [
+                        OxyColors.Purple, OxyColors.MediumPurple, OxyColors.Violet,
+                        OxyColors.Plum, OxyColors.Orchid, OxyColors.BlueViolet, OxyColors.Magenta
+                    ]
+                },
+                {
+                    4, [
+                        OxyColors.Brown, OxyColors.SaddleBrown, OxyColors.Sienna, OxyColors.Chocolate,
+                        OxyColors.SandyBrown, OxyColors.Chocolate, OxyColors.Peru, OxyColors.Tan
+                    ]
+                },
+                {
+                    5, [
+                        OxyColors.Gold, OxyColors.DarkGoldenrod, OxyColors.Wheat, OxyColors.Goldenrod,
+                        OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
+                    ]
+                }
+            };
 
             IEnumerable<OxyColor> overflow = new List<OxyColor>()
             {

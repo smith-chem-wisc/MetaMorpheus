@@ -153,14 +153,14 @@
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="ID" Binding="{Binding Letter}" Width="Auto" />
-                <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="Auto" />
-                <DataGridTextColumn Header="Protein Mass" Binding="{Binding MonoMass}" Width="100"/>
-                <DataGridTextColumn Header="Precursor Mz" Binding="{Binding PrecursorMz}" Width="80"/>
+                <DataGridTextColumn Header="Name" Binding="{Binding Psm.Name}" Width="Auto" />
+                <DataGridTextColumn Header="Theoretical Mass" Binding="{Binding Psm.PrecursorMass}" Width="100"/>
+                <DataGridTextColumn Header="Precursor Mz" Binding="{Binding Psm.PrecursorMz}" Width="80"/>
                 <!--<DataGridTextColumn Header="Ambiguity" Binding="{Binding AmbiguityLevel}" Width="80"/>-->
                 <DataGridTextColumn Header="Mods" Binding="{Binding ModString}"></DataGridTextColumn>
-                <DataGridTextColumn Header="PEP Q-Value" Binding="{Binding PEP_QValue, StringFormat=F3}" Width="60"
+                <DataGridTextColumn Header="PEP Q-Value" Binding="{Binding Psm.PEP_QValue, StringFormat=F3}" Width="60"
                             ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Score}" 
+                <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Psm.Score}" 
                             ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                 <DataGridTemplateColumn Header="Protein">
                     <DataGridTemplateColumn.CellTemplate>
