@@ -42,7 +42,7 @@ namespace GuiFunctions
         public ICollectionView PeptideSpectralMatchesView;
 
         private List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
-        private Dictionary<string, MsDataFile> MsDataFiles; // key is file name without extension
+        public Dictionary<string, MsDataFile> MsDataFiles { get; } // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private SpectralLibrary SpectralLibrary;

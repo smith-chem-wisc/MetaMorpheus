@@ -39,6 +39,7 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private MetaDrawSettingsViewModel SettingsView;
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
+        public ChimeraAnalysisTabViewModel ChimeraAnalysisTabViewModel { get; set; }
 
         public MetaDraw()
         {
@@ -514,6 +515,9 @@ namespace MetaMorpheusGUI
 
             var slowProcess = Task<List<string>>.Factory.StartNew(() => MetaDrawLogic.LoadFiles(loadSpectra: true, loadPsms: true));
             await slowProcess;
+
+            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles);
+            ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
             var errors = slowProcess.Result;
 
             if (errors.Any())

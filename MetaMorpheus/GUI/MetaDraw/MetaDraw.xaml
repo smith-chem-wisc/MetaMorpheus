@@ -516,6 +516,11 @@
                     </Grid>
                 </DockPanel>
             </TabItem>
+            
+            <!-- Chimera Analysis tab -->
+            <TabItem Header="Chimera Analysis" Background="DarkGray" x:Name="ChimeraTab">
+                <local:ChimeraAnalysisTabView x:Name="ChimeraAnalysisTabView" />
+            </TabItem>
         </TabControl>
     </Grid>
 </Window>
