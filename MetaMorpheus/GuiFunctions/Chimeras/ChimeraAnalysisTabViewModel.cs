@@ -1,16 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Windows;
-using Chemistry;
 using Easy.Common.Extensions;
 using EngineLayer;
-using GuiFunctions.ViewModels.Legends;
 using MassSpectrometry;
 using MzLibUtil;
 using Omics;
-using Omics.Fragmentation;
 using Omics.Modifications;
 using OxyPlot;
 using Readers;
@@ -24,6 +19,18 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
 {
     #region Displayed in GUI
     public List<ChimeraGroupViewModel> ChimeraGroupViewModels { get; set; }
+
+    private ChimeraGroupViewModel _selectedChimeraGroup;
+    public ChimeraGroupViewModel SelectedChimeraGroup
+    {
+        get => _selectedChimeraGroup;
+        set
+        {
+            _selectedChimeraGroup = value;
+            ChimeraLegendViewModel.ChimeraLegendItems = value.LegendItems;
+            OnPropertyChanged(nameof(SelectedChimeraGroup));
+        }
+    }
 
     private ChimeraLegendViewModel _chimeraLegendViewModel;
     public ChimeraLegendViewModel ChimeraLegendViewModel
@@ -62,10 +69,26 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         }
     }
 
+    private bool useLetterOnly;
+    public bool UseLetterOnly
+    {
+        get => useLetterOnly;
+        set
+        {
+            if (useLetterOnly == value)
+                return;
+
+            useLetterOnly = value;
+            ChimeraGroupViewModels.ForEach(p => p.AssignIonColors(useLetterOnly));
+            OnPropertyChanged(nameof(UseLetterOnly));
+        }
+    }
+
     #endregion
 
     public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles)
     {
+        ChimeraLegendViewModel = new ChimeraLegendViewModel();
         ChimeraGroupViewModels = ConstructChimericPsms(allPsms, dataFiles)
             .OrderByDescending(p => p.Count)
             .ToList();
@@ -76,6 +99,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         return psms
             .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget == "T")
             .GroupBy(p => (p.FileNameWithoutExtension, p.Ms2ScanNumber))
+            .Where(p => p.Count() > 1)
             .Select(group =>
             {
                 if (!dataFiles.TryGetValue(group.First().FileNameWithoutExtension, out MsDataFile spectraFile))
@@ -93,249 +117,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             .Where(groupVm => groupVm != null);
     }
 }
-
-/// <summary>
-/// View model for a group of chimeric IDs from a single MS2 scan
-/// </summary>
-public class ChimeraGroupViewModel : BaseViewModel
-{
-    public string FileNameWithoutExtension { get; set; }
-    public int OneBasedPrecursorScanNumber { get; set; }
-    public int Ms2ScanNumber { get; set; }
-    public int Count => ChimericPsms.Count;
-    public int ProteinCount { get; }
-    public MsDataScan Ms1Scan { get; set; }
-    public MsDataScan Ms2Scan { get; set; }
-    public ObservableCollection<ChimericSpectralMatchModel> ChimericPsms { get; set; }
-
-    #region Plotting 
-
-    private List<string> _letters = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-    public Queue<string> Letters { get; }
-    public Dictionary<string, List<ChimeraLegendItemViewModel>> LegendItems { get; set; }
-
-    private bool IsColorInitialized { get; set; } = false;
-    private Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> _matchedFragmentIonsByColor;
-    public Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> MatchedFragmentIonsByColor
-    {
-        get
-        {
-            if (IsColorInitialized) return _matchedFragmentIonsByColor;
-            AssignIonColors();
-            IsColorInitialized = true;
-            return _matchedFragmentIonsByColor;
-        }
-        set
-        {
-            _matchedFragmentIonsByColor = value;
-            OnPropertyChanged(nameof(MatchedFragmentIonsByColor));
-        }
-    }
-
-    private Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> _precursorIonsByColor;
-
-    public Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> PrecursorIonsByColor
-    {
-        get
-        {
-            if (IsColorInitialized) return _precursorIonsByColor;
-            AssignIonColors();
-            IsColorInitialized = true;
-            return _precursorIonsByColor;
-        }
-        set
-        {
-            _precursorIonsByColor = value;
-            OnPropertyChanged(nameof(PrecursorIonsByColor));
-        }
-    }
-
-    /// <summary>
-    /// Lazy loading of colors. Ensures we dont spend time parsing out what should be what color to never end up plotting it. 
-    /// </summary>
-    /// <param name="useLetterOnly"></param>
-    internal void AssignIonColors(bool useLetterOnly = false)
-    {
-        // precursor peaks
-        foreach (var group in ChimericPsms.SelectMany(psm => psm.PrecursorEnvelope.Peaks.Select(peak =>
-        {
-            var neutralTheoreticalProduct = new Product(ProductType.M, FragmentationTerminus.None,
-                peak.mz.ToMass(psm.PrecursorEnvelope.Charge),
-                0, 0, 0);
-            return (psm, new MatchedFragmentIon(
-                neutralTheoreticalProduct,
-                peak.mz,
-                peak.intensity,
-                psm.PrecursorEnvelope.Charge));
-        }))
-                     .GroupBy(p => p.Item2))
-        {
-
-            // distinct ions
-            if (group.Count() == 1)
-            {
-                var psm = group.First().psm;
-                var maxIntensityPrecursorIon = psm.PrecursorEnvelope.Peaks.MaxBy(p => p.intensity);
-                if (Math.Abs(group.Key.Intensity - maxIntensityPrecursorIon.intensity) < 0.00001)
-                {
-                    string annotation = "";
-
-                    if (useLetterOnly)
-                    {
-                        annotation += psm.Letter;
-                    }
-                    else
-                    {
-                        annotation += $"Charge = {group.Key.Charge}";
-                        annotation += $"\nm/z = {group.Key.Mz:0.00}";
-                        annotation += $"\nMono Mass = {psm.PrecursorEnvelope.MonoisotopicMass:0.00}";
-                        annotation += $"\nProtein = {psm.Psm.Name}";
-
-
-                        //PeptideWithSetModifications pepWithSetMods = new(psm.Psm.FullSequence.Split("|")[0], GlobalVariables.AllModsKnownDictionary);
-                        //foreach (var mod in pepWithSetMods.AllModsOneIsNterminus)
-                        //{
-                        //    annotation += $"\n{mod.Value.IdWithMotif}{mod.Key}";
-                        //}
-                    }
-
-
-                    _precursorIonsByColor.AddOrReplace(psm.Color, group.Key, annotation);
-                }
-                else
-                    _precursorIonsByColor.AddOrReplace(psm.Color, group.Key, "");
-            }
-            // shared ions
-            else
-            {
-                if (group.Select(p => p.psm.Psm.Accession).Distinct().Count() == 1)
-                {
-                    _precursorIonsByColor.AddOrReplace(group.First().psm.ProteinColor, group.Key, "");
-                }
-                else
-                {
-                    _precursorIonsByColor.AddOrReplace(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor, group.Key, "");
-                }
-            }
-        }
-
-        // matched fragment ions
-        var accessionDict = ChimericPsms.Select(p => p.Psm.Accession)
-            .Distinct()
-            .ToDictionary(p => p, p => ChimericPsms.Count(psm => psm.Psm.Accession == p));
-        foreach (var annotationGroup in ChimericPsms
-                     .SelectMany(psm => psm.Psm.MatchedIons
-                         .Select(ion => (psm.Psm.Accession, psm.Color, psm.ProteinColor, ion)))
-                         .GroupBy(g => g.ion.Annotation))
-        {
-            //TODO: Group by mz
-            // if only one ion has the same annotation, unique proteoform color
-            if (annotationGroup.Count() == 1)
-                _matchedFragmentIonsByColor.AddOrReplace(annotationGroup.First().Color, annotationGroup.First().ion, "");
-            else
-            {
-                foreach (var mzGroup in annotationGroup.GroupBy(p => p.ion.Mz))
-                {
-                    if (mzGroup.Count() == 1)
-                    {
-                        _matchedFragmentIonsByColor.AddOrReplace(mzGroup.First().Color, mzGroup.First().ion, "");
-                    }
-                    // if only one protein present
-                    else if (mzGroup.Select(p => p.Accession).Distinct().Count() == 1)
-                    {
-                        // if all proteoforms of the protein have the ion, protein shared color
-                        if (mzGroup.Count() == accessionDict[mzGroup.First().Accession])
-                            _matchedFragmentIonsByColor.AddOrReplace(mzGroup.First().ProteinColor, mzGroup.First().ion, "");
-                        // if not all proteoforms have the same ion, their unique color
-                        else
-                            foreach (var item in mzGroup)
-                                _matchedFragmentIonsByColor.AddOrReplace(item.Color, item.ion, "");
-
-                    }
-                    // if only one mz value and multiple proteins, shared color
-                    else
-                    {
-                        _matchedFragmentIonsByColor.AddOrReplace(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor, mzGroup.First().ion, "");
-                    }
-                }
-            }
-        }
-    }
-
-    #endregion
-
-    public ChimeraGroupViewModel(IEnumerable<SpectrumMatchFromTsv> chimericSpectrumMatches, MsDataScan precursorSpectrum, MsDataScan fragmentationSpectrum)
-    {
-        Ms1Scan = precursorSpectrum;
-        Ms2Scan = fragmentationSpectrum;
-        ChimericPsms = [..ConstructChimericPsmModels(chimericSpectrumMatches)];
-        LegendItems = new();
-        Letters = new Queue<string>(_letters);
-
-        var representative = ChimericPsms.FirstOrDefault()!.Psm;
-        FileNameWithoutExtension = representative.FileNameWithoutExtension;
-        OneBasedPrecursorScanNumber = representative.PrecursorScanNum;
-        Ms2ScanNumber = representative.Ms2ScanNumber;
-    }
-
-    private IEnumerable<ChimericSpectralMatchModel> ConstructChimericPsmModels(IEnumerable<SpectrumMatchFromTsv> psms)
-    {
-
-        // Deconvolute the isolation window of the MS1 scan. 
-        var deconParams = new DeconHostViewModel().PrecursorDeconvolutionParameters.Parameters; // Use default for current AnalyteType
-        List<IsotopicEnvelope> envelopes = Ms2Scan.GetIsolatedMassesAndCharges(Ms1Scan, deconParams).ToList();
-
-        var tolerance = new PpmTolerance(100);
-
-        // TODO: polish this. 
-        // match each envelope with a SpectrumMatch based upon the spectrumMatches peptidemonoMass + massdiffda
-        // considering each scan needs to be matched with teh closes spectrum match
-        List<(SpectrumMatchFromTsv, IsotopicEnvelope)> matchedPsms = new();
-        foreach (var scan in envelopes.Where(p => p.Peaks.Count >= 3 && Ms2Scan.IsolationRange.MajorityWithin(p.Peaks.Select(m => m.mz))))
-        {
-            var psm = psms
-                .Where(p => tolerance.Within(p.PrecursorMass, scan.MonoisotopicMass)
-                //|| (MetaDrawSettings.CheckMzForChimeras && mzTolerance.Within(p.PrecursorMz, scan.PrecursorMonoisotopicPeakMz))
-                //|| scan.PrecursorEnvelope.Peaks.Any(peak => tolerance.Within(peak.mz, p.PrecursorMz)))
-                )
-                .OrderBy(p => Math.Abs(p.PrecursorMass - scan.MonoisotopicMass))
-                .FirstOrDefault();
-
-            if (psm != null)
-                matchedPsms.Add((psm, scan));
-        }
-
-        var distinct = matchedPsms
-            .GroupBy(p => p.Item1.QValue + p.Item1.FullSequence)
-                .Select(g => g.First())
-                .OrderBy(p => p.Item1.PrecursorMz)
-                .ToList();
-
-
-        int proteinIndex = 0;
-        foreach (var group in distinct.GroupBy(p => p.Item1.Name)
-                        .OrderByDescending(p => p.Count()))
-        {
-            var proteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][0];
-            LegendItems.Add(group.Key, new List<ChimeraLegendItemViewModel>());
-
-            //if (annotationGroup.Count( ) > 1)
-            //LegendItems[annotationGroup.Key].Add(new ChimeraLegendItemViewModel("Shared Ions", proteinColor));
-            for (int i = 0; i < group.Count(); i++)
-            {
-                var color = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1];
-                var chimericPsm = new ChimericSpectralMatchModel(group.ElementAt(i).Item1, group.ElementAt(i).Item2,
-                        color, proteinColor)
-                    { Letter = Letters.Dequeue() };
-                LegendItems[group.Key].Add(new(chimericPsm.ModString, color));
-                yield return chimericPsm;
-            }
-            proteinIndex++;
-        }
-    }
-}
-
-
 
 /// <summary>
 /// View model for a single chimeric spectral match

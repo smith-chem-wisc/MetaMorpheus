@@ -5,10 +5,172 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:MetaMorpheusGUI"
              xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
+             xmlns:oxy="http://oxyplot.org/wpf"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800"
              d:DataContext="{d:DesignInstance guiFunctions:ChimeraAnalysisTabViewModel, IsDesignTimeCreatable=True}">
     <Grid>
-            
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*"   />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- Data Grid -->
+        <DataGrid x:Name="chermicDataGrid" Grid.Column="0" AutoGenerateColumns="False" VerticalAlignment="Stretch" 
+          ItemsSource="{Binding  ChimeraGroupViewModels}" SelectedItem="{Binding SelectedChimeraGroup}"
+                  SelectionMode="Single" SelectionUnit="FullRow" HorizontalScrollBarVisibility="Disabled"
+                  SelectedCellsChanged="ChermicDataGrid_OnSelectedCellsChanged"
+                  ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" 
+                  CanUserDeleteRows="false" CanUserAddRows="false" Grid.Row="0" Grid.RowSpan="4">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="MS2 Num" Binding="{Binding Ms2ScanNumber}" Width="30" 
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTextColumn Header="Precursor Num" Binding="{Binding OneBasedPrecursorScanNumber}" Width="30"
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTextColumn Header="Count" Binding="{Binding Count}" Width="30" 
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTextColumn Header="Total Fragments" Binding="{Binding TotalFragments}" Width="40"
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Unique Fragments" Binding="{Binding UniqueFragments}" Width="40"
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Protein Count" Binding="{Binding ProteinCount}" Width="30"
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="DataFile" Binding="{Binding FileNameWithoutExtension}" Width="100"
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Export -->
+        <Grid Grid.Column="0" Grid.Row="4"  HorizontalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center">
+                <ComboBox  ItemsSource="{Binding ExportTypes}"  
+                   SelectedItem="{Binding SelectedExportType}"
+                   DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"
+                   HorizontalContentAlignment="Center"  VerticalContentAlignment="Center" />
+
+                <CheckBox Content="Use Letter" IsChecked="{Binding UseLetterOnly}"  VerticalContentAlignment="Center" />
+            </StackPanel>
+
+            <Button Grid.Row="1" Grid.Column="0" Content="Export MS1" Width="80" 
+            Command="{Binding ExportMs1Command}" Margin="5 0 5 0"
+            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"/>
+
+            <Button Grid.Row="2" Grid.Column="0" Content="Export MS2" Width="80" 
+            Command="{Binding ExportMs2Command}" Margin="5 0 5 0"
+            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"/>
+
+            <Button Grid.Row="1" Grid.Column="1" Content="Export Woot" Width="80" 
+            Command="{Binding ExportWootCommand}" Margin="5 0 5 0"
+            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"/>
+
+            <Button Grid.Row="2" Grid.Column="1" Content="Export Cov" Width="80"
+            Command="{Binding ExportSequenceCoverageCommand}" Margin="5 0 5 0"
+            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"/>
+
+            <Button Grid.Row="1" Grid.Column="2" Content="Export Legend" Width="80"
+            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"
+            Command="{Binding ExportLegendCommand}" Margin="5 0 5 0"
+            CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
+
+            <Button Grid.Row="2" Grid.Column="2" Content="Export All" Width="80"
+            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"
+            Command="{Binding ExportBulkCommand}" Margin="5 0 5 0"
+            CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
+        </Grid>
+
+        <!--Moveable splitter-->
+        <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="4"
+                      HorizontalAlignment="Center"
+                      VerticalAlignment="Stretch"
+                      Background="Silver"
+                      Width="2"/>
+
+        <!-- MS1 Plot-->
+        <oxy:PlotView x:Name="ms1ChimeraOverlaPlot" Grid.Row="0" Grid.Column="2"
+                  FontSize="16" FontStretch="Expanded"
+                  Margin="0 0 0 0" VerticalAlignment="Stretch" />
+
+        <!-- MS2 Plot -->
+        <oxy:PlotView x:Name="ms2ChimeraPlot" Grid.Row="1" Grid.Column="2" 
+                  FontSize="16" FontStretch="Expanded" VerticalAlignment="Stretch" />
+
+        <!-- Sequence Coverage -->
+        <Expander Grid.Row="2" Grid.Column="2" IsExpanded="False">
+            <Expander.Header>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Label Content="Sequence Annotation" Margin="0 0 10 0" />
+                    <CheckBox Content="Group Proteins?" VerticalAlignment="Center"
+                          IsChecked="{Binding GroupProteinsInSequenceAnnotation}"
+                          Margin="0 0 10 0" />
+                </StackPanel>
+            </Expander.Header>
+            <ScrollViewer HorizontalScrollBarVisibility="Visible" CanContentScroll="True"
+                      VerticalScrollBarVisibility="Disabled"
+                      HorizontalAlignment="Left">
+                <Canvas x:Name="chimeraSequenceCanvas" />
+            </ScrollViewer>
+        </Expander>
+
+
+        <Expander Grid.Column="2" Grid.Row="3" Header="Colorized Legend" IsExpanded="False">
+            <local:ChimeraLegendControl x:Name="ChimeraLegendControlInTab"
+                                    DataContext="{Binding ChimeraLegendViewModel}" Height="Auto" />
+        </Expander>
+
+        <DataGrid x:Name="chimericResultDataGrid" Grid.Column="2" Grid.Row="4" Grid.RowSpan="2"
+          ItemsSource="{Binding SelectedChimeraGroup.ChimericPsms}"
+          CanUserAddRows="False" CanUserDeleteRows="False" ScrollViewer.CanContentScroll="False" IsReadOnly="True" AutoGenerateColumns="False"
+          HorizontalScrollBarVisibility="Disabled" >
+            <DataGrid.Columns>
+                <DataGridTemplateColumn Header="Proteoform" >
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Rectangle  Stroke="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}"
+                                Fill="{Binding Color, Converter={local:OxyColorToColorBrushConverter}}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="ID" Binding="{Binding Letter}" Width="Auto" />
+                <DataGridTextColumn Header="Protein Name" Binding="{Binding ProteinName}" Width="Auto" />
+                <DataGridTextColumn Header="Protein Mass" Binding="{Binding MonoMass}" Width="100"/>
+                <DataGridTextColumn Header="Precursor Mz" Binding="{Binding PrecursorMz}" Width="80"/>
+                <!--<DataGridTextColumn Header="Ambiguity" Binding="{Binding AmbiguityLevel}" Width="80"/>-->
+                <DataGridTextColumn Header="Mods" Binding="{Binding ModString}"></DataGridTextColumn>
+                <DataGridTextColumn Header="PEP Q-Value" Binding="{Binding PEP_QValue, StringFormat=F3}" Width="60"
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Score}" 
+                            ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTemplateColumn Header="Protein">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Rectangle Stroke="{Binding ProteinColor, Converter={local:OxyColorToColorBrushConverter}}"
+                             Fill="{Binding ProteinColor, Converter={local:OxyColorToColorBrushConverter}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
     </Grid>
 </UserControl>

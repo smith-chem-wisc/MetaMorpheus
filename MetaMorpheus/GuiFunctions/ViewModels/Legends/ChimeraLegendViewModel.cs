@@ -1,17 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using EngineLayer;
 using GuiFunctions.ViewModels.Legends;
 using Omics;
 using OxyPlot;
-using Proteomics;
-using Proteomics.ProteolyticDigestion;
 using Readers;
 
 namespace GuiFunctions
@@ -50,6 +42,12 @@ namespace GuiFunctions
             TopOffset = offset;
             ChimeraLegendItems = new();
             ParseLegendItemsFromPsms(chimericIDs);
+        }
+
+        public ChimeraLegendViewModel()
+        {
+            TopOffset = 0;
+            ChimeraLegendItems = new();
         }
 
         /// <summary>
