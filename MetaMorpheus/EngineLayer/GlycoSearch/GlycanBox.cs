@@ -19,8 +19,6 @@ namespace EngineLayer
 
         public GlycanBox[] ChildGlycanBoxes { get; set; }   // all possible glycan combinations in the glycanBox
 
-        public static Modification[] GlobalOGlycanModifications { get; set; }
-
         public static GlycanBox[] OGlycanBoxes { get; set; } // all possible glycan boxes
 
         public byte[] Kind { get; private set; } 
