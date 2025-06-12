@@ -12,6 +12,8 @@ using Omics.Fragmentation;
 using SpectralAveraging;
 using TaskLayer;
 using Transcriptomics.Digestion;
+using System.Reflection;
+using System;
 
 namespace Test
 {
@@ -391,5 +393,121 @@ namespace Test
             File.Delete(filePath);
         }
 
+
+        [Test]
+        [TestCase("Averagine")]
+        [TestCase("OxyriboAveragine")]
+        public static void TestToml_AverageResidueModel_Success(string modelName)
+        {
+            var types = Assembly.GetAssembly(typeof(AverageResidue))!
+                .GetTypes()
+                .ToList();
+            var residueType = types
+                .FirstOrDefault(t => t.Name == modelName && t.IsSubclassOf(typeof(AverageResidue)));
+            var model = (AverageResidue)Activator.CreateInstance(residueType);
+            var searchTask = new SearchTask();
+            searchTask.CommonParameters.PrecursorDeconvolutionParameters.AverageResidueModel = model;
+
+
+            var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testAverageResidueModel.toml");
+            Toml.WriteFile(searchTask, tomlPath, MetaMorpheusTask.tomlConfig);
+
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+            var loadedModel = searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters.AverageResidueModel;
+            Assert.That(loadedModel.GetType(), Is.EqualTo(model.GetType()));
+        }
+
+        [Test]
+        public static void TestToml_AverageResidueModel_FailsOnBadType()
+        {
+            var searchTask = new SearchTask();
+            var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testAverageResidueModel.toml");
+            Toml.WriteFile(searchTask, tomlPath, MetaMorpheusTask.tomlConfig);
+
+            var lines = File.ReadAllLines(tomlPath).ToList();
+            // change the model to a bad type
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                if (line.Contains("AverageResidueModel"))
+                {
+                    lines[i] = "AverageResidueModel = \"BadModel\"";
+                    break;
+                }
+            }
+            File.WriteAllLines(tomlPath, lines);
+
+            try
+            {
+                Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+                Assert.Fail();
+            }
+            catch (InvalidOperationException e)
+            {
+                var inner = e.InnerException;
+                Assert.That(inner, Is.TypeOf<InvalidOperationException>());
+
+                var inner2 = inner!.InnerException;
+                Assert.That(inner2, Is.TypeOf<InvalidOperationException>());
+
+                var inner3 = inner2!.InnerException;
+                Assert.That(inner3, Is.TypeOf<MetaMorpheusException>());
+                Assert.That(inner3!.Message, Does.Contain("Toml Parsing Failure"));
+                Assert.That(inner3.Message, Does.Contain("Unknown AverageResidueModel: BadModel"));
+            }
+            catch (Exception e)
+            {
+                Assert.Fail();
+            }
+            finally
+            {
+                File.Delete(tomlPath);
+            }
+        }
+
+        [Test]
+        public static void TestToml_DeconvolutionType_FailsOnBadType()
+        {
+            var searchTask = new SearchTask();
+            var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testDeconTypeModel.toml");
+            Toml.WriteFile(searchTask, tomlPath, MetaMorpheusTask.tomlConfig);
+
+            var lines = File.ReadAllLines(tomlPath).ToList();
+            // change the model to a bad type
+            for (int i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                if (line.Contains("DeconvolutionType"))
+                {
+                    lines[i] = "DeconvolutionType = \"BadDecon\"";
+                    break;
+                }
+            }
+            File.WriteAllLines(tomlPath, lines);
+
+            try
+            {
+                Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+                Assert.Fail();
+            }
+            catch (InvalidOperationException e)
+            {
+                var inner = e.InnerException;
+                Assert.That(inner, Is.TypeOf<InvalidOperationException>());
+
+                var inner2 = inner!.InnerException;
+                Assert.That(inner2, Is.TypeOf<MetaMorpheusException>());
+                Assert.That(inner2!.Message, Does.Contain("Toml Parsing Failure"));
+                Assert.That(inner2.Message, Does.Contain("Unknown DeconvolutionType: BadDecon"));
+            }
+            catch (Exception e)
+            {
+                Assert.Fail();
+            }
+            finally
+            {
+                File.Delete(tomlPath);
+            }
+        }
     }
 }
