@@ -415,6 +415,33 @@ namespace Test
             var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
             var loadedModel = searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters.AverageResidueModel;
             Assert.That(loadedModel.GetType(), Is.EqualTo(model.GetType()));
+            File.Delete(tomlPath);
+        }
+
+        [Test]
+        public static void TestToml_IsoDecWithOxyRiboAverageResidueModel()
+        {
+            var model = (AverageResidue)new OxyriboAveragine();
+            var searchTask = new SearchTask()
+            {
+                CommonParameters = new CommonParameters(precursorDeconParams: new IsoDecDeconvolutionParameters(Polarity.Negative, 4))
+            };
+            searchTask.CommonParameters.PrecursorDeconvolutionParameters.AverageResidueModel = model;
+
+            var tomlPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TestData", "testIsodec.toml");
+            Toml.WriteFile(searchTask, tomlPath, MetaMorpheusTask.tomlConfig);
+
+            var searchTaskLoaded = Toml.ReadFile<SearchTask>(tomlPath, MetaMorpheusTask.tomlConfig);
+            var loadedModel = searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters.AverageResidueModel;
+            Assert.That(loadedModel.GetType(), Is.EqualTo(model.GetType()));
+            var loadedDeconParams = searchTaskLoaded.CommonParameters.PrecursorDeconvolutionParameters;
+            Assert.That(loadedDeconParams, Is.TypeOf<IsoDecDeconvolutionParameters>());
+            var isoDecParams = (IsoDecDeconvolutionParameters)loadedDeconParams;
+            Assert.That(isoDecParams.Polarity, Is.EqualTo(Polarity.Negative));
+            Assert.That(isoDecParams.AverageResidueModel.GetType(), Is.EqualTo(model.GetType()));
+            Assert.That(isoDecParams.PhaseRes, Is.EqualTo(4));
+
+            File.Delete(tomlPath);
         }
 
         [Test]
@@ -498,7 +525,7 @@ namespace Test
                 var inner2 = inner!.InnerException;
                 Assert.That(inner2, Is.TypeOf<MetaMorpheusException>());
                 Assert.That(inner2!.Message, Does.Contain("Toml Parsing Failure"));
-                Assert.That(inner2.Message, Does.Contain("Unknown DeconvolutionType: BadDecon"));
+                Assert.That(inner2.Message, Does.Contain("Unknown Deconvolution Type: BadDecon"));
             }
             catch (Exception e)
             {

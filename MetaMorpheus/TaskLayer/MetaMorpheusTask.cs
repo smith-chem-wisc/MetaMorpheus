@@ -93,7 +93,7 @@ namespace TaskLayer
                     {
                         "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
                         "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
-                        _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown DeconvolutionType: {tmlTable.Get<string>("DeconvolutionType")}")
+                        _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
                     })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
             .ConfigureType<ClassicDeconvolutionParameters>(type => type
@@ -127,11 +127,9 @@ namespace TaskLayer
                         }
                     )))
             .ConfigureType<Averagine>(type => type
-                .CreateInstance(() => new Averagine())
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.GetType().Name)))
             .ConfigureType<OxyriboAveragine>(type => type
-                .CreateInstance(() => new OxyriboAveragine())
                 .WithConversionFor<TomlString>(convert => convert
                     .ToToml(custom => custom.GetType().Name)))
         );
