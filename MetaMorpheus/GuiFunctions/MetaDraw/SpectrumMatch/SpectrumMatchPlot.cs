@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Chemistry;
-using EngineLayer;
 using iText.IO.Image;
 using iText.Kernel.Pdf;
 using iText.Layout;
@@ -27,6 +26,7 @@ namespace GuiFunctions
 {
     public class SpectrumMatchPlot : Plot
     {
+        public static int MaxCharactersPerDescriptionLine = 32;
         protected List<MatchedFragmentIon> matchedFragmentIons;
         public MsDataScan Scan { get; protected set; }
         public SpectrumMatchFromTsv SpectrumMatch { get; set; }
@@ -502,25 +502,7 @@ namespace GuiFunctions
             if (SpectrumMatch.Name != null && MetaDrawSettings.SpectrumDescription["Protein: "])
             {
                 text.Append("Protein: ");
-                if (SpectrumMatch.Name.Length > 20)
-                {
-                    text.Append(SpectrumMatch.Name.Substring(0, 20));
-                    int length = SpectrumMatch.Name.Length;
-                    int remaining = length - 20;
-                    for (int i = 20; i < SpectrumMatch.Name.Length; i += 26)
-                    {
-                        if (remaining <= 26)
-                            text.Append("\r\n   " + SpectrumMatch.Name.Substring(i, remaining - 1));
-                        else
-                        {
-                            text.Append("\r\n   " + SpectrumMatch.Name.Substring(i, 26));
-                            remaining -= 26;
-                        }
-                    }
-                }
-                else
-                    text.Append(SpectrumMatch.Name);
-
+                text.Append(SpectrumMatch.Name);
                 text.Append("\r\n");
             }
 
@@ -588,16 +570,25 @@ namespace GuiFunctions
                 text.Append("\r\n");
             }
 
+            double fontSize = MetaDrawSettings.SpectrumDescriptionFontSize;
+            string annotationText = text.ToString();
+            double averageCharWidth = 0.48; // Magic number determined by trial and error
+            int maxLineLength = Math.Min(annotationText.Split('\n').Max(line => line.Length), MaxCharactersPerDescriptionLine);
+            double estimatedWidth = fontSize * averageCharWidth * maxLineLength;
+
+            // Set X offset to negative estimated width minus a small margin
+            double xOffset = -estimatedWidth - 10 - (fontSize / 3);
+
             var annotation = new PlotTextAnnotation()
             {
                 Text = text.ToString(),
                 XPosition = PlotTextAnnotation.RelativeToX.Right,
                 YPosition = PlotTextAnnotation.RelativeToY.Top,
-                FontWeight = 550,
-                X = -155,
+                FontWeight = 450,
+                X = xOffset,
                 Font = "Arial",
-                FontSize = 10,
-                TextColor = OxyColors.Black,
+                FontSize = MetaDrawSettings.SpectrumDescriptionFontSize,
+                TextColor = OxyColors.Black, 
             };
 
             Model.Annotations.Add(annotation);
@@ -656,9 +647,59 @@ namespace GuiFunctions
             pX += X;
             pY += Y;
 
-            rc.DrawMultilineText(new ScreenPoint(pX, pY), Text, TextColor, Font, FontSize, FontWeight);
+            // Ensure text does not overlay in Y dimension. 
+            double lineSpacing = 1.2; // 20% extra space
+            double lineHeight = FontSize * lineSpacing;
+
+            string processedText = WrapLongLines(Text, SpectrumMatchPlot.MaxCharactersPerDescriptionLine, SpectrumMatchPlot.MaxCharactersPerDescriptionLine);
+            var lines = (processedText ?? string.Empty).Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                double yOffset = i * lineHeight;
+                rc.DrawText(
+                    new ScreenPoint(pX, pY + yOffset),
+                    lines[i],
+                    TextColor,
+                    Font,
+                    FontSize,
+                    FontWeight);
+            }
         }
 
+        private string WrapLongLines(string text, int firstLineLimit = 32, int wrapLineLimit = 29, string indent = "   ")
+        {
+            var lines = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+            var result = new StringBuilder();
+
+            foreach (var line in lines)
+            {
+                if (line.Length > firstLineLimit)
+                {
+                    int written = 0;
+                    int remaining = line.Length;
+                    // First line
+                    result.Append(line.Substring(0, firstLineLimit));
+                    written += firstLineLimit;
+                    remaining -= firstLineLimit;
+
+                    // Subsequent lines
+                    while (remaining > 0)
+                    {
+                        int take = Math.Min(wrapLineLimit - indent.Length, remaining);
+                        result.Append("\r\n" + indent + line.Substring(written, take));
+                        written += take;
+                        remaining -= take;
+                    }
+                    result.Append("\r\n");
+                }
+                else
+                {
+                    result.Append(line + "\r\n");
+                }
+            }
+            return result.ToString().TrimEnd('\r', '\n');
+        }
 
     }
 }
