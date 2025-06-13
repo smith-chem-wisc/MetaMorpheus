@@ -220,6 +220,43 @@ namespace GuiFunctions
                         OxyColors.Gold, OxyColors.DarkGoldenrod, OxyColors.Wheat, OxyColors.Goldenrod,
                         OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
                     ]
+                },
+                {
+                    6, [
+                        OxyColors.Cornsilk, OxyColors.BlanchedAlmond, OxyColors.Wheat, OxyColors.Goldenrod,
+                        OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
+                    ]
+                },
+                {
+                    7, [
+                        OxyColors.Cornsilk, OxyColors.BlanchedAlmond, OxyColors.Wheat, OxyColors.Goldenrod,
+                        OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
+                    ]
+                },
+                {
+                    8, [
+                        OxyColors.Cornsilk, OxyColors.BlanchedAlmond, OxyColors.Wheat, OxyColors.Goldenrod,
+                        OxyColors.DarkKhaki, OxyColors.Khaki, OxyColors.Moccasin
+                    ]
+                },
+                {
+                    9, [
+                        OxyColors.DarkBlue, OxyColors.SkyBlue, OxyColors.CornflowerBlue,
+                        OxyColors.DarkBlue, OxyColors.CadetBlue, OxyColors.SteelBlue, OxyColors.DodgerBlue,
+                        OxyColors.AliceBlue, OxyColors.DarkSlateBlue
+                    ]
+                },
+                {
+                    10, [
+                        OxyColors.DarkRed, OxyColors.LightCoral, OxyColors.PaleVioletRed,
+                        OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
+                    ]
+                },
+                {
+                    11, [
+                        OxyColors.Green, OxyColors.MediumSpringGreen, OxyColors.LightGreen,
+                        OxyColors.Linen, OxyColors.SpringGreen, OxyColors.Chartreuse, OxyColors.DarkSeaGreen
+                    ]
                 }
             };
 

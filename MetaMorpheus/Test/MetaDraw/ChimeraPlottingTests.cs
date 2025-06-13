@@ -9,6 +9,7 @@ using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
+using OxyPlot;
 using OxyPlot.Wpf;
 using Readers;
 
@@ -18,7 +19,8 @@ namespace Test.MetaDraw;
 [ExcludeFromCodeCoverage]
 public class ChimeraPlottingTests
 {
-    public static ChimeraGroupViewModel TestChimeraGroup;
+    public static ChimeraGroupViewModel OneProteinTwoProteoformChimeraGroup;
+    public static ChimeraGroupViewModel TwoProteinsTwoProteoformChimeraGroup;
     public static List<SpectrumMatchFromTsv> AllMatches;
     public static MsDataFile DataFile;
     public static string TestExportDirectory => Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", "ChimeraPlottingTests");
@@ -41,6 +43,16 @@ public class ChimeraPlottingTests
         DataFile = MsDataFileReader.GetDataFile(msDataPath).LoadAllStaticData();
         DataFile.InitiateDynamicConnection();
         AllMatches = SpectrumMatchTsvReader.ReadTsv(psmPath, out var warnings).Where(p => p.Ms2ScanNumber <= DataFile.Scans.Length).ToList();
+
+        var testMs1Scan = DataFile.GetOneBasedScan(900);
+        var testMs2Scan = DataFile.GetOneBasedScan(901);
+        var testPsms = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan.OneBasedScanNumber);
+        OneProteinTwoProteoformChimeraGroup = new ChimeraGroupViewModel(testPsms, testMs1Scan, testMs2Scan);
+
+        var testMs1Scan2 = DataFile.GetOneBasedScan(1243);
+        var testMs2Scan2 = DataFile.GetOneBasedScan(1246);
+        var testPsms2 = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan2.OneBasedScanNumber && p.QValue <= 0.01);
+        TwoProteinsTwoProteoformChimeraGroup = new ChimeraGroupViewModel(testPsms2, testMs1Scan2, testMs2Scan2);
     }
 
     [OneTimeTearDown]
@@ -103,8 +115,155 @@ public class ChimeraPlottingTests
         MetaDrawSettings.ShowDecoys = false; // reset to not show decoys
     }
 
+    [Test]
+    public static void ChimeraTabViewModel_PrecursorAssignmentIsCorrectInGroups()
+    {
+        var dataFiles = new Dictionary<string, MsDataFile>()
+        {
+            {"FXN3_tr1_032017-calib", DataFile }
+        };
+        var chimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(AllMatches, dataFiles, TestExportDirectory);
+
+        foreach (var chimeraGroup in chimeraAnalysisTabViewModel.ChimeraGroupViewModels)
+        {
+            // Only test groups with at least 2 PSMs
+            if (chimeraGroup.Count < 2)
+                continue;
+
+            var chimericPsms = chimeraGroup.ChimericPsms.ToList();
+            for (int i = 0; i < chimericPsms.Count; i++)
+            {
+                var psm = chimericPsms[i].Psm;
+                var envelope = chimericPsms[i].PrecursorEnvelope;
+
+                // Compare to all other envelopes in the group
+                double minDiff = Math.Abs(psm.PrecursorMass - envelope.MonoisotopicMass);
+                for (int j = 0; j < chimericPsms.Count; j++)
+                {
+                    if (i == j) continue;
+                    var otherEnvelope = chimericPsms[j].PrecursorEnvelope;
+                    double diff = Math.Abs(psm.PrecursorMass - otherEnvelope.MonoisotopicMass);
+                    Assert.That(minDiff, Is.LessThanOrEqualTo(diff),
+                        $"PSM {i} in group (scan {chimeraGroup.Ms2ScanNumber}) should be assigned to its closest envelope.");
+                }
+            }
+        }
+    }
+
     #endregion
 
+    #region Group View Model
+
+    [Test]
+    public static void ChimeraGroupViewModel_PrecursorAssignmentIsCorrect()
+    {
+        // Arrange
+        var chimeraGroup = OneProteinTwoProteoformChimeraGroup;
+        Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+
+        var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
+        var envelope2 = chimeraGroup.ChimericPsms[1].PrecursorEnvelope;
+        var psm1 = chimeraGroup.ChimericPsms[0].Psm;
+        var psm2 = chimeraGroup.ChimericPsms[1].Psm;
+
+
+        // ensure mass differences are minimized
+        var psm1ToEnvelope1 = Math.Abs(psm1.PrecursorMass - envelope1.MonoisotopicMass);
+        var psm2ToEnvelope2 = Math.Abs(psm2.PrecursorMass - envelope2.MonoisotopicMass);
+        var psm1ToEnvelope2 = Math.Abs(psm1.PrecursorMass - envelope2.MonoisotopicMass);
+        var psm2ToEnvelope1 = Math.Abs(psm2.PrecursorMass - envelope1.MonoisotopicMass);
+
+        Assert.That(psm1ToEnvelope1, Is.LessThanOrEqualTo(psm1ToEnvelope2), "PSM 1 should be assigned to its own envelope.");
+        Assert.That(psm2ToEnvelope2, Is.LessThanOrEqualTo(psm2ToEnvelope1), "PSM 2 should be assigned to its own envelope.");
+    }
+
+    [Test]
+    public static void ChimeraGroupViewModel_PrecursorColorAssignmentIsCorrect_OneProteinTwoProteoforms()
+    {
+        // Arrange
+        var chimeraGroup = OneProteinTwoProteoformChimeraGroup;
+        Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+
+        var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
+        var envelope2 = chimeraGroup.ChimericPsms[1].PrecursorEnvelope;
+
+        var envelope1Peaks = envelope1.Peaks;
+        var envelope2Peaks = envelope2.Peaks;
+
+        var sharedPeakColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][0];
+        var firstColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][1];
+        var secondColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][2];
+
+        // One color for each of the precursor envelopes. 
+        Assert.That(chimeraGroup.PrecursorIonsByColor.Count(), Is.EqualTo(2));
+        Assert.That(chimeraGroup.PrecursorIonsByColor.ContainsKey(sharedPeakColor), Is.False, "Shared peak color should not be present.");
+        Assert.That(chimeraGroup.PrecursorIonsByColor.ContainsKey(firstColor), Is.True, "First color should be present.");
+        Assert.That(chimeraGroup.PrecursorIonsByColor.ContainsKey(secondColor), Is.True, "Second color should be present.");
+
+        Assert.That(chimeraGroup.PrecursorIonsByColor[firstColor].Count, Is.EqualTo(envelope1Peaks.Count), "First color should match envelope 1 peaks.");
+        Assert.That(chimeraGroup.PrecursorIonsByColor[secondColor].Count, Is.EqualTo(envelope2Peaks.Count), "Second color should match envelope 2 peaks.");
+        Assert.That(chimeraGroup.ChimericPsms.All(p => p.ProteinColor == sharedPeakColor));
+    }
+
+    [Test]
+    public static void ChimeraGroupViewModel_PrecursorColorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
+    {
+        // Arrange
+        var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup;
+        Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+
+        var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
+        var envelope2 = chimeraGroup.ChimericPsms[1].PrecursorEnvelope;
+
+        var envelope1Peaks = envelope1.Peaks;
+        var envelope2Peaks = envelope2.Peaks;
+
+        var sharedPeakColor = OxyColors.Black;
+        var firstProteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][0];
+        var firstProteoformOfFirstProteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[0][1];
+        var secondProteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[1][0];
+        var firstProteoformOfSecondProteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[1][1];
+
+        // One color for each of the precursor envelopes. 
+        Assert.That(chimeraGroup.PrecursorIonsByColor.Count(), Is.EqualTo(2));
+        Assert.That(chimeraGroup.PrecursorIonsByColor.ContainsKey(sharedPeakColor), Is.False, "Shared peak color should not be present.");
+        Assert.That(chimeraGroup.PrecursorIonsByColor.ContainsKey(firstProteoformOfFirstProteinColor), Is.True, "First color should be present.");
+        Assert.That(chimeraGroup.PrecursorIonsByColor.ContainsKey(firstProteoformOfSecondProteinColor), Is.True, "Second color should be present.");
+
+        Assert.That(chimeraGroup.PrecursorIonsByColor[firstProteoformOfFirstProteinColor].Count, Is.EqualTo(envelope1Peaks.Count), "First color should match envelope 1 peaks.");
+        Assert.That(chimeraGroup.PrecursorIonsByColor[firstProteoformOfSecondProteinColor].Count, Is.EqualTo(envelope2Peaks.Count), "Second color should match envelope 2 peaks.");
+        Assert.That(chimeraGroup.ChimericPsms.Any(p => p.ProteinColor == firstProteinColor));
+        Assert.That(chimeraGroup.ChimericPsms.Any(p => p.Color == firstProteoformOfFirstProteinColor));
+        Assert.That(chimeraGroup.ChimericPsms.Any(p => p.ProteinColor == secondProteinColor));
+        Assert.That(chimeraGroup.ChimericPsms.Any(p => p.Color == firstProteoformOfSecondProteinColor));
+    }
+
+
+    [Test]
+    public static void ChimeraGroupViewModel_FragmentColorAssignmentIsCorrect()
+    {
+        //// Arrange
+        //var chimeraGroup = OneProteinTwoProteoformChimeraGroup;
+        //Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+
+        //var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
+        //var envelope2 = chimeraGroup.ChimericPsms[1].PrecursorEnvelope;
+        //var psm1 = chimeraGroup.ChimericPsms[0].Psm;
+        //var psm2 = chimeraGroup.ChimericPsms[1].Psm;
+
+
+        //// ensure mass differences are minimized
+        //var psm1ToEnvelope1 = psm1.PrecursorMass - envelope1.MonoisotopicMass;
+        //var psm2ToEnvelope2 = psm2.PrecursorMass - envelope2.MonoisotopicMass;
+        //var psm1ToEnvelope2 = psm1.PrecursorMass - envelope2.MonoisotopicMass;
+        //var psm2ToEnvelope1 = psm2.PrecursorMass - envelope1.MonoisotopicMass;
+
+        //Assert.That(psm1ToEnvelope1, Is.LessThanOrEqualTo(psm1ToEnvelope2), "PSM 1 should be assigned to its own envelope.");
+        //Assert.That(psm2ToEnvelope2, Is.LessThanOrEqualTo(psm2ToEnvelope1), "PSM 2 should be assigned to its own envelope.");
+    }
+
+
+    #endregion
 
 }
 
