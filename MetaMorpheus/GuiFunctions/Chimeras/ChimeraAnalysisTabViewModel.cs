@@ -1,13 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Windows;
+using System.Windows.Input;
 using Easy.Common.Extensions;
-using EngineLayer;
 using MassSpectrometry;
 using MzLibUtil;
-using Omics;
-using Omics.Modifications;
-using OxyPlot;
 using Readers;
 
 namespace GuiFunctions;
@@ -88,18 +88,23 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
 
     #endregion
 
-    public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles)
+    public ChimeraAnalysisTabViewModel(List<SpectrumMatchFromTsv> allPsms, Dictionary<string, MsDataFile> dataFiles, string? exportDirectory = null)
     {
         ChimeraLegendViewModel = new ChimeraLegendViewModel();
         ChimeraGroupViewModels = ConstructChimericPsms(allPsms, dataFiles)
             .OrderByDescending(p => p.Count)
             .ToList();
+        ExportDirectory = exportDirectory ?? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        SelectedExportType = "Png";
+        ExportTypes = [ "Pdf", "Png", "Svg"];
+        OnPropertyChanged(nameof(ExportTypes));
     }
 
     private static IEnumerable<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
     {
+        // Groups are made from psms that pass the MetaDraw quality filter and only include decoys if we are showing decoys.
         return psms
-            .Where(p => p.QValue <= 0.01 && p.DecoyContamTarget == "T")
+            .Where(p => p.QValue <= MetaDrawSettings.QValueFilter && (MetaDrawSettings.ShowDecoys || !p.DecoyContamTarget.Contains('D')))
             .GroupBy(p => (p.FileNameWithoutExtension, p.Ms2ScanNumber))
             .Where(p => p.Count() > 1)
             .Select(group =>
@@ -118,37 +123,39 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             })
             .Where(groupVm => groupVm != null);
     }
-}
 
-/// <summary>
-/// View model for a single chimeric spectral match
-/// </summary>
-public class ChimericSpectralMatchModel : BaseViewModel
-{
-    public SpectrumMatchFromTsv Psm { get; set; }
-    public IsotopicEnvelope PrecursorEnvelope { get; set; }
-    public OxyColor Color { get; set; }
-    public OxyColor ProteinColor { get; set; }
-    public string Letter { get; set; }
-    public string ModString { get; set; }
-    public Dictionary<int, Modification> AllModsOneIsNterminus { get; set; }
+    #region IO
 
-    public ChimericSpectralMatchModel(SpectrumMatchFromTsv psm, IsotopicEnvelope precursorEnvelope, OxyColor color, OxyColor proteinColor)
+    private string _exportDirectory;
+    public string ExportDirectory
     {
-        Psm = psm;
-        PrecursorEnvelope = precursorEnvelope;
-        Color = color;
-        ProteinColor = proteinColor;
-
-        var modDict = GlobalVariables.AnalyteType switch {
-            AnalyteType.Oligo => GlobalVariables.AllRnaModsKnownDictionary,
-            _ => GlobalVariables.AllModsKnownDictionary
-        };
-        AllModsOneIsNterminus = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(psm.FullSequence, modDict);
-        ModString = string.Join(", ", AllModsOneIsNterminus.Select(m => $"{m.Key} - {m.Value.IdWithMotif}"));
+        get
+        {
+            if (!Directory.Exists(_exportDirectory))
+                Directory.CreateDirectory(_exportDirectory);
+            return _exportDirectory;
+        }
+        set
+        {
+            _exportDirectory = value;
+            OnPropertyChanged(nameof(ExportDirectory));
+        }
     }
-}
+    public ObservableCollection<string> ExportTypes { get; set; }
 
+    private string _selectedExportType;
+    public string SelectedExportType
+    {
+        get => _selectedExportType;
+        set
+        {
+            _selectedExportType = value;
+            OnPropertyChanged(nameof(SelectedExportType));
+        }
+    }
+
+    #endregion
+}
 
 internal static class Extensions
 {

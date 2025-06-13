@@ -516,7 +516,9 @@ namespace MetaMorpheusGUI
             var slowProcess = Task<List<string>>.Factory.StartNew(() => MetaDrawLogic.LoadFiles(loadSpectra: true, loadPsms: true));
             await slowProcess;
 
-            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles);
+            string directoryPath = Path.Combine(Path.GetDirectoryName(MetaDrawLogic.SpectralMatchResultFilePaths.First()), "MetaDrawExport",
+                DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture));
+            ChimeraAnalysisTabViewModel = new ChimeraAnalysisTabViewModel(MetaDrawLogic.FilteredListOfPsms.ToList(), MetaDrawLogic.MsDataFiles, directoryPath);
             ChimeraTab.DataContext = ChimeraAnalysisTabViewModel;
             var errors = slowProcess.Result;
 

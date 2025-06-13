@@ -67,37 +67,27 @@
             <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" HorizontalAlignment="Center">
                 <ComboBox  ItemsSource="{Binding ExportTypes}"  
                    SelectedItem="{Binding SelectedExportType}"
-                   DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"
                    HorizontalContentAlignment="Center"  VerticalContentAlignment="Center" />
 
                 <CheckBox Content="Use Letter" IsChecked="{Binding UseLetterOnly}"  VerticalContentAlignment="Center" />
             </StackPanel>
 
             <Button Grid.Row="1" Grid.Column="0" Content="Export MS1" Width="80" 
-            Command="{Binding ExportMs1Command}" Margin="5 0 5 0"
-            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"/>
+                    Margin="5 0 5 0" Click="ExportMs1"/>
 
             <Button Grid.Row="2" Grid.Column="0" Content="Export MS2" Width="80" 
-            Command="{Binding ExportMs2Command}" Margin="5 0 5 0"
-            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"/>
-
-            <Button Grid.Row="1" Grid.Column="1" Content="Export Woot" Width="80" 
-            Command="{Binding ExportWootCommand}" Margin="5 0 5 0"
-            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"/>
+                    Margin="5 0 5 0" Click="ExportMs2"/>
 
             <Button Grid.Row="2" Grid.Column="1" Content="Export Cov" Width="80"
-            Command="{Binding ExportSequenceCoverageCommand}" Margin="5 0 5 0"
-            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"/>
+                    Margin="5 0 5 0" Click="ExportSequenceCoverage"/>
 
             <Button Grid.Row="1" Grid.Column="2" Content="Export Legend" Width="80"
-            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"
-            Command="{Binding ExportLegendCommand}" Margin="5 0 5 0"
-            CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
+                    Margin="5 0 5 0" Click="ExportLegend"
+                    CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
 
             <Button Grid.Row="2" Grid.Column="2" Content="Export All" Width="80"
-            DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=TabItem} }"
-            Command="{Binding ExportBulkCommand}" Margin="5 0 5 0"
-            CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
+                    Margin="5 0 5 0" Click="ExportAll"
+                    CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
         </Grid>
 
         <!--Moveable splitter-->
@@ -156,7 +146,6 @@
                 <DataGridTextColumn Header="Name" Binding="{Binding Psm.Name}" Width="Auto" />
                 <DataGridTextColumn Header="Theoretical Mass" Binding="{Binding Psm.PrecursorMass}" Width="100"/>
                 <DataGridTextColumn Header="Precursor Mz" Binding="{Binding Psm.PrecursorMz}" Width="80"/>
-                <!--<DataGridTextColumn Header="Ambiguity" Binding="{Binding AmbiguityLevel}" Width="80"/>-->
                 <DataGridTextColumn Header="Mods" Binding="{Binding ModString}"></DataGridTextColumn>
                 <DataGridTextColumn Header="PEP Q-Value" Binding="{Binding Psm.PEP_QValue, StringFormat=F3}" Width="60"
                             ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>

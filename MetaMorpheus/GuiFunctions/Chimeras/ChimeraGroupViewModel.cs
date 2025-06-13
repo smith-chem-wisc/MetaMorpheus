@@ -43,7 +43,6 @@ public class ChimeraGroupViewModel : BaseViewModel
         {
             if (IsColorInitialized) return _matchedFragmentIonsByColor;
             AssignIonColors();
-            IsColorInitialized = true;
             return _matchedFragmentIonsByColor;
         }
         set
@@ -61,7 +60,6 @@ public class ChimeraGroupViewModel : BaseViewModel
         {
             if (IsColorInitialized) return _precursorIonsByColor;
             AssignIonColors();
-            IsColorInitialized = true;
             return _precursorIonsByColor;
         }
         set
@@ -173,6 +171,8 @@ public class ChimeraGroupViewModel : BaseViewModel
                 }
             }
         }
+
+        IsColorInitialized = true;
     }
 
     #endregion
@@ -182,10 +182,10 @@ public class ChimeraGroupViewModel : BaseViewModel
         Ms1Scan = precursorSpectrum;
         Ms2Scan = fragmentationSpectrum;
         LegendItems = new();
-        Letters = new Queue<string>(_letters);
+        Letters = new (_letters);
 
         ChimericPsms = [.. ConstructChimericPsmModels(chimericSpectrumMatches)];
-        var representative = ChimericPsms.FirstOrDefault()!.Psm;
+        var representative = chimericSpectrumMatches.FirstOrDefault()!;
         FileNameWithoutExtension = representative.FileNameWithoutExtension;
         OneBasedPrecursorScanNumber = representative.PrecursorScanNum;
         Ms2ScanNumber = representative.Ms2ScanNumber;
@@ -199,7 +199,6 @@ public class ChimeraGroupViewModel : BaseViewModel
 
     private IEnumerable<ChimericSpectralMatchModel> ConstructChimericPsmModels(IEnumerable<SpectrumMatchFromTsv> psms)
     {
-
         // Deconvolute the isolation window of the MS1 scan. 
         var deconParams = new DeconHostViewModel().PrecursorDeconvolutionParameters.Parameters; // Use default for current AnalyteType
         List<IsotopicEnvelope> envelopes = Ms2Scan.GetIsolatedMassesAndCharges(Ms1Scan, deconParams).ToList();
