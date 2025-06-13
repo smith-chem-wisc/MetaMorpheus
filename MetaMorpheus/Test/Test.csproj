@@ -24,7 +24,7 @@
     <PackageReference Include="Microsoft.ML" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.CpuMath" Version="3.0.1" />
     <PackageReference Include="Microsoft.ML.FastTree" Version="3.0.1" />
-    <PackageReference Include="mzLib" Version="1.0.562" />
+    <PackageReference Include="mzLib" Version="1.0.563" />
     <PackageReference Include="NUnit" Version="4.1.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
@@ -376,6 +376,12 @@
     <None Update="TestData\smalldb.fasta">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="TestData\snippet.d\analysis.tdf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\snippet.d\analysis.tdf_bin">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="TestData\SpectralLibrarySearch\1-81.raw">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
@@ -504,6 +510,9 @@
     </None>
     <None Update="TestData\TestExperimentalDesign\WrongNumberOfCells\small.mzML">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="TestData\timsTofSnippet.fasta">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="TestData\tinySemi.mgf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

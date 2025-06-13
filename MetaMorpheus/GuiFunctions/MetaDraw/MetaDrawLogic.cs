@@ -1056,6 +1056,10 @@ namespace GuiFunctions
 
                     var spectraFile = MsDataFileReader.GetDataFile(filepath);
                     spectraFile.InitiateDynamicConnection();
+                    if (spectraFile is TimsTofFileReader timsTofDataFile)
+                    {
+                        timsTofDataFile.LoadAllStaticData(); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
+                    }
                     if (!MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
                     {
                         spectraFile.CloseDynamicConnection();
