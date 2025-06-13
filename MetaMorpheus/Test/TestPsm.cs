@@ -11,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using TaskLayer;
 using UsefulProteomicsDatabases;
 using Omics;
@@ -21,8 +20,6 @@ using Omics.Modifications;
 using Easy.Common.Extensions;
 using Omics.BioPolymer;
 using Readers;
-using static Nett.TomlObjectFactory;
-using SpectrumMatchFromTsvHeader = EngineLayer.SpectrumMatchFromTsvHeader;
 
 namespace Test
 {

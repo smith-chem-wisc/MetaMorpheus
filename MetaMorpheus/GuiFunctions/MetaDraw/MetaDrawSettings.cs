@@ -53,6 +53,7 @@ namespace GuiFunctions
         public static int AxisLabelTextSize { get; set; } = 12;
         public static double StrokeThicknessUnannotated { get; set; } = 0.7;
         public static double StrokeThicknessAnnotated { get; set; } = 1.0;
+        public static double SpectrumDescriptionFontSize { get; set; } = 10;
 
         // filter settings
         public static bool ShowDecoys { get; set; } = false;
@@ -456,7 +457,8 @@ namespace GuiFunctions
                 AxisTitleTextSize = AxisTitleTextSize,
                 AxisLabelTextSize = AxisLabelTextSize,
                 StrokeThicknessUnannotated = StrokeThicknessUnannotated,
-                StrokeThicknessAnnotated = StrokeThicknessAnnotated
+                StrokeThicknessAnnotated = StrokeThicknessAnnotated,
+                SpectrumDescriptionFontSize = SpectrumDescriptionFontSize,
             };
         }
 
@@ -488,6 +490,7 @@ namespace GuiFunctions
             AxisLabelTextSize = settings.AxisLabelTextSize == 0 ? 12 : settings.AxisLabelTextSize;
             StrokeThicknessUnannotated = settings.StrokeThicknessUnannotated == 0 ? 0.7 : settings.StrokeThicknessUnannotated;
             StrokeThicknessAnnotated = settings.StrokeThicknessAnnotated == 0 ? 1 : settings.StrokeThicknessAnnotated;
+            SpectrumDescriptionFontSize = settings.SpectrumDescriptionFontSize;
             UnannotatedPeakColor = DrawnSequence.ParseOxyColorFromName(settings.UnannotatedPeakColor);
             InternalIonColor = DrawnSequence.ParseOxyColorFromName(settings.InternalIonColor);
 

@@ -11,7 +11,6 @@ using Omics.Modifications;
 using Easy.Common.Extensions;
 using EngineLayer.SpectrumMatch;
 using Readers;
-using SpectrumMatchFromTsvHeader = EngineLayer.SpectrumMatchFromTsvHeader;
 
 namespace Test
 {
