@@ -3,10 +3,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using System.Windows;
-using System.Windows.Input;
 using MassSpectrometry;
 using Readers;
+using EngineLayer;
 
 namespace GuiFunctions;
 
@@ -98,28 +97,45 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         OnPropertyChanged(nameof(ExportTypes));
     }
 
-    private static IEnumerable<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
+    private static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
     {
         // Groups are made from psms that pass the MetaDraw quality filter and only include decoys if we are showing decoys.
-        return psms
-            .Where(p => p.QValue <= MetaDrawSettings.QValueFilter && (MetaDrawSettings.ShowDecoys || !p.DecoyContamTarget.Contains('D')))
-            .GroupBy(p => (p.FileNameWithoutExtension, p.Ms2ScanNumber))
-            .Where(p => p.Count() > 1)
-            .Select(group =>
-            {
-                if (!dataFiles.TryGetValue(group.First().FileNameWithoutExtension, out MsDataFile spectraFile))
-                    return null;
+        var filteredPsms = new List<SpectrumMatchFromTsv>(psms.Count);
+        foreach (var p in psms)
+        {
+            if (p.QValue <= MetaDrawSettings.QValueFilter && (MetaDrawSettings.ShowDecoys || !p.DecoyContamTarget.Contains('D')))
+                filteredPsms.Add(p);
+        }
 
-                var ms1Scan = spectraFile.GetOneBasedScanFromDynamicConnection(group.First().PrecursorScanNum);
-                var ms2Scan = spectraFile.GetOneBasedScanFromDynamicConnection(group.First().Ms2ScanNumber);
+        var groupDict = new Dictionary<(string, int), IList<SpectrumMatchFromTsv>>(filteredPsms.Count);
+        foreach (var p in filteredPsms)
+        {
+            var key = (p.FileNameWithoutExtension, p.Ms2ScanNumber);
+            groupDict.AddOrCreate(key, p);
+        }
 
-                if (ms1Scan == null || ms2Scan == null)
-                    return null;
+        List<ChimeraGroupViewModel> toReturn = new(groupDict.Count);
+        foreach (var group in groupDict.Values)
+        {
+            if (group.Count <= 1)
+                continue;
 
-                var groupVm = new ChimeraGroupViewModel(group.OrderBy(p => p.PrecursorMz), ms1Scan, ms2Scan);
-                return groupVm.ChimericPsms.Count > 0 ? groupVm : null;
-            })
-            .Where(groupVm => groupVm != null);
+            var first = group[0];
+            if (!dataFiles.TryGetValue(first.FileNameWithoutExtension, out MsDataFile spectraFile))
+                continue;
+
+            var ms1Scan = spectraFile.GetOneBasedScanFromDynamicConnection(first.PrecursorScanNum);
+            var ms2Scan = spectraFile.GetOneBasedScanFromDynamicConnection(first.Ms2ScanNumber);
+
+            if (ms1Scan == null || ms2Scan == null)
+                continue;
+
+            var orderedGroup = group.OrderBy(p => p.PrecursorMz);
+            var groupVm = new ChimeraGroupViewModel(orderedGroup, ms1Scan, ms2Scan);
+            if (groupVm.ChimericPsms.Count > 0)
+                toReturn.Add(groupVm);
+        }
+        return toReturn;
     }
 
     #region IO
