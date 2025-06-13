@@ -110,20 +110,13 @@ public class ChimeraGroupViewModel : BaseViewModel
                         annotation += $"\nm/z = {group.Key.Mz:0.00}";
                         annotation += $"\nMono Mass = {psm.PrecursorEnvelope.MonoisotopicMass:0.00}";
                         annotation += $"\nProtein = {psm.Psm.Name}";
-
-
-                        //PeptideWithSetModifications pepWithSetMods = new(psm.Psm.FullSequence.Split("|")[0], GlobalVariables.AllModsKnownDictionary);
-                        //foreach (var mod in pepWithSetMods.AllModsOneIsNterminus)
-                        //{
-                        //    annotation += $"\n{mod.Value.IdWithMotif}{mod.Key}";
-                        //}
                     }
 
 
                     _precursorIonsByColor.AddOrReplace(psm.Color, group.Key, annotation);
                 }
                 else
-                    _precursorIonsByColor.AddOrReplace(psm.Color, group.Key, "");
+                    _precursorIonsByColor.AddOrReplace(psm.Color, group.Key, "Miso");
             }
             // shared ions
             else
@@ -215,8 +208,10 @@ public class ChimeraGroupViewModel : BaseViewModel
         var availablePsms = psms.ToList();
         var matchedPsms = new List<(SpectrumMatchFromTsv, IsotopicEnvelope)>();
 
-        // For each envelope, find the best matching PSM by minimizing a combined score
-        foreach (var envelope in envelopes.Where(p => p.Peaks.Count >= 2 && Ms2Scan.IsolationRange.MajorityWithin(p.Peaks.Select(m => m.mz))))
+        // For each envelope, find the best matching PSM by minimizing a combined score of mz and neutral mass differences. 
+        foreach (var envelope in envelopes.Where(p => p.Peaks.Count >= 2 && Ms2Scan.IsolationRange.MajorityWithin(p.Peaks.Select(m => m.mz)))
+            .OrderByDescending(p => p.Peaks.Count)
+            .ThenByDescending(p => p.Score))
         {
             SpectrumMatchFromTsv? bestPsm = null;
             double bestScore = double.MaxValue;
@@ -253,8 +248,9 @@ public class ChimeraGroupViewModel : BaseViewModel
             var proteinColor = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][0];
             LegendItems.Add(group.Key, new List<ChimeraLegendItemViewModel>());
 
-            //if (annotationGroup.Count( ) > 1)
-            //LegendItems[annotationGroup.Key].Add(new ChimeraLegendItemViewModel("Shared Ions", proteinColor));
+            if (group.Count() > 1)
+                LegendItems[group.Key].Add(new ChimeraLegendItemViewModel("Shared Ions", proteinColor));
+
             for (int i = 0; i < group.Count(); i++)
             {
                 var color = ChimeraSpectrumMatchPlot.ColorByProteinDictionary[proteinIndex][i + 1];

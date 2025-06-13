@@ -42,13 +42,14 @@ namespace GuiFunctions
         public ChimeraSpectrumMatchPlot(PlotView plotView, ChimeraGroupViewModel chimeraGroupVm, double mzMax = double.MaxValue) : base(plotView, null,
             chimeraGroupVm.Ms2Scan)
         {
-
+            matchedFragmentIons = chimeraGroupVm.MatchedFragmentIonsByColor.SelectMany(p => p.Value.Select(q => q.Item1)).ToList();
             AnnotateMatchedIonsFromChimeraGroupVm(chimeraGroupVm);
             if (Math.Abs(mzMax - double.MaxValue) > 0.001)
             {
                 Model.Axes[0].Maximum = mzMax;
             }
 
+            ZoomAxes();
             RefreshChart();
         }
 
@@ -192,8 +193,8 @@ namespace GuiFunctions
                 },
                 {
                     1, [
-                        OxyColors.Red, OxyColors.LightCoral, OxyColors.PaleVioletRed,
-                        OxyColors.IndianRed, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
+                        OxyColors.Red, OxyColors.IndianRed, OxyColors.PaleVioletRed,
+                        OxyColors.LightCoral, OxyColors.Firebrick, OxyColors.Maroon, OxyColors.Tomato
                     ]
                 },
                 {

@@ -97,7 +97,7 @@ namespace GuiFunctions
                 AbsoluteMinimum = 0,
                 AbsoluteMaximum = Scan.MassSpectrum.YArray.Max() * 2,
                 MajorStep = Scan.MassSpectrum.YArray.Max() / 10,
-                MinorStep = Scan.MassSpectrum.YArray.Max() / 10,
+                MinorStep = Scan.MassSpectrum.YArray.Max() / 50,
                 StringFormat = "0e-0",
                 MajorTickSize = 2,
                 TitleFontWeight = FontWeights.Bold,
@@ -138,9 +138,33 @@ namespace GuiFunctions
             line.Points.Add(new DataPoint(mz, 0));
             line.Points.Add(new DataPoint(mz, intensity));
 
-            if (annotation != null)
+            if (annotation != null && !annotation.Text.Contains("Miso"))
             {
-                Model.Annotations.Add(annotation);
+                var x = annotation.TextPosition.X;
+                var y = annotation.TextPosition.Y + 20;
+                var splits = annotation.Text.Split('\n');
+
+                // Calculate y step for annotation lines based on Y-axis range
+                var yAxis = Model.Axes.FirstOrDefault(a => a.Position == AxisPosition.Left);
+                double yRange = yAxis != null ? Math.Abs(yAxis.ActualMaximum - yAxis.ActualMinimum) : 1.0;
+                double yStep = yRange * 0.05; // 5% of the y-range per line 
+
+                for (int j = splits.Length - 1; j >= 0; j--)
+                {
+                    var split = splits[j];
+                    var annotationLine = new TextAnnotation();
+                    annotationLine.Font = annotation.Font;
+                    annotationLine.FontSize = annotation.FontSize;
+                    annotationLine.FontWeight = annotation.FontWeight;
+                    annotationLine.TextColor = annotation.TextColor;
+                    annotationLine.StrokeThickness = annotation.StrokeThickness;
+                    annotationLine.Text = split;
+                    annotationLine.TextPosition = new DataPoint(x, y);
+                    annotationLine.TextVerticalAlignment = annotation.TextVerticalAlignment;
+                    annotationLine.TextHorizontalAlignment = HorizontalAlignment.Center;
+                    Model.Annotations.Add(annotationLine);
+                    y += yStep;
+                }
             }
 
             Model.Series.Add(line);
@@ -255,43 +279,42 @@ namespace GuiFunctions
                         }
                     else
                         peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
+
+                    if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
+                        !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
+                    {
+                        peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
+                    }
+
+                    if (MetaDrawSettings.AnnotateCharges)
+                    {
+                        char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
+                        if (MetaDrawSettings.SubAndSuperScriptIons)
+                        {
+                            var superScript = new string(Math.Abs(matchedIon.Charge).ToString()
+                                .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
+                                .ToArray());
+
+                            peakAnnotationText += superScript;
+                            if (chargeAnnotation == '+')
+                                peakAnnotationText += (char)(chargeAnnotation + 8271);
+                            else
+                                peakAnnotationText += (char)(chargeAnnotation + 8270);
+                        }
+                        else
+                            peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
+                    }
+
+                    if (MetaDrawSettings.AnnotateMzValues)
+                    {
+                        peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
+                    }
                 }
                 else
                 {
                     peakAnnotationText += annotation;
                     intensity += intensity * 0.05;
                 }
-
-                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
-                    !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
-                {
-                    peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
-                }
-
-                if (MetaDrawSettings.AnnotateCharges)
-                {
-                    char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
-                    if (MetaDrawSettings.SubAndSuperScriptIons)
-                    {
-                        var superScript = new string(Math.Abs(matchedIon.Charge).ToString()
-                            .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
-                            .ToArray());
-
-                        peakAnnotationText += superScript;
-                        if (chargeAnnotation == '+')
-                            peakAnnotationText += (char)(chargeAnnotation + 8271);
-                        else
-                            peakAnnotationText += (char)(chargeAnnotation + 8270);
-                    }
-                    else
-                        peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
-                }
-
-                if (MetaDrawSettings.AnnotateMzValues)
-                {
-                    peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
-                }
-
 
                 peakAnnotation.Font = "Arial";
                 peakAnnotation.FontSize = MetaDrawSettings.AnnotatedFontSize;

@@ -20,11 +20,9 @@ public class Ms1ChimeraPlot : SpectrumMatchPlot
         Range = chimeraGroupVm.Ms2Scan.IsolationRange;
         ChimeraGroup = chimeraGroupVm;
 
-        AnnotateChimericPeaks(chimeraGroupVm);
-        Model.Axes[0].MajorStep = 1;
-        Model.Axes[0].MinorStep = 0.2;
-        SetTitle();
         ZoomAxes();
+        AnnotateChimericPeaks(chimeraGroupVm);
+        SetTitle();
         AnnotateIsolationWindow();
         RefreshChart();
     }
@@ -65,6 +63,8 @@ public class Ms1ChimeraPlot : SpectrumMatchPlot
 
     public void ZoomAxes()
     {
+        Model.Axes[0].MajorStep = 1;
+        Model.Axes[0].MinorStep = 0.2;
         var maxIntensity = ChimeraGroup.Ms1Scan.MassSpectrum.Extract(Range).Max(p => p.Intensity) * 1.4;
         Model.Axes[0].Zoom(Range.Minimum - 1, Range.Maximum + 1);
         Model.Axes[1].Zoom(0, maxIntensity);
