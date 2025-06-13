@@ -1,7 +1,9 @@
 ﻿using Nett;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
+using Easy.Common.Extensions;
 
 namespace EngineLayer;
 
@@ -151,5 +153,26 @@ public static class DictionaryExtensions
                 dictionary.Add(key, incrementValue);
             }
         }
+    }
+
+    /// <summary>
+    /// Method to add a value to a list in a dictionary if the key is present, and craete a new list if the key is not present
+    /// </summary>
+    public static void AddOrReplace<TKey, TValue, TValue2>(this Dictionary<TKey, List<(TValue, TValue2)>> dictionary, TKey key,
+        TValue value, TValue2 value2)
+    {
+        if (dictionary.ContainsKey(key))
+        {
+            var previousVersion = dictionary[key].FirstOrDefault(p => p.Item1.Equals(value));
+            if (!previousVersion.GetType().IsDefault())
+            {
+                dictionary[key].Remove(previousVersion);
+            }
+            dictionary[key].Add((value, value2));
+
+        }
+        else
+            dictionary.Add(key, new List<(TValue, TValue2)> { (value, value2) });
+
     }
 }

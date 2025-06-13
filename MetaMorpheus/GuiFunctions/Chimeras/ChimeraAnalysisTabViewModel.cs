@@ -5,9 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Input;
-using Easy.Common.Extensions;
 using MassSpectrometry;
-using MzLibUtil;
 using Readers;
 
 namespace GuiFunctions;
@@ -155,38 +153,4 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     }
 
     #endregion
-}
-
-internal static class Extensions
-{
-    /// <summary>
-    /// Determines if a majority of values are within a range
-    /// </summary>
-    /// <param name="range"></param>
-    /// <param name="values"></param>
-    /// <returns></returns>
-    internal static bool MajorityWithin(this MzRange range, IEnumerable<double> values)
-    {
-        int within = values.Count(p => p >= range.Minimum && p <= range.Maximum);
-        return within > values.Count() / 2;
-    }
-
-    // method to add a value to a list in a dictionary if the key is present, and craete a new list if the key is not present
-    public static void AddOrReplace<TKey, TValue, TValue2>(this Dictionary<TKey, List<(TValue, TValue2)>> dictionary, TKey key,
-        TValue value, TValue2 value2)
-    {
-        if (dictionary.ContainsKey(key))
-        {
-            var previousVersion = dictionary[key].FirstOrDefault(p => p.Item1.Equals(value));
-            if (!previousVersion.GetType().IsDefault())
-            {
-                dictionary[key].Remove(previousVersion);
-            }
-            dictionary[key].Add((value, value2));
-
-        }
-        else
-            dictionary.Add(key, new List<(TValue, TValue2)> { (value, value2) });
-
-    }
 }

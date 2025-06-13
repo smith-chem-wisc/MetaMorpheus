@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Chemistry;
+using EngineLayer;
 using GuiFunctions.ViewModels.Legends;
 using MassSpectrometry;
 using MzLibUtil;
