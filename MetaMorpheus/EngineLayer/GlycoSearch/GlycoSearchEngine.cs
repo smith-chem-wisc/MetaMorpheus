@@ -405,7 +405,7 @@ namespace EngineLayer.GlycoSearch
 
             int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
 
-            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray(); //list all of the possible glycoslation site/postition
+            Dictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }); //list all of the possible glycoslation site/postition
 
             var localizationScan = theScan;
             List<Product> products = new List<Product>(); // product list for the theoretical fragment ions
@@ -443,7 +443,7 @@ namespace EngineLayer.GlycoSearch
                     iDLow++; // if the oxonium ions don't make sense (there is no 204, or without their diagnostic ion), we can skip this glycan.
                     continue;
                 }
-                if (modPos.Length >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods) // the glycosite number should be larger than the possible glycan number.
+                if (modPos.Count >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods) // the glycosite number should be larger than the possible glycan number.
                 {
                     LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
                     LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products); //create the localization graph with the glycan mass and the possible glycosite.
@@ -481,7 +481,7 @@ namespace EngineLayer.GlycoSearch
 
         private void FindNGlycan(Ms2ScanWithSpecificMass theScan, int scanIndex, int scoreCutOff, PeptideWithSetModifications theScanBestPeptide, int ind, double possibleGlycanMassLow, double[] oxoniumIonIntensities, ref List<GlycoSpectralMatch> possibleMatches)
         {
-            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "Nxt", "Nxs" });
+            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "Nxt", "Nxs" }).Select(p => p.Key).ToList();
             if (modPos.Count < 1)
             {
                 return;

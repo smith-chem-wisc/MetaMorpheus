@@ -90,7 +90,7 @@ namespace Test
         {
             PeptideWithSetModifications pep = new PeptideWithSetModifications("ELNPTPNVEVNVECR", null); 
             string[] motifs = new string[] { "Nxs", "Nxt"};
-            var sites = GlycoSpectralMatch.GetPossibleModSites(pep, motifs);
+            var sites = GlycoSpectralMatch.GetPossibleModSites(pep, motifs).Select(p => p.Key).ToList();
             Assert.That(sites.Count() == 1 && sites[0] == 4);
 
             ModificationMotif.TryGetMotif("C", out ModificationMotif motif1);
@@ -98,12 +98,12 @@ namespace Test
             ModificationMotif.TryGetMotif("N", out ModificationMotif motif2);
             Modification mod2 = new Modification(_originalId: "Test of N", _modificationType: "Common Fixed", _target: motif2, _locationRestriction: "Anywhere.");
             var testN = new PeptideWithSetModifications("C[Common Fixed:Carbamidomethyl on C]N[Common Fixed:Test of N]SSDQPKL[Common Fixed:Carbamidomethyl on C]NLSGIETP", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 }, { "Test of N", mod2 } });
-            var testSites = GlycoSpectralMatch.GetPossibleModSites(testN, motifs);
+            var testSites = GlycoSpectralMatch.GetPossibleModSites(testN, motifs).Select(p => p.Key).ToList();
             Assert.That(testSites.Count() == 1 && testSites[0] == 11);
 
 
             var testC = new PeptideWithSetModifications("TELAAYLSC[Common Fixed:Carbamidomethyl on C]NATK", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 }});
-            var testCSites = GlycoSpectralMatch.GetPossibleModSites(testC, motifs);
+            var testCSites = GlycoSpectralMatch.GetPossibleModSites(testC, motifs).Select(p => p.Key).ToList();
             Assert.That(testCSites.Count() == 1 && testSites[0] == 11);
         }
 
@@ -115,7 +115,7 @@ namespace Test
             var aPeptideWithSetModifications = pep.Digest(digestionParams, new List<Modification>(), new List<Modification>());
 
             string[] motifs = new string[] { "Nxs", "Nxt" };
-            var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
+            var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs).Select(p => p.Key).ToList();
             Glycan glycan = Glycan.Struct2Glycan("(N(F)(N(H(H(N))(H(N)))))", 0).FirstOrDefault();
 
             CommonParameters commonParameters = new CommonParameters(deconvolutionMassTolerance: new PpmTolerance(20), trimMsMsPeaks: false);
@@ -170,7 +170,7 @@ namespace Test
             var aPeptideWithSetModifications = pep.Digest(digestionParams, fixedModifications, new List<Modification>());
 
             string[] motifs = new string[] { "Nxs", "Nxt" };
-            var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs);
+            var sites = GlycoSpectralMatch.GetPossibleModSites(aPeptideWithSetModifications.Last(), motifs).Select(p => p.Key).ToList();
             Glycan glycan = Glycan.Struct2Glycan("(N(N(H(H(H(H)))(H(H(H(H(H))))))))", 0).FirstOrDefault();
 
             Tolerance tolerance = new PpmTolerance(20);
