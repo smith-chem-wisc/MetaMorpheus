@@ -19,14 +19,14 @@ using Omics.Digestion;
 using Omics.Fragmentation.Peptide;
 using Omics.Modifications;
 using Omics.SpectrumMatch;
+using UsefulProteomicsDatabases;
+using UsefulProteomicsDatabases.Transcriptomics;
 using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
-using UsefulProteomicsDatabases;
 using Easy.Common.Extensions;
 using Readers;
-using UsefulProteomicsDatabases.Transcriptomics;
 
 namespace TaskLayer
 {
@@ -92,11 +92,11 @@ namespace TaskLayer
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
                     .FromToml(tmlTable => tmlTable.Get<string>("DeconvolutionType") switch
-                        {
-                            "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
-                            "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
-                            _ => throw new MetaMorpheusException("Unrecognized deconvolution type in toml")
-                        })))
+                    {
+                        "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
+                        "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
+                        _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
+                    })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
             .ConfigureType<ClassicDeconvolutionParameters>(type => type
                 .CreateInstance(() => new ClassicDeconvolutionParameters(1, 20, 4, 3))
@@ -115,7 +115,26 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MinusOneAreasZero)
                 .IgnoreProperty(p => p.IsotopeThreshold)
                 .IgnoreProperty(p => p.ZScoreThreshold))
-            );
+
+            // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
+            // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 
+            .ConfigureType<AverageResidue>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .FromToml(tmlString =>
+                        tmlString.Value switch
+                        {
+                            "Averagine" => new Averagine(),
+                            "OxyriboAveragine" => new OxyriboAveragine(),
+                            _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown AverageResidueModel: {tmlString.Value}")
+                        }
+                    )))
+            .ConfigureType<Averagine>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.GetType().Name)))
+            .ConfigureType<OxyriboAveragine>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.GetType().Name)))
+        );
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
@@ -1387,7 +1406,7 @@ namespace TaskLayer
                     toRemove.AddRange(accessionGroup.Where(p => p.IsContaminant));
                     if (toRemove.Any())
                     {
-                        Warn("The protein '" + accession + "' has multiple entries. Protein accessions must be unique. Contaminant protein " + accession + " was ignored.");
+                        Warn($"The {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s '" + accession + $"' has multiple entries. {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s accessions must be unique. Contaminant {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s " + accession + " was ignored.");
                     }
                 }
                 else if (tcAmbiguity == TargetContaminantAmbiguity.RemoveTarget)
@@ -1396,7 +1415,7 @@ namespace TaskLayer
                     toRemove.AddRange(accessionGroup.Where(p => !p.IsDecoy && !p.IsContaminant));
                     if (toRemove.Any())
                     {
-                        Warn("The protein '" + accession + "' has multiple entries. Protein accessions must be unique. Target protein " + accession + " was ignored.");
+                        Warn($"The {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s '" + accession + $"' has multiple entries. {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s accessions must be unique. Target {GlobalVariables.AnalyteType.GetBioPolymerLabel()}s " + accession + " was ignored.");
                     }
                 }
 
