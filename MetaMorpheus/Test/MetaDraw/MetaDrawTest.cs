@@ -1515,6 +1515,8 @@ namespace Test.MetaDraw
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
 
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
             Directory.CreateDirectory(outputFolder);
 
             // run search task

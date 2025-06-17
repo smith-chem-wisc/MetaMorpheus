@@ -19,6 +19,7 @@ using System.Windows.Input;
 using System.Windows.Navigation;
 using Omics.Modifications;
 using TaskLayer;
+using System.Text.RegularExpressions;
 
 namespace MetaMorpheusGUI
 {
@@ -516,7 +517,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*ms2.msalign)|*.raw;*.mzML;*.mgf;*ms2.msalign");
+            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin)|*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -1571,14 +1572,14 @@ namespace MetaMorpheusGUI
         {
             foreach (string path in paths.OrderBy(p => Path.GetFileName(p)))
             {
-                if (Directory.Exists(path))
+                if (Directory.Exists(path) & !Regex.IsMatch(path, @".d$")) // don't add directories that end in ".d" (bruker data files)
                 {
                     foreach (string file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
                     {
                         AddPreRunFile(file);
                     }
                 }
-                else if (File.Exists(path))
+                else if (File.Exists(path) || Regex.IsMatch(path, @".d$"))
                 {
                     AddPreRunFile(path);
                 }
@@ -1629,13 +1630,10 @@ namespace MetaMorpheusGUI
                             return;
                         }
                     }
-
                     goto case ".mzml";
-
                 case ".mgf":
                     NotificationHandler(null, new StringEventArgs(".mgf files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
                     goto case ".mzml";
-
                 case ".msalign":
                     if (filePath.Contains("_ms2."))
                     {
@@ -1647,7 +1645,15 @@ namespace MetaMorpheusGUI
                         NotificationHandler(null, new StringEventArgs("MS1 align file type not currently supported " + theExtension, null));
                     }
                     break;
-
+                case ".tdf":
+                case ".tdf_bin":
+                    // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 
+                    // the fileReader is designed to take the path to the .d directory instead of either/both individual files
+                    filePath = Path.GetDirectoryName(filePath);
+                    goto case ".d";
+                case ".d": // Bruker data files are directories that contain .d files
+                    NotificationHandler(null, new StringEventArgs("Quantification and calibration are not currently supported for Bruker data files. All other features of MetaMorpheus will function.", null));
+                    goto case ".mzml";
                 case ".mzml":
                     if (compressed) // not implemented yet
                     {
@@ -1662,7 +1668,6 @@ namespace MetaMorpheusGUI
                     UpdateFileSpecificParamsDisplay(Path.ChangeExtension(filePath, ".toml"));
                     UpdateOutputFolderTextbox();
                     break;
-
                 case ".xml":
                 case ".fasta":
                 case ".fa":
