@@ -59,6 +59,14 @@ namespace TaskLayer
                 var originalUnaveragedFilepath = currentRawFileList[spectraFileIndex];
                 var originalUnaveragedFilepathWithoutExtenstion = Path.GetFileNameWithoutExtension(originalUnaveragedFilepath);
                 var averagedFilepath = Path.Combine(OutputFolder, originalUnaveragedFilepathWithoutExtenstion + AveragingSuffix + ".mzML");
+                var originalFileExtension = GlobalVariables.GetFileExtension(originalUnaveragedFilepath);
+                if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase))
+                {
+                    Warn("Averaging for " + originalFileExtension + " files is not supported.");
+                    FinishedDataFile(originalUnaveragedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepath });
+                    ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion }));
+                    continue;
+                }
 
                 // mark file as in progress
                 StartingDataFile(originalUnaveragedFilepath, new List<string>() {taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion });

@@ -335,7 +335,7 @@
 	  	<File Id="src_System.Data.SqlClient.dll" Name="System.Data.SqlClient.dll" Source="$(var.GUI_TargetDir)System.Data.SqlClient.dll" />
 	  </Component>
 	  <Component Id="src_System.Data.SQLite.dll" Guid="5CB69DD0-680A-4E49-9A93-74D0F4A10661">
-	  	<File Id="src_System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.dll" />
+		<File Id="src_System.Data.SQLite.dll" Name="System.Data.SQLite.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.dll" />
 	  </Component>
 	  <Component Id="src_System.Data.SQLite.EF6.dll" Guid="F9804BA5-D660-4079-8BB4-738DF62EAF7E">
 	  	<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />

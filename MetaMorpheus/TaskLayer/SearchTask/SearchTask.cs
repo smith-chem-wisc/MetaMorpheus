@@ -97,8 +97,9 @@ namespace TaskLayer
 
             if (SearchParameters.DoLabelFreeQuantification)
             {
-                // disable quantification if a .mgf is being used
-                if (currentRawFileList.Any(x => Path.GetExtension(x).Equals(".mgf", StringComparison.OrdinalIgnoreCase)))
+                // disable quantification if a .mgf or .d files are  being used
+                if (currentRawFileList.Select(filepath => Path.GetExtension(filepath))
+                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase)))
                 {
                     SearchParameters.DoLabelFreeQuantification = false;
                 }
