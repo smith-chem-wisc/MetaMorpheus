@@ -82,6 +82,42 @@ namespace Test
         }
 
         [Test]
+        [TestCase(@"TestData\ok.mgf", @"TestData\okk.xml")]
+        [TestCase(@"TestData\snippet.d", @"TestData\gapdh.fasta")]
+        public static void TestAveragingDoesntCrashOnUnsupportedFiles(string filepath, string dbPath)
+        {
+            //The purpose of this test is to ensure that mgfs and timsTOF (.d) files can be run without crashing.
+
+            //Whenever a new feature is added that may require things an mgf does not have,
+            //there should be a check that prevents mgfs from using that feature.
+            string outputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestCalibrateAndSearchMgf");
+
+            SpectralAveragingTask task1 = new()
+            {
+                CommonParameters = new CommonParameters()
+            };
+            SearchTask task2 = new()
+            {
+                SearchParameters = new SearchParameters
+                {
+                    DoParsimony = true,
+                    DoLabelFreeQuantification = false
+                }
+            };
+            List<(string, MetaMorpheusTask)> taskList = new()
+            {
+                ("task1", task1),
+                ("task2", task2)
+            };
+            //run!
+
+            var engine = new EverythingRunnerEngine(taskList, new List<string> { filepath }, new List<DbForTask> { new DbForTask(dbPath, false) }, outputFolder);
+            engine.Run();
+            //Just don't crash! There should also be at least one psm at 1% FDR, but can't check for that.
+            Directory.Delete(outputFolder, true);
+        }
+
+        [Test]
         public static void TestCompressionDecompression()
         {
             string testInputFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"CompressionTest");
