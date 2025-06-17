@@ -13,14 +13,24 @@ namespace Test.GuiTests
         [Test]
         public void Constructor_InitializesProperties_Correctly()
         {
+            string defaultCustomText = "Custom dot 5 ppm 0";
             foreach (MassDiffAcceptorType type in Enum.GetValues<MassDiffAcceptorType>())
             {
-                string customText = "custom";
-                var vm = new MassDifferenceAcceptorSelectionViewModel(type, customText);
+                var vm = new MassDifferenceAcceptorSelectionViewModel(type, "");
 
                 Assert.That(vm.MassDiffAcceptorTypes.Select(m => m.Type), Is.EquivalentTo(Enum.GetValues<MassDiffAcceptorType>()));
                 Assert.That(vm.SelectedType.Type, Is.EqualTo(type));
-                Assert.That(vm.CustomMdac, Is.EqualTo(customText));
+
+                if (type == MassDiffAcceptorType.Custom)
+                {
+                    Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.Notch)); // Default mode
+                    Assert.That(vm.CustomName, Is.EqualTo("Custom")); // Default name
+                    Assert.That(vm.CustomMdac, Is.EqualTo(defaultCustomText));
+                }
+                else
+                {
+                    Assert.That(vm.CustomMdac, Is.EqualTo(string.Empty));
+                }
             }
         }
 
@@ -33,13 +43,13 @@ namespace Test.GuiTests
 
             // Switch to Custom, set CustomMdac
             vm.SelectedType = customModel;
-            vm.CustomMdac = "abc123";
+            vm.CustomMdac = "TestNotch dot 0.1 da 0,1.0029,2.0052";
             // Switch away from Custom, should cache and clear
             vm.SelectedType = exactModel;
             Assert.That(vm.CustomMdac, Is.EqualTo(string.Empty));
             // Switch back to Custom, should restore
             vm.SelectedType = customModel;
-            Assert.That(vm.CustomMdac, Is.EqualTo("abc123"));
+            Assert.That(vm.CustomMdac, Is.EqualTo("TestNotch dot 0.1 da 0,1.0029,2.0052"));
         }
 
         [Test]
@@ -148,6 +158,87 @@ namespace Test.GuiTests
             Assert.That(instance, Is.TypeOf<MassDifferenceAcceptorSelectionModel>());
             Assert.That(instance.SelectedType.Type, Is.EqualTo(MassDiffAcceptorType.TwoMM));
             Assert.That(instance.CustomMdac, Is.EqualTo(""));
+            Assert.That(instance.CustomMdacModes.Count, Is.EqualTo(3)); 
+        }
+
+        [Test]
+        public void NotchMode_Properties_Produce_Valid_CustomMdac()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            vm.CustomMode = CustomMdacMode.Notch;
+            vm.CustomName = "TestNotch";
+            vm.ToleranceValue = "0.1";
+            vm.SelectedToleranceType = "da";
+            vm.DotMassShifts = "0,1.0029,2.0052";
+
+            string expected = "TestNotch dot 0.1 da 0,1.0029,2.0052";
+            Assert.That(vm.CustomMdac, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void IntervalMode_Properties_Produce_Valid_CustomMdac()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            vm.CustomMode = CustomMdacMode.Interval;
+            vm.CustomName = "TestInterval";
+            vm.IntervalRanges = "[0,200];[300,400]";
+
+            string expected = "TestInterval interval [0,200];[300,400]";
+            Assert.That(vm.CustomMdac, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void AroundZeroMode_Properties_Produce_Valid_CustomMdac_Ppm()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            vm.CustomMode = CustomMdacMode.AroundZero;
+            vm.CustomName = "TestAroundZero";
+            vm.SelectedToleranceType = "ppm";
+            vm.ToleranceValue = "5";
+
+            string expected = "TestAroundZero ppmAroundZero 5";
+            Assert.That(vm.CustomMdac, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void AroundZeroMode_Properties_Produce_Valid_CustomMdac_Da()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            vm.CustomMode = CustomMdacMode.AroundZero;
+            vm.CustomName = "TestAroundZero";
+            vm.SelectedToleranceType = "da";
+            vm.ToleranceValue = "2.1";
+
+            string expected = "TestAroundZero daAroundZero 2.1";
+            Assert.That(vm.CustomMdac, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void ManualCustomMdac_Overrides_GuiFields()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            string manual = "ManualName dot 0.2 ppm 0,1.003";
+            vm.CustomMdac = manual;
+            Assert.That(vm.CustomMdac, Is.EqualTo(manual));
+            // Changing a GUI field should switch back to auto-generation
+            vm.CustomMode = CustomMdacMode.Notch;
+            vm.CustomName = "AutoName";
+            vm.ToleranceValue = "0.3";
+            vm.SelectedToleranceType = "da";
+            vm.DotMassShifts = "0,1.0029";
+            string expected = "AutoName dot 0.3 da 0,1.0029";
+            Assert.That(vm.CustomMdac, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void LegacyParsing_Sets_Properties_Correctly()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName dot 0.5 ppm 0,1.0029");
+            Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.Notch));
+            Assert.That(vm.CustomName, Is.EqualTo("LegacyName"));
+            Assert.That(vm.ToleranceValue, Is.EqualTo("0.5"));
+            Assert.That(vm.SelectedToleranceType, Is.EqualTo("ppm"));
+            Assert.That(vm.DotMassShifts, Is.EqualTo("0,1.0029"));
         }
     }
 }

@@ -112,7 +112,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         }
     }
 
-    public ObservableCollection<CustomMdacMode> CustomMdacMods { get; set; } = new(Enum.GetValues<CustomMdacMode>());
+    public ObservableCollection<CustomMdacMode> CustomMdacModes { get; } = new(Enum.GetValues<CustomMdacMode>());
     private CustomMdacMode _customMode;
     public CustomMdacMode CustomMode
     {
@@ -324,10 +324,36 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 /// <summary>
 /// A single MassDiff acceptor type and all relevant GUI display information
 /// </summary>
-public class MassDifferenceAcceptorTypeModel : IEquatable<MassDiffAcceptorType>, IEquatable<MassDifferenceAcceptorTypeModel>
+public class MassDifferenceAcceptorTypeModel : BaseViewModel, IEquatable<MassDiffAcceptorType>, IEquatable<MassDifferenceAcceptorTypeModel>
 {
-    public int PositiveMissedMonos { get; init; }
-    public int NegativeMissedMonos { get; init; }
+    private int _positiveMissedMonos;
+    public int PositiveMissedMonos
+    {
+        get => _positiveMissedMonos;
+        set
+        {
+            if (_positiveMissedMonos != value)
+            {
+                _positiveMissedMonos = value;
+                OnPropertyChanged(nameof(PositiveMissedMonos));
+            }
+        }
+    }
+
+    private int _negativeMissedMonos;
+    public int NegativeMissedMonos
+    {
+        get => _negativeMissedMonos;
+        set
+        {
+            if (_negativeMissedMonos != value)
+            {
+                _negativeMissedMonos = value;
+                OnPropertyChanged(nameof(NegativeMissedMonos));
+            }
+        }
+    }
+
     public MassDiffAcceptorType Type { get; init; }
     public string Label { get; init; }
     public string ToolTip { get; init; }
