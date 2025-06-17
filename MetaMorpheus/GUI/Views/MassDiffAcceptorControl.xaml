@@ -9,7 +9,7 @@
              d:DesignHeight="180" d:DesignWidth="800">
     <UserControl.Resources>
         <local:MassDifferenceAcceptorTypeToCustomTextBoxVisibilityConverter x:Key="CustomBoxConverter" />
-
+        <local:EnumToVisibilityConverter x:Key="EnumToVisibilityConverter"/>
         <!-- Style GroupBoxes -->
         <Style TargetType="GroupBox">
             <Setter Property="BorderThickness" Value="3 1 1 1"/>
@@ -26,19 +26,17 @@
     </UserControl.Resources>
 
     <Grid d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorSelectionModel.Instance}">
-        <GroupBox Header="Mass Difference Acceptor Criterion" x:Name="MassDiffAcceptorGroupBox">
+        <GroupBox Header="Precursor Mass Difference Acceptor Criterion" x:Name="MassDiffAcceptorGroupBox">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="3*" />
                 </Grid.ColumnDefinitions>
-
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <!-- Selection Radio Buttons -->
+                <!-- Left: Selection Radio Buttons -->
                 <StackPanel Grid.Column="0" Margin="0">
                     <ListBox ItemsSource="{Binding MassDiffAcceptorTypes}"
                              SelectedItem="{Binding SelectedType, Mode=TwoWay}"
@@ -74,10 +72,108 @@
                     </ListBox>
                 </StackPanel>
 
-                <!-- Mdac text box -->
-                <TextBox Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="1"  VerticalAlignment="Bottom"  Text="{Binding CustomMdac}"
-                         Visibility="{Binding SelectedType.Type, Converter={StaticResource CustomBoxConverter}}"
-                         ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" />
+
+                <!-- Right: Custom GUI (only visible when Custom is selected) -->
+                <Border Grid.Column="1" Padding="10,0,0,0"
+                        Visibility="{Binding SelectedType.Type, Converter={StaticResource CustomBoxConverter}}">
+
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Custom GUI controls (all modes) -->
+                        <StackPanel Grid.Row="0">
+                            <!-- Custom Mode Selection -->
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,8">
+                                <TextBlock Text="Custom Mode:" VerticalAlignment="Center" Margin="0,0,8,0" />
+                                <ComboBox ItemsSource="{Binding CustomMdacMods}"
+                                          SelectedItem="{Binding CustomMode, Mode=TwoWay}"
+                                          Width="80" />
+                                <TextBlock Text="Name:" VerticalAlignment="Center" Margin="10 0 5 0" />
+                                <TextBox Text="{Binding CustomName, Mode=TwoWay}"
+                                         VerticalAlignment="Center" Width="80" Height="22" />
+                            </StackPanel>
+
+                            <!-- Dot Mode -->
+                            <StackPanel>
+                                <StackPanel.Visibility>
+                                    <MultiBinding Converter="{StaticResource EnumToVisibilityConverter}">
+                                        <Binding Path="CustomMode" />
+                                        <Binding>
+                                            <Binding.Source>
+                                                <x:Static Member="guiFunctions:CustomMdacMode.Notch" />
+                                            </Binding.Source>
+                                        </Binding>
+                                    </MultiBinding>
+                                </StackPanel.Visibility>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Tolerance:" VerticalAlignment="Center" />
+                                    <local:DoubleTextBoxControl Text="{Binding DotTolerance, Mode=TwoWay}" Width="40" Margin="4,0,0,0" />
+                                    <ComboBox ItemsSource="{Binding ToleranceTypes}"
+                                              SelectedItem="{Binding SelectedToleranceType, Mode=TwoWay}" Width="60"
+                                              Margin="8,0,0,0" />
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                    <TextBlock Text="Mass Shifts (comma-separated):" VerticalAlignment="Center" />
+                                    <TextBox Text="{Binding DotMassShifts, Mode=TwoWay}"
+                                             Height="22"
+                                             Margin="4,0,0,0"
+                                             HorizontalAlignment="Stretch"
+                                             VerticalAlignment="Center"
+                                             MinWidth="60"
+                                    />
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- Interval Mode -->
+                            <StackPanel>
+                                <StackPanel.Visibility>
+                                    <MultiBinding Converter="{StaticResource EnumToVisibilityConverter}">
+                                        <Binding Path="CustomMode" />
+                                        <Binding>
+                                            <Binding.Source>
+                                                <x:Static Member="guiFunctions:CustomMdacMode.Interval" />
+                                            </Binding.Source>
+                                        </Binding>
+                                    </MultiBinding>
+                                </StackPanel.Visibility>
+                                <TextBlock Text="Ranges (e.g. [0,200];[300,400]):" />
+                                <TextBox Text="{Binding IntervalRanges, Mode=TwoWay}" Margin="0,0,0,4" />
+                            </StackPanel>
+
+                            <!-- AroundZero Mode -->
+                            <StackPanel>
+                                <StackPanel.Visibility>
+                                    <MultiBinding Converter="{StaticResource EnumToVisibilityConverter}">
+                                        <Binding Path="CustomMode" />
+                                        <Binding>
+                                            <Binding.Source>
+                                                <x:Static Member="guiFunctions:CustomMdacMode.AroundZero" />
+                                            </Binding.Source>
+                                        </Binding>
+                                    </MultiBinding>
+                                </StackPanel.Visibility>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="Value:" VerticalAlignment="Center" />
+                                    <local:DoubleTextBoxControl Text="{Binding AroundZeroValue, Mode=TwoWay}"
+                                                                Width="40" Margin="4,0,0,0" />
+                                    <ComboBox ItemsSource="{Binding ToleranceTypes}"
+                                              SelectedItem="{Binding SelectedToleranceType, Mode=TwoWay}" Width="60"
+                                              Margin="4,0,0,0" />
+                                </StackPanel>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Custom Mdac text box (always at the bottom) -->
+                        <StackPanel Grid.Row="1" Margin="0,8,0,0">
+                            <TextBlock Text="Custom String:" />
+                            <TextBox Text="{Binding CustomMdac}" 
+                                     ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
             </Grid>
         </GroupBox>
     </Grid>

@@ -10,22 +10,22 @@ namespace MetaMorpheusGUI;
 /// <summary>
 /// Converts an enum value to a boolean by comparing it to a parameter.
 /// </summary>
-public class EnumToBooleanConverter : IMultiValueConverter
+public class EnumToVisibilityConverter : IMultiValueConverter
 {
     public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
     {
         if (values.Length != 2 || values[0] == null || values[1] == null)
-            return false;
+            return Visibility.Collapsed;
 
         var type0 = values[0].GetType();
         var type1 = values[1].GetType();
 
-        if (type0.IsEnum && type1.IsEnum && type0 == type1)
+        if (type0.IsEnum && type1.IsEnum && type0 == type1 && values[0].Equals(values[1]))
         {
-            return values[0].Equals(values[1]);
+            return Visibility.Visible;
         }
 
-        return false;
+        return Visibility.Collapsed;
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
