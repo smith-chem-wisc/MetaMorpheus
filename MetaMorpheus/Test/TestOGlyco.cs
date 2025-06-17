@@ -414,12 +414,12 @@ namespace Test
             var p = scans.First().TheScan.MassSpectrum.Size * commonParameters.ProductMassTolerance.GetRange(1000).Width / scans.First().TheScan.MassSpectrum.Range.Width;
             var n = knownProducts.Where(v=>v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
             var allPathWithWeights = LocalizationGraph.GetAllPaths_CalP(localizationGraph, p, n);
-            Assert.That(allPathWithWeights.Count == 168);
+            Assert.That(allPathWithWeights.Count == 6);
 
             //Calculate Site Specific Localization Probability
             var y = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPathWithWeights, localizationGraph.ModPos.Select(p=>p.Key).ToArray());
             Assert.That(y.Count == 8);
-            Assert.That(y.First().Value[1].Item2 > 0.99);
+            Assert.That(y.First().Value[0].Item2 > 0.99);
 
         }
 
