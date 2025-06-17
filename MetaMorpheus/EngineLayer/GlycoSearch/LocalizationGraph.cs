@@ -303,7 +303,7 @@ namespace EngineLayer.GlycoSearch
                     var left = GetLeft(localizationGraph.array[i][path[i]].ModBox.ModIds, localizationGraph.array[i - 1][path[i - 1]].ModBox.ModIds).First();
 
                     var localPeakExist = localizationGraph.array[i - 1][path[i - 1]].CurrentCost > 0 && (localizationGraph.array[i][path[i]].CurrentCost > 0 || i == path.Length -1);
-                    route.AddPos(localizationGraph.ModPos.Keys.ToList().IndexOf(i), left, localPeakExist);
+                    route.AddPos(localizationGraph.ModPos.Keys.ElementAt(i), left, localPeakExist);
                 }
             }
 
@@ -505,8 +505,7 @@ namespace EngineLayer.GlycoSearch
             }
             
             Modification modForthisNode = GlycanBox.GlobalOGlycans[modDiff[0]];
-
-            return modForthisNode.Target.ToString() != motif;
+            return modForthisNode.Target.ToString() == motif;
         }
 
         /// <summary>
