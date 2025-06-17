@@ -6,6 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 using Chemistry;
 using EngineLayer;
+using MzLibUtil;
+using Nett;
 using NUnit.Framework;
 using Proteomics.ProteolyticDigestion;
 using Readers;
@@ -46,6 +48,31 @@ namespace Test
                     Assert.That(scanWithMass.ExperimentalFragments[i].Peaks[0].intensity, Is.EqualTo(scan.MassSpectrum.YArray[i]));
                 }
             }
+        }
+
+
+        [Test] 
+        public static void MsAlign_SearchIt()
+        {
+            string outDirectory = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "MsAlignSearchOutput");
+            if (Directory.Exists(outDirectory))
+            {
+                Directory.Delete(outDirectory, true);
+            }
+            Directory.CreateDirectory(outDirectory);
+
+            var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "JurkatTopDownRep2Fract1_ms2.msalign");
+            string dbPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "ThreeHumanHistone.fasta");
+            string topDownSearchToml = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TopDownSearchToml.toml");
+
+            var db = new DbForTask(dbPath, false);
+            var searchTask = Toml.ReadFile<SearchTask>(topDownSearchToml, MetaMorpheusTask.tomlConfig);
+            searchTask.CommonParameters.PrecursorMassTolerance = new AbsoluteTolerance(5);
+
+            searchTask.RunTask(outDirectory, [db], [path], "TestSearchWithMsAlign");
+            Assert.That(File.Exists(Path.Combine(outDirectory, "AllPSMs.psmtsv")), Is.True);
+
+            Directory.Delete(outDirectory, true);
         }
     }
 }

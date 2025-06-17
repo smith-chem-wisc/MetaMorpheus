@@ -8,8 +8,6 @@ namespace EngineLayer
 {
     public class Ms2ScanWithSpecificMass
     {
-        // Most of the processing here is done on the deconvoluted masses. SO we can make the do all of the processing in mzlib with a derived class
-        // We just need to make sure all of the neutral mass outputs are correct. This should translate to charged fragment ions. 
         public Ms2ScanWithSpecificMass(MsDataScan mzLibScan, double precursorMonoisotopicPeakMz, int precursorCharge, string fullFilePath, CommonParameters commonParam, 
             IsotopicEnvelope[] neutralExperimentalFragments = null, double? precursorIntensity = null, int? envelopePeakCount = null, double? precursorFractionalIntensity = null)
         {
@@ -25,7 +23,6 @@ namespace EngineLayer
 
             TheScan = mzLibScan;
 
-          
             if (commonParam.DissociationType != DissociationType.LowCID)
             {
                 ExperimentalFragments = neutralExperimentalFragments ?? GetNeutralExperimentalFragments(mzLibScan, commonParam);
@@ -72,14 +69,14 @@ namespace EngineLayer
                 return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
 
             HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
-                .SelectMany(p => p.Peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
+                .SelectMany(p => p.Peaks.Select(v => v.mz.RoundedDouble()!.Value)));
 
             for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
             {
                 double mz = scan.MassSpectrum.XArray[i];
                 double intensity = scan.MassSpectrum.YArray[i];
 
-                if (!alreadyClaimedMzs.Contains(ClassExtensions.RoundedDouble(mz).Value))
+                if (!alreadyClaimedMzs.Contains(mz.RoundedDouble()!.Value))
                 {
                     neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
                         new List<(double mz, double intensity)> { (mz, intensity) },

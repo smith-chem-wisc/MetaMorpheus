@@ -132,8 +132,8 @@ namespace EngineLayer
         public int MaxThreadsToUsePerFile { get; private set; }
         public IEnumerable<(string, string)> ListOfModsFixed { get; private set; }
         public IEnumerable<(string, string)> ListOfModsVariable { get; private set; }
-        public bool DoPrecursorDeconvolution { get; private set; }
-        public bool UseProvidedPrecursorInfo { get; private set; }
+        public bool DoPrecursorDeconvolution { get; set; }
+        public bool UseProvidedPrecursorInfo { get; set; }
         [TomlIgnore] public double DeconvolutionIntensityRatio { get; private set; }
         public int DeconvolutionMaxAssumedChargeState
         {

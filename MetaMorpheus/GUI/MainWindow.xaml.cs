@@ -516,7 +516,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*.msalign)|*.raw;*.mzML;*.mgf;*.msalign");
+            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*ms2.msalign)|*.raw;*.mzML;*.mgf;*ms2.msalign");
 
             if (openPicker.ShowDialog() == true)
             {

@@ -193,72 +193,6 @@ namespace TaskLayer
                 return scansWithPrecursors;
             }
 
-            // short circuit for already deconvoluted files
-            if (myMSDataFile is MsAlign align)
-            {
-                // if only ms2align, no precursor scans
-                if (align.All(scan => scan.MsnOrder == 2))
-                {
-                    for (int i = 0; i < ms2Scans.Length; i++)
-                    {
-                        // If no precursor mass, skip this scan. 
-                        if (ms2Scans[i].SelectedIonMonoisotopicGuessMz == 0.0) 
-                            continue;
-
-                        var ms2WithMass = new Ms2ScanWithSpecificMass(ms2Scans[i], ms2Scans[i].SelectedIonMonoisotopicGuessMz!.Value,
-                            ms2Scans[i].SelectedIonChargeStateGuess!.Value, fullFilePath, commonParameters, null,
-                            ms2Scans[i].SelectedIonIntensity ?? 1);
-
-                        if (scansWithPrecursors[i] is null)
-                            scansWithPrecursors[i] = [ms2WithMass];
-                        else
-                            scansWithPrecursors[i].Add(ms2WithMass);
-                    }
-                }
-                else
-                {
-                    // If precursor scans are present
-                    var groups = align.GroupBy(p => p.OneBasedPrecursorScanNumber)
-                        .ToDictionary(p => p.Key, p => p.ToArray());
-                    scansWithPrecursors = new List<Ms2ScanWithSpecificMass>[groups.Count];
-
-                    for (var index = 0; index < groups.Count; index++)
-                    {
-                        var precursorScanNumber = groups.ElementAt(index).Key;
-                        var fragmentationScans = groups.ElementAt(index).Value;
-                        var localScansWithPrecursors = new List<Ms2ScanWithSpecificMass>(fragmentationScans.Length);
-
-                        // no precursor scan
-                        if (precursorScanNumber is null)
-                        {
-                            for (int i = 0; i < fragmentationScans.Length; i++)
-                            {
-                                localScansWithPrecursors[i] = new Ms2ScanWithSpecificMass(ms2Scans[i],
-                                    ms2Scans[i].SelectedIonMonoisotopicGuessMz!.Value,
-                                    ms2Scans[i].SelectedIonChargeStateGuess!.Value, fullFilePath, commonParameters, null,
-                                    ms2Scans[i].SelectedIonIntensity ?? 1);
-                            }
-                        }
-                        else
-                        {
-                            // TODO: use the ms1.align to determine if chimeric spectra occurred
-                            double sumOfIntensity = fragmentationScans.Sum(p => p.SelectedIonIntensity ?? 1);
-                            for (int i = 0; i < fragmentationScans.Length; i++)
-                            {
-                                localScansWithPrecursors[i] = new Ms2ScanWithSpecificMass(ms2Scans[i],
-                                    ms2Scans[i].SelectedIonMonoisotopicGuessMz!.Value,
-                                    ms2Scans[i].SelectedIonChargeStateGuess!.Value, fullFilePath, commonParameters, null,
-                                    ms2Scans[i].SelectedIonIntensity!.Value / sumOfIntensity);
-                            }
-                        }
-
-                        scansWithPrecursors[index] = localScansWithPrecursors;
-                    }
-                }
-
-                return scansWithPrecursors.Where(p => p != null).ToArray();
-            }
-
             Parallel.ForEach(Partitioner.Create(0, ms2Scans.Length), new ParallelOptions { MaxDegreeOfParallelism = commonParameters.MaxThreadsToUsePerFile },
                 (partitionRange, loopState) =>
                 {
@@ -325,11 +259,11 @@ namespace TaskLayer
 
                         //if use precursor info from scan header and scan header has charge state
                         PrecursorFromScanHeader:
-                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue) 
+                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue && ms2scan.SelectedIonChargeStateGuess != 0) 
                         {
                             int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
 
-                            //still from scan header
+                            // Still from scan header - MsAlign uses this conditional to construct its precursors. 
                             if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                             {
                                 double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
