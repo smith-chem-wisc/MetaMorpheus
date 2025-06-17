@@ -22,7 +22,10 @@ using Readers;
 using System.Threading;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Test")]
 namespace GuiFunctions
 {
     public class MetaDrawLogic
@@ -42,7 +45,7 @@ namespace GuiFunctions
         public ICollectionView PeptideSpectralMatchesView;
 
         private List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
-        private Dictionary<string, MsDataFile> MsDataFiles; // key is file name without extension
+        internal Dictionary<string, MsDataFile> MsDataFiles; // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private SpectralLibrary SpectralLibrary;
