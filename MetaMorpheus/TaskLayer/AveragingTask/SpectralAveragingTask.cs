@@ -62,7 +62,7 @@ namespace TaskLayer
                 var originalFileExtension = GlobalVariables.GetFileExtension(originalUnaveragedFilepath);
                 if (originalFileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || originalFileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase))
                 {
-                    Warn(originalFileExtension + " files can not be averaged.");
+                    Warn("Averaging for " + originalFileExtension + " files is not supported.");
                     FinishedDataFile(originalUnaveragedFilepath, new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepath });
                     ReportProgress(new ProgressEventArgs(100, "Done!", new List<string> { taskId, "Individual Spectra Files", originalUnaveragedFilepathWithoutExtenstion }));
                     continue;
