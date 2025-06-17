@@ -90,7 +90,7 @@
                                 <TextBlock Text="Custom Mode:" VerticalAlignment="Center" Margin="0,0,8,0" />
                                 <ComboBox ItemsSource="{Binding CustomMdacMods}"
                                           SelectedItem="{Binding CustomMode, Mode=TwoWay}"
-                                          Width="80" />
+                                          Width="100" />
                                 <TextBlock Text="Name:" VerticalAlignment="Center" Margin="10 0 5 0" />
                                 <TextBox Text="{Binding CustomName, Mode=TwoWay}"
                                          VerticalAlignment="Center" Width="80" Height="22" />
@@ -110,7 +110,7 @@
                                 </StackPanel.Visibility>
                                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                                     <TextBlock Text="Tolerance:" VerticalAlignment="Center" />
-                                    <local:DoubleTextBoxControl Text="{Binding DotTolerance, Mode=TwoWay}" Width="40" Margin="4,0,0,0" />
+                                    <local:DoubleTextBoxControl Text="{Binding ToleranceValue, Mode=TwoWay}" Width="40" Margin="4,0,0,0" />
                                     <ComboBox ItemsSource="{Binding ToleranceTypes}"
                                               SelectedItem="{Binding SelectedToleranceType, Mode=TwoWay}" Width="60"
                                               Margin="8,0,0,0" />
@@ -157,7 +157,7 @@
                                 </StackPanel.Visibility>
                                 <StackPanel Orientation="Horizontal">
                                     <TextBlock Text="Value:" VerticalAlignment="Center" />
-                                    <local:DoubleTextBoxControl Text="{Binding AroundZeroValue, Mode=TwoWay}"
+                                    <local:DoubleTextBoxControl Text="{Binding ToleranceValue, Mode=TwoWay}"
                                                                 Width="40" Margin="4,0,0,0" />
                                     <ComboBox ItemsSource="{Binding ToleranceTypes}"
                                               SelectedItem="{Binding SelectedToleranceType, Mode=TwoWay}" Width="60"

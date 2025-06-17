@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Easy.Common.Extensions;
+using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
@@ -53,7 +54,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         get => _selectedType;
         set
         {
-            if (_selectedType != null) // only true during initialization when no cache is present. 
+            if (_selectedType != null) // only false during initialization when no cache is present. 
             {
                 switch (_selectedType.Type)
                 {
@@ -70,7 +71,11 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 
             // if moving to string input type, populate mdac with cached string
             if (_selectedType.Type == MassDiffAcceptorType.Custom)
-                CustomMdac = _cachedCustomMdac;
+            {
+                if (_cachedCustomMdac.IsNotNullOrEmpty())
+                    CustomMdac = _cachedCustomMdac;
+                OnCustomFieldChanged();
+            }
         }
     }
 
@@ -78,7 +83,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 
     private bool _isManualCustomMdac = false;
     private string _cachedCustomMdac = string.Empty;
-    private string _customMdac = string.Empty;
+    private string _customMdac = null;
     public string CustomMdac
     {
         get => _isManualCustomMdac ? _customMdac : BuildCustomMdac();
@@ -134,14 +139,14 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
     }
 
     // Notch mode
-    private string _dotTolerance = "5";
-    public string DotTolerance
+    private string _toleranceValue = "5";
+    public string ToleranceValue
     {
-        get => _dotTolerance;
+        get => _toleranceValue;
         set
         {
-            _dotTolerance = value;
-            OnPropertyChanged(nameof(DotTolerance));
+            _toleranceValue = value;
+            OnPropertyChanged(nameof(ToleranceValue));
             OnCustomFieldChanged();
         }
     }
@@ -171,19 +176,6 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         }
     }
 
-    // AroundZero mode - ppm or dalton tolerance value. 
-    private string _aroundZeroValue;
-    public string AroundZeroValue
-    {
-        get => _aroundZeroValue;
-        set
-        {
-            _aroundZeroValue = value;
-            OnPropertyChanged(nameof(AroundZeroValue));
-            OnCustomFieldChanged();
-        }
-    }
-
     // Helper to update CustomMdac when any field changes
     private void OnCustomFieldChanged()
     {
@@ -199,9 +191,9 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 
         return CustomMode switch
         {
-            CustomMdacMode.Notch => $"{CustomName} dot {DotTolerance} {SelectedToleranceType} {DotMassShifts}",
+            CustomMdacMode.Notch => $"{CustomName} dot {ToleranceValue} {SelectedToleranceType} {DotMassShifts}",
             CustomMdacMode.Interval => $"{CustomName} interval {IntervalRanges}",
-            CustomMdacMode.AroundZero => $"{CustomName} {SelectedToleranceType}AroundZero {AroundZeroValue}",
+            CustomMdacMode.AroundZero => $"{CustomName} {SelectedToleranceType}AroundZero {ToleranceValue}",
             _ => _customMdac
         };
     }
@@ -225,7 +217,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
                     CustomMode = CustomMdacMode.Notch;
                     if (split.Length >= 5)
                     {
-                        DotTolerance = split[2];
+                        ToleranceValue = split[2];
                         SelectedToleranceType = split[3].ToLowerInvariant();
                         DotMassShifts = split[4];
                     }
@@ -239,7 +231,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
                 case "daltonsAroundZero":
                     CustomMode = CustomMdacMode.AroundZero;
                     if (split.Length >= 3)
-                        AroundZeroValue = split[2];
+                        ToleranceValue = split[2];
                     SelectedToleranceType = split[1].ToLower().StartsWith("ppm") ? "ppm" : "da";
                     break;
                 case "OpenSearch":
@@ -257,6 +249,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             // fallback: just store the string
             _customMdac = text;
         }
+        OnCustomFieldChanged();
     }
 
     #endregion
