@@ -58,7 +58,7 @@ namespace Test
             if (Directory.Exists(outDirectory))
             {
                 Directory.Delete(outDirectory, true);
-            }
+            } 
             Directory.CreateDirectory(outDirectory);
 
             var path = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "JurkatTopDownRep2Fract1_ms2.msalign");
