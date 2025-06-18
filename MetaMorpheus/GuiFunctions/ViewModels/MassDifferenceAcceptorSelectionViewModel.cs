@@ -264,7 +264,73 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
                     {
                         ToleranceValue = split[2];
                         SelectedToleranceType = split[3].ToLowerInvariant();
-                        DotMassShifts = split[4];
+                        // Parse the legacy mass shifts
+                        var parsedShifts = split[4]
+                            .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                            .Select(s => double.Parse(s, System.Globalization.CultureInfo.InvariantCulture))
+                            .ToList();
+
+                        // Try to match as many as possible using the notches
+                        var notches = PredefinedNotches.ToList();
+                        var maxPos = 5; 
+                        var maxNeg = 5;
+
+                        // Brute-force: try all combinations of frequencies for each notch (for a small number of notches and frequencies, this is feasible)
+                        var bestMatch = new HashSet<double>();
+                        int[] bestPos = new int[notches.Count];
+                        int[] bestNeg = new int[notches.Count];
+
+                        void TryCombinations(int notchIdx, int[] pos, int[] neg)
+                        {
+                            if (notchIdx == notches.Count)
+                            {
+                                // Generate all possible sums for this combination
+                                var generated = new HashSet<double>();
+                                var ranges = notches.Select((n, i) =>
+                                    Enumerable.Range(-neg[i], pos[i] + neg[i] + 1).ToArray()).ToArray();
+
+                                foreach (var combo in CartesianProduct(ranges))
+                                {
+                                    double sum = 0;
+                                    for (int i = 0; i < notches.Count; i++)
+                                        sum += combo[i] * notches[i].MonoisotopicMass;
+                                    generated.Add(Math.Round(sum, 5)); // rounding for floating point tolerance
+                                }
+
+                                var matched = parsedShifts.Where(s => generated.Contains(Math.Round(s, 6))).ToHashSet();
+                                if (matched.Count > bestMatch.Count)
+                                {
+                                    bestMatch = matched;
+                                    Array.Copy(pos, bestPos, pos.Length);
+                                    Array.Copy(neg, bestNeg, neg.Length);
+                                }
+                                return;
+                            }
+                            for (int p = 0; p <= maxPos; p++)
+                            {
+                                for (int n = 0; n <= maxNeg; n++)
+                                {
+                                    pos[notchIdx] = p;
+                                    neg[notchIdx] = n;
+                                    TryCombinations(notchIdx + 1, pos, neg);
+                                }
+                            }
+                        }
+
+                        TryCombinations(0, new int[notches.Count], new int[notches.Count]);
+
+                        // Set the notches to the best found
+                        for (int i = 0; i < notches.Count; i++)
+                        {
+                            notches[i].IsSelected = bestPos[i] > 0 || bestNeg[i] > 0;
+                            notches[i].MaxPositiveFrequency = bestPos[i];
+                            notches[i].MaxNegativeFrequency = bestNeg[i];
+                        }
+
+                        // Any unmatched shifts go into DotMassShifts
+                        var unmatched = parsedShifts.Where(s => !bestMatch.Contains(Math.Round(s, 6)))
+                            .Select(s => s.ToString("G6", System.Globalization.CultureInfo.InvariantCulture));
+                        DotMassShifts = string.Join(",", unmatched);
                     }
                     break;
                 case "interval":
