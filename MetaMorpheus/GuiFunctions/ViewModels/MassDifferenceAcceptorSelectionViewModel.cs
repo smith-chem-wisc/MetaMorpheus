@@ -351,6 +351,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
                     break;
                 case "ppmAroundZero":
                 case "daltonsAroundZero":
+                case "daAroundZero":
                     CustomMode = CustomMdacMode.AroundZero;
                     if (split.Length >= 3)
                         ToleranceValue = split[2];

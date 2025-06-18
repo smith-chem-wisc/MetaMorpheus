@@ -232,10 +232,11 @@ namespace Test.GuiTests
         }
 
         [Test]
-        public void LegacyParsing_Sets_Properties_Correctly()
+        public void LegacyParsing_Notch_SetsPropertiesCorrectly()
         {
             var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName dot 0.5 ppm 0,1.0033548");
             Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.Notch));
+            Assert.That(vm.SelectedType, Is.EqualTo(MassDiffAcceptorType.Custom));
             Assert.That(vm.CustomName, Is.EqualTo("LegacyName"));
             Assert.That(vm.ToleranceValue, Is.EqualTo("0.5"));
             Assert.That(vm.SelectedToleranceType, Is.EqualTo("ppm"));
@@ -248,9 +249,11 @@ namespace Test.GuiTests
         }
 
         [Test]
-        public void LegacyParsing_SetsSelectableNotchesCorrectly()
+        public void LegacyParsing_Notch_SetsSelectableNotchesCorrectly()
         {
             var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "Custom dot 7 ppm -2.00671,-1.00335,0,1.00335,2.00671,3.01006");
+            Assert.That(vm.SelectedType, Is.EqualTo(MassDiffAcceptorType.Custom));
+            Assert.That(vm.SelectedType, Is.EqualTo(MassDiffAcceptorType.Custom));
             Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.Notch));
             Assert.That(vm.CustomName, Is.EqualTo("Custom"));
             Assert.That(vm.ToleranceValue, Is.EqualTo("7"));
@@ -261,6 +264,58 @@ namespace Test.GuiTests
             Assert.That(mm.IsSelected, Is.True);
             Assert.That(mm.MaxPositiveFrequency, Is.EqualTo(3));
             Assert.That(mm.MaxNegativeFrequency, Is.EqualTo(2));
+        }
+
+        [Test]
+        public void LegacyParsing_Interval_SetsPropertiesCorrectly()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName interval [1,140];[18,20]");
+            Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.Interval));
+            Assert.That(vm.SelectedType, Is.EqualTo(MassDiffAcceptorType.Custom));
+            Assert.That(vm.CustomName, Is.EqualTo("LegacyName"));
+            Assert.That(vm.DotMassShifts, Is.EqualTo("0"));
+
+            Assert.That(vm.IntervalRanges, Is.EqualTo("[1,140];[18,20]"));
+        }
+
+        [Test]
+        public void LegacyParsing_AroundZero_PPM_SetsPropertiesCorrectly()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName ppmAroundZero 7");
+            Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.AroundZero));
+            Assert.That(vm.SelectedType, Is.EqualTo(MassDiffAcceptorType.Custom));
+            Assert.That(vm.CustomName, Is.EqualTo("LegacyName"));
+            Assert.That(vm.ToleranceValue, Is.EqualTo("7"));
+            Assert.That(vm.SelectedToleranceType, Is.EqualTo("ppm"));
+            Assert.That(vm.DotMassShifts, Is.EqualTo("0"));
+        }
+
+        [Test]
+        public void LegacyParsing_AroundZero_Da_SetsPropertiesCorrectly()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName daAroundZero 17");
+            Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.AroundZero));
+            Assert.That(vm.SelectedType, Is.EqualTo(MassDiffAcceptorType.Custom));
+            Assert.That(vm.CustomName, Is.EqualTo("LegacyName"));
+            Assert.That(vm.ToleranceValue, Is.EqualTo("17"));
+            Assert.That(vm.SelectedToleranceType, Is.EqualTo("da"));
+            Assert.That(vm.DotMassShifts, Is.EqualTo("0"));
+
+            vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName daltonsAroundZero 17");
+            Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.AroundZero));
+            Assert.That(vm.SelectedType, Is.EqualTo(MassDiffAcceptorType.Custom));
+            Assert.That(vm.CustomName, Is.EqualTo("LegacyName"));
+            Assert.That(vm.ToleranceValue, Is.EqualTo("17"));
+            Assert.That(vm.SelectedToleranceType, Is.EqualTo("da"));
+            Assert.That(vm.DotMassShifts, Is.EqualTo("0"));
+        }
+
+        [Test]
+        public void LegacyParsing_Open_SetsPropertiesCorrectly()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName OpenSearch");
+            Assert.That(vm.SelectedType, Is.EqualTo(MassDiffAcceptorType.Open));
+            Assert.That(vm.CustomName, Is.EqualTo("LegacyName"));
         }
 
         [Test]
