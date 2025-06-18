@@ -1,7 +1,10 @@
 using Easy.Common.Extensions;
 using EngineLayer;
 using GuiFunctions;
+using MassSpectrometry;
+using Omics.Fragmentation;
 using OxyPlot;
+using Readers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -12,12 +15,11 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using Omics.Fragmentation;
-using Readers;
 
 namespace MetaMorpheusGUI
 {
@@ -34,7 +36,8 @@ namespace MetaMorpheusGUI
         public PtmLegendViewModel PtmLegend;
         public ChimeraLegendViewModel ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
-        private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
+        //private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
+        private static List<string> AcceptedSpectraFormats => Readers.SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.ToList();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private MetaDrawSettingsViewModel SettingsView;
@@ -88,7 +91,7 @@ namespace MetaMorpheusGUI
             {
                 foreach (var draggedFilePath in files)
                 {
-                    if (File.Exists(draggedFilePath))
+                    if (File.Exists(draggedFilePath) | (Directory.Exists(draggedFilePath) && Regex.IsMatch(draggedFilePath, @".d$")) )
                     {
                         AddFile(draggedFilePath);
                     }

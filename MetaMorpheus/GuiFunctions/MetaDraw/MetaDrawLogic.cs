@@ -22,7 +22,10 @@ using Readers;
 using System.Threading;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Test")]
 namespace GuiFunctions
 {
     public class MetaDrawLogic
@@ -42,7 +45,7 @@ namespace GuiFunctions
         public ICollectionView PeptideSpectralMatchesView;
 
         private List<SpectrumMatchFromTsv> AllSpectralMatches; // all loaded PSMs
-        private Dictionary<string, MsDataFile> MsDataFiles; // key is file name without extension
+        internal Dictionary<string, MsDataFile> MsDataFiles; // key is file name without extension
         private List<SpectrumMatchPlot> CurrentlyDisplayedPlots;
         private Regex illegalInFileName = new Regex(@"[\\/:*?""<>|]");
         private SpectralLibrary SpectralLibrary;
@@ -1055,7 +1058,15 @@ namespace GuiFunctions
                     fileNameWithoutExtension = System.IO.Path.GetFileName(fileNameWithoutExtension);
 
                     var spectraFile = MsDataFileReader.GetDataFile(filepath);
-                    spectraFile.InitiateDynamicConnection();
+                    if (spectraFile is TimsTofFileReader timsTofDataFile)
+                    {
+                        timsTofDataFile.LoadAllStaticData(); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
+                    }
+                    else
+                    {
+                        spectraFile.InitiateDynamicConnection();
+                    }
+
                     if (!MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
                     {
                         spectraFile.CloseDynamicConnection();
