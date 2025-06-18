@@ -44,24 +44,29 @@ namespace EngineLayer
             // Modification Properties
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
             // Generate the neural loss and diagnostic ions for O_glycan.
-            if (type == GlycanType.O_glycan && Ions != null)
+            if (type == GlycanType.O_glycan)
             {
-                List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
-                neutralLosses.Add(DissociationType.HCD, lossMasses);
-                neutralLosses.Add(DissociationType.CID, lossMasses);
-                neutralLosses.Add(DissociationType.EThcD, lossMasses);
                 ModificationType = "O-Glycosylation"; // Set the modification type to N-Glycosylation.
+                if (Ions != null)
+                {
+                    List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                    neutralLosses.Add(DissociationType.HCD, lossMasses);
+                    neutralLosses.Add(DissociationType.CID, lossMasses);
+                    neutralLosses.Add(DissociationType.EThcD, lossMasses);
+                }
             }
 
             // Generate the neural loss and diagnostic ions for N_glycan.
-            else if (type == GlycanType.N_glycan && Ions != null)
+            else if (type == GlycanType.N_glycan)
             {
-                List<double> lossMasses = Ions.Where(p => p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList(); //570 is a cutoff for glycan ion size 2N1H, which will generate fragment ions. 
-                neutralLosses.Add(DissociationType.HCD, lossMasses);
-                neutralLosses.Add(DissociationType.CID, lossMasses);
-                neutralLosses.Add(DissociationType.EThcD, lossMasses);
                 ModificationType = "N-Glycosylation"; // Set the modification type to N-Glycosylation.
-                
+                if (Ions != null)
+                {
+                    List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                    neutralLosses.Add(DissociationType.HCD, lossMasses);
+                    neutralLosses.Add(DissociationType.CID, lossMasses);
+                    neutralLosses.Add(DissociationType.EThcD, lossMasses);
+                }
             }
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();

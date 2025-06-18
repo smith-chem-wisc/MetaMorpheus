@@ -443,7 +443,7 @@ namespace EngineLayer.GlycoSearch
                     iDLow++; // if the oxonium ions don't make sense (there is no 204, or without their diagnostic ion), we can skip this glycan.
                     continue;
                 }
-                if (modPos.Count >= GlycanBox.OGlycanBoxes[iDLow].NumberOfMods) // the glycosite number should be larger than the possible glycan number.
+                if (GraphCheck(modPos, GlycanBox.OGlycanBoxes[iDLow])) // the glycosite number should be larger than the possible glycan number.
                 {
                     LocalizationGraph localizationGraph = new LocalizationGraph(modPos, GlycanBox.OGlycanBoxes[iDLow], GlycanBox.OGlycanBoxes[iDLow].ChildGlycanBoxes, iDLow);
                     LocalizationGraph.LocalizeOGlycan(localizationGraph, localizationScan, CommonParameters.ProductMassTolerance, products); //create the localization graph with the glycan mass and the possible glycosite.
@@ -708,6 +708,50 @@ namespace EngineLayer.GlycoSearch
             return possibleMatches;
         }
 
+        /// <summary>
+        /// Check if the motif in peptide is sufficient to cover the motif in glycanBox.
+        /// </summary>
+        /// <param name="modPos"></param>
+        /// <param name="glycanBox"></param>
+        /// <returns></returns>
+        private bool GraphCheck(Dictionary<int, string> modPos, GlycanBox glycanBox)
+        {
+            if (modPos.Count < glycanBox.NumberOfMods)
+                return false;
+            var motifInBox = new Dictionary<string, int>();
+            foreach (var modId in glycanBox.ModIds)
+            {
+                var motif = GlycanBox.GlobalOGlycans[modId].Target.ToString();
+
+                if (!motifInBox.ContainsKey(motif))
+                {
+                    motifInBox[motif] = 0;
+                }
+                motifInBox[motif]++;
+            }
+
+            var motifInPeptide = new Dictionary<string, int>();
+            for (int i = 0; i <= modPos.Count-1; i++)
+            {
+                var motif = modPos.Values.ElementAt(i);
+
+                if (!motifInPeptide.ContainsKey(motif))
+                {
+                    motifInPeptide[motif] = 0;
+                }
+                motifInPeptide[motif]++;
+            }
+
+            foreach (var motif in motifInBox)
+            {
+                if (!motifInPeptide.ContainsKey(motif.Key) || motifInPeptide[motif.Key] < motif.Value)
+                {
+                    return false; 
+                }
+            }
+
+            return true;
+        }
 
 
     }
