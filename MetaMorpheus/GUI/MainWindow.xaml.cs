@@ -710,7 +710,6 @@ namespace MetaMorpheusGUI
         {
             OpenNewTaskWindow(MyTask.GlycoSearch);
         }
-
         private void AddAveragingTaskButton_OnClick(object sender, RoutedEventArgs e)
         {
             OpenNewTaskWindow(MyTask.Average);
