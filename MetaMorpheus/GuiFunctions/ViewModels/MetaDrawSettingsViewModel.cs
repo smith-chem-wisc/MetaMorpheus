@@ -64,6 +64,8 @@ namespace GuiFunctions
             }
         }
 
+        public ObservableCollection<SpectrumDescriptorViewModel> SpectrumDescriptors { get; }
+
         public ObservableCollection<string> PossibleColors { get; set; }
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
@@ -80,6 +82,8 @@ namespace GuiFunctions
         /// <param name="loadAsync"></param>
         public MetaDrawSettingsViewModel(bool loadAsync = true)
         {
+            SpectrumDescriptors = [.. MetaDrawSettings.SpectrumDescription.Select(p => new SpectrumDescriptorViewModel(p.Key))];
+
             if (loadAsync)
                 Initialization = InitializeAsync();
             else
@@ -234,5 +238,21 @@ namespace GuiFunctions
         /// The result of the asynchronous initialization of this instance.
         /// </summary>
         Task Initialization { get; }
+    }
+
+    public class SpectrumDescriptorViewModel(string key) : BaseViewModel
+    {
+        private string _displayName;
+        public string DisplayName => _displayName ??= key.Split(":")[0];
+
+        public bool IsSelected
+        {
+            get => MetaDrawSettings.SpectrumDescription[key];
+            set
+            {
+                MetaDrawSettings.SpectrumDescription[key] = value;
+                OnPropertyChanged(nameof(IsSelected));
+            }
+        }
     }
 }
