@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using GuiFunctions;
@@ -90,19 +91,19 @@ namespace Test.GuiTests
         [Test]
         public void MassDifferenceAcceptorTypeModel_Equality_Works()
         {
-            var model1 = new MassDifferenceAcceptorTypeModel
+            var model1 = new MassDifferenceAcceptorTypeViewModel
             {
                 Type = MassDiffAcceptorType.OneMM,
                 Label = "A",
                 ToolTip = "B"
             };
-            var model2 = new MassDifferenceAcceptorTypeModel
+            var model2 = new MassDifferenceAcceptorTypeViewModel
             {
                 Type = MassDiffAcceptorType.OneMM,
                 Label = "C",
                 ToolTip = "D"
             };
-            var model3 = new MassDifferenceAcceptorTypeModel
+            var model3 = new MassDifferenceAcceptorTypeViewModel
             {
                 Type = MassDiffAcceptorType.TwoMM,
                 Label = "E",
@@ -239,6 +240,142 @@ namespace Test.GuiTests
             Assert.That(vm.ToleranceValue, Is.EqualTo("0.5"));
             Assert.That(vm.SelectedToleranceType, Is.EqualTo("ppm"));
             Assert.That(vm.DotMassShifts, Is.EqualTo("0,1.0029"));
+        }
+
+        [Test]
+        public void PredefinedNotches_Defaults_AreCorrect()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            Assert.That(vm.PredefinedNotches.Count, Is.EqualTo(1));
+            var notch = vm.PredefinedNotches[0];
+            Assert.That(notch.Name, Is.EqualTo("Missed Mono"));
+            Assert.That(notch.MonoisotopicMass, Is.EqualTo(Chemistry.Constants.C13MinusC12));
+            Assert.That(notch.MaxPositiveFrequency, Is.EqualTo(1));
+            Assert.That(notch.MaxNegativeFrequency, Is.EqualTo(0));
+            Assert.That(notch.IsSelected, Is.False);
+        }
+
+        [Test]
+        public void SelectableNotch_PropertyChanged_TriggersCustomMdacUpdate()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            var notch = vm.PredefinedNotches[0];
+            bool customMdacChanged = false;
+            vm.PropertyChanged += (s, e) => { if (e.PropertyName == nameof(vm.CustomMdac)) customMdacChanged = true; };
+
+            notch.IsSelected = true;
+            Assert.That(customMdacChanged, Is.True);
+            customMdacChanged = false;
+            notch.MaxPositiveFrequency = 2;
+            Assert.That(customMdacChanged, Is.True);
+            customMdacChanged = false;
+            notch.MaxNegativeFrequency = 1;
+            Assert.That(customMdacChanged, Is.True);
+        }
+
+        [Test]
+        public void GetAllNotchCombinations_ProducesAllSums()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            // Add a second notch for more complex combinations
+            vm.PredefinedNotches.Add(new SelectableNotchViewModel("Other", 2.0));
+            var missedMono = vm.PredefinedNotches[0];
+            var other = vm.PredefinedNotches[1];
+
+            missedMono.IsSelected = true;
+            missedMono.MaxPositiveFrequency = 1;
+            missedMono.MaxNegativeFrequency = 2;
+            other.IsSelected = true;
+            other.MaxPositiveFrequency = 1;
+            other.MaxNegativeFrequency = 1;
+
+            // Should produce all combinations of -2, -1, 0, 1 (missedMono) and -1*2.0, 0, 1*2.0 (other)
+            var combos = vm.GetType()
+                .GetMethod("GetAllNotchCombinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(vm, null) as System.Collections.IEnumerable;
+
+            var results = combos.Cast<double>().OrderBy(x => x).ToList();
+
+            // For missedMono: -2, -1, 0, 1; for other: -2, 0, 2
+            // All possible sums:
+            var expected = (
+                from mm in new[] { -2, -1, 0, 1 }.Select(i => i * missedMono.MonoisotopicMass)
+                from o in new[] { -2.0, 0.0, 2.0 }
+                select mm + o
+            ).Distinct().OrderBy(x => x).ToList();
+
+            Assert.That(results, Is.EquivalentTo(expected));
+        }
+
+        [Test]
+        public void BuildCustomMdac_CombinesNotchCombinationsAndUserInput()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            vm.CustomMode = CustomMdacMode.Notch;
+            vm.CustomName = "ComboTest";
+            vm.ToleranceValue = "0.1";
+            vm.SelectedToleranceType = "da";
+            // Add a second notch
+            vm.PredefinedNotches.Add(new SelectableNotchViewModel("Other", 2.0));
+            var missedMono = vm.PredefinedNotches[0];
+            var other = vm.PredefinedNotches[1];
+
+            missedMono.IsSelected = true;
+            missedMono.MaxPositiveFrequency = 1;
+            missedMono.MaxNegativeFrequency = 2;
+            other.IsSelected = true;
+            other.MaxPositiveFrequency = 1;
+            other.MaxNegativeFrequency = 1;
+
+            // User also enters a custom value
+            vm.DotMassShifts = "3.5";
+
+            // Build expected set
+            var mmVals = new[] { -2, -1, 0, 1 }.Select(i => i * missedMono.MonoisotopicMass);
+            var oVals = new[] { -2.0, 0.0, 2.0 };
+            var combos = (
+                from mm in mmVals
+                from o in oVals
+                select mm + o
+            ).Concat(new[] { 3.5 }).Distinct().OrderBy(x => x).ToList();
+
+            var expected = $"ComboTest dot 0.1 da {string.Join(",", combos.Select(x => x.ToString("G6", CultureInfo.InvariantCulture)))}";
+            Assert.That(vm.CustomMdac, Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void GetAllNotchCombinations_ReturnsZero_WhenNoneSelected()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            foreach (var n in vm.PredefinedNotches)
+            {
+                n.IsSelected = false;
+            }
+            var combos = vm.GetType()
+                .GetMethod("GetAllNotchCombinations", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
+                .Invoke(vm, null) as System.Collections.IEnumerable;
+            var results = combos.Cast<double>().ToList();
+            Assert.That(results.Count, Is.EqualTo(1));
+            Assert.That(results[0], Is.EqualTo(0));
+        }
+
+        [Test]
+        public void CartesianProduct_WorksForMultipleRanges()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "");
+            var method = vm.GetType().GetMethod("CartesianProduct", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            int[][] ranges = new[] {
+                new[] { -1, 0, 1 },
+                new[] { 0, 2 }
+            };
+            var result = method.Invoke(null, new object[] { ranges }) as System.Collections.IEnumerable;
+            var combos = result.Cast<int[]>().ToList();
+
+            // Should be 3*2 = 6 combinations
+            Assert.That(combos.Count, Is.EqualTo(6));
+            Assert.That(combos, Does.Contain(new[] { -1, 0 }));
+            Assert.That(combos, Does.Contain(new[] { 1, 2 }));
         }
     }
 }

@@ -989,8 +989,8 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
-                                    
-                                    <local:MassDifferenceAcceptorControl x:Name="MassDifferenceAcceptorControl" d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorModel.Instance}" />
+
+                                    <local:MassDifferenceAcceptorControl x:Name="MassDifferenceAcceptorControl" d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorSelectionModel.Instance}" />
 
                                     <GroupBox Header="Ambiguity Parameters">
                                         <Grid>

@@ -411,7 +411,7 @@ namespace MetaMorpheusGUI
                 ye.VerifyCheckState();
             }
 
-            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac);
+            _massDifferenceAcceptorViewModel = new(task.SearchParameters.MassDiffAcceptorType, task.SearchParameters.CustomMdac, task.CommonParameters.PrecursorMassTolerance.Value);
             WritePrunedDBCheckBox.IsChecked = task.SearchParameters.WritePrunedDatabase;
             UpdateModSelectionGrid();
         }

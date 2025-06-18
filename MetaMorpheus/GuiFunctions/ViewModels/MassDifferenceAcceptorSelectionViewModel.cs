@@ -1,7 +1,10 @@
-﻿using Easy.Common.Extensions;
+﻿using Chemistry;
+using Easy.Common.Extensions;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using TaskLayer;
 
@@ -18,8 +21,13 @@ public enum CustomMdacMode
 /// </summary>
 public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 {
-    public ObservableCollection<MassDifferenceAcceptorTypeModel> MassDiffAcceptorTypes { get; }
-    public MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType selectedType, string customText) : base()
+    public ObservableCollection<MassDifferenceAcceptorTypeViewModel> MassDiffAcceptorTypes { get; }
+    public ObservableCollection<SelectableNotchViewModel> PredefinedNotches { get; } = new()
+    {
+        new SelectableNotchViewModel("Missed Mono", Chemistry.Constants.C13MinusC12)
+    };
+
+    public MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType selectedType, string customText, double defaultCustomTolerance = 5)
     {
         // Almost every piece of this constructor is order dependent. Be careful when changing. 
         var types = Enum.GetValues<MassDiffAcceptorType>().ToList();
@@ -36,6 +44,16 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         // Default tolerance types
         ToleranceTypes = new[] { "ppm", "da" };
         SelectedToleranceType = ToleranceTypes[0];
+        ToleranceValue = defaultCustomTolerance.ToString(CultureInfo.InvariantCulture);
+
+        foreach (var notch in PredefinedNotches)
+        {
+            notch.PropertyChanged += (s, e) =>
+            {
+                if (e.PropertyName is nameof(SelectableNotchViewModel.IsSelected) or nameof(SelectableNotchViewModel.MaxPositiveFrequency) or nameof(SelectableNotchViewModel.MaxNegativeFrequency))
+                        OnCustomFieldChanged();
+            };
+        }
 
         // Parse legacy string if present
         if (!string.IsNullOrWhiteSpace(customText))
@@ -48,8 +66,8 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         }
     }
 
-    private MassDifferenceAcceptorTypeModel _selectedType;
-    public MassDifferenceAcceptorTypeModel SelectedType
+    private MassDifferenceAcceptorTypeViewModel _selectedType;
+    public MassDifferenceAcceptorTypeViewModel SelectedType
     {
         get => _selectedType;
         set
@@ -139,7 +157,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
     }
 
     // Notch mode
-    private string _toleranceValue = "5";
+    private string _toleranceValue;
     public string ToleranceValue
     {
         get => _toleranceValue;
@@ -164,7 +182,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
     }
 
     // Interval mode
-    private string _intervalRanges;
+    private string _intervalRanges = "[-187,200]";
     public string IntervalRanges
     {
         get => _intervalRanges;
@@ -189,9 +207,36 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         if (SelectedType?.Type != MassDiffAcceptorType.Custom)
             return string.Empty;
 
+        string combinedDotMassShifts = DotMassShifts;
+        if (CustomMode == CustomMdacMode.Notch)
+        {
+            // 1. Predefined notches
+            var predefined = GetAllNotchCombinations()
+                .Select(m => m.ToString("G6", System.Globalization.CultureInfo.InvariantCulture));
+
+            // 2. User custom
+            var user = Enumerable.Empty<string>();
+            if (!string.IsNullOrWhiteSpace(DotMassShifts))
+            {
+                user = DotMassShifts
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(s => s.Trim())
+                    .Where(s => double.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out _));
+            }
+
+            // 3. Combine, deduplicate, sort
+            var all = predefined.Concat(user)
+                .Distinct()
+                .OrderBy(x => double.Parse(x, System.Globalization.CultureInfo.InvariantCulture))
+                .ToList();
+
+            combinedDotMassShifts = string.Join(",", all);
+        }
+
         return CustomMode switch
         {
-            CustomMdacMode.Notch => $"{CustomName} dot {ToleranceValue} {SelectedToleranceType} {DotMassShifts}",
+            CustomMdacMode.Notch when ToleranceValue.IsNotNullOrEmpty() => $"{CustomName} dot {ToleranceValue} {SelectedToleranceType} {combinedDotMassShifts}",
+            CustomMdacMode.Notch when ToleranceValue.IsNullOrEmpty() => $"{CustomName} dot {combinedDotMassShifts}",
             CustomMdacMode.Interval => $"{CustomName} interval {IntervalRanges}",
             CustomMdacMode.AroundZero => $"{CustomName} {SelectedToleranceType}AroundZero {ToleranceValue}",
             _ => _customMdac
@@ -252,11 +297,55 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
         OnCustomFieldChanged();
     }
 
+    private IEnumerable<double> GetAllNotchCombinations()
+    {
+        var selected = PredefinedNotches.Where(n => n.IsSelected).ToList();
+        if (selected.Count == 0)
+            yield return 0;
+        else
+        {
+            // For each notch, create a list of possible counts (from -MaxNegative to +MaxPositive)
+            var ranges = selected
+                .Select(n => Enumerable.Range(-n.MaxNegativeFrequency, n.MaxPositiveFrequency + n.MaxNegativeFrequency + 1)
+                    .ToArray())
+                .ToArray();
+
+            // Cartesian product of all ranges
+            foreach (var combo in CartesianProduct(ranges))
+            {
+                double sum = 0;
+                for (int i = 0; i < selected.Count; i++)
+                    sum += combo[i] * selected[i].MonoisotopicMass;
+                yield return sum;
+            }
+        }
+    }
+
+    // Helper for cartesian product
+    private static IEnumerable<int[]> CartesianProduct(int[][] sequences)
+    {
+        int[] lengths = sequences.Select(s => s.Length).ToArray();
+        int[] indices = new int[sequences.Length];
+        while (true)
+        {
+            yield return indices.Select((v, i) => sequences[i][v]).ToArray();
+            int k = sequences.Length - 1;
+            while (k >= 0)
+            {
+                if (++indices[k] < lengths[k])
+                    break;
+                indices[k] = 0;
+                k--;
+            }
+            if (k < 0)
+                break;
+        }
+    }
+
     #endregion
 
 
-
-    private MassDifferenceAcceptorTypeModel CreateModel(MassDiffAcceptorType type)
+    private MassDifferenceAcceptorTypeViewModel CreateModel(MassDiffAcceptorType type)
     {
         string label = type switch
         {
@@ -310,7 +399,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             _ => throw new NotImplementedException($"No model implemented for type: {type}"),
         };
 
-        return new MassDifferenceAcceptorTypeModel
+        return new MassDifferenceAcceptorTypeViewModel
         {
             Type = type,
             Label = label,
@@ -324,7 +413,7 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
 /// <summary>
 /// A single MassDiff acceptor type and all relevant GUI display information
 /// </summary>
-public class MassDifferenceAcceptorTypeModel : BaseViewModel, IEquatable<MassDiffAcceptorType>, IEquatable<MassDifferenceAcceptorTypeModel>
+public class MassDifferenceAcceptorTypeViewModel : BaseViewModel, IEquatable<MassDiffAcceptorType>, IEquatable<MassDifferenceAcceptorTypeViewModel>
 {
     private int _positiveMissedMonos;
     public int PositiveMissedMonos
@@ -358,7 +447,7 @@ public class MassDifferenceAcceptorTypeModel : BaseViewModel, IEquatable<MassDif
     public string Label { get; init; }
     public string ToolTip { get; init; }
 
-    public bool Equals(MassDifferenceAcceptorTypeModel other)
+    public bool Equals(MassDifferenceAcceptorTypeViewModel other)
     {
         return Type == other!.Type;
     }
@@ -373,7 +462,7 @@ public class MassDifferenceAcceptorTypeModel : BaseViewModel, IEquatable<MassDif
         if (obj is null) return false;
         if (ReferenceEquals(this, obj)) return true;
         if (obj.GetType() != GetType()) return false;
-        return Equals((MassDifferenceAcceptorTypeModel)obj);
+        return Equals((MassDifferenceAcceptorTypeViewModel)obj);
     }
 
     public override int GetHashCode()
@@ -389,5 +478,41 @@ public class MassDifferenceAcceptorSelectionModel : MassDifferenceAcceptorSelect
     public MassDifferenceAcceptorSelectionModel() : base(MassDiffAcceptorType.TwoMM, "")
     {
 
+    }
+}
+
+public class SelectableNotchViewModel : BaseViewModel, IHasMass
+{
+    private bool _isSelected;
+    private int _maxPositiveFrequency;
+    private int _maxNegativeFrequency;
+    public string Name { get; }
+    public double MonoisotopicMass { get; }
+
+    public int MaxPositiveFrequency
+    {
+        get => _maxPositiveFrequency;
+        set { _maxPositiveFrequency = value; OnPropertyChanged(nameof(MaxPositiveFrequency)); }
+    }
+
+    public int MaxNegativeFrequency
+    {
+        get => _maxNegativeFrequency;
+        set { _maxNegativeFrequency = value; OnPropertyChanged(nameof(MaxNegativeFrequency)); }
+    }
+
+    public bool IsSelected
+    {
+        get => _isSelected;
+        set { _isSelected = value; OnPropertyChanged(nameof(IsSelected)); }
+    }
+
+    public SelectableNotchViewModel(string name, double mass, int maxFrequency = 1, int maxNegativeFrequency = 0)
+    {
+        Name = name;
+        MonoisotopicMass = mass;
+        MaxPositiveFrequency = maxFrequency;
+        MaxNegativeFrequency = maxNegativeFrequency;
+        IsSelected = false;
     }
 }
