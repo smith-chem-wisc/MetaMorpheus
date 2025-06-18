@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
+using MzLibUtil;
 using TaskLayer;
 
 namespace GuiFunctions;
@@ -260,10 +261,13 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
             {
                 case "dot":
                     CustomMode = CustomMdacMode.Notch;
+
+                    const double tolerance = 1e-4;
                     if (split.Length >= 5)
                     {
                         ToleranceValue = split[2];
                         SelectedToleranceType = split[3].ToLowerInvariant();
+
                         // Parse the legacy mass shifts
                         var parsedShifts = split[4]
                             .Split(',', StringSplitOptions.RemoveEmptyEntries)
@@ -289,15 +293,20 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
                                 var ranges = notches.Select((n, i) =>
                                     Enumerable.Range(-neg[i], pos[i] + neg[i] + 1).ToArray()).ToArray();
 
-                                foreach (var combo in CartesianProduct(ranges))
+                                var combos = CartesianProduct(ranges);
+                                foreach (var combo in combos)
                                 {
+                                    // Skip the all-zero combination (no mass shift)
+                                    if (combo.All(x => x == 0))
+                                        continue;
+
                                     double sum = 0;
                                     for (int i = 0; i < notches.Count; i++)
                                         sum += combo[i] * notches[i].MonoisotopicMass;
-                                    generated.Add(Math.Round(sum, 5)); // rounding for floating point tolerance
+                                    generated.Add(sum);
                                 }
 
-                                var matched = parsedShifts.Where(s => generated.Contains(Math.Round(s, 6))).ToHashSet();
+                                var matched = parsedShifts.Where(s => generated.Any(g => Math.Abs(s - g) < tolerance)).ToHashSet();
                                 if (matched.Count > bestMatch.Count)
                                 {
                                     bestMatch = matched;
@@ -328,8 +337,10 @@ public class MassDifferenceAcceptorSelectionViewModel : BaseViewModel
                         }
 
                         // Any unmatched shifts go into DotMassShifts
-                        var unmatched = parsedShifts.Where(s => !bestMatch.Contains(Math.Round(s, 6)))
-                            .Select(s => s.ToString("G6", System.Globalization.CultureInfo.InvariantCulture));
+                        var unmatched = parsedShifts
+                            .Where(s => !bestMatch.Any(m => Math.Abs(s - m) < tolerance))
+                            .Select(s => s.ToString("G6", System.Globalization.CultureInfo.InvariantCulture))
+                            .ToList();
                         DotMassShifts = string.Join(",", unmatched);
                     }
                     break;

@@ -234,12 +234,33 @@ namespace Test.GuiTests
         [Test]
         public void LegacyParsing_Sets_Properties_Correctly()
         {
-            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName dot 0.5 ppm 0,1.0029");
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "LegacyName dot 0.5 ppm 0,1.0033548");
             Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.Notch));
             Assert.That(vm.CustomName, Is.EqualTo("LegacyName"));
             Assert.That(vm.ToleranceValue, Is.EqualTo("0.5"));
             Assert.That(vm.SelectedToleranceType, Is.EqualTo("ppm"));
-            Assert.That(vm.DotMassShifts, Is.EqualTo("0,1.0029"));
+            Assert.That(vm.DotMassShifts, Is.EqualTo("0"));
+
+            var mm = vm.PredefinedNotches.FirstOrDefault(p => p.Name == "Missed Mono");
+            Assert.That(mm.IsSelected, Is.True);
+            Assert.That(mm.MaxPositiveFrequency, Is.EqualTo(1));
+            Assert.That(mm.MaxNegativeFrequency, Is.EqualTo(0));
+        }
+
+        [Test]
+        public void LegacyParsing_SetsSelectableNotchesCorrectly()
+        {
+            var vm = new MassDifferenceAcceptorSelectionViewModel(MassDiffAcceptorType.Custom, "Custom dot 7 ppm -2.00671,-1.00335,0,1.00335,2.00671,3.01006");
+            Assert.That(vm.CustomMode, Is.EqualTo(CustomMdacMode.Notch));
+            Assert.That(vm.CustomName, Is.EqualTo("Custom"));
+            Assert.That(vm.ToleranceValue, Is.EqualTo("7"));
+            Assert.That(vm.SelectedToleranceType, Is.EqualTo("ppm"));
+            Assert.That(vm.DotMassShifts, Is.EqualTo("0"));
+
+            var mm = vm.PredefinedNotches.FirstOrDefault(p => p.Name == "Missed Mono");
+            Assert.That(mm.IsSelected, Is.True);
+            Assert.That(mm.MaxPositiveFrequency, Is.EqualTo(3));
+            Assert.That(mm.MaxNegativeFrequency, Is.EqualTo(2));
         }
 
         [Test]
@@ -250,7 +271,7 @@ namespace Test.GuiTests
             var notch = vm.PredefinedNotches[0];
             Assert.That(notch.Name, Is.EqualTo("Missed Mono"));
             Assert.That(notch.MonoisotopicMass, Is.EqualTo(Chemistry.Constants.C13MinusC12));
-            Assert.That(notch.MaxPositiveFrequency, Is.EqualTo(1));
+            Assert.That(notch.MaxPositiveFrequency, Is.EqualTo(0));
             Assert.That(notch.MaxNegativeFrequency, Is.EqualTo(0));
             Assert.That(notch.IsSelected, Is.False);
         }
