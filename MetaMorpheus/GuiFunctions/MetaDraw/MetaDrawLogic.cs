@@ -1054,9 +1054,7 @@ namespace GuiFunctions
             {
                 lock (ThreadLocker)
                 {
-                    var fileNameWithoutExtension = filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty);
-                    fileNameWithoutExtension = System.IO.Path.GetFileName(fileNameWithoutExtension);
-
+                    var fileNameWithoutExtension = System.IO.Path.GetFileName(filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty));
                     var spectraFile = MsDataFileReader.GetDataFile(filepath);
                     if (spectraFile is TimsTofFileReader timsTofDataFile)
                     {
