@@ -493,9 +493,10 @@ namespace Test
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
+            //There is only one path, [4,1] means in position 4 with glycan 1
 
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int> { 4}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 0 }));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 1 }));
         }
 
         [Test]
