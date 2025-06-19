@@ -70,9 +70,9 @@ namespace EngineLayer
             }
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
-            diagnosticIons.Add(DissociationType.HCD, DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.CID, DiagnosticIons.Select(p => (double)p / 1E5).ToList());
-            diagnosticIons.Add(DissociationType.EThcD, DiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.HCD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.CID, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.EThcD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
             ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
             var id = Glycan.GetKindString(Kind);
 
@@ -136,7 +136,7 @@ namespace EngineLayer
         public List<GlycanIon> Ions { get; set; }
         public bool Decoy { get; private set; }
 
-        public HashSet<int> DiagnosticIons // B ions (the sugar fragment dropped from the glycopeptide), used for the N-glycan. There are more ions to set...
+        public HashSet<int> GlycanDiagnosticIons // B ions (the sugar fragment dropped from the glycopeptide), used for the N-glycan. There are more ions to set...
         {
             get
             {   
