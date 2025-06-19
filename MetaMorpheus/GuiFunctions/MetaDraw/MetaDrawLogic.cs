@@ -31,12 +31,10 @@ namespace GuiFunctions
         public ObservableCollection<string> SpectraFilePaths { get; private set; }
         public ObservableCollection<string> SpectralLibraryPaths { get; private set; }
         public ObservableCollection<SpectrumMatchFromTsv> FilteredListOfPsms { get; private set; } // filtered list of PSMs after q-value filter, etc.
-        public ObservableCollection<SpectrumMatchFromTsv> ChimericSpectralMatches { get; private set; }
         public Dictionary<string, ObservableCollection<SpectrumMatchFromTsv>> SpectralMatchesGroupedByFile { get; private set; }
         public DrawnSequence StationarySequence { get; set; }
         public DrawnSequence ScrollableSequence { get; set; }
         public DrawnSequence SequenceAnnotation { get; set; }
-        public ChimeraSpectrumMatchPlot ChimeraSpectrumMatchPlot { get; set; }
         public SpectrumMatchPlot SpectrumAnnotation { get; set; }
         public object ThreadLocker;
         public ICollectionView PeptideSpectralMatchesView;
@@ -59,7 +57,6 @@ namespace GuiFunctions
             PeptideSpectralMatchesView = CollectionViewSource.GetDefaultView(FilteredListOfPsms);
             ThreadLocker = new object();
             CurrentlyDisplayedPlots = new List<SpectrumMatchPlot>();
-            ChimericSpectralMatches = new();
         }
 
         public List<string> LoadFiles(bool loadSpectra, bool loadPsms)
@@ -93,25 +90,6 @@ namespace GuiFunctions
             errors.AddRange(errors3);
 
             return errors;
-        }
-
-        public void DisplayChimeraSpectra(PlotView plotView, List<SpectrumMatchFromTsv> sms, out List<string> errors)
-        {
-            CleanUpCurrentlyDisplayedPlots();
-            errors = null;
-
-            // get the scan
-            if (!MsDataFiles.TryGetValue(sms.First().FileNameWithoutExtension, out MsDataFile spectraFile))
-            {
-                errors = new List<string>();
-                errors.Add("The spectra file could not be found for this PSM: " + sms.First().FileNameWithoutExtension);
-                return;
-            }
-            MsDataScan scan = spectraFile.GetOneBasedScanFromDynamicConnection(sms.First().Ms2ScanNumber);
-            
-            ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, scan, sms);
-            ChimeraSpectrumMatchPlot.RefreshChart();
-            CurrentlyDisplayedPlots.Add(ChimeraSpectrumMatchPlot);
         }
 
         public void DisplaySpectrumMatch(PlotView plotView, SpectrumMatchFromTsv sm, ParentChildScanPlotsView parentChildScanPlotsView, out List<string> errors)
@@ -523,12 +501,6 @@ namespace GuiFunctions
                     DisplaySequences(stationaryCanvas, null, null, psm);
                     DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
                 }
-                else if (plotView.Name == "chimeraPlot")
-                {
-                    List<SpectrumMatchFromTsv> chimericSms = FilteredListOfPsms
-                        .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
-                    DisplayChimeraSpectra(plotView, chimericSms, out errors);
-                }
                 
 
                 if (errors != null)
@@ -587,15 +559,6 @@ namespace GuiFunctions
                 DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
                 DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out errors);
             }
-            else if (plotView.Name == "chimeraPlot")
-            {
-                List<SpectrumMatchFromTsv> chimericPsms = FilteredListOfPsms
-                    .Where(p => p.Ms2ScanNumber == spectrumMatches.First().Ms2ScanNumber &&
-                                p.FileNameWithoutExtension == spectrumMatches.First().FileNameWithoutExtension)
-                    .ToList();
-                DisplayChimeraSpectra(plotView, chimericPsms, out errors);
-            }
-
         }
 
         public MsDataScan GetMs2ScanFromPsm(SpectrumMatchFromTsv spectralMatch)
@@ -775,22 +738,6 @@ namespace GuiFunctions
                     || psm.Name.Contains(searchString) || psm.OrganismName.Contains(searchString));
                 };
             }
-        }
-
-        public void FilterPsmsToChimerasOnly()
-        {
-            lock (ThreadLocker)
-            {
-                FilteredListOfPsms.Clear();
-
-                var filteredChimericPsms = ChimericSpectralMatches.Where(MetaDrawSettings.FilterAcceptsPsm);
-                foreach (var psm in filteredChimericPsms)
-                {
-                    if (filteredChimericPsms.Count(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension) > 1)
-                        FilteredListOfPsms.Add(psm);
-                }
-            }
-
         }
 
         public void CleanUpResources()
@@ -1015,17 +962,6 @@ namespace GuiFunctions
                         }
                     }
                 }
-
-                foreach (var group in AllSpectralMatches
-                             .GroupBy(p => (p.Ms2ScanNumber, p.FileNameWithoutExtension))
-                             .Where(group => group.Count() > 1))
-                {
-                    foreach (var psm in group)
-                    {
-                        ChimericSpectralMatches.Add(psm);
-                    }
-                }
-
             }
             catch (Exception e)
             {

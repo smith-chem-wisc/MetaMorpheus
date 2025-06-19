@@ -393,28 +393,6 @@
                                         </Expander>
                                     </Grid>
                                 </TabItem>
-
-                                <!-- ChimeraPlot -->
-                                <TabItem x:Name="ChimeraScanPlot" >
-                                    <TabItem.Header>
-                                        <Label Content="Chimeric Scan View" x:Name="ChimeraScanPlotTabItem" />
-                                    </TabItem.Header>
-                                    <Grid Name="chimeraPlotGrid">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition />
-                                            <RowDefinition Height="Auto"/>
-                                        </Grid.RowDefinitions>
-
-                                        <!-- spectrum annotation -->
-                                        <Grid Grid.Row="0" >
-                                            <oxy:PlotView x:Name="chimeraPlot" FontSize="16" FontStretch="Expanded"
-                                                          Margin="0 0 0 0"  VerticalAlignment="Stretch"/>
-                                        </Grid>
-
-                                        <!-- Chimera Legend -->
-                                        <local:ChimeraLegendControl Grid.Row="1" x:Name="ChimeraLegendControl" DataContext="{Binding}" Height="Auto"/>
-                                    </Grid>
-                                </TabItem>
                             </TabControl>
 
                             <!--Detailed PSM properties-->

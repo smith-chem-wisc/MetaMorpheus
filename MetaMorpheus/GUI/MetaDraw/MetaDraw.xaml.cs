@@ -32,7 +32,6 @@ namespace MetaMorpheusGUI
         private ObservableCollection<string> plotTypes;
         private ObservableCollection<string> PsmStatPlotFiles;
         public PtmLegendViewModel PtmLegend;
-        public ChimeraLegendViewModel ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
@@ -43,8 +42,6 @@ namespace MetaMorpheusGUI
 
         public MetaDraw()
         {
-            UsefulProteomicsDatabases.Loaders.LoadElements();
-
             InitializeComponent();
 
             InitializeColorSettingsView();
@@ -189,31 +186,8 @@ namespace MetaMorpheusGUI
                 ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(psm);
             }
 
-            // Chimera plotter
-            if (MetaDrawTabControl.SelectedContent is Grid { Name: "chimeraPlotGrid" })
-            {
-                ClearPresentationArea();
-                chimeraPlot.Visibility = Visibility.Visible;
-                List<SpectrumMatchFromTsv> chimericPsms = MetaDrawLogic.FilteredListOfPsms
-                    .Where(p => p.Ms2ScanNumber == psm.Ms2ScanNumber && p.FileNameWithoutExtension == psm.FileNameWithoutExtension).ToList();
-                MetaDrawLogic.DisplayChimeraSpectra(chimeraPlot, chimericPsms, out List<string> error);
-                if (error != null && error.Count > 0)
-                    Debugger.Break();
-                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
-                AmbiguousWarningTextBlocks.Visibility = Visibility.Collapsed;
-                AmbiguousSequenceOptionBox.Visibility = Visibility.Collapsed;
-
-                if (MetaDrawSettings.ShowLegend)
-                {
-                    ChimeraLegend = new(chimericPsms);
-                    ChimeraLegendControl.DataContext = ChimeraLegend;
-                }
-                return;
-            }
-            else
-            {
-                wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
-            }
+            wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Visible;
+            
 
             SetSequenceDrawingPositionSettings(true);
             // Psm selected from ambiguous dropdown => adjust the psm to be drawn
@@ -595,23 +569,7 @@ namespace MetaMorpheusGUI
             Canvas legendCanvas = null;
             Vector ptmLegendLocationVector = new();
             List<string> errors = new();
-            if (((Grid)MetaDrawTabControl.SelectedContent).Name == "chimeraPlotGrid")
-            {
-                if (MetaDrawSettings.ShowLegend)
-                {
-                    ChimeraLegendControl chimeraLegendCopy = new();
-                    chimeraLegendCopy.DataContext = ChimeraLegendControl.DataContext;
-                    legendCanvas = new();
-                    legendCanvas.Children.Add(chimeraLegendCopy);
-                    Size legendSize = new Size((int)ChimeraLegendControl.ActualWidth, (int)ChimeraLegendControl.ActualHeight);
-                    legendCanvas.Measure(legendSize);
-                    legendCanvas.Arrange(new Rect(legendSize));
-                    legendCanvas.UpdateLayout();
-                }
-                MetaDrawLogic.ExportPlot(chimeraPlot, null, items, itemsControlSampleViewModel,
-                    directoryPath, out errors, legendCanvas);
-            }
-            else if (((Grid)MetaDrawTabControl.SelectedContent).Name == "PsmAnnotationGrid")
+            if (((Grid)MetaDrawTabControl.SelectedContent).Name == "PsmAnnotationGrid")
             {
 
                 if (MetaDrawSettings.ShowLegend)
@@ -1108,21 +1066,6 @@ namespace MetaMorpheusGUI
                     dataGridScanNums_SelectedCellsChanged(new object(), null);
                 }
             }
-
-            // switch from other view to chimera
-            if (e.AddedItems.Count > 0 && ((TabItem)e.AddedItems[0]).Name == "ChimeraScanPlot")
-            {
-                MetaDrawLogic.FilterPsmsToChimerasOnly();
-                ClearPresentationArea();
-
-                // reselect what was selected if possible
-                if (selectedPsm != null && MetaDrawLogic.FilteredListOfPsms.Contains(selectedPsm))
-                {
-                    int psmIndex = MetaDrawLogic.FilteredListOfPsms.IndexOf(selectedPsm);
-                    dataGridScanNums.SelectedIndex = psmIndex;
-                    dataGridScanNums_SelectedCellsChanged(new object(), null);
-                }
-            }
         }
 
         /// <summary>
@@ -1139,10 +1082,7 @@ namespace MetaMorpheusGUI
             wholeSequenceCoverageHorizontalScroll.Visibility = Visibility.Collapsed;
             AmbiguousSequenceOptionBox.Items.Clear();
             plotView.Visibility = Visibility.Hidden;
-            chimeraPlot.Visibility = Visibility.Hidden;
 
-            if (ChimeraLegend != null)
-                ChimeraLegend.Visibility = false;
             if (PtmLegend != null)
                 PtmLegend.Visibility = false;
         }

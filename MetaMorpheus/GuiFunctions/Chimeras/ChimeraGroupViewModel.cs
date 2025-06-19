@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -19,7 +20,7 @@ namespace GuiFunctions;
 /// <summary>
 /// View model for a group of chimeric IDs from a single MS2 scan
 /// </summary>
-public class ChimeraGroupViewModel : BaseViewModel
+public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectralMatchModel>
 {
     public string FileNameWithoutExtension { get; set; }
     public int OneBasedPrecursorScanNumber { get; set; }
@@ -269,6 +270,9 @@ public class ChimeraGroupViewModel : BaseViewModel
             proteinIndex++;
         }
     }
+
+    public IEnumerator<ChimericSpectralMatchModel> GetEnumerator() => ChimericPsms.GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }
 
 /// <summary>

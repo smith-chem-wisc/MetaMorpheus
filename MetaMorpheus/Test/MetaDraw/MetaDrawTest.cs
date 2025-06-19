@@ -888,30 +888,34 @@ namespace Test.MetaDraw
                 var type = typeof(SpectrumMatchFromTsv);
                 var field = type.GetField("<Ms2ScanNumber>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
                 field.SetValue(psm, psm.Ms2ScanNumber + 27300);
+
+                field = type.GetField("<PrecursorScanNum>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+                field.SetValue(psm, psm.PrecursorScanNum + 27300);
             }
-            var metaDrawDynamicScanConnection = (Dictionary<string, MsDataFile>)metadrawLogic?.GetType()
-                .GetField("MsDataFiles", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.GetValue(metadrawLogic);
 
+            var metaDrawDynamicScanConnection = metadrawLogic.MsDataFiles;
 
-            metadrawLogic.FilterPsmsToChimerasOnly();
+            var chimeraAnalysisTab = new ChimeraAnalysisTabViewModel(
+                metadrawLogic.SpectralMatchesGroupedByFile.SelectMany(p => p.Value).ToList(), metadrawLogic.MsDataFiles,
+                "");
             // test plotting on each instance of chimeras in this dataset
             var plotView = new OxyPlot.Wpf.PlotView() { Name = "chimeraPlot" };
-            foreach (var chimeraGroup in metadrawLogic.FilteredListOfPsms
-                         .GroupBy(p => p.Ms2ScanNumber))
+            foreach (var chimeraGroup in chimeraAnalysisTab.ChimeraGroupViewModels)
             {
-                Assert.That(chimeraGroup.Count(), Is.GreaterThanOrEqualTo(2));
+                Assert.That(chimeraGroup.Count, Is.GreaterThanOrEqualTo(2));
                 MsDataScan chimericScan = metaDrawDynamicScanConnection.First().Value
-                    .GetOneBasedScanFromDynamicConnection(chimeraGroup.First().Ms2ScanNumber);
+                    .GetOneBasedScanFromDynamicConnection(chimeraGroup.Ms2ScanNumber);
+                MsDataScan precursorScan = metaDrawDynamicScanConnection.First().Value
+                    .GetOneBasedScanFromDynamicConnection(chimeraGroup.OneBasedPrecursorScanNumber);
+
 
                 // plot the first chimera and test the results
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                var plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
                 Assert.That(errors == null || !errors.Any());
 
                 // test plot was drawn
                 var model = plotView.Model;
                 Assert.That(model, Is.Not.Null);
-                Assert.That(model.Equals(metadrawLogic.ChimeraSpectrumMatchPlot.Model));
                 Assert.That(plotView.Model.Axes.Count == 2);
 
                 var peakPoints = ((LineSeries)model.Series[0]).Points;
@@ -924,7 +928,7 @@ namespace Test.MetaDraw
                 // all matched ions were drawn
                 int drawnIonsNotDefaultColor = model.Series.Count(p => ((LineSeries)p).Color != MetaDrawSettings.UnannotatedPeakColor);
                 List<MatchedFragmentIon> fragments = new();
-                chimeraGroup.Select(p => p.MatchedIons).ForEach(m => fragments.AddRange(m));
+                chimeraGroup.MatchedFragmentIonsByColor.SelectMany(p => p.Value.Select(l => l.Item1)).ForEach(m => fragments.Add(m));
                 Assert.That(drawnIonsNotDefaultColor, Is.EqualTo(fragments.Count));
 
                 // shared matched ions are default color
@@ -945,8 +949,8 @@ namespace Test.MetaDraw
                 for (var i = 0; i < chimeraGroup.Count(); i++)
                 {
                     var chimera = chimeraGroup.ElementAt(i);
-                    var chimeraSpecificPeaks = unsharedIons.Intersect(chimera.MatchedIons).ToList();
-                    var chimeraSharedPeaks = sharedIons.Intersect(chimera.MatchedIons).ToList();
+                    var chimeraSpecificPeaks = unsharedIons.Intersect(chimeraGroup.MatchedFragmentIonsByColor[chimera.Color].Select(p => p.Item1)).ToList();
+                    var chimeraSharedPeaks = sharedIons.Intersect(chimeraGroup.MatchedFragmentIonsByColor[chimera.Color].Select(p => p.Item1)).ToList();
                     int drawnIonsOfSpecificID = model.Series.Count(p => ChimeraSpectrumMatchPlot.ColorByProteinDictionary[i].Any(m => m == ((LineSeries)p).Color));
 
                     if (i == 0)
@@ -958,15 +962,15 @@ namespace Test.MetaDraw
                 // test with different drawing settings
                 MetaDrawSettings.AnnotateCharges = true;
                 MetaDrawSettings.AnnotateMzValues = true;
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
                 Assert.That(errors == null || !errors.Any());
 
                 MetaDrawSettings.DisplayIonAnnotations = false;
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
                 Assert.That(errors == null || !errors.Any());
 
                 MetaDrawSettings.DisplayInternalIons = false;
-                metadrawLogic.DisplayChimeraSpectra(plotView, chimeraGroup.ToList(), out errors);
+                plot = new ChimeraSpectrumMatchPlot(plotView, chimeraGroup);
                 Assert.That(errors == null || !errors.Any());
                 MetaDrawSettings.DisplayInternalIons = true;
             }
@@ -974,7 +978,15 @@ namespace Test.MetaDraw
             // test export of singlular plot
             List<SpectrumMatchFromTsv> firstChimeraGroup = metadrawLogic.FilteredListOfPsms
                 .GroupBy(p => p.Ms2ScanNumber).First().ToList();
-            metadrawLogic.DisplayChimeraSpectra(plotView, firstChimeraGroup, out errors);
+            var precursorSpectrum = metaDrawDynamicScanConnection.First().Value
+                .GetOneBasedScanFromDynamicConnection(firstChimeraGroup.First().PrecursorScanNum);
+            var fragmentScan = metaDrawDynamicScanConnection.First().Value
+                .GetOneBasedScanFromDynamicConnection(firstChimeraGroup.First().Ms2ScanNumber);
+
+            var firstChimeraGroupVm = new ChimeraGroupViewModel(firstChimeraGroup, precursorSpectrum, fragmentScan);
+            var chimeraPlot = new ChimeraSpectrumMatchPlot(plotView, firstChimeraGroupVm);
+            plotView.Model = chimeraPlot.Model;
+
             Assert.That(errors == null || !errors.Any());
             foreach (var exportType in MetaDrawSettings.ExportTypes)
             {
@@ -1007,7 +1019,13 @@ namespace Test.MetaDraw
             // test export of multiple plots
             List<SpectrumMatchFromTsv> secondChimeraGroup = metadrawLogic.FilteredListOfPsms
                 .GroupBy(p => p.Ms2ScanNumber).ToList()[1].ToList();
-            metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
+            fragmentScan = metaDrawDynamicScanConnection.First().Value
+                .GetOneBasedScanFromDynamicConnection(secondChimeraGroup.First().Ms2ScanNumber);
+            precursorSpectrum = metaDrawDynamicScanConnection.First().Value
+                .GetOneBasedScanFromDynamicConnection(secondChimeraGroup.First().PrecursorScanNum);
+            var secondChimeraGroupVm = new ChimeraGroupViewModel(secondChimeraGroup, precursorSpectrum, fragmentScan);
+            chimeraPlot = new ChimeraSpectrumMatchPlot(plotView, secondChimeraGroupVm);
+
             Assert.That(errors == null || !errors.Any());
             foreach (var exportType in MetaDrawSettings.ExportTypes)
             {
@@ -1025,11 +1043,6 @@ namespace Test.MetaDraw
                 }
             }
 
-            // test error
-            metadrawLogic.CleanUpResources();
-            metadrawLogic.DisplayChimeraSpectra(plotView, secondChimeraGroup, out errors);
-            Assert.That(errors != null && errors.First().Equals("The spectra file could not be found for this PSM: TaGe_SA_HeLa_04_subset_longestSeq"));
-            
             Directory.Delete(outputFolder, true);
         }
 
