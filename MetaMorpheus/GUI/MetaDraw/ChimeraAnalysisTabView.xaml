@@ -73,20 +73,20 @@
             </StackPanel>
 
             <Button Grid.Row="1" Grid.Column="0" Content="Export MS1" Width="80" 
-                    Margin="5 0 5 0" Click="ExportMs1"/>
+                    Margin="5 0 5 0" Command="{Binding ExportMs1Command}"/>
 
             <Button Grid.Row="2" Grid.Column="0" Content="Export MS2" Width="80" 
-                    Margin="5 0 5 0" Click="ExportMs2"/>
+                    Margin="5 0 5 0" Command="{Binding ExportMs2Command}"/>
 
             <Button Grid.Row="2" Grid.Column="1" Content="Export Cov" Width="80"
-                    Margin="5 0 5 0" Click="ExportSequenceCoverage"/>
+                    Margin="5 0 5 0" Command="{Binding ExportSequenceCoverageCommand}"/>
 
             <Button Grid.Row="1" Grid.Column="2" Content="Export Legend" Width="80"
-                    Margin="5 0 5 0" Click="ExportLegend"
+                    Margin="5 0 5 0" Command="{Binding ExportLegendCommand}"
                     CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
 
             <Button Grid.Row="2" Grid.Column="2" Content="Export All" Width="80"
-                    Margin="5 0 5 0" Click="ExportAll"
+                    Margin="5 0 5 0" Command="{Binding ExportAllCommand}"
                     CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
         </Grid>
 

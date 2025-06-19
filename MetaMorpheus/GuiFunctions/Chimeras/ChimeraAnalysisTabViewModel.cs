@@ -6,6 +6,15 @@ using System.Linq;
 using MassSpectrometry;
 using Readers;
 using EngineLayer;
+using System.Windows;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
+using System.Windows.Media;
+using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Drawing;
+using System.Drawing.Imaging;
+using Brushes = System.Windows.Media.Brushes;
+using Point = System.Windows.Point;
 
 namespace GuiFunctions;
 
@@ -95,6 +104,12 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         SelectedExportType = "Png";
         ExportTypes = [ "Pdf", "Png", "Svg"];
         OnPropertyChanged(nameof(ExportTypes));
+
+        ExportMs1Command = new RelayCommand(ExportMs1);
+        ExportMs2Command = new RelayCommand(ExportMs2);
+        ExportSequenceCoverageCommand = new RelayCommand(ExportSequenceCoverage);
+        ExportLegendCommand = new DelegateCommand(ExportLegend);
+        ExportAllCommand = new DelegateCommand(ExportAll);
     }
 
     private static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
@@ -166,6 +181,250 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             _selectedExportType = value;
             OnPropertyChanged(nameof(SelectedExportType));
         }
+    }
+
+    public ICommand ExportMs1Command { get; set; }
+    public ICommand ExportMs2Command { get; set; }
+    public ICommand ExportSequenceCoverageCommand { get; set; }
+    public ICommand ExportLegendCommand { get; set; }
+    public ICommand ExportAllCommand { get; set; }
+
+    private void ExportMs1()
+    {
+        if (SelectedChimeraGroup == null)
+        {
+            MessageBox.Show("No chimera group selected for export.");
+            return;
+        }
+
+        string path = Path.Combine(ExportDirectory,
+            $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_MS1.{SelectedExportType.ToLower()}");
+
+        switch (SelectedExportType)
+        {
+            case "Pdf":
+                Ms1ChimeraPlot.ExportToPdf(path, (int)Ms1ChimeraPlot.Model.Width, (int)Ms1ChimeraPlot.Model.Height);
+                break;
+            case "Png":
+                Ms1ChimeraPlot.ExportToPng(path, (int)Ms1ChimeraPlot.Model.Width, (int)Ms1ChimeraPlot.Model.Height);
+                break;
+            case "Svg":
+                Ms1ChimeraPlot.ExportToSvg(path, (int)Ms1ChimeraPlot.Model.Width, (int)Ms1ChimeraPlot.Model.Height);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+
+        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
+    }
+
+    private void ExportMs2()
+    {
+        if (SelectedChimeraGroup == null)
+        {
+            MessageBox.Show("No chimera group selected for export.");
+            return;
+        }
+
+        string path = Path.Combine(ExportDirectory,
+            $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_MS2.{SelectedExportType.ToLower()}");
+
+        switch (SelectedExportType)
+        {
+            case "Pdf":
+                ChimeraSpectrumMatchPlot.ExportToPdf(path, (int)ChimeraSpectrumMatchPlot.Model.Width, (int)ChimeraSpectrumMatchPlot.Model.Height);
+                break;
+            case "Png":
+                ChimeraSpectrumMatchPlot.ExportToPng(path, (int)ChimeraSpectrumMatchPlot.Model.Width, (int)ChimeraSpectrumMatchPlot.Model.Height);
+                break;
+            case "Svg":
+                ChimeraSpectrumMatchPlot.ExportToSvg(path, (int)ChimeraSpectrumMatchPlot.Model.Width, (int)ChimeraSpectrumMatchPlot.Model.Height);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
+    }
+
+    private void ExportSequenceCoverage()
+    {
+        string path = Path.Combine(ExportDirectory,
+            $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_SequenceCoverage.{SelectedExportType.ToLower()}");
+        // change path to .png
+        path = Path.ChangeExtension(path, "png");
+
+        // convert canvas to bitmap
+        Rect bounds = VisualTreeHelper.GetDescendantBounds(ChimeraDrawnSequence.SequenceDrawingCanvas);
+        double dpi = 96d;
+
+        RenderTargetBitmap rtb = new(
+            (int)bounds.Width, //width
+            (int)bounds.Height, //height
+            dpi, //dpi x
+            dpi, //dpi y
+            System.Windows.Media.PixelFormats.Default // pixelformat
+        );
+
+        DrawingVisual dv = new();
+        using (DrawingContext dc = dv.RenderOpen())
+        {
+            VisualBrush vb = new(ChimeraDrawnSequence.SequenceDrawingCanvas);
+            dc.DrawRectangle(vb, null, new Rect(new System.Windows.Point(), bounds.Size));
+        }
+
+        rtb.Render(dv);
+
+        // export
+        using (FileStream stream = new(path, FileMode.Create))
+        {
+            PngBitmapEncoder encoder = new();
+            encoder.Frames.Add(BitmapFrame.Create(rtb));
+            encoder.Save(stream);
+        }
+        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
+    }
+
+    private void ExportLegend(object frameworkElement)
+    {
+        var element = frameworkElement as FrameworkElement;
+        if (element == null)
+        {
+            MessageBox.Show("No legend available for export.");
+            return;
+        }
+
+        string path = Path.Combine(ExportDirectory,
+            $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_Legend.{SelectedExportType.ToLower()}");
+
+
+        var bounds = VisualTreeHelper.GetDescendantBounds(element);
+        double dpi = 96d;
+
+        RenderTargetBitmap rtb = new RenderTargetBitmap((int)(bounds.Width),
+            (int)(bounds.Height),
+            dpi,
+            dpi,
+            PixelFormats.Pbgra32);
+
+        DrawingVisual dv = new DrawingVisual();
+        using (DrawingContext ctx = dv.RenderOpen())
+        {
+            VisualBrush vb = new VisualBrush(element);
+            ctx.DrawRectangle(vb, null, new Rect(new Point(), bounds.Size));
+        }
+
+        rtb.Render(dv);
+
+        // export
+        using (FileStream stream = new(path, FileMode.Create))
+        {
+            PngBitmapEncoder encoder = new();
+            encoder.Frames.Add(BitmapFrame.Create(rtb));
+            encoder.Save(stream);
+        }
+        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
+    }
+
+    private void ExportAll(object frameworkElement)
+    {
+        var element = frameworkElement as FrameworkElement;
+
+        // initialize all 
+        string path = Path.Combine(ExportDirectory,
+            $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_Combined.{SelectedExportType.ToLower()}");
+
+        List<System.Drawing.Bitmap> bitmaps = new();
+        List<Point> points = new();
+        double dpi = MetaDrawSettings.CanvasPdfExportDpi;
+        double outterBuffer = 10;
+
+
+        // scale and rotate sequence annotation
+        Rect annotationBounds = VisualTreeHelper.GetDescendantBounds(ChimeraDrawnSequence.SequenceDrawingCanvas);
+        var rtb = new RenderTargetBitmap((int)(annotationBounds.Width * dpi / 96), (int)(annotationBounds.Height *
+            dpi / 96), dpi, dpi, PixelFormats.Default);
+
+        var dv = new DrawingVisual();
+        using (DrawingContext ctx = dv.RenderOpen())
+        {
+            ctx.DrawRectangle(Brushes.White, null, new Rect(new Point(), annotationBounds.Size));
+
+            VisualBrush vb = new VisualBrush(ChimeraDrawnSequence.SequenceDrawingCanvas);
+            ctx.DrawRectangle(vb, null, new Rect(new Point(), annotationBounds.Size));
+        }
+        rtb.Render(dv);
+
+        TransformedBitmap rotatedBitmap = new TransformedBitmap(rtb, new RotateTransform(270));
+        TransformedBitmap scaledBitmap = new TransformedBitmap(rotatedBitmap, new ScaleTransform(1, 0.6));
+        using (var memory = new MemoryStream())
+        {
+            BitmapEncoder encoder = new BmpBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(scaledBitmap));
+            encoder.Save(memory);
+            bitmaps.Add(new System.Drawing.Bitmap(memory));
+        }
+        var annotationWidth = bitmaps[0].Width;
+        var annotationHeight = bitmaps[0].Height;
+        points.Add(new Point(outterBuffer, outterBuffer));
+
+        // legend
+        Rect legendBounds = VisualTreeHelper.GetDescendantBounds(element);
+        rtb = new RenderTargetBitmap((int)(legendBounds.Width * dpi / 96), (int)(legendBounds.Height * dpi / 96), dpi, dpi, PixelFormats.Default);
+        dv = new DrawingVisual();
+        using (DrawingContext ctx = dv.RenderOpen())
+        {
+            VisualBrush vb = new VisualBrush(element);
+            ctx.DrawRectangle(vb, null, new Rect(new Point(), legendBounds.Size));
+        }
+        rtb.Render(dv);
+        using (var memory = new MemoryStream())
+        {
+            BitmapEncoder encoder = new BmpBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(rtb));
+            encoder.Save(memory);
+            bitmaps.Add(new System.Drawing.Bitmap(memory));
+        }
+        var legendHeight = bitmaps[1].Height;
+        var legendWidth = bitmaps[1].Width;
+        points.Add(new Point(bitmaps[0].Width + 4 * outterBuffer, annotationHeight - legendHeight + outterBuffer));
+
+        // create temporary exports for spectraS
+        // give spectra the remaining space
+        string tempDir = Path.Combine(ExportDirectory, "temp");
+        if (!Directory.Exists(tempDir))
+            Directory.CreateDirectory(tempDir);
+        int remainingX = (int)(legendWidth);
+        double remainingY = annotationHeight - legendHeight;
+        int specHeight = (int)(remainingY / 2);
+
+        var ms1TempPath = Path.Combine(tempDir, "ms1.png");
+        Ms1ChimeraPlot.ExportToPng(ms1TempPath, remainingX, specHeight);
+        bitmaps.Add(new Bitmap(ms1TempPath));
+        points.Add(new Point(annotationWidth + outterBuffer, outterBuffer));
+
+
+        var ms2TempPath = Path.Combine(tempDir, "ms2.png");
+        ChimeraSpectrumMatchPlot.ExportToPng(ms2TempPath, remainingX, specHeight);
+        bitmaps.Add(new Bitmap(ms2TempPath));
+        points.Add(new Point(annotationWidth + outterBuffer, specHeight));
+
+        var combinedBitmap = new System.Drawing.Bitmap((int)(legendWidth + annotationWidth + 3 * outterBuffer),
+            (int)(annotationHeight + 2 * outterBuffer));
+        using (var g = System.Drawing.Graphics.FromImage(combinedBitmap))
+        {
+            //g.ScaleTransform(scaleX, scaleY);
+            g.Clear(System.Drawing.Color.White);
+            for (int i = 0; i < bitmaps.Count; i++)
+            {
+                g.DrawImage(bitmaps[i], (float)points[i].X, (float)points[i].Y);
+            }
+        }
+        combinedBitmap.Save(path, ImageFormat.Png);
+
+        // clean up
+        bitmaps.ForEach(b => b.Dispose());
+        Directory.Delete(tempDir, true);
+        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
     }
 
     #endregion
