@@ -101,7 +101,7 @@
                 
                 <!-- Custom GUI controls (all modes) -->
                 <Grid Grid.Row="1">
-                    <!-- Dot Mode -->
+                    <!-- Notche Mode -->
                     <StackPanel>
                         <StackPanel.Visibility>
                             <MultiBinding Converter="{StaticResource EnumToVisibilityConverter}">
@@ -143,7 +143,7 @@
                                          Margin="4,0,0,0"
                                          HorizontalAlignment="Stretch"
                                          VerticalAlignment="Center"
-                                         MinWidth="60" />
+                                         MinWidth="60" KeyDown="TextBox_KeyDown"/>
                             </StackPanel>
 
                             <!-- Predefined Notches -->

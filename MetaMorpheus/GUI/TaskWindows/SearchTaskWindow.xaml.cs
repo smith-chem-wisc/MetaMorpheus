@@ -994,7 +994,7 @@ namespace MetaMorpheusGUI
 
         private void KeyPressed(object sender, KeyEventArgs e)
         {
-            if (e.Key == Key.Return)
+            if (e.Key == Key.Return && e.OriginalSource is not TextBox)
             {
                 SaveButton_Click(sender, e);
             }
