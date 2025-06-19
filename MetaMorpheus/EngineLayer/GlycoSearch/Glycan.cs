@@ -62,7 +62,7 @@ namespace EngineLayer
                 ModificationType = "N-Glycosylation"; // Set the modification type to N-Glycosylation.
                 if (Ions != null)
                 {
-                    List<double> lossMasses = Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
+                    List<double> lossMasses = Ions.Where(p=>p.IonMass < 57000000).Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
                     neutralLosses.Add(DissociationType.HCD, lossMasses);
                     neutralLosses.Add(DissociationType.CID, lossMasses);
                     neutralLosses.Add(DissociationType.EThcD, lossMasses);
