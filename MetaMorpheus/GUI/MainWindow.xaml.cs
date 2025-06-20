@@ -517,7 +517,7 @@ namespace MetaMorpheusGUI
         /// </summary>
         private void AddSpectraFile_Click(object sender, RoutedEventArgs e)
         {
-            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*.tdf;*.tdf_bin)|*.raw;*.mzML;*.mgf;*.tdf;*.tdf_bin");
+            var openPicker = StartOpenFileDialog("Spectra Files(*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin)|*.raw;*.mzML;*.mgf;*ms2.msalign;*.tdf;*.tdf_bin");
 
             if (openPicker.ShowDialog() == true)
             {
@@ -1633,6 +1633,17 @@ namespace MetaMorpheusGUI
                 case ".mgf":
                     NotificationHandler(null, new StringEventArgs(".mgf files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
                     goto case ".mzml";
+                case ".msalign":
+                    if (filePath.Contains("_ms2."))
+                    {
+                        NotificationHandler(null, new StringEventArgs("MS2-only msalign files lack MS1 spectra, which are needed for quantification and searching for coisolated peptides. All other features of MetaMorpheus will function.", null));
+                        goto case ".mzml";
+                    }
+                    else if (filePath.Contains("_ms1."))
+                    {
+                        NotificationHandler(null, new StringEventArgs("MS1 align file type not currently supported " + theExtension, null));
+                    }
+                    break;
                 case ".tdf":
                 case ".tdf_bin":
                     // for Bruker timsTof files, the .tdf file is in a ".d" directory which also contains a .tdf_bin file 

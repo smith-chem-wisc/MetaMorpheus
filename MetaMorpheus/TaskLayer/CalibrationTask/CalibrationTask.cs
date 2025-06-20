@@ -92,7 +92,7 @@ namespace TaskLayer
                 var fileExtension = Path.GetExtension(originalUncalibratedFilePath);
                 string originalUncalibratedFilenameWithoutExtension = Path.GetFileNameWithoutExtension(originalUncalibratedFilePath);
                 bool calibrated = false;
-                if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase))
+                if (fileExtension.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".d", StringComparison.OrdinalIgnoreCase) || fileExtension.Equals(".msalign", StringComparison.OrdinalIgnoreCase))
                 {
                     unsuccessfullyCalibratedFilePaths.Add(originalUncalibratedFilePath);
                     // provide a message indicating why we couldn't calibrate
