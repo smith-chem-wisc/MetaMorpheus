@@ -32,15 +32,14 @@ namespace Test
         [OneTimeSetUp]
         public static void Setup()
         {
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
-            GlycanBox.GlobalOGlycanModifications = GlycanBox.BuildGlobalOGlycanModifications(GlycanBox.GlobalOGlycans);
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
             OGlycanBoxes = GlycanBox.BuildOGlycanBoxes(3).OrderBy(p => p.Mass).ToArray();
         }
 
         [Test]
         public static void OGlycoTest_LoadGlycanBox()
         {
-            Assert.That(OGlycanBoxes.Count(), Is.EqualTo(454));
+            Assert.That(OGlycanBoxes.Count(), Is.EqualTo(2924));
         }
 
         [Test]
@@ -167,9 +166,9 @@ namespace Test
         public static void OGlycoTest_OGlycanChildIons()
         {
             // Reload the glycan database to test the child ions.
-            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanLocations.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
+            GlycanBox.GlobalOGlycans = GlycanDatabase.LoadGlycan(GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First(), true, true).ToArray();
 
-            var glycan = GlycanBox.GlobalOGlycans[5]; // we use the glycan (N(H)(N(H)))
+            var glycan = GlycanBox.GlobalOGlycans[10]; // we use the glycan (N(H)(N(H)))
 
             Assert.That(glycan.Ions.Count == 5);
 
@@ -258,7 +257,7 @@ namespace Test
             var oxoniumIonIntensities = GlycoPeptides.ScanOxoniumIonFilter(scan, productSearchMode);
 
             //Get glycanBox          
-            var glycanBox = OGlycanBoxes[19];
+            var glycanBox = OGlycanBoxes[64];
 
             var satifyOxonium = GlycoPeptides.DiagonsticFilter(oxoniumIonIntensities, glycanBox);
             Assert.That(!satifyOxonium);
@@ -276,10 +275,10 @@ namespace Test
             Protein protein = new Protein("PTLFKNVSLYK", "");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
 
-            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
+            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).Select(p => p.Key).ToList();
 
-            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[8]);
-            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on X]LFKNVS[O-Glycosylation:N1 on X]LYK");
+            var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[21]);
+            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on S]LFKNVS[O-Glycosylation:N1 on S]LYK");
 
             var fragments_hcd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.HCD, new List<ProductType>(), peptide, peptideWithMod);
 
@@ -295,14 +294,14 @@ namespace Test
         public static void OGlycoTest_FragmentIons2()
         {
             //Get glycanBox
-            var glycanBox = OGlycanBoxes[24];
+            var glycanBox = OGlycanBoxes[85];
             Protein protein = new Protein("TVYLGASK", "");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
 
             List<int> modPos = new List<int> { 2, 8 };
 
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]VYLGAS[O-Glycosylation:H1N1A1 on X]K");
+            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on T]VYLGAS[O-Glycosylation:H1N1A1 on S]K");
 
             var fragments_etd = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
 
@@ -322,15 +321,15 @@ namespace Test
         public static void OGlycoTest_FragmentIonsHash()
         {
             //Get glycanBox
-            var glycanBox = OGlycanBoxes[8];
+            var glycanBox = OGlycanBoxes[22]; // GlycanBox : [N1A1 on T], [N1 on S]
 
             Protein protein = new Protein("PTLFKNVSLYK", "");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
 
-            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
+            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).Select(p => p.Key).ToList();
 
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on X]LFKNVS[O-Glycosylation:N1 on X]LYK");
+            Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on T]LFKNVS[O-Glycosylation:N1 on S]LYK");
 
             //The following code prove that the default Fragment method doesn't work for O-glycopeptide due to neutral losses.
             var fragments_hcd = new List<Product>();
@@ -346,7 +345,7 @@ namespace Test
                 peptideWithMod.Fragment(DissociationType.ETD, FragmentationTerminus.Both, fragmentsMod_etd);
 
             //Tuple<int, int[]> keyValuePair represents: <glycanBoxId, glycanModPositions> 
-            Tuple<int, int[]> keyValuePairs = new Tuple<int, int[]>(8, modPos.ToArray());
+            Tuple<int, int[]> keyValuePairs = new Tuple<int, int[]>(22, modPos.ToArray());
 
             var fragments_etd_origin = GlycoPeptides.GetFragmentHash(frag_ments_etd, new Tuple<int, int[]>(0, null), OGlycanBoxes, 1000);
 
@@ -368,20 +367,22 @@ namespace Test
         public static void OGlycoTest_Localization()
         {
             //Get glycanBox
-            var glycanBox = OGlycanBoxes[19];
+            var glycanBox = OGlycanBoxes[66];
 
             //Get unmodified peptide, products, allPossible modPos and all boxes.
             Protein protein = new Protein("TTGSLEPSSGASGPQVSSVK", "P16150");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
             List<Product> products = new List<Product>();
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
-
-            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(v=>v).ToArray();
+            
+                var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" })
+               .OrderBy(v => v.Key)
+               .ToDictionary(v => v.Key, v => v.Value);
             var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 6);
 
             //Get Unlocal Fragment
-            var unlocalCost = GlycoPeptides.GetUnlocalFragment(products, modPos, glycanBox);
+            var unlocalCost = GlycoPeptides.GetUnlocalFragment(products, modPos.Keys.ToArray(), glycanBox);
             Assert.That(unlocalCost.Count == 4); //Basicly, the unlocal are c/z ions that don't localize glycosylation. 
 
             //Get scan
@@ -392,7 +393,7 @@ namespace Test
 
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[3] { 10, 2, 3}, peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on X]T[O-Glycosylation:H1N1 on X]GSLEPSS[O-Glycosylation:N1 on X]GASGPQVSSVK");
+            Assert.That(peptideWithMod.FullSequence == "T[O-Glycosylation:H1N1 on T]T[O-Glycosylation:H1N1 on T]GSLEPSS[O-Glycosylation:N1 on S]GASGPQVSSVK");
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.EThcD, new List<ProductType>(), peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
 
@@ -406,19 +407,19 @@ namespace Test
             //Get localized Route
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v=>v.Item1), new List<int>{ 2, 3, 10}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.Item2), new List<int> { 1, 1, 0 }));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.Item2), new List<int> { 3, 3, 0 }));
 
 
             //Get all paths, calculate PScore and calculate position probability. 
             var p = scans.First().TheScan.MassSpectrum.Size * commonParameters.ProductMassTolerance.GetRange(1000).Width / scans.First().TheScan.MassSpectrum.Range.Width;
             var n = knownProducts.Where(v=>v.ProductType == ProductType.c || v.ProductType == ProductType.zDot).Count();
             var allPathWithWeights = LocalizationGraph.GetAllPaths_CalP(localizationGraph, p, n);
-            Assert.That(allPathWithWeights.Count == 168);
+            Assert.That(allPathWithWeights.Count == 6);
 
             //Calculate Site Specific Localization Probability
-            var y = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPathWithWeights, localizationGraph.ModPos);
+            var y = LocalizationGraph.CalSiteSpecificLocalizationProbability(allPathWithWeights, localizationGraph.ModPos.Select(p=>p.Key).ToArray());
             Assert.That(y.Count == 8);
-            Assert.That(y.First().Value[1].Item2 > 0.99);
+            Assert.That(y.First().Value[0].Item2 > 0.99);
 
         }
 
@@ -427,7 +428,7 @@ namespace Test
         {
             //There may have a bug that MM cannot identify Peptide modified with (HexNAc), This is to test and find the bug.
             //Get glycanBox
-            var glycanBox = OGlycanBoxes[0];
+            var glycanBox = OGlycanBoxes[1];
 
             //Get unmodified peptide, products, allPossible modPos and all boxes.
             Protein protein = new Protein("AATVGSLAGQPLQER", "P16150");
@@ -435,7 +436,10 @@ namespace Test
             List<Product> products = new List<Product>();
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
-            int[] modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).OrderBy(p => p).ToArray();
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" })
+                .OrderBy(v => v.Key)
+                .ToDictionary(v => v.Key, v => v.Value);
+
             var boxes = GlycanBox.BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds).ToArray();
 
             //Load scan.
@@ -446,7 +450,7 @@ namespace Test
 
             //Known peptideWithMod match.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(new int[1] {4}, peptide, glycanBox);
-            Assert.That(peptideWithMod.FullSequence == "AAT[O-Glycosylation:N1 on X]VGSLAGQPLQER");
+            Assert.That(peptideWithMod.FullSequence == "AAT[O-Glycosylation:N1 on T]VGSLAGQPLQER");
             //List<Product> knownProducts = peptideWithMod.Fragment(DissociationType.EThcD, FragmentationTerminus.Both).ToList();
             List<Product> knownProducts = GlycoPeptides.OGlyGetTheoreticalFragments(DissociationType.ETD, new List<ProductType>(), peptide, peptideWithMod);
             var matchedKnownFragmentIons = MetaMorpheusEngine.MatchFragmentIons(scans.First(), knownProducts, commonParameters);
@@ -489,9 +493,10 @@ namespace Test
             Assert.That(Enumerable.SequenceEqual(knowPath, allPaths[0]));
 
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
+            //There is only one path, [4,1] means in position 4 with glycan 1
 
             Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int> { 4}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 0 }));
+            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 1 }));
         }
 
         [Test]
@@ -955,16 +960,19 @@ namespace Test
         [Test]
         public static void OGlycoTest_GetAllPaths()
         {
-            int[] modPos = new int[3] { 2, 4, 6 };
-            var glycanBox = OGlycanBoxes[19];
+            Dictionary<int, string> modPos = new Dictionary<int, string>();
+            modPos.Add(2, "S");
+            modPos.Add(4, "T");
+            modPos.Add(6, "N");
+            var glycanBox = OGlycanBoxes[64];
             var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
 
-            for (int i = 0; i < modPos.Length; i++)
+            for (int i = 0; i < modPos.Count; i++)
             {
                 for (int j = 0; j < boxes.Length; j++)
                 {
-                    localizationGraph.array[i][j] = new AdjNode(i, j, modPos[i], boxes[j]);
+                    localizationGraph.array[i][j] = new AdjNode(i, j, modPos.Keys.ElementAt(i), boxes[j]);
                     localizationGraph.array[i][j].CummulativeSources = new List<int> { j }; 
                     localizationGraph.array[i][j].maxCost = 1;
                 }
@@ -987,16 +995,16 @@ namespace Test
         [Test]
         public static void OGlycoTest_GetLocalizedPath()
         {
-            int[] modPos = new int[1] { 4 };
+            Dictionary<int, string> modPos = new Dictionary<int, string> { { 4, "S" } };
             var glycanBox = OGlycanBoxes[1];
             var boxes = GlycanBox.BuildChildOGlycanBoxes(1, glycanBox.ModIds).ToArray();
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);
 
-            for (int i = 0; i < modPos.Length; i++)
+            for (int i = 0; i < modPos.Count; i++)
             {
                 for (int j = 0; j < boxes.Length; j++)
                 {
-                    localizationGraph.array[i][j] = new AdjNode(i, j, modPos[i], boxes[j]);
+                    localizationGraph.array[i][j] = new AdjNode(i, j, modPos.Keys.ElementAt(i), boxes[j]);
                     localizationGraph.array[i][j].CummulativeSources = new List<int> { j };
                 }
             }
