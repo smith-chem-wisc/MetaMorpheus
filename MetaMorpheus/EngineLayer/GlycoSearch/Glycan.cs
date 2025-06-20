@@ -81,24 +81,7 @@ namespace EngineLayer
             NeutralLosses = neutralLosses; // Set the neutral losses for the modification.
             base.DiagnosticIons = diagnosticIons; // Set the diagnostic ions for the modification.
 
-            if (OriginalId.Contains(" on "))
-            {
-                IdWithMotif = OriginalId;
-                OriginalId = OriginalId.Split(new string[1]
-                {
-                    " on "
-                }, StringSplitOptions.None)[0];
-            }
-            else if (OriginalId.Contains(" of "))
-            {
-                IdWithMotif = OriginalId.Replace(" of ", " on ");
-                OriginalId = OriginalId.Split(new string[2]
-                {
-                    " of ",
-                    " on "
-                }, StringSplitOptions.None)[0];
-            }
-            else if (OriginalId != null)
+            if (OriginalId != null)
             {
                 IdWithMotif = OriginalId + " on " + Target.ToString();
                 OriginalId = OriginalId;
