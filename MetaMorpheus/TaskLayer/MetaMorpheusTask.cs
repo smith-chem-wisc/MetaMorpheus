@@ -25,6 +25,8 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
+using Easy.Common.Extensions;
+using Readers;
 
 namespace TaskLayer
 {
@@ -207,6 +209,9 @@ namespace TaskLayer
                         {
                             MsDataScan precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
 
+                            if (precursorSpectrum is null)
+                                goto PrecursorFromScanHeader;
+
                             try
                             {
                                 ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
@@ -253,11 +258,12 @@ namespace TaskLayer
                         }
 
                         //if use precursor info from scan header and scan header has charge state
-                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue) 
+                        PrecursorFromScanHeader:
+                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue && ms2scan.SelectedIonChargeStateGuess != 0) 
                         {
                             int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
 
-                            //still from scan header
+                            // Still from scan header - MsAlign uses this conditional to construct its precursors. 
                             if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                             {
                                 double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;

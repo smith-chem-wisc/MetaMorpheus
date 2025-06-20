@@ -18,6 +18,7 @@ using System.Threading.Tasks;
 using Omics.Digestion;
 using Omics.Modifications;
 using Omics;
+using Readers;
 
 namespace TaskLayer
 {
@@ -99,7 +100,7 @@ namespace TaskLayer
             {
                 // disable quantification if a .mgf or .d files are  being used
                 if (currentRawFileList.Select(filepath => Path.GetExtension(filepath))
-                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase)))
+                    .Any(ext => ext.Equals(".mgf", StringComparison.OrdinalIgnoreCase) || ext.Equals(".d", StringComparison.OrdinalIgnoreCase) || ext.Equals(".msalign", StringComparison.OrdinalIgnoreCase)))
                 {
                     SearchParameters.DoLabelFreeQuantification = false;
                 }
@@ -228,6 +229,14 @@ namespace TaskLayer
                 // ensure that the next file has finished loading from the async method
                 nextFileLoadingTask.Wait();
                 var myMsDataFile = nextFileLoadingTask.Result;
+
+                // If the file is one which does not have precursor scans, but only precursor information, then we need to set the parameters accordingly
+                // We do this by adjusting the transient combined params so that this can be done on a file by file basis. 
+                if (myMsDataFile is Mgf or Ms2Align)
+                {
+                    combinedParams.DoPrecursorDeconvolution = false;
+                    combinedParams.UseProvidedPrecursorInfo = true;
+                }
 
                 // if another file exists, then begin loading it in while the previous is being searched
                 if (origDataFile != currentRawFileList.Last())
