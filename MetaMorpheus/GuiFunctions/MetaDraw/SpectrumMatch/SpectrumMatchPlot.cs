@@ -505,19 +505,20 @@ namespace GuiFunctions
                 text.Append(SpectrumMatch.Name);
                 text.Append("\r\n");
             }
+
             if (MetaDrawSettings.SpectrumDescription["Retention Time: "])
             {
                 text.Append("Retention Time: ");
                 text.Append(SpectrumMatch.RetentionTime);
                 text.Append("\r\n");
-            } 
+            }
 
-            //if (SpectrumMatch.OneOverKnot != null && MetaDrawSettings.SpectrumDescription["1/K\u2080: "])
-            //{
-            //    text.Append("1/K\u2080: ");
-            //    text.Append(SpectrumMatch.OneOverKnot);
-            //    text.Append("\r\n");
-            //}
+            if (SpectrumMatch.OneOverK0 != null && MetaDrawSettings.SpectrumDescription["1/K\u2080: "])
+            {
+                text.Append("1/K\u2080: ");
+                text.Append(SpectrumMatch.OneOverK0);
+                text.Append("\r\n");
+            }
 
             if (MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "])
             {
