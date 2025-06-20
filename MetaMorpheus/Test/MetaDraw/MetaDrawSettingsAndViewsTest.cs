@@ -625,6 +625,32 @@ namespace Test.MetaDraw
             var colorFromOxy = DrawnSequence.ParseColorFromOxyColor(oxyBlue);
             Assert.That(colorFromOxy == colorBlue);
         }
+
+        [Test]
+        public static void TestSpectrumDescriptorViewModelSyncsWithStaticSettings()
+        {
+            // Arrange: Reset settings and create a new view model
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            // Assert: Each SpectrumDescriptorViewModel reflects the static settings
+            foreach (var descVm in vm.SpectrumDescriptors)
+            {
+                // The initial IsSelected should match the static MetaDrawSettings.SpectrumDescription
+                Assert.That(descVm.IsSelected, Is.EqualTo(MetaDrawSettings.SpectrumDescription[descVm.DisplayName + ": "]));
+            }
+
+            // Act: Change IsSelected in the view model for each descriptor
+            foreach (var descVm in vm.SpectrumDescriptors)
+            {
+                bool newValue = !descVm.IsSelected;
+                descVm.IsSelected = newValue;
+
+                // Assert: The static settings are updated accordingly
+                Assert.That(MetaDrawSettings.SpectrumDescription[descVm.DisplayName + ": "], Is.EqualTo(newValue));
+                Assert.That(descVm.IsSelected, Is.EqualTo(newValue));
+            }
+        }
     }
 }
   
