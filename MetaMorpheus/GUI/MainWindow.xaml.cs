@@ -1594,8 +1594,27 @@ namespace MetaMorpheusGUI
                 return;
             }
 
-            // this line is NOT used because .xml.gz (extensions with two dots) mess up with Path.GetExtension
-            //var theExtension = Path.GetExtension(draggedFilePath).ToLowerInvariant();
+            // Handle Windows shortcut (.lnk) files: resolve to the target file if possible
+            if (Path.GetExtension(filePath).Equals(".lnk", StringComparison.OrdinalIgnoreCase))
+            {
+                try
+                {
+                    string resolvedPath = ResolveShortcutTarget(filePath);
+                    if (!string.IsNullOrEmpty(resolvedPath) && (File.Exists(resolvedPath) || Directory.Exists(resolvedPath)))
+                    {
+                        AddPreRunFile(resolvedPath);
+                    }
+                    else
+                    {
+                        NotificationHandler(null, new StringEventArgs("Could not resolve shortcut: " + filePath, null));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    NotificationHandler(null, new StringEventArgs("Error resolving shortcut: " + filePath + " (" + ex.Message + ")", null));
+                }
+                return;
+            }
 
             // we need to get the filename before parsing out the extension because if we assume that everything after the dot
             // is the extension and there are dots in the file path (i.e. in a folder name), this will mess up
@@ -1752,6 +1771,31 @@ namespace MetaMorpheusGUI
                 default:
                     NotificationHandler(null, new StringEventArgs("Unrecognized file type: " + theExtension, null));
                     break;
+            }
+        }
+
+        // Helper method to resolve Windows shortcut (.lnk) files to their target path
+        private static string ResolveShortcutTarget(string shortcutPath)
+        {
+            // Only works on Windows
+            if (!OperatingSystem.IsWindows())
+                return null;
+
+            try
+            {
+                Type shellType = Type.GetTypeFromProgID("WScript.Shell");
+                if (shellType == null)
+                    return null;
+                dynamic shell = Activator.CreateInstance(shellType);
+                dynamic shortcut = shell.CreateShortcut(shortcutPath);
+                string targetPath = shortcut.TargetPath as string;
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shortcut);
+                System.Runtime.InteropServices.Marshal.FinalReleaseComObject(shell);
+                return targetPath;
+            }
+            catch
+            {
+                return null;
             }
         }
 
