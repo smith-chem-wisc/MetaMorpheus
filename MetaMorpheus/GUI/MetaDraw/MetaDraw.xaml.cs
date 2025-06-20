@@ -37,7 +37,7 @@ namespace MetaMorpheusGUI
         public ChimeraLegendViewModel ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
         //private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
-        private static List<string> AcceptedSpectraFormats => Readers.SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.ToList();
+        private static List<string> AcceptedSpectraFormats => SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.Concat(new List<string> { ".msalign", ".tdf", ".tdf_bin" }).Select(format => format.ToLower()).ToList();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
         private MetaDrawSettingsViewModel SettingsView;
@@ -45,8 +45,6 @@ namespace MetaMorpheusGUI
 
         public MetaDraw()
         {
-            UsefulProteomicsDatabases.Loaders.LoadElements();
-
             InitializeComponent();
 
             InitializeColorSettingsView();
