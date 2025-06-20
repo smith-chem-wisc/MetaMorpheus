@@ -65,22 +65,22 @@ namespace EngineLayer
             var neutralExperimentalFragmentMasses =
                 Deconvoluter.Deconvolute(scan, commonParam.ProductDeconvolutionParameters, scan.MassSpectrum.Range).ToList();
 
-            if (commonParam.AssumeOrphanPeaksAreZ1Fragments)
+            if (!commonParam.AssumeOrphanPeaksAreZ1Fragments || scan.MassSpectrum is NeutralMassSpectrum)
+                return neutralExperimentalFragmentMasses.OrderBy(p => p.MonoisotopicMass).ToArray();
+
+            HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
+                .SelectMany(p => p.Peaks.Select(v => v.mz.RoundedDouble()!.Value)));
+
+            for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
             {
-                HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
-                    .SelectMany(p => p.Peaks.Select(v => ClassExtensions.RoundedDouble(v.mz).Value)));
+                double mz = scan.MassSpectrum.XArray[i];
+                double intensity = scan.MassSpectrum.YArray[i];
 
-                for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
+                if (!alreadyClaimedMzs.Contains(mz.RoundedDouble()!.Value))
                 {
-                    double mz = scan.MassSpectrum.XArray[i];
-                    double intensity = scan.MassSpectrum.YArray[i];
-
-                    if (!alreadyClaimedMzs.Contains(ClassExtensions.RoundedDouble(mz).Value))
-                    {
-                        neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
-                            new List<(double mz, double intensity)> { (mz, intensity) },
-                            mz.ToMass(1), 1, intensity, 0));
-                    }
+                    neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
+                        new List<(double mz, double intensity)> { (mz, intensity) },
+                        mz.ToMass(1), 1, intensity, 0));
                 }
             }
 
