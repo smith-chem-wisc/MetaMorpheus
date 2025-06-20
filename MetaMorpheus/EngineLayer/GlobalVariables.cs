@@ -468,7 +468,7 @@ namespace EngineLayer
             //The reason why not include Glycan into modification database is for users to apply their own database.
             foreach (var path in OGlycanDatabasePaths)
             {
-                var oGlycans = GlycanDatabase.LoadGlycan(path, false, false);
+                var oGlycans = GlycanDatabase.LoadGlycan(path, false, true);
                 foreach (var glycan in oGlycans)
                 {
                     if (!AllModsKnownDictionary.ContainsKey(glycan.IdWithMotif))
