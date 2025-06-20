@@ -240,6 +240,10 @@ namespace GuiFunctions
         Task Initialization { get; }
     }
 
+    /// <summary>
+    /// Class to represent each component of the Spectrum Description
+    /// </summary>
+    /// <param name="key"></param>
     public class SpectrumDescriptorViewModel(string key) : BaseViewModel
     {
         private string _displayName;
