@@ -989,72 +989,9 @@
                                             </StackPanel>
                                         </StackPanel>
                                     </GroupBox>
-                                    <GroupBox Header="Mass Difference Acceptor Criterion">
-                                        <StackPanel Margin="7">
-                                            <RadioButton x:Name="MassDiffAcceptExact" Content="Exact" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <RadioButton.ToolTip>
-                                                    <TextBlock>
-                                                Basic search where the observed and theoretical precursor masses must be equal (~0 Da precursor mass-difference).
-                                                This search type assumes that there are no monoisotopic errors.
-                                                    </TextBlock>
-                                                </RadioButton.ToolTip>
-                                            </RadioButton>
-                                            <RadioButton x:Name="MassDiffAccept1mm" Content="1 Missed Monoisotopic Peak" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <RadioButton.ToolTip>
-                                                    <TextBlock>
-                                                Basic search where the observed and theoretical precursor masses are allowed to disagree by 1 Da to allow for a 1 Da monoisotopic mass error.
-                                                <LineBreak />
-                                                Example: A spectrum with a reported precursor mass of 1000 at 0.1 Da tolerance can match to theoreticals with masses of 998.9-999.1, 999.9-1000.1, and 1000.9-1001.1.
-                                                    </TextBlock>
-                                                </RadioButton.ToolTip>
-                                            </RadioButton>
-                                            <RadioButton x:Name="MassDiffAccept2mm" Content="1 or 2 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <RadioButton.ToolTip>
-                                                    <TextBlock>
-                                                Basic search where the observed and theoretical precursor masses are allowed to disagree by 1 or 2 Da to allow for a 1 or 2 Da monoisotopic mass error.
-                                                    </TextBlock>
-                                                </RadioButton.ToolTip>
-                                            </RadioButton>
-                                            <RadioButton x:Name="MassDiffAccept3mm" Content="1, 2, or 3 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <RadioButton.ToolTip>
-                                                    <TextBlock>
-                                                Basic search where the observed and theoretical precursor masses are allowed to disagree by 1, 2, or 3 Da to allow for a 1, 2, or 3 Da monoisotopic mass error.
-                                                    </TextBlock>
-                                                </RadioButton.ToolTip>
-                                            </RadioButton>
-                                            <RadioButton x:Name="MassDiffAcceptPlusOrMinusThree" Content="+- 3 Missed Monoisotopic Peaks" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <RadioButton.ToolTip>
-                                                    <TextBlock>
-                                                Basic search where the observed and theoretical precursor masses are allowed to disagree by +-1, +-2, or +-3 Da in to allow for monoisotopic mass errors.
-                                                    </TextBlock>
-                                                </RadioButton.ToolTip>
-                                            </RadioButton>
-                                            <RadioButton x:Name="MassDiffAccept187" Content="-187 and Up" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <RadioButton.ToolTip>
-                                                    <TextBlock>
-                                                An "open-mass" search that allows mass-differences between observed and theoretical precursor masses of -187 Da to infinity (observed can be infinitely more massive than the theoretical).
-                                                <LineBreak />
-                                                The purpose of this search type is to detect mass-differences corresponding to PTMs, amino acid variants, sample handling artifacts, etc.
-                                                <LineBreak />
-                                                Please use "Modern Search" mode when using this search type.
-                                                    </TextBlock>
-                                                </RadioButton.ToolTip>
-                                            </RadioButton>
-                                            <RadioButton x:Name="MassDiffAcceptOpen" Content="Accept all" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <RadioButton.ToolTip>
-                                                    <TextBlock>
-                                                An "open-mass" search that allows mass-differences between observed and theoretical precursor masses of -infinity to infinity.
-                                                <LineBreak />
-                                                The purpose of this search type is to detect mass-differences corresponding to PTMs, amino acid variants, sample handling artifacts, etc.
-                                                <LineBreak />
-                                                Please use "Modern Search" mode when using this search type.
-                                                    </TextBlock>
-                                                </RadioButton.ToolTip>
-                                            </RadioButton>
-                                            <RadioButton x:Name="MassDiffAcceptCustom" Content="Custom:" />
-                                            <TextBox x:Name="CustomkMdacTextBox" ToolTipService.ShowDuration="999999" ToolTip="A custom mass difference acceptor may be specified in multiple ways:&#x0a;* To accept a custom (other than the interval corresponding to the precursor tolerance) interval around zero daltons, specify a custom name, followed by &quot;ppmAroundZero&quot; or &quot;daltonsAroundZero&quot;, followed by the numeric value corresponding to the interval width. Examples:&#x0a;  * CustomPpmInterval ppmAroundZero 5&#x0a;  * CustomDaltonInterval daltonsAroundZero 2.1 &#x0a;&#x0a;* To accept a variety of pre-specified mass differences, use a custom name, followed by &quot;dot&quot;, followed by a custom bin width, followed by comma separated acceptable mass differences. Examples:&#x0a;  * CustomMissedIsotopePeaks dot 5 ppm 0,1.0029,2.0052&#x0a;  * CustomOxidationAllowed dot 0.1 da 0,16&#x0a;&#x0a;* To accept mass differences in pre-specified dalton intervals, use a custom name, followed by &quot;interval&quot;, followed by comma separated mass intervals in brackets. Example:&#x0a;  * CustomPositiveIntervalAcceptror interval [0,200]" />
-                                        </StackPanel>
-                                    </GroupBox>
+
+                                    <local:MassDifferenceAcceptorControl x:Name="MassDifferenceAcceptorControl" d:DataContext="{x:Static guiFunctions:MassDifferenceAcceptorSelectionModel.Instance}" />
+
                                     <GroupBox Header="Ambiguity Parameters">
                                         <Grid>
                                             <StackPanel>
