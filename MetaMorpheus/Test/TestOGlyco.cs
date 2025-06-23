@@ -21,6 +21,7 @@ using static Nett.TomlObjectFactory;
 using TopDownProteomics;
 using MzLibUtil;
 using Readers;
+using System.Reflection.Metadata;
 
 namespace Test
 {
@@ -40,6 +41,73 @@ namespace Test
         public static void OGlycoTest_LoadGlycanBox()
         {
             Assert.That(OGlycanBoxes.Count(), Is.EqualTo(2924));
+        }
+
+        [Test]
+        public static void GlycoTest_GlycanLoading()
+        {
+            // Description: This test is to test the glycan loading function, including LoadKindGlycan and LoadStructureGlycan
+
+            //For O-glycan
+            var structDataBasePath = GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("OGlycan.gdb")).First();
+            var kindDataBasePath = GlobalVariables.OGlycanDatabasePaths.Where(p => p.Contains("Olgycan Database 28 glycans.txt")).First();
+            var structGlycans = GlycanDatabase.LoadGlycan(structDataBasePath, true, true).ToList();
+            Assert.That(structGlycans.Count() == 24); // The number of glycans in the database is 24. (12*2 by two diff motifs)
+            // Assert that the GlyId starts from 1 to 12
+            for (int i = 0; i < structGlycans.Count(); i++)
+            {
+                Assert.That(structGlycans[i].GlyId == i+1);
+                Assert.That(structGlycans[i].Type == GlycanType.O_glycan);
+            }
+
+            var kindGlycans = GlycanDatabase.LoadGlycan(kindDataBasePath, false, true).ToList();
+            Assert.That(kindGlycans.Count() == 56); // The number of glycans in the database is 56. (28*2 by two diff motifs)
+            // Assert that the GlyId starts from 1 to 12
+            for (int i = 0; i < structGlycans.Count(); i++)
+            {
+                Assert.That(kindGlycans[i].GlyId == i+1);
+                Assert.That(kindGlycans[i].Type == GlycanType.O_glycan);
+            }
+
+            //For N-glycan
+            var structDataBasePath_NGlycan = GlobalVariables.NGlycanDatabasePaths.Where(p => p.Contains("NGlycan.gdb")).First();
+            var structGlycans_NGlycan = GlycanDatabase.LoadGlycan(structDataBasePath_NGlycan, true, false).ToList();
+            Assert.That(structGlycans_NGlycan.Count() == 182); // The number of glycans in the database is 182. (182*1 by one 'N' motifs)
+            // Assert that the GlyId starts from 1 to 182
+            for (int i = 0; i < structGlycans_NGlycan.Count(); i++)
+            {
+                Assert.That(structGlycans_NGlycan[i].GlyId == i + 1);
+                Assert.That(structGlycans_NGlycan[i].Type == GlycanType.N_glycan);
+            }
+        }
+
+        [Test]
+        public static void GlycoTest_Constructor()
+        {
+            List<Glycan> oGlycans = Glycan.Struct2Glycan("N(H)", 1, true); 
+            Assert.That(oGlycans.Count == 2);
+            Assert.That(oGlycans.Count(p=> p.Type == GlycanType.O_glycan) == 2);
+            Assert.That(oGlycans[0].Target.ToString() == "S"); // There are two glycans generated, one is on S and the other is on T.
+            Assert.That(oGlycans[1].Target.ToString() == "T");
+            foreach (var oglycan in oGlycans)
+            {
+                Assert.That(oglycan is Modification);
+                Assert.That(oglycan.Kind.SequenceEqual(new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
+                Assert.That(oglycan.Mass == Glycan.GetMass(new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
+                Assert.That(oglycan.Ions.Count(p=> p.IonMass != 0) == 1); // There is only one glycanIon = H
+                Assert.That(oglycan.Ions.First(p => p.IonMass != 0).IonKind.SequenceEqual(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
+            }
+
+            List<Glycan> nGlycans = Glycan.Struct2Glycan("N(H)", 1, false);
+            Assert.That(nGlycans.Count == 1);
+            Assert.That(nGlycans.Count(p => p.Type == GlycanType.N_glycan) == 1);
+            Assert.That(nGlycans[0].Target.ToString() == "N"); // There is only one glycan generated, its motif is N.
+            Assert.That(nGlycans[0] is Modification);
+            Assert.That(nGlycans[0].Kind.SequenceEqual(new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
+            Assert.That(nGlycans[0].Mass == Glycan.GetMass(new byte[] { 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }));
+            Assert.That(nGlycans[0].Ions.Count(p => p.IonMass != 0) == 2); // There are two glycanIon :  H + cross-ring mass
+            Assert.That(nGlycans[0].Ions[1].IonKind.SequenceEqual(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })); // Cross-ring mass
+            Assert.That(nGlycans[0].Ions[2].IonKind.SequenceEqual(new byte[] { 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 })); // H ion
         }
 
         [Test]

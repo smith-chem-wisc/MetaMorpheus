@@ -709,6 +709,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
+        /// Valid the Graph created by this modPos and glycanBox.
         /// Check if the motif in peptide is sufficient to cover the motif in glycanBox.
         /// </summary>
         /// <param name="modPos"></param>
@@ -716,8 +717,11 @@ namespace EngineLayer.GlycoSearch
         /// <returns></returns>
         private bool GraphCheck(Dictionary<int, string> modPos, GlycanBox glycanBox)
         {
+            // If the motifs number is less than the glycanBox, we can skip this graph.
             if (modPos.Count < glycanBox.NumberOfMods)
                 return false;
+
+            // Calculate the motif in glycanBox.
             var motifInBox = new Dictionary<string, int>();
             foreach (var modId in glycanBox.ModIds)
             {
@@ -730,6 +734,7 @@ namespace EngineLayer.GlycoSearch
                 motifInBox[motif]++;
             }
 
+            // Calculate the motif in peptide.
             var motifInPeptide = new Dictionary<string, int>();
             for (int i = 0; i <= modPos.Count-1; i++)
             {
@@ -742,6 +747,7 @@ namespace EngineLayer.GlycoSearch
                 motifInPeptide[motif]++;
             }
 
+            // Check if the motif in peptide is sufficient to cover the motif in glycanBox.
             foreach (var motif in motifInBox)
             {
                 if (!motifInPeptide.ContainsKey(motif.Key) || motifInPeptide[motif.Key] < motif.Value)

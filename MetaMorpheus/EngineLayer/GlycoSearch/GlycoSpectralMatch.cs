@@ -41,9 +41,9 @@ namespace EngineLayer.GlycoSearch
         public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
         public LocalizationLevel LocalizationLevel { get; set; }
 
-        //Motif should be writen with required form
         /// <summary>
-        /// Try to get the ModSite in the right format.
+        /// Try to get the Motifs information from the peptide sequence.
+        /// Format is (AAindex, motif), like (2, T), (3, S)
         /// </summary>
         /// <param name="peptide"> full peptide sequence ex. "PTLFKNVSLYK" </param>
         /// <param name="motifs"> modificatino AA ex. "S","T"</param>
@@ -78,10 +78,6 @@ namespace EngineLayer.GlycoSearch
                         if (!modMotif.ContainsKey(r + 2)) //If the mod site is not in the dictionary, add it.
                         {
                             modMotif.Add(r + 2, modWithMotif.Target.ToString());
-                        }
-                        else //If the mod site is already in the dictionary, append the motif.
-                        {
-                            modMotif[r + 2] += "," + modWithMotif.Target.ToString();
                         }
                     }
                 }

@@ -19,7 +19,7 @@ namespace EngineLayer
         /// <param name="ToGenerateIons"> Do we need to generate the glycanIon? </param>
         /// <param name="IsOGlycanSearch"></param>
         /// <returns> A glycan object collection </returns>
-        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool ToGenerateIons, bool IsOGlycanSearch)
+        public static IEnumerable<Glycan> LoadGlycan(string filePath, bool ToGenerateIons, bool IsOGlycan)
         {
             bool isKind = true;
             using (StreamReader lines = new StreamReader(filePath))
@@ -37,11 +37,11 @@ namespace EngineLayer
 
             if (isKind)
             {
-                return LoadKindGlycan(filePath, ToGenerateIons, IsOGlycanSearch); // open the file of the kind format, example: HexNAc(2)Hex(5)NeuAc(1)Fuc(1)
+                return LoadKindGlycan(filePath, ToGenerateIons, IsOGlycan); // open the file of the kind format, example: HexNAc(2)Hex(5)NeuAc(1)Fuc(1)
             }
             else
             {
-                return LoadStructureGlycan(filePath, IsOGlycanSearch);            // open the file of the structure format, example: (N(H(A))(A))
+                return LoadStructureGlycan(filePath, IsOGlycan);            // open the file of the structure format, example: (N(H(A))(A))
             }
         }
 
@@ -53,7 +53,7 @@ namespace EngineLayer
         /// <param name="ToGenerateIons"></param>
         /// <param name="IsOGlycanSearch"></param>
         /// <returns>The glycan collection </returns>
-        public static IEnumerable<Glycan> LoadKindGlycan(string filePath, bool ToGenerateIons, bool IsOGlycanSearch)
+        public static IEnumerable<Glycan> LoadKindGlycan(string filePath, bool ToGenerateIons, bool IsOGlycan)
         {
             using (StreamReader lines = new StreamReader(filePath))
             {
@@ -69,7 +69,7 @@ namespace EngineLayer
 
                     var kind = String2Kind(line);  // Convert the database string to kind[] format (byte array).
 
-                    if (IsOGlycanSearch)
+                    if (IsOGlycan) // Load the oGlycan with two different motifs : S and T
                     {
                         var oGlycan_S = new Glycan(kind, "S", GlycanType.O_glycan); // Use the kind[] to create a glycan object.  
                         oGlycan_S.GlyId = id;
@@ -89,7 +89,7 @@ namespace EngineLayer
                         }
                         yield return oGlycan_T; // Output the second glycan  
                     }
-                    else
+                    else // Load the N-glycan with one motif : N
                     {
                         var nGlycan = new Glycan(kind, "N", GlycanType.N_glycan); // Use the kind[] to create a glycan object.
                         nGlycan.GlyId = id;
@@ -141,10 +141,11 @@ namespace EngineLayer
                     // For each O-glycan, two versions will be generated: one modified on serine (S), and the other on threonine (T).
                     if (IsOGlycan)
                     {
-                        foreach (var glycan in Glycan.Struct2Glycan(line, id+2, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.  
+                        foreach (var glycan in Glycan.Struct2Glycan(line, id, IsOGlycan)) // Modify the line to handle multiple Glycan objects returned by Struct2Glycan.  
                         {
                             yield return glycan;
                         }
+                        id = id +2; // Each line will generate two glycan objects
                     }
                     //For N-glycan, we only generate one kind of N-glycan.
                     else

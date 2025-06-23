@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Omics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
 using Proteomics;
 using MzLibUtil;
 using Omics.Modifications;
@@ -12,7 +11,7 @@ namespace EngineLayer.GlycoSearch
     public class LocalizationGraph
     {
         public AdjNode[][] array { get; set; }
-        public Dictionary<int, string> ModPos { get; }
+        public Dictionary<int, string> ModPos { get; } // Motif information, easily to track the aminoAcid index with corresponding motif.
 
         public int ModBoxId { get; }
         public ModBox ModBox { get; }
@@ -46,13 +45,14 @@ namespace EngineLayer.GlycoSearch
         /// <param name="products"></param>
         public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
         {
-            var boxSatisfyBox = BuildValidChart(localizationGraph.ChildModBoxes);
+            var validChart = BuildValidChart(localizationGraph.ChildModBoxes);
             var modPos = localizationGraph.ModPos;
 
             for (int x = 0; x < modPos.Count; x++)
             {
                 for (int y = 0; y < localizationGraph.ChildModBoxes.Length; y++)
                 {
+                    //Check if the node is valid, if not, skip it.
                     if (nodeCheck(localizationGraph.ModBox as GlycanBox, localizationGraph.ModPos, x, y)) // Check the mod number in this node is valid
                     {
                         AdjNode adjNode = new AdjNode(x, y, modPos.Keys.ElementAt(x), localizationGraph.ChildModBoxes[y]);
@@ -78,7 +78,8 @@ namespace EngineLayer.GlycoSearch
                             {
                                 //Check if a previous AdjNode exist and the current AdjNode could link to previous AdjNode. 
                                 var motifInThisPos = modPos.Values.ElementAt(x);
-                                if (boxSatisfyBox[y][preY] && localizationGraph.array[x - 1][preY] != null && motifCheck(localizationGraph.ModBox as GlycanBox, preY, y, motifInThisPos))
+                                // valid the connection between the previous node and the current node.
+                                if (validChart[y][preY] && localizationGraph.array[x - 1][preY] != null && motifCheck(localizationGraph.ModBox as GlycanBox, preY, y, motifInThisPos))
                                 {
                                     adjNode.AllSources.Add(preY);
 
@@ -306,7 +307,6 @@ namespace EngineLayer.GlycoSearch
                     route.AddPos(localizationGraph.ModPos.Keys.ElementAt(i), left, localPeakExist);
                 }
             }
-
             return route;
         }
 
@@ -429,7 +429,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
-        /// Check the number of the motifs should be fit to the requirment of the modBox
+        /// The number of the motifs in this node should be fit to the requirement of the modBox
         /// </summary>
         /// <param name="childBox"></param>
         /// <param name="x"></param>
@@ -437,10 +437,13 @@ namespace EngineLayer.GlycoSearch
         public static bool nodeCheck(GlycanBox ModBox, Dictionary<int, string> modPos, int x, int y)
         {
             //Step 1: Check the number of modifications 
-            int maxModNum = x + 1; //maxModNum: the most mods we can have up to current mod pos;
-            int minModNum = ModBox.ModIds.Length - (modPos.Count - 1 - x); //minModNum: the least mods we can have up to current mod pos. In order to get min number, the min = number of glycan in the box - number of node from the last.
-            
-            // Total 3 glycan in the box, end position is 7, then for position 5, the min = 3 - (7-5) = 1.
+
+            //maxModNum: the most mods we can have up to current mod pos;
+            int maxModNum = x + 1; 
+
+            //MinModNum: the least mods we can have up to current mod pos. In order to get min number, the min = number of glycan in the box - number of node from the last.
+            //Ex. 3 glycan in the box, end position is 7, then for position 5, the min = 3 - (7-5) = 1.
+            int minModNum = ModBox.ModIds.Length - (modPos.Count - 1 - x);
             var childBox = ModBox.ChildGlycanBoxes[y]; // Get the childBox from the ModBox, which is the glycanBox in the localization graph.
             if (childBox.NumberOfMods < minModNum || childBox.NumberOfMods > maxModNum)
             {
@@ -485,7 +488,7 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
-        /// Check the motif change (between two node connection) is valid or not.
+        /// Check the motif change (between two node connection) is valid for this position.
         /// </summary>
         /// <param name="preY"></param>
         /// <param name="currentY"></param>
@@ -493,7 +496,6 @@ namespace EngineLayer.GlycoSearch
         /// <returns></returns>
         public static bool motifCheck(GlycanBox modBox, int preY, int currentY, string motif)
         {
-            // Step 1: Check if the ModBox can be attached to the ModPos
             var preModBoxId = modBox.ChildGlycanBoxes[preY].ModIds;
             var currentModBoxId = modBox.ChildGlycanBoxes[currentY].ModIds;
 
@@ -509,11 +511,11 @@ namespace EngineLayer.GlycoSearch
         }
 
         /// <summary>
-        /// The function is used to get the difference between the previous node and the current node.
+        /// Get the mod difference between the previous node and the current node.
         /// </summary>
         /// <param name="preModId"></param>
         /// <param name="currentModId"></param>
-        /// <returns></returns>
+        /// <returns> the different modId</returns>
         public static int[] GetDiff(int[] preModId, int[] currentModId)
         {
             var gx = currentModId.GroupBy(p => p).ToDictionary(p => p.Key, p => p.ToList());
