@@ -5,7 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MetaMorpheusGUI"
         mc:Ignorable="d"
-        Drop="Window_Drop" AllowDrop="true" Background="{StaticResource BackgroundColor}" WindowStartupLocation="CenterScreen" MinHeight="400" 
+        Drop="Window_Drop" AllowDrop="true" 
+        Background="{StaticResource BackgroundColor}" 
+        WindowStartupLocation="CenterScreen" MinHeight="400" 
         MinWidth="800" Height="550" Width="1000"
         Loaded="MyWindow_Loaded"
         PreviewKeyDown="Window_PreviewKeyDown">
@@ -17,21 +19,79 @@
             <!--Allows use of "not" (i.e., inverse of true boolean) in binding properties-->
             <local:BooleanInverter x:Key="InvertedBooleanConverter" />
 
+            <Style TargetType="TabControl" x:Key="TabControlStyle">
+                <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabControl">
+                            <Grid ClipToBounds="true">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/> <!-- For tab headers --> 
+                                    <ColumnDefinition Width="*"/>  <!-- For content -->
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- Header Panel (Vertical Tabs + Custom Toggle) -->
+                                <StackPanel Grid.Row="0" Grid.Column="0"
+                                 Orientation="Vertical"
+                                 IsItemsHost="False"
+                                 Background="Transparent">
+
+                                    <!-- Protein/RNA Toggle Control -->
+                                    <local:ProteinRnaImageToggle Margin="0 5 0 5" Width="100" Height="50" />
+
+                                    <!-- Actual Tab Headers -->
+                                    <TabPanel
+                                         Name="HeaderPanel"
+                                         IsItemsHost="True"
+                                         Margin="0"
+                                         KeyboardNavigation.TabIndex="1"
+                                         Panel.ZIndex="1"
+                                         Background="Transparent"/>
+                                </StackPanel>
+
+                                <!-- Content Panel -->
+                                <ContentPresenter
+                         Name="PART_SelectedContentHost"
+                         Margin="4 0 0 0 "
+                         Grid.Row="0"
+                         Grid.Column="1"
+                         ContentSource="SelectedContent"/>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
+                        <Setter Property="BorderBrush" Value="{StaticResource RnaSideBarMainColor}"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
             <!--Styling for the tab items on the left side-->
             <Style x:Key="TabItemStyle" TargetType="TabItem">
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Background" Value="{StaticResource SideBarMainColor}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
+                <Setter Property="Margin" Value="0,0,2,0" />
+                <Setter Property="Padding" Value="0" />
                 <Setter Property="Template">
                     <Setter.Value>
                         <ControlTemplate TargetType="TabItem">
-                            <Grid Height="35" Width="105" Background="{StaticResource SideBarMainColor}">
+                            <Grid Height="35" Width="105" Background="{TemplateBinding Background}">
                                 <Border Name="Border" Margin="0,0,0,0" Background="Transparent"
-                                                BorderThickness="{TemplateBinding BorderThickness}" BorderBrush="{TemplateBinding BorderBrush}" >
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        BorderBrush="{Binding BorderBrush, RelativeSource={RelativeSource TemplatedParent}}">
                                     <ContentPresenter 
-                                                x:Name="ContentSite" 
-                                                VerticalAlignment="Center"
-                                                HorizontalAlignment="Left"
-                                                ContentSource="Header" Margin="5,2,10,2"
-                                                RecognizesAccessKey="True">
-                                    </ContentPresenter>
+                                        x:Name="ContentSite" 
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Left"
+                                        ContentSource="Header" Margin="5,2,10,2"
+                                        RecognizesAccessKey="True"/>
                                 </Border>
                             </Grid>
 
@@ -39,24 +99,22 @@
                                 <Trigger Property="IsSelected" Value="True">
                                     <Setter Property="BorderThickness" Value="0,0,7,0"/>
                                     <Setter Property="FontWeight" Value="Bold"/>
-                                    <!--Color of tab item text (when selected)-->
                                     <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
-                                    <!--Color of tab item right side (when selected)-->
-                                    <Setter Property="BorderBrush" Value="{StaticResource AccentColor}"/>
                                 </Trigger>
 
                                 <Trigger Property="IsSelected" Value="False">
-                                    <!--Color of tab item text (when deselected)-->
                                     <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
                                 </Trigger>
                             </ControlTemplate.Triggers>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
-                <Setter Property="FontSize" Value="14" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="Margin" Value="0,0,2,0" />
-                <Setter Property="Padding" Value="0" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource RnaSideBarMainColor}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource RnaAccentColor}"/>
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <!--Styling for the grid that defines each page-->
@@ -72,6 +130,21 @@
                 <Setter Property="Background" Value="{StaticResource AccentColor}"/>
                 <Setter Property="Foreground" Value="{StaticResource TextColor2}"/>
                 <Setter Property="FontSize" Value="12"/>
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Background" Value="{StaticResource RnaAccentColor}" />
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+
+            <!--Styling for the "important" buttons that should disappear in RNA mode-->
+            <Style x:Key="ImportantButtonStyleNotForRna" TargetType="Button" BasedOn="{StaticResource ImportantButtonStyle}">
+                <Setter Property="Visibility" Value="Visible" />
+                <Style.Triggers>
+                    <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                        <Setter Property="Visibility" Value="Collapsed" />
+                    </DataTrigger>
+                </Style.Triggers>
             </Style>
 
             <!--Styling for borders-->
@@ -126,8 +199,30 @@
                 <MenuItem Header="Add new averaging task" Click="AddAveragingTaskButton_OnClick" />
                 <MenuItem Header="Add new GPTMD task" Click="AddGPTMDTaskButton_Click" />
                 <MenuItem Header="Add new search task" Click="AddSearchTaskButton_Click" />
-                <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" />
-                <MenuItem Header="Add new glycopeptide task" Click="AddGlycoSearchTask_Click" />
+                <MenuItem Header="Add new crosslink task" Click="AddCrosslinkTask_Click" >
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
+                <MenuItem Header="Add new glycopeptide task" Click="AddGlycoSearchTask_Click" >
+                    <MenuItem.Style>
+                        <Style TargetType="MenuItem">
+                            <Setter Property="Visibility" Value="Visible"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </MenuItem.Style>
+                </MenuItem>
                 <Separator/>
                 <MenuItem Header="Load task from .toml file" Click="LoadTask_Click" />
             </ContextMenu>
@@ -248,22 +343,25 @@
             </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
-
     <!--Window content-->
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="1*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
-
         <!--Pages-->
         <TabControl x:Name="MainWindowTabControl" Grid.Row="0" TabStripPlacement="Left" Margin="0" SelectionChanged="TabControl_SelectionChanged" 
-                    BorderThickness="0" BorderBrush="{StaticResource BorderColor}">
+                    BorderThickness="0" BorderBrush="{StaticResource BorderColor}" Style="{StaticResource TabControlStyle}">
             <TabControl.Resources>
                 <Style TargetType="Grid">
                     <!--This defines the *default* style for *all grids in the entire tab control*-->
                     <!--This is not great but seems necessary to have a proper background on the tab items...-->
                     <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                            <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
                 </Style>
             </TabControl.Resources>
 
@@ -271,8 +369,9 @@
             <TabItem Name="AboutTab" Header="About" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="60"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
 
@@ -280,7 +379,7 @@
                     <Label Content="About" Grid.Row="0" Style="{StaticResource HeaderLabelStyle}" />
 
                     <!--Text content-->
-                    <TextBlock Grid.Row="3" Style="{StaticResource TextBlockStyle}">
+                    <TextBlock Grid.Row="1" Style="{StaticResource TextBlockStyle}">
                         MetaMorpheus is a search program for MS/MS proteomics data. It takes a protein database (.xml or .fasta)
                         as input,as well as spectra files in ms2.msalign, .mzML, .mgf, or Thermo .raw format. Optionally, a spectral library 
                         (.msp) can be used to improve search results.
@@ -305,7 +404,7 @@
 
                         ● The 
 
-                        <Hyperlink NavigateUri="https://github.com/smith-chem-wisc/MetaMorpheus/wiki/Averaging-Task" RequestNavigate="Hyperlink_RequestNavigate">
+                        <Hyperlink NavigateUri="https://pubmed.ncbi.nlm.nih.gov/38487981/" RequestNavigate="Hyperlink_RequestNavigate">
                             averaging
                         </Hyperlink>
                         
@@ -386,7 +485,7 @@
             <TabItem Name="DatabasesTab" Header="Databases" TabIndex="0" Style="{StaticResource TabItemStyle}">
                 <Grid Style="{StaticResource PageGridStyle}">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="50"/>
+                        <RowDefinition Height="60"/>
                         <RowDefinition Height="60"/>
                         <RowDefinition Height="25"/>
                         <RowDefinition Height="1*"/>
@@ -416,14 +515,15 @@
                     <Button Name="DownloadUniProtDatabaseButton" Grid.Row="2" Content="DOWNLOAD PROTEOME" Visibility="Collapsed"
                         Click="DownloadUniProtDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="10,0,0,0" HorizontalAlignment="Left" />
 
-                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN PROTEOMES FOLDER" 
-                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left"/>
+                    <Button Name="OpenProteomesFolder" Grid.Row="2" Content="OPEN DATABASE FOLDER"
+                        Click="OpenProteomesFolder_Click" Style="{StaticResource ImportantButtonStyle}" Margin="211,0,0,0" HorizontalAlignment="Left" />
 
-                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD PROTEOME" 
+                    <Button Name="AddDatabaseButton" Grid.Row="2" Content="+ADD DATABASE" 
                         Click="AddProteinDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,10,0" HorizontalAlignment="Right"/>
 
                     <Button Name="AddDefaultContaminantsButton" Grid.Row="2" Content="+ADD DEFAULT CONTAMINANTS" 
-                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyle}" Margin="0,0,211,0" HorizontalAlignment="Right"/>
+                        Click="AddDefaultContaminantDatabase_Click" Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,211,0" HorizontalAlignment="Right">
+                    </Button>
 
                     <!--The list of databases-->
                     <DataGrid Name="dataGridProteinDatabases" Grid.Row="3" Grid.ColumnSpan="4" ItemsSource="{Binding}" Style="{StaticResource x:DataGridStyle}"
@@ -531,9 +631,9 @@
                         <Button Name="AddSearchTaskButton" Grid.Column="3" Content="+ADD SEARCH" HorizontalAlignment="Right" Click="AddSearchTaskButton_Click" 
                             Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddXlTaskButton" Grid.Column="4" Content="+ADD XL SEARCH" HorizontalAlignment="Right" Click="AddCrosslinkTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,1,0" Width="140"/>
+                            Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,1,0" Width="140"/>
                         <Button Name="AddGlycoTaskButton" Grid.Column="5" Content="+ADD GLYCO SEARCH" HorizontalAlignment="Right" Click="AddGlycoSearchTask_Click" 
-                            Style="{StaticResource ImportantButtonStyle}" Margin="0,0,0,0" Width="140"/>
+                            Style="{StaticResource ImportantButtonStyleNotForRna}" Margin="0,0,0,0" Width="140"/>
                     </Grid>
 
                     <!--List of tasks-->
@@ -863,7 +963,18 @@
         </TabControl>
 
         <!--Notifications-->
-        <Grid Grid.Row="2" Background="{StaticResource SideBarMainColor}" Margin="0,-1,0,0" >
+        <Grid Grid.Row="1" Margin="0,-1,0,0" >
+            <Grid.Resources>
+                <Style TargetType="Grid">
+                    <Setter Property="Background" Value="{StaticResource SideBarMainColor}" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding Source={x:Static local:UpdateGUISettings.Globals}, Path=IsRnaMode}" Value="True">
+                            <Setter Property="Background" Value="{StaticResource RnaSideBarMainColor}"/>
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Grid.Resources>
+            
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="105" />
                 <ColumnDefinition Width="*" />

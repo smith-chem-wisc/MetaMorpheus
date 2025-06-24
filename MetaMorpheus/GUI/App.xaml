@@ -8,6 +8,7 @@
         <!--TODO: store these in a file and read them from disk, to let users style MetaMorpheus?-->
         <SolidColorBrush x:Key="SideBarMainColor" Color="#353b48" />
         <SolidColorBrush x:Key="AccentColor" Color="#0097e6" />
+        <SolidColorBrush x:Key="LightAccentColor" Color="#bdf0ff" />
         <SolidColorBrush x:Key="SecondaryButtonColor" Color="#2f3640" />
         <SolidColorBrush x:Key="BackgroundColor" Color="#f5f6fa" />
         <SolidColorBrush x:Key="DataGridBackgroundColor" Color="#f5f6fa" />
@@ -19,6 +20,10 @@
         <Color x:Key="ForegroundDark">#bdbdbd</Color>
         <SolidColorBrush x:Key="ForegroundDarkBrush" Color="{StaticResource ForegroundDark}" />
 
+        <SolidColorBrush x:Key="RnaAccentColor" Color="#a64ef9" />
+        <SolidColorBrush x:Key="LightRnaAccentColor" Color="#FFC4C4FF" />
+        <SolidColorBrush x:Key="RnaSideBarMainColor" Color="#433d49" />
+        
         <!--Default button style for all of MetaMorpheus-->
         <!--<Style TargetType="Button">
             <Setter Property="BorderThickness" Value="0"/>
@@ -57,5 +62,9 @@
             <Setter Property="VerticalContentAlignment" Value="Center"></Setter>
             <Setter Property="Width" Value="40"></Setter>
         </Style>
+        
+        <!-- Icons -->
+        <BitmapImage x:Key="ProteinIcon" UriSource="Icons/IconProtein.bmp"/>
+        <BitmapImage x:Key="RnaIcon" UriSource="Icons/IconRna.bmp"/>
     </Application.Resources>
 </Application>
