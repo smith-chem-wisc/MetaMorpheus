@@ -6,6 +6,7 @@ using System;
 using Proteomics;
 using MassSpectrometry;
 using Omics.Modifications;
+using System.Text.RegularExpressions;
 
 namespace EngineLayer
 {
@@ -60,7 +61,7 @@ namespace EngineLayer
         public HashSet<int> DiagnosticIons // B ions (the sugar fragment dropped from the glycopeptide), used for the N-glycan. There are more ions to set...
         {
             get
-            {   
+            {
                 HashSet<int> diagnosticIons = new HashSet<int>();
                 if (Kind[0] >= 1) //if we have Hexose(the number more than one), then we have the corresponding diagonsitic ions as below.
                 {
@@ -508,6 +509,39 @@ namespace EngineLayer
             return kindString;
         }
 
+        /// <summary>
+        /// Convert the glycan name to the glycan kind array.
+        /// </summary>
+        /// <param name="glycanName"></param>
+        /// <returns></returns>
+        public static byte[] StringToKind(string glycanName)
+        {
+            // Initialize the kind array with zeros
+            byte[] kind = new byte[NameCharDic.Count];
+
+            // Regular expression to match the sugar type and count
+            Regex regex = new Regex(@"([A-Z][a-z]*)(\d+)");
+
+            // Match the input string
+            var matches = regex.Matches(glycanName);
+
+            // Update the kind array based on the matches
+            foreach (Match match in matches)
+            {
+                string sugarType = match.Groups[1].Value;
+                int count = int.Parse(match.Groups[2].Value);
+
+                // Find the corresponding index for the sugar type
+                var sugarInfo = NameCharDic.FirstOrDefault(x => x.Value.Item1.ToString() == sugarType);
+                if (sugarInfo.Value != null)
+                {
+                    kind[sugarInfo.Value.Item2] = (byte)count;
+                }
+            }
+
+            return kind;
+        }
+
         #endregion
 
         //TO THINK: Is it reasonable to transfer Glycan to Modification the first time Glycan is read in? Which could save time.
@@ -557,7 +591,7 @@ namespace EngineLayer
             //TO THINK: what the neutralLoss for O-Glyco?
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
 
-            if (glycan.Ions!=null)
+            if (glycan.Ions != null)
             {
                 List<double> lossMasses = glycan.Ions.Select(p => (double)p.LossIonMass / 1E5).OrderBy(p => p).ToList();
                 neutralLosses.Add(DissociationType.HCD, lossMasses);

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-
+using EngineLayer.ModSearch;
 namespace EngineLayer.GlycoSearch
 {
     //the class is for localization graph matrix. Each node in the matrix is represented by AdjNode.

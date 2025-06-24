@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using Omics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
-using Proteomics;
 using MzLibUtil;
+using EngineLayer.ModSearch;
 
 namespace EngineLayer.GlycoSearch
 {
@@ -46,7 +45,6 @@ namespace EngineLayer.GlycoSearch
         public static void LocalizeOGlycan(LocalizationGraph localizationGraph, Ms2ScanWithSpecificMass theScan, Tolerance productTolerance, List<Product> products)
         {
             var boxSatisfyBox = BoxSatisfyBox(localizationGraph.ChildModBoxes);
-
             for (int i = 0; i < localizationGraph.ModPos.Length; i++)
             {
                 //maxLength: the most mods we can have up to current mod pos; minlengtt: the least mods we can have up to current mod pos.
@@ -57,7 +55,7 @@ namespace EngineLayer.GlycoSearch
                 {
                     if (localizationGraph.ChildModBoxes[j].NumberOfMods <= maxLength && localizationGraph.ChildModBoxes[j].NumberOfMods >= minlength)
                     {
-                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]); //chekc the num of glycan in this node is make sense.
+                        AdjNode adjNode = new AdjNode(i, j, localizationGraph.ModPos[i], localizationGraph.ChildModBoxes[j]); //check the num of glycan in this node is make sense.
 
                         double cost = 0;
                         if (i != localizationGraph.ModPos.Length - 1) // check the node is not the last one.
