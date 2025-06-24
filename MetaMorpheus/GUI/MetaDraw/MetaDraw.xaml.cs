@@ -623,7 +623,7 @@ namespace MetaMorpheusGUI
                     ptmLegendLocationVector.X = PsmAnnotationGrid.ActualWidth - ChildScanPtmLegendControl.ActualWidth;
                 }
                 MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel,
-                    directoryPath, out errors, legendCanvas, ptmLegendLocationVector);
+                    directoryPath, out errors, legendCanvas, ptmLegendLocationVector, FragmentationReanalysisViewModel);
             }
 
             if (errors != null && errors.Any())
