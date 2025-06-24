@@ -70,6 +70,9 @@
     <None Update="Digestion\rnases.tsv">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Glycan_Mods\NGlycan\NGlycan_struct.gdb">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="Glycan_Mods\NGlycan\NGlycan.gdb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

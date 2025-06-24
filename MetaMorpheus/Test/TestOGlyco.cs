@@ -58,26 +58,41 @@ namespace Test
             {
                 Assert.That(structGlycans[i].GlyId == i+1);
                 Assert.That(structGlycans[i].Type == GlycanType.O_glycan);
+                Assert.That(structGlycans[i].Ions != null);
             }
 
-            var kindGlycans = GlycanDatabase.LoadGlycan(kindDataBasePath, false, true).ToList();
+            var kindGlycans = GlycanDatabase.LoadGlycan(kindDataBasePath, true, true).ToList();
             Assert.That(kindGlycans.Count() == 56); // The number of glycans in the database is 56. (28*2 by two diff motifs)
             // Assert that the GlyId starts from 1 to 12
             for (int i = 0; i < structGlycans.Count(); i++)
             {
                 Assert.That(kindGlycans[i].GlyId == i+1);
                 Assert.That(kindGlycans[i].Type == GlycanType.O_glycan);
+                Assert.That(kindGlycans[i].Ions != null);
             }
 
             //For N-glycan
-            var structDataBasePath_NGlycan = GlobalVariables.NGlycanDatabasePaths.Where(p => p.Contains("NGlycan.gdb")).First();
-            var structGlycans_NGlycan = GlycanDatabase.LoadGlycan(structDataBasePath_NGlycan, true, false).ToList();
-            Assert.That(structGlycans_NGlycan.Count() == 182); // The number of glycans in the database is 182. (182*1 by one 'N' motifs)
+            var kindDataBasePath_NGlycan = GlobalVariables.NGlycanDatabasePaths.Where(p => p.Contains("NGlycan.gdb")).First();
+            var kindGlycans_NGlycan = GlycanDatabase.LoadGlycan(kindDataBasePath_NGlycan, true, false).ToList();
+            Assert.That(kindGlycans_NGlycan.Count() == 182); // The number of glycans in the database is 182. (182*1 by one 'N' motifs)
             // Assert that the GlyId starts from 1 to 182
+            for (int i = 0; i < kindGlycans_NGlycan.Count(); i++)
+            {
+                Assert.That(kindGlycans_NGlycan[i].GlyId == i + 1);
+                Assert.That(kindGlycans_NGlycan[i].Type == GlycanType.N_glycan);
+                Assert.That(kindGlycans_NGlycan[i].Ions != null);
+            }
+
+            //For N-glycan
+            var structDataBasePath_NGlycan = GlobalVariables.NGlycanDatabasePaths.Where(p => p.Contains("NGlycan_struct.gdb")).First();
+            var structGlycans_NGlycan = GlycanDatabase.LoadGlycan(structDataBasePath_NGlycan, true, false).ToList();
+            Assert.That(structGlycans_NGlycan.Count() == 12); // The number of glycans in the database is 182. (182*1 by one 'N' motifs)
+            // Assert that the GlyId starts from 1 to 12
             for (int i = 0; i < structGlycans_NGlycan.Count(); i++)
             {
                 Assert.That(structGlycans_NGlycan[i].GlyId == i + 1);
                 Assert.That(structGlycans_NGlycan[i].Type == GlycanType.N_glycan);
+                Assert.That(kindGlycans_NGlycan[i].Ions != null);
             }
         }
 
