@@ -20,6 +20,7 @@ namespace Test
         [Test]
         [TestCase(@"TestData\ok.mgf", @"TestData\okk.xml")]
         [TestCase(@"TestData\snippet.d", @"TestData\gapdh.fasta")]
+        [TestCase(@"TopDownTestData\JurkatTopDownRep2Fract1_ms2.msalign", @"TestData\gapdh.fasta")]
         public static void TestQuantificationDoesntCrashOnUnsupportedFiles(string filepath, string dbPath)
         {
             //The purpose of this test is to ensure that mgfs and timsTOF (.d) files can be run without crashing.
@@ -51,6 +52,7 @@ namespace Test
         [Test]
         [TestCase(@"TestData\ok.mgf", @"TestData\okk.xml")]
         [TestCase(@"TestData\snippet.d", @"TestData\gapdh.fasta")]
+        [TestCase(@"TopDownTestData\JurkatTopDownRep2Fract1_ms2.msalign", @"TestData\gapdh.fasta")]
         public static void TestCalibrationDoesntCrashOnUnsupportedFiles(string filepath, string dbPath)
         {
             //The purpose of this test is to ensure that mgfs and timsTOF (.d) files can be run without crashing.
@@ -84,6 +86,7 @@ namespace Test
         [Test]
         [TestCase(@"TestData\ok.mgf", @"TestData\okk.xml")]
         [TestCase(@"TestData\snippet.d", @"TestData\gapdh.fasta")]
+        [TestCase(@"TopDownTestData\JurkatTopDownRep2Fract1_ms2.msalign", @"TestData\gapdh.fasta")]
         public static void TestAveragingDoesntCrashOnUnsupportedFiles(string filepath, string dbPath)
         {
             //The purpose of this test is to ensure that mgfs and timsTOF (.d) files can be run without crashing.
