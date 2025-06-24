@@ -623,8 +623,16 @@ namespace MetaMorpheusGUI
                     ptmLegendLocationVector = (Vector)ChildScanPtmLegendControl.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ChildScanPtmLegendControl);
                     ptmLegendLocationVector.X = PsmAnnotationGrid.ActualWidth - ChildScanPtmLegendControl.ActualWidth;
                 }
+
+                // If psm and GUI display have different number of matched ions, send in the refragmenter for exporting. 
+                FragmentationReanalysisViewModel toPlotForExport = null;
+                if (MetaDrawLogic.SpectrumAnnotation.SpectrumMatch.MatchedIons.Count != MetaDrawLogic.SpectrumAnnotation.MatchedFragmentIons.Count)
+                {
+                    toPlotForExport = FragmentationReanalysisViewModel;
+                }
+
                 MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel,
-                    directoryPath, out errors, legendCanvas, ptmLegendLocationVector, FragmentationReanalysisViewModel);
+                    directoryPath, out errors, legendCanvas, ptmLegendLocationVector, toPlotForExport);
             }
 
             if (errors != null && errors.Any())
@@ -1219,21 +1227,10 @@ namespace MetaMorpheusGUI
             if (plot?.Scan == null || plot.SpectrumMatch == null)
                 return;
 
-            List<MatchedFragmentIon> oldMatchedIons = null;
-            if (FragmentationReanalysisViewModel.Persist)
-            {
-                oldMatchedIons = plot.SpectrumMatch.MatchedIons;
-                ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(plot.SpectrumMatch);
-            }
-            var matched = plot.SpectrumMatch.MatchedIons;
-
+            var matched = plot.MatchedFragmentIons;
             var sb = new StringBuilder();
             foreach (var ion in matched)
                 sb.AppendLine($"{ion.Mz:F6}\t{ion.Intensity:F0}");
-
-            // put the original ions back in place if they were altered
-            if (oldMatchedIons != null && !plot.SpectrumMatch.MatchedIons.SequenceEqual(oldMatchedIons))
-                plot.SpectrumMatch.MatchedIons = oldMatchedIons;
 
             Clipboard.SetText(sb.ToString());
         }
@@ -1245,13 +1242,7 @@ namespace MetaMorpheusGUI
             if (plot?.SpectrumMatch == null)
                 return;
 
-            List<MatchedFragmentIon> oldMatchedIons = null;
-            if (FragmentationReanalysisViewModel.Persist)
-            {
-                oldMatchedIons = plot.SpectrumMatch.MatchedIons;
-                ReplaceFragmentIonsOnPsmFromFragmentReanalysisViewModel(plot.SpectrumMatch);
-            }
-            var matched = plot.SpectrumMatch.MatchedIons;
+            var matched = plot.MatchedFragmentIons;
 
             var sb = new StringBuilder();
             sb.AppendLine("Annotation\tm/z\tIntensity\tType\tFragmentNumber");
@@ -1259,10 +1250,6 @@ namespace MetaMorpheusGUI
             {
                 sb.AppendLine($"{ion.Annotation}\t{ion.Mz:F6}\t{ion.Intensity:F0}\t{ion.NeutralTheoreticalProduct.ProductType}\t{ion.NeutralTheoreticalProduct.FragmentNumber}");
             }
-
-            // put the original ions back in place if they were altered
-            if (oldMatchedIons != null && !plot.SpectrumMatch.MatchedIons.SequenceEqual(oldMatchedIons))
-                plot.SpectrumMatch.MatchedIons = oldMatchedIons;
 
             Clipboard.SetText(sb.ToString());
         }

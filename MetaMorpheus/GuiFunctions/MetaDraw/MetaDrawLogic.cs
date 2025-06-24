@@ -523,7 +523,7 @@ namespace GuiFunctions
 
                 // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
                 List<MatchedFragmentIon> oldMatchedIons = null;
-                if (reFragment is not null && reFragment.Persist)
+                if (reFragment is not null)
                 {
                     oldMatchedIons = psm.MatchedIons;
                     var scan = GetMs2ScanFromPsm(psm);
