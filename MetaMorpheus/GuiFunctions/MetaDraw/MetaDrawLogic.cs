@@ -1081,13 +1081,11 @@ namespace GuiFunctions
             {
                 lock (ThreadLocker)
                 {
-                    var fileNameWithoutExtension = filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty);
-                    fileNameWithoutExtension = System.IO.Path.GetFileName(fileNameWithoutExtension);
-
+                    var fileNameWithoutExtension = System.IO.Path.GetFileName(filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty));
                     var spectraFile = MsDataFileReader.GetDataFile(filepath);
                     if (spectraFile is TimsTofFileReader timsTofDataFile)
                     {
-                        timsTofDataFile.LoadAllStaticData(); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
+                        timsTofDataFile.LoadAllStaticData(maxThreads: Environment.ProcessorCount - 1); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
                     }
                     else
                     {
