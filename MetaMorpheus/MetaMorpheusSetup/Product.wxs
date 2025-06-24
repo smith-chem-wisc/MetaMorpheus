@@ -340,6 +340,7 @@
 	  <Component Id="src_System.Data.SQLite.EF6.dll" Guid="F9804BA5-D660-4079-8BB4-738DF62EAF7E">
 	  	<File Id="src_System.Data.SQLite.EF6.dll" Name="System.Data.SQLite.EF6.dll" Source="$(var.GUI_TargetDir)System.Data.SQLite.EF6.dll" />
 	  </Component>
+
 	  <Component Id="src_System.Drawing.Common.dll" Guid="D0717D69-C8C8-422C-8E25-A32A422AEFCE">
 	  	<File Id="src_System.Drawing.Common.dll" Name="System.Drawing.Common.dll" Source="$(var.GUI_TargetDir)System.Drawing.Common.dll" />
 	  </Component>
@@ -482,8 +483,10 @@
       <Component Id="src_LdaNative.dll" Guid="2FDBD232-12A0-43D6-A54D-06FFC627CE23">
         <File Id="src_LdaNative.dll" Name="LdaNative.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\LdaNative.dll" />
       </Component>
+	  <Component Id="src_SQLite.Interop.dll" Guid="A918BB3C-0720-469E-900B-27FA93B7BB86">
+		<File Id="src_SQLite.Interop.dll" Name="SQLite.Interop.dll" Source="$(var.GUI_TargetDir)runtimes\win-x64\native\SQLite.Interop.dll" />
+	  </Component>
     </ComponentGroup>
-    
   </Fragment>
 
   <!--Build the App Mods folder-->
