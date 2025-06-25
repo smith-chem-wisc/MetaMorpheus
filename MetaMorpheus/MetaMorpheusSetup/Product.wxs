@@ -671,13 +671,11 @@
   <!--Builds the App ProteolyticDigestion folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_ProteolyticDigestion_files" Directory="MetaAppProteolyticDigestionFolder">
-      <Component Id="RemoveProteolyticDigestion" Condition="OVERWRITEAPPDATA">
-        
+      <Component Id="RemoveProteolyticDigestion" Condition="OVERWRITEAPPDATA" Guid="C0E85E53-4245-44ED-A3CB-BD5C241FC302">
         <RemoveFolder Id="MetaAppProteolyticDigestionFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       <Component Id="Appsrc_ProteolyticDigestion_proteases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E" Condition="OVERWRITEAPPDATA">
-        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_ProteolyticDigestion_proteases.tsv" Name="proteases.tsv" Source="$(var.GUI_TargetDir)ProteolyticDigestion\proteases.tsv" />
       </Component>
@@ -687,13 +685,11 @@
   <!--Builds the App Rnases folder-->
   <Fragment>
 	  <ComponentGroup Id="Appsrc_Digestion_files" Directory="MetaAppDigestionFolder">
-		  <Component Id="RemoveDigestion" Condition="OVERWRITEAPPDATA">
-
+		  <Component Id="RemoveDigestion" Condition="OVERWRITEAPPDATA" Guid="25CA934F-1A99-49D8-BB94-C52639E21615">
 			  <RemoveFolder Id="MetaAppDigestionFolder" On="both" />
 			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 		  </Component>
-		  <Component Id="Appsrc_Digestion_rnases.tsv" Guid="A3AF0FEB-59EE-4207-9BDB-3B285D1E720E" Condition="OVERWRITEAPPDATA">
-
+		  <Component Id="Appsrc_Digestion_rnases.tsv" Guid="07709B54-1331-4851-92AD-26116852467C" Condition="OVERWRITEAPPDATA">
 			  <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
 			  <File ReadOnly="no" Id="Appsrc_Digestion_rnases.tsv" Name="rnases.tsv" Source="$(var.GUI_TargetDir)Digestion\rnases.tsv" />
 		  </Component>
@@ -704,12 +700,10 @@
   <Fragment>
     <ComponentGroup Id="Appsrc_Contaminants_files" Directory="MetaAppContaminantsFolder">
       <Component Id="RemoveContaminants" Guid="D40C37B7-1F04-4DCC-A4AC-46D9F613570A" Condition="OVERWRITEAPPDATA">
-        
         <RemoveFolder Id="MetaAppContaminantsFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       <Component Id="Appsrc_Contaminants_MetaMorpheus_Contaminants.xml" Guid="d840b7a1-dfce-418a-bd4a-f3805625f53d" Condition="OVERWRITEAPPDATA">
-        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
         <File ReadOnly="no" Id="Appsrc_Contaminants_MetaMorpheusContaminants.xml" Name="MetaMorpheusContaminants.xml" Source="$(var.GUI_TargetDir)Contaminants\MetaMorpheusContaminants.xml" />
       </Component>
@@ -719,14 +713,12 @@
   <!--Build the Proteomes folder-->
   <Fragment>
     <ComponentGroup Id="Appsrc_Proteomes_files" Directory="MetaAppProteomesFolder">
-      <Component Id="RemoveProteomes" Guid="CE2297F1-81E4-4268-9976-50A5A48C391D" Condition="OVERWRITEAPPDATA">
-        
+      <Component Id="RemoveProteomes" Guid="CE2297F1-81E4-4268-9976-50A5A48C391D" Condition="OVERWRITEAPPDATA">    
         <RemoveFolder Id="MetaAppProteomesFolder" On="both" />
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
       <Component Id="Appsrc_Proteomes_availableUniProtProteomes.txt.gz" Guid="89F6BBC1-4668-4F9C-A52B-69603CE418C1" Condition="OVERWRITEAPPDATA">
         <File ReadOnly="yes" Id="Appsrc_Proteomes_availableUniProtProteomes.txt" Name="availableUniProtProteomes.txt.gz" Source="$(var.GUI_TargetDir)Proteomes\availableUniProtProteomes.txt.gz" />
-        
         <RegistryValue Root="HKCU" Key="Software\SmithGroup\MetaMorpheus" Name="installed" Type="integer" Value="1" KeyPath="yes" />
       </Component>
     </ComponentGroup>
@@ -736,7 +728,6 @@
   <Fragment>
     <ComponentGroup Id="ExcelDefaults">
       <Component Id="ExcelDefault" Directory="ProgramFiles64Folder" Guid="{D6A1CF31-27C8-4DCB-A92F-D36D6EDB7C70}" Permanent="yes" Condition="EXCELDEFAULTPROPERTY">
-        
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv" />
         <RegistryKey Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.tsv\OpenWithList">
           <RegistryValue Name="a" Value="EXCEL.EXE" Type="string" />
@@ -755,7 +746,6 @@
         </RegistryKey>
       </Component>
       <Component Id="ExcelDefault2" Directory="ProgramFiles64Folder" Guid="{A19A382C-8DD8-4A03-8DE8-66973C197A98}" Permanent="yes" Condition="EXCELSELECT&lt;&gt;&quot;1&quot;">
-        
         <RemoveRegistryKey Action="removeOnInstall" Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command" />
         <RegistryKey Root="HKCU" Key="Software\Classes\tsv_auto_file\shell\open\command">
           <RegistryValue Action="write" Value="&quot;[EXCELSELECT]&quot; &quot;%1&quot;" Type="string" />
