@@ -104,7 +104,7 @@ namespace Test
 
             var testC = new PeptideWithSetModifications("TELAAYLSC[Common Fixed:Carbamidomethyl on C]NATK", new Dictionary<string, Modification> { { "Carbamidomethyl on C", mod1 }});
             var testCSites = GlycoSpectralMatch.GetPossibleModSites(testC, motifs).Select(p => p.Key).ToList();
-            Assert.That(testCSites.Count() == 1 && testSites[0] == 11);
+            Assert.That(testCSites.Count() == 1 && testCSites[0] == 11);
         }
 
         [Test]

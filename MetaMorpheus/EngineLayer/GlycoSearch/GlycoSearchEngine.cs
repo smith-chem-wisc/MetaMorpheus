@@ -405,7 +405,7 @@ namespace EngineLayer.GlycoSearch
 
             int iDLow = GlycoPeptides.BinarySearchGetIndex(GlycanBox.OGlycanBoxes.Select(p => p.Mass).ToArray(), possibleGlycanMassLow); // try to find the index that closet match to the "possibleGlycanMassLow" within the glycanBox
 
-            Dictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }); //list all of the possible glycoslation site/postition
+            SortedDictionary<int, string> modPos = GlycoSpectralMatch.GetPossibleModSites(theScanBestPeptide, new string[] { "S", "T" }); //list all of the possible glycoslation site/postition
 
             var localizationScan = theScan;
             List<Product> products = new List<Product>(); // product list for the theoretical fragment ions
@@ -715,7 +715,7 @@ namespace EngineLayer.GlycoSearch
         /// <param name="modPos"></param>
         /// <param name="glycanBox"></param>
         /// <returns></returns>
-        private bool GraphCheck(Dictionary<int, string> modPos, GlycanBox glycanBox)
+        private bool GraphCheck(SortedDictionary<int, string> modPos, GlycanBox glycanBox)
         {
             // If the motifs number is less than the glycanBox, we can skip this graph.
             if (modPos.Count < glycanBox.NumberOfMods)
@@ -736,9 +736,10 @@ namespace EngineLayer.GlycoSearch
 
             // Calculate the motif in peptide.
             var motifInPeptide = new Dictionary<string, int>();
+            var modPos_motif = modPos.Values.ToArray();
             for (int i = 0; i <= modPos.Count-1; i++)
             {
-                var motif = modPos.Values.ElementAt(i);
+                var motif = modPos_motif[i];
 
                 if (!motifInPeptide.ContainsKey(motif))
                 {

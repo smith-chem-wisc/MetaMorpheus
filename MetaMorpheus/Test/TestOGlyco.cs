@@ -17,11 +17,9 @@ using SpectralAveraging;
 using NUnit.Framework.Legacy;
 using Omics.Modifications;
 using Easy.Common.Extensions;
-using static Nett.TomlObjectFactory;
 using TopDownProteomics;
 using MzLibUtil;
 using Readers;
-using System.Reflection.Metadata;
 
 namespace Test
 {
@@ -64,7 +62,7 @@ namespace Test
             var kindGlycans = GlycanDatabase.LoadGlycan(kindDataBasePath, true, true).ToList();
             Assert.That(kindGlycans.Count() == 56); // The number of glycans in the database is 56. (28*2 by two diff motifs)
             // Assert that the GlyId starts from 1 to 12
-            for (int i = 0; i < structGlycans.Count(); i++)
+            for (int i = 0; i < kindGlycans.Count(); i++)
             {
                 Assert.That(kindGlycans[i].GlyId == i+1);
                 Assert.That(kindGlycans[i].Type == GlycanType.O_glycan);
@@ -92,7 +90,7 @@ namespace Test
             {
                 Assert.That(structGlycans_NGlycan[i].GlyId == i + 1);
                 Assert.That(structGlycans_NGlycan[i].Type == GlycanType.N_glycan);
-                Assert.That(kindGlycans_NGlycan[i].Ions != null);
+                Assert.That(structGlycans_NGlycan[i].Ions != null);
             }
         }
 
@@ -457,10 +455,8 @@ namespace Test
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
             List<Product> products = new List<Product>();
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
-            
-                var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" })
-               .OrderBy(v => v.Key)
-               .ToDictionary(v => v.Key, v => v.Value);
+
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
             var boxes = GlycanBox.BuildChildOGlycanBoxes(3, glycanBox.ModIds).ToArray();
             Assert.That(boxes.Count() == 6);
 
@@ -519,10 +515,7 @@ namespace Test
             List<Product> products = new List<Product>();
             peptide.Fragment(DissociationType.ETD, FragmentationTerminus.Both, products);
 
-            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" })
-                .OrderBy(v => v.Key)
-                .ToDictionary(v => v.Key, v => v.Value);
-
+            var modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" });
             var boxes = GlycanBox.BuildChildOGlycanBoxes(glycanBox.NumberOfMods, glycanBox.ModIds).ToArray();
 
             //Load scan.
@@ -1043,7 +1036,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_GetAllPaths()
         {
-            Dictionary<int, string> modPos = new Dictionary<int, string>();
+            SortedDictionary<int, string> modPos = new SortedDictionary<int, string>();
             modPos.Add(2, "S");
             modPos.Add(4, "T");
             modPos.Add(6, "N");
@@ -1078,7 +1071,7 @@ namespace Test
         [Test]
         public static void OGlycoTest_GetLocalizedPath()
         {
-            Dictionary<int, string> modPos = new Dictionary<int, string> { { 4, "S" } };
+            SortedDictionary<int, string> modPos = new SortedDictionary<int, string> { { 4, "S" } };
             var glycanBox = OGlycanBoxes[1];
             var boxes = GlycanBox.BuildChildOGlycanBoxes(1, glycanBox.ModIds).ToArray();
             LocalizationGraph localizationGraph = new LocalizationGraph(modPos, glycanBox, boxes, -1);

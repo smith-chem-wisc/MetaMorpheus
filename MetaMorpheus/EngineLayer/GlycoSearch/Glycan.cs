@@ -34,7 +34,7 @@ namespace EngineLayer
         {
             // Glycan Properties
             Struc = struc;
-            Mass = mass;
+            Mass = mass; // Glycan mass is stored as an integer scaled by 1e5 to improve performance. Divide by 1e5 to obtain the monoisotopic mass in Daltons (Da).
             Kind = kind;
             Ions = ions;
             Decoy = decoy;
