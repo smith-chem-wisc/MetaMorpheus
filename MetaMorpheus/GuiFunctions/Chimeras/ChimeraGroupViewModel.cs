@@ -41,6 +41,10 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
 
     private bool IsColorInitialized { get; set; } = false;
     private Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> _matchedFragmentIonsByColor = [];
+
+    /// <summary>
+    /// Key: Color, Value is a list of tuples where the first item is the matched fragment ion and the second item is an annotation string.
+    /// </summary>
     public Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> MatchedFragmentIonsByColor
     {
         get

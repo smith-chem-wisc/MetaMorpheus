@@ -1765,6 +1765,5 @@ namespace Test.MetaDraw
             string xlTestDataFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData");
             var interLinkResults = File.ReadAllLines(Path.Combine(xlTestDataFolder, @"XL_Interlinks.tsv"));
         }
-        
     }
 }

@@ -1,18 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using EngineLayer;
 using Omics.Fragmentation;
-using Proteomics.ProteolyticDigestion;
-using Readers;
-using ThermoFisher.CommonCore.Data.Interfaces;
 
 namespace GuiFunctions;
 
@@ -47,25 +38,6 @@ public class ChimeraDrawnSequence
 
     private void DrawSequences()
     {
-        if (_parent is not null && _parent.GroupProteinsInSequenceAnnotation)
-        {
-            int index = 0;
-            foreach (var baseSeqGroup in ChimeraGroupViewModel.ChimericPsms.GroupBy(p => p.Psm.BaseSeq))
-            {
-                DrawBaseSequence(baseSeqGroup.First(), index);
-                foreach (var psm in baseSeqGroup)
-                {
-                    AddModifications(psm, index);
-                    AddMatchedIons(psm, index);
-                }
-
-                index++;
-            }
-
-            return;
-        }
-
-
         int maxBaseSeqLength = ChimeraGroupViewModel.ChimericPsms.Max(p => p.Psm.BaseSeq.Length);
         for (var index = 0; index < ChimeraGroupViewModel.ChimericPsms.Count; index++)
         {
@@ -84,12 +56,20 @@ public class ChimeraDrawnSequence
         // Shared Ions
         if (ChimeraGroupViewModel.MatchedFragmentIonsByColor.ContainsKey(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor))
         {
+            color = DrawnSequence.ParseColorFromOxyColor(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor);
             foreach (var ion in ChimeraGroupViewModel
                          .MatchedFragmentIonsByColor[ChimeraSpectrumMatchPlot.MultipleProteinSharedColor]
                          .Select(p => p.Item1))
             {
-                if (!psm.Psm.MatchedIons.Contains(ion)) continue;
-                color = DrawnSequence.ParseColorFromOxyColor(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor);
+                var matchedIon = psm.Psm.MatchedIons.FirstOrDefault(mi =>
+                    mi.Charge == ion.Charge &&
+                    mi.NeutralTheoreticalProduct.ProductType == ion.NeutralTheoreticalProduct.ProductType &&
+                    mi.NeutralTheoreticalProduct.FragmentNumber == ion.NeutralTheoreticalProduct.FragmentNumber &&
+                    Math.Abs(mi.Intensity - ion.Intensity) < 1e-6 &&
+                    Math.Abs(mi.Mz - ion.Mz) < 1e-6);
+
+                if (matchedIon == null)
+                    continue;
                 AddMatchedIon(ion, color, row, psm.Psm.BaseSeq.Length);
             }
         }
@@ -97,12 +77,12 @@ public class ChimeraDrawnSequence
         // Protein Shared Ions
         if (ChimeraGroupViewModel.MatchedFragmentIonsByColor.ContainsKey(psm.ProteinColor))
         {
+            color = DrawnSequence.ParseColorFromOxyColor(psm.ProteinColor);
             foreach (var ion in ChimeraGroupViewModel
                          .MatchedFragmentIonsByColor[psm.ProteinColor]
                          .Select(p => p.Item1))
             {
                 if (!psm.Psm.MatchedIons.Contains(ion)) continue;
-                color = DrawnSequence.ParseColorFromOxyColor(psm.ProteinColor);
                 AddMatchedIon(ion, color, row, psm.Psm.BaseSeq.Length);
             }
         }
@@ -110,11 +90,11 @@ public class ChimeraDrawnSequence
         // Unique Ions
         if (ChimeraGroupViewModel.MatchedFragmentIonsByColor.ContainsKey(psm.Color))
         {
+            color = DrawnSequence.ParseColorFromOxyColor(psm.Color);
             foreach (var ion in ChimeraGroupViewModel
                          .MatchedFragmentIonsByColor[psm.Color]
                          .Select(p => p.Item1))
             {
-                color = DrawnSequence.ParseColorFromOxyColor(psm.Color);
                 AddMatchedIon(ion, color, row, psm.Psm.BaseSeq.Length);
             }
         }

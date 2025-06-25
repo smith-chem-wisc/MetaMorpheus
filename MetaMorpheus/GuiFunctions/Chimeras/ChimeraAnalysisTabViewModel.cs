@@ -10,7 +10,6 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Drawing;
 using System.Drawing.Imaging;
 using Brushes = System.Windows.Media.Brushes;
@@ -67,13 +66,13 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     #region Settings that change behavior
 
     private bool _groupProteinsInSequenceAnnotation;
-    public bool GroupProteinsInSequenceAnnotation
+    public bool GroupByBaseSequenceInAnnotaiton
     {
         get => _groupProteinsInSequenceAnnotation;
         set
         {
             _groupProteinsInSequenceAnnotation = value;
-            OnPropertyChanged(nameof(GroupProteinsInSequenceAnnotation));
+            OnPropertyChanged(nameof(GroupByBaseSequenceInAnnotaiton));
         }
     }
 
@@ -256,6 +255,13 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         // convert canvas to bitmap
         Rect bounds = VisualTreeHelper.GetDescendantBounds(ChimeraDrawnSequence.SequenceDrawingCanvas);
         double dpi = 96d;
+
+        // Defaults in case the canvas has not been expanded. 
+        if (double.IsNegativeInfinity(bounds.Width))
+        {
+            bounds.Width = 800;
+            bounds.Height = 80 * ChimeraDrawnSequence.ChimeraGroupViewModel.Count;
+        }
 
         RenderTargetBitmap rtb = new(
             (int)bounds.Width, //width
