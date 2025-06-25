@@ -30,7 +30,7 @@ namespace EngineLayer
     public class Glycan :  Modification
     {
         public Glycan(string struc, int mass, byte[] kind, List<GlycanIon> ions, bool decoy, string motif, GlycanType type = GlycanType.O_glycan) 
-            : base( _monoisotopicMass: mass / 1E5, _locationRestriction: "Anywhere.")
+            : base( _monoisotopicMass: mass / 1E5, _locationRestriction: "Anywhere.") // Divide the mass by 1E5 to convert it to monoisotopic mass in Daltons (Da).
         {
             // Glycan Properties
             Struc = struc;
@@ -70,7 +70,7 @@ namespace EngineLayer
             }
 
             Dictionary<DissociationType, List<double>> diagnosticIons = new Dictionary<DissociationType, List<double>>();
-            diagnosticIons.Add(DissociationType.HCD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
+            diagnosticIons.Add(DissociationType.HCD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList()); // Divided by 1E5 to convert mass(int) to monoisotopic mass(double).
             diagnosticIons.Add(DissociationType.CID, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
             diagnosticIons.Add(DissociationType.EThcD, GlycanDiagnosticIons.Select(p => (double)p / 1E5).ToList());
             ModificationMotif.TryGetMotif(motif, out ModificationMotif finalMotif); //TO DO: only one motif can be write here.
@@ -96,7 +96,7 @@ namespace EngineLayer
         /// </summary>
         /// <param name="kind"></param>
         /// <param name="type"></param>
-        public Glycan(byte[] kind, string motif, GlycanType type = GlycanType.Undefined)
+        public Glycan(byte[] kind, string motif, GlycanType type)
             : this(null, GetMass(kind), kind, null, false, motif, type)
         {
         }
@@ -668,9 +668,9 @@ namespace EngineLayer
                     GlycanIon glycanIon = new GlycanIon(null, ion.IonMass + value, ion.IonKind, ion.LossIonMass - value);
                     glycanIons.Add(glycanIon);
                 }
-                var aDecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, glycanIons, true, aGlycan.Motif, aGlycan.Type);
-                aDecoyGlycan.GlyId = aGlycan.GlyId;
-                allGlycans.Add(aDecoyGlycan);
+                var DecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, glycanIons, true, aGlycan.Motif, aGlycan.Type);
+                DecoyGlycan.GlyId = aGlycan.GlyId;
+                allGlycans.Add(DecoyGlycan);
             }
             return allGlycans.OrderBy(p => p.Mass).ToArray();
         }
