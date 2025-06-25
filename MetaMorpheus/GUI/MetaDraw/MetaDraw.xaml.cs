@@ -1231,11 +1231,11 @@ namespace MetaMorpheusGUI
             if (plot?.Scan == null || plot.SpectrumMatch == null)
                 return;
 
-            var matched = plot.MatchedFragmentIons.Distinct().ToList();
+            var matched = plot.MatchedFragmentIons;
+
             var sb = new StringBuilder();
             foreach (var ion in matched)
                 sb.AppendLine($"{ion.Mz:F6}\t{ion.Intensity:F0}");
-
             Clipboard.SetText(sb.ToString());
         }
 
@@ -1246,7 +1246,7 @@ namespace MetaMorpheusGUI
             if (plot?.SpectrumMatch == null)
                 return;
 
-            var matched = plot.MatchedFragmentIons.Distinct().ToList();
+            var matched = plot.MatchedFragmentIons;
 
             var sb = new StringBuilder();
             sb.AppendLine("Annotation\tm/z\tIntensity\tType\tFragmentNumber");
