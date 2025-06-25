@@ -356,8 +356,7 @@ namespace Test
             Protein protein = new Protein("PTLFKNVSLYK", "");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
 
-            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).Select(p => p.Key).ToList();
-
+            int[] modPos = { 9, 3 }; //OGlyGetTheoreticalPeptide is only used for generating modifiedPeptide. In here I just follow the original code to test the fragment ions.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, OGlycanBoxes[22]);
             Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on T]LFKNVS[O-Glycosylation:N1 on S]LYK");
 
@@ -407,8 +406,7 @@ namespace Test
             Protein protein = new Protein("PTLFKNVSLYK", "");
             var peptide = protein.Digest(new DigestionParams(), new List<Modification>(), new List<Modification>()).First();
 
-            List<int> modPos = GlycoSpectralMatch.GetPossibleModSites(peptide, new string[] { "S", "T" }).Select(p => p.Key).ToList();
-
+            int[] modPos = { 9, 3 }; //OGlyGetTheoreticalPeptide is only used for generating modifiedPeptide. In here I just follow the original code to test the fragment ions.
             var peptideWithMod = GlycoPeptides.OGlyGetTheoreticalPeptide(modPos.ToArray(), peptide, glycanBox);
             Assert.That(peptideWithMod.FullSequence == "PT[O-Glycosylation:N1A1 on T]LFKNVS[O-Glycosylation:N1 on S]LYK");
 

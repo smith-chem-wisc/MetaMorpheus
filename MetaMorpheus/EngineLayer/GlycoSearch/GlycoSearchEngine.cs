@@ -737,10 +737,8 @@ namespace EngineLayer.GlycoSearch
             // Calculate the motif in peptide.
             var motifInPeptide = new Dictionary<string, int>();
             var modPos_motif = modPos.Values.ToArray();
-            for (int i = 0; i <= modPos.Count-1; i++)
+            foreach (var motif in modPos_motif)
             {
-                var motif = modPos_motif[i];
-
                 if (!motifInPeptide.ContainsKey(motif))
                 {
                     motifInPeptide[motif] = 0;
