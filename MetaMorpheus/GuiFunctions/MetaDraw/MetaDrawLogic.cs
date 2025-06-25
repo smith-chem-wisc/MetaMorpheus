@@ -503,7 +503,7 @@ namespace GuiFunctions
 
         public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<SpectrumMatchFromTsv> spectrumMatches,
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
-            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new())
+            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new(), FragmentationReanalysisViewModel? reFragment = null)
         {
             errors = new List<string>();
 
@@ -519,6 +519,16 @@ namespace GuiFunctions
                 {
                     errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
                     return;
+                }
+
+                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                List<MatchedFragmentIon> oldMatchedIons = null;
+                if (reFragment is not null)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    var scan = GetMs2ScanFromPsm(psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    psm.MatchedIons = newIons;
                 }
 
                 if (plotView.Name == "plotView")
@@ -583,12 +593,30 @@ namespace GuiFunctions
                             break;
                     }
                 }
+                // put the original ions back in place if they were altered
+                if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                    psm.MatchedIons = oldMatchedIons;
             }
 
             if (plotView.Name == "plotView")
             {
-                DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
-                DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out errors);
+                var psm = spectrumMatches.First();
+
+                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                List<MatchedFragmentIon> oldMatchedIons = null;
+                if (reFragment is not null && reFragment.Persist)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    var scan = GetMs2ScanFromPsm(psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    psm.MatchedIons = newIons;
+                }
+                DisplaySequences(stationaryCanvas, null, null, psm);
+                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+
+                // put the original ions back in place if they were altered
+                if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                    psm.MatchedIons = oldMatchedIons;
             }
             else if (plotView.Name == "chimeraPlot")
             {
@@ -598,7 +626,6 @@ namespace GuiFunctions
                     .ToList();
                 DisplayChimeraSpectra(plotView, chimericPsms, out errors);
             }
-
         }
 
         public MsDataScan GetMs2ScanFromPsm(SpectrumMatchFromTsv spectralMatch)

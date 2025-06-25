@@ -17,9 +17,12 @@ using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
 using Omics.Fragmentation;
+using OxyPlot;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using TaskLayer;
+using OxyPlot.Wpf;
+using LineSeries = OxyPlot.Series.LineSeries;
 
 namespace Test.MetaDraw
 {
@@ -1754,6 +1757,102 @@ namespace Test.MetaDraw
             string xlTestDataFolder = Path.Combine(TestContext.CurrentContext.TestDirectory, @"XlTestData");
             var interLinkResults = File.ReadAllLines(Path.Combine(xlTestDataFolder, @"XL_Interlinks.tsv"));
         }
-        
+
+        [Test]
+        public void ExportPlot_RefragmentationWithAdditionalFragmentIons_WritesExpectedIons()
+        {
+            // Arrange
+            var logic = new MetaDrawLogic();
+            MetaDrawSettings.ExportType = "Png";
+            string dataFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchSingleSpectra.mzML");
+            string psmFilePath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchResults.psmtsv");
+
+            // Load
+            logic.SpectraFilePaths.Add(dataFilePath);
+            logic.SpectralMatchResultFilePaths.Add(psmFilePath);
+            logic.LoadFiles(true, true);
+            var psm = logic.FilteredListOfPsms.First();
+
+            // Add to spectrumMatches
+            var spectrumMatches = new List<SpectrumMatchFromTsv> { psm };
+
+            // Set up a FragmentationReanalysisViewModel with additional ions (e.g., c, zDot)
+            var reFragment = new FragmentationReanalysisViewModel();
+            foreach (var frag in reFragment.PossibleProducts)
+            {
+                // Enable b, y, c, and zDot ions
+                frag.Use = frag.ProductType == ProductType.b || frag.ProductType == ProductType.y ||
+                           frag.ProductType == ProductType.bWaterLoss || frag.ProductType == ProductType.yAmmoniaLoss ||
+                           frag.ProductType == ProductType.c || frag.ProductType == ProductType.zDot;
+            }
+            reFragment.Persist = true;
+
+            // Set up dummy plotView and canvas
+            var plotView = new PlotView { Name = "plotView" };
+            var stationaryCanvas = new Canvas();
+            var parentChildScanPlotsView = new ParentChildScanPlotsView();
+            string tempDir = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "RefragmentTest");
+            Directory.CreateDirectory(tempDir);
+
+            // Act
+            // Export without refragmentation 
+            string fileNoRefragment = Path.Combine(tempDir, "no_refragment.png");
+            logic.ExportPlot(plotView, stationaryCanvas, spectrumMatches, parentChildScanPlotsView, tempDir, out var errorsNoRefragment, null, new System.Windows.Vector(), null);
+            string exportedFileNoRefragment = Directory.GetFiles(tempDir, "*.png").FirstOrDefault();
+            Assert.That(exportedFileNoRefragment, Is.Not.Null, "Exported file without refragmentation should exist.");
+
+            // Rename File so it is not overriden by next export. 
+            File.Move(exportedFileNoRefragment, fileNoRefragment);
+
+            // Export with refragmentation
+            logic.ExportPlot(plotView, stationaryCanvas, spectrumMatches, parentChildScanPlotsView, tempDir, out var errorsRefragment, null, new System.Windows.Vector(), reFragment);
+            string exportedFileRefragment = Directory.GetFiles(tempDir, "*.png").FirstOrDefault();
+            Assert.That(exportedFileRefragment, Is.Not.Null, "Exported file with refragmentation should exist.");
+
+            // Assert: file with refragmentation should be larger
+            var sizeNoRefragment = new FileInfo(fileNoRefragment).Length;
+            var sizeRefragment = new FileInfo(exportedFileRefragment).Length;
+            Assert.That(sizeRefragment, Is.GreaterThan(sizeNoRefragment), "Refragmented export should be larger due to more annotated ions.");
+
+            // Assert: colors for c and zDot ions are present in the PNG with refragmentation but not in the other
+            var cColor = MetaDrawSettings.ProductTypeToColor[ProductType.c];
+            var zDotColor = MetaDrawSettings.ProductTypeToColor[ProductType.zDot];
+
+            // Use using statements to ensure Bitmaps are disposed immediately after use
+            bool noRefragmentHasC, noRefragmentHasZDot, refragmentHasC, refragmentHasZDot;
+            using (var bmpNoRefragment = new Bitmap(fileNoRefragment))
+            using (var bmpRefragment = new Bitmap(exportedFileRefragment))
+            {
+                bool HasColor(Bitmap bmp, OxyColor color)
+                {
+                    for (int y = 0; y < bmp.Height; y++)
+                    {
+                        for (int x = 0; x < bmp.Width; x++)
+                        {
+                            var px = bmp.GetPixel(x, y);
+                            if (px.R == color.R && px.G == color.G && px.B == color.B)
+                                return true;
+                        }
+                    }
+                    return false;
+                }
+
+                noRefragmentHasC = HasColor(bmpNoRefragment, cColor);
+                noRefragmentHasZDot = HasColor(bmpNoRefragment, zDotColor);
+                refragmentHasC = HasColor(bmpRefragment, cColor);
+                refragmentHasZDot = HasColor(bmpRefragment, zDotColor);
+            }
+
+            Assert.That(noRefragmentHasC || noRefragmentHasZDot, Is.False,
+                "No c or zDot ion colors should be present in the PNG without refragmentation.");
+            Assert.That(refragmentHasC || refragmentHasZDot, Is.True,
+                "c or zDot ion colors should be present in the PNG with refragmentation.");
+
+            Assert.That(errorsNoRefragment, Is.Null, "No errors should be reported for no refragmentation.");
+            Assert.That(errorsRefragment, Is.Null, "No errors should be reported for refragmentation.");
+
+            // Clean up
+            Directory.Delete(tempDir, true);
+        }
     }
 }
