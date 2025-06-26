@@ -41,16 +41,16 @@ namespace EngineLayer.GlycoSearch
         public List<Tuple<int, int, bool>> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
         public LocalizationLevel LocalizationLevel { get; set; }
 
-        //Motif should be writen with required form
         /// <summary>
-        /// Try to get the ModSite in the right format.
+        /// Try to get the Motifs information from the peptide sequence.
+        /// Format is (AAindex, motif), like (2, T), (3, S)
         /// </summary>
         /// <param name="peptide"> full peptide sequence ex. "PTLFKNVSLYK" </param>
         /// <param name="motifs"> modificatino AA ex. "S","T"</param>
         /// <returns> int[], the Modpositon index list ex.[9,3] </returns>
-        public static List<int> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
+        public static SortedDictionary<int, string> GetPossibleModSites(PeptideWithSetModifications peptide, string[] motifs)
         {
-            List<int> possibleModSites = new List<int>();
+            SortedDictionary<int, string> modMotif = new SortedDictionary<int, string>();
 
             List<Modification> modifications = new List<Modification>();
 
@@ -75,12 +75,14 @@ namespace EngineLayer.GlycoSearch
                     //FullSequence is used here to avoid duplicated modification on same sites?
                     if (ModificationLocalization.ModFits(modWithMotif, peptide.BaseSequence, r + 1, peptide.Length, r + 1))
                     {
-                        possibleModSites.Add(r + 2);
+                        if (!modMotif.ContainsKey(r + 2)) //If the mod site is not in the dictionary, add it.
+                        {
+                            modMotif.Add(r + 2, modWithMotif.Target.ToString());
+                        }
                     }
                 }
             }
-
-            return possibleModSites;
+            return modMotif;
         }
 
         public static bool MotifExist(string baseSeq, string[] motifs)
@@ -287,7 +289,7 @@ namespace EngineLayer.GlycoSearch
 
                 sb.Append(glycanBox.NumberOfMods + "\t");
 
-                sb.Append(LocalizationGraphs.First().ModPos.Length + "\t");
+                sb.Append(LocalizationGraphs.First().ModPos.Count + "\t");
 
                 sb.Append(glycanBox.Mass + "\t");
 
@@ -487,7 +489,7 @@ namespace EngineLayer.GlycoSearch
                 return localizationLevel;
             }
 
-            if (localizationGraph.ModPos.Length == 1 && localizationGraph.TotalScore == 0)
+            if (localizationGraph.ModPos.Count == 1 && localizationGraph.TotalScore == 0)
             {
                 return LocalizationLevel.Level1b;
             }
