@@ -82,7 +82,7 @@ namespace Test
             }
 
             //For N-glycan
-            var structDataBasePath_NGlycan = GlobalVariables.NGlycanDatabasePaths.Where(p => p.Contains("NGlycan_struct.gdb")).First();
+            var structDataBasePath_NGlycan = "E:\\GitClones\\MetaMorpheus\\MetaMorpheus\\Test\\GlycoTestData\\NGlycan_struct.gdb"; ;
             var structGlycans_NGlycan = GlycanDatabase.LoadGlycan(structDataBasePath_NGlycan, true, false).ToList();
             Assert.That(structGlycans_NGlycan.Count() == 12); // The number of glycans in the database is 182. (182*1 by one 'N' motifs)
             // Assert that the GlyId starts from 1 to 12
