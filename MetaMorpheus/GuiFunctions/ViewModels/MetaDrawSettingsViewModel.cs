@@ -21,6 +21,12 @@ namespace GuiFunctions
     /// </summary>
     public class MetaDrawSettingsViewModel : BaseViewModel, IAsyncInitialization
     {
+        private static readonly Lazy<MetaDrawSettingsViewModel> _instance =
+            new(() => new MetaDrawSettingsViewModel());
+
+        // Singleton to ensure only one instance of MetaDrawSettingsViewModel exists
+        public static MetaDrawSettingsViewModel Instance => _instance.Value;
+
         #region Private Properties
 
         private ObservableCollection<ModTypeForTreeViewModel> _Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
@@ -93,6 +99,7 @@ namespace GuiFunctions
                 LoadPTMs();
                 LoadIonTypes();
                 LoadSequenceCoverage();
+                Initialization = Task.CompletedTask;
             }
         }
 

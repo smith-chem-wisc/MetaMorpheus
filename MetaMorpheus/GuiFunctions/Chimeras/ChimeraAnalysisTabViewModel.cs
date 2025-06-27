@@ -243,26 +243,27 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         Rect bounds = VisualTreeHelper.GetDescendantBounds(ChimeraDrawnSequence.SequenceDrawingCanvas);
         double dpi = 96d;
 
-        // Defaults in case the canvas has not been expanded. 
-        if (double.IsNegativeInfinity(bounds.Width))
-        {
-            bounds.Width = 800;
-            bounds.Height = 80 * ChimeraDrawnSequence.ChimeraGroupViewModel.Count;
-        }
+        var width = double.IsNegativeInfinity(bounds.Width) 
+            ? MetaDrawSettings.AnnotatedSequenceTextSpacing * ChimeraDrawnSequence.ChimeraGroupViewModel.ChimericPsms.Max(p => p.Psm.BaseSeq.Length)
+            : bounds.Width;
+        var height = double.IsNegativeInfinity(bounds.Height)
+            ? 80 * ChimeraDrawnSequence.ChimeraGroupViewModel.Count
+            : bounds.Height;
 
         RenderTargetBitmap rtb = new(
-            (int)bounds.Width, //width
-            (int)bounds.Height, //height
+            (int)width, //width
+            (int)height, //height
             dpi, //dpi x
             dpi, //dpi y
             System.Windows.Media.PixelFormats.Default // pixelformat
         );
+        var size = new System.Windows.Size(width, height);
 
         DrawingVisual dv = new();
         using (DrawingContext dc = dv.RenderOpen())
         {
             VisualBrush vb = new(ChimeraDrawnSequence.SequenceDrawingCanvas);
-            dc.DrawRectangle(vb, null, new Rect(new System.Windows.Point(), bounds.Size));
+            dc.DrawRectangle(vb, null, new Rect(new System.Windows.Point(), size));
         }
 
         rtb.Render(dv);
