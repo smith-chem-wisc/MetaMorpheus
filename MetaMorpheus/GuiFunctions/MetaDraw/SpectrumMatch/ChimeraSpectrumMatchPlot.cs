@@ -32,7 +32,7 @@ namespace GuiFunctions
         {
             SpectrumMatches = sms;
             PsmsByProteinDictionary = SpectrumMatches.GroupBy(p => p.BaseSeq).ToDictionary(p => p.Key, p => p.ToList());
-            sms.Select(p => p.MatchedIons).ForEach(p => matchedFragmentIons.AddRange(p));
+            sms.Select(p => p.MatchedIons).ForEach(p => MatchedFragmentIons.AddRange(p));
             
             AnnotateMatchedIons();
             ZoomAxes();
@@ -42,7 +42,7 @@ namespace GuiFunctions
         public ChimeraSpectrumMatchPlot(PlotView plotView, ChimeraGroupViewModel chimeraGroupVm, double mzMax = double.MaxValue) : base(plotView, null,
             chimeraGroupVm.Ms2Scan)
         {
-            matchedFragmentIons = chimeraGroupVm.MatchedFragmentIonsByColor.SelectMany(p => p.Value.Select(q => q.Item1)).ToList();
+            MatchedFragmentIons = chimeraGroupVm.MatchedFragmentIonsByColor.SelectMany(p => p.Value.Select(q => q.Item1)).ToList();
             AnnotateMatchedIonsFromChimeraGroupVm(chimeraGroupVm);
             if (Math.Abs(mzMax - double.MaxValue) > 0.001)
             {

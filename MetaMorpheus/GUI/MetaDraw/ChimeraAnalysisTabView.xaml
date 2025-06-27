@@ -84,10 +84,6 @@
             <Button Grid.Row="1" Grid.Column="2" Content="Export Legend" Width="80"
                     Margin="5 0 5 0" Command="{Binding ExportLegendCommand}"
                     CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
-
-            <Button Grid.Row="2" Grid.Column="2" Content="Export All" Width="80"
-                    Margin="5 0 5 0" Command="{Binding ExportAllCommand}"
-                    CommandParameter="{Binding ElementName=chimericResultDataGrid}"/>
         </Grid>
 
         <!--Moveable splitter-->
@@ -109,12 +105,7 @@
         <!-- Sequence Coverage -->
         <Expander Grid.Row="2" Grid.Column="2" IsExpanded="False">
             <Expander.Header>
-                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Label Content="Sequence Annotation" Margin="0 0 10 0" />
-                    <CheckBox Content="Group Proteins?" VerticalAlignment="Center"
-                          IsChecked="{Binding GroupProteinsInSequenceAnnotation}"
-                          Margin="0 0 10 0" />
-                </StackPanel>
+                <Label Content="Sequence Annotation" Margin="0 0 10 0" />
             </Expander.Header>
             <ScrollViewer HorizontalScrollBarVisibility="Visible" CanContentScroll="True"
                       VerticalScrollBarVisibility="Disabled"

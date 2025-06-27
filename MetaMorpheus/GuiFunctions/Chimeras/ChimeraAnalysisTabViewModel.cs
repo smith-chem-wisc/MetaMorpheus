@@ -65,17 +65,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
 
     #region Settings that change behavior
 
-    private bool _groupProteinsInSequenceAnnotation;
-    public bool GroupByBaseSequenceInAnnotaiton
-    {
-        get => _groupProteinsInSequenceAnnotation;
-        set
-        {
-            _groupProteinsInSequenceAnnotation = value;
-            OnPropertyChanged(nameof(GroupByBaseSequenceInAnnotaiton));
-        }
-    }
-
     private bool useLetterOnly;
     public bool UseLetterOnly
     {
@@ -108,7 +97,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         ExportMs2Command = new RelayCommand(ExportMs2);
         ExportSequenceCoverageCommand = new RelayCommand(ExportSequenceCoverage);
         ExportLegendCommand = new DelegateCommand(ExportLegend);
-        ExportAllCommand = new DelegateCommand(ExportAll);
     }
 
     private static List<ChimeraGroupViewModel> ConstructChimericPsms(List<SpectrumMatchFromTsv> psms, Dictionary<string, MsDataFile> dataFiles)
@@ -186,7 +174,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     public ICommand ExportMs2Command { get; set; }
     public ICommand ExportSequenceCoverageCommand { get; set; }
     public ICommand ExportLegendCommand { get; set; }
-    public ICommand ExportAllCommand { get; set; }
 
     private void ExportMs1()
     {
@@ -328,108 +315,6 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             encoder.Frames.Add(BitmapFrame.Create(rtb));
             encoder.Save(stream);
         }
-        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
-    }
-
-    private void ExportAll(object frameworkElement)
-    {
-        var element = frameworkElement as FrameworkElement;
-
-        // initialize all 
-        string path = Path.Combine(ExportDirectory,
-            $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_Combined.{SelectedExportType.ToLower()}");
-
-        List<System.Drawing.Bitmap> bitmaps = new();
-        List<Point> points = new();
-        double dpi = MetaDrawSettings.CanvasPdfExportDpi;
-        double outterBuffer = 10;
-
-
-        // scale and rotate sequence annotation
-        Rect annotationBounds = VisualTreeHelper.GetDescendantBounds(ChimeraDrawnSequence.SequenceDrawingCanvas);
-        var rtb = new RenderTargetBitmap((int)(annotationBounds.Width * dpi / 96), (int)(annotationBounds.Height *
-            dpi / 96), dpi, dpi, PixelFormats.Default);
-
-        var dv = new DrawingVisual();
-        using (DrawingContext ctx = dv.RenderOpen())
-        {
-            ctx.DrawRectangle(Brushes.White, null, new Rect(new Point(), annotationBounds.Size));
-
-            VisualBrush vb = new VisualBrush(ChimeraDrawnSequence.SequenceDrawingCanvas);
-            ctx.DrawRectangle(vb, null, new Rect(new Point(), annotationBounds.Size));
-        }
-        rtb.Render(dv);
-
-        TransformedBitmap rotatedBitmap = new TransformedBitmap(rtb, new RotateTransform(270));
-        TransformedBitmap scaledBitmap = new TransformedBitmap(rotatedBitmap, new ScaleTransform(1, 0.6));
-        using (var memory = new MemoryStream())
-        {
-            BitmapEncoder encoder = new BmpBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(scaledBitmap));
-            encoder.Save(memory);
-            bitmaps.Add(new System.Drawing.Bitmap(memory));
-        }
-        var annotationWidth = bitmaps[0].Width;
-        var annotationHeight = bitmaps[0].Height;
-        points.Add(new Point(outterBuffer, outterBuffer));
-
-        // legend
-        Rect legendBounds = VisualTreeHelper.GetDescendantBounds(element);
-        rtb = new RenderTargetBitmap((int)(legendBounds.Width * dpi / 96), (int)(legendBounds.Height * dpi / 96), dpi, dpi, PixelFormats.Default);
-        dv = new DrawingVisual();
-        using (DrawingContext ctx = dv.RenderOpen())
-        {
-            VisualBrush vb = new VisualBrush(element);
-            ctx.DrawRectangle(vb, null, new Rect(new Point(), legendBounds.Size));
-        }
-        rtb.Render(dv);
-        using (var memory = new MemoryStream())
-        {
-            BitmapEncoder encoder = new BmpBitmapEncoder();
-            encoder.Frames.Add(BitmapFrame.Create(rtb));
-            encoder.Save(memory);
-            bitmaps.Add(new System.Drawing.Bitmap(memory));
-        }
-        var legendHeight = bitmaps[1].Height;
-        var legendWidth = bitmaps[1].Width;
-        points.Add(new Point(bitmaps[0].Width + 4 * outterBuffer, annotationHeight - legendHeight + outterBuffer));
-
-        // create temporary exports for spectraS
-        // give spectra the remaining space
-        string tempDir = Path.Combine(ExportDirectory, "temp");
-        if (!Directory.Exists(tempDir))
-            Directory.CreateDirectory(tempDir);
-        int remainingX = (int)(legendWidth);
-        double remainingY = annotationHeight - legendHeight;
-        int specHeight = (int)(remainingY / 2);
-
-        var ms1TempPath = Path.Combine(tempDir, "ms1.png");
-        Ms1ChimeraPlot.ExportToPng(ms1TempPath, remainingX, specHeight);
-        bitmaps.Add(new Bitmap(ms1TempPath));
-        points.Add(new Point(annotationWidth + outterBuffer, outterBuffer));
-
-
-        var ms2TempPath = Path.Combine(tempDir, "ms2.png");
-        ChimeraSpectrumMatchPlot.ExportToPng(ms2TempPath, remainingX, specHeight);
-        bitmaps.Add(new Bitmap(ms2TempPath));
-        points.Add(new Point(annotationWidth + outterBuffer, specHeight));
-
-        var combinedBitmap = new System.Drawing.Bitmap((int)(legendWidth + annotationWidth + 3 * outterBuffer),
-            (int)(annotationHeight + 2 * outterBuffer));
-        using (var g = System.Drawing.Graphics.FromImage(combinedBitmap))
-        {
-            //g.ScaleTransform(scaleX, scaleY);
-            g.Clear(System.Drawing.Color.White);
-            for (int i = 0; i < bitmaps.Count; i++)
-            {
-                g.DrawImage(bitmaps[i], (float)points[i].X, (float)points[i].Y);
-            }
-        }
-        combinedBitmap.Save(path, ImageFormat.Png);
-
-        // clean up
-        bitmaps.ForEach(b => b.Dispose());
-        Directory.Delete(tempDir, true);
         MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
     }
 
