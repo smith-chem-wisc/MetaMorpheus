@@ -26,11 +26,21 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border Background="{TemplateBinding Background}" 
+                        <Border x:Name="border"
+                                Background="{TemplateBinding Background}" 
                                 CornerRadius="4"
                                 SnapsToDevicePixels="True">
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Background" Value="{StaticResource AccentColor}" />
+                                <Setter Property="Foreground" Value="{StaticResource TextColor1}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.5"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -44,8 +54,9 @@
         </Grid.ColumnDefinitions>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*"   />
+            <RowDefinition Height="*" />    <!-- MS1 plot -->
+            <RowDefinition Height="5" />    <!-- Splitter -->
+            <RowDefinition Height="*" />    <!-- MS2 plot -->
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -58,7 +69,7 @@
                   SelectionMode="Single" SelectionUnit="FullRow" HorizontalScrollBarVisibility="Disabled"
                   SelectedCellsChanged="ChermicDataGrid_OnSelectedCellsChanged"
                   ScrollViewer.CanContentScroll="True" IsReadOnly="True" Margin="0,0,0,0" 
-                  CanUserDeleteRows="false" CanUserAddRows="false" Grid.Row="0" Grid.RowSpan="4">
+                  CanUserDeleteRows="false" CanUserAddRows="false" Grid.Row="0" Grid.RowSpan="5">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="MS2 " Binding="{Binding Ms2ScanNumber}" Width="50" 
                             ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
@@ -78,7 +89,7 @@
         </DataGrid>
 
         <!-- Export -->
-        <Grid Grid.Column="0" Grid.Row="4" HorizontalAlignment="Center">
+        <Grid Grid.Column="0" Grid.Row="5" HorizontalAlignment="Center" VerticalAlignment="Bottom">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -110,13 +121,21 @@
         <oxy:PlotView x:Name="ms1ChimeraOverlaPlot" Grid.Row="0" Grid.Column="2"
                   FontSize="16" FontStretch="Expanded"
                   Margin="0 0 0 0" VerticalAlignment="Stretch" />
-
+        
+        <!-- Splitter between MS1 and MS2 plots -->
+        <GridSplitter Grid.Row="1" Grid.Column="2"
+                      Height="1"
+                      HorizontalAlignment="Stretch"
+                      VerticalAlignment="Center"
+                      Background="Gray"
+                      ShowsPreview="True" />
+        
         <!-- MS2 Plot -->
-        <oxy:PlotView x:Name="ms2ChimeraPlot" Grid.Row="1" Grid.Column="2" 
+        <oxy:PlotView x:Name="ms2ChimeraPlot" Grid.Row="2" Grid.Column="2" 
                   FontSize="16" FontStretch="Expanded" VerticalAlignment="Stretch" />
 
         <!-- Sequence Coverage -->
-        <Expander Grid.Row="2" Grid.Column="2" IsExpanded="False">
+        <Expander Grid.Row="3" Grid.Column="2" IsExpanded="False">
             <Expander.Header>
                 <Label Content="Sequence Annotation" Margin="0 0 10 0" />
             </Expander.Header>
@@ -128,12 +147,12 @@
         </Expander>
 
 
-        <Expander Grid.Column="2" Grid.Row="3" Header="Colorized Legend" IsExpanded="False">
+        <Expander Grid.Column="2" Grid.Row="4" Header="Colorized Legend" IsExpanded="False">
             <local:ChimeraLegendControl x:Name="ChimeraLegendControlInTab"
                                     DataContext="{Binding ChimeraLegendViewModel}" Height="Auto" />
         </Expander>
 
-        <DataGrid x:Name="chimericResultDataGrid" Grid.Column="2" Grid.Row="4" Grid.RowSpan="2"
+        <DataGrid x:Name="chimericResultDataGrid" Grid.Column="2" Grid.Row="5" Grid.RowSpan="2"
           ItemsSource="{Binding SelectedChimeraGroup.ChimericPsms}"
           CanUserAddRows="False" CanUserDeleteRows="False" ScrollViewer.CanContentScroll="False" IsReadOnly="True" AutoGenerateColumns="False"
           HorizontalScrollBarVisibility="Disabled" >

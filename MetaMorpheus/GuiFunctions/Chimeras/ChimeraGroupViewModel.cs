@@ -222,7 +222,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         for (int i = 0; i < n; i++)
         {
             var psm = psmList[i];
-            int psmCharge = psm.PrecursorCharge; 
+            int psmCharge = psm.PrecursorCharge;
             double psmExperimentalMass = psm.PrecursorMass + double.Parse(psm.MassDiffDa.Split('|')[0]);
 
             for (int j = 0; j < m; j++)
@@ -233,7 +233,15 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
                     cost += 1000; // Charge mismatch penalty, can be adjusted
 
                 cost += Math.Abs(psmExperimentalMass - env.MonoisotopicMass); // Neutral Mass Diff Cost
-                cost += Math.Abs(psm.PrecursorMz - env.MonoisotopicMass.ToMz(env.Charge)); // Mz Diff Cost
+                cost += Math.Abs(psmExperimentalMass.ToMz(psm.PrecursorCharge) - env.MonoisotopicMass.ToMz(env.Charge)); // Mz Diff Cost
+
+                // Reward more precursor peaks, punish fewer
+                // Assume a typical good envelope has 4 peaks; scale so more peaks reduces cost, fewer increases
+                // You can adjust the scaling factor (e.g., 10) as needed for your data
+                int peakCount = env.Peaks.Count;
+                double peakScore = 0.01 * (4 - peakCount); // 4 is the reference peak count
+                cost += peakScore;
+
                 costMatrix[i, j] = cost;
             }
         }

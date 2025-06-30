@@ -33,7 +33,9 @@ public class ChimericSpectralMatchModel : BaseViewModel
             AnalyteType.Oligo => GlobalVariables.AllRnaModsKnownDictionary,
             _ => GlobalVariables.AllModsKnownDictionary
         };
-        AllModsOneIsNterminus = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(psm.FullSequence, modDict);
+
+        // If ambiguous, takes the first sequence. 
+        AllModsOneIsNterminus = IBioPolymerWithSetMods.GetModificationDictionaryFromFullSequence(psm.FullSequence.Split('|')[0], modDict);
         ModString = string.Join(", ", AllModsOneIsNterminus.Select(m => $"{m.Key} - {m.Value.IdWithMotif}"));
     }
 }

@@ -240,7 +240,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         path = Path.ChangeExtension(path, "png");
 
         // convert canvas to bitmap
-        Rect bounds = VisualTreeHelper.GetDescendantBounds(ChimeraDrawnSequence.SequenceDrawingCanvas);
+        Rect bounds = new Rect(new Point(0, 0), new Point(ChimeraDrawnSequence.SequenceDrawingCanvas.Width, ChimeraDrawnSequence.SequenceDrawingCanvas.Height));
         double dpi = 96d;
 
         var width = double.IsNegativeInfinity(bounds.Width) 
@@ -263,7 +263,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         using (DrawingContext dc = dv.RenderOpen())
         {
             VisualBrush vb = new(ChimeraDrawnSequence.SequenceDrawingCanvas);
-            dc.DrawRectangle(vb, null, new Rect(new System.Windows.Point(), size));
+            dc.DrawRectangle(vb, null, new Rect(new System.Windows.Point(0,0), size));
         }
 
         rtb.Render(dv);
