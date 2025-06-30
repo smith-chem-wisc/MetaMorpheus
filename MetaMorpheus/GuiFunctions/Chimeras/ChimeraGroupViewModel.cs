@@ -222,8 +222,8 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         for (int i = 0; i < n; i++)
         {
             var psm = psmList[i];
-            int psmCharge = psm.PrecursorCharge; // or psm.Charge, adjust as needed
-            double psmExperimentalMass = psm.PrecursorMass;
+            int psmCharge = psm.PrecursorCharge; 
+            double psmExperimentalMass = psm.PrecursorMass + double.Parse(psm.MassDiffDa.Split('|')[0]);
 
             for (int j = 0; j < m; j++)
             {
