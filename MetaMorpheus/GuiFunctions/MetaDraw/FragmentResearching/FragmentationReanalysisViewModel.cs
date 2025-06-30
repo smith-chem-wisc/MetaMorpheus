@@ -244,7 +244,7 @@ namespace GuiFunctions
                 if (ReferenceEquals(x, y)) return true;
                 if (x is null || y is null) return false;
 
-                return Math.Round(x.Mz, 3).Equals(Math.Round(y.Mz, 3))
+                return Math.Round(x.Mz, 1).Equals(Math.Round(y.Mz, 1))
                        && x.Charge == y.Charge
                        && Math.Round(x.Intensity).Equals(Math.Round(y.Intensity))
                        && x.NeutralTheoreticalProduct.FragmentNumber == y.NeutralTheoreticalProduct.FragmentNumber
@@ -257,7 +257,7 @@ namespace GuiFunctions
             {
                 if (obj is null) return 0;
                 int hash = 17;
-                hash = hash * 23 + Math.Round(obj.Mz, 3).GetHashCode();
+                hash = hash * 23 + Math.Round(obj.Mz, 1).GetHashCode();
                 hash = hash * 23 + obj.Charge.GetHashCode();
                 hash = hash * 23 + Math.Round(obj.Intensity).GetHashCode();
                 hash = hash * 23 + obj.NeutralTheoreticalProduct.FragmentNumber.GetHashCode();
