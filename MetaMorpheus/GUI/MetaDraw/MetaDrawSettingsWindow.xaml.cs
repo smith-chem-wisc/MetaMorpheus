@@ -22,17 +22,10 @@ namespace MetaMorpheusGUI
     /// </summary>
     public partial class MetaDrawSettingsWindow : Window
     {
-        private readonly ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
-        private readonly ObservableCollection<IonTypeForTreeViewModel> IonGroups = new ObservableCollection<IonTypeForTreeViewModel>();
-        private readonly ObservableCollection<CoverageTypeForTreeViewModel> CoverageColors = new ObservableCollection<CoverageTypeForTreeViewModel>();
-
-        private MetaDrawSettingsViewModel SettingsView;
-
-        public MetaDrawSettingsWindow(MetaDrawSettingsViewModel view)
+        public MetaDrawSettingsWindow()
         {
             InitializeComponent();
-            SettingsView = view;
-            DataContext = SettingsView;
+            DataContext = MetaDrawSettingsViewModel.Instance;
             PopulateChoices();
         }
 
@@ -83,9 +76,9 @@ namespace MetaMorpheusGUI
 
             ExportFileFormatComboBox.ItemsSource = MetaDrawSettings.ExportTypes;
             ExportFileFormatComboBox.SelectedItem = MetaDrawSettings.ExportType;
-            IonColorExpander.ItemsSource = SettingsView.IonGroups;
-            PTMColorExpander.ItemsSource = SettingsView.Modifications;
-            SequenceCoverageColorExpander.ItemsSource = SettingsView.CoverageColors;
+            IonColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.IonGroups;
+            PTMColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.Modifications;
+            SequenceCoverageColorExpander.ItemsSource = MetaDrawSettingsViewModel.Instance.CoverageColors;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
@@ -127,7 +120,7 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.SpectrumDescriptionFontSize = double.TryParse(SpectrumDescriptionFontSizeBox.Text, out double spectrumDescriptionFontSize) ? spectrumDescriptionFontSize : 10;
             if (!ShowInternalIonsCheckBox.IsChecked.Value)
                 MetaDrawSettings.InternalIonColor = OxyColors.Transparent;
-            SettingsView.Save();
+            MetaDrawSettingsViewModel.Instance.Save();
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {
@@ -278,7 +271,7 @@ namespace MetaMorpheusGUI
         private void setDefaultbutton_Click(object sender, RoutedEventArgs e)
         {
             Save_Click(sender, e);
-            SettingsView.SaveAsDefault();
+            MetaDrawSettingsViewModel.Instance.SaveAsDefault();
         }
 
         /// <summary>
@@ -323,9 +316,9 @@ namespace MetaMorpheusGUI
                 if (File.Exists(MetaDrawSettingsViewModel.SettingsPath))
                     File.Delete(MetaDrawSettingsViewModel.SettingsPath);
                 MetaDrawSettings.ResetSettings();
-                MetaDrawSettingsViewModel settingsViewModel = new MetaDrawSettingsViewModel();
-                SettingsView = settingsViewModel;
-                DataContext = SettingsView;
+                MetaDrawSettingsViewModel settingsViewModel = MetaDrawSettingsViewModel.Instance;
+                settingsViewModel.LoadSettings();
+                DataContext = settingsViewModel;
                 PopulateChoices();
                 DialogResult = true;
             }
