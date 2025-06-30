@@ -40,7 +40,7 @@ public partial class SettingsButtonControl : UserControl
     private void SettingsButton_Click(object sender, RoutedEventArgs e)
     {
         // Open the settings window
-        var settingsWindow = new MetaDrawSettingsWindow(SettingsViewModel as MetaDrawSettingsViewModel)
+        var settingsWindow = new MetaDrawSettingsWindow()
         {
             Owner = Window.GetWindow(this)
         };
