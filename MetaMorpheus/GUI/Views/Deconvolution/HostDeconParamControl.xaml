@@ -25,7 +25,7 @@
         </Style>
     </UserControl.Resources>
 
-    <GroupBox Header="MS1 Deconvolution" > 
+    <GroupBox Header="MS1 Deconvolution" x:Name="GroupBoxHeader"> 
         <Grid d:DataContext="{x:Static guiFunctions:DeconHostModel.Instance}">
 
             <Grid.RowDefinitions>

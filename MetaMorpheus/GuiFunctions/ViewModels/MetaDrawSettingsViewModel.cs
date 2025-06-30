@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nett;
 using System.Windows.Input;
+using MassSpectrometry;
 
 namespace GuiFunctions
 {
@@ -69,6 +70,8 @@ namespace GuiFunctions
                 OnPropertyChanged(nameof(CoverageColors));
             }
         }
+
+        public DeconHostViewModel DeconHostViewModel { get; set; } = new DeconHostViewModel();  
 
         public ObservableCollection<string> PossibleColors { get; set; }
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }

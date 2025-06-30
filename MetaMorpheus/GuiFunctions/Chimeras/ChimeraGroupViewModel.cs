@@ -208,7 +208,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
     private IEnumerable<ChimericSpectralMatchModel> ConstructChimericPsmModels(IEnumerable<SpectrumMatchFromTsv> psms)
     {
         // Deconvolute the isolation window of the MS1 scan. 
-        var deconParams = new DeconHostViewModel().PrecursorDeconvolutionParameters.Parameters; // Use default for current AnalyteType
+        var deconParams = MetaDrawSettingsViewModel.Instance.DeconHostViewModel.PrecursorDeconvolutionParameters.Parameters;
         List<IsotopicEnvelope> envelopes = Ms2Scan.GetIsolatedMassesAndCharges(Ms1Scan, deconParams)
             .Where(p => p.Peaks.Count >= 2) // Magic number for quality filtering. 
             .ToList();
