@@ -43,7 +43,6 @@ namespace MetaMorpheusGUI
         {
             InitializeComponent();
 
-            SettingsButton.RefreshAction = RefreshPlotsAfterSettingsChange;
             MetaDrawLogic = new MetaDrawLogic();
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchResultFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectraFilePaths, MetaDrawLogic.ThreadLocker);

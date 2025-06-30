@@ -28,16 +28,9 @@ namespace MetaMorpheusGUI
                 CmbGlycanLocalizationLevelEnd.Items.Add(level);
             }
 
-            DisplayAnnotationsCheckBox.IsChecked = MetaDrawSettings.DisplayIonAnnotations;
-            MZCheckBox.IsChecked = MetaDrawSettings.AnnotateMzValues;
-            ChargesCheckBox.IsChecked = MetaDrawSettings.AnnotateCharges;
-            BoldTextCheckBox.IsChecked = MetaDrawSettings.AnnotationBold;
             DecoysCheckBox.IsChecked = MetaDrawSettings.ShowDecoys;
             ContaminantsCheckBox.IsChecked = MetaDrawSettings.ShowContaminants;
-            ShowInternalIonAnnotationsCheckBox.IsChecked = MetaDrawSettings.DisplayInternalIonAnnotations;
             PrecursorChargeCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Charge: "];
-            ShowInternalIonsCheckBox.IsChecked = MetaDrawSettings.DisplayInternalIons;
-            SubSuperScriptedIonAnnotations.IsChecked = MetaDrawSettings.SubAndSuperScriptIons;
             PrecursorMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Mass: "];
             TheoreticalMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Theoretical Mass: "];
             ScoreCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Score: "];
@@ -56,11 +49,6 @@ namespace MetaMorpheusGUI
             qValueBox.Text = MetaDrawSettings.QValueFilter.ToString();
             AmbiguityFilteringComboBox.DataContext = MetaDrawSettings.AmbiguityTypes;
             AmbiguityFilteringComboBox.SelectedItem = MetaDrawSettings.AmbiguityFilter;
-            TextSizeBox.Text = MetaDrawSettings.AnnotatedFontSize.ToString();
-            AxisLabelTextSizeBox.Text = MetaDrawSettings.AxisLabelTextSize.ToString();
-            AxisTitleTextSizeBox.Text = MetaDrawSettings.AxisTitleTextSize.ToString();
-            AnnotatedPeakSizeBox.Text = MetaDrawSettings.StrokeThicknessAnnotated.ToString(CultureInfo.InvariantCulture);
-            UnannotatedPeakSizeBox.Text = MetaDrawSettings.StrokeThicknessUnannotated.ToString(CultureInfo.InvariantCulture);
             CmbGlycanLocalizationLevelStart.SelectedItem = MetaDrawSettings.LocalizationLevelStart.ToString();
             CmbGlycanLocalizationLevelEnd.SelectedItem = MetaDrawSettings.LocalizationLevelEnd.ToString();
             SpectrumDescriptionFontSizeBox.Text = MetaDrawSettings.SpectrumDescriptionFontSize.ToString();
@@ -79,15 +67,8 @@ namespace MetaMorpheusGUI
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            MetaDrawSettings.DisplayIonAnnotations = DisplayAnnotationsCheckBox.IsChecked.Value;
-            MetaDrawSettings.AnnotateMzValues = MZCheckBox.IsChecked.Value;
-            MetaDrawSettings.AnnotateCharges = ChargesCheckBox.IsChecked.Value;
-            MetaDrawSettings.AnnotationBold = BoldTextCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowDecoys = DecoysCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowContaminants = ContaminantsCheckBox.IsChecked.Value;
-            MetaDrawSettings.DisplayInternalIons = ShowInternalIonsCheckBox.IsChecked.Value;
-            MetaDrawSettings.SubAndSuperScriptIons = SubSuperScriptedIonAnnotations.IsChecked.Value;
-            MetaDrawSettings.DisplayInternalIonAnnotations = ShowInternalIonAnnotationsCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Charge: "] = PrecursorChargeCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Precursor Mass: "] = PrecursorMassCheckBox.IsChecked.Value;
             MetaDrawSettings.SpectrumDescription["Theoretical Mass: "] = TheoreticalMassCheckBox.IsChecked.Value;
@@ -130,131 +111,55 @@ namespace MetaMorpheusGUI
                 MetaDrawSettings.QValueFilter = 1;
             }
 
-            if (!string.IsNullOrWhiteSpace(TextSizeBox.Text))
+            var fontSize = MetaDrawSettings.AnnotatedFontSize;
+            if (fontSize <= 0)
             {
-                if (int.TryParse(TextSizeBox.Text, out int fontSize))
-                {
-                    if (fontSize <= 0)
-                    {
-                        MessageBox.Show("Font size must be a positive integer");
-                        return;
-                    }
-                    if (fontSize > 36)
-                    {
-                        MessageBox.Show("Font size must be <= 36");
-                        return;
-                    }
-
-                    MetaDrawSettings.AnnotatedFontSize = fontSize;
-                }
-                else
-                {
-                    MessageBox.Show("Could not parse font size; must be a positive integer");
-                    return;
-                }
+                MessageBox.Show("Font size must be a positive integer");
+                return;
             }
-            else
+            if (fontSize > 36)
             {
-                MetaDrawSettings.AnnotatedFontSize = 12;
+                MessageBox.Show("Font size must be <= 36");
+                return;
             }
 
-            if (!string.IsNullOrWhiteSpace(AxisTitleTextSizeBox.Text))
+            fontSize = MetaDrawSettings.AnnotatedFontSize;
+            if (fontSize <= 0)
             {
-                if (int.TryParse(AxisTitleTextSizeBox.Text, out int fontSize))
-                {
-                    if (fontSize <= 0)
-                    {
-                        MessageBox.Show("Font size must be a positive integer");
-                        return;
-                    }
-                    if (fontSize > 36)
-                    {
-                        MessageBox.Show("Font size must be <= 36");
-                        return;
-                    }
-
-                    MetaDrawSettings.AxisTitleTextSize = fontSize;
-                }
-                else
-                {
-                    MessageBox.Show("Could not parse font size; must be a positive integer");
-                    return;
-                }
+                MessageBox.Show("Font size must be a positive integer");
+                return;
             }
-            else
+            if (fontSize > 36)
             {
-                MetaDrawSettings.AxisTitleTextSize = 12;
+                MessageBox.Show("Font size must be <= 36");
+                return;
             }
 
-            if (!string.IsNullOrWhiteSpace(AxisLabelTextSizeBox.Text))
+            fontSize = MetaDrawSettings.AxisLabelTextSize;
+            if (fontSize <= 0)
             {
-                if (int.TryParse(AxisLabelTextSizeBox.Text, out int fontSize))
-                {
-                    if (fontSize <= 0)
-                    {
-                        MessageBox.Show("Font size must be a positive integer");
-                        return;
-                    }
-                    if (fontSize > 36)
-                    {
-                        MessageBox.Show("Font size must be <= 36");
-                        return;
-                    }
-
-                    MetaDrawSettings.AxisLabelTextSize = fontSize;
-                }
-                else
-                {
-                    MessageBox.Show("Could not parse font size; must be a positive integer");
-                    return;
-                }
+                MessageBox.Show("Font size must be a positive integer");
+                return;
             }
-            else
+            if (fontSize > 36)
             {
-                MetaDrawSettings.AxisLabelTextSize = 12;
+                MessageBox.Show("Font size must be <= 36");
+                return;
             }
 
-            if (!string.IsNullOrWhiteSpace(AnnotatedPeakSizeBox.Text))
+            var strokeThickness = MetaDrawSettings.StrokeThicknessAnnotated;
+            if (strokeThickness <= 0)
             {
-                if (double.TryParse(AnnotatedPeakSizeBox.Text, out double strokeThickness))
-                {
-                    if (strokeThickness <= 0)
-                    {
-                        MessageBox.Show("Stroke thickness must be a positive number");
-                        return;
-                    }
-
-                    MetaDrawSettings.StrokeThicknessAnnotated = strokeThickness;
-                }
-                else
-                {
-                    MessageBox.Show("Could not parse stroke thickness; must be a positive number");
-                    return;
-                }
+                MessageBox.Show("Stroke thickness must be a positive number");
+                return;
             }
-            else
-                MetaDrawSettings.StrokeThicknessAnnotated = 1;
 
-            if (!string.IsNullOrWhiteSpace(UnannotatedPeakSizeBox.Text))
+            strokeThickness = MetaDrawSettings.StrokeThicknessUnannotated;
+            if (strokeThickness <= 0)
             {
-                if (double.TryParse(UnannotatedPeakSizeBox.Text, out double strokeThickness))
-                {
-                    if (strokeThickness <= 0)
-                    {
-                        MessageBox.Show("Stroke thickness must be a positive number");
-                        return;
-                    }
-
-                    MetaDrawSettings.StrokeThicknessUnannotated = strokeThickness;
-                }
-                else
-                {
-                    MessageBox.Show("Could not parse stroke thickness; must be a positive number");
-                    return;
-                }
+                MessageBox.Show("Stroke thickness must be a positive number");
+                return;
             }
-            else
-                MetaDrawSettings.StrokeThicknessUnannotated = 0.7;
 
             DialogResult = true;
         }

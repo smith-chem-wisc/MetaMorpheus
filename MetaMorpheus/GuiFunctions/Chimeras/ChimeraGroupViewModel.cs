@@ -235,13 +235,6 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
                 cost += Math.Abs(psmExperimentalMass - env.MonoisotopicMass); // Neutral Mass Diff Cost
                 cost += Math.Abs(psmExperimentalMass.ToMz(psm.PrecursorCharge) - env.MonoisotopicMass.ToMz(env.Charge)); // Mz Diff Cost
 
-                // Reward more precursor peaks, punish fewer
-                // Assume a typical good envelope has 4 peaks; scale so more peaks reduces cost, fewer increases
-                // You can adjust the scaling factor (e.g., 10) as needed for your data
-                int peakCount = env.Peaks.Count;
-                double peakScore = 0.01 * (4 - peakCount); // 4 is the reference peak count
-                cost += peakScore;
-
                 costMatrix[i, j] = cost;
             }
         }

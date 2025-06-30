@@ -63,7 +63,7 @@
                           HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="10 0"/>
                 <CheckBox Content="Use Letter" IsChecked="{Binding UseLetterOnly}" VerticalContentAlignment="Center" />
             </StackPanel>
-            <UniformGrid Grid.Row="1" Columns="4" HorizontalAlignment="Center" Margin="0,10,0,0">
+            <UniformGrid Grid.Row="1" Columns="2" HorizontalAlignment="Center" Margin="0,10,0,0">
                 <Button Content="Export MS1" Command="{Binding ExportMs1Command}" Width="100" Height="32"
                         Style="{StaticResource MetaDrawButtonStyle}" />
                 <Button Content="Export MS2" Command="{Binding ExportMs2Command}" Width="100" Height="32"
@@ -84,9 +84,14 @@
                       Width="2"/>
 
         <!-- MS1 Plot-->
-        <oxy:PlotView x:Name="ms1ChimeraOverlaPlot" Grid.Row="0" Grid.Column="2"
-                  FontSize="16" FontStretch="Expanded"
-                  Margin="0 0 0 0" VerticalAlignment="Stretch" />
+        <Grid Grid.Row="0" Grid.Column="2">
+            <oxy:PlotView x:Name="ms1ChimeraOverlaPlot" 
+                          FontSize="16" FontStretch="Expanded"
+                          Margin="0 0 0 0" VerticalAlignment="Stretch" />
+            <local:SettingsButtonControl Height="52" HorizontalAlignment="Left" VerticalAlignment="Top"
+                                         Panel.ZIndex="1" RefreshAction="RefreshPlotsAfterSettingsChange"/>
+        </Grid>
+        
         
         <!-- Splitter between MS1 and MS2 plots -->
         <GridSplitter Grid.Row="1" Grid.Column="2"

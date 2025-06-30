@@ -43,10 +43,8 @@
                             <!--Select spectra file-->
                             <DockPanel Grid.Row="0" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
                                 <Label Content="Spectra files: " Width="95" />
-                                <Button Name="resetSpectraFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"
-                                        Style="{StaticResource MetaDrawButtonStyle}" Height="24"/>
-                                <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" 
-                                        Style="{StaticResource MetaDrawButtonStyle}" Height="24"/>
+                                <Button Name="resetSpectraFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
+                                <Button Name="selectSpectraFileButton" Content="Select" DockPanel.Dock="Right" Click="selectSpectraFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="spectraFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
                                 </Label>
@@ -55,10 +53,8 @@
                             <!--Select MetaMorpheus output file (psmfromtsv) -->
                             <DockPanel Grid.Row="1" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
                                 <Label Content="PSM files: " Width="95" />
-                                <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"
-                                        Style="{StaticResource MetaDrawButtonStyle}" Height="24"/>
-                                <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" 
-                                        Style="{StaticResource MetaDrawButtonStyle}" Height="24"/>
+                                <Button Name="resetPsmFileButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
+                                <Button Name="selectPsmFileButton" Content="Select" DockPanel.Dock="Right" Click="selectPsmFileButton_Click" Width="40" />
                                 <Label BorderThickness="1">
                                     <TextBlock Name="psmFileNameLabel" Text="None Selected" TextTrimming="CharacterEllipsis" />
                                 </Label>
@@ -67,10 +63,9 @@
                             <!-- Select spectral library file -->
                             <DockPanel Grid.Row="2" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
                                 <Label Content="Spectral Library:" Width="95" ToolTip="Optional"/>
-                                <Button Name="resetSpecLibraryButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"
-                                        Style="{StaticResource MetaDrawButtonStyle}" Height="24"/>
+                                <Button Name="resetSpecLibraryButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
                                 <Button Name="selectSpecLibraryButton" Content="Select" DockPanel.Dock="Right" Width="40" Click="selectSpecLibraryButton_Click" 
-                                        ToolTip="Optional"  Style="{StaticResource MetaDrawButtonStyle}" Height="24"/>
+                                        ToolTip="Optional"/>
                                 <Label BorderThickness="1">
                                     <TextBlock Name="specLibraryLabel" Text="None Selected" TextTrimming="CharacterEllipsis" ToolTip="Optional"/>
                                 </Label>
@@ -78,7 +73,7 @@
 
                             <Border Grid.Row="3" Grid.ColumnSpan="3" BorderBrush="Black" BorderThickness="0,0,0,1" Margin="0 0 0 0" Padding="0 0 0 0">
                                 <DockPanel Grid.Row="2" Grid.ColumnSpan="3" LastChildFill="True">
-                                    <Button Name="loadFiles" Content="Load Files" Width="80" Click="loadFilesButton_Click"  Style="{StaticResource MetaDrawButtonStyle}"/>
+                                    <Button Name="loadFiles" Content="Load Files" Width="80" Click="loadFilesButton_Click" />
                                     <TextBox Width="100" TextChanged="TextBox_TextChanged" DockPanel.Dock="Right"></TextBox>
                                     <Label HorizontalAlignment="Right" Height="28">Search</Label>
                                 </DockPanel>
@@ -115,7 +110,7 @@
                                 <Label Content="Export As: " Width="75"  DockPanel.Dock="Left"/>
                                 <Button Name="exportPdfs" Content="{Binding}" DockPanel.Dock="Left" IsEnabled="False" Width="40" Click="PDFButton_Click" Margin="5 0 5 0"/>
                                 <Button Name="exportSpectrumLibrary" Content="Spectrum Library" DockPanel.Dock="Right" IsEnabled="False" Click="ExportSpectrumLibraryButton_Click" 
-                                        Width="114" Margin="5 0 5 0" Style="{StaticResource MetaDrawButtonStyle}" Height="26"/>
+                                        Width="114" Margin="5 0 5 0" />
                             </DockPanel>
                         </Grid>
 
@@ -158,7 +153,7 @@
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
                                 <!--Settings menu-->
                                 <local:SettingsButtonControl x:Name="SettingsButton" Grid.Row="0" Grid.Column="1"
-                                                             RefreshAction="{Binding RedrawPlotsAction}"/>
+                                                             RefreshAction="RefreshPlotsAfterSettingsChange"/>
 
                                 <!-- Scrolling Sequence and Ambiguous Textbox-->
                                 <Grid Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" >
@@ -339,8 +334,7 @@
 
                                         <!-- export sequence coverage button -->
                                         <Button x:Name="SequenceCoverageExportButton"  Grid.Row="1" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
-                                                Content="Export" Margin="0 0 5 0" Click="SequenceCoverageExportButton_Click"
-                                                Style="{StaticResource MetaDrawButtonStyle}" Width="48" Height="24"/>
+                                                Content="Export" Margin="0 0 5 0" Click="SequenceCoverageExportButton_Click"/>
 
                                         <!-- Sequence Annotation Expander -->
                                         <Expander Grid.Row="3" Header="Sequence Annotation" VerticalAlignment="Bottom" HorizontalAlignment="Left" 

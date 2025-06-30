@@ -7,12 +7,12 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="Graphical Settings" Width="620" SizeToContent="Height" WindowStartupLocation="CenterScreen"
-        Height="500" MaxHeight="1000">
+        Height="500" MaxHeight="1000"
+        MinHeight="500">
 
-    
-    
     <!-- When changing any of these settings, be sure to do each of the following -->
     <!-- Update the MetaDrawSettings.cs to have a field for it, as well as the MetaDrawSettingsSnapshot class -->
+
     <Grid >
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
@@ -101,15 +101,15 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <CheckBox Grid.Column="0" Grid.Row="0" 
+                                        <CheckBox Grid.Column="0" Grid.Row="0" IsChecked="{Binding DisplayIonAnnotations}"
                                   Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
-                                        <CheckBox Grid.Column="0" Grid.Row="1" 
+                                        <CheckBox Grid.Column="0" Grid.Row="1" IsChecked="{Binding AnnotateMzValues}"
                                   Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
-                                        <CheckBox Grid.Column="0" Grid.Row="2" 
+                                        <CheckBox Grid.Column="0" Grid.Row="2" IsChecked="{Binding AnnotateCharges}"
                                   Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
-                                        <CheckBox Grid.Column="0" Grid.Row="3" 
+                                        <CheckBox Grid.Column="0" Grid.Row="3" IsChecked="{Binding DisplayInternalIonAnnotations}"
                                   Name="ShowInternalIonsCheckBox" Content="Show internal ions" Margin="5" />
-                                        <CheckBox Grid.Column="0" Grid.Row="4" 
+                                        <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIons}"
                                   Name="ShowInternalIonAnnotationsCheckBox" Content="Display internal ion annotations" Margin="5" />
 
                                     </Grid>
@@ -118,37 +118,39 @@
                                         <StackPanel Margin="5 5 0 0">
 
 
-                                            <CheckBox Name="BoldTextCheckBox" Content="Bold ion annotations" Margin="5"/>
-                                            <CheckBox Name="SubSuperScriptedIonAnnotations" Content="Sub/superscripted ion annotations" Margin="5" />
+                                            <CheckBox Name="BoldTextCheckBox" Content="Bold ion annotations" Margin="5"
+                                                      IsChecked="{Binding AnnotationBold}"/>
+                                            <CheckBox Name="SubSuperScriptedIonAnnotations" IsChecked="{Binding SubAndSuperScriptIons}"
+                                                      Content="Sub/superscripted ion annotations" Margin="5" />
 
                                             <StackPanel Orientation="Horizontal" Margin="5 0">
                                                 <Label Content="Annotation text size:" Width="165"/>
-                                                <local:DoubleTextBoxControl x:Name ="TextSizeBox" Width="80" Height="24" 
-                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                                <local:IntegerTexBoxControl x:Name ="TextSizeBox" Width="80" Height="24" Text="{Binding AnnotatedFontSize}" 
+                                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                             </StackPanel>
 
                                             <StackPanel Orientation="Horizontal" Margin="5 0">
                                                 <Label Content="Axis title text size:" Width="165"/>
-                                                <local:DoubleTextBoxControl x:Name ="AxisTitleTextSizeBox" Width="80" Height="24" 
-                                         VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                                <local:IntegerTexBoxControl x:Name ="AxisTitleTextSizeBox" Width="80" Height="24" Text="{Binding AxisTitleTextSize}" 
+                                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                             </StackPanel>
 
                                             <StackPanel Orientation="Horizontal" Margin="5 0">
                                                 <Label Content="Axis label text size:" Width="165"/>
-                                                <local:DoubleTextBoxControl x:Name ="AxisLabelTextSizeBox" Width="80" Height="24" 
-                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                                <local:IntegerTexBoxControl x:Name ="AxisLabelTextSizeBox" Width="80" Height="24" Text="{Binding AxisLabelTextSize}" 
+                                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                             </StackPanel>
 
 
                                             <StackPanel Orientation="Horizontal" Margin="5 0">
                                                 <Label Content="Annotated peak thickness:" Width="165"/>
-                                                <local:DoubleTextBoxControl x:Name ="AnnotatedPeakSizeBox" Width="80" Height="24" 
+                                                <local:DoubleTextBoxControl x:Name ="AnnotatedPeakSizeBox" Width="80" Height="24" Text="{Binding StrokeThicknessAnnotated}" 
                                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                             </StackPanel>
 
                                             <StackPanel Orientation="Horizontal" Margin="5 0" >
                                                 <Label Content="Unannotated peak thickness:" Width="165"/>
-                                                <local:DoubleTextBoxControl x:Name ="UnannotatedPeakSizeBox" Width="80" Height="24" 
+                                                <local:DoubleTextBoxControl x:Name ="UnannotatedPeakSizeBox" Width="80" Height="24" Text="{Binding StrokeThicknessUnannotated}" 
                                                             VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                             </StackPanel>
                                         </StackPanel>
@@ -200,113 +202,236 @@
 
                                 </StackPanel>
                             </GroupBox>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </TabItem>
+            
+            <!-- Color Customization Tab -->
+            <TabItem Header="Color Customization">
+                <ScrollViewer>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                            <GroupBox Header="Color Customization">
-                                <StackPanel>
-                                    <!-- ion color selection -->
-                                    <Expander x:Name="IonColorSelection" Header="Ion Color Selection"
-      DockPanel.Dock="Top" Margin="10 5 5 5 " >
-                                        <StackPanel >
-                                            <ItemsControl x:Name="IonColorExpander"  ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:IonTypeForTreeViewModel}">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- ion color selection -->
+                        <GroupBox x:Name="IonColorSelection" Header="Fragment Ion Colors" Grid.Row="0"
+                                      DockPanel.Dock="Left" Margin="5 5 10 5 " Grid.Column="0">
+                            <ItemsControl x:Name="IonColorExpander" ItemsSource="{Binding}"
+                                                  DataContext="{x:Type guiFunctions:IonTypeForTreeViewModel}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Expander Header="{Binding GroupName}" Margin="10 2 0 0 ">
+                                            <ItemsControl ItemsSource="{Binding Ions}">
                                                 <ItemsControl.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Expander Header="{Binding GroupName}" Margin="10 2 0 0 ">
-                                                            <ItemsControl ItemsSource="{Binding Ions}" >
-                                                                <ItemsControl.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <StackPanel Orientation="Horizontal"  >
-                                                                            <TextBlock Text="{Binding IonName, FallbackValue='y - ion'}" Margin="5 0 5 0" Width="120" TextAlignment="Center"/>
-                                                                            <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                            Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
-                                                                            <ComboBox Width="100" HorizontalAlignment="Right" Margin="5 0 5 0" HorizontalContentAlignment="Center"
-                                              SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged"
-                                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
-                                                            RelativeSource={RelativeSource Mode=FindAncestor, 
-                                                            AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
-                                                                            </ComboBox>
-                                                                        </StackPanel>
-                                                                    </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                            </ItemsControl>
-                                                        </Expander>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </Expander>
-
-                                    <!-- ptm color selection -->
-                                    <Expander Name="PTMColorSelection" Header="PTM Color Selection"
-  DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
-                                        <StackPanel>
-                                            <ItemsControl x:Name="PTMColorExpander" DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <Expander Header="{Binding DisplayName}" Margin="10 2 0 0">
-                                                            <ItemsControl ItemsSource="{Binding Children}" >
-                                                                <ItemsControl.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <StackPanel Orientation="Horizontal" Background="{Binding Background}" ToolTip="{Binding ToolTipStuff}" >
-                                                                            <TextBlock Text="{Binding ModName, FallbackValue='y - ion'}" Margin="5 0 5 0" TextAlignment="Center"
-                                               TextWrapping="Wrap" Width="180"/>
-                                                                            <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                            Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
-                                                                            <ComboBox Width="80" HorizontalAlignment="Right" Margin="5 0 5 0" HorizontalContentAlignment="Center"
-                                              SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged_1"
-                                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
-                                                            RelativeSource={RelativeSource Mode=FindAncestor, 
-                                                            AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
-                                                                            </ComboBox>
-                                                                        </StackPanel>
-                                                                    </DataTemplate>
-                                                                </ItemsControl.ItemTemplate>
-                                                            </ItemsControl>
-                                                        </Expander>
-                                                    </DataTemplate>
-                                                </ItemsControl.ItemTemplate>
-                                            </ItemsControl>
-                                        </StackPanel>
-                                    </Expander>
-
-                                    <!-- Sequence coverage colors -->
-                                    <Expander  Header="Sequence Coverage Color Selection" 
-      DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
-                                        <StackPanel>
-                                            <ItemsControl x:Name="SequenceCoverageColorExpander" ItemsSource="{Binding}" DataContext="{x:Type guiFunctions:CoverageTypeForTreeViewModel}">
-                                                <ItemsControl.ItemTemplate>
-                                                    <DataTemplate>
-                                                        <StackPanel Orientation="Horizontal"  >
-                                                            <TextBlock Text="{Binding Name, FallbackValue='y - ion'}" Margin="5 0 5 0" Width="180" TextAlignment="Center"/>
-                                                            <Ellipse Width="12" Height="12" Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}" StrokeThickness="1"
-                                            Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
-                                                            <ComboBox Width="80" HorizontalAlignment="Right" Margin="5 0 5 0" HorizontalContentAlignment="Center"
-                              SelectedItem="{Binding SelectedColor}" SelectionChanged="ComboBox_SelectionChanged_2"
-                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
-                                            RelativeSource={RelativeSource Mode=FindAncestor, 
-                                            AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <TextBlock
+                                                                        Text="{Binding IonName, FallbackValue='y - ion'}"
+                                                                        Margin="5 0 5 0" Width="120" TextAlignment="Center" />
+                                                            <Ellipse Width="12" Height="12"
+                                                                             Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
+                                                                             StrokeThickness="1"
+                                                                             Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                                            <ComboBox Width="100" HorizontalAlignment="Right"
+                                                                              Margin="5 0 5 0"
+                                                                              HorizontalContentAlignment="Center"
+                                                                              SelectedItem="{Binding SelectedColor}"
+                                                                              SelectionChanged="ComboBox_SelectionChanged"
+                                                                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                                              RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                              AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
                                                             </ComboBox>
                                                         </StackPanel>
                                                     </DataTemplate>
                                                 </ItemsControl.ItemTemplate>
                                             </ItemsControl>
-                                        </StackPanel>
-                                    </Expander>
-                                </StackPanel>
-                            </GroupBox>
-                        </StackPanel>
-                    </ScrollViewer>
-                </Grid>
-            </TabItem>
+                                        </Expander>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </GroupBox>
 
+                        <!-- slider -->
+                        <GridSplitter Grid.Column="1" Grid.Row="0" Grid.RowSpan="3"
+                                      VerticalAlignment="Stretch"
+                                      HorizontalAlignment="Center"
+                                      Background="LightGray"
+                                      Width="2"/>
+
+                        <!-- ptm color selection -->
+                        <GroupBox Name="PTMColorSelection" Header="PTM Colors" Grid.Column="2" Grid.Row="0" Grid.RowSpan="2"
+                                      DockPanel.Dock="Left" Margin="10 5 5 5" Visibility="Visible">
+                            <ItemsControl x:Name="PTMColorExpander"
+                                                  DataContext="{x:Type guiFunctions:ModTypeForTreeViewModel}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Expander Header="{Binding DisplayName}" Margin="10 2 0 0">
+                                            <ItemsControl ItemsSource="{Binding Children}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <StackPanel Orientation="Horizontal"
+                                                                            Background="{Binding Background}"
+                                                                            ToolTip="{Binding ToolTipStuff}">
+                                                            <TextBlock
+                                                                        Text="{Binding ModName, FallbackValue='y - ion'}"
+                                                                        Margin="5 0 5 0" TextAlignment="Center"
+                                                                        TextWrapping="Wrap" Width="180" />
+                                                            <Ellipse Width="12" Height="12"
+                                                                             Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
+                                                                             StrokeThickness="1"
+                                                                             Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                                            <ComboBox Width="80" HorizontalAlignment="Right"
+                                                                              Margin="5 0 5 0"
+                                                                              HorizontalContentAlignment="Center"
+                                                                              SelectedItem="{Binding SelectedColor}"
+                                                                              SelectionChanged="ComboBox_SelectionChanged_1"
+                                                                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                                              RelativeSource={RelativeSource Mode=FindAncestor, 
+                                                              AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
+                                                            </ComboBox>
+                                                        </StackPanel>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </Expander>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </GroupBox>
+
+                        <!-- Sequence coverage colors -->
+                        <GroupBox Header="Sequence Coverage Colors" Grid.Column="0" Grid.Row="1"
+                                  DockPanel.Dock="Top" Margin="10 5 5 5" Visibility="Visible">
+                            <ItemsControl x:Name="SequenceCoverageColorExpander" ItemsSource="{Binding}" HorizontalContentAlignment="Left"
+                                                  DataContext="{x:Type guiFunctions:CoverageTypeForTreeViewModel}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Orientation="Horizontal" >
+                                            <TextBlock Text="{Binding Name, FallbackValue='y - ion'}"
+                                                               Margin="0 0 5 0" Width="120" TextAlignment="Center" />
+                                            <Ellipse Width="12" Height="12"
+                                                             Stroke="{Binding ColorBrush, FallbackValue={StaticResource AccentColor}}"
+                                                             StrokeThickness="1"
+                                                             Fill="{Binding ColorBrush}" Margin="0 5 0 5" />
+                                            <ComboBox Width="80" HorizontalAlignment="Right" Margin="5 0 5 0"
+                                                              HorizontalContentAlignment="Center"
+                                                              SelectedItem="{Binding SelectedColor}"
+                                                              SelectionChanged="ComboBox_SelectionChanged_2"
+                                                              ItemsSource="{Binding Path=DataContext.PossibleColors, 
+                                              RelativeSource={RelativeSource Mode=FindAncestor, 
+                                              AncestorType={x:Type local:MetaDrawSettingsWindow}}}">
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </GroupBox>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+            
             <!-- Chimera Analysis Tab -->
             <TabItem Header="Chimera Analysis">
-                <DockPanel>
-                    <GroupBox>
-                        <local:HostDeconParamControl x:Name="DeisotopingControl" DataContext="{Binding DeconHostViewModel}">
-                            <local:HostDeconParamControl.
-                        </local:HostDeconParamControl>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <GroupBox Header="Spectral Match Display"  Grid.Row="0">
+                        <Grid Margin="15 0 0 0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <CheckBox Grid.Column="0" Grid.Row="0" IsChecked="{Binding DisplayIonAnnotations}"
+                                          Content="Display ion annotations" Margin="5" />
+                            <CheckBox Grid.Column="0" Grid.Row="1" IsChecked="{Binding AnnotateMzValues}"
+                                          Content="Annotate m/z values" Margin="5" />
+                            <CheckBox Grid.Column="0" Grid.Row="2" IsChecked="{Binding AnnotateCharges}"
+                                          Content="Annotate charges" Margin="5" />
+                            <CheckBox Grid.Column="0" Grid.Row="3"
+                                          IsChecked="{Binding DisplayInternalIonAnnotations}"
+                                          Content="Show internal ions" Margin="5" />
+                            <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIons}"
+                                          Content="Display internal ion annotations" Margin="5" />
+
+                            <CheckBox Content="Bold ion annotations"  Margin="7 5"  Grid.Column="1" Grid.Row="0" 
+                                          IsChecked="{Binding AnnotationBold}" />
+                            <CheckBox IsChecked="{Binding SubAndSuperScriptIons}" Grid.Column="1" Grid.Row="1" 
+                                          Content="Sub/superscripted ion annotations"  Margin="7 5"  />
+
+                            <StackPanel Orientation="Horizontal" Margin="5 0"
+                                            Grid.Column="1" Grid.Row="2" >
+                                <Label Content="Annotation text size:" Width="165" />
+                                <local:IntegerTexBoxControl Width="80" Height="24"
+                                                                    Text="{Binding AnnotatedFontSize}"
+                                                                    VerticalContentAlignment="Center"
+                                                                    HorizontalContentAlignment="Center" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="5 0"
+                                            Grid.Column="1" Grid.Row="3" >
+                                <Label Content="Axis title text size:" Width="165" />
+                                <local:IntegerTexBoxControl Width="80" Height="24"
+                                                                    Text="{Binding AxisTitleTextSize}"
+                                                                    VerticalContentAlignment="Center"
+                                                                    HorizontalContentAlignment="Center" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="5 0"
+                                            Grid.Column="1" Grid.Row="4" >
+                                <Label Content="Axis label text size:" Width="165" />
+                                <local:IntegerTexBoxControl Width="80" Height="24"
+                                        Text="{Binding AxisLabelTextSize}"
+                                        VerticalContentAlignment="Center"
+                                        HorizontalContentAlignment="Center" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="5 0"
+                                            Grid.Column="1" Grid.Row="5" >
+                                <Label Content="Annotated peak thickness:" Width="165" />
+                                <local:DoubleTextBoxControl Width="80" Height="24"
+                                        Text="{Binding StrokeThicknessAnnotated}"
+                                        VerticalContentAlignment="Center"
+                                        HorizontalContentAlignment="Center" />
+                            </StackPanel>
+
+                            <StackPanel Orientation="Horizontal" Margin="5 0"
+                                            Grid.Column="1" Grid.Row="6" >
+                                <Label Content="Unannotated peak thickness:" Width="165" />
+                                <local:DoubleTextBoxControl Width="80" Height="24"
+                                        Text="{Binding StrokeThicknessUnannotated}"
+                                        VerticalContentAlignment="Center"
+                                        HorizontalContentAlignment="Center" />
+                            </StackPanel>
+                        </Grid>
                     </GroupBox>
-                </DockPanel>
+                    <local:HostDeconParamControl x:Name="DeisotopingControl" DockPanel.Dock="Bottom" Grid.Row="1"
+                                                 GroupBoxHeader="Precursor Deconvolution Parameters for Aligning Search Results to Spectra"
+                                                 ShowMs2Section="False"
+                                                 DataContext="{Binding DeconHostViewModel}">
+                       
+                    </local:HostDeconParamControl>
+                </Grid>
             </TabItem>
         </TabControl>
         

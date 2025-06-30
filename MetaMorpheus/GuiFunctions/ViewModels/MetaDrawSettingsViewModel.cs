@@ -71,13 +71,75 @@ namespace GuiFunctions
             }
         }
 
-        public DeconHostViewModel DeconHostViewModel { get; set; } = new DeconHostViewModel();  
+        public DeconHostViewModel DeconHostViewModel { get; set; }
 
         public ObservableCollection<string> PossibleColors { get; set; }
         public bool HasDefaultSaved { get { return File.Exists(SettingsPath); } }
         public bool CanOpen { get { return (_LoadedIons && _LoadedPTMs && _LoadedSequenceCoverage); } }
         public Task Initialization { get; private set; }
         public static string SettingsPath = Path.Combine(GlobalVariables.DataDir, "DefaultParameters", @"MetaDrawSettingsDefault.xml");
+
+        public bool DisplayIonAnnotations
+        {
+            get => MetaDrawSettings.DisplayIonAnnotations;
+            set { MetaDrawSettings.DisplayIonAnnotations = value; OnPropertyChanged(nameof(DisplayIonAnnotations)); }
+        }
+        public bool AnnotateMzValues
+        {
+            get => MetaDrawSettings.AnnotateMzValues;
+            set { MetaDrawSettings.AnnotateMzValues = value; OnPropertyChanged(nameof(AnnotateMzValues)); }
+        }
+        public bool AnnotateCharges
+        {
+            get => MetaDrawSettings.AnnotateCharges;
+            set { MetaDrawSettings.AnnotateCharges = value; OnPropertyChanged(nameof(AnnotateCharges)); }
+        }
+        public bool DisplayInternalIonAnnotations
+        {
+            get => MetaDrawSettings.DisplayInternalIonAnnotations;
+            set { MetaDrawSettings.DisplayInternalIonAnnotations = value; OnPropertyChanged(nameof(DisplayInternalIonAnnotations)); }
+        }
+        public bool DisplayInternalIons
+        {
+            get => MetaDrawSettings.DisplayInternalIons;
+            set { MetaDrawSettings.DisplayInternalIons = value; OnPropertyChanged(nameof(DisplayInternalIons)); }
+        }
+        public bool AnnotationBold
+        {
+            get => MetaDrawSettings.AnnotationBold;
+            set { MetaDrawSettings.AnnotationBold = value; OnPropertyChanged(nameof(AnnotationBold)); }
+        }
+        public bool SubAndSuperScriptIons
+        {
+            get => MetaDrawSettings.SubAndSuperScriptIons;
+            set { MetaDrawSettings.SubAndSuperScriptIons = value; OnPropertyChanged(nameof(SubAndSuperScriptIons)); }
+        }
+
+        public int AnnotatedFontSize
+        {
+            get => MetaDrawSettings.AnnotatedFontSize;
+            set { MetaDrawSettings.AnnotatedFontSize = value; OnPropertyChanged(nameof(AnnotatedFontSize)); }
+        }
+        public int AxisLabelTextSize
+        {
+            get => MetaDrawSettings.AxisLabelTextSize;
+            set { MetaDrawSettings.AxisLabelTextSize = value; OnPropertyChanged(nameof(AxisLabelTextSize)); }
+        }
+        public int AxisTitleTextSize
+        {
+            get => MetaDrawSettings.AxisTitleTextSize;
+            set { MetaDrawSettings.AxisTitleTextSize = value; OnPropertyChanged(nameof(AxisTitleTextSize)); }
+        }
+        public double StrokeThicknessAnnotated
+        {
+            get => MetaDrawSettings.StrokeThicknessAnnotated;
+            set { MetaDrawSettings.StrokeThicknessAnnotated = value; OnPropertyChanged(nameof(StrokeThicknessAnnotated)); }
+        }
+        public double StrokeThicknessUnannotated
+        {
+            get => MetaDrawSettings.StrokeThicknessUnannotated;
+            set { MetaDrawSettings.StrokeThicknessUnannotated = value; OnPropertyChanged(nameof(StrokeThicknessUnannotated)); }
+        }
 
         #endregion
 
@@ -104,6 +166,9 @@ namespace GuiFunctions
                 LoadSequenceCoverage();
                 Initialization = Task.CompletedTask;
             }
+
+            DeconHostViewModel = new();
+            DeconHostViewModel.SetAllPrecursorMaxChargeState(60); // Ensure it will work for top-down and bottom-up. Eventually we can set the GlobalVariables.AnalyteType dynamically in MetaDraw and have the decon params just work.  
         }
 
         private async Task InitializeAsync()
