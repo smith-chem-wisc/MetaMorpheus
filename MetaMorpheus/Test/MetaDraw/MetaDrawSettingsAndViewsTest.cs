@@ -169,7 +169,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestSettingsViewLoading()
         {
-            MetaDrawSettingsViewModel BlankSettingsView = new MetaDrawSettingsViewModel(false);
+            MetaDrawSettingsViewModel BlankSettingsView = MetaDrawSettingsViewModel.Instance;
             BlankSettingsView.Modifications = new();
             BlankSettingsView.IonGroups = new();
             BlankSettingsView.CoverageColors = new();
