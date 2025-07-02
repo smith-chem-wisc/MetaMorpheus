@@ -311,7 +311,7 @@ namespace EngineLayer.GlycoSearch
                     sb.Append(string.Join(",", glycans.Select(p => p.Struc.ToString()).ToArray())); //ex. (N(H)),(N(H(A))(N(H))),(N(H)(N(H(A))(F))
                 }
                 sb.Append("\t");
-
+                
                 sb.Append(CorrectLocalizationLevel(SiteSpeciLocalProb, LocalizationGraphs.First(), Routes.First(), LocalizedGlycan, LocalizationLevel)); sb.Append("\t");
 
                 string local_peptide = "";
@@ -357,7 +357,7 @@ namespace EngineLayer.GlycoSearch
                 sb.Append("\t");
                 sb.Append("\t");
 
-                 sb.Append("\t");
+                sb.Append("\t");
 
                 sb.Append(SiteSpeciLocalInfo(SiteSpeciLocalProb));
             }
@@ -420,7 +420,7 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var seenMod in modSiteSeenCount)
             {
-                if (seenMod.Value == OGlycanBoxLocalization.Count) // Try to fine the glycan-site pair that always localized in all the cases.
+                if (seenMod.Value == OGlycanBoxLocalization.Count) // Try to find the glycan-site pair that always localized in all the cases.
                 {
                     localizedGlycan.Add(new Tuple<int, int, bool>(int.Parse(seenMod.Key.Split('-')[0]), int.Parse(seenMod.Key.Split('-')[1]), true));
                 }

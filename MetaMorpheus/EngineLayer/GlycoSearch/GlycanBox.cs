@@ -1,11 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using Chemistry;
 using System;
-using Proteomics;
-using MassSpectrometry;
 using Omics.Modifications;
+using EngineLayer.ModSearch;
 
 namespace EngineLayer
 {
@@ -128,9 +125,9 @@ namespace EngineLayer
         public GlycanBox(int[] ids, bool Istarget = true):base(ids)
         {
             byte[] kind = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-            foreach (var id in ModIds) //ModIds is the same as ids.
+            foreach (var id in ids) //ModIds is the same as ids.
             {
-                for (int i = 0; i < kind.Length; i++)   
+                for (int i = 0; i < kind.Length; i++)
                 {
                     kind[i] += GlobalOGlycans[id].Kind[i]; //kind is the sum of all glycan Kind in the Box.
                 }
@@ -139,7 +136,7 @@ namespace EngineLayer
 
             if (Istarget)
             {
-                Mass = (double)Glycan.GetMass(Kind) / 1E5;
+                Mass = (double)(Glycan.GetMass(Kind)) / 1E5;
             }
             else
             {
