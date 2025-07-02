@@ -250,12 +250,15 @@ namespace GuiFunctions
                         }
                     }
                 else
-                    peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
-                
-                if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
-                    !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
                 {
-                    peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
+                    peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
+
+                    if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
+                        !peakAnnotationText.Contains("-" +
+                                                     matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
+                    {
+                        peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
+                    }
                 }
 
                 if (MetaDrawSettings.AnnotateCharges)
