@@ -1,0 +1,21 @@
+﻿<UserControl x:Class="MetaMorpheusGUI.SettingsButtonControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:MetaMorpheusGUI"
+             mc:Ignorable="d" 
+             d:DesignHeight="32" d:DesignWidth="32">
+    <Button x:Name="SettingsButton"
+            Background="White"
+            BorderThickness="0"
+            Click="SettingsButton_Click"
+            IsEnabled="{Binding SettingsViewModel.CanOpen, RelativeSource={RelativeSource AncestorType=UserControl}}">
+        <StackPanel Orientation="Horizontal">
+            <Image Source="Icons/icons8-settings-480.png" Margin="0,3,0,0"/>
+            <ToolTipService.ToolTip>
+                <ToolTip Content="Settings" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500"/>
+            </ToolTipService.ToolTip>
+        </StackPanel>
+    </Button>
+</UserControl>

@@ -152,15 +152,8 @@
 
                                 <Grid Grid.Row="0" Background="Gray" Opacity=".65"></Grid>
                                 <!--Settings menu-->
-                                <Button x:Name="Settings" Grid.Row="0" Grid.Column="1" Click="settings_Click" Background="White" 
-                                        BorderThickness="0" IsEnabled="{Binding SettingsView.CanOpen}">
-                                    <StackPanel Name="SettingsButton" Orientation="Horizontal">
-                                        <Image Source="Icons\icons8-settings-480.png" Margin="0,3,0,0" ></Image>
-                                        <ToolTipService.ToolTip>
-                                            <ToolTip Content="Settings" ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500" />
-                                        </ToolTipService.ToolTip>
-                                    </StackPanel>
-                                </Button>
+                                <local:SettingsButtonControl x:Name="SettingsButton" Grid.Row="0" Grid.Column="1"
+                                                             RefreshAction="{Binding RedrawPlotsAction}"/>
 
                                 <!-- Scrolling Sequence and Ambiguous Textbox-->
                                 <Grid Grid.Row="0" Grid.Column="2" Grid.ColumnSpan="2" >
