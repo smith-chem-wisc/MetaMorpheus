@@ -36,7 +36,6 @@ namespace MetaMorpheusGUI
         public PtmLegendViewModel PtmLegend;
         public ChimeraLegendViewModel ChimeraLegend;
         private ObservableCollection<ModTypeForTreeViewModel> Modifications = new ObservableCollection<ModTypeForTreeViewModel>();
-        //private static List<string> AcceptedSpectraFormats = new List<string> { ".mzml", ".raw", ".mgf" };
         private static List<string> AcceptedSpectraFormats => SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.Concat(new List<string> { ".msalign", ".tdf", ".tdf_bin" }).Select(format => format.ToLower()).ToList();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
@@ -103,6 +102,11 @@ namespace MetaMorpheusGUI
 
             if (AcceptedSpectraFormats.Contains(theExtension))
             {
+                // If a bruker timsTof file was selected, we actually want the parent folder
+                if(theExtension == ".tdf" || theExtension == ".tdf_bin")
+                {
+                    filePath = Path.GetDirectoryName(filePath);
+                }
                 if (!MetaDrawLogic.SpectraFilePaths.Contains(filePath))
                 {
                     MetaDrawLogic.SpectraFilePaths.Add(filePath);
