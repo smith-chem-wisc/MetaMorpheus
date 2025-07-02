@@ -9,6 +9,9 @@
         Title="Graphical Settings" Width="620" SizeToContent="Height" WindowStartupLocation="CenterScreen"
         Height="500" MaxHeight="1000">
 
+    <Window.Resources>
+        <local:SpectrumDescriptorToolTipConverter x:Key="SpectrumDescriptorToolTipConverter"/>
+    </Window.Resources>
     
     
     <!-- When changing any of these settings, be sure to do each of the following -->
@@ -156,34 +159,29 @@
                                       DockPanel.Dock="Top" Margin="10 5 5 5">
 
                                 <!-- Spectrum Description Text Customization Options 
-                                To make changes here, add a checkbox then add it to Save_Click and PopulateChoices, 
-                                then add a new item to SpectrumDescripion Dictionary in Settings, 
-                                finally update PeptideSpectrumMatchPlot.AnnotateProperties() -->
-                                    <StackPanel>
-                                        <StackPanel Orientation="Horizontal" Margin="5 0" >
-                                            <Label Content="Font Size:" Width="165"/>
+                                To have it displayed in settings window: add a new item to SpectrumDescription Dictionary in MetaDrawSettings, 
+                                To have it appear on the spectrum: update PeptideSpectrumMatchPlot.AnnotateProperties() -->
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5 0" >
+                                        <Label Content="Font Size:" Width="165"/>
                                         <local:DoubleTextBoxControl x:Name ="SpectrumDescriptionFontSizeBox" Width="80" Height="24" 
-                                                                        VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                                        </StackPanel>
-                                        <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
-                                        <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
-                                        <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
-                                        <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
-                                        <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
-                                        <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
-                                        <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
-                                        <CheckBox Name="AmbiguityLevelCheckBox" Content="Ambiguity Level" Margin="3" 
-                                                  ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                            <ToolTipService.ToolTip>
-                                                J. Proteome Res. 2018, 17, 3, 1321–1325
-                                            </ToolTipService.ToolTip>
-                                        </CheckBox>
-                                        <CheckBox Name="SpectralAngleCheckBox" Content="Spectral Angle" Margin="3" />
-                                        <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
-                                        <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
-                                        <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
-                                        <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
+                                                                    VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
                                     </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding SpectrumDescriptors}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Margin="3"
+                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                          Content="{Binding DisplayName}">
+                                                    <CheckBox.ToolTip>
+                                                        <TextBlock Text="{Binding DisplayName, Converter={StaticResource SpectrumDescriptorToolTipConverter}}"/>
+                                                    </CheckBox.ToolTip>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
                             </Expander>
 
                             <!-- spectrum components -->
