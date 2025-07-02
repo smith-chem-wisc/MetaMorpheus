@@ -13,6 +13,7 @@ using OxyPlot.Annotations;
 using Omics.Fragmentation;
 using Readers;
 using TaskLayer;
+using Chemistry;
 
 namespace Test.MetaDraw
 {
@@ -61,6 +62,14 @@ namespace Test.MetaDraw
             plotView = new OxyPlot.Wpf.PlotView() { Name = "plotView" };
             parentChildView = new ParentChildScanPlotsView();
             psm = metadrawLogic.FilteredListOfPsms.First(p => p.FullSequence == "QIVHDSGR");
+
+            // create a fake neutral loss fragment ion for testing purposes. 
+            var ionToCopy = psm.MatchedIons.First();
+            var productToCopy = ionToCopy.NeutralTheoreticalProduct;
+            var neutralTheorecticalProduct = new Product(productToCopy.ProductType, productToCopy.Terminus, productToCopy.NeutralMass - 18.01056468, productToCopy.FragmentNumber, productToCopy.ResiduePosition, 18.01056468, productToCopy.SecondaryProductType, productToCopy.SecondaryFragmentNumber);
+            var neutralLossIon = new MatchedFragmentIon(neutralTheorecticalProduct, neutralTheorecticalProduct.MonoisotopicMass.ToMz(ionToCopy.Charge), ionToCopy.Intensity, ionToCopy.Charge);
+            psm.MatchedIons.Add(neutralLossIon);
+
         }
 
         [OneTimeTearDown]
@@ -137,6 +146,24 @@ namespace Test.MetaDraw
             yield return new PeakAnnotationTestCase(true, true, false, true, "yIb₄₋₇¹⁺", internalColor, 12);
             yield return new PeakAnnotationTestCase(true, false, true, true, "yIb₄₋₇ (397.145)", internalColor, 12);
             yield return new PeakAnnotationTestCase(true, true, true, true, "yIb₄₋₇¹⁺ (397.145)", internalColor, 12);
+
+            // all parameter combinations for neutral loss ions
+            yield return new PeakAnnotationTestCase(false, false, false, false, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, true, false, false, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, false, true, false, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, false, false, true, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, true, true, false, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, true, false, true, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, false, true, true, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(false, true, true, true, "", unannotatedColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, false, false, "b1-18.01", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, false, false, "b1-18.01+1", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, true, false, "b1-18.01 (129.066)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, false, true, "b₁\u208b\u2081\u2088.\u2080\u2081", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, true, false, "b1-18.01+1 (129.066)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, false, true, "b₁\u208b\u2081\u2088.\u2080\u2081¹⁺", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, true, true, "b₁\u208b\u2081\u2088.\u2080\u2081 (129.066)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, true, true, "b₁\u208b\u2081\u2088.\u2080\u2081¹⁺ (129.066)", bColor, 13);
         }
 
 
