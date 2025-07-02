@@ -1192,5 +1192,10 @@ namespace MetaMorpheusGUI
             var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm);
             psm.MatchedIons = newIons;
         }
+
+        private void MetaDraw_OnClosing(object sender, CancelEventArgs e)
+        {
+            MetaDrawLogic.CleanUpResources();
+        }
     }
 }
