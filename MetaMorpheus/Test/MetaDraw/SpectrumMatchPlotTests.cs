@@ -1,11 +1,8 @@
-﻿global using PsmFromTsv = Readers.PsmFromTsv; // Temporary until a follow-up PR changes these to SpectrumMatchFromTsv
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Windows.Controls;
-using EngineLayer;
 using GuiFunctions;
 using NUnit.Framework;
 using OxyPlot;
@@ -158,12 +155,12 @@ namespace Test.MetaDraw
             yield return new PeakAnnotationTestCase(false, true, true, true, "", unannotatedColor, 13);
             yield return new PeakAnnotationTestCase(true, false, false, false, "b1-18.01", bColor, 13);
             yield return new PeakAnnotationTestCase(true, true, false, false, "b1-18.01+1", bColor, 13);
-            yield return new PeakAnnotationTestCase(true, false, true, false, "b1-18.01 (129.066)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, true, false, "b1-18.01 (111.055)", bColor, 13);
             yield return new PeakAnnotationTestCase(true, false, false, true, "b₁\u208b\u2081\u2088.\u2080\u2081", bColor, 13);
-            yield return new PeakAnnotationTestCase(true, true, true, false, "b1-18.01+1 (129.066)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, true, false, "b1-18.01+1 (111.055)", bColor, 13);
             yield return new PeakAnnotationTestCase(true, true, false, true, "b₁\u208b\u2081\u2088.\u2080\u2081¹⁺", bColor, 13);
-            yield return new PeakAnnotationTestCase(true, false, true, true, "b₁\u208b\u2081\u2088.\u2080\u2081 (129.066)", bColor, 13);
-            yield return new PeakAnnotationTestCase(true, true, true, true, "b₁\u208b\u2081\u2088.\u2080\u2081¹⁺ (129.066)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, false, true, true, "b₁\u208b\u2081\u2088.\u2080\u2081 (111.055)", bColor, 13);
+            yield return new PeakAnnotationTestCase(true, true, true, true, "b₁\u208b\u2081\u2088.\u2080\u2081¹⁺ (111.055)", bColor, 13);
         }
 
 
