@@ -9,6 +9,7 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="MetaDraw" 
+        Closing="MetaDraw_OnClosing"
         Drop="Window_Drop" AllowDrop="true" WindowStartupLocation="CenterScreen" MinHeight="400" MinWidth="800" Height="600" Width="1200">
     <!-- To make changes here more amendable in the future, an MVC architecture approach should be taken. In this approach, many of the variables and data 
          are store in C# classes that are bound to the xaml files. The xaml files reference their bound data instead of it being assinged in the code 
