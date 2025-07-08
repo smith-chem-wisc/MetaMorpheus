@@ -199,28 +199,11 @@ namespace EngineLayer
                                                 IBioPolymerWithSetMods pep;
                                                 if (GlobalVariables.AnalyteType is AnalyteType.Oligo)
                                                 {
-                                                    pep = new OligoWithSetMods(
-                                                        proteinWithDigestInfo.Key as NucleicAcid,
-                                                        proteinWithDigestInfo.Value.DigestParams as RnaDigestionParams,
-                                                        proteinWithDigestInfo.Value.OneBasedStart,
-                                                        proteinWithDigestInfo.Value.OneBasedEnd,
-                                                        proteinWithDigestInfo.Value.MissedCleavages,
-                                                        proteinWithDigestInfo.Value.CleavageSpecificity,
-                                                        originalPeptide.AllModsOneIsNterminus,
-                                                        originalPeptide.NumFixedMods);
+                                                    pep = new OligoWithSetMods(proteinWithDigestInfo.Key as NucleicAcid, proteinWithDigestInfo.Value.DigestParams as RnaDigestionParams, proteinWithDigestInfo.Value.OneBasedStart, proteinWithDigestInfo.Value.OneBasedEnd, proteinWithDigestInfo.Value.MissedCleavages, proteinWithDigestInfo.Value.CleavageSpecificity, originalPeptide.AllModsOneIsNterminus, originalPeptide.NumFixedMods);
                                                 }
                                                 else
                                                 {
-                                                    pep = new PeptideWithSetModifications(
-                                                        proteinWithDigestInfo.Key as Protein,
-                                                        proteinWithDigestInfo.Value.DigestParams,
-                                                        proteinWithDigestInfo.Value.OneBasedStart,
-                                                        proteinWithDigestInfo.Value.OneBasedEnd,
-                                                        proteinWithDigestInfo.Value.CleavageSpecificity,
-                                                        originalPeptide.Description,
-                                                        proteinWithDigestInfo.Value.MissedCleavages,
-                                                        originalPeptide.AllModsOneIsNterminus,
-                                                        originalPeptide.NumFixedMods);
+                                                    pep = new PeptideWithSetModifications(proteinWithDigestInfo.Key as Protein, proteinWithDigestInfo.Value.DigestParams, proteinWithDigestInfo.Value.OneBasedStart, proteinWithDigestInfo.Value.OneBasedEnd, proteinWithDigestInfo.Value.CleavageSpecificity, originalPeptide.Description, proteinWithDigestInfo.Value.MissedCleavages, originalPeptide.AllModsOneIsNterminus, originalPeptide.NumFixedMods);
                                                 }
 
                                                 lock (_fdrFilteredPeptides)
