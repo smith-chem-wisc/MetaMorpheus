@@ -77,7 +77,6 @@ namespace Test.Transcriptomics
             Assert.That(match, Is.TypeOf<OligoSpectralMatch>(), "Match is not of type OligoSpectralMatch.");
             Assert.That(match.Score, Is.GreaterThan(22), "Score for GUACUG sixmer match is not greater than 22.");
             Assert.That(match.BaseSequence, Is.EqualTo("GUACUG"), "Base sequence does not match GUACUG.");
-
         }
     }
 }

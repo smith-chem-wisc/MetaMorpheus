@@ -229,21 +229,21 @@ namespace EngineLayer.ClassicSearch
                 {
                     bool scoreImprovement = SpectralMatches[scan.ScanIndex] == null || (thisScore - SpectralMatches[scan.ScanIndex].RunnerUpScore) > -SpectralMatch.ToleranceForScoreDifferentiation;
 
-                    if (scoreImprovement)
+                    if (!scoreImprovement) 
+                        return;
+
+                    // if the PSM is null, create a new one; otherwise, add or replace the peptide
+                    switch (SpectralMatches[scan.ScanIndex])
                     {
-
-                        if (SpectralMatches[scan.ScanIndex] == null)
-
-                        {
-                            if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
-                                SpectralMatches[scan.ScanIndex] = new OligoSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons);
-                            else
-                                SpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons);
-                        }
-                        else
-                        {
+                        case null when GlobalVariables.AnalyteType == AnalyteType.Oligo:
+                            SpectralMatches[scan.ScanIndex] = new OligoSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons);
+                            break;
+                        case null:
+                            SpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons);
+                            break;
+                        default:
                             SpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons);
-                        }
+                            break;
                     }
                 }
             }
