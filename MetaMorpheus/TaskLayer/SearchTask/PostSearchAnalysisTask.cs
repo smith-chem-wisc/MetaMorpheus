@@ -638,13 +638,13 @@ namespace TaskLayer
 
             // write PSMs
             string writtenFile = Path.Combine(Parameters.OutputFolder, $"All{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s.{GlobalVariables.AnalyteType.GetSpectralMatchExtension()}");
-            WritePsmsToTsv(psmsForPsmResults.OrderByDescending(p=>p).ToList(), writtenFile, writePeptideLevelResults: false);
+            WritePsmsToTsv(psmsForPsmResults.OrderByDescending(p => p).ToList(), writtenFile, writePeptideLevelResults: false);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write PSMs for percolator
             // percolator native read format is .tab
             writtenFile = Path.Combine(Parameters.OutputFolder, $"All{GlobalVariables.AnalyteType.GetSpectralMatchLabel()}s_FormattedForPercolator.tab");
-            WritePsmsForPercolator(psmsForPsmResults.OrderByDescending(p=>p).ToList(), writtenFile);
+            WritePsmsForPercolator(psmsForPsmResults.OrderByDescending(p => p).ToList(), writtenFile);
             FinishedWritingFile(writtenFile, new List<string> { Parameters.SearchTaskId });
 
             // write summary text
@@ -1890,7 +1890,7 @@ namespace TaskLayer
                 }
             }
             
-            var keys = ResultsDictionary.Keys.Where(k=>k.Item1 != "All").OrderBy(k=>k.Item1).ToList();
+            var keys = ResultsDictionary.Keys.Where(k => k.Item1 != "All").OrderBy(k=>k.Item1).ToList();
             if (keys.Any())
             {
                 sb.AppendLine();
