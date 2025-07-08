@@ -307,7 +307,7 @@ namespace EngineLayer
         /// <summary>
         /// This method is used by protein parsimony to remove PeptideWithSetModifications objects that have non-parsimonious protein associations
         /// </summary>
-        public void TrimProteinMatches(HashSet<Protein> parsimoniousProteins)
+        public void TrimProteinMatches(HashSet<IBioPolymer> parsimoniousProteins)
         {
             if (IsDecoy)
             {

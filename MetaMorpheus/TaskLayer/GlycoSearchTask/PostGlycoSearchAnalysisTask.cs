@@ -14,6 +14,7 @@ using Proteomics.ProteolyticDigestion;
 using Readers;
 using ThermoFisher.CommonCore.Data;
 using ProteinGroup = EngineLayer.ProteinGroup;
+using Omics;
 
 namespace TaskLayer
 {
@@ -324,8 +325,8 @@ namespace TaskLayer
                 foreach (var psm in _filteredPsms)
                 {
                     List<Protein> proteinList = psm.BestMatchingBioPolymersWithSetMods.Select(p => ((PeptideWithSetModifications)p.SpecificBioPolymer).Protein).ToList();
-                    ProteinGroup newProteinGroup = new ProteinGroup(new HashSet<Protein>(proteinList),
-                        new HashSet<PeptideWithSetModifications>(new List<PeptideWithSetModifications>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.SpecificBioPolymer).ToList())), new HashSet<PeptideWithSetModifications>());
+                    ProteinGroup newProteinGroup = new ProteinGroup(new HashSet<IBioPolymer>(proteinList),
+                        new HashSet<IBioPolymerWithSetMods>(new List<IBioPolymerWithSetMods>(psm.BestMatchingBioPolymersWithSetMods.Select(p=> (PeptideWithSetModifications)p.SpecificBioPolymer).ToList())), new HashSet<IBioPolymerWithSetMods>());
 
                     if (_proteinGroups.Any(p => p.Equals(newProteinGroup)))
                     {
