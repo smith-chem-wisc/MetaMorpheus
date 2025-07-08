@@ -142,41 +142,31 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         var accessionDict = ChimericPsms.Select(p => p.Psm.Accession)
             .Distinct()
             .ToDictionary(p => p, p => ChimericPsms.Count(psm => psm.Psm.Accession == p));
-        foreach (var annotationGroup in ChimericPsms
+        foreach (var mzGroup in ChimericPsms
                      .SelectMany(psm => psm.Psm.MatchedIons
                          .Select(ion => (psm.Psm.Accession, psm.Color, psm.ProteinColor, ion)))
-                     .GroupBy(g => g.ion.Annotation))
+                     .GroupBy(g => g.ion.Mz))
         {
-            //TODO: Group by mz
-            // if only one ion has the same annotation, unique proteoform color
-            if (annotationGroup.Count() == 1)
-                _matchedFragmentIonsByColor.AddOrReplace(annotationGroup.First().Color, annotationGroup.First().ion, "");
+            if (mzGroup.Count() == 1)
+            {
+                _matchedFragmentIonsByColor.AddOrReplace(mzGroup.First().Color, mzGroup.First().ion, "");
+            }
+            // if only one protein present
+            else if (mzGroup.Select(p => p.Accession).Distinct().Count() == 1)
+            {
+                // if all proteoforms of the protein have the ion, protein shared color
+                if (mzGroup.Count() == accessionDict[mzGroup.First().Accession])
+                    _matchedFragmentIonsByColor.AddOrReplace(mzGroup.First().ProteinColor, mzGroup.First().ion, "");
+                // if not all proteoforms have the same ion, their unique color
+                else
+                    foreach (var item in mzGroup)
+                        _matchedFragmentIonsByColor.AddOrReplace(item.Color, item.ion, "");
+
+            }
+            // if only one mz value and multiple proteins, shared color
             else
             {
-                foreach (var mzGroup in annotationGroup.GroupBy(p => p.ion.Mz))
-                {
-                    if (mzGroup.Count() == 1)
-                    {
-                        _matchedFragmentIonsByColor.AddOrReplace(mzGroup.First().Color, mzGroup.First().ion, "");
-                    }
-                    // if only one protein present
-                    else if (mzGroup.Select(p => p.Accession).Distinct().Count() == 1)
-                    {
-                        // if all proteoforms of the protein have the ion, protein shared color
-                        if (mzGroup.Count() == accessionDict[mzGroup.First().Accession])
-                            _matchedFragmentIonsByColor.AddOrReplace(mzGroup.First().ProteinColor, mzGroup.First().ion, "");
-                        // if not all proteoforms have the same ion, their unique color
-                        else
-                            foreach (var item in mzGroup)
-                                _matchedFragmentIonsByColor.AddOrReplace(item.Color, item.ion, "");
-
-                    }
-                    // if only one mz value and multiple proteins, shared color
-                    else
-                    {
-                        _matchedFragmentIonsByColor.AddOrReplace(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor, mzGroup.First().ion, "");
-                    }
-                }
+                _matchedFragmentIonsByColor.AddOrReplace(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor, mzGroup.First().ion, "");
             }
         }
 
