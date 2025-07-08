@@ -78,9 +78,14 @@ namespace EngineLayer
 
                 if (!alreadyClaimedMzs.Contains(mz.RoundedDouble()!.Value))
                 {
-                    neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
-                        new List<(double mz, double intensity)> { (mz, intensity) },
-                        mz.ToMass(1), 1, intensity, 0));
+                    if (scan.Polarity != Polarity.Negative)
+                        neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
+                            new List<(double mz, double intensity)> { (mz, intensity) },
+                            mz.ToMass(1), 1, intensity, 0));
+                    else
+                        neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
+                            new List<(double mz, double intensity)> { (mz, intensity) },
+                            mz.ToMass(-1), -1, intensity, 0));
                 }
             }
 

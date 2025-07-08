@@ -180,7 +180,10 @@ namespace EngineLayer
                 var closestExperimentalMass = scan.GetClosestExperimentalIsotopicEnvelope(product.NeutralMass);
 
                 // is the mass error acceptable?
-                if (closestExperimentalMass != null && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass) && closestExperimentalMass.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                if (closestExperimentalMass != null
+                    && commonParameters.ProductMassTolerance.Within(closestExperimentalMass.MonoisotopicMass, product.NeutralMass)
+                    && ((scan.TheScan.Polarity == Polarity.Positive && closestExperimentalMass.Charge <= scan.PrecursorCharge)
+                    || (scan.TheScan.Polarity == Polarity.Negative && closestExperimentalMass.Charge >= scan.PrecursorCharge)))//TODO apply this filter before picking the envelope
                 {
                     matchedFragmentIons.Add(new MatchedFragmentIon(product, closestExperimentalMass.MonoisotopicMass.ToMz(closestExperimentalMass.Charge),
                         closestExperimentalMass.Peaks.First().intensity, closestExperimentalMass.Charge));
@@ -253,7 +256,10 @@ namespace EngineLayer
                     foreach (var x in closestExperimentalMassList)
                     {
                         String ion = $"{product.ProductType.ToString()}{ product.FragmentNumber}^{x.Charge}-{product.NeutralLoss}";
-                        if (x != null && !ions.Contains(ion) && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) && x.Charge <= scan.PrecursorCharge)//TODO apply this filter before picking the envelope
+                        if (x != null 
+                            && !ions.Contains(ion) 
+                            && commonParameters.ProductMassTolerance.Within(x.MonoisotopicMass, product.NeutralMass) 
+                            && ((x.Charge > 0 && x.Charge <= scan.PrecursorCharge) || (x.Charge < 0 && x.Charge >= scan.PrecursorCharge)))//TODO apply this filter before picking the envelope
                         {
                             Product temProduct = product;
                             matchedFragmentIons.Add(new MatchedFragmentIon(temProduct, x.MonoisotopicMass.ToMz(x.Charge),
