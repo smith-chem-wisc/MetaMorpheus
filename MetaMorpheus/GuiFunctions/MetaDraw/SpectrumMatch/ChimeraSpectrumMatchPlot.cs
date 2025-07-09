@@ -39,7 +39,7 @@ namespace GuiFunctions
         {
             SpectrumMatches = sms;
             PsmsByProteinDictionary = SpectrumMatches.GroupBy(p => p.BaseSeq).ToDictionary(p => p.Key, p => p.ToList());
-            sms.Select(p => p.MatchedIons).ForEach(p => matchedFragmentIons.AddRange(p));
+            sms.Select(p => p.MatchedIons).ForEach(p => MatchedFragmentIons.AddRange(p));
             
             AnnotateMatchedIons();
             ZoomAxes();
