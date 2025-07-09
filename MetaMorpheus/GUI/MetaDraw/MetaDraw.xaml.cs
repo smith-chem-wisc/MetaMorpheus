@@ -15,6 +15,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
@@ -622,8 +623,16 @@ namespace MetaMorpheusGUI
                     ptmLegendLocationVector = (Vector)ChildScanPtmLegendControl.GetType().GetProperty("VisualOffset", BindingFlags.NonPublic | BindingFlags.Instance).GetValue(ChildScanPtmLegendControl);
                     ptmLegendLocationVector.X = PsmAnnotationGrid.ActualWidth - ChildScanPtmLegendControl.ActualWidth;
                 }
+
+                // If psm and GUI display have different number of matched ions, send in the refragmenter for exporting. 
+                FragmentationReanalysisViewModel toPlotForExport = null;
+                if (MetaDrawLogic.SpectrumAnnotation.SpectrumMatch.MatchedIons.Count != MetaDrawLogic.SpectrumAnnotation.MatchedFragmentIons.Count)
+                {
+                    toPlotForExport = FragmentationReanalysisViewModel;
+                }
+
                 MetaDrawLogic.ExportPlot(plotView, stationarySequenceCanvas, items, itemsControlSampleViewModel,
-                    directoryPath, out errors, legendCanvas, ptmLegendLocationVector);
+                    directoryPath, out errors, legendCanvas, ptmLegendLocationVector, toPlotForExport);
             }
 
             if (errors != null && errors.Any())
@@ -1182,5 +1191,59 @@ namespace MetaMorpheusGUI
             var newIons = FragmentationReanalysisViewModel.MatchIonsWithNewTypes(scan, psm);
             psm.MatchedIons = newIons;
         }
+
+        #region Fragment Plot Click Effects 
+
+        // Copy the entire m/z spectrum (all peaks)
+        private void CopyMzSpectrum_Click(object sender, RoutedEventArgs e)
+        {
+            var plot = MetaDrawLogic.SpectrumAnnotation;
+            if (plot?.Scan == null)
+                return;
+
+            var sb = new StringBuilder();
+            var mzs = plot.Scan.MassSpectrum.XArray;
+            var intensities = plot.Scan.MassSpectrum.YArray;
+            for (int i = 0; i < mzs.Length; i++)
+                sb.AppendLine($"{mzs[i]:F6}\t{intensities[i]:F6}");
+
+            Clipboard.SetText(sb.ToString());
+        }
+
+        // Copy only annotated peaks (matched ions)
+        private void CopyAnnotatedMzSpectrum_Click(object sender, RoutedEventArgs e)
+        {
+            var plot = MetaDrawLogic.SpectrumAnnotation;
+            if (plot?.Scan == null || plot.SpectrumMatch == null)
+                return;
+
+            var matched = plot.MatchedFragmentIons;
+
+            var sb = new StringBuilder();
+            foreach (var ion in matched)
+                sb.AppendLine($"{ion.Mz:F6}\t{ion.Intensity:F0}");
+            Clipboard.SetText(sb.ToString());
+        }
+
+        // Copy matched ions with details
+        private void CopyMatchedIons_Click(object sender, RoutedEventArgs e)
+        {
+            var plot = MetaDrawLogic.SpectrumAnnotation;
+            if (plot?.SpectrumMatch == null)
+                return;
+
+            var matched = plot.MatchedFragmentIons;
+
+            var sb = new StringBuilder();
+            sb.AppendLine("Annotation\tm/z\tIntensity\tType\tFragmentNumber");
+            foreach (var ion in matched)
+            {
+                sb.AppendLine($"{ion.Annotation}\t{ion.Mz:F6}\t{ion.Intensity:F0}\t{ion.NeutralTheoreticalProduct.ProductType}\t{ion.NeutralTheoreticalProduct.FragmentNumber}");
+            }
+
+            Clipboard.SetText(sb.ToString());
+        }
+
+        #endregion
     }
 }
