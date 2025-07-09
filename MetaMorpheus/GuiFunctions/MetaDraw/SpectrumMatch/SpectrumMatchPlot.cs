@@ -27,7 +27,7 @@ namespace GuiFunctions
     public class SpectrumMatchPlot : Plot
     {
         public static int MaxCharactersPerDescriptionLine = 32;
-        protected List<MatchedFragmentIon> matchedFragmentIons;
+        public List<MatchedFragmentIon> MatchedFragmentIons { get; }
         public MsDataScan Scan { get; protected set; }
         public SpectrumMatchFromTsv SpectrumMatch { get; set; }
 
@@ -45,19 +45,19 @@ namespace GuiFunctions
             Model.Title = string.Empty;
             Model.Subtitle = string.Empty;
             Scan = scan;
-            matchedFragmentIons = new();
+            MatchedFragmentIons = new();
 
             DrawSpectrum();
             if (matchedIons is null && sm is not null)
             {
                 SpectrumMatch = sm;
-                matchedFragmentIons = SpectrumMatch.MatchedIons;
-                AnnotateMatchedIons(isBetaPeptide: false, matchedFragmentIons);
+                MatchedFragmentIons = SpectrumMatch.MatchedIons;
+                AnnotateMatchedIons(isBetaPeptide: false, MatchedFragmentIons);
             }
             else if (matchedIons is not null && sm is not null)
             {
                 SpectrumMatch = sm;
-                matchedFragmentIons = matchedIons;
+                MatchedFragmentIons = matchedIons;
                 AnnotateMatchedIons(false, matchedIons);
             }
 
@@ -311,15 +311,15 @@ namespace GuiFunctions
         /// Zooms the axis of the graph to the matched ions
         /// </summary>
         /// <param name="yZoom"></param>
-        /// <param name="matchedFramgentIons">ions to zoom to. if null, it will used the stored protected matchedFragmentIons</param>
+        /// <param name="matchedFramgentIons">ions to zoom to. if null, it will used the stored protected MatchedFragmentIons</param>
         protected void ZoomAxes(IEnumerable<MatchedFragmentIon> matchedFramgentIons = null, double yZoom = 1.2)
         {
-            matchedFramgentIons ??= matchedFragmentIons;
+            matchedFramgentIons ??= MatchedFragmentIons;
             double highestAnnotatedIntensity = 0;
             double highestAnnotatedMz = double.MinValue;
             double lowestAnnotatedMz = double.MaxValue;
 
-            foreach (var ion in matchedFragmentIons)
+            foreach (var ion in MatchedFragmentIons)
             {
                 double mz = ion.NeutralTheoreticalProduct.NeutralMass.ToMz(ion.Charge);
                 int i = Scan.MassSpectrum.GetClosestPeakIndex(mz);
@@ -552,7 +552,7 @@ namespace GuiFunctions
                 if (librarySpectrum != null)
                 {
                     text.Append("Displayed Spectral Angle: ");
-                    text.Append(librarySpectrum.CalculateSpectralAngleOnTheFly(this.matchedFragmentIons) + "\r\n");
+                    text.Append(librarySpectrum.CalculateSpectralAngleOnTheFly(this.MatchedFragmentIons) + "\r\n");
                 }
             }
 
