@@ -138,6 +138,13 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
             }
         }
 
+        _matchedFragmentIonsByColor = AssignFragmentIonColors();
+        IsColorInitialized = true;
+    }
+
+    public Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> AssignFragmentIonColors()
+    {
+        var toReturn = new Dictionary<OxyColor, List<(MatchedFragmentIon, string)>>();
         // matched fragment ions
         var accessionDict = ChimericPsms.Select(p => p.Psm.Accession)
             .Distinct()
@@ -147,30 +154,30 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
                          .Select(ion => (psm.Psm.Accession, psm.Color, psm.ProteinColor, ion)))
                      .GroupBy(g => g.ion.Mz))
         {
+            var first = mzGroup.First();
             if (mzGroup.Count() == 1)
             {
-                _matchedFragmentIonsByColor.AddOrReplace(mzGroup.First().Color, mzGroup.First().ion, "");
+                toReturn.AddOrReplace(first.Color, first.ion, "");
             }
             // if only one protein present
             else if (mzGroup.Select(p => p.Accession).Distinct().Count() == 1)
             {
                 // if all proteoforms of the protein have the ion, protein shared color
-                if (mzGroup.Count() == accessionDict[mzGroup.First().Accession])
-                    _matchedFragmentIonsByColor.AddOrReplace(mzGroup.First().ProteinColor, mzGroup.First().ion, "");
+                if (mzGroup.Count() == accessionDict[first.Accession])
+                    toReturn.AddOrReplace(first.ProteinColor, first.ion, "");
                 // if not all proteoforms have the same ion, their unique color
                 else
                     foreach (var item in mzGroup)
-                        _matchedFragmentIonsByColor.AddOrReplace(item.Color, item.ion, "");
+                        toReturn.AddOrReplace(item.Color, item.ion, "");
 
             }
             // if only one mz value and multiple proteins, shared color
             else
             {
-                _matchedFragmentIonsByColor.AddOrReplace(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor, mzGroup.First().ion, "");
+                toReturn.AddOrReplace(ChimeraSpectrumMatchPlot.MultipleProteinSharedColor, first.ion, "");
             }
         }
-
-        IsColorInitialized = true;
+        return toReturn;
     }
 
     #endregion

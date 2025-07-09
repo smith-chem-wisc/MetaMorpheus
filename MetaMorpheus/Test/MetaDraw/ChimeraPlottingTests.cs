@@ -9,6 +9,7 @@ using EngineLayer;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
+using Omics.Fragmentation;
 using OxyPlot;
 using OxyPlot.Wpf;
 using Readers;
@@ -19,11 +20,13 @@ namespace Test.MetaDraw;
 [ExcludeFromCodeCoverage]
 public class ChimeraPlottingTests
 {
-    public static ChimeraGroupViewModel OneProteinTwoProteoformChimeraGroup;
-    public static ChimeraGroupViewModel TwoProteinsTwoProteoformChimeraGroup;
+    public static ChimeraTestCase OneProteinTwoProteoformChimeraGroup;
+    public static ChimeraTestCase TwoProteinsTwoProteoformChimeraGroup;
     public static List<SpectrumMatchFromTsv> AllMatches;
     public static MsDataFile DataFile;
     public static string TestExportDirectory => Path.Combine(TestContext.CurrentContext.TestDirectory, "MetaDraw", "ChimeraPlottingTests");
+
+    public record ChimeraTestCase(ChimeraGroupViewModel ChimeraGroup, Dictionary<OxyColor, List<MatchedFragmentIon>> ExpectedIonsByColor);
 
     [OneTimeSetUp]
     public static void OneTimeSetup()
@@ -47,12 +50,19 @@ public class ChimeraPlottingTests
         var testMs1Scan = DataFile.GetOneBasedScan(900);
         var testMs2Scan = DataFile.GetOneBasedScan(901);
         var testPsms = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan.OneBasedScanNumber);
-        OneProteinTwoProteoformChimeraGroup = new ChimeraGroupViewModel(testPsms, testMs1Scan, testMs2Scan);
+        var group = new ChimeraGroupViewModel(testPsms, testMs1Scan, testMs2Scan);
+        var ions = group.AssignFragmentIonColors()
+            .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList() );
+        OneProteinTwoProteoformChimeraGroup = new ChimeraTestCase(group, ions);
 
         var testMs1Scan2 = DataFile.GetOneBasedScan(1243);
         var testMs2Scan2 = DataFile.GetOneBasedScan(1246);
         var testPsms2 = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan2.OneBasedScanNumber && p.QValue <= 0.01);
-        TwoProteinsTwoProteoformChimeraGroup = new ChimeraGroupViewModel(testPsms2, testMs1Scan2, testMs2Scan2);
+        var group2 = new ChimeraGroupViewModel(testPsms2, testMs1Scan2, testMs2Scan2);
+        var ions2 = group2.AssignFragmentIonColors()
+            .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList());
+
+        TwoProteinsTwoProteoformChimeraGroup = new ChimeraTestCase(group2, ions2);
     }
 
     [OneTimeTearDown]
@@ -155,10 +165,33 @@ public class ChimeraPlottingTests
     #region Group View Model
 
     [Test]
-    public static void ChimeraGroupViewModel_PrecursorAssignmentIsCorrect()
+    public static void ChimeraGroupViewModel_PrecursorAssignmentIsCorrect_OneProteinTwoProteoforms()
     {
         // Arrange
-        var chimeraGroup = OneProteinTwoProteoformChimeraGroup;
+        var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+
+        var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
+        var envelope2 = chimeraGroup.ChimericPsms[1].PrecursorEnvelope;
+        var psm1 = chimeraGroup.ChimericPsms[0].Psm;
+        var psm2 = chimeraGroup.ChimericPsms[1].Psm;
+
+
+        // ensure mass differences are minimized
+        var psm1ToEnvelope1 = Math.Abs(psm1.PrecursorMass - envelope1.MonoisotopicMass);
+        var psm2ToEnvelope2 = Math.Abs(psm2.PrecursorMass - envelope2.MonoisotopicMass);
+        var psm1ToEnvelope2 = Math.Abs(psm1.PrecursorMass - envelope2.MonoisotopicMass);
+        var psm2ToEnvelope1 = Math.Abs(psm2.PrecursorMass - envelope1.MonoisotopicMass);
+
+        Assert.That(psm1ToEnvelope1, Is.LessThanOrEqualTo(psm1ToEnvelope2), "PSM 1 should be assigned to its own envelope.");
+        Assert.That(psm2ToEnvelope2, Is.LessThanOrEqualTo(psm2ToEnvelope1), "PSM 2 should be assigned to its own envelope.");
+    }
+
+    [Test]
+    public static void ChimeraGroupViewModel_PrecursorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
+    {
+        // Arrange
+        var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
         Assert.That(chimeraGroup.Count, Is.EqualTo(2));
 
         var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
@@ -181,7 +214,7 @@ public class ChimeraPlottingTests
     public static void ChimeraGroupViewModel_PrecursorColorAssignmentIsCorrect_OneProteinTwoProteoforms()
     {
         // Arrange
-        var chimeraGroup = OneProteinTwoProteoformChimeraGroup;
+        var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         Assert.That(chimeraGroup.Count, Is.EqualTo(2));
 
         var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
@@ -209,7 +242,7 @@ public class ChimeraPlottingTests
     public static void ChimeraGroupViewModel_PrecursorColorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
     {
         // Arrange
-        var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup;
+        var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
         Assert.That(chimeraGroup.Count, Is.EqualTo(2));
 
         var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
@@ -238,28 +271,60 @@ public class ChimeraPlottingTests
         Assert.That(chimeraGroup.ChimericPsms.Any(p => p.Color == firstProteoformOfSecondProteinColor));
     }
 
+    [Test]
+    public static void ChimeraGroupViewModel_FragmentColorAssignmentIsCorrect_OneProteinTwoProteoforms()
+    {
+        // Arrange
+        var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        var expectedIons = OneProteinTwoProteoformChimeraGroup.ExpectedIonsByColor;
+
+        // Assert that the expected ions match the actual ions in the group
+        Assert.That(chimeraGroup.MatchedFragmentIonsByColor.Count, Is.EqualTo(expectedIons.Count), "Precursor ions by color count should match expected ions count.");
+
+        foreach (var ionsByColor in chimeraGroup.MatchedFragmentIonsByColor)
+        {
+            var color = ionsByColor.Key;
+            var actualIons = ionsByColor.Value;
+            Assert.That(expectedIons.ContainsKey(color), Is.True, $"Expected ions should contain color {color}.");
+
+            var expectedIonsList = expectedIons[color];
+            // Check that the actual ions match the expected ions
+            Assert.That(actualIons.Count, Is.EqualTo(expectedIonsList.Count), $"Count of matched fragment ions for color {color} should match expected count.");
+            foreach (var ion in actualIons)
+            {
+                Assert.That(expectedIonsList.Any(e => Math.Abs(e.Mz - ion.Item1.Mz) < 1e-3 && e.NeutralTheoreticalProduct.ProductType == ion.Item1.NeutralTheoreticalProduct.ProductType), Is.True,
+                    $"Matched fragment ion {ion} should be in expected ions for color {color}.");
+            }
+
+        }
+    }
 
     [Test]
-    public static void ChimeraGroupViewModel_FragmentColorAssignmentIsCorrect()
+    public static void ChimeraGroupViewModel_FragmentColorAssignmentIsCorrect_TwoProteinsTwoProteoforms()
     {
-        //// Arrange
-        //var chimeraGroup = OneProteinTwoProteoformChimeraGroup;
-        //Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+        // Arrange
+        var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+        var expectedIons = TwoProteinsTwoProteoformChimeraGroup.ExpectedIonsByColor;
 
-        //var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
-        //var envelope2 = chimeraGroup.ChimericPsms[1].PrecursorEnvelope;
-        //var psm1 = chimeraGroup.ChimericPsms[0].Psm;
-        //var psm2 = chimeraGroup.ChimericPsms[1].Psm;
+        // Assert that the expected ions match the actual ions in the group
+        Assert.That(chimeraGroup.MatchedFragmentIonsByColor.Count, Is.EqualTo(expectedIons.Count), "Precursor ions by color count should match expected ions count.");
 
+        foreach (var ionsByColor in chimeraGroup.MatchedFragmentIonsByColor)
+        {
+            var color = ionsByColor.Key;
+            var actualIons = ionsByColor.Value;
+            Assert.That(expectedIons.ContainsKey(color), Is.True, $"Expected ions should contain color {color}.");
 
-        //// ensure mass differences are minimized
-        //var psm1ToEnvelope1 = psm1.PrecursorMass - envelope1.MonoisotopicMass;
-        //var psm2ToEnvelope2 = psm2.PrecursorMass - envelope2.MonoisotopicMass;
-        //var psm1ToEnvelope2 = psm1.PrecursorMass - envelope2.MonoisotopicMass;
-        //var psm2ToEnvelope1 = psm2.PrecursorMass - envelope1.MonoisotopicMass;
+            var expectedIonsList = expectedIons[color];
+            // Check that the actual ions match the expected ions
+            Assert.That(actualIons.Count, Is.EqualTo(expectedIonsList.Count), $"Count of matched fragment ions for color {color} should match expected count.");
+            foreach (var ion in actualIons)
+            {
+                Assert.That(expectedIonsList.Any(e => Math.Abs(e.Mz - ion.Item1.Mz) < 1e-3 && e.NeutralTheoreticalProduct.ProductType == ion.Item1.NeutralTheoreticalProduct.ProductType), Is.True,
+                    $"Matched fragment ion {ion} should be in expected ions for color {color}.");
+            }
 
-        //Assert.That(psm1ToEnvelope1, Is.LessThanOrEqualTo(psm1ToEnvelope2), "PSM 1 should be assigned to its own envelope.");
-        //Assert.That(psm2ToEnvelope2, Is.LessThanOrEqualTo(psm2ToEnvelope1), "PSM 2 should be assigned to its own envelope.");
+        }
     }
 
 
