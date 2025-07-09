@@ -218,7 +218,15 @@
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height = "0.75*" />
                                             </Grid.RowDefinitions>
-                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0"/>
+                                            <oxy:PlotView Grid.Row="0" x:Name="plotView" FontSize="16" FontStretch="Expanded" Margin="0 0 0 0">
+                                                <oxy:PlotView.ContextMenu>
+                                                    <ContextMenu>
+                                                        <MenuItem Header="Copy m/z Spectrum (All)" Click="CopyMzSpectrum_Click"/>
+                                                        <MenuItem Header="Copy m/z Spectrum (Annotated)" Click="CopyAnnotatedMzSpectrum_Click"/>
+                                                        <MenuItem Header="Copy Matched Ions" Click="CopyMatchedIons_Click"/>
+                                                    </ContextMenu>
+                                                </oxy:PlotView.ContextMenu>
+                                            </oxy:PlotView>
                                         </Grid>
 
                                         <!--Canvas for drawing stationary sequence annotation-->
