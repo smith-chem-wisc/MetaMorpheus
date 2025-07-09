@@ -296,7 +296,7 @@ namespace EngineLayer
         /// <param name="commonParameters"></param>
         public static void DetermineAnalyteType(CommonParameters commonParameters)
         {
-            // Comment made while DetemineAnalyteType happend at the task layer
+            // Comment made while DetemineAnalyteType happened at the task layer
             // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
             // that bottom-up and top-down data is not being searched in the same task. 
 

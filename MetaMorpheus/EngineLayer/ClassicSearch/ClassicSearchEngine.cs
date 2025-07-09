@@ -121,16 +121,16 @@ namespace EngineLayer.ClassicSearch
                         if (GlobalVariables.StopLoops) { return; }
 
                         // digest each protein into peptides and search for each peptide in all spectra within precursor mass tolerance
-                        foreach (var peptide in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
+                        foreach (var specificBioPolymer in Proteins[i].Digest(CommonParameters.DigestionParams, FixedModifications, VariableModifications, SilacLabels, TurnoverLabels))
                         {
                             if (WriteDigestionCounts)
-                                DigestionCountDictionary.Increment((peptide.Parent.Accession, peptide.BaseSequence));
+                                DigestionCountDictionary.Increment((specificBioPolymer.Parent.Accession, specificBioPolymer.BaseSequence));
                                 
                             IBioPolymerWithSetMods reversedOnTheFlyDecoy = null;
 
-                            if (SpectralLibrary != null && peptide is PeptideWithSetModifications pep)
+                            if (SpectralLibrary != null && specificBioPolymer is PeptideWithSetModifications pep)
                             {
-                                int[] newAAlocations = new int[peptide.BaseSequence.Length];
+                                int[] newAAlocations = new int[specificBioPolymer.BaseSequence.Length];
                                 reversedOnTheFlyDecoy = pep.GetReverseDecoyFromTarget(newAAlocations);
                             }
 
@@ -142,7 +142,7 @@ namespace EngineLayer.ClassicSearch
                             }
 
                             // score each scan that has an acceptable precursor mass
-                            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(peptide.MonoisotopicMass, SearchMode))
+                            foreach (ScanWithIndexAndNotchInfo scan in GetAcceptableScans(specificBioPolymer.MonoisotopicMass, SearchMode))
                             {
                                 Ms2ScanWithSpecificMass theScan = ArrayOfSortedMS2Scans[scan.ScanIndex];
                                 var dissociationType = CommonParameters.DissociationType == DissociationType.Autodetect ?
@@ -157,7 +157,7 @@ namespace EngineLayer.ClassicSearch
                                 // check if we've already generated theoretical fragments for this peptide+dissociation type
                                 if (peptideTheorProducts.Count == 0)
                                 {
-                                    peptide.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
+                                    specificBioPolymer.Fragment(dissociationType, CommonParameters.DigestionParams.FragmentationTerminus, peptideTheorProducts);
                                 }
 
                                 // match theoretical target ions to spectrum
@@ -167,7 +167,7 @@ namespace EngineLayer.ClassicSearch
                                 // calculate the peptide's score
                                 double thisScore = CalculatePeptideScore(theScan.TheScan, matchedIons, fragmentsCanHaveDifferentCharges: WriteSpectralLibrary);
 
-                                AddPeptideCandidateToPsm(scan, thisScore, peptide, matchedIons);
+                                AddPeptideCandidateToPsm(scan, thisScore, specificBioPolymer, matchedIons);
 
                                 if (SpectralLibrary != null)
                                 {
