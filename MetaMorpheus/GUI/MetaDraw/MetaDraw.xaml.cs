@@ -1192,6 +1192,11 @@ namespace MetaMorpheusGUI
             psm.MatchedIons = newIons;
         }
 
+        private void MetaDraw_OnClosing(object sender, CancelEventArgs e)
+        {
+            MetaDrawLogic.CleanUpResources();
+        }
+        
         #region Fragment Plot Click Effects 
 
         // Copy the entire m/z spectrum (all peaks)
