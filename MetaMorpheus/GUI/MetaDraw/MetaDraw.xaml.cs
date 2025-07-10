@@ -40,14 +40,13 @@ namespace MetaMorpheusGUI
         private static List<string> AcceptedSpectraFormats => SpectrumMatchFromTsvHeader.AcceptedSpectraFormats.Concat(new List<string> { ".msalign", ".tdf", ".tdf_bin" }).Select(format => format.ToLower()).ToList();
         private static List<string> AcceptedResultsFormats = new List<string> { ".psmtsv", ".tsv" };
         private static List<string> AcceptedSpectralLibraryFormats = new List<string> { ".msp" };
-        private MetaDrawSettingsViewModel SettingsView;
         private FragmentationReanalysisViewModel FragmentationReanalysisViewModel;
 
         public MetaDraw()
         {
             InitializeComponent();
 
-            InitializeColorSettingsView();
+            SettingsButton.RefreshAction = RefreshPlotsAfterSettingsChange;
             MetaDrawLogic = new MetaDrawLogic();
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectralMatchResultFilePaths, MetaDrawLogic.ThreadLocker);
             BindingOperations.EnableCollectionSynchronization(MetaDrawLogic.SpectraFilePaths, MetaDrawLogic.ThreadLocker);
@@ -468,23 +467,20 @@ namespace MetaMorpheusGUI
             MetaDrawLogic.CleanUpResources();
         }
 
-        private void settings_Click(object sender, RoutedEventArgs e)
+        /// <summary>
+        /// Will be fired by settings button control if settings change. 
+        /// </summary>
+        private void RefreshPlotsAfterSettingsChange()
         {
             // save current selected PSM
             var selectedItem = dataGridScanNums.SelectedItem;
-            var settingsWindow = new MetaDrawSettingsWindow(SettingsView);
-            var result = settingsWindow.ShowDialog();
-
             exportPdfs.Content = MetaDrawSettings.ExportType;
-            // re-select selected PSM
-            if (result == true)
-            {
-                // refresh chart
-                dataGridScanNums_SelectedCellsChanged(null, null);
 
-                // filter based on new settings
-                MetaDrawLogic.FilterPsms();
-            }
+            // refresh chart
+            dataGridScanNums_SelectedCellsChanged(null, null);
+
+            // filter based on new settings
+            MetaDrawLogic.FilterPsms();
 
             if (selectedItem != null)
             {
@@ -1022,16 +1018,6 @@ namespace MetaMorpheusGUI
             }
             MetaDrawSettings.FirstAAonScreenIndex = firstLetterOnScreen;
             MetaDrawSettings.NumberOfAAOnScreen = lettersOnScreen;
-        }
-
-        /// <summary>
-        /// Allows the color settings to load asynchronously, avoiding a minor delay in MetaDraw Launch
-        /// </summary>
-        private async void InitializeColorSettingsView()
-        {
-            MetaDrawSettingsViewModel view = new MetaDrawSettingsViewModel();
-            await view.Initialization;
-            SettingsView = view;
         }
 
         /// <summary>
