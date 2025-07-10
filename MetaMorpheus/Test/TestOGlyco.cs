@@ -1,25 +1,25 @@
-﻿using EngineLayer;
+﻿using Easy.Common.Extensions;
+using EngineLayer;
+using EngineLayer.GlycoSearch;
+using FlashLFQ;
 using MassSpectrometry;
+using MzLibUtil;
+using Nett;
 using NUnit.Framework; 
-using Proteomics;
+using NUnit.Framework.Legacy;
 using Omics.Fragmentation;
+using Omics.Modifications;
+using Proteomics;
 using Proteomics.ProteolyticDigestion;
+using Readers;
+using SpectralAveraging;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using TaskLayer;
-using UsefulProteomicsDatabases;
-using Nett;
-using EngineLayer.GlycoSearch;
-using FlashLFQ;
-using SpectralAveraging;
-using NUnit.Framework.Legacy;
-using Omics.Modifications;
-using Easy.Common.Extensions;
 using TopDownProteomics;
-using MzLibUtil;
-using Readers;
+using UsefulProteomicsDatabases;
 
 namespace Test
 {

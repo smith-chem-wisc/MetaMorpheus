@@ -39,7 +39,7 @@ namespace EngineLayer.GlycoSearch
         public double DiagnosticIonScore { get; set; } //Since every glycopeptide generate DiagnosticIon, it is important to seperate the score. 
 
         public double R138vs144 { get; set; } // The intensity ratio of this 138 and 144 could be a signature for O-glycan or N-glycan.
-        public List<ModSitePair> LocalizedGlycan { get; set; } //<mod site, glycanID, isLocalized> All seen glycans identified.
+        public List<ModSitePair> LocalizedGlycan { get; set; } // The ModSite with confidence defined.
         public LocalizationLevel LocalizationLevel { get; set; }
 
         /// <summary>
@@ -382,38 +382,24 @@ namespace EngineLayer.GlycoSearch
         /// <param name="OGlycanBoxLocalization"> all case of the pair </param>
         /// <param name="localizationLevel"> level 1 to level 3 </param>
         /// <returns> A tuple, represent the pair and its confidience ex. [3,5,ture] means glycan 5 located on glycosite 3, and very confidience </returns>
-        public static List<ModSitePair> GetLocalizedGlycan(List<Route> OGlycanBoxLocalization, out LocalizationLevel localizationLevel)
+        public static List<ModSitePair> GetLocalizedGlycan(List<Route> allLocalizationsRoutes, out LocalizationLevel localizationLevel)
         {
             List<ModSitePair> localizedMod = new List<ModSitePair>();
 
-            //Dictionary<string, int> modSiteSeenCount = new Dictionary<string, int>(); // all possible glycan-sites pair, Dictionary<string, int>: site-glycan pair, count
-
-            //foreach (var route in OGlycanBoxLocalization) // ogl means one case, there are three glycan located on the same peptide: (5,1,False),(9,8,Flase),(10,9,Ture)
-            //{
-            //    foreach (var modSite in route.ModSitePairs)            // og means one glycan locaization, like (5,1,False) -> glycan 1 attached on postion5.
-            //    {
-            //        var k = modSite.SiteIndex.ToString() + "-" + modSite.ModId.ToString(); // k = 5-1(glycosite-glycan) means the glycan-site pair
-            //        if (modSiteSeenCount.ContainsKey(k)) // accout the number of the same glycan-site pair
-            //        {
-            //            modSiteSeenCount[k] += 1;   // this pair cpunt +1
-            //        }
-            //        else
-            //        {
-            //            modSiteSeenCount.Add(k, 1); // If the pair is first time to seen, add it to the dictionary.
-            //        }
-            //    }
-            //}
-
-            var modSiteSeenCount = OGlycanBoxLocalization.SelectMany(p => p.ModSitePairs).GroupBy(p => p).ToDictionary(g => g.Key, g => g.Count()); //This is a more efficient way to count the glycan-site pair.
+            //This is a more efficient way to count the mod-site pair of all routes.
+            var modSiteSeenCount = allLocalizationsRoutes
+                .SelectMany(p => p.ModSitePairs)
+                .GroupBy(p => p)
+                .ToDictionary(g => g.Key, g => g.Count()); 
 
             localizationLevel = LocalizationLevel.Level3;
-            if (OGlycanBoxLocalization.Count == 1) // we just have one situation(route), no other possibility
+            if (allLocalizationsRoutes.Count == 1) // we just have one hypothesis(route), no other possibility
             {
                 localizationLevel = LocalizationLevel.Level1;
             }
-            else if (OGlycanBoxLocalization.Count > 1)
+            else if (allLocalizationsRoutes.Count > 1)
             {
-                if (modSiteSeenCount.Values.Any(p => p == OGlycanBoxLocalization.Count)) //If anyone of the glycan-site pair is localized in all the cases, then the localization level is 2.
+                if (modSiteSeenCount.Values.Any(p => p == allLocalizationsRoutes.Count)) //If anyone of the glycan-site pair is localized in all the cases, then the localization level is 2.
                 {
                     localizationLevel = LocalizationLevel.Level2;
                 }
@@ -425,11 +411,11 @@ namespace EngineLayer.GlycoSearch
 
             foreach (var seenMod in modSiteSeenCount)
             {
-                if (seenMod.Value == OGlycanBoxLocalization.Count) // Try to fine the glycan-site pair that always localized in all the cases.
+                if (seenMod.Value == allLocalizationsRoutes.Count) // Try to fine the glycan-site pair that always localized in all the cases. 
                 {
-                    seenMod.Key.Confident = true;
+                    seenMod.Key.Confident = true; //If yes, then confident will be set as ture.
                 }
-                localizedMod.Add(seenMod.Key);
+                localizedMod.Add(seenMod.Key); //Otherwise, default is false.
             }
 
             return localizedMod;
