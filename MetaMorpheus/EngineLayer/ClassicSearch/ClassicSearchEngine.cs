@@ -233,18 +233,13 @@ namespace EngineLayer.ClassicSearch
                         return;
 
                     // if the PSM is null, create a new one; otherwise, add or replace the peptide
-                    switch (SpectralMatches[scan.ScanIndex])
-                    {
-                        case null when GlobalVariables.AnalyteType == AnalyteType.Oligo:
+                    if (SpectralMatches[scan.ScanIndex] == null)
+                        if (GlobalVariables.AnalyteType == AnalyteType.Oligo)
                             SpectralMatches[scan.ScanIndex] = new OligoSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons);
-                            break;
-                        case null:
+                        else
                             SpectralMatches[scan.ScanIndex] = new PeptideSpectralMatch(peptide, scan.Notch, thisScore, scan.ScanIndex, ArrayOfSortedMS2Scans[scan.ScanIndex], CommonParameters, matchedIons);
-                            break;
-                        default:
-                            SpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons);
-                            break;
-                    }
+                    else
+                        SpectralMatches[scan.ScanIndex].AddOrReplace(peptide, thisScore, scan.Notch, CommonParameters.ReportAllAmbiguity, matchedIons);
                 }
             }
         }
