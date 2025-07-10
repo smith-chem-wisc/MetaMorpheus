@@ -1,4 +1,6 @@
-﻿using MassSpectrometry;
+﻿using EngineLayer.DIA.Enums;
+using MassSpectrometry;
+using MzLibUtil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,13 +9,14 @@ using System.Threading.Tasks;
 
 namespace EngineLayer.DIA
 {
-    public class PrecursorFragmentGroup
+    public class PrecursorFragmentsGroup
     {
         public ExtractedIonChromatogram PrecursorXic { get; set; }
 
         public List<PrecursorFragmentPair> PFpairs { get; set; }
+        public int PFgroupIndex { get; set; } 
 
-        public PrecursorFragmentGroup(ExtractedIonChromatogram precursorXic, List<PrecursorFragmentPair> pfPairs = null)
+        public PrecursorFragmentsGroup(ExtractedIonChromatogram precursorXic, List<PrecursorFragmentPair> pfPairs = null)
         {
             PrecursorXic = precursorXic;
             PFpairs = pfPairs ?? new List<PrecursorFragmentPair>();
@@ -55,5 +58,46 @@ namespace EngineLayer.DIA
 
             return corr;
         }
+
+        public static double CalculateXicOverlapRatio(ExtractedIonChromatogram xic1, ExtractedIonChromatogram xic2)
+        {
+            if ((xic1.StartScanIndex < xic2.StartScanIndex && xic1.EndScanIndex < xic2.StartScanIndex) ||
+                (xic2.StartScanIndex < xic1.StartScanIndex && xic2.EndScanIndex < xic1.StartScanIndex))
+            {
+                return 0;
+            }
+            var start = Math.Min(xic1.StartScanIndex, xic2.StartScanIndex);
+            var end = Math.Max(xic1.EndScanIndex, xic2.EndScanIndex);
+            var overlapStart = Math.Max(xic1.StartScanIndex, xic2.StartScanIndex);
+            var overlapEnd = Math.Min(xic1.EndScanIndex, xic2.EndScanIndex);
+
+            double overlap = (overlapEnd - overlapStart) / (double)(end - start);
+            return overlap;
+        }
+
+        public static Ms2ScanWithSpecificMass ConstructNewMs2Scans(PrecursorFragmentsGroup pfGroup, CommonParameters commonParameters, PseudoMs2ConstructionType pseudoMs2Type, string dataFilePath)
+        {
+            switch (pseudoMs2Type)
+            {
+
+                default: return null;
+            }
+        }
+
+        //public static Ms2ScanWithSpecificMass GetPseudoMs2Scan_mzPeak(PrecursorFragmentsGroup pfGroup, CommonParameters commonParameters, string dataFilePath)
+        //{
+        //    //var mzs = pfGroup.PFpairs.Select(pf => pf.FragmentXic.AveragedM).ToArray();
+        //    //var intensities = pfGroup.PFpairs.Select(pf => pf.FragmentXic.AveragedM).ToArray();
+        //    //var spectrum = new MzSpectrum(mzs, intensities, false);
+        //    //var newMs2Scan = new MsDataScan(spectrum, pfGroup.PFgroupIndex, 2, true, Polarity.Positive, pfGroup.PrecursorXic.ApexRT, new MzRange(mzs.Min(), mzs.Max()), null, MZAnalyzerType.Orbitrap, intensities.Sum(), null, null, null, oneBasedPrecursorScanNumber: pfGroup.PrecursorXic.Index);
+        //    //var neutralExperimentalFragments = Ms2ScanWithSpecificMass.GetNeutralExperimentalFragments(newMs2Scan, commonParameters);
+        //    //var charge = pfGroup.PrecursorXic.Charge;
+        //    //var monoMz = pfGroup.PrecursorPeakCurve.MonoisotopicMass.ToMz(charge);
+        //    ////should highestPeakMz used in ms2withmass???
+        //    //Ms2ScanWithSpecificMass scanWithprecursor = new Ms2ScanWithSpecificMass(newMs2Scan, monoMz, charge, dataFilePath,
+        //    //    commonParameters, neutralExperimentalFragments);
+
+        //    return scanWithprecursor;
+        //}
     }
 }
