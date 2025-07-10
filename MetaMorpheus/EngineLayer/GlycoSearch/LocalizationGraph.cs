@@ -400,11 +400,11 @@ namespace EngineLayer.GlycoSearch
                 matrix[i] = new Tuple<int, int, double>[routes.Count];
                 for (int j = 0; j < routes.Count; j++)
                 {
-                    foreach (var m in routes[j].Mods)
+                    foreach (var modSitePair in routes[j].ModSitePairs)
                     {
-                        if (m.Item1 == modPos[i])
+                        if (modSitePair.SiteIndex == modPos[i])
                         {
-                            matrix[i][j] = new Tuple<int, int, double>(m.Item1, m.Item2, routes[j].ReversePScore);
+                            matrix[i][j] = new Tuple<int, int, double>(modSitePair.SiteIndex, modSitePair.ModId, routes[j].ReversePScore);
                         }
                     }
                 }
