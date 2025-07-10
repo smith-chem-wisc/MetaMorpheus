@@ -118,7 +118,7 @@ namespace TaskLayer.MbrAnalysis
 
             if (bestMbrMatches.Any())
             {
-                List<SpectralMatch> allPsms = parameters.AllPsms.
+                List<SpectralMatch> allPsms = parameters.AllSpectralMatches.
                     OrderByDescending(p => p).ToList();
 
                 FDRAnalysisOfMbrPsms(bestMbrMatches, allPsms, parameters, fileSpecificParameters);
@@ -137,7 +137,7 @@ namespace TaskLayer.MbrAnalysis
             CommonParameters commonParameters,
             List<(string, CommonParameters)> fileSpecificParameters)
         {
-            var peptides = parameters.AllPsms;
+            var peptides = parameters.AllSpectralMatches;
             PostSearchAnalysisTask postProcessing = new PostSearchAnalysisTask
             {
                 Parameters = parameters,
