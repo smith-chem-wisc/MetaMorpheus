@@ -38,7 +38,7 @@ public class RnaSpecificTypeSwitches
             GlobalVariables.AnalyteType = AnalyteType.Oligo;
 
         var commonParams = new CommonParameters(digestionParams: digestionParams);
-        MetaMorpheusTask.DetermineAnalyteType(commonParams);
+        MetaMorpheusEngine.DetermineAnalyteType(commonParams);
         Assert.That(GlobalVariables.AnalyteType, Is.EqualTo(expected), $"Expected {expected} but got {GlobalVariables.AnalyteType}");
     }
 

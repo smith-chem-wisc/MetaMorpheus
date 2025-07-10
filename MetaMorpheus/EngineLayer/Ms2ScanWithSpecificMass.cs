@@ -71,6 +71,7 @@ namespace EngineLayer
             HashSet<double> alreadyClaimedMzs = new HashSet<double>(neutralExperimentalFragmentMasses
                 .SelectMany(p => p.Peaks.Select(v => v.mz.RoundedDouble()!.Value)));
 
+            int charge = scan.Polarity == Polarity.Positive ? 1 : -1;
             for (int i = 0; i < scan.MassSpectrum.XArray.Length; i++)
             {
                 double mz = scan.MassSpectrum.XArray[i];
@@ -80,7 +81,7 @@ namespace EngineLayer
                 {
                     neutralExperimentalFragmentMasses.Add(new IsotopicEnvelope(
                         new List<(double mz, double intensity)> { (mz, intensity) },
-                        mz.ToMass(1), 1, intensity, 0));
+                        mz.ToMass(charge), charge, intensity, 0));
                 }
             }
 

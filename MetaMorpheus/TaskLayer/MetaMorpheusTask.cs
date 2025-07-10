@@ -569,7 +569,7 @@ namespace TaskLayer
         public MyTaskResults RunTask(string output_folder, List<DbForTask> currentProteinDbFilenameList, List<string> currentRawDataFilepathList, string displayName)
         {
             this.OutputFolder = output_folder;
-            DetermineAnalyteType(CommonParameters);
+            MetaMorpheusEngine.DetermineAnalyteType(CommonParameters);
             StartingSingleTask(displayName);
 
             var tomlFileName = Path.Combine(Directory.GetParent(output_folder).ToString(), "Task Settings", displayName + "config.toml");
@@ -1269,23 +1269,7 @@ namespace TaskLayer
             }
         }
 
-        public static void DetermineAnalyteType(CommonParameters commonParameters)
-        {
-            // changes the name of the analytes from "peptide" to "proteoform" if the protease is set to top-down
 
-            // TODO: note that this will not function well if the user is using file-specific settings, but it's assumed
-            // that bottom-up and top-down data is not being searched in the same task
-            if (commonParameters == null || commonParameters.DigestionParams == null)
-                return;
-
-            GlobalVariables.AnalyteType = commonParameters.DigestionParams switch
-            {
-                RnaDigestionParams => AnalyteType.Oligo,
-                DigestionParams { Protease: not null } when commonParameters.DigestionParams.DigestionAgent.Name == "top-down" 
-                    => AnalyteType.Proteoform,
-                _ => AnalyteType.Peptide
-            };
-        }
 
         /// <summary>
         /// Handle ambiguity when two theoretical bioPolymers in the
