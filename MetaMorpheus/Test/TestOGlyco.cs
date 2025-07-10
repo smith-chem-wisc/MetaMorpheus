@@ -483,8 +483,8 @@ namespace Test
 
             //Get localized Route
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v=>v.Item1), new List<int>{ 2, 3, 10}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(v => v.Item2), new List<int> { 3, 3, 0 }));
+            Assert.That(Enumerable.SequenceEqual(local.ModSitePairs.Select(v=>v.SiteIndex), new List<int>{ 2, 3, 10}));
+            Assert.That(Enumerable.SequenceEqual(local.ModSitePairs.Select(v => v.ModId), new List<int> { 3, 3, 0 }));
 
 
             //Get all paths, calculate PScore and calculate position probability. 
@@ -569,8 +569,8 @@ namespace Test
             var local = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
             //There is only one path, [4,1] means in position 4 with glycan 1
 
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p=>p.Item1), new List<int> { 4}));
-            Assert.That(Enumerable.SequenceEqual(local.Mods.Select(p => p.Item2), new List<int> { 1 }));
+            Assert.That(Enumerable.SequenceEqual(local.ModSitePairs.Select(p=>p.SiteIndex), new List<int> { 4}));
+            Assert.That(Enumerable.SequenceEqual(local.ModSitePairs.Select(p => p.ModId), new List<int> { 1 }));
         }
 
         [Test]
@@ -1088,7 +1088,7 @@ namespace Test
 
             var route = LocalizationGraph.GetLocalizedPath(localizationGraph, allPaths.First());
 
-            Assert.That(route.Mods.First().Item3);
+            Assert.That(route.ModSitePairs.First().HasMs2Spectrum);
         }
 
         [Test]
