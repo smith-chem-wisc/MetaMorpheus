@@ -10,11 +10,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Windows.Media;
-using System.Drawing;
-using System.Drawing.Imaging;
-using Brushes = System.Windows.Media.Brushes;
 using Point = System.Windows.Point;
-using System.Windows.Media.Media3D;
 
 namespace GuiFunctions;
 
@@ -180,7 +176,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
     {
         if (SelectedChimeraGroup == null)
         {
-            MessageBox.Show("No chimera group selected for export.");
+            MessageBoxHelper.Warn("No chimera group selected for export.");
             return;
         }
 
@@ -204,14 +200,14 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
                 throw new ArgumentOutOfRangeException();
         }
 
-        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
+        MessageBoxHelper.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
     }
 
     private void ExportMs2()
     {
         if (SelectedChimeraGroup == null)
         {
-            MessageBox.Show("No chimera group selected for export.");
+            MessageBoxHelper.Warn("No chimera group selected for export.");
             return;
         }
 
@@ -234,7 +230,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
+        MessageBoxHelper.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
     }
 
     private void ExportSequenceCoverage()
@@ -280,7 +276,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             encoder.Frames.Add(BitmapFrame.Create(rtb));
             encoder.Save(stream);
         }
-        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
+        MessageBoxHelper.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
     }
 
     private void ExportLegend(object frameworkElement)
@@ -288,7 +284,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         var element = frameworkElement as FrameworkElement;
         if (element == null)
         {
-            MessageBox.Show("No legend available for export.");
+            MessageBoxHelper.Warn("No legend available for export.");
             return;
         }
 
@@ -321,7 +317,7 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
             encoder.Frames.Add(BitmapFrame.Create(rtb));
             encoder.Save(stream);
         }
-        MessageBox.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
+        MessageBoxHelper.Show(MetaDrawSettings.ExportType + "(s) exported to: " + path);
     }
 
     #endregion

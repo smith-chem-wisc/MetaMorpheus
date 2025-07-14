@@ -188,7 +188,9 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         var terminalFrags = ChimericPsms.SelectMany(p => p.Psm.MatchedIons)
             .Where(p => !p.IsInternalFragment).ToList();
         TotalFragments = terminalFrags.Count;
-        UniqueFragments = terminalFrags.Distinct().Count();
+        UniqueFragments = terminalFrags.Select(p => (p.NeutralTheoreticalProduct.Annotation, p.Mz.RoundedDouble(1)))
+            .Distinct()
+            .Count();
         ProteinCount = ChimericPsms.GroupBy(p => p.Psm.Accession).Count();
     }
 
@@ -210,7 +212,7 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
         {
             var psm = psmList[i];
             int psmCharge = psm.PrecursorCharge;
-            double psmExperimentalMass = psm.PrecursorMass + double.Parse(psm.MassDiffDa.Split('|')[0]);
+            double psmExperimentalMass = psm.PrecursorMass;
 
             for (int j = 0; j < m; j++)
             {

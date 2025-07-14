@@ -12,6 +12,12 @@ namespace Test.MetaDraw;
 [TestFixture, Apartment(ApartmentState.STA)]
 public class ChimeraSpectrumMatchPlotTests
 {
+    [SetUp]
+    public void SetUp()
+    {
+        MessageBoxHelper.SuppressMessageBoxes = true;
+    }
+
     [Test]
     public void ChimeraSpectrumMatchPlot_Constructor_InitializesProperties()
     {

@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Chemistry;
 using EngineLayer;
-using EngineLayer.FdrAnalysis;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
@@ -59,6 +57,7 @@ public class ChimeraPlottingTests
     [OneTimeSetUp]
     public static void OneTimeSetup()
     {
+        MessageBoxHelper.SuppressMessageBoxes = true;
         GlobalVariables.AnalyteType = AnalyteType.Proteoform;
         // Ensure the export directory exists in a new state
         if (Directory.Exists(TestExportDirectory))
@@ -72,7 +71,6 @@ public class ChimeraPlottingTests
     public static void OneTimeTearDown()
     {
         GlobalVariables.AnalyteType = AnalyteType.Peptide;
-        DataFile.CloseDynamicConnection();
         // Clean up the export directory after tests
         if (Directory.Exists(TestExportDirectory))
         {
@@ -180,7 +178,7 @@ public class ChimeraPlottingTests
             .ToList();
         Assert.That(terminalFragments.Count, Is.EqualTo(chimeraGroup.TotalFragments),  chimeraGroup.TotalFragments + " terminal fragments should match total fragments in the group.");
 
-        var uniqueFragments = terminalFragments
+        var uniqueFragments = terminalFragments.Select(p => (p.NeutralTheoreticalProduct.Annotation, p.Mz.RoundedDouble(1)))
             .Distinct()
             .ToList();
         Assert.That(uniqueFragments.Count, Is.EqualTo(chimeraGroup.UniqueFragments), "Unique fragments should match total unique fragments in the group.");
@@ -199,7 +197,7 @@ public class ChimeraPlottingTests
             .ToList();
         Assert.That(terminalFragments.Count, Is.EqualTo(chimeraGroup.TotalFragments), chimeraGroup.TotalFragments + " terminal fragments should match total fragments in the group.");
 
-        var uniqueFragments = terminalFragments
+        var uniqueFragments = terminalFragments.Select(p => (p.NeutralTheoreticalProduct.Annotation, p.Mz.RoundedDouble(1)))
             .Distinct()
             .ToList();
         Assert.That(uniqueFragments.Count, Is.EqualTo(chimeraGroup.UniqueFragments), "Unique fragments should match total unique fragments in the group.");

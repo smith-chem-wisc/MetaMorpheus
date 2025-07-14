@@ -541,11 +541,6 @@ namespace GuiFunctions
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);
                             break;
 
-                        case "ChimeraSpectrumMatchPlot":
-                            ((ChimeraSpectrumMatchPlot)plot).ExportPlot(filePath, legendCanvas, plotView.ActualWidth,
-                                plotView.ActualHeight);
-                            break;
-
                         case "CrosslinkSpectrumMatchPlot":
                             ((CrosslinkSpectrumMatchPlot)plot).ExportPlot(filePath, StationarySequence.SequenceDrawingCanvas,
                                 legendCanvas, ptmLegendLocationVector, plotView.ActualWidth, plotView.ActualHeight);

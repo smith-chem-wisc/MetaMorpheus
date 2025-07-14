@@ -15,6 +15,11 @@ namespace Test.MetaDraw;
 [TestFixture, Apartment(System.Threading.ApartmentState.STA)]
 public class ChimeraAnalysisTabViewModelTests
 {
+    [SetUp]
+    public void SetUp()
+    {
+        MessageBoxHelper.SuppressMessageBoxes = true;
+    }
 
     [Test]
     public void Constructor_InitializesProperties()
@@ -163,61 +168,119 @@ public class ChimeraAnalysisTabViewModelTests
     }
 
     [Test]
-    public void ExportMs1Command_InvokesExportMs1()
+    public void ExportMs1Command_DoesNothing_WhenSelectedChimeraGroupIsNull()
     {
         // Arrange
         var allPsms = ChimeraPlottingTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraPlottingTests.DataFile } };
         var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
-        vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
-        vm.SelectedExportType = "Png";
-        string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportMs1");
+
+        string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportMs1_Null");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
 
-        // Act
-        vm.Ms1ChimeraPlot = new Ms1ChimeraPlot(new PlotView(), vm.SelectedChimeraGroup);
-        Assert.DoesNotThrow(() => vm.ExportMs1Command.Execute(new()));
-
-        // Assert
-        string[] files = Directory.GetFiles(tempDir, "*_MS1.png");
-        Assert.That(files.Length, Is.GreaterThan(0));
+        // Act & Assert
+        Assert.DoesNotThrow(() => vm.ExportMs1Command.Execute(null));
+        Assert.That(Directory.GetFiles(tempDir, "*_MS1.*").Length, Is.EqualTo(0));
 
         // Cleanup
-        foreach (var file in files)
-            File.Delete(file);
         Directory.Delete(tempDir, true);
     }
 
     [Test]
-    public void ExportMs2Command_InvokesExportMs2()
+    public void ExportMs2Command_DoesNothing_WhenSelectedChimeraGroupIsNull()
+    {
+        // Arrange
+        var allPsms = ChimeraPlottingTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraPlottingTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+
+        string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportMs2_Null");
+        vm.ExportDirectory = tempDir;
+        Directory.CreateDirectory(tempDir);
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => vm.ExportMs2Command.Execute(null));
+        Assert.That(Directory.GetFiles(tempDir, "*_MS2.*").Length, Is.EqualTo(0));
+
+        // Cleanup
+        Directory.Delete(tempDir, true);
+    }
+
+    [Test]
+    public void ExportLegendCommand_DoesNothing_WhenArgumentIsNull()
+    {
+        // Arrange
+        var allPsms = ChimeraPlottingTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraPlottingTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportLegend_Null");
+        vm.ExportDirectory = tempDir;
+        Directory.CreateDirectory(tempDir);
+
+        // Act & Assert
+        Assert.DoesNotThrow(() => vm.ExportLegendCommand.Execute(null));
+        Assert.That(Directory.GetFiles(tempDir, "*_Legend.*").Length, Is.EqualTo(0));
+
+        // Cleanup
+        Directory.Delete(tempDir, true);
+    }
+
+    [TestCase("Pdf")]
+    [TestCase("Png")]
+    [TestCase("Svg")]
+    public void ExportMs1Command_ExportsCorrectFormat(string format)
     {
         // Arrange
         var allPsms = ChimeraPlottingTests.AllMatches;
         var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraPlottingTests.DataFile } };
         var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
         vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
-        vm.SelectedExportType = "Png";
-        string tempDir = Path.Combine(Path.GetTempPath(), "ChimeraAnalysisTabViewModelTests_ExportMs2");
+        vm.SelectedExportType = format;
+        string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs1_{format}");
         vm.ExportDirectory = tempDir;
         Directory.CreateDirectory(tempDir);
-        var plotView = new PlotView
-        {
-            Width = 200,
-            Height = 100
-        };
-
+        vm.Ms1ChimeraPlot = new Ms1ChimeraPlot(new OxyPlot.Wpf.PlotView(), vm.SelectedChimeraGroup);
 
         // Act
-        vm.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, vm.SelectedChimeraGroup);
-        Assert.DoesNotThrow(() => vm.ExportMs2Command.Execute(new()));
+        Assert.DoesNotThrow(() => vm.ExportMs1Command.Execute(null));
 
         // Assert
-        string[] files = Directory.GetFiles(tempDir, "*_MS2.png");
-        Assert.That(files.Length, Is.GreaterThan(0));
+        string ext = format.ToLower();
+        Assert.That(Directory.GetFiles(tempDir, $"*_MS1.{ext}").Length, Is.GreaterThan(0));
 
         // Cleanup
-        foreach (var file in files)
+        foreach (var file in Directory.GetFiles(tempDir))
+            File.Delete(file);
+        Directory.Delete(tempDir, true);
+    }
+
+    [TestCase("Pdf")]
+    [TestCase("Png")]
+    [TestCase("Svg")]
+    public void ExportMs2Command_ExportsCorrectFormat(string format)
+    {
+        // Arrange
+        var allPsms = ChimeraPlottingTests.AllMatches;
+        var dataFiles = new Dictionary<string, MsDataFile> { { "FXN3_tr1_032017-calib", ChimeraPlottingTests.DataFile } };
+        var vm = new ChimeraAnalysisTabViewModel(allPsms, dataFiles);
+        vm.SelectedChimeraGroup = vm.ChimeraGroupViewModels[0];
+        vm.SelectedExportType = format;
+        string tempDir = Path.Combine(Path.GetTempPath(), $"ChimeraAnalysisTabViewModelTests_ExportMs2_{format}");
+        vm.ExportDirectory = tempDir;
+        Directory.CreateDirectory(tempDir);
+        var plotView = new OxyPlot.Wpf.PlotView { Width = 200, Height = 100 };
+        vm.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(plotView, vm.SelectedChimeraGroup);
+
+        // Act
+        Assert.DoesNotThrow(() => vm.ExportMs2Command.Execute(null));
+
+        // Assert
+        string ext = format.ToLower();
+        Assert.That(Directory.GetFiles(tempDir, $"*_MS2.{ext}").Length, Is.GreaterThan(0));
+
+        // Cleanup
+        foreach (var file in Directory.GetFiles(tempDir))
             File.Delete(file);
         Directory.Delete(tempDir, true);
     }
