@@ -12,7 +12,6 @@ using MassSpectrometry;
 using NUnit.Framework;
 using Omics.Fragmentation;
 using OxyPlot;
-using OxyPlot.Wpf;
 using Readers;
 using Path = System.IO.Path;
 
