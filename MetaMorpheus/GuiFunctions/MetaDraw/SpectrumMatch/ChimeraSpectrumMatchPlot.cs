@@ -1,16 +1,12 @@
-﻿using MassSpectrometry;
-using OxyPlot;
-using Omics.Fragmentation;
+﻿using OxyPlot;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Easy.Common.Extensions;
 using OxyPlot.Wpf;
 using Point = System.Windows.Point;
 using Canvas = System.Windows.Controls.Canvas;
-using Readers;
 using System;
 
 namespace GuiFunctions
@@ -20,30 +16,12 @@ namespace GuiFunctions
         private static Queue<OxyColor> overflowColors;
         public static OxyColor MultipleProteinSharedColor;
         public static Dictionary<int, List<OxyColor>> ColorByProteinDictionary;
-        public static Queue<OxyColor> OverflowColors
-        {
-            get => new Queue<OxyColor>(overflowColors.ToList());
-        }
+        public static Queue<OxyColor> OverflowColors => new(overflowColors);
 
-        public List<SpectrumMatchFromTsv> SpectrumMatches { get; private set; }
-        public Dictionary<string, List<SpectrumMatchFromTsv>> PsmsByProteinDictionary { get; private set; }
-
-        public ChimeraSpectrumMatchPlot(PlotView plotView, MsDataScan scan, List<SpectrumMatchFromTsv> sms) : base(plotView, null, scan)
-        {
-            SpectrumMatches = sms;
-            PsmsByProteinDictionary = SpectrumMatches.GroupBy(p => p.BaseSeq).ToDictionary(p => p.Key, p => p.ToList());
-            sms.Select(p => p.MatchedIons).ForEach(p => MatchedFragmentIons.AddRange(p));
-            
-            AnnotateMatchedIons();
-            ZoomAxes();
-            RefreshChart();
-        }
-
-        public ChimeraSpectrumMatchPlot(PlotView plotView, ChimeraGroupViewModel chimeraGroupVm, double mzMax = double.MaxValue) : base(plotView, null,
-            chimeraGroupVm.Ms2Scan)
+        public ChimeraSpectrumMatchPlot(PlotView plotView, ChimeraGroupViewModel chimeraGroupVm, double mzMax = double.MaxValue) : base(plotView, null, chimeraGroupVm.Ms2Scan)
         {
             MatchedFragmentIons = chimeraGroupVm.MatchedFragmentIonsByColor.SelectMany(p => p.Value.Select(q => q.Item1)).ToList();
-            AnnotateMatchedIonsFromChimeraGroupVm(chimeraGroupVm);
+            AnnotateMatchedIons(chimeraGroupVm);
             if (Math.Abs(mzMax - double.MaxValue) > 0.001)
             {
                 Model.Axes[0].Maximum = mzMax;
@@ -53,78 +31,15 @@ namespace GuiFunctions
             RefreshChart();
         }
 
-        private void AnnotateMatchedIonsFromChimeraGroupVm(ChimeraGroupViewModel chimeraGroupVm)
+        /// <summary>
+        /// Annotates the matched ions based upon the protein of origin, and the unique proteoform ID's
+        /// </summary>
+        private void AnnotateMatchedIons(ChimeraGroupViewModel chimeraGroupVm)
         {
             foreach (var ionGroup in chimeraGroupVm.MatchedFragmentIonsByColor)
             {
                 var color = ionGroup.Key;
                 ionGroup.Value.ForEach(p => AnnotatePeak(p.Item1, false, false, color));
-            }
-        }
-
-        /// <summary>
-        /// Annotates the matched ions based upon the protein of origin, and the unique proteoform ID's
-        /// </summary>
-        protected void AnnotateMatchedIons()
-        {
-            var allMatchedIons = new List<MatchedFragmentIon>();
-            List<(string, MatchedFragmentIon)> allDrawnIons = [];
-            var overflowColors = OverflowColors;
-
-            var proteinIndex = 0;
-            foreach (var proteinGroup in PsmsByProteinDictionary.Values)
-            {
-                var proteinMatchedIons = new List<MatchedFragmentIon>();
-                var proteinDrawnIons = new List<MatchedFragmentIon>();
-
-                for (var j = 0; j < proteinGroup.Count; j++)
-                {
-                    proteinMatchedIons.AddRange(proteinGroup[j].MatchedIons);
-                    allMatchedIons.AddRange(proteinGroup[j].MatchedIons);
-                    var bioPolymerWithSetMods = proteinGroup.First()
-                        .ToBioPolymerWithSetMods(proteinGroup[j].FullSequence.Split('|')[0]);
-
-                    // more proteins than protein programmed colors
-                    if (proteinIndex >= ColorByProteinDictionary.Keys.Count)
-                    {
-                        proteinIndex = 0;
-                    }
-
-                    // each matched ion
-                    foreach (var matchedIon in proteinGroup[j].MatchedIons)
-                    {
-                        if (!MetaDrawSettings.DisplayInternalIons &&
-                            matchedIon.NeutralTheoreticalProduct.SecondaryProductType != null)
-                            continue;
-
-                        OxyColor color;
-
-                        // if drawn by the same protein already
-                        if (proteinDrawnIons.Any(p => p.Equals(matchedIon)))
-                        {
-                            color = ColorByProteinDictionary[proteinIndex][0];
-                        }
-                        // if drawn already by different protein
-                        else if (allDrawnIons.Any(p => p.Item2.Equals(matchedIon)))
-                        {
-                            color = MultipleProteinSharedColor;
-                        }
-                        // if unique peak
-                        else
-                        {
-                            // more proteoforms than programmed colors
-                            if (j + 1 >= ColorByProteinDictionary[proteinIndex].Count)
-                            {
-                                ColorByProteinDictionary[proteinIndex].Add(overflowColors.Dequeue());
-                            }
-                            color = ColorByProteinDictionary[proteinIndex][j + 1];
-                            proteinDrawnIons.Add(matchedIon);
-                        }
-                        AnnotatePeak(matchedIon, false, false, color);
-                        allDrawnIons.Add((proteinGroup[j].BaseSeq, matchedIon));
-                    }
-                }
-                proteinIndex++;
             }
         }
 
@@ -171,6 +86,7 @@ namespace GuiFunctions
 
             // combine the bitmaps
             var combinedBitmaps = MetaDrawLogic.CombineBitmap(bitmaps, points, false);
+            bitmaps.ForEach(p => p.Dispose());
             File.Delete(tempModelPath);
             File.Delete(tempLegendPngPath);
             base.ExportPlot(path, combinedBitmaps, width, height);
