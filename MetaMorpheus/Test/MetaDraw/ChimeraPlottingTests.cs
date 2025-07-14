@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using EngineLayer;
+using EngineLayer.FdrAnalysis;
 using GuiFunctions;
 using MassSpectrometry;
 using NUnit.Framework;
@@ -13,6 +14,7 @@ using Omics.Fragmentation;
 using OxyPlot;
 using OxyPlot.Wpf;
 using Readers;
+using Path = System.IO.Path;
 
 namespace Test.MetaDraw;
 
@@ -28,20 +30,10 @@ public class ChimeraPlottingTests
 
     public record ChimeraTestCase(ChimeraGroupViewModel ChimeraGroup, Dictionary<OxyColor, List<MatchedFragmentIon>> ExpectedIonsByColor);
 
-    [OneTimeSetUp]
-    public static void OneTimeSetup()
+    static ChimeraPlottingTests()
     {
-        GlobalVariables.AnalyteType = AnalyteType.Proteoform;
-        // Ensure the export directory exists in a new state
-        if (Directory.Exists(TestExportDirectory))
-        {
-            Directory.Delete(TestExportDirectory, true);
-        }
-        Directory.CreateDirectory(TestExportDirectory);
-
         var psmPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchResults.psmtsv");
         string msDataPath = Path.Combine(TestContext.CurrentContext.TestDirectory, "TopDownTestData", "TDGPTMDSearchSingleSpectra.mzML");
-
 
         DataFile = MsDataFileReader.GetDataFile(msDataPath).LoadAllStaticData();
         DataFile.InitiateDynamicConnection();
@@ -52,7 +44,7 @@ public class ChimeraPlottingTests
         var testPsms = AllMatches.Where(p => p.Ms2ScanNumber == testMs2Scan.OneBasedScanNumber);
         var group = new ChimeraGroupViewModel(testPsms, testMs1Scan, testMs2Scan);
         var ions = group.AssignFragmentIonColors()
-            .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList() );
+            .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList());
         OneProteinTwoProteoformChimeraGroup = new ChimeraTestCase(group, ions);
 
         var testMs1Scan2 = DataFile.GetOneBasedScan(1243);
@@ -63,6 +55,18 @@ public class ChimeraPlottingTests
             .ToDictionary(p => p.Key, p => p.Value.Select(m => m.Item1).ToList());
 
         TwoProteinsTwoProteoformChimeraGroup = new ChimeraTestCase(group2, ions2);
+    }
+
+    [OneTimeSetUp]
+    public static void OneTimeSetup()
+    {
+        GlobalVariables.AnalyteType = AnalyteType.Proteoform;
+        // Ensure the export directory exists in a new state
+        if (Directory.Exists(TestExportDirectory))
+        {
+            Directory.Delete(TestExportDirectory, true);
+        }
+        Directory.CreateDirectory(TestExportDirectory);
     }
 
     [OneTimeTearDown]
@@ -329,7 +333,6 @@ public class ChimeraPlottingTests
 
 
     #endregion
-
 }
 
 [TestFixture]

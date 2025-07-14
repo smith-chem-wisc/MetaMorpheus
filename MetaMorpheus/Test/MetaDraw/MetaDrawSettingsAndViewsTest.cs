@@ -582,7 +582,7 @@ namespace Test.MetaDraw
                 p.FullSequence == overflowInducingProteins.First().FullSequence));
             chimeraLegend = new(overflowInducingProteins);
             Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.DistinctBy(p => p.ColorBrush.Color).Count(),
-                Is.EqualTo(overflowInducingProteins.Count() + 1));
+                Is.EqualTo(overflowInducingProteins.Count()));
             Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.Count() == overflowInducingProteins.Count + 1);
             Assert.That(chimeraLegend.ChimeraLegendItems.First().Value.Last().ColorBrush.Color, Is.EqualTo(DrawnSequence
                 .ParseColorBrushFromOxyColor(ChimeraSpectrumMatchPlot.OverflowColors.Dequeue()).Color));

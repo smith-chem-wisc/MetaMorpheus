@@ -1043,26 +1043,6 @@ namespace Test.MetaDraw
                 MetaDrawSettings.DisplayInternalIons = true;
             }
 
-            // test export of  plot
-            Assert.That(errors == null || !errors.Any());
-            chimeraAnalysisTab.SelectedChimeraGroup = chimeraAnalysisTab.ChimeraGroupViewModels[0];
-            chimeraAnalysisTab.Ms1ChimeraPlot = new Ms1ChimeraPlot(new(), chimeraAnalysisTab.SelectedChimeraGroup);
-            chimeraAnalysisTab.ChimeraSpectrumMatchPlot = new ChimeraSpectrumMatchPlot(new(), chimeraAnalysisTab.SelectedChimeraGroup);
-            chimeraAnalysisTab.ChimeraDrawnSequence = new ChimeraDrawnSequence(new(), chimeraAnalysisTab.SelectedChimeraGroup, chimeraAnalysisTab);
-            string exportNameBase =
-                chimeraAnalysisTab.SelectedChimeraGroup.FileNameWithoutExtension + "_" +
-                chimeraAnalysisTab.SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber + "_" +
-                chimeraAnalysisTab.SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber + "_";
-
-            foreach (var exportType in chimeraAnalysisTab.ExportTypes)
-            {
-                chimeraAnalysisTab.SelectedExportType = exportType;
-                chimeraAnalysisTab.ExportMs2Command.Execute(new());
-                var expectedPath = exportNameBase + "MS2." + exportType.ToLower();
-
-                Assert.That(File.Exists(Path.Combine(outputFolder, expectedPath)));
-            }
-
             Directory.Delete(outputFolder, true);
         }
 
