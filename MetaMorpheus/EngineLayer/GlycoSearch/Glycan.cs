@@ -101,28 +101,58 @@ namespace EngineLayer
         {
         }
 
-        public int GlyId { get; set; }            // Glycan ID, which is the index of glycan in the glycan database.
-        public string Struc { get; private set; } // Glycan structure string represented the glycan structure and linkage. Ex. (N(H(A))(N(H(A))(F)))
+        /// <summary>
+        /// Glycan ID, which is the index of glycan in the glycan database.
+        /// </summary>
+        public int GlyId { get; set; }
+        /// <summary>
+        /// Glycan structure string representing the glycan structure and linkage. Example: (N(H(A))(N(H(A))(F)))
+        /// </summary>
+        public string Struc { get; private set; }
+        /// <summary>
+        /// Glycan mass, stored as an integer scaled by 1e5.
+        /// </summary>
         public int Mass { get; private set; }
-        public GlycanType Type; // GlycanType N_glycan, O_glycan, Undefined;
+        /// <summary>
+        /// Type of glycan (N-glycan, O-glycan).
+        /// </summary>
+        public GlycanType Type;
+        /// <summary>
+        /// Motif string indicating the modification motif (e.g., "N", "S", "T").
+        /// </summary>
         public string Motif;
 
 
-        public byte[] Kind { get; private set; }  // Glycans are composed of several types of mono suagr. In Kind, each number correspond to one type (corresponded order as Glycan.CharMassDic).
-        public string Composition                 // Glycan composition string. Ex. H2N2A2F1.
+        /// <summary>
+        /// Glycan composition array. Each number corresponds to one type of monosaccharide (order matches Glycan.CharMassDic).
+        /// </summary>
+        public byte[] Kind { get; private set; }
+        /// <summary>
+        /// Glycan composition string. Example: H2N2A2F1.
+        /// </summary>
+        public string Composition
         {
             get
             {
                 return Glycan.GetKindString(Kind);
             }
         }
+        /// <summary>
+        /// List of glycan fragment ions.
+        /// </summary>
         public List<GlycanIon> Ions { get; set; }
+        /// <summary>
+        /// Indicates whether the glycan is a decoy.
+        /// </summary>
         public bool Decoy { get; private set; }
 
-        public HashSet<int> GlycanDiagnosticIons // B ions (the sugar fragment dropped from the glycopeptide), used for the N-glycan. There are more ions to set...
+        /// <summary>
+        /// Set of diagnostic ion masses (B ions) for the glycan, used for glycopeptide identification.
+        /// </summary>
+        public HashSet<int> GlycanDiagnosticIons
         {
             get
-            {   
+            {
                 HashSet<int> diagnosticIons = new HashSet<int>();
                 if (Kind[0] >= 1) //if we have Hexose(the number more than one), then we have the corresponding diagonsitic ions as below.
                 {
@@ -155,7 +185,6 @@ namespace EngineLayer
                 }
                 return diagnosticIons;
             }
-
         }
 
         #region Glycan information
@@ -164,6 +193,9 @@ namespace EngineLayer
 
 
         //Glycan mass dictionary
+        /// <summary>
+        /// Dictionary mapping monosaccharide character codes to their integer mass (scaled by 1e5).
+        /// </summary>
         //H: C6O5H10 Hexose, N: C8O5NH13 HexNAc, A: C11O8NH17 Neu5Ac, G: C11H17NO9 Neu5Gc, F: C6O4H10 Fucose, 
         //P: PO3H Phosphate, S: SO3H Sulfo, Y: Na Sodium, C:Acetyl for Neu5Ac
         //X: C5H10O5 Xylose
@@ -181,7 +213,9 @@ namespace EngineLayer
             { 'K', 25006897 },
         };
 
-        // The corresponding index for sugar and Kind.
+        /// <summary>
+        /// Dictionary mapping monosaccharide names to their character code and index in the Kind array.
+        /// </summary>
         public readonly static Dictionary<string, Tuple<char, int>> NameCharDic = new Dictionary<string, Tuple<char, int>>
         {
             {"Hex", new Tuple<char, int>('H', 0) },
@@ -197,15 +231,21 @@ namespace EngineLayer
             {"Kdn", new Tuple<char,int>('K',10)}
         };
 
-        //The same ion as we describe above in the diagnostic ions. That just for the initial filtering for glycopeptide peaks. Not used now.
-        public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int> 
+        /// <summary>
+        /// Set of common oxonium ion masses (int, scaled by 1e5) used for initial glycopeptide peak filtering.
+        /// </summary>
+        public readonly static HashSet<int> CommonOxoniumIons = new HashSet<int>
         {13805550, 16806607, 18607663, 20408720, 36614002 };
 
-        //The same ion as we describe above in the diagnostic ions. Used for building the oxoniumIntensity list.
-        public readonly static int[] AllOxoniumIons = new int[] 
+        /// <summary>
+        /// Array of all oxonium ion masses (int, scaled by 1e5) used for building oxonium intensity lists.
+        /// </summary>
+        public readonly static int[] AllOxoniumIons = new int[]
         {10902895, 11503951, 12605550, 12703952, 13805550, 14406607, 16306064, 16806607, 18607663, 20408720, 27409268, 29008759, 29210324, 30809816, 36614002, 65723544, 67323035};
 
-        //TrimannosylCore. Only useful for N-Glyco peptides.
+        /// <summary>
+        /// Dictionary mapping N-glycan core ion indices to their monoisotopic mass (double).
+        /// </summary>
         public readonly static Dictionary<int, double> TrimannosylCores = new Dictionary<int, double>
         {
             //Each of the mass represent as a N-Glycan core. 
@@ -218,7 +258,6 @@ namespace EngineLayer
             { 892, 892.317215}, //Y5
             { 349, 349.137281}, //Y2F
             { 552, 552.216654}  //Y3F
-
         };
 
         #endregion

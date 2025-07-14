@@ -23,7 +23,9 @@ namespace EngineLayer.GlycoSearch
         public int ModPos { get; }
         public ModBox ModBox { get; }
 
-        //sources are represented by index. Only track ones with highest cummulative cost
+        /// <summary>
+        /// sources are represented by index. Only track ones with highest cummulative cost
+        /// </summary>
         public List<int> CummulativeSources { get; set; } = new List<int>();
 
         public double maxCost { get; set; }

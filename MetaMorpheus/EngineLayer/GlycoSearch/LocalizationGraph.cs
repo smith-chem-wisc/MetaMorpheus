@@ -10,15 +10,36 @@ namespace EngineLayer.GlycoSearch
 {
     public class LocalizationGraph
     {
+        /// <summary>
+        /// The localization graph matrix, where each node represents a possible position in this graph.
+        /// </summary>
         public AdjNode[][] array { get; set; }
-        public SortedDictionary<int, string> ModPos { get; } // Motif information, easily to track the aminoAcid index with corresponding motif.
+        /// <summary>
+        /// Motif information mapping amino acid indices to their corresponding motif strings for glycosylation sites.
+        /// </summary>
+        public SortedDictionary<int, string> ModPos { get; }
 
+        /// <summary>
+        /// The index of the ModBox (within all ModBoxes) that is associated with this localization graph.
+        /// </summary>
         public int ModBoxId { get; }
+        /// <summary>
+        /// The modification box representing the combined set of modifications for the peptide.
+        /// </summary>
         public ModBox ModBox { get; }
+        /// <summary>
+        /// The array of child ModBoxes, each ModBoxes representing a possible combination of modifications from the ModBox.
+        /// </summary>
         public ModBox[] ChildModBoxes { get; set; }
 
-        public double NoLocalCost{get; set;}   // Note that we have node for each glycosite, the matched ions before the first node and after the last node is scored here.
-        public double TotalScore { get; set; } // Total score is the score of matched ions that are used for localization. For O-glycan, it is the score of all matched c/zDot ions. 
+        /// <summary>
+        /// The score for matched ions that are not localized to any glycosylation site (before the first node and after the last node).
+        /// </summary>
+        public double NoLocalCost { get; set; }
+        /// <summary>
+        /// The total score for all matched ions used for localization, typically the sum of scores for all c/zDot ions in O-glycan localization.
+        /// </summary>
+        public double TotalScore { get; set; }
 
         public LocalizationGraph(SortedDictionary<int, string> modPos, ModBox modBox, ModBox[] childModBoxes, int id)
         {
