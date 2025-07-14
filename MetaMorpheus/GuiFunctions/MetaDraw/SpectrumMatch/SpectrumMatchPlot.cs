@@ -256,53 +256,41 @@ namespace GuiFunctions
             {
                 string peakAnnotationText = prefix;
 
-                if (annotation.IsNullOrEmpty())
-                {
-                    if (MetaDrawSettings.SubAndSuperScriptIons)
-                        foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
+                if (MetaDrawSettings.SubAndSuperScriptIons)
+                    foreach (var character in matchedIon.NeutralTheoreticalProduct.Annotation)
+                    {
+                        if (char.IsDigit(character))
+                            peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
+                        else switch (character)
                         {
-                            if (char.IsDigit(character))
-                                peakAnnotationText += MetaDrawSettings.SubScriptNumbers[character - '0'];
-                            else
-                                switch (character)
-                                {
-                                    case '-':
-                                        peakAnnotationText += "\u208B"; // sub scripted Hyphen
-                                        break;
-                                    case '[':
-                                    case ']':
-                                        continue;
-                                    default:
-                                        peakAnnotationText += character;
-                                        break;
-                                }
+                            case '-':
+                                peakAnnotationText += "\u208B"; // sub scripted Hyphen
+                                break;
+                            case '[':
+                            case ']':
+                                continue;
+                            default:
+                                peakAnnotationText += character;
+                                break;
                         }
-                    else
-                        peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
-
-                    if (matchedIon.NeutralTheoreticalProduct.NeutralLoss != 0 &&
-                        !peakAnnotationText.Contains("-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2")))
-                    {
-                        peakAnnotationText += "-" + matchedIon.NeutralTheoreticalProduct.NeutralLoss.ToString("F2");
                     }
+                else
+                    peakAnnotationText += matchedIon.NeutralTheoreticalProduct.Annotation;
 
-                    if (MetaDrawSettings.AnnotateCharges)
+                if (MetaDrawSettings.AnnotateCharges)
+                {
+                    char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
+                    if (MetaDrawSettings.SubAndSuperScriptIons)
                     {
-                        char chargeAnnotation = matchedIon.Charge > 0 ? '+' : '-';
-                        if (MetaDrawSettings.SubAndSuperScriptIons)
-                        {
-                            var superScript = new string(Math.Abs(matchedIon.Charge).ToString()
-                                .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
-                                .ToArray());
+                        var superScript = new string(Math.Abs(matchedIon.Charge).ToString()
+                            .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
+                            .ToArray());
 
                             peakAnnotationText += superScript;
                             if (chargeAnnotation == '+')
                                 peakAnnotationText += (char)(chargeAnnotation + 8271);
                             else
                                 peakAnnotationText += (char)(chargeAnnotation + 8270);
-                        }
-                        else
-                            peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
                     }
 
                     if (MetaDrawSettings.AnnotateMzValues)
@@ -536,6 +524,20 @@ namespace GuiFunctions
             {
                 text.Append("Protein: ");
                 text.Append(SpectrumMatch.Name);
+                text.Append("\r\n");
+            }
+
+            if (MetaDrawSettings.SpectrumDescription["Retention Time: "])
+            {
+                text.Append("Retention Time: ");
+                text.Append(SpectrumMatch.RetentionTime);
+                text.Append("\r\n");
+            }
+
+            if (SpectrumMatch.OneOverK0 != null && MetaDrawSettings.SpectrumDescription["1/K\u2080: "])
+            {
+                text.Append("1/K\u2080: ");
+                text.Append(SpectrumMatch.OneOverK0);
                 text.Append("\r\n");
             }
 

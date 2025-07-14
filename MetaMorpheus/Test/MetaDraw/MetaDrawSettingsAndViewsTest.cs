@@ -13,6 +13,8 @@ using OxyPlot;
 using Omics.Fragmentation;
 using Proteomics.ProteolyticDigestion;
 using Readers;
+using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 
 namespace Test.MetaDraw
 {
@@ -169,7 +171,7 @@ namespace Test.MetaDraw
         [Test]
         public static void TestSettingsViewLoading()
         {
-            MetaDrawSettingsViewModel BlankSettingsView = new MetaDrawSettingsViewModel(false);
+            MetaDrawSettingsViewModel BlankSettingsView = MetaDrawSettingsViewModel.Instance;
             BlankSettingsView.Modifications = new();
             BlankSettingsView.IonGroups = new();
             BlankSettingsView.CoverageColors = new();
@@ -376,6 +378,118 @@ namespace Test.MetaDraw
             Assert.That(coverageTypeForTreeView.SelectedColor == color.GetColorName());
             Assert.That(coverageTypeForTreeView.ColorBrush.Color ==
                         DrawnSequence.ParseColorBrushFromOxyColor(color).Color);
+        }
+
+        [Test]
+        public static void TestMetaDrawSettingsViewModelPublicProperties()
+        {
+            // Arrange
+            var viewModel = new MetaDrawSettingsViewModel(false);
+
+            // Test Modifications property
+            Assert.That(viewModel.Modifications, Is.Not.Null);
+            Assert.That(viewModel.Modifications, Is.InstanceOf<ObservableCollection<ModTypeForTreeViewModel>>());
+
+            // Test IonGroups property
+            Assert.That(viewModel.IonGroups, Is.Not.Null);
+            Assert.That(viewModel.IonGroups, Is.InstanceOf<ObservableCollection<IonTypeForTreeViewModel>>());
+
+            // Test CoverageColors property
+            Assert.That(viewModel.CoverageColors, Is.Not.Null);
+            Assert.That(viewModel.CoverageColors, Is.InstanceOf<ObservableCollection<CoverageTypeForTreeViewModel>>());
+
+            // Test SpectrumDescriptors property
+            Assert.That(viewModel.SpectrumDescriptors, Is.Not.Null);
+            Assert.That(viewModel.SpectrumDescriptors, Is.InstanceOf<ObservableCollection<SpectrumDescriptorViewModel>>());
+
+            // Test PossibleColors property
+            Assert.That(viewModel.PossibleColors, Is.Not.Null);
+            Assert.That(viewModel.PossibleColors, Is.InstanceOf<ObservableCollection<string>>());
+
+            // Test HasDefaultSaved property
+            Assert.That(viewModel.HasDefaultSaved, Is.TypeOf<bool>());
+
+            // Test CanOpen property
+            Assert.That(viewModel.CanOpen, Is.TypeOf<bool>());
+
+            // Test Initialization property
+            Assert.That(viewModel.Initialization, Is.Not.Null);
+            Assert.That(viewModel.Initialization, Is.InstanceOf<Task>());
+
+            // Test static SettingsPath property
+            Assert.That(MetaDrawSettingsViewModel.SettingsPath, Is.Not.Null.And.Not.Empty);
+
+            // Test DisplayIonAnnotations property
+            bool originalDisplayIonAnnotations = viewModel.DisplayIonAnnotations;
+            viewModel.DisplayIonAnnotations = !originalDisplayIonAnnotations;
+            Assert.That(viewModel.DisplayIonAnnotations, Is.EqualTo(!originalDisplayIonAnnotations));
+            viewModel.DisplayIonAnnotations = originalDisplayIonAnnotations;
+
+            // Test AnnotateMzValues property
+            bool originalAnnotateMzValues = viewModel.AnnotateMzValues;
+            viewModel.AnnotateMzValues = !originalAnnotateMzValues;
+            Assert.That(viewModel.AnnotateMzValues, Is.EqualTo(!originalAnnotateMzValues));
+            viewModel.AnnotateMzValues = originalAnnotateMzValues;
+
+            // Test AnnotateCharges property
+            bool originalAnnotateCharges = viewModel.AnnotateCharges;
+            viewModel.AnnotateCharges = !originalAnnotateCharges;
+            Assert.That(viewModel.AnnotateCharges, Is.EqualTo(!originalAnnotateCharges));
+            viewModel.AnnotateCharges = originalAnnotateCharges;
+
+            // Test DisplayInternalIonAnnotations property
+            bool originalDisplayInternalIonAnnotations = viewModel.DisplayInternalIonAnnotations;
+            viewModel.DisplayInternalIonAnnotations = !originalDisplayInternalIonAnnotations;
+            Assert.That(viewModel.DisplayInternalIonAnnotations, Is.EqualTo(!originalDisplayInternalIonAnnotations));
+            viewModel.DisplayInternalIonAnnotations = originalDisplayInternalIonAnnotations;
+
+            // Test DisplayInternalIons property
+            bool originalDisplayInternalIons = viewModel.DisplayInternalIons;
+            viewModel.DisplayInternalIons = !originalDisplayInternalIons;
+            Assert.That(viewModel.DisplayInternalIons, Is.EqualTo(!originalDisplayInternalIons));
+            viewModel.DisplayInternalIons = originalDisplayInternalIons;
+
+            // Test AnnotationBold property
+            bool originalAnnotationBold = viewModel.AnnotationBold;
+            viewModel.AnnotationBold = !originalAnnotationBold;
+            Assert.That(viewModel.AnnotationBold, Is.EqualTo(!originalAnnotationBold));
+            viewModel.AnnotationBold = originalAnnotationBold;
+
+            // Test SubAndSuperScriptIons property
+            bool originalSubAndSuperScriptIons = viewModel.SubAndSuperScriptIons;
+            viewModel.SubAndSuperScriptIons = !originalSubAndSuperScriptIons;
+            Assert.That(viewModel.SubAndSuperScriptIons, Is.EqualTo(!originalSubAndSuperScriptIons));
+            viewModel.SubAndSuperScriptIons = originalSubAndSuperScriptIons;
+
+            // Test AnnotatedFontSize property
+            int originalAnnotatedFontSize = viewModel.AnnotatedFontSize;
+            viewModel.AnnotatedFontSize = originalAnnotatedFontSize + 1;
+            Assert.That(viewModel.AnnotatedFontSize, Is.EqualTo(originalAnnotatedFontSize + 1));
+            viewModel.AnnotatedFontSize = originalAnnotatedFontSize;
+
+            // Test AxisLabelTextSize property
+            int originalAxisLabelTextSize = viewModel.AxisLabelTextSize;
+            viewModel.AxisLabelTextSize = originalAxisLabelTextSize + 1;
+            Assert.That(viewModel.AxisLabelTextSize, Is.EqualTo(originalAxisLabelTextSize + 1));
+            viewModel.AxisLabelTextSize = originalAxisLabelTextSize;
+
+            // Test AxisTitleTextSize property
+            int originalAxisTitleTextSize = viewModel.AxisTitleTextSize;
+            viewModel.AxisTitleTextSize = originalAxisTitleTextSize + 1;
+            Assert.That(viewModel.AxisTitleTextSize, Is.EqualTo(originalAxisTitleTextSize + 1));
+            viewModel.AxisTitleTextSize = originalAxisTitleTextSize;
+
+            // Test StrokeThicknessAnnotated property
+            double originalStrokeThicknessAnnotated = viewModel.StrokeThicknessAnnotated;
+            viewModel.StrokeThicknessAnnotated = originalStrokeThicknessAnnotated + 0.1;
+            Assert.That(viewModel.StrokeThicknessAnnotated, Is.EqualTo(originalStrokeThicknessAnnotated + 0.1));
+            viewModel.StrokeThicknessAnnotated = originalStrokeThicknessAnnotated;
+
+            // Test StrokeThicknessUnannotated property
+            double originalStrokeThicknessUnannotated = viewModel.StrokeThicknessUnannotated;
+            viewModel.StrokeThicknessUnannotated = originalStrokeThicknessUnannotated + 0.1;
+            Assert.That(viewModel.StrokeThicknessUnannotated, Is.EqualTo(originalStrokeThicknessUnannotated + 0.1));
+            viewModel.StrokeThicknessUnannotated = originalStrokeThicknessUnannotated;
         }
 
         [Test]
@@ -624,6 +738,32 @@ namespace Test.MetaDraw
 
             var colorFromOxy = DrawnSequence.ParseColorFromOxyColor(oxyBlue);
             Assert.That(colorFromOxy == colorBlue);
+        }
+
+        [Test]
+        public static void TestSpectrumDescriptorViewModelSyncsWithStaticSettings()
+        {
+            // Arrange: Reset settings and create a new view model
+            MetaDrawSettings.ResetSettings();
+            var vm = new MetaDrawSettingsViewModel(false);
+
+            // Assert: Each SpectrumDescriptorViewModel reflects the static settings
+            foreach (var descVm in vm.SpectrumDescriptors)
+            {
+                // The initial IsSelected should match the static MetaDrawSettings.SpectrumDescription
+                Assert.That(descVm.IsSelected, Is.EqualTo(MetaDrawSettings.SpectrumDescription[descVm.DisplayName + ": "]));
+            }
+
+            // Act: Change IsSelected in the view model for each descriptor
+            foreach (var descVm in vm.SpectrumDescriptors)
+            {
+                bool newValue = !descVm.IsSelected;
+                descVm.IsSelected = newValue;
+
+                // Assert: The static settings are updated accordingly
+                Assert.That(MetaDrawSettings.SpectrumDescription[descVm.DisplayName + ": "], Is.EqualTo(newValue));
+                Assert.That(descVm.IsSelected, Is.EqualTo(newValue));
+            }
         }
     }
 }

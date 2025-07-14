@@ -17,9 +17,12 @@ using MassSpectrometry;
 using NUnit.Framework;
 using OxyPlot.Series;
 using Omics.Fragmentation;
+using OxyPlot;
 using Proteomics.ProteolyticDigestion;
 using Readers;
 using TaskLayer;
+using OxyPlot.Wpf;
+using LineSeries = OxyPlot.Series.LineSeries;
 using OxyPlot;
 
 namespace Test.MetaDraw
@@ -821,7 +824,7 @@ namespace Test.MetaDraw
             Assert.That((int)peakPoints[1].Y, Is.EqualTo(8496));
 
             // write pdf
-            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-Glycosylation:H1N1 on X]SEPLSSK").ToList();
+            var psmsToExport = metadrawLogic.FilteredListOfPsms.Where(p => p.FullSequence == "STTAVQTPTSGEPLVST[O-Glycosylation:H1N1 on T]SEPLSSK").ToList();
             metadrawLogic.ExportPlot(plotView, metadrawLogic.StationarySequence.SequenceDrawingCanvas, psmsToExport, parentChildView, outputFolder, out errors);
 
             // test that pdf exists
@@ -1528,6 +1531,8 @@ namespace Test.MetaDraw
             string proteinDatabase = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\smalldb.fasta");
             string spectraFile = Path.Combine(TestContext.CurrentContext.TestDirectory, @"TestData\SmallCalibratible_Yeast.mzML");
 
+            if (Directory.Exists(outputFolder))
+                Directory.Delete(outputFolder, true);
             Directory.CreateDirectory(outputFolder);
 
             // run search task

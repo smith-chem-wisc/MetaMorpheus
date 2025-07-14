@@ -7,9 +7,13 @@
         xmlns:guiFunctions="clr-namespace:GuiFunctions;assembly=GuiFunctions"
         mc:Ignorable="d"
         Title="Graphical Settings" Width="620" SizeToContent="Height" WindowStartupLocation="CenterScreen"
-        Height="500" MaxHeight="1000"
-        MinHeight="500">
+        Height="500" MaxHeight="700">
 
+    <Window.Resources>
+        <local:SpectrumDescriptorToolTipConverter x:Key="SpectrumDescriptorToolTipConverter"/>
+    </Window.Resources>
+    
+    
     <!-- When changing any of these settings, be sure to do each of the following -->
     <!-- Update the MetaDrawSettings.cs to have a field for it, as well as the MetaDrawSettingsSnapshot class -->
 
@@ -101,95 +105,100 @@
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <CheckBox Grid.Column="0" Grid.Row="0" IsChecked="{Binding DisplayIonAnnotations}"
-                                  Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
-                                        <CheckBox Grid.Column="0" Grid.Row="1" IsChecked="{Binding AnnotateMzValues}"
-                                  Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
-                                        <CheckBox Grid.Column="0" Grid.Row="2" IsChecked="{Binding AnnotateCharges}"
-                                  Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
-                                        <CheckBox Grid.Column="0" Grid.Row="3" IsChecked="{Binding DisplayInternalIonAnnotations}"
-                                  Name="ShowInternalIonsCheckBox" Content="Show internal ions" Margin="5" />
-                                        <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIons}"
-                                  Name="ShowInternalIonAnnotationsCheckBox" Content="Display internal ion annotations" Margin="5" />
+                                <CheckBox Grid.Column="0" Grid.Row="0" IsChecked="{Binding DisplayIonAnnotations}"
+                                          Name="DisplayAnnotationsCheckBox" Content="Display ion annotations" Margin="5"/>
+                                <CheckBox Grid.Column="0" Grid.Row="1" IsChecked="{Binding AnnotateMzValues}"
+                                          Name="MZCheckBox" Content="Annotate m/z values" Margin="5"/>
+                                <CheckBox Grid.Column="0" Grid.Row="2" IsChecked="{Binding AnnotateCharges}"
+                                          Name="ChargesCheckBox" Content="Annotate charges" Margin="5"/>
+                                <CheckBox Grid.Column="0" Grid.Row="3" IsChecked="{Binding DisplayInternalIons}"
+                                          Name="ShowInternalIonsCheckBox" Content="Show internal ions" Margin="5" />
+                                <CheckBox Grid.Column="0" Grid.Row="4" IsChecked="{Binding DisplayInternalIonAnnotations}"
+                                          Name="ShowInternalIonAnnotationsCheckBox" Content="Display internal ion annotations" Margin="5" />
 
                                     </Grid>
 
-                                    <Expander Header="Advanced Ion Annotations" DockPanel.Dock="Top" Margin="10 5 5 5">
-                                        <StackPanel Margin="5 5 0 0">
+                            <Expander Header="Advanced Ion Annotations" DockPanel.Dock="Top" Margin="10 5 5 5">
+                                <StackPanel Margin="5 5 0 0">
+                                    <CheckBox Name="BoldTextCheckBox" Content="Bold ion annotations" Margin="5"
+                                              IsChecked="{Binding AnnotationBold}" />
+                                    <CheckBox Name="SubSuperScriptedIonAnnotations"
+                                              IsChecked="{Binding SubAndSuperScriptIons}"
+                                              Content="Sub/superscripted ion annotations" Margin="5" />
 
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Annotation text size:" Width="165" />
+                                        <local:IntegerTexBoxControl x:Name="TextSizeBox" Width="80" Height="24"
+                                                                    Text="{Binding AnnotatedFontSize}"
+                                                                    VerticalContentAlignment="Center"
+                                                                    HorizontalContentAlignment="Center" />
+                                    </StackPanel>
 
-                                            <CheckBox Name="BoldTextCheckBox" Content="Bold ion annotations" Margin="5"
-                                                      IsChecked="{Binding AnnotationBold}"/>
-                                            <CheckBox Name="SubSuperScriptedIonAnnotations" IsChecked="{Binding SubAndSuperScriptIons}"
-                                                      Content="Sub/superscripted ion annotations" Margin="5" />
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Axis title text size:" Width="165" />
+                                        <local:IntegerTexBoxControl x:Name="AxisTitleTextSizeBox" Width="80"
+                                                                    Height="24" Text="{Binding AxisTitleTextSize}"
+                                                                    VerticalContentAlignment="Center"
+                                                                    HorizontalContentAlignment="Center" />
+                                    </StackPanel>
 
-                                            <StackPanel Orientation="Horizontal" Margin="5 0">
-                                                <Label Content="Annotation text size:" Width="165"/>
-                                                <local:IntegerTexBoxControl x:Name ="TextSizeBox" Width="80" Height="24" Text="{Binding AnnotatedFontSize}" 
-                                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                                            </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Axis label text size:" Width="165" />
+                                        <local:IntegerTexBoxControl x:Name="AxisLabelTextSizeBox" Width="80"
+                                                                    Height="24" Text="{Binding AxisLabelTextSize}"
+                                                                    VerticalContentAlignment="Center"
+                                                                    HorizontalContentAlignment="Center" />
+                                    </StackPanel>
 
-                                            <StackPanel Orientation="Horizontal" Margin="5 0">
-                                                <Label Content="Axis title text size:" Width="165"/>
-                                                <local:IntegerTexBoxControl x:Name ="AxisTitleTextSizeBox" Width="80" Height="24" Text="{Binding AxisTitleTextSize}" 
-                                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                                            </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Annotated peak thickness:" Width="165" />
+                                        <local:DoubleTextBoxControl x:Name="AnnotatedPeakSizeBox" Width="80"
+                                                                    Height="24"
+                                                                    Text="{Binding StrokeThicknessAnnotated}"
+                                                                    VerticalContentAlignment="Center"
+                                                                    HorizontalContentAlignment="Center" />
+                                    </StackPanel>
 
-                                            <StackPanel Orientation="Horizontal" Margin="5 0">
-                                                <Label Content="Axis label text size:" Width="165"/>
-                                                <local:IntegerTexBoxControl x:Name ="AxisLabelTextSizeBox" Width="80" Height="24" Text="{Binding AxisLabelTextSize}" 
-                                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                                            </StackPanel>
-
-
-                                            <StackPanel Orientation="Horizontal" Margin="5 0">
-                                                <Label Content="Annotated peak thickness:" Width="165"/>
-                                                <local:DoubleTextBoxControl x:Name ="AnnotatedPeakSizeBox" Width="80" Height="24" Text="{Binding StrokeThicknessAnnotated}" 
-                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                                            </StackPanel>
-
-                                            <StackPanel Orientation="Horizontal" Margin="5 0" >
-                                                <Label Content="Unannotated peak thickness:" Width="165"/>
-                                                <local:DoubleTextBoxControl x:Name ="UnannotatedPeakSizeBox" Width="80" Height="24" Text="{Binding StrokeThicknessUnannotated}" 
-                                                            VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </Expander>
+                                    <StackPanel Orientation="Horizontal" Margin="5 0">
+                                        <Label Content="Unannotated peak thickness:" Width="165" />
+                                        <local:DoubleTextBoxControl x:Name="UnannotatedPeakSizeBox" Width="80"
+                                                                    Height="24"
+                                                                    Text="{Binding StrokeThicknessUnannotated}"
+                                                                    VerticalContentAlignment="Center"
+                                                                    HorizontalContentAlignment="Center" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Expander>
 
 
                                     <Expander Name="SpectrumDescriptionExpander"  Header="Spectrum Description" 
                               DockPanel.Dock="Top" Margin="10 5 5 5">
 
-                                        <!-- Spectrum Description Text Customization Options 
-                        To make changes here, add a checkbox then add it to Save_Click and PopulateChoices, 
-                        then add a new item to SpectrumDescripion Dictionary in Settings, 
-                        finally update PeptideSpectrumMatchPlot.AnnotateProperties() -->
-                                        <StackPanel>
-                                            <StackPanel Orientation="Horizontal" Margin="5 0" >
-                                                <Label Content="Font Size:" Width="165"/>
-                                                <local:DoubleTextBoxControl x:Name ="SpectrumDescriptionFontSizeBox" Width="80" Height="24" 
-                                                                VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
-                                            </StackPanel>
-                                            <CheckBox Name="PrecursorChargeCheckBox" Content="Precursor Charge" Margin="3"/>
-                                            <CheckBox Name="PrecursorMassCheckBox" Content="Precursor Mass" Margin="3"/>
-                                            <CheckBox Name="TheoreticalMassCheckBox" Content="Theoretical Mass" Margin="3"/>
-                                            <CheckBox Name="ProteinAccessionCheckBox" Content="Protein Accession" Margin="3"/>
-                                            <CheckBox Name="ProteinCheckBox" Content="Protein" Margin="3"/>
-                                            <CheckBox Name="DecoyContaminantTargetCheckBox" Content="Decoy/Contaminant/Target" Margin="3"/>
-                                            <CheckBox Name="SequenceLengthCheckBox" Content="Sequence Length" Margin="3" />
-                                            <CheckBox Name="AmbiguityLevelCheckBox" Content="Ambiguity Level" Margin="3" 
-                                          ToolTipService.ShowDuration="999999" ToolTipService.InitialShowDelay="500">
-                                                <ToolTipService.ToolTip>
-                                                    J. Proteome Res. 2018, 17, 3, 1321–1325
-                                                </ToolTipService.ToolTip>
-                                            </CheckBox>
-                                            <CheckBox Name="SpectralAngleCheckBox" Content="Spectral Angle" Margin="3" />
-                                            <CheckBox Name="ScoreCheckBox" Content="Score" Margin="3"/>
-                                            <CheckBox Name="QValueCheckBox" Content="Q-Value" Margin="3"/>
-                                            <CheckBox Name="PEPCheckBox" Content="PEP" Margin="3" />
-                                            <CheckBox Name="PEPQValueCheckBox" Content="PEP Q-Value" Margin="3" />
-                                        </StackPanel>
-                                    </Expander>
+                                <!-- Spectrum Description Text Customization Options 
+                                To have it displayed in settings window: add a new item to SpectrumDescription Dictionary in MetaDrawSettings, 
+                                To have it appear on the spectrum: update PeptideSpectrumMatchPlot.AnnotateProperties() -->
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="5 0" >
+                                        <Label Content="Font Size:" Width="165"/>
+                                        <local:DoubleTextBoxControl x:Name ="SpectrumDescriptionFontSizeBox" Width="80" Height="24" 
+                                                                    VerticalContentAlignment="Center" HorizontalContentAlignment="Center" />
+                                    </StackPanel>
+                                    <ItemsControl ItemsSource="{Binding SpectrumDescriptors}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <CheckBox Margin="3"
+                                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                          Content="{Binding DisplayName}">
+                                                    <CheckBox.ToolTip>
+                                                        <TextBlock Text="{Binding DisplayName, Converter={StaticResource SpectrumDescriptorToolTipConverter}}"/>
+                                                    </CheckBox.ToolTip>
+                                                </CheckBox>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+
+                            </Expander>
 
                                     <!-- spectrum components -->
                                     <Expander Header="Spectrum Components" DockPanel.Dock="Top" Margin="10 5 5 5">

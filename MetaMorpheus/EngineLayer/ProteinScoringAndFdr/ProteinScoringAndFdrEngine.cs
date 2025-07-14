@@ -59,7 +59,7 @@ namespace EngineLayer
 
             foreach (var proteinGroup in proteinGroups)
             {
-                List<PeptideWithSetModifications> pepsToRemove = new List<PeptideWithSetModifications>();
+                List<IBioPolymerWithSetMods> pepsToRemove = new();
                 foreach (var peptide in proteinGroup.AllPeptides)
                 {
                     // build PSM list for scoring

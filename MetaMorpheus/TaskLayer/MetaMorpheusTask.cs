@@ -25,6 +25,8 @@ using Proteomics;
 using Proteomics.ProteolyticDigestion;
 using Transcriptomics;
 using Transcriptomics.Digestion;
+using Easy.Common.Extensions;
+using Readers;
 
 namespace TaskLayer
 {
@@ -90,11 +92,11 @@ namespace TaskLayer
             .ConfigureType<DeconvolutionParameters>(type => type
                 .WithConversionFor<TomlTable>(c => c
                     .FromToml(tmlTable => tmlTable.Get<string>("DeconvolutionType") switch
-                        {
-                            "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
-                            "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
-                            _ => throw new MetaMorpheusException("Unrecognized deconvolution type in toml")
-                        })))
+                    {
+                        "ClassicDeconvolution" => tmlTable.Get<ClassicDeconvolutionParameters>(),
+                        "IsoDecDeconvolution" => tmlTable.Get<IsoDecDeconvolutionParameters>(),
+                        _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown Deconvolution Type: {tmlTable.Get<string>("DeconvolutionType")}")
+                    })))
             // Ignore all properties that are not user settable, instantiate with defaults. If the toml differs, defaults will be overridden. 
             .ConfigureType<ClassicDeconvolutionParameters>(type => type
                 .CreateInstance(() => new ClassicDeconvolutionParameters(1, 20, 4, 3))
@@ -113,7 +115,26 @@ namespace TaskLayer
                 .IgnoreProperty(p => p.MinusOneAreasZero)
                 .IgnoreProperty(p => p.IsotopeThreshold)
                 .IgnoreProperty(p => p.ZScoreThreshold))
-            );
+
+            // Convert average residue models to simple strings instead of tables, Nett makes all objects tables by default
+            // The base class AverageResidue is used for Toml Reading. The derived classes are used for toml writing. 
+            .ConfigureType<AverageResidue>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .FromToml(tmlString =>
+                        tmlString.Value switch
+                        {
+                            "Averagine" => new Averagine(),
+                            "OxyriboAveragine" => new OxyriboAveragine(),
+                            _ => throw new MetaMorpheusException($"Toml Parsing Failure - Unknown AverageResidueModel: {tmlString.Value}")
+                        }
+                    )))
+            .ConfigureType<Averagine>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.GetType().Name)))
+            .ConfigureType<OxyriboAveragine>(type => type
+                .WithConversionFor<TomlString>(convert => convert
+                    .ToToml(custom => custom.GetType().Name)))
+        );
        
 
         protected readonly StringBuilder ProseCreatedWhileRunning = new StringBuilder();
@@ -188,6 +209,9 @@ namespace TaskLayer
                         {
                             MsDataScan precursorSpectrum = myMSDataFile.GetOneBasedScan(ms2scan.OneBasedPrecursorScanNumber.Value);
 
+                            if (precursorSpectrum is null)
+                                goto PrecursorFromScanHeader;
+
                             try
                             {
                                 ms2scan.RefineSelectedMzAndIntensity(precursorSpectrum.MassSpectrum);
@@ -234,11 +258,12 @@ namespace TaskLayer
                         }
 
                         //if use precursor info from scan header and scan header has charge state
-                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue) 
+                        PrecursorFromScanHeader:
+                        if (commonParameters.UseProvidedPrecursorInfo && ms2scan.SelectedIonChargeStateGuess.HasValue && ms2scan.SelectedIonChargeStateGuess != 0) 
                         {
                             int precursorCharge = ms2scan.SelectedIonChargeStateGuess.Value;
 
-                            //still from scan header
+                            // Still from scan header - MsAlign uses this conditional to construct its precursors. 
                             if (ms2scan.SelectedIonMonoisotopicGuessMz.HasValue)
                             {
                                 double precursorMZ = ms2scan.SelectedIonMonoisotopicGuessMz.Value;
@@ -840,12 +865,14 @@ namespace TaskLayer
 
         protected static void WritePsmsToTsv(IEnumerable<SpectralMatch> psms, string filePath, IReadOnlyDictionary<string, int> modstoWritePruned, bool writePeptideLevelResults = false)
         {
+            
             using (StreamWriter output = new StreamWriter(filePath))
             {
-                output.WriteLine(SpectralMatch.GetTabSeparatedHeader());
+                bool includeOneOverK0Column = psms.Any(p => p.ScanOneOverK0.HasValue);
+                output.WriteLine(SpectralMatch.GetTabSeparatedHeader(includeOneOverK0Column));
                 foreach (var psm in psms)
                 {
-                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults));
+                    output.WriteLine(psm.ToString(modstoWritePruned, writePeptideLevelResults, includeOneOverK0Column));
                 }
             }
         }

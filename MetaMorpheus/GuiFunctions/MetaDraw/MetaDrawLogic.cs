@@ -22,7 +22,10 @@ using Readers;
 using System.Threading;
 using Omics.Fragmentation;
 using Omics.SpectrumMatch;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("Test")]
 namespace GuiFunctions
 {
     public class MetaDrawLogic
@@ -478,7 +481,7 @@ namespace GuiFunctions
 
         public void ExportPlot(PlotView plotView, Canvas stationaryCanvas, List<SpectrumMatchFromTsv> spectrumMatches,
             ParentChildScanPlotsView parentChildScanPlotsView, string directory, out List<string> errors,
-            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new())
+            Canvas legendCanvas = null, Vector ptmLegendLocationVector = new(), FragmentationReanalysisViewModel? reFragment = null)
         {
             errors = new List<string>();
 
@@ -494,6 +497,16 @@ namespace GuiFunctions
                 {
                     errors.Add("The spectra file could not be found for this PSM: " + psm.FileNameWithoutExtension);
                     return;
+                }
+
+                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                List<MatchedFragmentIon> oldMatchedIons = null;
+                if (reFragment is not null)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    var scan = GetMs2ScanFromPsm(psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    psm.MatchedIons = newIons;
                 }
 
                 if (plotView.Name == "plotView")
@@ -547,12 +560,30 @@ namespace GuiFunctions
                             break;
                     }
                 }
+                // put the original ions back in place if they were altered
+                if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                    psm.MatchedIons = oldMatchedIons;
             }
 
             if (plotView.Name == "plotView")
             {
-                DisplaySequences(stationaryCanvas, null, null, spectrumMatches.First());
-                DisplaySpectrumMatch(plotView, spectrumMatches.First(), parentChildScanPlotsView, out errors);
+                var psm = spectrumMatches.First();
+
+                // if we have ions that were not originally search for, cache original, find new ions, plot, replace original
+                List<MatchedFragmentIon> oldMatchedIons = null;
+                if (reFragment is not null && reFragment.Persist)
+                {
+                    oldMatchedIons = psm.MatchedIons;
+                    var scan = GetMs2ScanFromPsm(psm);
+                    var newIons = reFragment.MatchIonsWithNewTypes(scan, psm);
+                    psm.MatchedIons = newIons;
+                }
+                DisplaySequences(stationaryCanvas, null, null, psm);
+                DisplaySpectrumMatch(plotView, psm, parentChildScanPlotsView, out errors);
+
+                // put the original ions back in place if they were altered
+                if (oldMatchedIons != null && !psm.MatchedIons.SequenceEqual(oldMatchedIons))
+                    psm.MatchedIons = oldMatchedIons;
             }
         }
 
@@ -982,11 +1013,17 @@ namespace GuiFunctions
             {
                 lock (ThreadLocker)
                 {
-                    var fileNameWithoutExtension = filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty);
-                    fileNameWithoutExtension = System.IO.Path.GetFileName(fileNameWithoutExtension);
-
+                    var fileNameWithoutExtension = System.IO.Path.GetFileName(filepath.Replace(GlobalVariables.GetFileExtension(filepath), string.Empty));
                     var spectraFile = MsDataFileReader.GetDataFile(filepath);
-                    spectraFile.InitiateDynamicConnection();
+                    if (spectraFile is TimsTofFileReader timsTofDataFile)
+                    {
+                        timsTofDataFile.LoadAllStaticData(maxThreads: Environment.ProcessorCount - 1); // timsTof files need to load all static data before they can be used, as dynamic access is not available for them
+                    }
+                    else
+                    {
+                        spectraFile.InitiateDynamicConnection();
+                    }
+
                     if (!MsDataFiles.TryAdd(fileNameWithoutExtension, spectraFile))
                     {
                         spectraFile.CloseDynamicConnection();

@@ -30,19 +30,6 @@ namespace MetaMorpheusGUI
 
             DecoysCheckBox.IsChecked = MetaDrawSettings.ShowDecoys;
             ContaminantsCheckBox.IsChecked = MetaDrawSettings.ShowContaminants;
-            PrecursorChargeCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Charge: "];
-            PrecursorMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Precursor Mass: "];
-            TheoreticalMassCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Theoretical Mass: "];
-            ScoreCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Score: "];
-            ProteinAccessionCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Protein Accession: "];
-            ProteinCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Protein: "];
-            DecoyContaminantTargetCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "];
-            QValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Q-Value: "];
-            SequenceLengthCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Sequence Length: "];
-            AmbiguityLevelCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Ambiguity Level: "];
-            SpectralAngleCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["Spectral Angle: "];
-            PEPCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP: "];
-            PEPQValueCheckBox.IsChecked = MetaDrawSettings.SpectrumDescription["PEP Q-Value: "];
             StationarySequenceCheckBox.IsChecked = MetaDrawSettings.DrawStationarySequence;
             SequencenNumbersCheckBox.IsChecked = MetaDrawSettings.DrawNumbersUnderStationary;
             ShowLegendCheckBox.IsChecked = MetaDrawSettings.ShowLegend;
@@ -69,19 +56,6 @@ namespace MetaMorpheusGUI
         {
             MetaDrawSettings.ShowDecoys = DecoysCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowContaminants = ContaminantsCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Precursor Charge: "] = PrecursorChargeCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Precursor Mass: "] = PrecursorMassCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Theoretical Mass: "] = TheoreticalMassCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Score: "] = ScoreCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Protein Accession: "] = ProteinAccessionCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Protein: "] = ProteinCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Decoy/Contaminant/Target: "] = DecoyContaminantTargetCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Q-Value: "] = QValueCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Sequence Length: "] = SequenceLengthCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Ambiguity Level: "] = AmbiguityLevelCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["Spectral Angle: "] = SpectralAngleCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["PEP: "] = PEPCheckBox.IsChecked.Value;
-            MetaDrawSettings.SpectrumDescription["PEP Q-Value: "] = PEPQValueCheckBox.IsChecked.Value;
             MetaDrawSettings.DrawStationarySequence = StationarySequenceCheckBox.IsChecked.Value;
             MetaDrawSettings.DrawNumbersUnderStationary = SequencenNumbersCheckBox.IsChecked.Value;
             MetaDrawSettings.ShowLegend = ShowLegendCheckBox.IsChecked.Value;
@@ -111,56 +85,49 @@ namespace MetaMorpheusGUI
                 MetaDrawSettings.QValueFilter = 1;
             }
 
-            var fontSize = MetaDrawSettings.AnnotatedFontSize;
-            if (fontSize <= 0)
+            switch (MetaDrawSettings.AnnotatedFontSize)
             {
-                MessageBox.Show("Font size must be a positive integer");
-                return;
-            }
-            if (fontSize > 36)
-            {
-                MessageBox.Show("Font size must be <= 36");
-                return;
+                case <= 0:
+                    MessageBox.Show("Font size must be a positive integer");
+                    return;
+                case > 36:
+                    MessageBox.Show("Font size must be <= 36");
+                    return;
             }
 
-            fontSize = MetaDrawSettings.AnnotatedFontSize;
-            if (fontSize <= 0)
+            switch (MetaDrawSettings.AxisTitleTextSize)
             {
-                MessageBox.Show("Font size must be a positive integer");
-                return;
-            }
-            if (fontSize > 36)
-            {
-                MessageBox.Show("Font size must be <= 36");
-                return;
+                case <= 0:
+                    MessageBox.Show("Font size must be a positive integer");
+                    return;
+                case > 36:
+                    MessageBox.Show("Font size must be <= 36");
+                    return;
             }
 
-            fontSize = MetaDrawSettings.AxisLabelTextSize;
-            if (fontSize <= 0)
+            switch (MetaDrawSettings.AxisLabelTextSize)
             {
-                MessageBox.Show("Font size must be a positive integer");
-                return;
-            }
-            if (fontSize > 36)
-            {
-                MessageBox.Show("Font size must be <= 36");
-                return;
+                case <= 0:
+                    MessageBox.Show("Font size must be a positive integer");
+                    return;
+                case > 36:
+                    MessageBox.Show("Font size must be <= 36");
+                    return;
             }
 
-            var strokeThickness = MetaDrawSettings.StrokeThicknessAnnotated;
-            if (strokeThickness <= 0)
+            if (MetaDrawSettings.StrokeThicknessAnnotated <= 0)
             {
                 MessageBox.Show("Stroke thickness must be a positive number");
                 return;
             }
 
-            strokeThickness = MetaDrawSettings.StrokeThicknessUnannotated;
-            if (strokeThickness <= 0)
+            if (MetaDrawSettings.StrokeThicknessUnannotated <= 0)
             {
                 MessageBox.Show("Stroke thickness must be a positive number");
                 return;
             }
 
+            MetaDrawSettingsViewModel.Instance.Save();
             DialogResult = true;
         }
 
