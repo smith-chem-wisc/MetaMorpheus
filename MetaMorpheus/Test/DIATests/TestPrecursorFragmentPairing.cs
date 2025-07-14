@@ -70,6 +70,7 @@ namespace Test
         [Test]
         public static void TestCalculateOverlapRatio()
         {
+            //perfectly aligned XICs, should return 1
             var peakList1 = new List<IIndexedPeak>();
             double[] intensityMultipliers = { 1, 2, 3, 2, 1 };
             for (int i = 0; i < intensityMultipliers.Length; i++)
@@ -86,6 +87,7 @@ namespace Test
             double overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(xic1, xic2);
             Assert.That(overlap, Is.EqualTo(1.0).Within(1e-6));
 
+            //XICs with no overlap, should return 0
             var peakList3 = new List<IIndexedPeak>();
             for (int i = 0; i < intensityMultipliers.Length; i++)
             {
@@ -95,6 +97,7 @@ namespace Test
             overlap = PrecursorFragmentsGroup.CalculateXicOverlapRatio(xic1, xic3);
             Assert.That(overlap, Is.EqualTo(0));
 
+            //XICs with partial overlap
             var peakList4 = new List<IIndexedPeak>();
             for (int i = 0; i < intensityMultipliers.Length; i++)
             {

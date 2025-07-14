@@ -8,7 +8,6 @@ namespace EngineLayer.DIA.Enums
 {
     public enum PseudoMs2ConstructionType
     {
-        mzPeak,
-        neutralMass,
+        AveragedM,
     }
 }
