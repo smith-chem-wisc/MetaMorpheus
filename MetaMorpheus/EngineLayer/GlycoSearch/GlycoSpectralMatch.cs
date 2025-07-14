@@ -64,7 +64,7 @@ namespace EngineLayer.GlycoSearch
                 }
             }
 
-            foreach (var modWithMotif in modifications) //interate through all the modifications with motif.
+            foreach (var modWithMotif in modifications) //iterate through all the modifications with motif.
             {
                 for (int r = 0; r < peptide.Length; r++)
                 {

@@ -39,7 +39,6 @@ namespace EngineLayer
             Ions = ions;
             Decoy = decoy;
             Type = type;
-            Motif = motif;
 
             // Modification Properties
             Dictionary<DissociationType, List<double>> neutralLosses = new Dictionary<DissociationType, List<double>>();
@@ -117,10 +116,6 @@ namespace EngineLayer
         /// Type of glycan (N-glycan, O-glycan).
         /// </summary>
         public GlycanType Type;
-        /// <summary>
-        /// Motif string indicating the modification motif (e.g., "N", "S", "T").
-        /// </summary>
-        public string Motif;
 
 
         /// <summary>
@@ -707,7 +702,7 @@ namespace EngineLayer
                     GlycanIon glycanIon = new GlycanIon(null, ion.IonMass + value, ion.IonKind, ion.LossIonMass - value);
                     glycanIons.Add(glycanIon);
                 }
-                var DecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, glycanIons, true, aGlycan.Motif, aGlycan.Type);
+                var DecoyGlycan = new Glycan(aGlycan.Struc, aGlycan.Mass, aGlycan.Kind, glycanIons, true, aGlycan.Target.ToString(), aGlycan.Type);
                 DecoyGlycan.GlyId = aGlycan.GlyId;
                 allGlycans.Add(DecoyGlycan);
             }
