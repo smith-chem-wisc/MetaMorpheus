@@ -168,11 +168,51 @@ public class ChimeraPlottingTests
     #region Group View Model
 
     [Test]
+    public static void ChimeraGroupViewModel_FragmentCounts_OneProteinTwoProteoforms()
+    {
+        // Arrange
+        var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
+        Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+        Assert.That(chimeraGroup.ProteinCount, Is.EqualTo(1));
+
+        var terminalFragments = chimeraGroup.ChimericPsms.SelectMany(p => p.Psm.MatchedIons)
+            .Where(p => !p.IsInternalFragment)
+            .ToList();
+        Assert.That(terminalFragments.Count, Is.EqualTo(chimeraGroup.TotalFragments),  chimeraGroup.TotalFragments + " terminal fragments should match total fragments in the group.");
+
+        var uniqueFragments = terminalFragments
+            .Distinct()
+            .ToList();
+        Assert.That(uniqueFragments.Count, Is.EqualTo(chimeraGroup.UniqueFragments), "Unique fragments should match total unique fragments in the group.");
+    }
+
+    [Test]
+    public static void ChimeraGroupViewModel_FragmentCounts_TwoProteinsTwoProteoforms()
+    {
+        // Arrange
+        var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
+        Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+        Assert.That(chimeraGroup.ProteinCount, Is.EqualTo(2));
+
+        var terminalFragments = chimeraGroup.ChimericPsms.SelectMany(p => p.Psm.MatchedIons)
+            .Where(p => !p.IsInternalFragment)
+            .ToList();
+        Assert.That(terminalFragments.Count, Is.EqualTo(chimeraGroup.TotalFragments), chimeraGroup.TotalFragments + " terminal fragments should match total fragments in the group.");
+
+        var uniqueFragments = terminalFragments
+            .Distinct()
+            .ToList();
+        Assert.That(uniqueFragments.Count, Is.EqualTo(chimeraGroup.UniqueFragments), "Unique fragments should match total unique fragments in the group.");
+    }
+
+    [Test]
     public static void ChimeraGroupViewModel_PrecursorAssignmentIsCorrect_OneProteinTwoProteoforms()
     {
         // Arrange
         var chimeraGroup = OneProteinTwoProteoformChimeraGroup.ChimeraGroup;
         Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+        Assert.That(chimeraGroup.ProteinCount, Is.EqualTo(1));
+
 
         var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
         var envelope2 = chimeraGroup.ChimericPsms[1].PrecursorEnvelope;
@@ -196,6 +236,7 @@ public class ChimeraPlottingTests
         // Arrange
         var chimeraGroup = TwoProteinsTwoProteoformChimeraGroup.ChimeraGroup;
         Assert.That(chimeraGroup.Count, Is.EqualTo(2));
+        Assert.That(chimeraGroup.ProteinCount, Is.EqualTo(2));
 
         var envelope1 = chimeraGroup.ChimericPsms[0].PrecursorEnvelope;
         var envelope2 = chimeraGroup.ChimericPsms[1].PrecursorEnvelope;

@@ -22,22 +22,22 @@ namespace GuiFunctions;
 /// </summary>
 public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectralMatchModel>
 {
-    public string FileNameWithoutExtension { get; set; }
-    public int OneBasedPrecursorScanNumber { get; set; }
-    public int Ms2ScanNumber { get; set; }
+    public string FileNameWithoutExtension { get; }
+    public int OneBasedPrecursorScanNumber { get;}
+    public int Ms2ScanNumber { get; }
     public int Count => ChimericPsms.Count;
     public int ProteinCount { get; }
     public int TotalFragments { get; }
     public int UniqueFragments { get; }
-    public MsDataScan Ms1Scan { get; set; }
-    public MsDataScan Ms2Scan { get; set; }
-    public ObservableCollection<ChimericSpectralMatchModel> ChimericPsms { get; set; }
+    public MsDataScan Ms1Scan { get; }
+    public MsDataScan Ms2Scan { get; }
+    public ObservableCollection<ChimericSpectralMatchModel> ChimericPsms { get; }
 
     #region Plotting 
 
     private List<string> _letters = new List<string> { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
     public Queue<string> Letters { get; }
-    public Dictionary<string, List<ChimeraLegendItemViewModel>> LegendItems { get; set; }
+    public Dictionary<string, List<ChimeraLegendItemViewModel>> LegendItems { get; }
 
     private bool IsColorInitialized { get; set; } = false;
     private Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> _matchedFragmentIonsByColor = [];
@@ -53,11 +53,6 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
             AssignIonColors();
             return _matchedFragmentIonsByColor;
         }
-        set
-        {
-            _matchedFragmentIonsByColor = value;
-            OnPropertyChanged(nameof(MatchedFragmentIonsByColor));
-        }
     }
 
     private Dictionary<OxyColor, List<(MatchedFragmentIon, string)>> _precursorIonsByColor = [];
@@ -69,11 +64,6 @@ public class ChimeraGroupViewModel : BaseViewModel, IEnumerable<ChimericSpectral
             if (IsColorInitialized) return _precursorIonsByColor;
             AssignIonColors();
             return _precursorIonsByColor;
-        }
-        set
-        {
-            _precursorIonsByColor = value;
-            OnPropertyChanged(nameof(PrecursorIonsByColor));
         }
     }
 

@@ -14,6 +14,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using Brushes = System.Windows.Media.Brushes;
 using Point = System.Windows.Point;
+using System.Windows.Media.Media3D;
 
 namespace GuiFunctions;
 
@@ -186,16 +187,18 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         string path = Path.Combine(ExportDirectory,
             $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_MS1.{SelectedExportType.ToLower()}");
 
+        int width = Ms1ChimeraPlot.Model.Width > 0 ? (int)Ms1ChimeraPlot.Model.Width : 700;
+        int height = Ms1ChimeraPlot.Model.Width > 0 ? (int)Ms1ChimeraPlot.Model.Width : 300;
         switch (SelectedExportType)
         {
             case "Pdf":
-                Ms1ChimeraPlot.ExportToPdf(path, (int)Ms1ChimeraPlot.Model.Width, (int)Ms1ChimeraPlot.Model.Height);
+                Ms1ChimeraPlot.ExportToPdf(path, width, height);
                 break;
             case "Png":
-                Ms1ChimeraPlot.ExportToPng(path, (int)Ms1ChimeraPlot.Model.Width, (int)Ms1ChimeraPlot.Model.Height);
+                Ms1ChimeraPlot.ExportToPng(path, width, height);
                 break;
             case "Svg":
-                Ms1ChimeraPlot.ExportToSvg(path, (int)Ms1ChimeraPlot.Model.Width, (int)Ms1ChimeraPlot.Model.Height);
+                Ms1ChimeraPlot.ExportToSvg(path, width, height);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
@@ -215,16 +218,18 @@ public class ChimeraAnalysisTabViewModel : BaseViewModel
         string path = Path.Combine(ExportDirectory,
             $"{SelectedChimeraGroup.FileNameWithoutExtension}_{SelectedChimeraGroup.Ms1Scan.OneBasedScanNumber}_{SelectedChimeraGroup.Ms2Scan.OneBasedScanNumber}_MS2.{SelectedExportType.ToLower()}");
 
+        int width = ChimeraSpectrumMatchPlot.Model.Width > 0 ? (int)ChimeraSpectrumMatchPlot.Model.Width : 700;
+        int height = ChimeraSpectrumMatchPlot.Model.Width > 0 ? (int)ChimeraSpectrumMatchPlot.Model.Width : 300;
         switch (SelectedExportType)
         {
             case "Pdf":
-                ChimeraSpectrumMatchPlot.ExportToPdf(path, (int)ChimeraSpectrumMatchPlot.Model.Width, (int)ChimeraSpectrumMatchPlot.Model.Height);
+                ChimeraSpectrumMatchPlot.ExportToPdf(path, width, height);
                 break;
             case "Png":
-                ChimeraSpectrumMatchPlot.ExportToPng(path, (int)ChimeraSpectrumMatchPlot.Model.Width, (int)ChimeraSpectrumMatchPlot.Model.Height);
+                ChimeraSpectrumMatchPlot.ExportToPng(path, width, height);
                 break;
             case "Svg":
-                ChimeraSpectrumMatchPlot.ExportToSvg(path, (int)ChimeraSpectrumMatchPlot.Model.Width, (int)ChimeraSpectrumMatchPlot.Model.Height);
+                ChimeraSpectrumMatchPlot.ExportToSvg(path, width, height);
                 break;
             default:
                 throw new ArgumentOutOfRangeException();
