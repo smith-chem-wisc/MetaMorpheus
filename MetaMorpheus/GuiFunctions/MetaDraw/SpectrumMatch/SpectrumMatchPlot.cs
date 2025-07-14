@@ -286,17 +286,19 @@ namespace GuiFunctions
                             .Select(digit => MetaDrawSettings.SuperScriptNumbers[digit - '0'])
                             .ToArray());
 
-                            peakAnnotationText += superScript;
-                            if (chargeAnnotation == '+')
-                                peakAnnotationText += (char)(chargeAnnotation + 8271);
-                            else
-                                peakAnnotationText += (char)(chargeAnnotation + 8270);
+                        peakAnnotationText += superScript;
+                        if (chargeAnnotation == '+')
+                            peakAnnotationText += (char)(chargeAnnotation + 8271);
+                        else
+                            peakAnnotationText += (char)(chargeAnnotation + 8270);
                     }
+                    else
+                        peakAnnotationText += chargeAnnotation.ToString() + matchedIon.Charge;
+                }
 
-                    if (MetaDrawSettings.AnnotateMzValues)
-                    {
-                        peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
-                    }
+                if (MetaDrawSettings.AnnotateMzValues)
+                {
+                    peakAnnotationText += " (" + matchedIon.Mz.ToString("F3") + ")";
                 }
                 else
                 {

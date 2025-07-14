@@ -64,7 +64,7 @@
                             <!-- Select spectral library file -->
                             <DockPanel Grid.Row="2" LastChildFill="True" Grid.ColumnSpan="3" Margin="0 1 0 1">
                                 <Label Content="Spectral Library:" Width="95" ToolTip="Optional"/>
-                                <Button Name="resetSpecLibraryButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click"/>
+                                <Button Name="resetSpecLibraryButton" Content="Reset" DockPanel.Dock="Right" IsEnabled="False" Width="40" Click="resetFilesButton_Click" />
                                 <Button Name="selectSpecLibraryButton" Content="Select" DockPanel.Dock="Right" Width="40" Click="selectSpecLibraryButton_Click" 
                                         ToolTip="Optional"/>
                                 <Label BorderThickness="1">
@@ -111,7 +111,7 @@
                                 <Label Content="Export As: " Width="75"  DockPanel.Dock="Left"/>
                                 <Button Name="exportPdfs" Content="{Binding}" DockPanel.Dock="Left" IsEnabled="False" Width="40" Click="PDFButton_Click" Margin="5 0 5 0"/>
                                 <Button Name="exportSpectrumLibrary" Content="Spectrum Library" DockPanel.Dock="Right" IsEnabled="False" Click="ExportSpectrumLibraryButton_Click" 
-                                        Width="114" Margin="5 0 5 0" />
+                                        Width="100" Margin="5 0 5 0" />
                             </DockPanel>
                         </Grid>
 

@@ -3,6 +3,9 @@ using System.Windows.Input;
 
 namespace GuiFunctions
 {
+    /// <summary>
+    /// A command that can be used to execute an action without parameters.
+    /// </summary>
     public class RelayCommand : ICommand
     {
         #region Private Members
@@ -59,6 +62,9 @@ namespace GuiFunctions
         #endregion
     }
 
+    /// <summary>
+    /// A command that can be used to execute an action with a parameter.
+    /// </summary>
     public class DelegateCommand : ICommand
     {
         #region Private Members

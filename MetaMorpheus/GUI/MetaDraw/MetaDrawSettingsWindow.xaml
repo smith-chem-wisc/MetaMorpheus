@@ -436,7 +436,7 @@
                     </GroupBox>
                     <local:HostDeconParamControl x:Name="DeisotopingControl" DockPanel.Dock="Bottom" Grid.Row="1"
                                                  GroupBoxHeader="Precursor Deconvolution Parameters for Aligning Search Results to Spectra"
-                                                 ShowMs2Section="False"
+                                                 ShowMs2Section="False" 
                                                  DataContext="{Binding DeconHostViewModel}">
                        
                     </local:HostDeconParamControl>

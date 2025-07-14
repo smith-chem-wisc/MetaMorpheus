@@ -66,7 +66,6 @@ namespace MetaMorpheusGUI
             MetaDrawSettings.SpectrumDescriptionFontSize = double.TryParse(SpectrumDescriptionFontSizeBox.Text, out double spectrumDescriptionFontSize) ? spectrumDescriptionFontSize : 10;
             if (!ShowInternalIonsCheckBox.IsChecked.Value)
                 MetaDrawSettings.InternalIonColor = OxyColors.Transparent;
-            MetaDrawSettingsViewModel.Instance.Save();
 
             if (!string.IsNullOrWhiteSpace(qValueBox.Text))
             {

@@ -1,5 +1,4 @@
-﻿using Nett;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -172,7 +171,7 @@ public static class DictionaryExtensions
 
         }
         else
-            dictionary.Add(key, new List<(TValue, TValue2)> { (value, value2) });
+            dictionary.Add(key, [(value, value2)]);
 
     }
 }
