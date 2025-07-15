@@ -62,6 +62,8 @@ namespace EngineLayer.Gptmd
                 return false;
             }
 
+            if (attemptToLocalize.LocationRestriction == "Anywhere.")
+                return true;
             if (attemptToLocalize.LocationRestriction is "N-terminal." or "5'-terminal." && (proteinOneBasedIndex <= 2))
                 return true;
             if (attemptToLocalize.LocationRestriction is "Peptide N-terminal." or "Oligo 5'-terminal." && peptideOneBasedIndex == 1)
@@ -186,8 +188,8 @@ namespace EngineLayer.Gptmd
             });
 
             //UpdateModDictionary(modDict);
-            foreach(var kvp in modDict)
-                ModDictionary.MergeOrCreate(kvp.Key, [..kvp.Value]);
+            foreach (var kvp in modDict)
+                ModDictionary.MergeOrCreate(kvp.Key, new HashSet<Tuple<int, Modification>>(kvp.Value));
             return new GptmdResults(this, ModDictionary, modsAdded);
         }
 
