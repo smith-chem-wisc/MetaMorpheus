@@ -129,8 +129,7 @@
             <local:SettingsButtonControl Height="52" HorizontalAlignment="Left" VerticalAlignment="Top"
                                          Panel.ZIndex="1" RefreshAction="RefreshPlotsAfterSettingsChange"/>
         </Grid>
-        
-        
+
         <!-- Splitter between MS1 and MS2 plots -->
         <GridSplitter Grid.Row="1" Grid.Column="2"
                       Height="1"
@@ -161,10 +160,10 @@
                                     DataContext="{Binding ChimeraLegendViewModel}" Height="Auto" />
         </Expander>
 
-        <DataGrid x:Name="chimericResultDataGrid" Grid.Column="2" Grid.Row="5" Grid.RowSpan="2"
+        <DataGrid x:Name="chimericResultDataGrid" Grid.Column="2" Grid.Row="5" Grid.RowSpan="2" Height="Auto"
           ItemsSource="{Binding SelectedChimeraGroup.ChimericPsms}"
           CanUserAddRows="False" CanUserDeleteRows="False" ScrollViewer.CanContentScroll="False" IsReadOnly="True" AutoGenerateColumns="False"
-          HorizontalScrollBarVisibility="Disabled" >
+          HorizontalScrollBarVisibility="Disabled" CanUserResizeColumns="True">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="Proteoform" >
                     <DataGridTemplateColumn.CellTemplate>
@@ -174,20 +173,23 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="ID" Binding="{Binding Letter}" Width="Auto" />
-                <DataGridTextColumn Header="Name" Binding="{Binding Psm.Name}" Width="Auto" />
-                <DataGridTextColumn Header="Theoretical Mass" Binding="{Binding Psm.PrecursorMass}" Width="100"/>
-                <DataGridTextColumn Header="Precursor Mz" Binding="{Binding Psm.PrecursorMz}" Width="80"/>
-                <DataGridTextColumn Header="Mods" Binding="{Binding ModString}"></DataGridTextColumn>
-                <DataGridTextColumn Header="PEP Q-Value" Binding="{Binding Psm.PEP_QValue, StringFormat=F3}" Width="60"
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
-                <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Psm.Score}" 
-                            ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTextColumn Header="ID" Binding="{Binding Letter}" Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
+                <DataGridTextColumn Header="Name" Binding="{Binding Psm.Name}" Width="Auto" CanUserResize="True" />
+                <DataGridTextColumn Header="Theoretical Mass" Binding="{Binding Psm.PrecursorMass}" Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Precursor Mz" Binding="{Binding Psm.PrecursorMz}" Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="Mods" Binding="{Binding ModString}" Width="Auto" CanUserResize="True" />
+                <DataGridTextColumn Header="PEP Q-Value" Binding="{Binding Psm.PEP_QValue, StringFormat=F3}" Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}"/>
+                <DataGridTextColumn Header="MetaMorpheus Score" Binding="{Binding Psm.Score}"  Width="Auto"
+                                    ElementStyle="{StaticResource DataGridCenteredCellStyle}" />
                 <DataGridTemplateColumn Header="Protein">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Rectangle Stroke="{Binding ProteinColor, Converter={local:OxyColorToColorBrushConverter}}"
-                             Fill="{Binding ProteinColor, Converter={local:OxyColorToColorBrushConverter}}" />
+                                       Fill="{Binding ProteinColor, Converter={local:OxyColorToColorBrushConverter}}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
